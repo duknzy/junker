@@ -1,5 +1,5 @@
-// ⚡ 軽量 Service Worker（Flora v3.2 高速マルチAI並列・壁紙・STEPウィザード対応）
-const CACHE_NAME = 'flora-pwa-v3.2'; // ← バージョンを上げて古いキャッシュを完全破棄
+// ⚡ 軽量 Service Worker（Flora v3.3 壁紙カスタマイザー & StudyClock対応）
+const CACHE_NAME = 'flora-pwa-v3.3'; // ← バージョンを上げて古いキャッシュを完全破棄
 
 // 最低限、オフライン時に救いたい主要ページだけ事前キャッシュ
 const PRECACHE_URLS = [
@@ -14,8 +14,8 @@ const PRECACHE_URLS = [
     './insights.html',
     './timeline.html',
     './ai-settings.html',
-    './style.css?v=3.2',
-    './sidebar.js',
+    './style.css?v=3.3',
+    './sidebar.js?v=3.3',
     './manifest.json'
 ];
 

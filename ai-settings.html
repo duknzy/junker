@@ -8,7 +8,7 @@
 <link rel="icon" href="icons/icon.png">
 <link rel="apple-touch-icon" href="icons/icon.png">
 <title>Flora | AI設定</title>
-<link rel="stylesheet" href="style.css?v=3.2">
+<link rel="stylesheet" href="style.css?v=3.3">
 <style>
     .settings-section { margin-bottom: 2.2rem; }
     .settings-section-title { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.3rem; display: flex; align-items: center; gap: 0.5rem; }
@@ -140,6 +140,71 @@
                     <p class="page-subtitle">各機能で使用するAPIキーやモデルの優先度を一元管理。端末ローカルに安全に保存されます。</p>
                 </div>
             </div>
+
+            <!-- ============================== -->
+            <!-- 🖼️ 壁紙 & 表示カスタマイズ -->
+            <!-- ============================== -->
+            <section class="settings-section">
+                <div class="settings-section-title">🖼️ 壁紙 & 表示カスタマイズ</div>
+                <div class="settings-section-sub">
+                    背景画像、白オーバーレイの濃さ、カードの透過度、すりガラスのぼかし強度を自由に調整できます。サイドバーの「🖼️ 壁紙 & 透過設定」ボタンからもいつでも変更できます。
+                </div>
+                <div class="flora-card" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem;">
+                    <div style="display: flex; gap: 0.8rem; align-items: center; flex-wrap: wrap;">
+                        <button type="button" class="flora-btn flora-btn-primary btn-sm" onclick="document.getElementById('sidebar-wallpaper-input')?.click() || document.getElementById('ai-set-wp-input')?.click();">
+                            📷 壁紙画像ファイルを選択
+                        </button>
+                        <input type="file" id="ai-set-wp-input" accept="image/*" style="display:none;">
+                        <button type="button" class="flora-btn flora-btn-ghost btn-sm" style="color: var(--error);" onclick="if(confirm('壁紙を解除しますか？')){localStorage.removeItem('flora_wallpaper'); document.body.classList.remove('has-custom-wallpaper'); document.body.style.removeProperty('--user-wallpaper');}">
+                            🗑️ デフォルトの背景に戻す
+                        </button>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.2rem;">
+                        <!-- スライダー 1 -->
+                        <div class="wp-slider-group">
+                            <div class="wp-slider-label-row">
+                                <span>背景白オーバーレイ（薄いほど壁紙鮮明）：</span>
+                                <span class="wp-slider-val" id="page-wp-val-overlay">22%</span>
+                            </div>
+                            <input type="range" class="wp-range-input" id="page-wp-range-overlay" min="0" max="80" step="5" value="22">
+                            <div style="display: flex; justify-content: space-between; font-size: 0.68rem; color: var(--text-muted);">
+                                <span>0% (壁紙くっきり)</span>
+                                <span>40%</span>
+                                <span>80% (白め)</span>
+                            </div>
+                        </div>
+
+                        <!-- スライダー 2 -->
+                        <div class="wp-slider-group">
+                            <div class="wp-slider-label-row">
+                                <span>カード・パネルの不透明度：</span>
+                                <span class="wp-slider-val" id="page-wp-val-card">85%</span>
+                            </div>
+                            <input type="range" class="wp-range-input" id="page-wp-range-card" min="30" max="95" step="5" value="85">
+                            <div style="display: flex; justify-content: space-between; font-size: 0.68rem; color: var(--text-muted);">
+                                <span>30% (透明グラス)</span>
+                                <span>60%</span>
+                                <span>95% (ソリッド白)</span>
+                            </div>
+                        </div>
+
+                        <!-- スライダー 3 -->
+                        <div class="wp-slider-group">
+                            <div class="wp-slider-label-row">
+                                <span>すりガラスのぼかし強度 (Blur)：</span>
+                                <span class="wp-slider-val" id="page-wp-val-blur">8px</span>
+                            </div>
+                            <input type="range" class="wp-range-input" id="page-wp-range-blur" min="0" max="20" step="1" value="8">
+                            <div style="display: flex; justify-content: space-between; font-size: 0.68rem; color: var(--text-muted);">
+                                <span>0px (なし)</span>
+                                <span>10px</span>
+                                <span>20px (強)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
 
             <!-- ============================== -->
             <!-- 🔑 APIキー管理 -->
@@ -477,6 +542,78 @@ document.getElementById("io-import-file").addEventListener("change", async (e) =
         e.target.value = "";
     }
 });
+
+// --------------------------------------------------------------------------
+// 🖼️ ページ内 壁紙&透過カスタマイザー
+// --------------------------------------------------------------------------
+(function setupPageWallpaperControls() {
+    const rangeOverlay = document.getElementById('page-wp-range-overlay');
+    const rangeCard = document.getElementById('page-wp-range-card');
+    const rangeBlur = document.getElementById('page-wp-range-blur');
+
+    const valOverlay = document.getElementById('page-wp-val-overlay');
+    const valCard = document.getElementById('page-wp-val-card');
+    const valBlur = document.getElementById('page-wp-val-blur');
+
+    const input = document.getElementById('ai-set-wp-input');
+
+    const currentOverlay = localStorage.getItem('flora_wallpaper_overlay') || '0.22';
+    const currentCard = localStorage.getItem('flora_wallpaper_card') || '0.85';
+    const currentBlur = localStorage.getItem('flora_wallpaper_blur') || '8';
+
+    if (rangeOverlay) {
+        rangeOverlay.value = Math.round(currentOverlay * 100);
+        valOverlay.textContent = `${Math.round(currentOverlay * 100)}%`;
+        rangeOverlay.oninput = (e) => {
+            const val = e.target.value;
+            const decimal = (val / 100).toFixed(2);
+            valOverlay.textContent = `${val}%`;
+            document.documentElement.style.setProperty('--wp-overlay-opacity', decimal);
+            localStorage.setItem('flora_wallpaper_overlay', decimal);
+        };
+    }
+
+    if (rangeCard) {
+        rangeCard.value = Math.round(currentCard * 100);
+        valCard.textContent = `${Math.round(currentCard * 100)}%`;
+        rangeCard.oninput = (e) => {
+            const val = e.target.value;
+            const decimal = (val / 100).toFixed(2);
+            valCard.textContent = `${val}%`;
+            document.documentElement.style.setProperty('--wp-card-opacity', decimal);
+            localStorage.setItem('flora_wallpaper_card', decimal);
+        };
+    }
+
+    if (rangeBlur) {
+        rangeBlur.value = currentBlur;
+        valBlur.textContent = `${currentBlur}px`;
+        rangeBlur.oninput = (e) => {
+            const val = e.target.value;
+            valBlur.textContent = `${val}px`;
+            document.documentElement.style.setProperty('--wp-blur', `${val}px`);
+            localStorage.setItem('flora_wallpaper_blur', val);
+        };
+    }
+
+    if (input) {
+        input.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const dataUrl = ev.target.result;
+                try {
+                    localStorage.setItem('flora_wallpaper', dataUrl);
+                } catch(err) {}
+                document.body.style.setProperty('--user-wallpaper', `url("${dataUrl}")`);
+                document.body.classList.add('has-custom-wallpaper');
+                showToast("🖼️ 壁紙を設定しました", "success");
+            };
+            reader.readAsDataURL(file);
+        };
+    }
+})();
 
 renderAllKeyLists();
 renderFeatureUI();

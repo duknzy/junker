@@ -1086,8 +1086,14 @@ mjx-container[jax="CHTML"][display="true"] {
 .w-full { width: 100%; }
 .h-full { height: 100%; }
 
+:root {
+    --wp-overlay-opacity: 0.22;
+    --wp-card-opacity: 0.85;
+    --wp-blur: 8px;
+}
+
 /* ==========================================================================
-   🖼️ カスタム壁紙システム（ユーザー指定画像）
+   🖼️ カスタム壁紙システム（ユーザー指定画像 & 透過カスタマイズ）
    ========================================================================== */
 body.has-custom-wallpaper {
     background-image: var(--user-wallpaper, url('./wallpaper.jpg')) !important;
@@ -1098,9 +1104,9 @@ body.has-custom-wallpaper {
 }
 
 body.has-custom-wallpaper .app-layout {
-    background: rgba(248, 250, 252, 0.88) !important;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    background: rgba(248, 250, 252, var(--wp-overlay-opacity, 0.22)) !important;
+    backdrop-filter: blur(var(--wp-blur, 8px));
+    -webkit-backdrop-filter: blur(var(--wp-blur, 8px));
 }
 
 body.has-custom-wallpaper .app-main {
@@ -1108,9 +1114,9 @@ body.has-custom-wallpaper .app-main {
 }
 
 body.has-custom-wallpaper .app-sidebar {
-    background: rgba(255, 255, 255, 0.94) !important;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, var(--wp-card-opacity, 0.85)) !important;
+    backdrop-filter: blur(var(--wp-blur, 8px));
+    -webkit-backdrop-filter: blur(var(--wp-blur, 8px));
 }
 
 body.has-custom-wallpaper .squircle-card,
@@ -1120,9 +1126,71 @@ body.has-custom-wallpaper .new-lesson-form,
 body.has-custom-wallpaper .lesson-card-row,
 body.has-custom-wallpaper .lesson-grid-card,
 body.has-custom-wallpaper .ai-sidebar-panel,
-body.has-custom-wallpaper .problem-content-col {
-    background: rgba(255, 255, 255, 0.96) !important;
-    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08) !important;
+body.has-custom-wallpaper .problem-content-col,
+body.has-custom-wallpaper .main-question-tile,
+body.has-custom-wallpaper .answer-formula-tile,
+body.has-custom-wallpaper .ai-sidebar-tile,
+body.has-custom-wallpaper .flora-card,
+body.has-custom-wallpaper .filter-card,
+body.has-custom-wallpaper .custom-sprint-card {
+    background: rgba(255, 255, 255, var(--wp-card-opacity, 0.85)) !important;
+    backdrop-filter: blur(var(--wp-blur, 8px));
+    -webkit-backdrop-filter: blur(var(--wp-blur, 8px));
+    box-shadow: 0 4px 18px rgba(15, 23, 42, 0.08) !important;
+}
+
+/* 🖼️ 壁紙カスタマイザー モーダル */
+.wallpaper-modal-backdrop {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 99999;
+    animation: fadeIn 0.15s ease-out;
+}
+
+.wallpaper-modal-card {
+    width: 90%;
+    max-width: 480px;
+    background: #FFFFFF;
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-modal);
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.wp-slider-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.wp-slider-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: var(--fs-xs);
+    font-weight: 700;
+    color: var(--text-secondary);
+}
+
+.wp-slider-val {
+    font-family: var(--font-mono);
+    color: var(--brand-primary);
+    font-weight: 800;
+}
+
+.wp-range-input {
+    width: 100%;
+    accent-color: var(--brand-primary);
+    cursor: pointer;
 }
 
 /* ==========================================================================
