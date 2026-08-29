@@ -1,5 +1,5 @@
-// ⚡ 軽量 Service Worker（Flora v3.0 クリーンモダン対応）
-const CACHE_NAME = 'flora-pwa-v3.0'; // ← バージョンを上げて古いサイバーCSSキャッシュを完全破棄
+// ⚡ 軽量 Service Worker（Flora v3.1 クリーンモダン対応）
+const CACHE_NAME = 'flora-pwa-v3.1'; // ← バージョンを上げて古いキャッシュを完全破棄
 
 // 最低限、オフライン時に救いたい主要ページだけ事前キャッシュ
 const PRECACHE_URLS = [
@@ -14,7 +14,7 @@ const PRECACHE_URLS = [
     './insights.html',
     './timeline.html',
     './ai-settings.html',
-    './style.css?v=3.0',
+    './style.css?v=3.1',
     './sidebar.js',
     './manifest.json'
 ];

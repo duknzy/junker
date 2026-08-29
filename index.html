@@ -8,7 +8,7 @@
     <link rel="icon" href="icons/icon.png">
     <link rel="apple-touch-icon" href="icons/icon.png">
     <title>Flora | 誤答克服ダッシュボード</title>
-    <link rel="stylesheet" href="style.css?v=3.0">
+    <link rel="stylesheet" href="style.css?v=3.1">
     
     <script>
         window.MathJax = {
@@ -995,35 +995,27 @@ async function checkAndLoadLinkedLesson(uid) {
 
             if (user) {
                 currentUser = user;
-                authPanel.innerHTML = `
-                    <div class="user-profile">
-                        <img src="${user.photoURL}" class="user-avatar">
-                        <span>${user.displayName}</span>
-                        <button id="logout-btn">ログアウト</button>
-                    </div>
-                `;
-                document.getElementById("logout-btn").addEventListener("click", () => signOut(auth));
+                authPanel.innerHTML = "";
                 
                 registerBtn.style.display = "block";
-document.getElementById("open-insight-list-btn").style.display = "block"; // 💡 追加
-document.getElementById("open-qna-archive-btn").style.display = "block"; // 💬 追加
-document.getElementById("open-mnemonic-list-btn").style.display = "block"; // 🎴 追加
+                document.getElementById("open-insight-list-btn").style.display = "block";
+                document.getElementById("open-qna-archive-btn").style.display = "block";
+                document.getElementById("open-mnemonic-list-btn").style.display = "block";
                 loginNotice.style.display = "none";
                 mainGrid.style.display = "grid";
                 filterBar.style.display = "flex"; 
 
                 listenToCloudData(user.uid);
-                listenToQnaArchive(user.uid); // 💬【新設】質問履歴アーカイブの監視を開始
-                checkAndLoadLinkedLesson(user.uid); // 🎓 lesson.htmlからの継続問題リンクを確認
+                listenToQnaArchive(user.uid);
+                checkAndLoadLinkedLesson(user.uid);
             } else {
                 currentUser = null;
-                authPanel.innerHTML = `<span style="color:var(--accent-magenta); cursor:pointer;" id="header-login-btn">SIGN IN</span>`;
-                document.getElementById("header-login-btn").addEventListener("click", doLogin);
+                authPanel.innerHTML = "";
                 
                 registerBtn.style.display = "none";
-                document.getElementById("open-insight-list-btn").style.display = "none"; // 💡 非表示処理を追加
-                document.getElementById("open-qna-archive-btn").style.display = "none"; // 💬 非表示処理を追加
-                document.getElementById("open-mnemonic-list-btn").style.display = "none"; // 🎴 非表示処理を追加
+                document.getElementById("open-insight-list-btn").style.display = "none";
+                document.getElementById("open-qna-archive-btn").style.display = "none";
+                document.getElementById("open-mnemonic-list-btn").style.display = "none";
                 loginNotice.style.display = "block";
                 mainGrid.style.display = "none";
                 filterBar.style.display = "none";

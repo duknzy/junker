@@ -8,7 +8,7 @@
     <link rel="icon" href="icons/icon.png">
     <link rel="apple-touch-icon" href="icons/icon.png">
     <title>Flora | 問題解答セッション</title>
-    <link rel="stylesheet" href="style.css?v=3.0">
+    <link rel="stylesheet" href="style.css?v=3.1">
     
     <script>
         window.MathJax = {
@@ -1201,16 +1201,47 @@ ${glossaryBlock}`;
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 loginUid = user.uid;
-                if (!PROBLEM_ID) {
-                    showToast("問題IDの指定がありません。", "error");
-                    setTimeout(() => { location.href = "index.html"; }, 1200);
-                    return;
+                let activeProblemId = PROBLEM_ID;
+
+                // 🎯 問題IDが指定されていない場合（サイドバーから直接開いた場合など）：
+                //    登録されている問題の中から今日復習すべき優先度の高い問題を自動選択する
+                if (!activeProblemId) {
+                    try {
+                        const problemsSnap = await get(ref(database, 'users/' + user.uid + '/problems'));
+                        const problemsData = problemsSnap.val() || {};
+                        const problemList = Object.values(problemsData).filter(p => p && p.id);
+
+                        if (problemList.length === 0) {
+                            showToast("登録された問題がまだありません。ダッシュボードから問題を登録してください。", "info", 3000);
+                            setTimeout(() => { location.href = "index.html"; }, 1500);
+                            return;
+                        }
+
+                        // 復習優先度順でソート（誤答数が多い ＞ 最終挑戦日が古い ＞ 新規）
+                        problemList.sort((a, b) => {
+                            const errA = Number(a.errorCount || 0);
+                            const errB = Number(b.errorCount || 0);
+                            if (errB !== errA) return errB - errA;
+                            const timeA = a.lastAttemptAt ? new Date(a.lastAttemptAt).getTime() : 0;
+                            const timeB = b.lastAttemptAt ? new Date(b.lastAttemptAt).getTime() : 0;
+                            return timeA - timeB;
+                        });
+
+                        const selectedProblem = problemList[0];
+                        window.location.replace("problem.html?id=" + encodeURIComponent(selectedProblem.id));
+                        return;
+                    } catch (err) {
+                        console.error("問題自動選択エラー:", err);
+                        location.href = "index.html";
+                        return;
+                    }
                 }
-                // 🖼️【新設】フル画像を先に取得してから問題本体を描画する（初回描画時に画像が揃っている状態にするため）
-                await loadProblemFullImages(user.uid, PROBLEM_ID);
+
+                // 🖼️【新設】フル画像を先に取得してから問題本体を描画する
+                await loadProblemFullImages(user.uid, activeProblemId);
                 loadCloudProblemSession(user.uid);
-                listenToQnaLogsForProblem(user.uid, PROBLEM_ID); // 💬【新設】この問題の過去の質問ログを監視
-                listenToLinkedLessonForProblem(user.uid, PROBLEM_ID); // 🎓【新設】この問題から作られた授業を監視
+                listenToQnaLogsForProblem(user.uid, activeProblemId);
+                listenToLinkedLessonForProblem(user.uid, activeProblemId);
             } else {
                 location.href = "index.html";
             }
