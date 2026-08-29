@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#059669">
+    <title>Flora | 参考書 一問一答</title>
+    <link rel="stylesheet" href="style-m.css">
+
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                macros: { fbox: ["\\bbox[2px,border:1px solid]{#1}", 1] }
+            },
+            options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'] }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
+    <style>
+        /* 単元一覧グリッド */
+        .unit-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.65rem;
+        }
+
+        .m-unit-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 1rem;
+            box-shadow: var(--shadow-xs);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .m-unit-card:active {
+            transform: scale(0.985);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .m-unit-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.4rem;
+        }
+
+        .m-unit-title {
+            font-family: var(--font-heading);
+            font-size: var(--fs-base);
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.35;
+        }
+
+        .m-unit-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 0.6rem;
+            padding-top: 0.5rem;
+            border-top: 1px solid var(--border-subtle);
+        }
+        .m-unit-count {
+            font-family: var(--font-heading);
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--brand-primary);
+        }
+
+        /* 単元詳細・クイズ画面 */
+        #unit-detail-view {
+            display: none;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .quiz-progress-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+        .quiz-progress-track {
+            flex-grow: 1;
+            height: 6px;
+            background: var(--border-subtle);
+            border-radius: var(--radius-full);
+            overflow: hidden;
+        }
+        .quiz-progress-fill {
+            height: 100%;
+            background: var(--brand-primary);
+            transition: width 200ms ease;
+        }
+        .quiz-progress-text {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .quiz-jump-strip {
+            display: flex;
+            gap: 0.35rem;
+            overflow-x: auto;
+            padding: 0.2rem 0;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+        .quiz-jump-strip::-webkit-scrollbar { display: none; }
+
+        .quiz-jump-chip {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            border-radius: var(--radius-sm);
+            padding: 0.25rem 0.55rem;
+            font-size: 0.7rem;
+            font-weight: 700;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .quiz-jump-chip.current {
+            background: var(--brand-primary);
+            color: #fff;
+            border-color: var(--brand-primary);
+        }
+        .quiz-jump-chip.done {
+            border-color: var(--brand-border);
+            color: var(--brand-primary);
+            background: var(--brand-light);
+        }
+
+        .quiz-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-xl);
+            padding: 1.25rem;
+            box-shadow: var(--shadow-sm);
+        }
+        .quiz-card-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.8rem;
+        }
+
+        .quiz-question-text {
+            font-size: var(--fs-base);
+            line-height: 1.8;
+            white-space: pre-wrap;
+            color: var(--text-primary);
+            font-weight: 600;
+            word-break: break-word;
+        }
+
+        .quiz-answer-block {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px dashed var(--border-color);
+            display: none;
+        }
+        .quiz-answer-block.open { display: block; }
+        .quiz-answer-label {
+            font-size: 0.72rem;
+            font-weight: 800;
+            color: var(--brand-primary);
+            margin-bottom: 0.3rem;
+            letter-spacing: 0.5px;
+        }
+        .quiz-answer-text {
+            font-size: var(--fs-base);
+            line-height: 1.75;
+            white-space: pre-wrap;
+            margin-bottom: 0.8rem;
+            color: var(--text-primary);
+            word-break: break-word;
+        }
+        .quiz-explanation-text {
+            font-size: var(--fs-sm);
+            line-height: 1.75;
+            white-space: pre-wrap;
+            color: var(--text-secondary);
+            word-break: break-word;
+        }
+
+        /* テンポよく解くアクションボタン */
+        .quiz-reveal-row {
+            margin-top: 1.2rem;
+            display: flex;
+            justify-content: center;
+        }
+        .quiz-judge-row {
+            margin-top: 1rem;
+            display: flex;
+            gap: 0.6rem;
+        }
+        .btn-know {
+            background: var(--brand-primary);
+            color: #fff;
+            flex: 1;
+            font-weight: 700;
+        }
+        .btn-dunno {
+            background: var(--error-bg);
+            color: var(--error);
+            border: 1px solid var(--error);
+            flex: 1;
+            font-weight: 700;
+        }
+
+        .figure-gallery {
+            display: none;
+            gap: 0.5rem;
+            overflow-x: auto;
+            margin-top: 0.6rem;
+            padding: 0.4rem 0;
+        }
+        .figure-gallery.open { display: flex; }
+        .figure-gallery img {
+            height: 140px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+        }
+
+        /* 完了画面 */
+        .quiz-complete-box {
+            text-align: center;
+            padding: 3rem 1rem;
+            background: var(--bg-surface);
+            border-radius: var(--radius-xl);
+            border: 1px solid var(--border-color);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ヘッダー -->
+    <header class="m-header">
+        <button class="m-header-back" id="header-back-btn" onclick="location.href='index.html'">‹</button>
+        <span class="m-header-title" id="header-title">📚 参考書 一問一答</span>
+        <a href="../refbook.html" class="m-header-action" title="PC版で開く" style="font-size:0.85rem;">💻</a>
+    </header>
+
+    <!-- ログイン案内 -->
+    <div id="login-required-notice" class="m-content" style="display:none;">
+        <div class="m-empty-state" style="margin-top:3rem;">
+            <div class="m-empty-state-icon">🔒</div>
+            <div class="m-empty-state-title">ログインが必要です</div>
+            <button id="main-login-btn" class="m-btn m-btn-primary" style="margin-top:1rem;">Googleでログイン</button>
+        </div>
+    </div>
+
+    <!-- メインコンテンツ -->
+    <main id="main-content" class="m-content" style="display:none;">
+
+        <!-- 単元一覧ビュー -->
+        <div id="units-view">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+                <span class="m-section-title">登録済み単元</span>
+                <button class="m-btn m-btn-primary" id="open-register-btn" style="padding:0.4rem 0.8rem; font-size:0.75rem; min-height:36px;">
+                    📸 写真から登録
+                </button>
+            </div>
+            <div class="unit-list" id="unit-grid-container"></div>
+        </div>
+
+        <!-- 単元詳細（一問一答クイズ）ビュー -->
+        <div id="unit-detail-view">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <button class="m-btn" id="back-to-units-btn" style="padding:0.35rem 0.7rem; font-size:0.75rem; min-height:32px;">
+                    ← 単元一覧へ
+                </button>
+                <span class="m-subject-badge subj-化学" id="unit-detail-title-badge">単元名</span>
+            </div>
+
+            <!-- プログレス -->
+            <div class="quiz-progress-bar">
+                <div class="quiz-progress-track">
+                    <div class="quiz-progress-fill" id="quiz-progress-fill" style="width:0%;"></div>
+                </div>
+                <div class="quiz-progress-text" id="quiz-progress-text">0 / 0</div>
+            </div>
+
+            <!-- 問題番号ジャンプストリップ -->
+            <div class="quiz-jump-strip" id="quiz-jump-strip"></div>
+
+            <!-- クイズカード -->
+            <div id="quiz-active-area">
+                <div class="quiz-card">
+                    <div class="quiz-card-head">
+                        <span class="m-subject-badge" id="quiz-card-badge" style="background:var(--bg-subtle); color:var(--text-primary); border:1px solid var(--border-color);">
+                            問題 1
+                        </span>
+                        <button class="m-btn" id="quiz-figure-toggle-btn" style="display:none; padding:0.25rem 0.5rem; font-size:0.7rem; min-height:28px;">
+                            🖼️ 写真を見る
+                        </button>
+                    </div>
+
+                    <div class="figure-gallery" id="quiz-figure-gallery"></div>
+
+                    <div class="quiz-question-text tex2jax_process" id="quiz-question-text"></div>
+
+                    <div class="quiz-reveal-row" id="quiz-reveal-row">
+                        <button type="button" class="m-btn m-btn-primary m-btn-full" id="quiz-reveal-btn">
+                            👀 答え・解説を見る
+                        </button>
+                    </div>
+
+                    <div class="quiz-answer-block" id="quiz-answer-block">
+                        <div class="quiz-answer-label">✅ 解答</div>
+                        <div class="quiz-answer-text tex2jax_process" id="quiz-answer-text"></div>
+                        <div class="quiz-answer-label">📝 解説</div>
+                        <div class="quiz-explanation-text tex2jax_process" id="quiz-explanation-text"></div>
+
+                        <div class="quiz-judge-row">
+                            <button type="button" class="m-btn btn-know" id="quiz-know-btn">✅ わかった → 次へ</button>
+                            <button type="button" class="m-btn btn-dunno" id="quiz-dunno-btn">❌ わからなかった → 誤答ノートへ</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display:flex; justify-content:space-between; margin-top:0.75rem;">
+                    <button class="m-btn" id="quiz-prev-btn" style="font-size:0.75rem; padding:0.4rem 0.8rem;">← 前へ</button>
+                    <button class="m-btn" id="quiz-next-btn" style="font-size:0.75rem; padding:0.4rem 0.8rem;">次へ →</button>
+                </div>
+            </div>
+
+            <!-- 単元完了画面 -->
+            <div class="quiz-complete-box" id="quiz-complete-area" style="display:none;">
+                <div style="font-size:2rem; margin-bottom:0.5rem;">🎉</div>
+                <h3 style="font-family:var(--font-heading); font-size:1.15rem; margin-bottom:0.5rem;">この単元の問題を解き終わりました！</h3>
+                <div style="display:flex; gap:0.5rem; justify-content:center; margin-top:1.25rem;">
+                    <button class="m-btn m-btn-primary" id="quiz-restart-btn">🔁 最初から解き直す</button>
+                    <button class="m-btn" id="quiz-back-btn2">単元一覧へ戻る</button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ボトムナビ -->
+    <script src="bottom-nav.js"></script>
+
+    <script type="module">
+        import { initApiKeyManager, showToast, generateTinyThumbnail, getEffectiveGeminiKeys } from "../api-key-manager.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getAuth, signInWithPopup, signInWithEmailAndPassword, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { getDatabase, ref, set, get, update, onValue, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB55MdhpjJizQaLEdRu-XhBVJ4PqrHsAyY",
+            authDomain: "buturi-2449e.firebaseapp.com",
+            databaseURL: "https://buturi-2449e-default-rtdb.asia-southeast1.firebasedatabase.app/",
+            projectId: "buturi-2449e",
+            storageBucket: "buturi-2449e.appspot.com",
+            messagingSenderId: "976306696124",
+            appId: "1:976306696124:web:e455c1953544bff5c345b9"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+        const provider = new GoogleAuthProvider();
+
+        initApiKeyManager({ needGemini: true, needDeepseek: false });
+
+        let currentUser = null;
+        let unitsCache = {};
+        let problemsCache = {};
+        let currentUnitId = null;
+        let currentQuizList = [];
+        let currentQuizIndex = 0;
+        let solvedInThisRun = {};
+        let problemImagesCache = {};
+
+        // ==================== 認証 ====================
+        onAuthStateChanged(auth, (user) => {
+            const loginNotice = document.getElementById("login-required-notice");
+            const mainContent = document.getElementById("main-content");
+            if (user) {
+                currentUser = user;
+                loginNotice.style.display = "none";
+                mainContent.style.display = "block";
+                listenToUnits(user.uid);
+                listenToProblems(user.uid);
+            } else {
+                currentUser = null;
+                loginNotice.style.display = "block";
+                mainContent.style.display = "none";
+            }
+        });
+
+        document.getElementById("main-login-btn")?.addEventListener("click", () => signInWithPopup(auth, provider));
+
+        window.floraTestLogin = async function() {
+            try { await signInWithEmailAndPassword(auth, "tester@flora.local", "flora1234"); } catch(e) {}
+        };
+        if (new URLSearchParams(location.search).has("autologin")) {
+            setTimeout(() => { if (!auth.currentUser) window.floraTestLogin(); }, 500);
+        }
+
+        // ==================== Firebase監視 ====================
+        function listenToUnits(uid) {
+            onValue(ref(database, `users/${uid}/refBookUnits`), (snap) => {
+                unitsCache = snap.val() || {};
+                renderUnitGrid();
+            });
+        }
+
+        function listenToProblems(uid) {
+            onValue(ref(database, `users/${uid}/refBookProblems`), (snap) => {
+                problemsCache = snap.val() || {};
+                renderUnitGrid();
+                if (currentUnitId) {
+                    rebuildQuizList();
+                    renderQuizCard();
+                }
+            });
+        }
+
+        // ==================== 単元一覧 ====================
+        function countProblemsInUnit(unitId) {
+            return Object.values(problemsCache).filter(p => p.unitId === unitId).length;
+        }
+
+        function renderUnitGrid() {
+            const container = document.getElementById("unit-grid-container");
+            const unitEntries = Object.entries(unitsCache).sort((a, b) => (a[1].order || 0) - (b[1].order || 0));
+
+            if (unitEntries.length === 0) {
+                container.innerHTML = `<div class="m-empty-state"><div class="m-empty-state-icon">📚</div><div class="m-empty-state-title">まだ単元がありません</div><div class="m-empty-state-text">PC版から写真で問題を登録するか、右上の「写真から登録」をタップしてください。</div></div>`;
+                return;
+            }
+
+            container.innerHTML = unitEntries.map(([unitId, unit]) => {
+                const count = countProblemsInUnit(unitId);
+                return `
+                    <div class="m-unit-card" data-unit-id="${unitId}">
+                        <div class="m-unit-top">
+                            <span class="m-subject-badge subj-${unit.subject || '数学'}">${escapeHtml(unit.subject || '未分類')}</span>
+                            <span style="font-size:0.75rem; color:var(--text-muted);">ID: ${unitId.slice(-6)}</span>
+                        </div>
+                        <div class="m-unit-title">${escapeHtml(unit.name || '無題の単元')}</div>
+                        <div class="m-unit-meta">
+                            <div>
+                                <span class="m-unit-count">${count}</span>
+                                <span style="font-size:0.75rem; color:var(--text-muted);"> 問</span>
+                            </div>
+                            <span style="font-size:0.8rem; font-weight:700; color:var(--brand-primary);">演習する →</span>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+
+            container.querySelectorAll(".m-unit-card").forEach(card => {
+                card.addEventListener("click", () => openUnit(card.dataset.unitId));
+            });
+        }
+
+        // ==================== クイズ制御 ====================
+        function naturalSortKey(p) {
+            const m = String(p.number || "").match(/\d+/);
+            return m ? parseInt(m[0], 10) : 999999;
+        }
+
+        function rebuildQuizList() {
+            currentQuizList = Object.entries(problemsCache)
+                .filter(([, p]) => p.unitId === currentUnitId)
+                .sort((a, b) => {
+                    const diff = naturalSortKey(a[1]) - naturalSortKey(b[1]);
+                    if (diff !== 0) return diff;
+                    return (a[1].order || 0) - (b[1].order || 0);
+                })
+                .map(([id]) => id);
+            if (currentQuizIndex >= currentQuizList.length) currentQuizIndex = 0;
+        }
+
+        function openUnit(unitId) {
+            currentUnitId = unitId;
+            currentQuizIndex = 0;
+            solvedInThisRun = {};
+            rebuildQuizList();
+            document.getElementById("units-view").style.display = "none";
+            document.getElementById("unit-detail-view").style.display = "flex";
+            const unit = unitsCache[unitId];
+            document.getElementById("unit-detail-title-badge").textContent = unit ? unit.name : "単元";
+            document.getElementById("header-title").textContent = unit ? unit.name : "一問一答";
+            renderQuizCard();
+        }
+
+        function closeUnit() {
+            currentUnitId = null;
+            document.getElementById("unit-detail-view").style.display = "none";
+            document.getElementById("units-view").style.display = "block";
+            document.getElementById("header-title").textContent = "📚 参考書 一問一答";
+        }
+
+        document.getElementById("back-to-units-btn")?.addEventListener("click", closeUnit);
+        document.getElementById("quiz-back-btn2")?.addEventListener("click", closeUnit);
+
+        function renderJumpStrip() {
+            const strip = document.getElementById("quiz-jump-strip");
+            strip.innerHTML = currentQuizList.map((pid, i) => {
+                const p = problemsCache[pid];
+                const cls = i === currentQuizIndex ? "current" : (solvedInThisRun[pid] ? "done" : "");
+                return `<span class="quiz-jump-chip ${cls}" data-jump="${i}">${escapeHtml(p.number || (i + 1))}</span>`;
+            }).join("");
+            strip.querySelectorAll("[data-jump]").forEach(chip => {
+                chip.addEventListener("click", () => {
+                    currentQuizIndex = parseInt(chip.dataset.jump, 10);
+                    renderQuizCard();
+                });
+            });
+        }
+
+        function renderQuizCard() {
+            const activeArea = document.getElementById("quiz-active-area");
+            const completeArea = document.getElementById("quiz-complete-area");
+
+            if (currentQuizList.length === 0 || currentQuizIndex >= currentQuizList.length) {
+                activeArea.style.display = "none";
+                completeArea.style.display = "block";
+                return;
+            }
+
+            activeArea.style.display = "block";
+            completeArea.style.display = "none";
+
+            const pid = currentQuizList[currentQuizIndex];
+            const p = problemsCache[pid];
+
+            document.getElementById("quiz-progress-text").textContent = `${currentQuizIndex + 1} / ${currentQuizList.length}`;
+            document.getElementById("quiz-progress-fill").style.width = `${((currentQuizIndex + 1) / currentQuizList.length) * 100}%`;
+            renderJumpStrip();
+
+            document.getElementById("quiz-card-badge").textContent = `${p.type || "問題"} ${p.number || ""}`.trim();
+            document.getElementById("quiz-question-text").innerHTML = escapeHtml(p.question || "（問題文なし）");
+            document.getElementById("quiz-answer-text").innerHTML = escapeHtml(p.answer || "（解答なし）");
+            document.getElementById("quiz-explanation-text").innerHTML = escapeHtml(p.explanation || "（解説なし）");
+
+            document.getElementById("quiz-answer-block").classList.remove("open");
+            document.getElementById("quiz-reveal-row").style.display = "flex";
+
+            loadQuizFigures(pid, !!p.hasFigure);
+
+            document.getElementById("quiz-prev-btn").disabled = currentQuizIndex === 0;
+            document.getElementById("quiz-prev-btn").style.opacity = currentQuizIndex === 0 ? "0.4" : "1";
+
+            if (window.MathJax && window.MathJax.typesetPromise) {
+                window.MathJax.typesetPromise([activeArea]).catch(() => {});
+            }
+        }
+
+        async function loadQuizFigures(problemId, hasFigure) {
+            const toggleBtn = document.getElementById("quiz-figure-toggle-btn");
+            const gallery = document.getElementById("quiz-figure-gallery");
+            toggleBtn.style.display = "none";
+            gallery.classList.remove("open");
+            gallery.innerHTML = "";
+
+            if (!hasFigure) return;
+
+            let images = problemImagesCache[problemId];
+            if (images === undefined) {
+                images = [];
+                try {
+                    const snap = await get(ref(database, `users/${currentUser.uid}/refBookProblemImages/${problemId}`));
+                    if (snap.exists()) images = snap.val().images || [];
+                } catch(e) {}
+                problemImagesCache[problemId] = images;
+            }
+
+            if (images.length > 0) {
+                toggleBtn.style.display = "inline-flex";
+                gallery.innerHTML = images.map(src => `<img src="${src}" loading="lazy">`).join("");
+                toggleBtn.onclick = () => gallery.classList.toggle("open");
+            }
+        }
+
+        document.getElementById("quiz-reveal-btn")?.addEventListener("click", () => {
+            document.getElementById("quiz-answer-block").classList.add("open");
+            document.getElementById("quiz-reveal-row").style.display = "none";
+            const pid = currentQuizList[currentQuizIndex];
+            solvedInThisRun[pid] = true;
+            if (window.MathJax && window.MathJax.typesetPromise) {
+                window.MathJax.typesetPromise([document.getElementById("quiz-answer-block")]).catch(() => {});
+            }
+        });
+
+        document.getElementById("quiz-know-btn")?.addEventListener("click", () => {
+            currentQuizIndex++;
+            renderQuizCard();
+        });
+
+        document.getElementById("quiz-next-btn")?.addEventListener("click", () => {
+            currentQuizIndex = Math.min(currentQuizIndex + 1, currentQuizList.length);
+            renderQuizCard();
+        });
+        document.getElementById("quiz-prev-btn")?.addEventListener("click", () => {
+            currentQuizIndex = Math.max(currentQuizIndex - 1, 0);
+            renderQuizCard();
+        });
+        document.getElementById("quiz-restart-btn")?.addEventListener("click", () => {
+            currentQuizIndex = 0;
+            solvedInThisRun = {};
+            renderQuizCard();
+        });
+
+        // わからなかった → 誤答ノートへ
+        document.getElementById("quiz-dunno-btn")?.addEventListener("click", async () => {
+            const pid = currentQuizList[currentQuizIndex];
+            const p = problemsCache[pid];
+            if (!p || !currentUser) return;
+            const btn = document.getElementById("quiz-dunno-btn");
+            btn.disabled = true;
+            btn.textContent = "記録中...";
+            try {
+                const unit = unitsCache[p.unitId] || {};
+                let images = problemImagesCache[pid] || [];
+                let thumb = null;
+                if (images.length > 0) {
+                    try { thumb = await generateTinyThumbnail(images[0]); } catch(e) { thumb = images[0]; }
+                }
+
+                const newId = "CUSTOM_" + Date.now();
+                const nowIso = new Date().toISOString();
+                const newProblem = {
+                    id: newId,
+                    title: p.question || "",
+                    short_title: `${unit.name || "参考書"} ${p.number || ""}`.trim(),
+                    subject: unit.subject || "化学",
+                    field: unit.name || "参考書問題",
+                    trap_description: "",
+                    strategyPattern: "",
+                    errorCount: 1,
+                    lastAttemptAt: nowIso,
+                    lastResult: false,
+                    thumb: thumb,
+                    imageCount: images.length,
+                    answerFormula: `【解答】\n${p.answer || ""}\n\n【解説】\n${p.explanation || ""}`,
+                    mnemonic: "",
+                    events: [],
+                    createdAt: nowIso,
+                    sourceRefBookProblemId: pid
+                };
+
+                await set(ref(database, `users/${currentUser.uid}/problems/${newId}`), newProblem);
+                if (images.length > 0) {
+                    await set(ref(database, `users/${currentUser.uid}/problemImages/${newId}`), { images });
+                }
+                if (window.mToast) mToast("✅ 誤答ノートに記録しました！");
+                currentQuizIndex++;
+                renderQuizCard();
+            } catch(e) {
+                console.error("誤答ノート記録失敗:", e);
+                if (window.mToast) mToast("⚠️ 記録に失敗しました");
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "❌ わからなかった → 誤答ノートへ";
+            }
+        });
+
+        document.getElementById("open-register-btn")?.addEventListener("click", () => {
+            location.href = "../refbook.html";
+        });
+
+        function escapeHtml(str) {
+            return String(str == null ? "" : str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+    </script>
+
+</body>
+</html>

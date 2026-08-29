@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#059669">
+    <title>Flora | 問題演習</title>
+    <link rel="stylesheet" href="style-m.css">
+
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true,
+                macros: { fbox: ["\\bbox[2px,border:1px solid]{#1}", 1] }
+            },
+            options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'] },
+            chtml: { displayAlign: 'left' }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" async></script>
+
+    <style>
+        /* 問題画面固有 */
+        .problem-section {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+        }
+        .problem-section-label {
+            font-size: var(--fs-xs);
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 0.4rem;
+        }
+
+        .problem-text {
+            font-size: var(--fs-base);
+            line-height: 1.75;
+            color: var(--text-primary);
+            word-break: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .problem-images {
+            display: flex;
+            gap: 0.5rem;
+            overflow-x: auto;
+            padding: 0.5rem 0;
+            -webkit-overflow-scrolling: touch;
+        }
+        .problem-images img {
+            height: 180px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            flex-shrink: 0;
+        }
+
+        /* 自己採点ボタン */
+        .judge-row {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 0.5rem;
+        }
+        .judge-btn {
+            flex: 1;
+            padding: 0.9rem;
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            background: var(--bg-surface);
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s;
+            min-height: 52px;
+            text-align: center;
+        }
+        .judge-btn:active { transform: scale(0.96); }
+        .judge-btn.correct { border-color: var(--success); color: var(--success); }
+        .judge-btn.correct.selected { background: var(--success); color: #fff; }
+        .judge-btn.wrong { border-color: var(--error); color: var(--error); }
+        .judge-btn.wrong.selected { background: var(--error); color: #fff; }
+
+        /* 模範解答・アコーディオン */
+        .reveal-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            width: 100%;
+            padding: 0.7rem;
+            border: 1px dashed var(--border-color);
+            border-radius: var(--radius-md);
+            background: var(--bg-subtle);
+            color: var(--text-secondary);
+            font-size: var(--fs-sm);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+            min-height: 44px;
+        }
+        .reveal-btn:active { background: var(--brand-light); }
+
+        .model-answer-box {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 1rem;
+            font-size: var(--fs-sm);
+            line-height: 1.8;
+            margin-top: 0.5rem;
+        }
+
+        /* AIチャットセクション */
+        .chat-messages {
+            max-height: 400px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+            padding: 0.5rem 0;
+        }
+        .chat-bubble {
+            padding: 0.7rem 0.9rem;
+            border-radius: var(--radius-lg);
+            font-size: var(--fs-sm);
+            line-height: 1.65;
+            max-width: 88%;
+            word-break: break-word;
+        }
+        .chat-bubble.user {
+            align-self: flex-end;
+            background: var(--brand-primary);
+            color: var(--text-on-primary);
+            border-bottom-right-radius: 4px;
+        }
+        .chat-bubble.ai {
+            align-self: flex-start;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            border-bottom-left-radius: 4px;
+        }
+        .chat-input-row {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        .chat-input-row input {
+            flex: 1;
+        }
+
+        /* 気づきメモ */
+        .insight-textarea {
+            width: 100%;
+            min-height: 80px;
+            padding: 0.65rem 0.9rem;
+            font-size: var(--fs-sm);
+            font-family: var(--font-base);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            background: var(--bg-surface);
+            color: var(--text-primary);
+            outline: none;
+            resize: vertical;
+        }
+        .insight-textarea:focus {
+            border-color: var(--brand-primary);
+            box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.12);
+        }
+
+        /* ステータスバッジ */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.2rem 0.6rem;
+            font-size: 0.68rem;
+            font-weight: 700;
+            border-radius: var(--radius-full);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ヘッダー -->
+    <header class="m-header">
+        <button class="m-header-back" onclick="location.href='index.html'">‹</button>
+        <span class="m-header-title" id="header-title">問題演習</span>
+        <a href="../problem.html" id="pc-link" class="m-header-action" title="PC版で開く" style="font-size:0.85rem;">💻</a>
+    </header>
+
+    <!-- ログイン案内 -->
+    <div id="login-notice" class="m-content" style="display:none;">
+        <div class="m-empty-state" style="margin-top:3rem;">
+            <div class="m-empty-state-icon">🔒</div>
+            <div class="m-empty-state-title">ログインが必要です</div>
+            <button id="main-login-btn" class="m-btn m-btn-primary" style="margin-top:1rem;">Googleでログイン</button>
+        </div>
+    </div>
+
+    <!-- メインコンテンツ -->
+    <main id="main-content" class="m-content" style="display:none;">
+
+        <!-- 問題文 -->
+        <div class="problem-section">
+            <div class="problem-section-label">📝 問題文</div>
+            <div class="problem-text" id="problem-text">読み込み中...</div>
+            <div class="problem-images" id="problem-images"></div>
+        </div>
+
+        <!-- 罠 & 定石パターン（折りたたみ） -->
+        <div class="problem-section">
+            <button class="reveal-btn" id="trap-reveal-btn" onclick="toggleSection('trap-body')">
+                ⚠️ 罠＆定石パターンを見る
+            </button>
+            <div id="trap-body" style="display:none;margin-top:0.5rem;">
+                <div class="problem-section-label" style="margin-top:0.5rem;">⚠️ 罠ポイント</div>
+                <div class="problem-text" id="trap-text"></div>
+                <div class="problem-section-label" style="margin-top:0.75rem;">🧭 定石パターン</div>
+                <div class="problem-text" id="strategy-text"></div>
+            </div>
+        </div>
+
+        <!-- 模範解答（折りたたみ） -->
+        <div class="problem-section">
+            <button class="reveal-btn" id="answer-reveal-btn" onclick="toggleSection('answer-body')">
+                📖 模範解答を見る
+            </button>
+            <div id="answer-body" style="display:none;margin-top:0.5rem;">
+                <div class="model-answer-box" id="model-answer-text"></div>
+            </div>
+        </div>
+
+        <!-- 自己採点 -->
+        <div class="problem-section">
+            <div class="problem-section-label">✅ 自己採点</div>
+            <div class="judge-row">
+                <button class="judge-btn wrong" id="btn-wrong" onclick="judgeResult(false)">❌ 間違えた</button>
+                <button class="judge-btn correct" id="btn-correct" onclick="judgeResult(true)">🎉 合ってた</button>
+            </div>
+            <div id="judge-feedback" style="margin-top:0.5rem;font-size:var(--fs-sm);color:var(--text-secondary);text-align:center;"></div>
+        </div>
+
+        <!-- 気づきメモ -->
+        <div class="problem-section">
+            <div class="problem-section-label">🧠 気づき・極意メモ</div>
+            <textarea class="insight-textarea" id="insight-input" placeholder="この問題の核心を自分の言葉でメモ..."></textarea>
+            <button class="m-btn m-btn-primary" style="margin-top:0.5rem;width:100%;" onclick="saveInsight()">💾 メモ保存</button>
+        </div>
+
+        <!-- AIチャット -->
+        <div class="problem-section">
+            <div class="problem-section-label">🤖 AIに質問</div>
+            <div class="chat-messages" id="chat-messages"></div>
+            <div class="chat-input-row">
+                <input type="text" class="m-input" id="chat-input" placeholder="この問題について質問..." style="font-size:var(--fs-sm);">
+                <button class="m-btn m-btn-primary" onclick="sendChatMessage()">送信</button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ボトムナビ -->
+    <script src="bottom-nav.js"></script>
+
+    <script>
+        // セクション開閉
+        function toggleSection(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const isHidden = el.style.display === 'none';
+            el.style.display = isHidden ? 'block' : 'none';
+            // MathJax再レンダリング
+            if (isHidden && window.MathJax && window.MathJax.typesetPromise) {
+                window.MathJax.typesetPromise([el]).catch(() => {});
+            }
+        }
+    </script>
+
+    <script type="module">
+        import { initApiKeyManager, showToast, callGeminiChat, getGeminiKeys } from "../api-key-manager.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getAuth, signInWithPopup, signInWithEmailAndPassword, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { getDatabase, ref, get, update, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB55MdhpjJizQaLEdRu-XhBVJ4PqrHsAyY",
+            authDomain: "buturi-2449e.firebaseapp.com",
+            databaseURL: "https://buturi-2449e-default-rtdb.asia-southeast1.firebasedatabase.app/",
+            projectId: "buturi-2449e",
+            storageBucket: "buturi-2449e.appspot.com",
+            messagingSenderId: "976306696124",
+            appId: "1:976306696124:web:e455c1953544bff5c345b9"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+        const provider = new GoogleAuthProvider();
+        initApiKeyManager({ needGemini: true, needDeepseek: false });
+
+        const PROBLEM_ID = new URLSearchParams(location.search).get('id');
+        // PC版リンクにIDを引き継ぐ
+        const pcLink = document.getElementById('pc-link');
+        if (pcLink && PROBLEM_ID) pcLink.href = `../problem.html?id=${PROBLEM_ID}`;
+
+        let currentUser = null;
+        let currentProblem = null;
+        let chatHistory = [];
+
+        // ==================== 認証 ====================
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                document.getElementById("login-notice").style.display = "none";
+                document.getElementById("main-content").style.display = "block";
+                if (PROBLEM_ID) loadProblem(user.uid, PROBLEM_ID);
+                else {
+                    document.getElementById("problem-text").textContent = "問題IDが指定されていません。ダッシュボードから問題を選んでください。";
+                }
+            } else {
+                document.getElementById("login-notice").style.display = "block";
+                document.getElementById("main-content").style.display = "none";
+            }
+        });
+
+        document.getElementById("main-login-btn").addEventListener("click", () => {
+            signInWithPopup(auth, provider).catch(e => console.error(e));
+        });
+
+        // テスターログイン
+        window.floraTestLogin = async function() {
+            try { await signInWithEmailAndPassword(auth, "tester@flora.local", "flora1234"); } catch(e) {}
+        };
+        if (new URLSearchParams(location.search).has("autologin")) {
+            setTimeout(() => { if (!auth.currentUser) window.floraTestLogin(); }, 500);
+        }
+
+        // ==================== 問題読み込み ====================
+        async function loadProblem(uid, pid) {
+            try {
+                const snap = await get(ref(database, `users/${uid}/problems/${pid}`));
+                const p = snap.val();
+                if (!p) {
+                    document.getElementById("problem-text").textContent = "問題データが見つかりませんでした。";
+                    return;
+                }
+                currentProblem = { ...p, id: pid };
+
+                // ヘッダータイトル更新
+                document.getElementById("header-title").textContent = p.short_title || "問題演習";
+
+                // 問題文
+                const problemTextEl = document.getElementById("problem-text");
+                problemTextEl.innerHTML = formatText(p.title || p.extracted_text || "問題文なし");
+
+                // 画像
+                const imagesEl = document.getElementById("problem-images");
+                imagesEl.innerHTML = "";
+                // まず新形式（problemImages）を試行、なければ旧形式
+                let images = [];
+                if (p.thumb) {
+                    try {
+                        const imgSnap = await get(ref(database, `users/${uid}/problemImages/${pid}`));
+                        const imgData = imgSnap.val();
+                        if (imgData && imgData.images) images = imgData.images;
+                    } catch(e) {}
+                    if (images.length === 0) images = [p.thumb]; // フル画像取得失敗時はサムネイルでも表示
+                } else if (Array.isArray(p.images) && p.images.length > 0) {
+                    images = p.images;
+                } else if (p.imageData) {
+                    images = [p.imageData];
+                }
+                images.forEach(src => {
+                    const img = document.createElement("img");
+                    img.src = src;
+                    img.loading = "lazy";
+                    imagesEl.appendChild(img);
+                });
+
+                // 罠 & 定石
+                document.getElementById("trap-text").innerHTML = formatText(p.trap_description || "");
+                document.getElementById("strategy-text").innerHTML = formatText(p.strategy_pattern || "");
+
+                // 模範解答
+                document.getElementById("model-answer-text").innerHTML = formatText(p.model_answer || "解答データなし");
+
+                // 気づきメモ
+                const insightInput = document.getElementById("insight-input");
+                if (p.insight) insightInput.value = p.insight;
+
+                // MathJax レンダリング
+                if (window.MathJax && window.MathJax.typesetPromise) {
+                    window.MathJax.typesetPromise([document.getElementById("main-content")]).catch(() => {});
+                }
+
+                // AIチャット用コンテキスト初期化
+                chatHistory = [{
+                    role: "user",
+                    parts: [{ text: `以下の問題について、生徒から質問があったら丁寧に答えてください。\n\n問題: ${p.title || p.extracted_text || ""}\n\n模範解答: ${p.model_answer || ""}` }]
+                }, {
+                    role: "model",
+                    parts: [{ text: "この問題について理解しました。何でも質問してください！" }]
+                }];
+
+            } catch (e) {
+                console.error("問題読み込み失敗:", e);
+                document.getElementById("problem-text").textContent = "読み込みエラー: " + e.message;
+            }
+        }
+
+        // ==================== 自己採点 ====================
+        window.judgeResult = async function(isCorrect) {
+            if (!currentUser || !currentProblem) return;
+
+            const btnCorrect = document.getElementById("btn-correct");
+            const btnWrong = document.getElementById("btn-wrong");
+            const feedback = document.getElementById("judge-feedback");
+
+            btnCorrect.classList.toggle("selected", isCorrect);
+            btnWrong.classList.toggle("selected", !isCorrect);
+
+            const updates = {
+                lastResult: isCorrect,
+                lastAttemptAt: new Date().toISOString(),
+            };
+            if (!isCorrect) {
+                updates.errorCount = (currentProblem.errorCount || 0) + 1;
+                currentProblem.errorCount = updates.errorCount;
+            }
+
+            try {
+                await update(ref(database, `users/${currentUser.uid}/problems/${currentProblem.id}`), updates);
+                feedback.textContent = isCorrect ? "🎉 正解！克服に近づきました" : "❌ 記録しました。次は解けるようにしましょう";
+                feedback.style.color = isCorrect ? "var(--success)" : "var(--error)";
+            } catch (e) {
+                feedback.textContent = "⚠️ 保存に失敗しました";
+                feedback.style.color = "var(--error)";
+            }
+        };
+
+        // ==================== 気づきメモ保存 ====================
+        window.saveInsight = async function() {
+            if (!currentUser || !currentProblem) return;
+            const text = document.getElementById("insight-input").value.trim();
+            try {
+                await update(ref(database, `users/${currentUser.uid}/problems/${currentProblem.id}`), {
+                    insight: text,
+                    insightUpdatedAt: new Date().toISOString()
+                });
+                if (window.mToast) mToast("💾 メモを保存しました");
+            } catch (e) {
+                if (window.mToast) mToast("⚠️ 保存に失敗しました");
+            }
+        };
+
+        // ==================== AIチャット ====================
+        window.sendChatMessage = async function() {
+            const input = document.getElementById("chat-input");
+            const msg = input.value.trim();
+            if (!msg) return;
+            input.value = "";
+
+            const messagesEl = document.getElementById("chat-messages");
+            messagesEl.insertAdjacentHTML("beforeend", `<div class="chat-bubble user">${escHtml(msg)}</div>`);
+
+            chatHistory.push({ role: "user", parts: [{ text: msg }] });
+
+            // AI応答
+            const thinkingEl = document.createElement("div");
+            thinkingEl.className = "chat-bubble ai";
+            thinkingEl.textContent = "考え中...";
+            messagesEl.appendChild(thinkingEl);
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+
+            try {
+                const result = await callGeminiChat(chatHistory, "problem_chat");
+                const aiText = result || "回答を取得できませんでした。";
+                thinkingEl.innerHTML = formatText(aiText);
+                chatHistory.push({ role: "model", parts: [{ text: aiText }] });
+                if (window.MathJax && window.MathJax.typesetPromise) {
+                    window.MathJax.typesetPromise([thinkingEl]).catch(() => {});
+                }
+            } catch (e) {
+                thinkingEl.textContent = "⚠️ エラー: " + e.message;
+            }
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+        };
+
+        // Enter で送信
+        document.getElementById("chat-input").addEventListener("keydown", (e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                window.sendChatMessage();
+            }
+        });
+
+        // ==================== ユーティリティ ====================
+        function formatText(text) {
+            if (!text) return "";
+            return String(text)
+                .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+                .replace(/\$([^$]+)\$/g, (m) => m) // MathJax用にそのまま残す
+                .replace(/\\n/g, "<br>")
+                .replace(/\n/g, "<br>");
+        }
+
+        function escHtml(s) {
+            return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+    </script>
+
+</body>
+</html>

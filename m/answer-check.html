@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#059669">
+    <title>Flora | クイック答え合わせ</title>
+    <link rel="stylesheet" href="style-m.css">
+
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                macros: { fbox: ["\\bbox[2px,border:1px solid]{#1}", 1] }
+            },
+            options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'] }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
+    <style>
+        .qc-subject-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.4rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .qc-subject-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.15rem;
+            padding: 0.5rem 0.2rem;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-size: 0.72rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s;
+            min-height: 48px;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .qc-subject-btn:active { transform: scale(0.95); }
+        .qc-subject-btn.active {
+            background: var(--brand-primary);
+            color: #fff;
+            border-color: var(--brand-primary);
+            box-shadow: 0 2px 8px rgba(5, 150, 105, 0.25);
+        }
+
+        .qc-result-box {
+            display: none;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 1.25rem;
+            margin-top: 1rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .qc-answer-row {
+            padding: 0.75rem;
+            background: var(--bg-subtle);
+            border-radius: var(--radius-md);
+            margin-bottom: 0.6rem;
+        }
+        .qc-answer-num {
+            font-weight: 800;
+            font-size: 0.85rem;
+            color: var(--brand-primary);
+            margin-bottom: 0.25rem;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ヘッダー -->
+    <header class="m-header">
+        <button class="m-header-back" onclick="location.href='index.html'">‹</button>
+        <span class="m-header-title">⚡ クイック答え合わせ</span>
+        <a href="../answer-check.html" class="m-header-action" title="PC版で開く" style="font-size:0.85rem;">💻</a>
+    </header>
+
+    <main class="m-content">
+
+        <!-- 11教科グリッド -->
+        <span class="m-section-title">📚 教科を選択</span>
+        <div class="qc-subject-grid" id="subject-grid">
+            <button class="qc-subject-btn active" data-subject="数学"><span>📐</span><span>数学</span></button>
+            <button class="qc-subject-btn" data-subject="物理"><span>⚡</span><span>物理</span></button>
+            <button class="qc-subject-btn" data-subject="化学"><span>🧪</span><span>化学</span></button>
+            <button class="qc-subject-btn" data-subject="生物"><span>🧬</span><span>生物</span></button>
+            <button class="qc-subject-btn" data-subject="情報"><span>💻</span><span>情報</span></button>
+            <button class="qc-subject-btn" data-subject="地理"><span>🗺️</span><span>地理</span></button>
+            <button class="qc-subject-btn" data-subject="日本史"><span>⛩️</span><span>日本史</span></button>
+            <button class="qc-subject-btn" data-subject="世界史"><span>🏛️</span><span>世界史</span></button>
+            <button class="qc-subject-btn" data-subject="英語"><span>🔤</span><span>英語</span></button>
+            <button class="qc-subject-btn" data-subject="国語"><span>📜</span><span>国語</span></button>
+            <button class="qc-subject-btn" data-subject="公民"><span>⚖️</span><span>公民</span></button>
+        </div>
+
+        <!-- 写真アップロード -->
+        <div class="m-card">
+            <div class="m-card-title">📸 問題・解答用紙の写真</div>
+            <p style="font-size:var(--fs-xs); color:var(--text-muted); margin-bottom:0.6rem;">
+                答えだけをAIが超高速で判定します。
+            </p>
+            <input type="file" accept="image/*" multiple id="photo-input" class="m-input" style="padding:0.4rem;">
+            <div id="thumb-preview" style="display:flex; gap:0.4rem; overflow-x:auto; margin-top:0.5rem;"></div>
+        </div>
+
+        <!-- 実行ボタン -->
+        <button class="m-btn m-btn-primary m-btn-full" id="run-check-btn" style="margin-top:0.75rem;">
+            ✨ 答え合わせを実行
+        </button>
+
+        <!-- 結果表示 -->
+        <div class="qc-result-box" id="result-box">
+            <div style="font-weight:800; font-size:1rem; color:var(--brand-primary); margin-bottom:0.75rem;">
+                🎯 判定結果
+            </div>
+            <div id="result-content"></div>
+        </div>
+
+    </main>
+
+    <!-- ボトムナビ -->
+    <script src="bottom-nav.js"></script>
+
+    <script type="module">
+        import { initApiKeyManager, showToast, callGeminiJSON } from "../api-key-manager.js";
+
+        initApiKeyManager({ needGemini: true, needDeepseek: false });
+
+        let selectedSubject = "数学";
+        let selectedImages = [];
+
+        // 教科ボタン選択
+        document.querySelectorAll(".qc-subject-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                document.querySelectorAll(".qc-subject-btn").forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+                selectedSubject = btn.dataset.subject;
+            });
+        });
+
+        // 画像選択
+        document.getElementById("photo-input")?.addEventListener("change", async (e) => {
+            const files = Array.from(e.target.files || []);
+            selectedImages = [];
+            const previewEl = document.getElementById("thumb-preview");
+            previewEl.innerHTML = "";
+
+            for (const f of files) {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    const dataUrl = ev.target.result;
+                    selectedImages.push({
+                        mimeType: f.type || "image/jpeg",
+                        base64: dataUrl.split(",")[1],
+                        dataUrl
+                    });
+                    previewEl.innerHTML += `<img src="${dataUrl}" style="height:60px; border-radius:6px; border:1px solid var(--border-color);">`;
+                };
+                reader.readAsDataURL(f);
+            }
+        });
+
+        // 答え合わせ実行
+        document.getElementById("run-check-btn")?.addEventListener("click", async () => {
+            if (selectedImages.length === 0) {
+                if (window.mToast) mToast("⚠️ 写真を選択してください");
+                return;
+            }
+
+            const btn = document.getElementById("run-check-btn");
+            btn.disabled = true;
+            btn.textContent = "AIが判定中...";
+
+            try {
+                const parts = [{ text: `教科「${selectedSubject}」のクイック答え合わせです。写真に写っている問題の正解と要点を箇条書きで返してください。` }];
+                selectedImages.forEach(img => {
+                    parts.push({ inlineData: { mimeType: img.mimeType, data: img.base64 } });
+                });
+
+                const schema = {
+                    type: "OBJECT",
+                    properties: {
+                        answers: {
+                            type: "ARRAY",
+                            items: {
+                                type: "OBJECT",
+                                properties: {
+                                    number: { type: "STRING" },
+                                    correctAnswer: { type: "STRING" },
+                                    point: { type: "STRING" }
+                                },
+                                required: ["number", "correctAnswer"]
+                            }
+                        }
+                    },
+                    required: ["answers"]
+                };
+
+                const res = await callGeminiJSON(parts, "あなたは各教科の解答判定エキスパートAIです。正解を抽出してJSONで返してください。", {
+                    temperature: 0.2,
+                    responseSchema: schema,
+                    featureId: "answer_check"
+                });
+
+                const resultBox = document.getElementById("result-box");
+                const resultContent = document.getElementById("result-content");
+                resultBox.style.display = "block";
+
+                const list = res.answers || [];
+                if (list.length === 0) {
+                    resultContent.innerHTML = "<div class='text-muted'>解答を抽出できませんでした。</div>";
+                } else {
+                    resultContent.innerHTML = list.map(item => `
+                        <div class="qc-answer-row">
+                            <div class="qc-answer-num">問題 ${escapeHtml(item.number)}</div>
+                            <div style="font-weight:700; color:var(--text-primary); margin-bottom:0.2rem;">
+                                正解: ${escapeHtml(item.correctAnswer)}
+                            </div>
+                            ${item.point ? `<div style="font-size:0.75rem; color:var(--text-secondary);">${escapeHtml(item.point)}</div>` : ''}
+                        </div>
+                    `).join("");
+                }
+
+                if (window.MathJax && window.MathJax.typesetPromise) {
+                    window.MathJax.typesetPromise([resultContent]).catch(() => {});
+                }
+                if (window.mToast) mToast("✅ 判定完了！");
+            } catch(e) {
+                console.error(e);
+                if (window.mToast) mToast("⚠️ エラー: " + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "✨ 答え合わせを実行";
+            }
+        });
+
+        function escapeHtml(s) {
+            return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+    </script>
+
+</body>
+</html>

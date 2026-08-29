@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#059669">
+    <title>Flora | 歴史 統合年表</title>
+    <link rel="stylesheet" href="style-m.css">
+
+    <style>
+        .timeline-type-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+        .type-tab-btn {
+            flex: 1;
+            padding: 0.6rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            background: var(--bg-surface);
+            font-size: var(--fs-sm);
+            font-weight: 700;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.15s;
+        }
+        .type-tab-btn.active {
+            background: var(--brand-primary);
+            color: #fff;
+            border-color: var(--brand-primary);
+        }
+
+        /* タイムラインアイテム */
+        .timeline-flow {
+            position: relative;
+            padding-left: 1.5rem;
+            margin-top: 1rem;
+        }
+        .timeline-flow::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 6px;
+            width: 2px;
+            background: var(--border-color);
+        }
+
+        .tl-item {
+            position: relative;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 0.9rem 1rem;
+            margin-bottom: 0.8rem;
+            box-shadow: var(--shadow-xs);
+        }
+        .tl-item::before {
+            content: '';
+            position: absolute;
+            left: -1.5rem;
+            top: 1.2rem;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--brand-primary);
+            border: 2px solid #fff;
+            transform: translateX(-4px);
+        }
+
+        .tl-year {
+            font-family: var(--font-heading);
+            font-size: var(--fs-md);
+            font-weight: 800;
+            color: var(--brand-primary);
+            margin-bottom: 0.2rem;
+        }
+        .tl-name {
+            font-weight: 700;
+            font-size: var(--fs-base);
+            color: var(--text-primary);
+            margin-bottom: 0.35rem;
+        }
+        .tl-mnemonic {
+            background: var(--warning-bg);
+            border: 1px dashed #FDE68A;
+            border-radius: var(--radius-sm);
+            padding: 0.35rem 0.6rem;
+            font-size: 0.75rem;
+            color: var(--warning);
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ヘッダー -->
+    <header class="m-header">
+        <button class="m-header-back" onclick="location.href='index.html'">‹</button>
+        <span class="m-header-title" id="tl-title">🏛️ 歴史 統合年表</span>
+        <a href="../timeline.html" class="m-header-action" title="PC版で開く" style="font-size:0.85rem;">💻</a>
+    </header>
+
+    <main class="m-content">
+
+        <!-- 世界史 / 日本史 タブ -->
+        <div class="timeline-type-tabs">
+            <button class="type-tab-btn active" id="btn-world">🌍 世界史</button>
+            <button class="type-tab-btn" id="btn-japan">⛩️ 日本史</button>
+        </div>
+
+        <!-- 検索バー -->
+        <div class="m-search-bar">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="tl-search" placeholder="出来事や年号で検索...">
+        </div>
+
+        <!-- 年表リスト -->
+        <div class="timeline-flow" id="timeline-container"></div>
+
+    </main>
+
+    <!-- ボトムナビ -->
+    <script src="bottom-nav.js"></script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB55MdhpjJizQaLEdRu-XhBVJ4PqrHsAyY",
+            authDomain: "buturi-2449e.firebaseapp.com",
+            databaseURL: "https://buturi-2449e-default-rtdb.asia-southeast1.firebasedatabase.app/",
+            projectId: "buturi-2449e",
+            storageBucket: "buturi-2449e.appspot.com",
+            messagingSenderId: "976306696124",
+            appId: "1:976306696124:web:e455c1953544bff5c345b9"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+
+        let currentHistoryType = "world"; // "world" or "japan"
+        let allProblems = {};
+        let allLessons = {};
+        let searchQuery = "";
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                listenData(user.uid);
+            }
+        });
+
+        window.floraTestLogin = async function() {
+            try { await signInWithEmailAndPassword(auth, "tester@flora.local", "flora1234"); } catch(e) {}
+        };
+        if (new URLSearchParams(location.search).has("autologin")) {
+            setTimeout(() => { if (!auth.currentUser) window.floraTestLogin(); }, 500);
+        }
+
+        function listenData(uid) {
+            onValue(ref(database, `users/${uid}/problems`), snap => {
+                allProblems = snap.val() || {};
+                renderTimeline();
+            });
+            onValue(ref(database, `users/${uid}/lessons`), snap => {
+                allLessons = snap.val() || {};
+                renderTimeline();
+            });
+        }
+
+        // タブ切替
+        document.getElementById("btn-world").onclick = () => {
+            currentHistoryType = "world";
+            document.getElementById("btn-world").classList.add("active");
+            document.getElementById("btn-japan").classList.remove("active");
+            renderTimeline();
+        };
+        document.getElementById("btn-japan").onclick = () => {
+            currentHistoryType = "japan";
+            document.getElementById("btn-japan").classList.add("active");
+            document.getElementById("btn-world").classList.remove("active");
+            renderTimeline();
+        };
+
+        document.getElementById("tl-search").oninput = (e) => {
+            searchQuery = e.target.value.trim().toLowerCase();
+            renderTimeline();
+        };
+
+        function renderTimeline() {
+            const container = document.getElementById("timeline-container");
+            const targetSubject = currentHistoryType === "world" ? "世界史" : "日本史";
+
+            const events = [];
+
+            // 1. 問題から抽出
+            Object.values(allProblems).forEach(p => {
+                if (!p || p.subject !== targetSubject) return;
+                if (Array.isArray(p.events)) {
+                    p.events.forEach(ev => {
+                        events.push({
+                            name: ev.name,
+                            year: ev.year,
+                            yearSort: ev.year_sort || 0,
+                            region: ev.region || "",
+                            mnemonic: p.mnemonic || "",
+                            source: p.short_title || "問題"
+                        });
+                    });
+                }
+            });
+
+            // 2. 授業から抽出
+            Object.values(allLessons).forEach(l => {
+                if (!l || l.subject !== targetSubject) return;
+                if (Array.isArray(l.events)) {
+                    l.events.forEach(ev => {
+                        events.push({
+                            name: ev.name,
+                            year: ev.year,
+                            yearSort: ev.year_sort || 0,
+                            region: ev.region || "",
+                            mnemonic: l.mnemonic || "",
+                            source: l.title || "授業"
+                        });
+                    });
+                }
+            });
+
+            // 年代ソート
+            events.sort((a, b) => a.yearSort - b.yearSort);
+
+            // 検索フィルター
+            const filtered = events.filter(ev => {
+                if (!searchQuery) return true;
+                return [ev.name, ev.year, ev.region, ev.mnemonic, ev.source].join(" ").toLowerCase().includes(searchQuery);
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="m-empty-state" style="padding-left:0;">
+                        <div class="m-empty-state-icon">🏛️</div>
+                        <div class="m-empty-state-title">${targetSubject}の出来事がありません</div>
+                        <div class="m-empty-state-text">${targetSubject}の問題や授業を登録すると、自動でここに年表が作られます！</div>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filtered.map(ev => `
+                <div class="tl-item">
+                    <div class="tl-year">${escapeHtml(ev.year || '')}</div>
+                    <div class="tl-name">${escapeHtml(ev.name || '')}</div>
+                    ${ev.mnemonic ? `<div class="tl-mnemonic">💡 語呂: ${escapeHtml(ev.mnemonic)}</div>` : ''}
+                    <div style="font-size:0.68rem; color:var(--text-muted); margin-top:0.35rem;">
+                        📍 ${escapeHtml(ev.region || '全般')} ｜ 出典: ${escapeHtml(ev.source)}
+                    </div>
+                </div>
+            `).join("");
+        }
+
+        function escapeHtml(s) {
+            return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#059669">
+    <title>Flora | 気づき・極意ノート</title>
+    <link rel="stylesheet" href="style-m.css">
+
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                macros: { fbox: ["\\bbox[2px,border:1px solid]{#1}", 1] }
+            },
+            options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'] }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
+    <style>
+        .insight-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 1rem;
+            margin-bottom: 0.65rem;
+            box-shadow: var(--shadow-xs);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .insight-card:active {
+            transform: scale(0.985);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .insight-text {
+            font-size: var(--fs-base);
+            line-height: 1.7;
+            color: var(--text-primary);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            word-break: break-word;
+        }
+
+        .insight-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            padding-top: 0.4rem;
+            border-top: 1px solid var(--border-subtle);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ヘッダー -->
+    <header class="m-header">
+        <button class="m-header-back" onclick="location.href='index.html'">‹</button>
+        <span class="m-header-title">💡 気づき・極意ノート</span>
+        <a href="../insights.html" class="m-header-action" title="PC版で開く" style="font-size:0.85rem;">💻</a>
+    </header>
+
+    <main class="m-content">
+
+        <!-- 検索バー -->
+        <div class="m-search-bar">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="insight-search" placeholder="気づき・解法パターンを検索...">
+        </div>
+
+        <!-- 教科フィルター -->
+        <div class="m-filter-chips" id="insight-subject-chips"></div>
+
+        <!-- 一覧 -->
+        <div id="insight-list" style="margin-top:0.6rem;"></div>
+
+    </main>
+
+    <!-- ボトムナビ -->
+    <script src="bottom-nav.js"></script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB55MdhpjJizQaLEdRu-XhBVJ4PqrHsAyY",
+            authDomain: "buturi-2449e.firebaseapp.com",
+            databaseURL: "https://buturi-2449e-default-rtdb.asia-southeast1.firebasedatabase.app/",
+            projectId: "buturi-2449e",
+            storageBucket: "buturi-2449e.appspot.com",
+            messagingSenderId: "976306696124",
+            appId: "1:976306696124:web:e455c1953544bff5c345b9"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+
+        let allProblems = {};
+        let currentSubject = "ALL";
+        let searchQuery = "";
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                onValue(ref(database, `users/${user.uid}/problems`), snap => {
+                    allProblems = snap.val() || {};
+                    renderInsights();
+                });
+            }
+        });
+
+        window.floraTestLogin = async function() {
+            try { await signInWithEmailAndPassword(auth, "tester@flora.local", "flora1234"); } catch(e) {}
+        };
+        if (new URLSearchParams(location.search).has("autologin")) {
+            setTimeout(() => { if (!auth.currentUser) window.floraTestLogin(); }, 500);
+        }
+
+        document.getElementById("insight-search").oninput = (e) => {
+            searchQuery = e.target.value.trim().toLowerCase();
+            renderInsights();
+        };
+
+        function renderInsights() {
+            const listEl = document.getElementById("insight-list");
+            const chipsEl = document.getElementById("insight-subject-chips");
+
+            // 気づきがある問題だけ抽出
+            const items = Object.entries(allProblems)
+                .filter(([, p]) => p && p.insight && p.insight.trim() !== "")
+                .map(([id, p]) => ({ id, ...p }));
+
+            // 教科チップ
+            const subjects = new Set();
+            items.forEach(p => { if (p.subject) subjects.add(p.subject); });
+
+            let chipsHtml = `<button class="m-chip ${currentSubject === 'ALL' ? 'active' : ''}" data-subj="ALL">✨ すべて</button>`;
+            subjects.forEach(s => {
+                chipsHtml += `<button class="m-chip ${currentSubject === s ? 'active' : ''}" data-subj="${s}">${s}</button>`;
+            });
+            chipsEl.innerHTML = chipsHtml;
+            chipsEl.querySelectorAll(".m-chip").forEach(btn => {
+                btn.onclick = () => {
+                    currentSubject = btn.dataset.subj;
+                    renderInsights();
+                };
+            });
+
+            // フィルター
+            const filtered = items.filter(p => {
+                if (currentSubject !== "ALL" && p.subject !== currentSubject) return false;
+                if (searchQuery) {
+                    const hay = [p.insight, p.short_title, p.field, p.subject].join(" ").toLowerCase();
+                    if (!hay.includes(searchQuery)) return false;
+                }
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                listEl.innerHTML = `
+                    <div class="m-empty-state">
+                        <div class="m-empty-state-icon">💡</div>
+                        <div class="m-empty-state-title">気づきメモがまだありません</div>
+                        <div class="m-empty-state-text">問題を解いた後に「気づきメモ」を記録すると、ここに一覧表示されます。</div>
+                    </div>
+                `;
+                return;
+            }
+
+            listEl.innerHTML = filtered.map(p => `
+                <div class="insight-card" onclick="location.href='problem.html?id=${p.id}'">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem;">
+                        <span class="m-subject-badge subj-${p.subject || '数学'}">${escapeHtml(p.subject || '未分類')}</span>
+                        <span style="font-size:0.75rem; color:var(--text-muted);">${escapeHtml(p.short_title || '')}</span>
+                    </div>
+                    <div class="insight-text tex2jax_process">${escapeHtml(p.insight)}</div>
+                    <div class="insight-meta">
+                        <span>🏷️ ${escapeHtml(p.field || '')}</span>
+                        <span style="color:var(--brand-primary); font-weight:700;">問題を開く →</span>
+                    </div>
+                </div>
+            `).join("");
+
+            if (window.MathJax && window.MathJax.typesetPromise) {
+                window.MathJax.typesetPromise([listEl]).catch(() => {});
+            }
+        }
+
+        function escapeHtml(s) {
+            return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+    </script>
+
+</body>
+</html>

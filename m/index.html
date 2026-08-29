@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#059669">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>Flora | 誤答ノート</title>
+    <link rel="stylesheet" href="style-m.css">
+
+    <style>
+        /* ====== ダッシュボード固有スタイル ====== */
+
+        /* 統計サマリー（横スクロールの3カード） */
+        .stat-row {
+            display: flex;
+            gap: 0.6rem;
+            overflow-x: auto;
+            padding: 0 0 0.5rem;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            margin-bottom: 0.75rem;
+        }
+        .stat-row::-webkit-scrollbar { display: none; }
+
+        .stat-card {
+            flex: 0 0 auto;
+            min-width: 120px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 0.75rem 0.9rem;
+            box-shadow: var(--shadow-xs);
+        }
+        .stat-label {
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 0.15rem;
+        }
+        .stat-value {
+            font-family: var(--font-heading);
+            font-size: 1.6rem;
+            font-weight: 800;
+            line-height: 1.15;
+            color: var(--text-primary);
+        }
+        .stat-sub {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            margin-top: 0.15rem;
+        }
+
+        /* 記憶定着バー */
+        .retention-bar-wrap {
+            height: 5px;
+            background: var(--bg-subtle);
+            border-radius: var(--radius-full);
+            overflow: hidden;
+            margin-top: 0.35rem;
+        }
+        .retention-bar-fill {
+            height: 100%;
+            background: var(--brand-primary);
+            border-radius: var(--radius-full);
+            transition: width 0.5s ease;
+        }
+
+        /* 問題行カード */
+        .p-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 0.9rem;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            margin-bottom: 0.6rem;
+            cursor: pointer;
+            transition: box-shadow 0.15s, transform 0.1s;
+            border-left: 4px solid var(--brand-primary);
+        }
+        .p-row:active {
+            transform: scale(0.985);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .p-thumb {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-md);
+            flex-shrink: 0;
+            overflow: hidden;
+            background: var(--bg-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.35rem;
+        }
+        .p-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .p-main {
+            flex: 1;
+            min-width: 0;
+        }
+        .p-title {
+            font-weight: 600;
+            font-size: var(--fs-sm);
+            color: var(--text-primary);
+            line-height: 1.35;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .p-badges {
+            display: flex;
+            gap: 0.3rem;
+            flex-wrap: wrap;
+            margin-top: 0.2rem;
+        }
+        .p-meta {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            margin-top: 0.15rem;
+        }
+
+        .p-err {
+            font-family: var(--font-heading);
+            font-size: 1.15rem;
+            font-weight: 800;
+            text-align: center;
+            min-width: 36px;
+            flex-shrink: 0;
+            line-height: 1;
+        }
+        .p-err-label {
+            font-size: 0.55rem;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        /* セクションヘッダー */
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.5rem 0.15rem;
+            margin-top: 0.5rem;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .section-header-left {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: var(--fs-xs);
+            font-weight: 700;
+            color: var(--text-secondary);
+        }
+        .section-chevron {
+            display: inline-block;
+            transition: transform 0.2s;
+            font-size: 0.65rem;
+        }
+        .section-header.collapsed .section-chevron {
+            transform: rotate(-90deg);
+        }
+        .section-count {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            background: var(--bg-subtle);
+            padding: 0.15rem 0.5rem;
+            border-radius: var(--radius-full);
+        }
+        .section-rows.collapsed { display: none; }
+
+        /* ログイン案内 */
+        .login-notice {
+            text-align: center;
+            padding: 4rem 1.5rem;
+        }
+        .login-notice h2 {
+            font-family: var(--font-heading);
+            font-size: var(--fs-lg);
+            margin-bottom: 0.5rem;
+        }
+        .login-notice p {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+            font-size: var(--fs-sm);
+        }
+
+        /* PC版リンク */
+        .pc-link-bar {
+            text-align: center;
+            padding: 0.5rem;
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ヘッダー -->
+    <header class="m-header">
+        <div style="display:flex;align-items:center;gap:0.5rem;flex:1;min-width:0;">
+            <span style="font-size:1.35rem;">🌱</span>
+            <span class="m-header-title">Flora 誤答ノート</span>
+        </div>
+        <a href="../index.html" class="m-header-action" title="PC版で開く" style="font-size:0.9rem;">💻</a>
+    </header>
+
+    <!-- ログイン案内（未ログイン時のみ） -->
+    <div id="login-notice" class="login-notice" style="display:none;">
+        <h2>🌱 Flora へようこそ</h2>
+        <p>ログインして誤答ノートを同期しましょう</p>
+        <button id="main-login-btn" class="m-btn m-btn-primary m-btn-full" style="max-width:280px;margin:0 auto;">
+            Googleでログイン
+        </button>
+        <div style="margin-top:0.75rem;">
+            <button id="test-login-btn" class="m-btn" style="font-size:0.75rem;padding:0.4rem 0.8rem;">
+                🧪 テスターログイン
+            </button>
+        </div>
+    </div>
+
+    <!-- メインコンテンツ（ログイン後） -->
+    <main id="main-content" class="m-content" style="display:none;">
+
+        <!-- 統計サマリー -->
+        <div class="stat-row">
+            <div class="stat-card">
+                <div class="stat-label">累計誤答</div>
+                <div class="stat-value" id="total-errors-display">00</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">今日の演習</div>
+                <div class="stat-value" id="solved-today-display">00</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">記憶定着率</div>
+                <div class="stat-value" id="retention-rate-display">0%</div>
+                <div class="retention-bar-wrap">
+                    <div class="retention-bar-fill" id="retention-bar-display" style="width:0%;"></div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">本日要対応</div>
+                <div class="stat-value text-error" id="due-count-display">0</div>
+                <div class="stat-sub">問</div>
+            </div>
+        </div>
+
+        <!-- 検索バー -->
+        <div class="m-search-bar">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="search-input" placeholder="問題を検索...">
+        </div>
+
+        <!-- 教科フィルター（横スクロール） -->
+        <div class="m-filter-chips" id="subject-chips"></div>
+
+        <!-- 問題一覧 -->
+        <div id="problem-list" style="margin-top:0.5rem;"></div>
+
+    </main>
+
+    <!-- FAB: 問題登録 -->
+    <a href="../index.html#add-problem-modal" class="m-fab" id="fab-add" style="display:none;text-decoration:none;">📸</a>
+
+    <!-- ボトムナビ -->
+    <script src="bottom-nav.js"></script>
+
+    <!-- Firebase & ロジック -->
+    <script type="module">
+        import { initApiKeyManager, showToast, getGeminiKeys } from "../api-key-manager.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getAuth, signInWithPopup, signInWithEmailAndPassword, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { getDatabase, ref, get, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB55MdhpjJizQaLEdRu-XhBVJ4PqrHsAyY",
+            authDomain: "buturi-2449e.firebaseapp.com",
+            databaseURL: "https://buturi-2449e-default-rtdb.asia-southeast1.firebasedatabase.app/",
+            projectId: "buturi-2449e",
+            storageBucket: "buturi-2449e.appspot.com",
+            messagingSenderId: "976306696124",
+            appId: "1:976306696124:web:e455c1953544bff5c345b9"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+        const provider = new GoogleAuthProvider();
+
+        // APIキー管理UI注入
+        initApiKeyManager({ needGemini: true, needDeepseek: false });
+
+        let currentUser = null;
+        let lastProblems = {};
+        let currentSubjectFilter = "ALL";
+        let currentSearchQuery = "";
+
+        // ==================== 認証 ====================
+        onAuthStateChanged(auth, (user) => {
+            const loginNotice = document.getElementById("login-notice");
+            const mainContent = document.getElementById("main-content");
+            const fab = document.getElementById("fab-add");
+
+            if (user) {
+                currentUser = user;
+                loginNotice.style.display = "none";
+                mainContent.style.display = "block";
+                fab.style.display = "flex";
+                listenToProblems(user.uid);
+            } else {
+                currentUser = null;
+                loginNotice.style.display = "block";
+                mainContent.style.display = "none";
+                fab.style.display = "none";
+            }
+        });
+
+        function doLogin() { signInWithPopup(auth, provider).catch(e => console.error(e)); }
+        document.getElementById("main-login-btn").addEventListener("click", doLogin);
+
+        async function doTestLogin() {
+            try {
+                await signInWithEmailAndPassword(auth, "tester@flora.local", "flora1234");
+                if (window.mToast) mToast("✅ テスターログイン成功");
+            } catch (e) {
+                console.error("Test login failed:", e);
+                if (window.mToast) mToast("⚠️ ログイン失敗");
+            }
+        }
+        document.getElementById("test-login-btn")?.addEventListener("click", doTestLogin);
+        window.floraTestLogin = doTestLogin;
+
+        if (new URLSearchParams(location.search).has("autologin") || new URLSearchParams(location.search).has("test")) {
+            setTimeout(() => { if (!auth.currentUser) doTestLogin(); }, 500);
+        }
+
+        // ==================== データ取得 ====================
+        function listenToProblems(uid) {
+            const problemsRef = ref(database, 'users/' + uid + '/problems');
+            onValue(problemsRef, (snapshot) => {
+                lastProblems = snapshot.val() || {};
+                renderDashboard();
+            });
+        }
+
+        // ==================== 検索 & フィルター ====================
+        document.getElementById("search-input").addEventListener("input", (e) => {
+            currentSearchQuery = e.target.value.trim().toLowerCase();
+            renderDashboard();
+        });
+
+        // ==================== 復習優先度の計算 ====================
+        function getUrgency(p) {
+            const boostedAt = p.lessonReviewPriorityAt ? new Date(p.lessonReviewPriorityAt) : null;
+            const alreadyReviewed = boostedAt && p.lastAttemptAt && new Date(p.lastAttemptAt) >= boostedAt;
+            if (boostedAt && !alreadyReviewed) return "overdue";
+
+            if (!p.lastAttemptAt) return "new";
+
+            const diffDays = (Date.now() - new Date(p.lastAttemptAt).getTime()) / (1000 * 60 * 60 * 24);
+            const difficulty = Number(p.errorCount || 1);
+            let interval = 7;
+            if (difficulty === 1) interval = 4;
+            if (difficulty === 2) interval = 2;
+            if (difficulty >= 3) interval = 1;
+
+            if (p.errorCount === 0 || p.lastResult === true) return "safe";
+            if (diffDays >= interval * 1.5) return "overdue";
+            if (diffDays >= interval) return "critical";
+            return "pending";
+        }
+
+        const urgencyConfig = {
+            overdue:  { label: "⚠️ 忘却危機", color: "var(--accent-yellow)" },
+            critical: { label: "🔥 要復習",   color: "var(--accent-magenta)" },
+            new:      { label: "🆕 未挑戦",   color: "#888" },
+            pending:  { label: "⏳ 定着中",   color: "#b16eff" },
+            safe:     { label: "✨ 克服済",   color: "var(--accent-cyan)" },
+        };
+
+        const sectionOrder = ["overdue", "critical", "new", "pending", "safe"];
+
+        // ==================== 描画 ====================
+        function renderDashboard() {
+            const listEl = document.getElementById("problem-list");
+            const chipsEl = document.getElementById("subject-chips");
+
+            // 1. 教科一覧を抽出
+            const subjects = new Set();
+            Object.values(lastProblems).forEach(p => subjects.add(p.subject || "未分類"));
+
+            // 教科チップ描画
+            let chipsHtml = `<button class="m-chip ${currentSubjectFilter === 'ALL' ? 'active' : ''}" data-subj="ALL">✨ すべて</button>`;
+            subjects.forEach(s => {
+                chipsHtml += `<button class="m-chip ${currentSubjectFilter === s ? 'active' : ''}" data-subj="${s}">${s}</button>`;
+            });
+            chipsEl.innerHTML = chipsHtml;
+            chipsEl.querySelectorAll(".m-chip").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    currentSubjectFilter = btn.dataset.subj;
+                    renderDashboard();
+                });
+            });
+
+            // 2. フィルタ&分類
+            const buckets = { overdue: [], critical: [], new: [], pending: [], safe: [] };
+            let totalErrors = 0, solvedToday = 0, safeCount = 0, criticalDue = 0, totalFiltered = 0;
+            const todayStr = new Date().toDateString();
+
+            Object.entries(lastProblems).forEach(([id, p]) => {
+                if (!p) return;
+                const subj = p.subject || "未分類";
+                if (currentSubjectFilter !== "ALL" && subj !== currentSubjectFilter) return;
+                if (currentSearchQuery) {
+                    const hay = [p.short_title, p.title, p.field, p.subject, p.insight, p.trap_description]
+                        .filter(Boolean).join(" ").toLowerCase();
+                    if (!hay.includes(currentSearchQuery)) return;
+                }
+
+                totalFiltered++;
+                totalErrors += Number(p.errorCount || 0);
+                if (p.lastAttemptAt && p.lastResult === true && new Date(p.lastAttemptAt).toDateString() === todayStr) {
+                    solvedToday++;
+                }
+
+                const urgency = getUrgency(p);
+                if (urgency === "safe") safeCount++;
+                if (urgency === "overdue" || urgency === "critical" || urgency === "new") criticalDue++;
+
+                buckets[urgency].push({ id, ...p });
+            });
+
+            // 統計更新
+            document.getElementById("total-errors-display").textContent = String(totalErrors).padStart(2, '0');
+            document.getElementById("solved-today-display").textContent = String(solvedToday).padStart(2, '0');
+            const retention = totalFiltered > 0 ? Math.round((safeCount / totalFiltered) * 100) : 0;
+            document.getElementById("retention-rate-display").textContent = `${retention}%`;
+            document.getElementById("retention-bar-display").style.width = `${retention}%`;
+            document.getElementById("due-count-display").textContent = criticalDue;
+
+            // 3. 行描画
+            let html = "";
+            sectionOrder.forEach(key => {
+                const items = buckets[key];
+                if (!items || items.length === 0) return;
+                const cfg = urgencyConfig[key];
+
+                html += `
+                    <div class="section-header" data-section="${key}" onclick="this.classList.toggle('collapsed');this.nextElementSibling.classList.toggle('collapsed');">
+                        <div class="section-header-left">
+                            <span class="section-chevron">▼</span>
+                            <span>${cfg.label}</span>
+                        </div>
+                        <span class="section-count">${items.length}</span>
+                    </div>
+                    <div class="section-rows" data-section-rows="${key}">
+                `;
+
+                items.forEach(p => {
+                    // サムネイル
+                    let thumbContent = "";
+                    if (p.thumb) {
+                        thumbContent = `<img src="${p.thumb}">`;
+                    } else {
+                        const subj = p.subject || "";
+                        let icon = "📝";
+                        if (subj.includes("数学")) icon = "📐";
+                        else if (subj.includes("物理")) icon = "⚡";
+                        else if (subj.includes("化学")) icon = "🧪";
+                        else if (subj.includes("世界史")) icon = "🌍";
+                        else if (subj.includes("日本史")) icon = "⛩️";
+                        else if (subj.includes("英語")) icon = "🔤";
+                        else if (subj.includes("国語")) icon = "📖";
+                        else if (subj.includes("地理")) icon = "🗺️";
+                        else if (subj.includes("情報")) icon = "💻";
+                        else if (subj.includes("生物")) icon = "🧬";
+                        thumbContent = icon;
+                    }
+
+                    // 教科バッジCSSクラス
+                    const subjClass = getSubjectClass(p.subject || "");
+
+                    html += `
+                        <div class="p-row" style="border-left-color:${cfg.color};" onclick="location.href='problem.html?id=${p.id}'">
+                            <div class="p-thumb">${thumbContent}</div>
+                            <div class="p-main">
+                                <div class="p-title">${escHtml(p.short_title || p.title || "無題")}</div>
+                                <div class="p-badges">
+                                    <span class="m-subject-badge ${subjClass}">${escHtml(p.subject || "未分類")}</span>
+                                    ${p.field ? `<span class="m-subject-badge" style="background:var(--bg-subtle);color:var(--text-secondary);border:1px solid var(--border-color);">${escHtml(truncate(p.field, 15))}</span>` : ""}
+                                </div>
+                            </div>
+                            <div class="p-err" style="color:${cfg.color};">
+                                <div>${String(p.errorCount || 0).padStart(2, '0')}</div>
+                                <div class="p-err-label">誤答</div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += `</div>`;
+            });
+
+            if (totalFiltered === 0 && Object.keys(lastProblems).length === 0) {
+                html = `
+                    <div class="m-empty-state" style="margin-top:2rem;">
+                        <div class="m-empty-state-icon">📚</div>
+                        <div class="m-empty-state-title">まだ問題が登録されていません</div>
+                        <div class="m-empty-state-text">PC版の「📸 写真から問題を登録」で<br>誤答問題を追加してみましょう</div>
+                    </div>
+                `;
+            } else if (totalFiltered === 0) {
+                html = `<div class="m-empty-state"><div class="m-empty-state-text">条件に一致する問題がありません</div></div>`;
+            }
+
+            listEl.innerHTML = html;
+        }
+
+        function getSubjectClass(subj) {
+            if (subj.includes("数学")) return "subj-数学";
+            if (subj.includes("物理")) return "subj-物理";
+            if (subj.includes("化学")) return "subj-化学";
+            if (subj.includes("世界史")) return "subj-世界史";
+            if (subj.includes("英語")) return "subj-英語";
+            if (subj.includes("国語")) return "subj-国語";
+            if (subj.includes("公民")) return "subj-公民";
+            if (subj.includes("情報")) return "subj-情報";
+            if (subj.includes("地理")) return "subj-地理";
+            if (subj.includes("日本史")) return "subj-日本史";
+            if (subj.includes("生物")) return "subj-生物";
+            return "";
+        }
+
+        function escHtml(s) {
+            if (!s) return "";
+            return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+        function truncate(s, n) {
+            if (!s) return "";
+            return s.length > n ? s.slice(0, n) + "…" : s;
+        }
+    </script>
+
+</body>
+</html>

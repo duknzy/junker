@@ -96,6 +96,9 @@
                     </button>
                     <input type="file" id="sidebar-wallpaper-input" accept="image/*" style="display: none;">
                 </div>
+                <a href="m/index.html" class="sidebar-item" style="padding: 0.35rem 0.5rem; font-size: 0.74rem; background: var(--bg-subtle); justify-content: center; border: 1px solid var(--border-color); margin-bottom: 0.4rem; text-decoration: none;">
+                    <span>📱 モバイル表示</span>
+                </a>
                 <div class="sidebar-user-card" id="sidebar-user-container">
                     <div class="sidebar-user-avatar" id="sidebar-user-avatar">F</div>
                     <div style="flex: 1; min-width: 0;">

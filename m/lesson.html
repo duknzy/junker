@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#059669">
+    <title>Flora | 参考書 授業モード</title>
+    <link rel="stylesheet" href="style-m.css">
+
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                macros: { fbox: ["\\bbox[2px,border:1px solid]{#1}", 1] }
+            },
+            options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'] }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
+    <style>
+        /* 授業カード */
+        .m-lesson-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 1rem;
+            margin-bottom: 0.65rem;
+            box-shadow: var(--shadow-xs);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .m-lesson-card:active {
+            transform: scale(0.985);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .m-lesson-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.35rem;
+        }
+
+        .m-lesson-title {
+            font-family: var(--font-heading);
+            font-size: var(--fs-base);
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.35;
+        }
+
+        .m-lesson-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            margin-top: 0.5rem;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            flex-wrap: wrap;
+        }
+
+        .badge-status {
+            padding: 0.15rem 0.55rem;
+            border-radius: var(--radius-full);
+            font-size: 0.68rem;
+            font-weight: 700;
+        }
+        .status-teaching { background: var(--brand-light); color: var(--brand-primary); border: 1px solid var(--brand-border); }
+        .status-completed { background: var(--warning-bg); color: var(--warning); border: 1px solid #FDE68A; }
+
+        /* 受講画面 */
+        #lesson-active-view {
+            display: none;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .lesson-progress-header {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 0.75rem 1rem;
+            position: sticky;
+            top: var(--header-height);
+            z-index: 10;
+        }
+
+        .chat-flow {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            padding: 0.5rem 0;
+            min-height: 200px;
+        }
+
+        .lesson-bubble {
+            padding: 0.9rem 1.1rem;
+            border-radius: var(--radius-lg);
+            font-size: var(--fs-base);
+            line-height: 1.8;
+            max-width: 92%;
+            word-break: break-word;
+        }
+        .lesson-bubble.teacher {
+            align-self: flex-start;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            border-bottom-left-radius: 4px;
+            box-shadow: var(--shadow-xs);
+        }
+        .lesson-bubble.student {
+            align-self: flex-end;
+            background: var(--brand-primary);
+            color: #fff;
+            border-bottom-right-radius: 4px;
+        }
+
+        .lecture-note-box {
+            background: var(--bg-subtle);
+            border-left: 4px solid var(--brand-primary);
+            border-radius: 0 var(--radius-md) var(--radius-md) 0;
+            padding: 0.9rem 1rem;
+            font-size: var(--fs-sm);
+            line-height: 1.75;
+            margin: 0.5rem 0;
+        }
+
+        /* 画面下部のアクションバー */
+        .lesson-input-bar {
+            position: sticky;
+            bottom: calc(var(--bottom-nav-height) + var(--safe-area-bottom));
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(16px);
+            padding: 0.5rem 0;
+            border-top: 1px solid var(--border-subtle);
+            display: flex;
+            gap: 0.5rem;
+            z-index: 20;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ヘッダー -->
+    <header class="m-header">
+        <button class="m-header-back" id="header-back-btn" onclick="location.href='index.html'">‹</button>
+        <span class="m-header-title" id="header-title">📖 参考書 授業モード</span>
+        <a href="../lesson.html" class="m-header-action" title="PC版で開く" style="font-size:0.85rem;">💻</a>
+    </header>
+
+    <!-- ログイン案内 -->
+    <div id="login-required-notice" class="m-content" style="display:none;">
+        <div class="m-empty-state" style="margin-top:3rem;">
+            <div class="m-empty-state-icon">🔒</div>
+            <div class="m-empty-state-title">ログインが必要です</div>
+            <button id="main-login-btn" class="m-btn m-btn-primary" style="margin-top:1rem;">Googleでログイン</button>
+        </div>
+    </div>
+
+    <!-- メインコンテンツ -->
+    <main id="main-content" class="m-content" style="display:none;">
+
+        <!-- 授業一覧ビュー -->
+        <div id="lessons-list-view">
+            <div class="m-search-bar">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="lesson-search-input" placeholder="授業を検索...">
+            </div>
+
+            <!-- 教科フィルター -->
+            <div class="m-filter-chips" id="lesson-subject-chips"></div>
+
+            <!-- 授業一覧リスト -->
+            <div id="lesson-list-container" style="margin-top:0.6rem;"></div>
+        </div>
+
+        <!-- 授業受講画面ビュー -->
+        <div id="lesson-active-view">
+            <!-- 進捗バー -->
+            <div class="lesson-progress-header">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem;">
+                    <button class="m-btn" id="leave-lesson-btn" style="padding:0.25rem 0.6rem; font-size:0.7rem; min-height:28px;">
+                        ← 授業一覧へ
+                    </button>
+                    <span style="font-size:0.75rem; font-weight:700; color:var(--text-secondary);" id="lesson-part-indicator">
+                        Part 1 / 3
+                    </span>
+                </div>
+                <div class="m-progress">
+                    <div class="m-progress-bar" id="lesson-progress-bar" style="width:33%;"></div>
+                </div>
+            </div>
+
+            <!-- 講義チャットストリーム -->
+            <div class="chat-flow" id="lesson-chat-flow"></div>
+
+            <!-- アクション入力バー -->
+            <div class="lesson-input-bar">
+                <input type="text" class="m-input" id="lesson-student-input" placeholder="先生に質問、または「次へ」..." style="font-size:var(--fs-sm);">
+                <button class="m-btn m-btn-primary" id="lesson-send-btn" style="flex-shrink:0;">送信</button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ボトムナビ -->
+    <script src="bottom-nav.js"></script>
+
+    <script type="module">
+        import { initApiKeyManager, showToast, callGeminiChat } from "../api-key-manager.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getAuth, signInWithPopup, signInWithEmailAndPassword, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { getDatabase, ref, get, update, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB55MdhpjJizQaLEdRu-XhBVJ4PqrHsAyY",
+            authDomain: "buturi-2449e.firebaseapp.com",
+            databaseURL: "https://buturi-2449e-default-rtdb.asia-southeast1.firebasedatabase.app/",
+            projectId: "buturi-2449e",
+            storageBucket: "buturi-2449e.appspot.com",
+            messagingSenderId: "976306696124",
+            appId: "1:976306696124:web:e455c1953544bff5c345b9"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+        const provider = new GoogleAuthProvider();
+
+        initApiKeyManager({ needGemini: true, needDeepseek: false });
+
+        let currentUser = null;
+        let lessonsCache = {};
+        let activeLessonId = null;
+        let currentSubjectFilter = "ALL";
+        let currentSearchQuery = "";
+
+        // ==================== 認証 ====================
+        onAuthStateChanged(auth, (user) => {
+            const loginNotice = document.getElementById("login-required-notice");
+            const mainContent = document.getElementById("main-content");
+            if (user) {
+                currentUser = user;
+                loginNotice.style.display = "none";
+                mainContent.style.display = "block";
+                listenToLessons(user.uid);
+            } else {
+                currentUser = null;
+                loginNotice.style.display = "block";
+                mainContent.style.display = "none";
+            }
+        });
+
+        document.getElementById("main-login-btn")?.addEventListener("click", () => signInWithPopup(auth, provider));
+
+        window.floraTestLogin = async function() {
+            try { await signInWithEmailAndPassword(auth, "tester@flora.local", "flora1234"); } catch(e) {}
+        };
+        if (new URLSearchParams(location.search).has("autologin")) {
+            setTimeout(() => { if (!auth.currentUser) window.floraTestLogin(); }, 500);
+        }
+
+        // ==================== Firebase監視 ====================
+        function listenToLessons(uid) {
+            onValue(ref(database, `users/${uid}/lessons`), (snap) => {
+                lessonsCache = snap.val() || {};
+                renderLessonList();
+            });
+        }
+
+        // ==================== 検索 & フィルター ====================
+        document.getElementById("lesson-search-input")?.addEventListener("input", (e) => {
+            currentSearchQuery = e.target.value.trim().toLowerCase();
+            renderLessonList();
+        });
+
+        function renderLessonList() {
+            const container = document.getElementById("lesson-list-container");
+            const chipsEl = document.getElementById("lesson-subject-chips");
+
+            // 教科一覧
+            const subjects = new Set();
+            Object.values(lessonsCache).forEach(l => { if (l && l.subject) subjects.add(l.subject); });
+
+            let chipsHtml = `<button class="m-chip ${currentSubjectFilter === 'ALL' ? 'active' : ''}" data-subj="ALL">✨ すべて</button>`;
+            subjects.forEach(s => {
+                chipsHtml += `<button class="m-chip ${currentSubjectFilter === s ? 'active' : ''}" data-subj="${s}">${s}</button>`;
+            });
+            chipsEl.innerHTML = chipsHtml;
+            chipsEl.querySelectorAll(".m-chip").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    currentSubjectFilter = btn.dataset.subj;
+                    renderLessonList();
+                });
+            });
+
+            // リスト描画
+            const entries = Object.entries(lessonsCache).sort((a, b) => new Date(b[1].createdAt || 0) - new Date(a[1].createdAt || 0));
+            const filtered = entries.filter(([, l]) => {
+                if (!l) return false;
+                if (currentSubjectFilter !== "ALL" && l.subject !== currentSubjectFilter) return false;
+                if (currentSearchQuery) {
+                    const hay = [l.title, l.topic, l.subject, l.level].filter(Boolean).join(" ").toLowerCase();
+                    if (!hay.includes(currentSearchQuery)) return false;
+                }
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="m-empty-state"><div class="m-empty-state-icon">📖</div><div class="m-empty-state-title">授業がありません</div><div class="m-empty-state-text">PC版から新しい授業を作成してみましょう</div></div>`;
+                return;
+            }
+
+            container.innerHTML = filtered.map(([id, l]) => {
+                const isCompleted = l.status === "completed";
+                const statusClass = isCompleted ? "status-completed" : "status-teaching";
+                const statusText = isCompleted ? "✅ 完了" : "📖 進行中";
+
+                return `
+                    <div class="m-lesson-card" data-lesson-id="${id}">
+                        <div class="m-lesson-top">
+                            <span class="m-subject-badge subj-${l.subject || '数学'}">${escapeHtml(l.subject || '未分類')}</span>
+                            <span class="badge-status ${statusClass}">${statusText}</span>
+                        </div>
+                        <div class="m-lesson-title">${escapeHtml(l.title || l.topic || '無題の授業')}</div>
+                        <div class="m-lesson-meta">
+                            <span>🪜 ${escapeHtml(l.level || '高校基礎')}</span>
+                            <span>⏱️ ${l.createdAt ? new Date(l.createdAt).toLocaleDateString('ja-JP') : ''}</span>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+
+            container.querySelectorAll(".m-lesson-card").forEach(card => {
+                card.addEventListener("click", () => openLesson(card.dataset.lessonId));
+            });
+        }
+
+        // ==================== 受講画面制御 ====================
+        function openLesson(lessonId) {
+            const lesson = lessonsCache[lessonId];
+            if (!lesson) return;
+
+            activeLessonId = lessonId;
+            document.getElementById("lessons-list-view").style.display = "none";
+            document.getElementById("lesson-active-view").style.display = "flex";
+            document.getElementById("header-title").textContent = lesson.title || "授業受講";
+
+            const chatFlow = document.getElementById("lesson-chat-flow");
+            chatFlow.innerHTML = "";
+
+            // 導入講義ノートを最初に出す
+            if (lesson.lectureNote) {
+                chatFlow.innerHTML += `
+                    <div class="lesson-bubble teacher">
+                        <strong>👩‍🏫 ギャル先生の講義ノート</strong>
+                        <div class="lecture-note-box tex2jax_process">${formatText(lesson.lectureNote)}</div>
+                        <div>準備ができたら、下の入力欄から質問するか「次へ進む」と伝えてね！</div>
+                    </div>
+                `;
+            } else if (lesson.plan) {
+                chatFlow.innerHTML += `
+                    <div class="lesson-bubble teacher">
+                        <strong>👩‍🏫 今日の講義テーマ: ${escapeHtml(lesson.title || '')}</strong>
+                        <div class="lecture-note-box tex2jax_process">${formatText(lesson.plan)}</div>
+                    </div>
+                `;
+            }
+
+            // チャットログがあれば復元
+            if (Array.isArray(lesson.chatHistory)) {
+                lesson.chatHistory.forEach(msg => {
+                    const cls = msg.role === "user" ? "student" : "teacher";
+                    chatFlow.innerHTML += `<div class="lesson-bubble ${cls} tex2jax_process">${formatText(msg.text || msg.content || "")}</div>`;
+                });
+            }
+
+            if (window.MathJax && window.MathJax.typesetPromise) {
+                window.MathJax.typesetPromise([chatFlow]).catch(() => {});
+            }
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        }
+
+        function leaveLesson() {
+            activeLessonId = null;
+            document.getElementById("lesson-active-view").style.display = "none";
+            document.getElementById("lessons-list-view").style.display = "block";
+            document.getElementById("header-title").textContent = "📖 参考書 授業モード";
+        }
+        document.getElementById("leave-lesson-btn")?.addEventListener("click", leaveLesson);
+
+        // チャット送信
+        async function sendLessonMessage() {
+            const input = document.getElementById("lesson-student-input");
+            const text = input.value.trim();
+            if (!text || !activeLessonId || !currentUser) return;
+            input.value = "";
+
+            const chatFlow = document.getElementById("lesson-chat-flow");
+            chatFlow.insertAdjacentHTML("beforeend", `<div class="lesson-bubble student">${escapeHtml(text)}</div>`);
+
+            const thinkingEl = document.createElement("div");
+            thinkingEl.className = "lesson-bubble teacher";
+            thinkingEl.textContent = "先生が返答を作成中...";
+            chatFlow.appendChild(thinkingEl);
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+
+            try {
+                const lesson = lessonsCache[activeLessonId];
+                const history = [{
+                    role: "user",
+                    parts: [{ text: `あなたはギャル先生AIチューターです。以下の授業について生徒と対話してください。\nテーマ: ${lesson.title}\n講義内容: ${lesson.lectureNote || lesson.plan || ""}` }]
+                }, {
+                    role: "model",
+                    parts: [{ text: "了解！バイブス上げていくよ〜！" }]
+                }, {
+                    role: "user",
+                    parts: [{ text }]
+                }];
+
+                const reply = await callGeminiChat(history, "lesson_chat");
+                thinkingEl.innerHTML = formatText(reply || "了解！");
+                if (window.MathJax && window.MathJax.typesetPromise) {
+                    window.MathJax.typesetPromise([thinkingEl]).catch(() => {});
+                }
+            } catch(e) {
+                thinkingEl.textContent = "⚠️ エラー: " + e.message;
+            }
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        }
+
+        document.getElementById("lesson-send-btn")?.addEventListener("click", sendLessonMessage);
+        document.getElementById("lesson-student-input")?.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                sendLessonMessage();
+            }
+        });
+
+        function formatText(s) {
+            if (!s) return "";
+            return String(s)
+                .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+                .replace(/\\n/g, "<br>").replace(/\n/g, "<br>");
+        }
+        function escapeHtml(s) {
+            return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+    </script>
+
+</body>
+</html>
