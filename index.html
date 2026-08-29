@@ -8,7 +8,7 @@
     <link rel="icon" href="icons/icon.png">
     <link rel="apple-touch-icon" href="icons/icon.png">
     <title>Flora | 誤答克服ダッシュボード</title>
-    <link rel="stylesheet" href="style.css?v=3.1">
+    <link rel="stylesheet" href="style.css?v=3.2">
     
     <script>
         window.MathJax = {
@@ -518,12 +518,16 @@
                 <span class="filter-label" style="display:block; margin-bottom:0.4rem;">📚 教科を選択：</span>
                 <div id="subject-select-group" style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
                     <button type="button" class="subject-select-btn active" data-subject="数学" onclick="setSelectedSubject('数学')">数学</button>
-                    <button type="button" class="subject-select-btn" data-subject="物理" onclick="setSelectedSubject('物理')">物理基礎</button>
-                    <button type="button" class="subject-select-btn" data-subject="化学" onclick="setSelectedSubject('化学')">化学基礎</button>
+                    <button type="button" class="subject-select-btn" data-subject="物理" onclick="setSelectedSubject('物理')">物理</button>
+                    <button type="button" class="subject-select-btn" data-subject="化学" onclick="setSelectedSubject('化学')">化学</button>
+                    <button type="button" class="subject-select-btn" data-subject="生物" onclick="setSelectedSubject('生物')">生物</button>
+                    <button type="button" class="subject-select-btn" data-subject="情報" onclick="setSelectedSubject('情報')">情報</button>
+                    <button type="button" class="subject-select-btn" data-subject="地理" onclick="setSelectedSubject('地理')">地理</button>
+                    <button type="button" class="subject-select-btn" data-subject="日本史" onclick="setSelectedSubject('日本史')">日本史</button>
+                    <button type="button" class="subject-select-btn" data-subject="世界史" onclick="setSelectedSubject('世界史')">世界史</button>
                     <button type="button" class="subject-select-btn" data-subject="英語" onclick="setSelectedSubject('英語')">英語</button>
                     <button type="button" class="subject-select-btn" data-subject="国語" onclick="setSelectedSubject('国語')">国語</button>
-                    <button type="button" class="subject-select-btn" data-subject="地歴公民" onclick="setSelectedSubject('地歴公民')">地歴公民</button>
-                    <button type="button" class="subject-select-btn" data-subject="世界史" onclick="setSelectedSubject('世界史')">世界史</button>
+                    <button type="button" class="subject-select-btn" data-subject="地歴公民" onclick="setSelectedSubject('地歴公民')">公民</button>
                 </div>
             </div>
 
@@ -852,13 +856,76 @@
   "events": [
     {
       "name": "出来事の名前（例：フランス革命の勃発）",
-      "year": "表示用の年（例：1789年、前3世紀、14世紀後半 など、わかる精度で）",
-      "year_sort": "並べ替え用の年（西暦の整数。紀元前は負の数、例：前221年なら-221）",
-      "region": "次のいずれか1つ：東アジア／東南アジア／南アジア／西アジア・中央アジア／ヨーロッパ／アメリカ大陸／アフリカ／地域をまたぐ／世界全体"
+      "year": "表示用の年（例：1789年、前3世紀、14世紀後半 など）",
+      "year_sort": 1789,
+      "region": "ヨーロッパ"
     }
   ]
 }
-※eventsには、この問題文・解説中に登場する年号つきの出来事をすべて含めること（1個でも複数でもよい）。年号が特定できる出来事が1つも無い問題の場合は空配列（[]）にすること。
+`.trim(),
+            "情報": `
+あなたは高校情報（情報I・プログラミング）の「誤答分析エキスパートAI」です。提出された問題（画像またはテキスト）を深く分析してください。
+出力は必ず以下のJSONフォーマットの形式にしてください。他の説明テキストは絶対に含めないでください。
+{
+  "subject": "情報",
+  "field": "分野名（例：情報社会とセキュリティ、コンピュータとデータ表現、アルゴリズムとプログラミング、ネットワーク など）",
+  "short_title": "問題の要約タイトル",
+  "extracted_text": "読み取った正確な問題文・プログラムコードの全文 【厳守】要約・省略は絶対禁止。問題文がどれだけ長くても、最後の設問・選択肢まで一字一句省略せず全文を書き出すこと。",
+  "trap_description": "高校生がこの問題で最も間違えやすいポイント（配列の添字0始まりのミス、二進数変換ミス、不等号の境界値、論理回路の反転見落としなど）の解説文",
+  "strategy_pattern": "【最重要】この問題固有の数値や変数名には触れず、①問題のどの特徴（ループ構造・条件分岐・データ形式）を見て『型』を判断するか、②その型に対する定石アプローチ（トレース表の作成、ビット演算の法則など）、③なぜそれが有効なのかを一般化して説明すること。2〜4文程度。",
+  "model_answer": "最終的な正しい答えと、トレース表やステップごとの分かりやすい解説。コードはインデントを整えて出力すること。手順ごとに改行コード（\\n）を挟んで見やすい箇条書き形式で出力すること"
+}
+`.trim(),
+
+            "地理": `
+あなたは高校地理（地理探究・地理総合）の「誤答分析エキスパートAI」です。提出された問題（画像またはテキスト）を深く分析してください。
+出力は必ず以下のJSONフォーマットの形式にしてください。他の説明テキストは絶対に含めないでください。
+{
+  "subject": "地理",
+  "field": "分野名（例：系統地理 気候と植生、系統地理 地形、地誌 アジア、地誌 ヨーロッパ、産業と環境問題 など）",
+  "short_title": "問題の要約タイトル",
+  "extracted_text": "読み取った正確な問題文の全文（雨温図・地図・統計表の内容の要点も含む） 【厳守】要約・省略は絶対禁止。",
+  "trap_description": "高校生が間違えやすい気候区分の判定基準や統計データの読み取りミス・地名混同の解説",
+  "strategy_pattern": "【最重要】この問題固有の地名・数値には触れず、①統計や図表のどの特徴を見て問題の『型』を判断するか、②その型に対して定石として使うべき思考プロセス（気候因子の分解、産業立地の条件など）、③なぜそれが有効なのかを一般化して説明すること。2〜4文程度。",
+  "model_answer": "最終的な正しい答えと、論理的な理由づけ・因果関係を含む分かりやすい解説。手順ごとに改行コード（\\n）を挟んで出力すること"
+}
+`.trim(),
+
+            "日本史": `
+あなたは高校日本史（日本史探究）の「誤答分析エキスパートAI」です。提出された問題（画像またはテキスト）を深く分析してください。
+出力は必ず以下のJSONフォーマットの形式にしてください。他の説明テキストは絶対に含めないでください。
+{
+  "subject": "日本史",
+  "field": "分野名（例：古代 律令国家、中世 鎌倉幕府、近世 幕藩体制、近代 明治維新と立憲制、現代 戦後復興 など時代が分かる形で）",
+  "short_title": "問題の要約タイトル",
+  "extracted_text": "読み取った正確な問題文・史料文の全文 【厳守】要約・省略は絶対禁止。",
+  "trap_description": "高校生が間違えやすい世紀・年代の前後関係、似た法令・役職の混同、原因と結果の取り違えの解説",
+  "strategy_pattern": "【最重要】この問題固有の年号・人名には触れず、①設問のどの特徴（時期・制度比較・対外関係）を見て問題の『型』を判断するか、②その型に対して定石として使うべき考え方、③なぜそれが有効なのかを一般化して説明すること。2〜4文程度。",
+  "model_answer": "最終的な正しい答えとステップごとの分かりやすい解説。重要な年号（西暦）や同時代の世界情勢との連動も明記すること。",
+  "mnemonic": "この問題で最も覚える価値が高い年号1つの語呂合わせ（「年号：語呂合わせ本文」の形式）。無ければ空文字。",
+  "events": [
+    {
+      "name": "出来事の名前",
+      "year": "表示用の年（例：645年、1603年 など）",
+      "year_sort": 1603,
+      "region": "東アジア"
+    }
+  ]
+}
+`.trim(),
+
+            "生物": `
+あなたは高校生物（生物基礎・生物探究）の「誤答分析エキスパートAI」です。提出された問題（画像またはテキスト）を深く分析してください。
+出力は必ず以下のJSONフォーマットの形式にしてください。他の説明テキストは絶対に含めないでください。
+{
+  "subject": "生物",
+  "field": "分野名（例：細胞と分子、代謝とエネルギー、遺伝情報の発現、発生、動物の反応と行動、生態系 など）",
+  "short_title": "問題の要約タイトル",
+  "extracted_text": "読み取った正確な問題文・実験手順の全文 【厳守】要約・省略は絶対禁止。",
+  "trap_description": "高校生が間違えやすい実験データの対照関係の誤読や、似た生体分子・器官の働きの混同の解説",
+  "strategy_pattern": "【最重要】この問題固有の生物名や数値には触れず、①実験設定やグラフのどの特徴を見て問題の『型』を判断するか、②その型に対して定石として使うべき論理的思考アプローチ、③なぜそれが有効なのかを一般化して説明すること。2〜4文程度。",
+  "model_answer": "最終的な正しい答えと、分子・細胞レベルのメカニズムを順序立てて解説した分かりやすい文章。手順ごとに改行コード（\\n）を挟んで出力すること"
+}
 `.trim()
         };
 
@@ -1358,7 +1425,18 @@ function resolveCreatedAt(p) {
                 totalProblemEntries++;
                 dynamicTotalCount += Number(p.errorCount || 0);
                 
-                let badgeSubjectClass = subjectText.includes("物理") ? "badge-physics" : (subjectText.includes("数学") ? "badge-math" : (subjectText.includes("世界史") ? "badge-history" : "badge-new"));
+                let badgeSubjectClass = "badge-new";
+                if (subjectText.includes("数学")) badgeSubjectClass = "badge-math";
+                else if (subjectText.includes("物理")) badgeSubjectClass = "badge-physics";
+                else if (subjectText.includes("化学")) badgeSubjectClass = "badge-chemistry";
+                else if (subjectText.includes("生物")) badgeSubjectClass = "badge-biology";
+                else if (subjectText.includes("情報")) badgeSubjectClass = "badge-info";
+                else if (subjectText.includes("地理")) badgeSubjectClass = "badge-geography";
+                else if (subjectText.includes("日本史")) badgeSubjectClass = "badge-nihonshi";
+                else if (subjectText.includes("世界史")) badgeSubjectClass = "badge-history";
+                else if (subjectText.includes("英語")) badgeSubjectClass = "badge-english";
+                else if (subjectText.includes("国語")) badgeSubjectClass = "badge-japanese";
+                else if (subjectText.includes("公民")) badgeSubjectClass = "badge-civics";
 
                 if (p.lastAttemptAt && p.lastResult === true) {
                     if (new Date(p.lastAttemptAt).toDateString() === todayStr) {

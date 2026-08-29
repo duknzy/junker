@@ -8,7 +8,7 @@
     <link rel="icon" href="icons/icon.png">
     <link rel="apple-touch-icon" href="icons/icon.png">
     <title>Flora | 問題解答セッション</title>
-    <link rel="stylesheet" href="style.css?v=3.1">
+    <link rel="stylesheet" href="style.css?v=3.2">
     
     <script>
         window.MathJax = {
@@ -37,9 +37,13 @@
             grid-template-columns: 1fr 380px;
             gap: 1.5rem;
             align-items: start;
+            transition: grid-template-columns 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .problem-bento-grid.chat-wide {
+            grid-template-columns: 1fr 620px;
         }
         @media (max-width: 1024px) {
-            .problem-bento-grid { grid-template-columns: 1fr; }
+            .problem-bento-grid, .problem-bento-grid.chat-wide { grid-template-columns: 1fr; }
         }
 
         .main-question-tile {
@@ -368,12 +372,16 @@
                                 <span class="flora-badge badge-math" id="question-badge">LOADING...</span>
                                 <select id="on-demand-subject-select" class="flora-select" style="display:none; width: auto; font-size: var(--fs-xs); padding: 0.3rem 1.8rem 0.3rem 0.6rem;">
                                     <option value="数学">数学</option>
-                                    <option value="物理">物理基礎</option>
-                                    <option value="化学">化学基礎</option>
+                                    <option value="物理">物理</option>
+                                    <option value="化学">化学</option>
+                                    <option value="生物">生物</option>
+                                    <option value="情報">情報</option>
+                                    <option value="地理">地理</option>
+                                    <option value="日本史">日本史</option>
+                                    <option value="世界史">世界史</option>
                                     <option value="英語">英語</option>
                                     <option value="国語">国語</option>
                                     <option value="地歴公民">地歴公民</option>
-                                    <option value="世界史">世界史</option>
                                 </select>
                                 <button type="button" class="flora-btn flora-btn-primary btn-sm" id="on-demand-analyze-btn" style="display:none;">⚡ この問題をAI解析する</button>
                                 <span id="analyze-engine-hint" style="display:none; font-size:0.72rem; color:var(--text-muted); font-weight:600;"></span>
@@ -453,9 +461,14 @@
 
                     <!-- 右カラム：AIチューター チャット -->
                     <aside class="ai-sidebar-tile">
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.6rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.6rem; gap: 0.4rem;">
                             <div>
-                                <span class="flora-badge badge-safe" id="ai-status">AI TUTOR</span>
+                                <div style="display: flex; align-items: center; gap: 0.4rem;">
+                                    <span class="flora-badge badge-safe" id="ai-status">AI TUTOR</span>
+                                    <button type="button" class="ai-expand-toggle-btn" id="toggle-chat-width-btn" title="質問画面の幅を広げる / 戻す">
+                                        <span id="toggle-chat-width-icon">↔</span> <span id="toggle-chat-width-label">広げる</span>
+                                    </button>
+                                </div>
                                 <h3 style="font-family: var(--font-heading); font-size: 1rem; font-weight: 700; margin-top: 0.3rem;" id="current-step">対話チューター</h3>
                             </div>
                             <div class="engine-toggle-group" id="engine-toggle-group">
@@ -632,6 +645,30 @@
             }
         }
         setupWideChatButton();
+
+        // ↔ 質問エリア幅の可変・伸縮トグル（同ページ内）
+        function setupInlineChatExpand() {
+            const toggleBtn = document.getElementById('toggle-chat-width-btn');
+            const gridEl = document.querySelector('.problem-bento-grid');
+            const iconEl = document.getElementById('toggle-chat-width-icon');
+            const labelEl = document.getElementById('toggle-chat-width-label');
+            if (!toggleBtn || !gridEl) return;
+
+            const isSavedWide = localStorage.getItem('flora_problem_chat_wide') === 'true';
+            if (isSavedWide) {
+                gridEl.classList.add('chat-wide');
+                if (labelEl) labelEl.textContent = '縮める';
+                if (iconEl) iconEl.textContent = '→|←';
+            }
+
+            toggleBtn.onclick = () => {
+                const nowWide = gridEl.classList.toggle('chat-wide');
+                localStorage.setItem('flora_problem_chat_wide', nowWide ? 'true' : 'false');
+                if (labelEl) labelEl.textContent = nowWide ? '縮める' : '広げる';
+                if (iconEl) iconEl.textContent = nowWide ? '→|←' : '↔';
+            };
+        }
+        setupInlineChatExpand();
 
         // 🔑【複数キー対応】右下の🔑ボタンから追加/削除できる管理UIを注入。未登録なら自動で開く。
         initApiKeyManager({ needGemini: true, needDeepseek: true });

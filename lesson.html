@@ -8,7 +8,7 @@
     <link rel="icon" href="icons/icon.png">
     <link rel="apple-touch-icon" href="icons/icon.png">
     <title>Flora | 参考書 授業モード</title>
-    <link rel="stylesheet" href="style.css?v=3.1">
+    <link rel="stylesheet" href="style.css?v=3.2">
 
     <script>
         window.MathJax = {
@@ -212,6 +212,105 @@
         .style-card-btn.active.socratic-style {
             border-color: var(--subj-japanese-border);
             background: var(--subj-japanese-bg);
+        }
+
+        /* 🧙 STEP ウィザード */
+        .step-progress-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.4rem;
+            margin-bottom: 1.25rem;
+            padding: 0.6rem 0.8rem;
+            background: var(--bg-subtle);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+        }
+        .step-indicator-item {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            font-size: var(--fs-xs);
+            font-weight: 700;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.25rem 0.5rem;
+            border-radius: var(--radius-sm);
+            transition: all 0.15s ease;
+        }
+        .step-indicator-item.active {
+            color: var(--brand-primary);
+            background: var(--brand-light);
+        }
+        .step-indicator-item.completed {
+            color: var(--text-primary);
+        }
+        .step-num-badge {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.72rem;
+            background: var(--border-color);
+            color: var(--text-secondary);
+        }
+        .step-indicator-item.active .step-num-badge {
+            background: var(--brand-primary);
+            color: #FFFFFF;
+        }
+        .step-indicator-item.completed .step-num-badge {
+            background: #10B981;
+            color: #FFFFFF;
+        }
+        .step-divider-arrow {
+            color: var(--border-glow);
+            font-size: 0.75rem;
+        }
+
+        .subject-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 0.6rem;
+            margin-top: 0.6rem;
+        }
+        .subject-select-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.35rem;
+            padding: 0.9rem 0.6rem;
+            border-radius: var(--radius-md);
+            border: 1.5px solid var(--border-color);
+            background: var(--bg-surface);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            text-align: center;
+        }
+        .subject-select-card:hover {
+            border-color: var(--brand-primary);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-sm);
+        }
+        .subject-select-card.active {
+            border-color: var(--brand-primary);
+            background: var(--brand-light);
+            box-shadow: 0 0 0 2px var(--brand-border);
+        }
+        .subject-card-icon {
+            font-size: 1.4rem;
+        }
+        .subject-card-name {
+            font-size: 0.84rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .subject-card-tag {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            font-weight: 600;
         }
         .style-card-title {
             font-size: 0.92rem;
@@ -482,67 +581,189 @@
                         </button>
 
                         <div id="new-lesson-body" class="new-lesson-body hidden">
-                            <!-- 🌟 授業スタイル選択スイッチ -->
-                            <div>
-                                <label style="font-size:0.8rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:0.4rem;">
-                                    🎓 授業スタイルを選択：
-                                </label>
-                                <div class="style-selector-container">
-                                    <button type="button" class="style-card-btn active" id="style-btn-standard">
-                                        <div class="style-card-title">📖 標準講義モード</div>
-                                        <div class="style-card-desc">参考書に沿って順序立てて解説し、疑問を質問するインプット重視スタイル</div>
-                                    </button>
-                                    <button type="button" class="style-card-btn socratic-style" id="style-btn-socratic">
-                                        <div class="style-card-title" style="color:var(--subj-japanese);">🧠 ソクラテス対話ゼミ</div>
-                                        <div class="style-card-desc">多角的アプローチ（別解比較）＋ 罠見破り ＋ 問答式で能動的に鍛える実践スタイル</div>
+                            <!-- 🧙 STEP プログレスバー -->
+                            <div class="step-progress-bar">
+                                <div class="step-indicator-item active" id="step-nav-1" data-step="1">
+                                    <span class="step-num-badge">1</span>
+                                    <span>教科選択</span>
+                                </div>
+                                <span class="step-divider-arrow">→</span>
+                                <div class="step-indicator-item" id="step-nav-2" data-step="2">
+                                    <span class="step-num-badge">2</span>
+                                    <span>スタイル & 方式</span>
+                                </div>
+                                <span class="step-divider-arrow">→</span>
+                                <div class="step-indicator-item" id="step-nav-3" data-step="3">
+                                    <span class="step-num-badge">3</span>
+                                    <span>内容入力 & 生成</span>
+                                </div>
+                            </div>
+
+                            <!-- 📍 STEP 1: 教科選択（必須・ワンクリック） -->
+                            <div class="wizard-step-section" id="wizard-step-1">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
+                                    <label style="font-size:0.85rem; font-weight:700; color:var(--text-primary);">
+                                        ① 学びたい教科を選択してください（必須）：
+                                    </label>
+                                    <span style="font-size:0.72rem; color:var(--brand-primary); font-weight:700;" id="selected-subject-badge-hint">未選択</span>
+                                </div>
+                                <p style="font-size:0.75rem; color:var(--text-secondary); margin-bottom:0.6rem;">
+                                    教科に応じた最高峰のAIプロンプト（数式LaTeX・コード・因果関係・図解）が自動最適化されます。
+                                </p>
+                                
+                                <div class="subject-cards-grid" id="subject-cards-grid">
+                                    <div class="subject-select-card active" data-subject="数学">
+                                        <div class="subject-card-icon">📐</div>
+                                        <div class="subject-card-name">数学</div>
+                                        <div class="subject-card-tag">数I・A・II・B・III・C</div>
+                                    </div>
+                                    <div class="subject-select-card" data-subject="物理">
+                                        <div class="subject-card-icon">⚡</div>
+                                        <div class="subject-card-name">物理</div>
+                                        <div class="subject-card-tag">力学・電磁気・波動</div>
+                                    </div>
+                                    <div class="subject-select-card" data-subject="化学">
+                                        <div class="subject-card-icon">🧪</div>
+                                        <div class="subject-card-name">化学</div>
+                                        <div class="subject-card-tag">理論・無機・有機</div>
+                                    </div>
+                                    <div class="subject-select-card" data-subject="生物">
+                                        <div class="subject-card-icon">🧬</div>
+                                        <div class="subject-card-name">生物</div>
+                                        <div class="subject-card-tag">分子・遺伝・生態</div>
+                                    </div>
+                                    <div class="subject-select-card" data-subject="情報">
+                                        <div class="subject-card-icon">💻</div>
+                                        <div class="subject-card-name">情報</div>
+                                        <div class="subject-card-tag">情報I・プログラミング</div>
+                                    </div>
+                                    <div class="subject-select-card" data-subject="地理">
+                                        <div class="subject-card-icon">🗺️</div>
+                                        <div class="subject-card-name">地理</div>
+                                        <div class="subject-card-tag">系統地理・地誌・気候</div>
+                                    </div>
+                                    <div class="subject-select-card" data-subject="日本史">
+                                        <div class="subject-card-icon">⛩️</div>
+                                        <div class="subject-card-name">日本史</div>
+                                        <div class="subject-card-tag">通史・文化・史料</div>
+                                    </div>
+                                    <div class="subject-select-card" data-subject="世界史">
+                                        <div class="subject-card-icon">🏛️</div>
+                                        <div class="subject-card-name">世界史</div>
+                                        <div class="subject-card-tag">地域史・年表・同時代</div>
+                                    </div>
+                                    <div class="subject-select-card" data-subject="英語">
+                                        <div class="subject-card-icon">🔤</div>
+                                        <div class="subject-card-name">英語</div>
+                                        <div class="subject-card-tag">英文読解・文法・語法</div>
+                                    </div>
+                                    <div class="subject-select-card" data-subject="国語">
+                                        <div class="subject-card-icon">📜</div>
+                                        <div class="subject-card-name">国語</div>
+                                        <div class="subject-card-tag">現代文・古文・漢文</div>
+                                    </div>
+                                    <div class="subject-select-card" data-subject="公民">
+                                        <div class="subject-card-icon">⚖️</div>
+                                        <div class="subject-card-name">公民 / 倫政</div>
+                                        <div class="subject-card-tag">政治・経済・倫理</div>
+                                    </div>
+                                </div>
+
+                                <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
+                                    <button type="button" class="flora-btn flora-btn-primary btn-sm" id="wizard-goto-step-2">
+                                        次へ：スタイルを選択 →
                                     </button>
                                 </div>
                             </div>
 
-                            <div style="display:flex; gap:0.5rem; margin: 0.4rem 0 0.8rem 0;">
-                                <button type="button" class="flora-btn flora-btn-primary mode-tab-btn active" id="mode-tab-photo" style="flex:1;">📷 参考書から</button>
-                                <button type="button" class="flora-btn flora-btn-secondary mode-tab-btn" id="mode-tab-topic" style="flex:1;">✏️ 単元名だけで</button>
+                            <!-- 📍 STEP 2: スタイル & 方式 -->
+                            <div class="wizard-step-section hidden" id="wizard-step-2">
+                                <div>
+                                    <label style="font-size:0.85rem; font-weight:700; color:var(--text-primary); display:block; margin-bottom:0.4rem;">
+                                        ② 授業スタイルを選択：
+                                    </label>
+                                    <div class="style-selector-container">
+                                        <button type="button" class="style-card-btn active" id="style-btn-standard">
+                                            <div class="style-card-title">📖 標準講義モード</div>
+                                            <div class="style-card-desc">順序立てて体系的に解説し、疑問を質問するインプット重視スタイル</div>
+                                        </button>
+                                        <button type="button" class="style-card-btn socratic-style" id="style-btn-socratic">
+                                            <div class="style-card-title" style="color:var(--subj-japanese);">🧠 ソクラテス対話ゼミ</div>
+                                            <div class="style-card-desc">多角的アプローチ（別解比較）＋ 罠見破り ＋ 問答式で能動的に鍛える実践スタイル</div>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div style="margin-top: 0.8rem;">
+                                    <label style="font-size:0.85rem; font-weight:700; color:var(--text-primary); display:block; margin-bottom:0.4rem;">
+                                        入力方式：
+                                    </label>
+                                    <div style="display:flex; gap:0.5rem;">
+                                        <button type="button" class="flora-btn flora-btn-primary mode-tab-btn active" id="mode-tab-photo" style="flex:1;">📷 参考書の写真から</button>
+                                        <button type="button" class="flora-btn flora-btn-secondary mode-tab-btn" id="mode-tab-topic" style="flex:1;">✏️ 単元名だけで（AIゼロから生成）</button>
+                                    </div>
+                                </div>
+
+                                <div style="margin-top: 0.8rem;">
+                                    <label for="continuation-select" style="font-size:0.8rem; color:var(--text-secondary); display:block; margin-bottom:0.3rem; font-weight:600;">
+                                        🔗 これは以前の授業の続きですか？（同じ参考書・単元の前の講など）
+                                    </label>
+                                    <select id="continuation-select" class="flora-select">
+                                        <option value="">続きではない（新規シリーズとして開始）</option>
+                                    </select>
+                                </div>
+
+                                <div style="display: flex; justify-content: space-between; margin-top: 1.2rem;">
+                                    <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="wizard-backto-step-1">
+                                        ← 教科選択に戻る
+                                    </button>
+                                    <button type="button" class="flora-btn flora-btn-primary btn-sm" id="wizard-goto-step-3">
+                                        次へ：内容を入力 →
+                                    </button>
+                                </div>
                             </div>
 
-                            <div style="margin-bottom: 0.6rem;">
-                                <label for="continuation-select" style="font-size:0.8rem; color:var(--text-secondary); display:block; margin-bottom:0.3rem; font-weight:600;">
-                                    🔗 これは以前の授業の続きですか？（同じ参考書の前の講など）
-                                </label>
-                                <select id="continuation-select" class="flora-select">
-                                    <option value="">続きではない（新規シリーズとして開始）</option>
-                                </select>
-                            </div>
+                            <!-- 📍 STEP 3: 内容入力 & AI生成 -->
+                            <div class="wizard-step-section hidden" id="wizard-step-3">
+                                <div id="mode-group-photo">
+                                    <label class="file-drop-label" id="file-drop-label" for="image-input">
+                                        📷 参考書のページ写真をアップロード（複数枚OK）
+                                    </label>
+                                    <input type="file" id="image-input" accept="image/*" multiple style="display:none;">
+                                    <div class="thumb-row" id="thumb-row"></div>
+                                    <textarea class="note-textarea" id="note-input" placeholder="（任意）特にここが分からない、というメモがあれば入力してください"></textarea>
+                                </div>
 
-                            <div id="mode-group-photo">
-                                <label class="file-drop-label" id="file-drop-label" for="image-input">
-                                    📷 参考書のページ写真をアップロード（複数枚OK）
-                                </label>
-                                <input type="file" id="image-input" accept="image/*" multiple style="display:none;">
-                                <div class="thumb-row" id="thumb-row"></div>
-                                <textarea class="note-textarea" id="note-input" placeholder="（任意）特にここが分からない、というメモがあれば入力してください"></textarea>
-                            </div>
+                                <div id="mode-group-topic" style="display:none;">
+                                    <label style="font-size:0.8rem; color:var(--text-secondary); display:block; margin-bottom:0.3rem; font-weight:600;">
+                                        📝 学びたい単元名（例：<span id="topic-placeholder-example">二次関数の最大最小</span>）
+                                    </label>
+                                    <input type="text" id="topic-input" class="flora-input" placeholder="例：微分方程式の解法 / 物理 コンデンサー回路 / 情報I アルゴリズムと計算量 など" style="margin-bottom:0.6rem;">
+                                    
+                                    <label style="font-size:0.8rem; color:var(--text-secondary); display:block; margin-bottom:0.3rem; font-weight:600;">
+                                        🎚️ レベル感
+                                    </label>
+                                    <select id="topic-level-select" class="flora-select" style="margin-bottom:0.6rem;">
+                                        <option value="教科書レベル（基礎の基礎から）">教科書レベル（基礎の基礎から）</option>
+                                        <option value="定期テストレベル">定期テストレベル</option>
+                                        <option value="入試基礎レベル" selected>入試基礎レベル</option>
+                                        <option value="入試標準〜応用レベル">入試標準〜応用レベル</option>
+                                    </select>
+                                    <textarea class="note-textarea" id="topic-note-input" placeholder="（任意）特に重点を置いてほしい内容、すでに知っている前提などがあれば入力してください"></textarea>
+                                    <div style="font-size:0.75rem; color:var(--brand-primary); margin-top:0.4rem; font-weight:600;">
+                                        ⚡ 複数Geminiキーを並列稼働させ、カリキュラム・超詳細解説・暗記ポイントを同時生成します！
+                                    </div>
+                                </div>
 
-                            <div id="mode-group-topic" style="display:none;">
-                                <label style="font-size:0.8rem; color:var(--text-secondary); display:block; margin-bottom:0.3rem; font-weight:600;">
-                                    📝 学びたい単元名
-                                </label>
-                                <input type="text" id="topic-input" class="flora-input" placeholder="例：数学III 微分方程式／物理 コンデンサー回路 など" style="margin-bottom:0.6rem;">
-                                <label style="font-size:0.8rem; color:var(--text-secondary); display:block; margin-bottom:0.3rem; font-weight:600;">
-                                    🎚️ レベル感
-                                </label>
-                                <select id="topic-level-select" class="flora-select" style="margin-bottom:0.6rem;">
-                                    <option value="教科書レベル（基礎の基礎から）">教科書レベル（基礎の基礎から）</option>
-                                    <option value="定期テストレベル">定期テストレベル</option>
-                                    <option value="入試基礎レベル" selected>入試基礎レベル</option>
-                                    <option value="入試標準〜応用レベル">入試標準〜応用レベル</option>
-                                </select>
-                                <textarea class="note-textarea" id="topic-note-input" placeholder="（任意）特に重点を置いてほしい内容、すでに知っている前提などがあれば入力してください"></textarea>
-                                <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.4rem;">※参考書がないため、AIが自身の知識だけでカリキュラムと解説を作成します。</div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.2rem;">
+                                    <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="wizard-backto-step-2">
+                                        ← 方式選択に戻る
+                                    </button>
+                                    <button type="button" class="flora-btn flora-btn-primary btn-lg" id="generate-plan-btn">
+                                        🧑‍🏫 AI並列エンジンで授業プランを生成
+                                    </button>
+                                </div>
                             </div>
-
-                            <button type="button" class="flora-btn flora-btn-primary btn-lg" id="generate-plan-btn" style="margin-top: 0.8rem;">
-                                🧑‍🏫 授業プランを作ってもらう
-                            </button>
                         </div>
                     </div>
 
@@ -790,6 +1011,72 @@
         let selectedImages = [];
         let creationMode = "photo";
         let selectedTeachingStyle = "standard";
+        let selectedSubject = "数学";
+        let currentWizardStep = 1;
+
+        // 🧙 STEP ウィザード制御
+        function goToWizardStep(step) {
+            currentWizardStep = step;
+            [1, 2, 3].forEach(s => {
+                const section = el(`wizard-step-${s}`);
+                const nav = el(`step-nav-${s}`);
+                if (section) section.classList.toggle("hidden", s !== step);
+                if (nav) {
+                    nav.classList.toggle("active", s === step);
+                    nav.classList.toggle("completed", s < step);
+                }
+            });
+            const badge = el("selected-subject-badge-hint");
+            if (badge) badge.textContent = `選択中: ${selectedSubject}`;
+        }
+
+        function setupSubjectCardSelection() {
+            const cards = document.querySelectorAll(".subject-select-card");
+            cards.forEach(card => {
+                card.onclick = () => {
+                    cards.forEach(c => c.classList.remove("active"));
+                    card.classList.add("active");
+                    selectedSubject = card.getAttribute("data-subject") || "数学";
+                    const badge = el("selected-subject-badge-hint");
+                    if (badge) badge.textContent = `選択中: ${selectedSubject}`;
+                    
+                    // 教科に応じたプレースホルダー例
+                    const exampleEl = el("topic-placeholder-example");
+                    const inputEl = el("topic-input");
+                    const examples = {
+                        "数学": "二次関数の最大最小 / 微分積分 / ベクトル",
+                        "物理": "コンデンサー回路 / 力学的エネルギー保存 / ドップラー効果",
+                        "化学": "酸・塩基の中和滴定 / 酸化還元 / 有機化合物の構造決定",
+                        "生物": "転写・翻訳と遺伝暗号 / 光合成の明反応・暗反応",
+                        "情報": "情報I アルゴリズムと計算量 / 二進数表現 / ネットワークと暗号化",
+                        "地理": "ケッペンの気候区分 / 東南アジアの地誌・産業 / 貿易構造",
+                        "日本史": "荘園公領制の成立 / 江戸幕府の幕藩体制 / 明治維新と富国強兵",
+                        "世界史": "フランス革命とナポレオン / シルクロードと東西交易 / 冷戦構造",
+                        "英語": "関係詞の非制限用法 / 仮定法過去完了 / 論理展開マーカー",
+                        "国語": "現代文 評論文の対比構造 / 古文 助動詞の意味と識別 / 漢文 句法",
+                        "公民": "日本国憲法と三権分立 / 市場経済と金融政策 / 西洋近代哲学"
+                    };
+                    if (exampleEl && examples[selectedSubject]) {
+                        exampleEl.textContent = examples[selectedSubject].split(" / ")[0];
+                    }
+                    if (inputEl && examples[selectedSubject]) {
+                        inputEl.placeholder = `例：${examples[selectedSubject]}`;
+                    }
+                };
+            });
+
+            // STEP ナビゲーションボタン
+            if (el("wizard-goto-step-2")) el("wizard-goto-step-2").onclick = () => goToWizardStep(2);
+            if (el("wizard-goto-step-3")) el("wizard-goto-step-3").onclick = () => goToWizardStep(3);
+            if (el("wizard-backto-step-1")) el("wizard-backto-step-1").onclick = () => goToWizardStep(1);
+            if (el("wizard-backto-step-2")) el("wizard-backto-step-2").onclick = () => goToWizardStep(2);
+
+            [1, 2, 3].forEach(s => {
+                const nav = el(`step-nav-${s}`);
+                if (nav) nav.onclick = () => goToWizardStep(s);
+            });
+        }
+        setupSubjectCardSelection();
 
         function setTeachingStyle(style) {
             selectedTeachingStyle = style;
@@ -813,13 +1100,17 @@
             const photoGroup = el("mode-group-photo");
             const topicGroup = el("mode-group-topic");
             if (mode === "topic") {
-                photoBtn.style.background = "#111"; photoBtn.style.color = "var(--text-bright-muted)"; photoBtn.style.border = "1px solid #333"; photoBtn.style.boxShadow = "none";
-                topicBtn.style.background = "var(--accent-cyan)"; topicBtn.style.color = "#000"; topicBtn.style.border = "none"; topicBtn.style.boxShadow = "3px 3px 0px #008b94";
+                photoBtn.classList.remove("flora-btn-primary", "active");
+                photoBtn.classList.add("flora-btn-secondary");
+                topicBtn.classList.remove("flora-btn-secondary");
+                topicBtn.classList.add("flora-btn-primary", "active");
                 photoGroup.style.display = "none";
                 topicGroup.style.display = "block";
             } else {
-                topicBtn.style.background = "#111"; topicBtn.style.color = "var(--text-bright-muted)"; topicBtn.style.border = "1px solid #333"; topicBtn.style.boxShadow = "none";
-                photoBtn.style.background = "var(--accent-cyan)"; photoBtn.style.color = "#000"; photoBtn.style.border = "none"; photoBtn.style.boxShadow = "3px 3px 0px #008b94";
+                topicBtn.classList.remove("flora-btn-primary", "active");
+                topicBtn.classList.add("flora-btn-secondary");
+                photoBtn.classList.remove("flora-btn-secondary");
+                photoBtn.classList.add("flora-btn-primary", "active");
                 topicGroup.style.display = "none";
                 photoGroup.style.display = "block";
             }
@@ -831,6 +1122,7 @@
         function setNewLessonFormOpen(open) {
             el("new-lesson-body").classList.toggle("hidden", !open);
             el("new-lesson-toggle").classList.toggle("open", open);
+            if (open) goToWizardStep(1);
         }
         el("new-lesson-toggle").addEventListener("click", () => {
             const isOpen = !el("new-lesson-body").classList.contains("hidden");
@@ -856,18 +1148,26 @@
             return LEVEL_ORDER[idx + 1];
         }
 
-        // 📚 授業一覧のグループ化用：タイトル・単元名から教科を推定
-        const LESSON_SUBJECT_ICONS = { "数学": "📐", "物理": "⚛️", "化学": "🧪", "英語": "🔤", "国語": "📖", "世界史": "🌍", "日本史": "🏯", "地歴公民": "🗾", "その他": "📎" };
+        // 📚 授業一覧のグループ化用アイコン
+        const LESSON_SUBJECT_ICONS = {
+            "数学": "📐", "物理": "⚡", "化学": "🧪", "生物": "🧬",
+            "情報": "💻", "地理": "🗺️", "日本史": "⛩️", "世界史": "🏛️",
+            "英語": "🔤", "国語": "📜", "公民": "⚖️", "地歴公民": "🗾", "その他": "📎"
+        };
         function detectLessonSubject(lesson) {
+            if (lesson.subject && LESSON_SUBJECT_ICONS[lesson.subject]) return lesson.subject;
             const text = ((lesson.title || "") + " " + (lesson.topicKey || "")).toLowerCase();
+            if (/情報|プログラミング|アルゴリズム|python|二進数|ネットワーク/i.test(text)) return "情報";
+            if (/地理|気候|ケッペン|地誌|貿易/i.test(text)) return "地理";
+            if (/日本史|幕府|天皇|江戸|明治|戦国|縄文|弥生|平安/i.test(text)) return "日本史";
+            if (/世界史|革命|ローマ|帝国|ナポレオン|ルネサンス|冷戦/i.test(text)) return "世界史";
+            if (/生物|細胞|dna|遺伝|光合成|代謝/i.test(text)) return "生物";
             if (/数学|微分|積分|ベクトル|数列|三角関数|確率/i.test(text)) return "数学";
             if (/物理|力学|電磁気|波動|運動方程式/i.test(text)) return "物理";
-            if (/化学|mol|酸化|還元|酸|塩基/i.test(text)) return "化学";
-            if (/英語|文法|英文法|長文/i.test(text)) return "英語";
+            if (/化学|mol|酸化|還元|酸|塩基|無機|有機/i.test(text)) return "化学";
+            if (/英語|文法|英文法|長文|grammar/i.test(text)) return "英語";
             if (/現代文|古文|漢文|国語/i.test(text)) return "国語";
-            if (/世界史/i.test(text)) return "世界史";
-            if (/日本史/i.test(text)) return "日本史";
-            if (/地理|公民|政治経済/i.test(text)) return "地歴公民";
+            if (/公民|政治|経済|憲法|倫理/i.test(text)) return "公民";
             return "その他";
         }
         let pendingLevelUp = null;
@@ -964,7 +1264,62 @@
         }
 
         // --------------------------------------------------------------
-        // 授業プラン生成
+        // 🎓 教科別最適化プロンプト体系
+        // --------------------------------------------------------------
+        const SUBJECT_PROMPT_GUIDES = {
+            "情報": `
+【情報科・情報I・プログラミング特化ルール】
+・アルゴリズム・計算量・データ構造・プログラミング（Python/疑似言語等）・情報セキュリティ・ネットワーク・基盤アーキテクチャの解説を徹底すること。
+・コードや疑似コード例を示すときは、ブロックを明確にし、変数の動きやトレース表を具体的に説明すること。
+・暗記事項にはプロトコル名、暗号化方式、論理回路、データ表現（2進数/浮動小数点）の定義を網羅すること。`,
+            "地理": `
+【地理科・系統地理・地誌特化ルール】
+・「なぜその気候・土壌・産業・貿易になるのか」という地理的必然性・因果関係を論理的に解説すること。
+・統計データ（生産量・輸入割合・人口推移）の背景にあるメカニズムと思考プロセスを重視すること。
+・地名・気候区分（ケッペン等）・地形形成作用・国際関係を明確に関連付けて説明すること。`,
+            "日本史": `
+【日本史科特化ルール】
+・単なる年号・用語の羅列ではなく、「政治体制の変遷・経済構造・対外関係・社会不安・文化」の相互の因果関係を一本のストーリーとして解説すること。
+・同時代の東アジアや世界情勢（中国王朝の興亡、西洋列強の進出など）との連動を必ず明記すること。
+・重要史料のキーワードや背景、幕府・朝廷・民衆の力関係の力学を深掘りすること。`,
+            "世界史": `
+【世界史科特化ルール】
+・地域史（ヨーロッパ、西アジア、東アジア等）の縦軸と、同時代における交易・戦争・文化伝播の横軸を立体的に結びつけること。
+・年代・世紀・支配領域・帝国崩壊の因果関係を明快に整理すること。`,
+            "数学": `
+【数学科特化ルール】
+・数式や変数はすべて必ず $ または $$ で囲むLaTeX形式で厳格に記述すること。
+・定義・定理・公理の導入から、典型解法パターンの着眼点（なぜその式変形をするのか、何を文字でおくのか）を徹底的に論理化すること。
+・途中式の省略を禁止し、必要十分条件・定義域・場合分けの落とし穴を漏れなく指摘すること。`,
+            "物理": `
+【物理科特化ルール】
+・物理現象の「直感的なイメージ」「力の作図」「エネルギーの流れ」を言葉で視覚的に言語化すること。
+・SI単位系、文字式の次元（ディメンション確認）、座標軸の正の向きの宣言を徹底すること。
+・公式の単なる丸暗記ではなく、定義式からの導出や極限・境界値の吟味を解説に盛り込むこと。`,
+            "化学": `
+【化学科特化ルール】
+・現象をミクロな原子・電子・分子の視点（結合、エネルギー、平衡）から論理的に説明すること。
+・化学反応式・熱化学方程式・イオン反応式の係数と状態を正確に記述すること。
+・実験手順、色の変化、沈殿、気体発生の原理を確実に網羅すること。`,
+            "生物": `
+【生物科特化ルール】
+・生命現象のメカニズム（分子生物学、遺伝、発生、代謝、情報伝達）を図解的に言語化すること。
+・対照実験の論理やグラフ・実験データの読み解き方の要点を明示すること。`,
+            "英語": `
+【英語科特化ルール】
+・文構造（SVOC、修飾関係、品詞の働き、ディスコースマーカー）の論理的分析を徹底すること。
+・単なる直訳ではなく、前後の文脈展開（抽象→具体、主張→理由）を捉える読み方を提示すること。`,
+            "国語": `
+【国語科特化ルール】
+・現代文：論理の骨格（対比・言い換え・因果関係）を構造化して解説すること。
+・古文・漢文：文法・助動詞の活用・意味、句法、主語の補完、時代背景を精緻に解説すること。`,
+            "公民": `
+【公民・倫政特化ルール】
+・憲法・政治制度・経済理論・思想史の思想的背景と思想家たちの主張の対比を論理的に解説すること。`
+        };
+
+        // --------------------------------------------------------------
+        // 授業プラン生成（マルチAI並列処理エンジン）
         // --------------------------------------------------------------
         el("generate-plan-btn").addEventListener("click", () => generatePlan());
         el("regenerate-plan-btn").addEventListener("click", () => generatePlan());
@@ -1025,21 +1380,21 @@
         async function generatePlan() {
             if (creationMode === "photo" && selectedImages.length === 0) {
                 showToast("まずは参考書のページ写真をアップロードしてください。", "error");
+                goToWizardStep(3);
                 return;
             }
             if (creationMode === "topic" && !el("topic-input").value.trim()) {
                 showToast("学びたい単元名を入力してください。", "error");
+                goToWizardStep(3);
                 return;
             }
 
             const btn = el("generate-plan-btn");
             const regenBtn = el("regenerate-plan-btn");
             const originalText = btn.textContent;
-            btn.textContent = "⚙️ プラン作成中...";
+            btn.textContent = "⚙️ 複数AI並列エンジンで超高品質プランを構築中...";
             btn.disabled = true;
             if (regenBtn) regenBtn.disabled = true;
-
-            let PLAN_SYSTEM_INSTRUCTION, promptText, parts, topicTextForSave, levelTextForSave;
 
             const isSocratic = selectedTeachingStyle === "socratic";
             const socraticAddon = isSocratic ? `
@@ -1047,99 +1402,164 @@
 この授業は「多角的アプローチ（別解比較）」「あえて間違える落とし穴の見破り」「対話式問答」を重視するスタイルです。
 各パートの要約(summary)には、単なる解説範囲だけでなく「生徒に投げかけるべき核心の問いや、比較検討すべき別解の視点」を盛り込んで計画してください。` : "";
 
-            if (creationMode === "photo") {
-                const noteText = el("note-input").value.trim();
+            const subjectGuide = SUBJECT_PROMPT_GUIDES[selectedSubject] || "";
 
-                PLAN_SYSTEM_INSTRUCTION = `${customPolicyPrompt}
+            try {
+                if (creationMode === "photo") {
+                    // 📷 参考書写真モード
+                    const noteText = el("note-input").value.trim();
+
+                    const PLAN_SYSTEM_INSTRUCTION = `${customPolicyPrompt}
+【対象教科：${selectedSubject}】
+${subjectGuide}
 ${socraticAddon}
 
 今回はまだ授業本編ではなく、授業の準備をしてください。
-1. 添付された参考書ページの内容を正確に読み取り、全文を書き出すこと（数式は $ $ で囲むこと）。【厳守】要約・省略は絶対禁止。ページ数が多くても、最後のページの内容まで一字一句省略せず全文を書き出すこと。1文でも省いたら失格とみなす。
-2. 内容量を踏まえて、区切りの良い単位で「大まかな授業プラン」を作成すること（目安は2〜6パート程度。多すぎず少なすぎないように）
-3. この範囲の中で、参考書オリジナルの名前がついた法則・定理・原則・手順（例:「タッチの定理」「大原則」「手順①〜⑦」のような、この本独自の呼び方をしているもの）があれば、その名称と定義を簡潔に抽出すること。一般的な物理・数学用語（力、速度など）はここには含めない。「この本オリジナルの呼び方・造語・番号付き手順」だけを対象にすること
-4. もしこの参考書の内容が世界史・日本史など歴史科目である場合に限り、本文中に登場する年号つきの出来事をすべてhistorical_eventsとして抽出すること。歴史科目でない場合（数学・物理・英語など）は historical_events は空配列（[]）にすること
+1. 添付された参考書ページの内容を正確に読み取り、全文を書き出すこと（数式は $ $ で囲むこと）。【厳守】要約・省略は絶対禁止。ページ数が多くても、最後のページの内容まで一字一句省略せず全文を書き出すこと。
+2. 内容量を踏まえて、区切りの良い単位で「大まかな授業プラン」を作成すること（目安は2〜6パート程度）
+3. この範囲の中で、参考書オリジナルの名前がついた法則・定理・原則・手順があれば抽出すること
+4. 歴史科目または年号を伴う内容の場合、出来事をhistorical_eventsとして抽出すること
 
-出力は必ず以下のJSON形式のみで返してください。他のテキストは一切含めないこと。
-{
-  "extracted_text": "読み取った参考書の全文（数式は $ $ で囲む）。省略・要約は禁止、全ページの内容を漏れなく含めること",
-  "lesson_title": "この授業全体を表す短いタイトル",
-  "parts": [
-    { "title": "パートのタイトル", "summary": "このパートで扱う内容の要約（1〜2文）" }
-  ],
-  "key_terms": [
-    { "name": "この本オリジナルの用語・法則名（例：タッチの定理）", "definition": "簡潔で正確な定義（1〜2文）" }
-  ],
-  "historical_events": [
-    { "name": "出来事の名前", "year": "表示用の年（例：1789年、前3世紀 など）", "year_sort": "並べ替え用の年（西暦の整数。紀元前は負の数）", "region": "東アジア／東南アジア／南アジア／西アジア・中央アジア／ヨーロッパ／アメリカ大陸／アフリカ／地域をまたぐ／世界全体 のいずれか1つ" }
-  ]
-}`;
+出力は必ず指定のJSON形式のみで返してください。`;
 
-                promptText = "添付した参考書のページを解析し、指定のJSONで授業プランを作成してください。";
-                if (noteText) promptText += `\n\n【生徒からのメモ】\n${noteText}`;
+                    let promptText = `【教科：${selectedSubject}】\n添付した参考書のページを解析し、指定のJSONで授業プランを作成してください。`;
+                    if (noteText) promptText += `\n\n【生徒からのメモ】\n${noteText}`;
 
-                parts = [{ text: promptText }];
-                selectedImages.forEach(img => parts.push({ inlineData: { mimeType: img.mimeType, data: img.data } }));
+                    const parts = [{ text: promptText }];
+                    selectedImages.forEach(img => parts.push({ inlineData: { mimeType: img.mimeType, data: img.data } }));
 
-            } else {
-                const topicText = el("topic-input").value.trim();
-                const levelText = el("topic-level-select").value;
-                const topicNoteText = el("topic-note-input").value.trim();
-                topicTextForSave = topicText;
-                levelTextForSave = levelText;
+                    const result = await callGeminiJSON(parts, PLAN_SYSTEM_INSTRUCTION, { responseSchema: LESSON_PLAN_RESPONSE_SCHEMA, featureId: "lesson_plan_photo" });
+                    if (!Array.isArray(result.parts) || result.parts.length === 0) throw new Error("プランの形式が不正です。");
+                    draftPlan = result;
+                    draftPlan.subject = selectedSubject;
+                    draftPlan.sourceMode = "photo";
+                    draftPlan.teachingStyle = selectedTeachingStyle;
 
-                PLAN_SYSTEM_INSTRUCTION = `${customPolicyPrompt}
+                } else {
+                    // ⚡ 単元名モード：複数GeminiキーによるマルチAI並列生成！
+                    const topicText = el("topic-input").value.trim();
+                    const levelText = el("topic-level-select").value;
+                    const topicNoteText = el("topic-note-input").value.trim();
+
+                    // Engine 1: カリキュラム・構成・タイトル・年代イベント策定AI
+                    const structureSystemPrompt = `${customPolicyPrompt}
+【対象教科：${selectedSubject}】
+${subjectGuide}
 ${socraticAddon}
 
-今回は生徒の手元に参考書がありません。指定された単元について、あなた自身の知識だけを使って、ゼロから授業を設計してください。
-1. 指定された単元・レベル感に沿って、生徒が体系的に理解できるように内容を組み立て、「授業ノート」として全文を書き出すこと（数式は $ $ で囲むこと）。このノートは後の授業本編で「教える内容の正解」として毎回参照されるので、公式・定義・成り立ち・典型的な考え方の流れを、正確かつ網羅的に、ただし冗長になりすぎない密度で書くこと
-2. 内容量を踏まえて、区切りの良い単位で「大まかな授業プラン」を作成すること（目安は2〜6パート程度。多すぎず少なすぎないように。基礎概念→典型パターン→応用、のように学習の階段になるよう並べること）
-3. この単元特有の重要用語・公式・定理（一般的すぎるものは除く）があれば、名称と定義を簡潔に抽出すること
-4. もしプロンプト中に【重要：レベルアップ授業です】という指示がある場合は、そこに書かれている「前回の授業ノート」を熟読した上で、前回の復習を軽く触れつつ今回の発展的内容に重点を置くこと
-5. もし指定された単元が歴史科目である場合に限り、授業ノート中に登場する年号つきの出来事をすべてhistorical_eventsとして抽出すること。歴史科目でない場合は空配列（[]）にすること
+指定された単元について、生徒が最高効率で習得できる体系的なカリキュラム構成を設計してください。
+・2〜5パートに論理的に分割すること（基礎概念→典型パターン→応用・発展）
+・各パートのタイトルと、そのパートで伝えるべきエッセンス・落とし穴を要約に記述すること
+・歴史・地理的年号イベントがあれば抽出すること`;
 
-出力は必ず以下のJSON形式のみで返してください。他のテキストは一切含めないこと。
-{
-  "extracted_text": "この単元について新規に作成した授業ノート全文（数式は $ $ で囲む）",
-  "lesson_title": "この授業全体を表す短いタイトル",
-  "parts": [
-    { "title": "パートのタイトル", "summary": "このパートで扱う内容の要約（1〜2文）" }
-  ],
-  "key_terms": [
-    { "name": "重要な用語・公式・定理名", "definition": "簡潔で正確な定義（1〜2文）" }
-  ],
-  "historical_events": [
-    { "name": "出来事の名前", "year": "表示用の年（例：1789年、前3世紀 など）", "year_sort": "並べ替え用の年（西暦の整数。紀元前は負の数）", "region": "東アジア／東南アジア／南アジア／西アジア・中央アジア／ヨーロッパ／アメリカ大陸／アフリカ／地域をまたぐ／世界全体 のいずれか1つ" }
-  ]
-}
-`;
+                    const STRUCTURE_SCHEMA = {
+                        type: "OBJECT",
+                        properties: {
+                            lesson_title: { type: "STRING" },
+                            parts: {
+                                type: "ARRAY",
+                                items: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        title: { type: "STRING" },
+                                        summary: { type: "STRING" }
+                                    },
+                                    required: ["title", "summary"]
+                                }
+                            },
+                            historical_events: {
+                                type: "ARRAY",
+                                items: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        name: { type: "STRING" },
+                                        year: { type: "STRING" },
+                                        year_sort: { type: "INTEGER" },
+                                        region: { type: "STRING", enum: HISTORY_REGIONS }
+                                    },
+                                    required: ["name", "year", "year_sort", "region"]
+                                }
+                            }
+                        },
+                        required: ["lesson_title", "parts"]
+                    };
 
-                promptText = `以下の単元について、指定のJSONで授業プランと授業ノートを作成してください。\n\n【単元名】\n${topicText}\n\n【レベル感】\n${levelText}`;
-                if (topicNoteText) promptText += `\n\n【生徒からの要望・前提】\n${topicNoteText}`;
+                    // Engine 2: 超詳細講義ノート・本質解説執筆AI
+                    const lectureSystemPrompt = `${customPolicyPrompt}
+【対象教科：${selectedSubject}】
+${subjectGuide}
 
-                if (pendingLevelUp) {
-                    const termsLine = (pendingLevelUp.fromKeyTerms && pendingLevelUp.fromKeyTerms.length > 0)
-                        ? pendingLevelUp.fromKeyTerms.join("、")
-                        : "（特になし）";
-                    promptText += `\n\n【重要：レベルアップ授業です】\nこの生徒は同じ単元をすでに「${pendingLevelUp.fromLevel}」で学習済みです。\n\n【前回（${pendingLevelUp.fromLevel}）の授業ノート】\n${pendingLevelUp.fromNote || "（記録なし）"}\n\n【前回までの既習キーワード】\n${termsLine}`;
+あなたは一流予備校の超人気講師です。指定された単元・レベルに沿って、参考書1章分に匹敵する「超詳細・極めてわかりやすい講義ノート全文」を書き下ろしてください。
+・数式は必ず $ $ または $$ $$ で囲むこと
+・途中式、定義の成り立ち、直感的なたとえ話、思考プロセスを一切妥協せず網羅的に執筆すること
+・このノートは生徒がいつでも参照できるバイブルとなります`;
+
+                    const LECTURE_SCHEMA = {
+                        type: "OBJECT",
+                        properties: {
+                            extracted_text: { type: "STRING" }
+                        },
+                        required: ["extracted_text"]
+                    };
+
+                    // Engine 3: 暗記ポイント・公式・重要用語抽出AI
+                    const memorizeSystemPrompt = `${customPolicyPrompt}
+【対象教科：${selectedSubject}】
+${subjectGuide}
+
+指定された単元で、試験で満点を取るために絶対に暗記すべき重要公式・定理・専門用語・定義・反応式を漏れなく抽出してください。`;
+
+                    const MEMORIZE_SCHEMA = {
+                        type: "OBJECT",
+                        properties: {
+                            key_terms: {
+                                type: "ARRAY",
+                                items: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        name: { type: "STRING" },
+                                        definition: { type: "STRING" }
+                                    },
+                                    required: ["name", "definition"]
+                                }
+                            }
+                        },
+                        required: ["key_terms"]
+                    };
+
+                    let basePrompt = `【教科：${selectedSubject}】\n【単元名】${topicText}\n【レベル】${levelText}`;
+                    if (topicNoteText) basePrompt += `\n【生徒からの要望】${topicNoteText}`;
+                    if (pendingLevelUp) {
+                        basePrompt += `\n\n【レベルアップ授業】前回レベル（${pendingLevelUp.fromLevel}）ノート:\n${pendingLevelUp.fromNote || ""}`;
+                    }
+
+                    // 🚀 3つのAIを完全並列 (Promise.all) で同時ディスパッチ！
+                    const [resStructure, resLecture, resMemorize] = await Promise.all([
+                        callGeminiJSON([{ text: basePrompt + "\n\nカリキュラム構成をJSONで出力してください。" }], structureSystemPrompt, { responseSchema: STRUCTURE_SCHEMA, featureId: "lesson_parallel_structure" }),
+                        callGeminiJSON([{ text: basePrompt + "\n\n超詳細な講義ノート全文をJSONで出力してください。" }], lectureSystemPrompt, { responseSchema: LECTURE_SCHEMA, featureId: "lesson_parallel_lecture" }),
+                        callGeminiJSON([{ text: basePrompt + "\n\n暗記すべき重要公式・用語リストをJSONで出力してください。" }], memorizeSystemPrompt, { responseSchema: MEMORIZE_SCHEMA, featureId: "lesson_parallel_memorize" })
+                    ]);
+
+                    draftPlan = {
+                        subject: selectedSubject,
+                        lesson_title: resStructure.lesson_title || `【${selectedSubject}】${topicText}`,
+                        parts: resStructure.parts || [],
+                        historical_events: resStructure.historical_events || [],
+                        extracted_text: resLecture.extracted_text || "",
+                        key_terms: resMemorize.key_terms || [],
+                        sourceMode: "topic",
+                        teachingStyle: selectedTeachingStyle,
+                        topicKey: topicText,
+                        level: levelText
+                    };
                 }
 
-                parts = [{ text: promptText }];
-            }
-
-            try {
-                const result = await callGeminiJSON(parts, PLAN_SYSTEM_INSTRUCTION, { responseSchema: LESSON_PLAN_RESPONSE_SCHEMA, featureId: "lesson_plan" });
-                if (!Array.isArray(result.parts) || result.parts.length === 0) throw new Error("プランの形式が不正です。");
-                draftPlan = result;
-                draftPlan.sourceMode = creationMode;
-                draftPlan.teachingStyle = selectedTeachingStyle;
-                if (creationMode === "topic") {
-                    draftPlan.topicKey = topicTextForSave;
-                    draftPlan.level = levelTextForSave;
-                }
                 renderPlanPreview();
                 el("view-list").classList.add("hidden");
                 el("view-plan-preview").classList.remove("hidden");
                 await forceTriggerMathJax();
+                showToast(`⚡ ${selectedSubject}の高品質授業プランが完成しました！`, "success", 3000);
+
             } catch (err) {
                 console.error(err);
                 showToast("授業プランの作成に失敗しました。原因: " + err.message, "error", 8000);
@@ -2728,8 +3148,25 @@ ${GAL_SENSEI_PERSONA_PROMPT}
             if (REQUESTED_ID) {
                 await loadLessonView(loginUid, REQUESTED_ID);
             } else {
+                // ⚡ SWR（Stale-While-Revalidate）：ローカルキャッシュから即時0秒描画
+                try {
+                    const cachedRaw = localStorage.getItem('flora_cached_lessons_' + loginUid);
+                    if (cachedRaw) {
+                        const cachedObj = JSON.parse(cachedRaw);
+                        lastLessonsSnapshot = cachedObj;
+                        renderContinueCard(cachedObj);
+                        renderLessonList(cachedObj);
+                        renderContinuationOptions(cachedObj);
+                        renderTopicRoadmap(cachedObj);
+                    }
+                } catch(e) {}
+
+                // Firebase同期
                 onValue(ref(database, 'users/' + loginUid + '/lessons'), (snapshot) => {
                     lastLessonsSnapshot = snapshot.val() || {};
+                    try {
+                        localStorage.setItem('flora_cached_lessons_' + loginUid, JSON.stringify(lastLessonsSnapshot));
+                    } catch(e) {}
                     renderContinueCard(lastLessonsSnapshot);
                     renderLessonList(lastLessonsSnapshot);
                     renderContinuationOptions(lastLessonsSnapshot);

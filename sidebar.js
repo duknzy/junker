@@ -79,6 +79,12 @@
             </div>
 
             <div class="sidebar-footer">
+                <div style="display: flex; gap: 0.4rem; margin-bottom: 0.4rem;">
+                    <button type="button" id="sidebar-wallpaper-btn" title="壁紙画像を設定 / 解除" class="sidebar-item" style="flex: 1; padding: 0.35rem 0.5rem; font-size: 0.74rem; background: var(--bg-subtle); justify-content: center; border: 1px solid var(--border-color);">
+                        <span>🖼️ 壁紙設定</span>
+                    </button>
+                    <input type="file" id="sidebar-wallpaper-input" accept="image/*" style="display: none;">
+                </div>
                 <div class="sidebar-user-card" id="sidebar-user-container">
                     <div class="sidebar-user-avatar" id="sidebar-user-avatar">F</div>
                     <div style="flex: 1; min-width: 0;">
@@ -92,8 +98,62 @@
             </div>
         `;
 
-        // ユーザー情報の同期
+        // ユーザー情報の同期 & 壁紙イベントのバインド
         updateSidebarUser();
+        setupWallpaperControls();
+    }
+
+    function setupWallpaperControls() {
+        const btn = document.getElementById('sidebar-wallpaper-btn');
+        const input = document.getElementById('sidebar-wallpaper-input');
+        if (!btn || !input) return;
+
+        btn.onclick = () => {
+            const hasWp = document.body.classList.contains('has-custom-wallpaper');
+            if (hasWp && confirm("現在カスタム壁紙が設定されています。壁紙を解除してデフォルトに戻しますか？\n（キャンセルを押すと別の画像を選択できます）")) {
+                localStorage.removeItem('flora_wallpaper');
+                document.body.classList.remove('has-custom-wallpaper');
+                document.body.style.removeProperty('--user-wallpaper');
+                return;
+            }
+            input.click();
+        };
+
+        input.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const dataUrl = ev.target.result;
+                try {
+                    localStorage.setItem('flora_wallpaper', dataUrl);
+                } catch(err) {
+                    console.warn("Storage quota exceeded, applying session only");
+                }
+                applyWallpaper(dataUrl);
+            };
+            reader.readAsDataURL(file);
+        };
+    }
+
+    function applyWallpaper(urlOrData) {
+        document.body.style.setProperty('--user-wallpaper', `url("${urlOrData}")`);
+        document.body.classList.add('has-custom-wallpaper');
+    }
+
+    function initWallpaper() {
+        const saved = localStorage.getItem('flora_wallpaper');
+        if (saved) {
+            applyWallpaper(saved);
+            return;
+        }
+
+        // フォルダ内の wallpaper.jpg を自動プローブ
+        const probeImg = new Image();
+        probeImg.onload = () => {
+            applyWallpaper('./wallpaper.jpg');
+        };
+        probeImg.src = './wallpaper.jpg';
     }
 
     function updateSidebarUser() {
@@ -114,6 +174,9 @@
             }
         } catch(e) {}
     }
+
+    // 壁紙の即時適用
+    initWallpaper();
 
     // DOM読み込み完了時に実行
     if (document.readyState === 'loading') {
