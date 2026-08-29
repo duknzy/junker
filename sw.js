@@ -1,15 +1,21 @@
-// ⚡ 軽量 Service Worker（PWAインストール要件対応）
-const CACHE_NAME = 'flora-pwa-v2'; // ← バージョンを上げて古いキャッシュを破棄
+// ⚡ 軽量 Service Worker（Flora v3.0 クリーンモダン対応）
+const CACHE_NAME = 'flora-pwa-v3.0'; // ← バージョンを上げて古いサイバーCSSキャッシュを完全破棄
 
 // 最低限、オフライン時に救いたい主要ページだけ事前キャッシュ
 const PRECACHE_URLS = [
     './',
     './index.html',
+    './problem.html',
+    './lesson.html',
     './refbook.html',
+    './answer-check.html',
+    './custom-sprint.html',
+    './daily.html',
     './insights.html',
+    './timeline.html',
     './ai-settings.html',
-    './style.css',
-    './mobile-nav.js',
+    './style.css?v=3.0',
+    './sidebar.js',
     './manifest.json'
 ];
 
