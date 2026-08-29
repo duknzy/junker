@@ -1,0 +1,675 @@
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { audioSynth } from '../services/audio';
+import confetti from 'canvas-confetti';
+import { Play, Pause, RotateCcw, ArrowDownToLine, Bell, Timer, Flame, Award } from 'lucide-react';
+import { SubjectKey, MacroTask, TodoItem } from '../types';
+import { STUDY_SUBJECT_KEYS, SUBJECT_METAS } from '../constants/subjects';
+
+interface TimersProps {
+  onCommitTimerResult: (subject: SubjectKey, durationMinutes: number, taskName: string, startTimeStr?: string) => void;
+  macroTasks?: MacroTask[];
+  todos?: TodoItem[];
+  selectedTodoForTimer?: TodoItem | null;
+  // Unified Stopwatch Props
+  swSeconds: number;
+  swIsRunning: boolean;
+  swStartTimeStr: string;
+  swSubject: SubjectKey;
+  swTaskTitle: string;
+  onToggleStopwatch: () => void;
+  onResetStopwatch: () => void;
+  onCommitStopwatch: () => void;
+  onChangeSwSubject: (subject: SubjectKey) => void;
+  onChangeSwTaskTitle: (title: string) => void;
+}
+
+type PomodoroMode = 'work' | 'shortBreak' | 'longBreak';
+
+export const Timers: React.FC<TimersProps> = ({
+  onCommitTimerResult,
+  macroTasks = [],
+  todos = [],
+  selectedTodoForTimer = null,
+  swSeconds,
+  swIsRunning,
+  swStartTimeStr,
+  swSubject,
+  swTaskTitle,
+  onToggleStopwatch,
+  onResetStopwatch,
+  onCommitStopwatch,
+  onChangeSwSubject,
+  onChangeSwTaskTitle,
+}) => {
+  const [activeTab, setActiveTab] = useState<'pomo' | 'stopwatch' | 'countdown'>('pomo');
+
+  // --- Pomodoro State ---
+  const [pomoMode, setPomoMode] = useState<PomodoroMode>('work');
+  const [pomoSecondsLeft, setPomoSecondsLeft] = useState<number>(25 * 60);
+  const [pomoIsRunning, setPomoIsRunning] = useState<boolean>(false);
+  const [pomoCycleCount, setPomoCycleCount] = useState<number>(1);
+  const [selectedSubject, setSelectedSubject] = useState<SubjectKey>('math');
+  const [pomoTaskTitle, setPomoTaskTitle] = useState<string>('');
+
+  const pomoDurations = {
+    work: 25 * 60,
+    shortBreak: 5 * 60,
+    longBreak: 15 * 60,
+  };
+
+  // --- Countdown State ---
+  const [cdInitialMinutes, setCdInitialMinutes] = useState<number>(60);
+  const [cdSecondsLeft, setCdSecondsLeft] = useState<number>(60 * 60);
+  const [cdIsRunning, setCdIsRunning] = useState<boolean>(false);
+  const [cdTaskTitle, setCdTaskTitle] = useState<string>('');
+  const [cdSubject, setCdSubject] = useState<SubjectKey>('chem');
+
+  // Auto-fill when a todo item is passed from outside
+  useEffect(() => {
+    if (selectedTodoForTimer) {
+      const title = selectedTodoForTimer.text;
+      const sub = selectedTodoForTimer.subject || 'math';
+      setSelectedSubject(sub);
+      setPomoTaskTitle(title);
+      setCdSubject(sub);
+      setCdTaskTitle(title);
+    }
+  }, [selectedTodoForTimer]);
+
+  // Refs for intervals
+  const pomoTimerRef = useRef<number | null>(null);
+  const cdTimerRef = useRef<number | null>(null);
+
+  // Ref for wall-clock based pomodoro deadline (immune to background tab throttling)
+  const pomoDeadlineRef = useRef<number>(0);
+  // Ref for wall-clock based countdown deadline
+  const cdDeadlineRef = useRef<number>(0);
+
+  // Helper format MM:SS
+  const formatTime = (secs: number) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+
+  // Helper format HH:MM:SS
+  const formatHourMinSec = (secs: number) => {
+    const h = Math.floor(secs / 3600);
+    const m = Math.floor((secs % 3600) / 60);
+    const s = secs % 60;
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+
+  // --- Pomodoro Tick (wall-clock based) ---
+  const handlePomoComplete = useCallback(() => {
+    audioSynth.playChime();
+    if (pomoMode === 'work') {
+      confetti({
+        particleCount: 80,
+        spread: 60,
+        origin: { y: 0.7 },
+      });
+      if (pomoCycleCount % 4 === 0) {
+        setPomoMode('longBreak');
+        setPomoSecondsLeft(pomoDurations.longBreak);
+        pomoDeadlineRef.current = Date.now() + pomoDurations.longBreak * 1000;
+      } else {
+        setPomoMode('shortBreak');
+        setPomoSecondsLeft(pomoDurations.shortBreak);
+        pomoDeadlineRef.current = Date.now() + pomoDurations.shortBreak * 1000;
+      }
+      setPomoCycleCount((prev) => prev + 1);
+    } else {
+      setPomoMode('work');
+      setPomoSecondsLeft(pomoDurations.work);
+      pomoDeadlineRef.current = Date.now() + pomoDurations.work * 1000;
+    }
+  }, [pomoMode, pomoCycleCount, pomoDurations.longBreak, pomoDurations.shortBreak, pomoDurations.work]);
+
+  useEffect(() => {
+    if (pomoIsRunning) {
+      // Set deadline only when first starting (ref is 0)
+      if (pomoDeadlineRef.current === 0) {
+        pomoDeadlineRef.current = Date.now() + pomoSecondsLeft * 1000;
+      }
+
+      const tick = () => {
+        const remaining = Math.ceil((pomoDeadlineRef.current - Date.now()) / 1000);
+        if (remaining <= 0) {
+          setPomoSecondsLeft(0);
+          handlePomoComplete();
+        } else {
+          setPomoSecondsLeft(remaining);
+        }
+      };
+
+      pomoTimerRef.current = window.setInterval(tick, 1000);
+      const onVisible = () => { if (document.visibilityState === 'visible') tick(); };
+      document.addEventListener('visibilitychange', onVisible);
+
+      return () => {
+        if (pomoTimerRef.current) clearInterval(pomoTimerRef.current);
+        document.removeEventListener('visibilitychange', onVisible);
+      };
+    } else {
+      if (pomoTimerRef.current) clearInterval(pomoTimerRef.current);
+      pomoDeadlineRef.current = 0;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pomoIsRunning, handlePomoComplete]);
+
+  // --- Countdown Tick (wall-clock based) ---
+  useEffect(() => {
+    if (cdIsRunning) {
+      // Set deadline only when first starting (ref is 0)
+      if (cdDeadlineRef.current === 0) {
+        cdDeadlineRef.current = Date.now() + cdSecondsLeft * 1000;
+      }
+
+      const tick = () => {
+        const remaining = Math.ceil((cdDeadlineRef.current - Date.now()) / 1000);
+        if (remaining <= 0) {
+          audioSynth.playChime();
+          setCdIsRunning(false);
+          setCdSecondsLeft(0);
+        } else {
+          setCdSecondsLeft(remaining);
+        }
+      };
+
+      cdTimerRef.current = window.setInterval(tick, 1000);
+      const onVisible = () => { if (document.visibilityState === 'visible') tick(); };
+      document.addEventListener('visibilitychange', onVisible);
+
+      return () => {
+        if (cdTimerRef.current) clearInterval(cdTimerRef.current);
+        document.removeEventListener('visibilitychange', onVisible);
+      };
+    } else {
+      if (cdTimerRef.current) clearInterval(cdTimerRef.current);
+      cdDeadlineRef.current = 0;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cdIsRunning]);
+
+  const commitPomodoro = () => {
+    onCommitTimerResult(
+      selectedSubject,
+      25,
+      pomoTaskTitle || `${SUBJECT_METAS[selectedSubject].name} 集中演習`
+    );
+    confetti({ particleCount: 50, spread: 50 });
+  };
+
+  const commitCountdown = () => {
+    const durMins = cdInitialMinutes;
+    onCommitTimerResult(
+      cdSubject,
+      durMins,
+      cdTaskTitle || `${SUBJECT_METAS[cdSubject].name} 模試演習`
+    );
+    setCdIsRunning(false);
+    setCdSecondsLeft(cdInitialMinutes * 60);
+  };
+
+  const currentPomoBooks = macroTasks.filter((t) => t.subject === selectedSubject);
+  const currentSwBooks = macroTasks.filter((t) => t.subject === swSubject);
+  const currentCdBooks = macroTasks.filter((t) => t.subject === cdSubject);
+
+  return (
+    <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-4 shadow-lg text-slate-200">
+      {/* Sub Tabs */}
+      <div className="flex items-center justify-between border-b border-slate-800 pb-2.5 mb-3.5">
+        <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800 font-mono">
+          <button
+            onClick={() => setActiveTab('pomo')}
+            className={`px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all whitespace-nowrap ${
+              activeTab === 'pomo' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Flame className="w-3.5 h-3.5 text-amber-400" />
+            <span>POMODORO</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('stopwatch')}
+            className={`px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all whitespace-nowrap ${
+              activeTab === 'stopwatch' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Timer className="w-3.5 h-3.5 text-blue-300" />
+            <span>STOPWATCH</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('countdown')}
+            className={`px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all whitespace-nowrap ${
+              activeTab === 'countdown' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Bell className="w-3.5 h-3.5 text-indigo-300" />
+            <span>EXAM_CD</span>
+          </button>
+        </div>
+
+        <span className="text-xs font-mono text-blue-400 font-bold uppercase tracking-wider hidden sm:inline-block whitespace-nowrap">
+          TELEMETRY_TIMERS
+        </span>
+      </div>
+
+      {/* --- POMODORO VIEW --- */}
+      {activeTab === 'pomo' && (
+        <div className="space-y-3.5">
+          <div className="flex items-center justify-between font-mono">
+            <div className="flex gap-1.5">
+              <button
+                onClick={() => {
+                  setPomoMode('work');
+                  setPomoSecondsLeft(pomoDurations.work);
+                  setPomoIsRunning(false);
+                }}
+                className={`px-2.5 py-1 rounded-md text-xs font-bold border transition-all whitespace-nowrap ${
+                  pomoMode === 'work'
+                    ? 'bg-blue-950 border-blue-500 text-blue-300'
+                    : 'bg-slate-900 border-slate-800 text-slate-400'
+                }`}
+              >
+                FOCUS_25M
+              </button>
+              <button
+                onClick={() => {
+                  setPomoMode('shortBreak');
+                  setPomoSecondsLeft(pomoDurations.shortBreak);
+                  setPomoIsRunning(false);
+                }}
+                className={`px-2.5 py-1 rounded-md text-xs font-bold border transition-all whitespace-nowrap ${
+                  pomoMode === 'shortBreak'
+                    ? 'bg-emerald-950 border-emerald-500 text-emerald-300'
+                    : 'bg-slate-900 border-slate-800 text-slate-400'
+                }`}
+              >
+                REST_5M
+              </button>
+              <button
+                onClick={() => {
+                  setPomoMode('longBreak');
+                  setPomoSecondsLeft(pomoDurations.longBreak);
+                  setPomoIsRunning(false);
+                }}
+                className={`px-2.5 py-1 rounded-md text-xs font-bold border transition-all whitespace-nowrap ${
+                  pomoMode === 'longBreak'
+                    ? 'bg-purple-950 border-purple-500 text-purple-300'
+                    : 'bg-slate-900 border-slate-800 text-slate-400'
+                }`}
+              >
+                REST_15M
+              </button>
+            </div>
+
+            <div className="flex items-center gap-1.5 text-xs text-blue-400 font-bold uppercase tracking-wider whitespace-nowrap">
+              <Award className="w-4 h-4" />
+              <span>CYCLE #{pomoCycleCount}</span>
+            </div>
+          </div>
+
+          {/* Big Digit Display */}
+          <div className="text-center py-2.5 bg-slate-950/80 rounded-lg border border-slate-800/80">
+            <div className="text-5xl sm:text-6xl font-mono font-black tracking-tight text-white drop-shadow-sm">
+              {formatTime(pomoSecondsLeft)}
+            </div>
+            <div className="text-xs font-mono font-bold uppercase text-blue-400/80 tracking-widest mt-1">
+              {pomoMode === 'work' ? 'FOCUS PHASE ACTIVE' : 'RECOVERY / COOL-DOWN'}
+            </div>
+          </div>
+
+          {/* Subject & Task selection */}
+          <div className="space-y-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div className="sm:col-span-1">
+                <select
+                  value={selectedSubject}
+                  onChange={(e) => setSelectedSubject(e.target.value as SubjectKey)}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-md px-2.5 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500 font-mono"
+                >
+                  {STUDY_SUBJECT_KEYS.map((k) => (
+                    <option key={k} value={k}>
+                      {SUBJECT_METAS[k].name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="sm:col-span-2">
+                <input
+                  type="text"
+                  value={pomoTaskTitle}
+                  onChange={(e) => setPomoTaskTitle(e.target.value)}
+                  placeholder={`タスク・教材名 (例: ${currentPomoBooks[0]?.category || '例題演習'})`}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-md px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500 font-sans"
+                />
+              </div>
+            </div>
+
+            {/* Quick textbook & todo buttons */}
+            {(currentPomoBooks.length > 0 || todos.filter((t) => !t.done).length > 0) && (
+              <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                {todos.filter((t) => !t.done).length > 0 && (
+                  <>
+                    <span className="text-[11px] text-emerald-400 font-mono whitespace-nowrap">やる事To-Do:</span>
+                    {todos
+                      .filter((t) => !t.done)
+                      .slice(0, 4)
+                      .map((t) => (
+                        <button
+                          key={t.id}
+                          type="button"
+                          onClick={() => {
+                            setPomoTaskTitle(t.text);
+                            if (t.subject) setSelectedSubject(t.subject);
+                          }}
+                          className="px-2 py-0.5 rounded bg-emerald-950/60 hover:bg-emerald-900/80 border border-emerald-700/50 text-[11px] text-emerald-300 hover:text-emerald-200 transition-all font-sans whitespace-nowrap truncate max-w-[140px]"
+                          title={t.text}
+                        >
+                          ✓ {t.text}
+                        </button>
+                      ))}
+                  </>
+                )}
+                {currentPomoBooks.length > 0 && (
+                  <>
+                    <span className="text-[11px] text-slate-500 font-mono whitespace-nowrap">教材:</span>
+                    {currentPomoBooks.map((t) => (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => setPomoTaskTitle(t.category)}
+                        className="px-2 py-0.5 rounded bg-slate-950 hover:bg-blue-950 border border-slate-800 hover:border-blue-500/50 text-[11px] text-slate-300 hover:text-blue-300 transition-all font-sans whitespace-nowrap"
+                      >
+                        {t.category}
+                      </button>
+                    ))}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Control Buttons */}
+          <div className="flex items-center gap-2 pt-1">
+            <button
+              onClick={() => setPomoIsRunning(!pomoIsRunning)}
+              className={`flex-1 py-2.5 rounded-md font-mono font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm transition-all uppercase tracking-wider whitespace-nowrap ${
+                pomoIsRunning
+                  ? 'bg-amber-600 hover:bg-amber-500 text-white'
+                  : 'bg-blue-600 hover:bg-blue-500 text-white'
+              }`}
+            >
+              {pomoIsRunning ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+              <span>{pomoIsRunning ? 'PAUSE' : 'START_FOCUS'}</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setPomoIsRunning(false);
+                setPomoSecondsLeft(pomoDurations[pomoMode]);
+              }}
+              title="タイマーリセット"
+              className="p-2.5 rounded-md bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300"
+            >
+              <RotateCcw className="w-4 h-4" />
+            </button>
+
+            <button
+              onClick={commitPomodoro}
+              className="px-3.5 py-2.5 rounded-md bg-blue-950 border border-blue-500/50 text-blue-300 text-xs font-mono font-bold uppercase flex items-center gap-1.5 transition-all hover:bg-blue-900 whitespace-nowrap"
+              title="この25分をタイムライン／ログに即記録"
+            >
+              <ArrowDownToLine className="w-4 h-4 text-blue-400" />
+              <span>COMMIT_25M</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* --- STOPWATCH VIEW --- */}
+      {activeTab === 'stopwatch' && (
+        <div className="space-y-3.5">
+          <div className="flex items-center justify-between text-xs font-mono text-slate-400">
+            <span>START: <strong className="text-blue-400">{swStartTimeStr || '--:--'}</strong></span>
+            <span className="uppercase text-slate-500">PRECISION_TIMER</span>
+          </div>
+
+          <div className="text-center py-2.5 bg-slate-950/80 rounded-lg border border-slate-800/80">
+            <div className="text-5xl sm:text-6xl font-mono font-black tracking-tight text-white drop-shadow-sm">
+              {formatHourMinSec(swSeconds)}
+            </div>
+            <div className="text-xs font-mono font-bold uppercase text-blue-400/80 tracking-widest mt-1">
+              {swIsRunning ? '⚡ LOGGING_ACTIVE' : 'STANDBY'}
+            </div>
+          </div>
+
+          {/* Form parameters */}
+          <div className="space-y-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div className="sm:col-span-1">
+                <select
+                  value={swSubject}
+                  onChange={(e) => onChangeSwSubject(e.target.value as SubjectKey)}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-md px-2.5 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500 font-mono"
+                >
+                  {STUDY_SUBJECT_KEYS.map((k) => (
+                    <option key={k} value={k}>
+                      {SUBJECT_METAS[k].name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="sm:col-span-2">
+                <input
+                  type="text"
+                  value={swTaskTitle}
+                  onChange={(e) => onChangeSwTaskTitle(e.target.value)}
+                  placeholder={`演習内容 (例: ${currentSwBooks[0]?.category || '問題演習'})`}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-md px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500 font-sans"
+                />
+              </div>
+            </div>
+
+            {/* Quick textbook & todo buttons */}
+            {(currentSwBooks.length > 0 || todos.filter((t) => !t.done).length > 0) && (
+              <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                {todos.filter((t) => !t.done).length > 0 && (
+                  <>
+                    <span className="text-[11px] text-emerald-400 font-mono whitespace-nowrap">やる事To-Do:</span>
+                    {todos
+                      .filter((t) => !t.done)
+                      .slice(0, 4)
+                      .map((t) => (
+                        <button
+                          key={t.id}
+                          type="button"
+                          onClick={() => {
+                            onChangeSwTaskTitle(t.text);
+                            if (t.subject) onChangeSwSubject(t.subject);
+                          }}
+                          className="px-2 py-0.5 rounded bg-emerald-950/60 hover:bg-emerald-900/80 border border-emerald-700/50 text-[11px] text-emerald-300 hover:text-emerald-200 transition-all font-sans whitespace-nowrap truncate max-w-[140px]"
+                          title={t.text}
+                        >
+                          ✓ {t.text}
+                        </button>
+                      ))}
+                  </>
+                )}
+                {currentSwBooks.length > 0 && (
+                  <>
+                    <span className="text-[11px] text-slate-500 font-mono whitespace-nowrap">教材:</span>
+                    {currentSwBooks.map((t) => (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => onChangeSwTaskTitle(t.category)}
+                        className="px-2 py-0.5 rounded bg-slate-950 hover:bg-blue-950 border border-slate-800 hover:border-blue-500/50 text-[11px] text-slate-300 hover:text-blue-300 transition-all font-sans whitespace-nowrap"
+                      >
+                        {t.category}
+                      </button>
+                    ))}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Controls */}
+          <div className="flex items-center gap-2 pt-1">
+            <button
+              onClick={onToggleStopwatch}
+              className={`flex-1 py-2.5 rounded-md font-mono font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm transition-all uppercase tracking-wider whitespace-nowrap ${
+                swIsRunning
+                  ? 'bg-amber-600 hover:bg-amber-500 text-white'
+                  : 'bg-blue-600 hover:bg-blue-500 text-white'
+              }`}
+            >
+              {swIsRunning ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+              <span>{swIsRunning ? 'STOP' : 'START_STOPWATCH'}</span>
+            </button>
+
+            <button
+              onClick={onResetStopwatch}
+              title="リセット"
+              className="p-2.5 rounded-md bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300"
+            >
+              <RotateCcw className="w-4 h-4" />
+            </button>
+
+            <button
+              onClick={onCommitStopwatch}
+              disabled={swSeconds < 60}
+              className={`px-3.5 py-2.5 rounded-md border text-xs font-mono font-bold uppercase flex items-center gap-1.5 transition-all whitespace-nowrap ${
+                swSeconds >= 60
+                  ? 'bg-blue-950 hover:bg-blue-900 border-blue-500/50 text-blue-300'
+                  : 'bg-slate-900 border-slate-800 text-slate-600 cursor-not-allowed'
+              }`}
+              title="現在の計測結果を記録"
+            >
+              <ArrowDownToLine className="w-4 h-4" />
+              <span>COMMIT_LOG</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* --- COUNTDOWN VIEW --- */}
+      {activeTab === 'countdown' && (
+        <div className="space-y-3.5">
+          <div className="flex items-center justify-between text-xs font-mono text-slate-400">
+            <div className="flex gap-1.5">
+              {[15, 30, 60, 90, 120].map((m) => (
+                <button
+                  key={m}
+                  onClick={() => {
+                    setCdInitialMinutes(m);
+                    setCdSecondsLeft(m * 60);
+                    setCdIsRunning(false);
+                  }}
+                  className={`px-2 py-1 rounded-md text-xs font-mono font-bold border transition-all whitespace-nowrap ${
+                    cdInitialMinutes === m
+                      ? 'bg-blue-950 border-blue-400 text-blue-300'
+                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  {m}M
+                </button>
+              ))}
+            </div>
+            <span className="uppercase text-slate-500 whitespace-nowrap">EXAM_SIMULATION</span>
+          </div>
+
+          <div className="text-center py-2.5 bg-slate-950/80 rounded-lg border border-slate-800/80">
+            <div className="text-5xl sm:text-6xl font-mono font-black tracking-tight text-white drop-shadow-sm">
+              {formatTime(cdSecondsLeft)}
+            </div>
+            <div className="text-xs font-mono font-bold uppercase text-blue-400/80 tracking-widest mt-1">
+              {cdIsRunning ? 'EXAM TIMER RUNNING' : 'STANDBY'}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div className="sm:col-span-1">
+                <select
+                  value={cdSubject}
+                  onChange={(e) => setCdSubject(e.target.value as SubjectKey)}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-md px-2.5 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500 font-mono"
+                >
+                  {STUDY_SUBJECT_KEYS.map((k) => (
+                    <option key={k} value={k}>
+                      {SUBJECT_METAS[k].name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="sm:col-span-2">
+                <input
+                  type="text"
+                  value={cdTaskTitle}
+                  onChange={(e) => setCdTaskTitle(e.target.value)}
+                  placeholder={`演習名 (例: ${currentCdBooks[0]?.category || '共通テスト模試'})`}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-md px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500 font-sans"
+                />
+              </div>
+            </div>
+
+            {/* Quick textbook buttons */}
+            {currentCdBooks.length > 0 && (
+              <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                <span className="text-[11px] text-slate-500 font-mono whitespace-nowrap">登録教材:</span>
+                {currentCdBooks.map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setCdTaskTitle(t.category)}
+                    className="px-2 py-1 rounded bg-slate-950 hover:bg-blue-950 border border-slate-800 hover:border-blue-500/50 text-xs text-slate-300 hover:text-blue-300 transition-all font-sans whitespace-nowrap"
+                  >
+                    {t.category}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 pt-1">
+            <button
+              onClick={() => setCdIsRunning(!cdIsRunning)}
+              className={`flex-1 py-2.5 rounded-md font-mono font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm transition-all uppercase tracking-wider whitespace-nowrap ${
+                cdIsRunning
+                  ? 'bg-amber-600 hover:bg-amber-500 text-white'
+                  : 'bg-blue-600 hover:bg-blue-500 text-white'
+              }`}
+            >
+              {cdIsRunning ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+              <span>{cdIsRunning ? 'PAUSE' : 'START_EXAM'}</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setCdIsRunning(false);
+                setCdSecondsLeft(cdInitialMinutes * 60);
+              }}
+              title="リセット"
+              className="p-2.5 rounded-md bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300"
+            >
+              <RotateCcw className="w-4 h-4" />
+            </button>
+
+            <button
+              onClick={commitCountdown}
+              className="px-3.5 py-2.5 rounded-md bg-blue-950 hover:bg-blue-900 border border-blue-500/50 text-blue-300 text-xs font-mono font-bold uppercase flex items-center gap-1.5 transition-all whitespace-nowrap"
+            >
+              <ArrowDownToLine className="w-4 h-4" />
+              <span>COMMIT_{cdInitialMinutes}M</span>
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};

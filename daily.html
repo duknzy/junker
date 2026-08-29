@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#050508">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="LOLZ">
+    <meta name="format-detection" content="telephone=no">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="icons/icon.png">
+    <link rel="apple-touch-icon" href="icons/icon.png">
+    <title>LOLZ // DAILY SPRINT 10</title>
+    <link rel="stylesheet" href="style.css">
+    
+ <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true,
+                // 🩹【修正】\fbox{...} は数式モードの標準TeXマクロではなく未定義コマンドとして
+                // そのまま表示されてしまうため、ams標準の \boxed{...} の別名として登録する
+                macros: { fbox: ["\\bbox[2px,border:1px solid]{#1}", 1] }
+            },
+            options: {
+                ignoreHtmlClass: 'tex2jax_ignore',
+                processHtmlClass: 'tex2jax_process'
+            },
+            chtml: {
+                displayAlign: 'left'
+            }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" async></script>
+
+    <style>
+        .sprint-container { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem; min-height: calc(100vh - 3rem); }
+        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1a2a35; padding-bottom: 1rem; }
+        .timer-display { font-size: 2rem; font-weight: 900; color: var(--accent-magenta); font-family: monospace; letter-spacing: 1px; text-shadow: 0 0 10px rgba(255, 0, 127, 0.3); }
+        .progress-badge { background: transparent; color: var(--accent-cyan); border: 1px solid var(--accent-cyan); }
+        
+        .problem-card { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 1.5rem; 
+            padding: 2rem; 
+            background: var(--card-bg-glass); 
+            border: 1px solid rgba(0, 243, 255, 0.2); 
+            box-shadow: 4px 4px 0px rgba(0, 243, 255, 0.05);
+            height: auto !important;
+            position: relative;
+        }
+        
+        .sprint-title { font-size: 1.4rem; font-weight: 800; line-height: 1.6; color: var(--text-main); min-height: auto; margin-bottom: 1rem; }
+        .control-panel { display: flex; gap: 1rem; width: 100%; margin-top: 1rem; position: relative; z-index: 10; }
+        .btn-action { flex: 1; height: 54px; font-size: 1.1rem; font-weight: 800; cursor: pointer; }
+        .btn-wrong { background: var(--accent-magenta) !important; color: #000 !important; box-shadow: 4px 4px 0px #9e004f !important; }
+        .btn-correct { background: var(--accent-cyan) !important; color: #000 !important; box-shadow: 4px 4px 0px #008b94 !important; }
+        
+        .reveal-zone { display: none; flex-direction: column; gap: 1.2rem; background: rgba(255,255,255,0.02); padding: 1.5rem; border-radius: 16px; border: 1px dashed #3a3a4a; margin-top: 1.5rem; width: 100%; }
+        .result-screen { display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 4rem 2rem; border: 1px solid var(--accent-cyan); background: var(--card-bg-glass); }
+        
+        .mjx-chtml { margin: 0.5rem 0 !important; padding-left: 2px; }
+    </style>
+</head>
+<body>
+
+    <div class="sprint-container">
+        <!-- GLOBAL CYBER HUD NAV -->
+        <nav class="global-cyber-nav">
+            <div class="nav-brand">//Lolz</div>
+            <div class="nav-links">
+                <a href="index.html" class="nav-btn">🧠 誤答ノート</a>
+                <a href="daily.html" class="nav-btn active">🏁 計算スプリント</a>
+                <a href="custom-sprint.html" class="nav-btn">🎯 カスタムスプリント</a>
+                <a href="lesson.html" class="nav-btn">📖 授業・解説</a>
+                <a href="answer-check.html" class="nav-btn">⚡ 答え合わせ</a>
+                <a href="insights.html" class="nav-btn">💡 気づき・質問ログ</a>  
+                <a href="timeline.html" class="nav-btn">🌍 世界史年表</a>
+                <a href="ai-settings.html" class="nav-btn">⚙️ AI設定</a>
+                <a href="tokei/index.html" class="nav-btn global-timer-link">⏱️ 集中タイマー</a>
+                <a href="#" onclick="openTimerPopout(event)" class="nav-btn" title="別ウィンドウでタイマーを開く">🗔 小窓</a>
+                <a href="#" onclick="openLogPopout(event)" class="nav-btn" title="24hログを小窓で開く">📊 24hログ</a>
+                <a href="#" onclick="openGooglePhotosPopout(event)" class="nav-btn" title="Google Photosを小窓で開く">📷 Photos</a>
+            </div>
+        </nav>
+        <script src="global-timer-sync.js"></script>
+
+        <header>
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <span style="font-weight: 900; letter-spacing: -1px; color: var(--accent-cyan)">DAILY SPRINT 10</span>
+                <span class="badge progress-badge" id="sprint-progress">ANALYZING...</span>
+            </div>
+            <div class="timer-display" id="sprint-timer">00:00.00</div>
+        </header>
+
+        <main id="sprint-play-zone" class="squircle-tile problem-card">
+            <div style="display: flex; gap: 0.5rem;">
+                <span class="badge badge-physics" id="problem-meta">AI // SYNAPSES</span>
+            </div>
+            
+            <div class="sprint-title" id="problem-title-display">🤖 クラウド同期完了。AIがあなたの誤答データをスキャンし、本日の特訓問題10問を生成しています。少々お待ちください（約5秒）...</div>
+
+            <div class="control-panel" id="action-trigger-zone">
+                <button type="button" class="tactile-btn btn-action" id="btn-reveal-ans" style="background:#111; color:#fff; border:1px solid #333; display:none;">👁 答えを確認する</button>
+            </div>
+
+            <div class="reveal-zone" id="sprint-reveal-zone">
+                <hr style="border: 0; border-top: 1px dashed #22222a; margin-bottom: 0.5rem;">
+                <div style="font-size:0.8rem; color:var(--text-muted); font-weight:800; margin-bottom:0.2rem;">STEPS</div>
+                <div class="model-answer-text" id="sprint-steps-display" style="font-size:1rem; white-space:pre-wrap; line-height:1.6; color:var(--text-bright-muted); margin-bottom:1rem;">---</div>
+                
+                <div class="control-panel">
+                    <button type="button" class="tactile-btn btn-action btn-wrong" id="btn-sprint-wrong">❌ ミスった（LOLZへ送る）</button>
+                    <button type="button" class="tactile-btn btn-action btn-correct" id="btn-sprint-correct">🎉 解けた！(次へ)</button>
+                </div>
+            </div>
+        </main>
+
+        <div id="sprint-result-zone" class="squircle-tile result-screen">
+            <h2 style="font-size: 2rem; font-weight: 900; color: var(--accent-cyan); margin-bottom: 1rem;">🏁 FINISH // チェッカーフラッグ！</h2>
+            <p style="color:var(--text-muted); margin-bottom: 2rem;">本日の計算スプリント10問をすべてクリアしました。</p>
+            <div style="font-size: 1rem; color:var(--text-bright-muted); margin-bottom: 0.5rem; font-weight: 800;">TOTAL TIME</div>
+            <div class="timer-display" id="final-time-display" style="font-size: 3.5rem; margin-bottom: 3rem;">00:00.00</div>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center;">
+                <button type="button" class="tactile-btn" id="btn-regenerate-sprint" style="padding: 1rem 2rem; background: #111; color: var(--accent-yellow); border: 1px solid var(--accent-yellow); box-shadow: 4px 4px 0px rgba(255,245,0,0.2);">🔄 新しい10問でもう一周する</button>
+                <button type="button" class="tactile-btn" onclick="location.href='index.html'" style="padding: 1rem 2rem; background: var(--accent-cyan); box-shadow: 4px 4px 0px #008b94;">ダッシュボードに戻る</button>
+            </div>
+        </div>
+    </div>
+
+
+    
+    
+    <script type="module">
+        import { dailyProblemBank } from "./daily-data.js";
+        import {
+            getGeminiKeys, initApiKeyManager,
+            showToast, callGeminiJSON
+        } from "./api-key-manager.js";
+
+        const proto = "https" + "://";
+        const d = ".";
+        const fbBase = proto + "www" + d + "gstatic" + d + "com/firebasejs/10.12.0/";
+
+        const { initializeApp } = await import(fbBase + "firebase-app.js");
+        const { getAuth, onAuthStateChanged } = await import(fbBase + "firebase-auth.js");
+        const { getDatabase, ref, set, get, onValue } = await import(fbBase + "firebase-database.js");
+
+        // Firebase設定
+        const firebaseConfig = {
+            apiKey: "AIzaSyB55MdhpjJizQaLEdRu-XhBVJ4PqrHsAyY", 
+            authDomain: "buturi-2449e.firebaseapp.com",
+            databaseURL: proto + "buturi-2449e-default-rtdb" + d + "asia-southeast1" + d + "firebasedatabase" + d + "app/",
+            projectId: "buturi-2449e",
+            storageBucket: "buturi-2449e.appspot.com",
+            messagingSenderId: "976306696124",
+            appId: "1:976306696124:web:e455c1953544bff5c345b9"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+
+        // 🔑【複数キー対応】index.html/problem.htmlと共通の管理UIを注入（未登録なら自動で開く）
+        initApiKeyManager({ needGemini: true });
+        // ✨ GEMINI_MODEL_FALLBACK_LIST / buildGeminiUrl / stripCodeFence / fixJsonEscapes / extractJsonArray は
+        //    api-key-manager.js から共通インポート（重複定義の解消）
+
+        let selectedQuestions = [];
+        let currentQuestionIndex = 0;
+        let loginUid = null;
+        let startTime = 0;
+        let timerInterval = null;
+        let currentTodayStr = null;
+        let currentSprintCacheRef = null;
+
+        // ==========================================================================
+        // 💾【セッション永続化】別画面に行って戻ってきても続きから再開できるようにする
+        // ==========================================================================
+        const SESSION_STORAGE_KEY = "RE_MIND_DAILY_SPRINT_SESSION";
+
+        function saveSession() {
+            try {
+                const payload = {
+                    dateStr: currentTodayStr,
+                    finished: false,
+                    currentQuestionIndex: currentQuestionIndex,
+                    elapsedMs: Date.now() - startTime
+                };
+                localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(payload));
+            } catch (e) {
+                console.warn("セッション保存に失敗しました", e);
+            }
+        }
+
+        function saveFinishedSession(finalTimeText) {
+            try {
+                const payload = {
+                    dateStr: currentTodayStr,
+                    finished: true,
+                    finalTime: finalTimeText
+                };
+                localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(payload));
+            } catch (e) {
+                console.warn("セッション保存に失敗しました", e);
+            }
+        }
+
+        function clearSession() {
+            try { localStorage.removeItem(SESSION_STORAGE_KEY); } catch (e) { /* noop */ }
+        }
+
+        // 今日の分の続き（未完了 or 直後の結果）だけを有効な保存データとして扱う
+        function loadSessionForToday(todayStr) {
+            try {
+                const raw = localStorage.getItem(SESSION_STORAGE_KEY);
+                if (!raw) return null;
+                const session = JSON.parse(raw);
+                if (!session || session.dateStr !== todayStr) return null;
+                return session;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        // タブを閉じる／別ページへ移動する直前にも、途中経過を確実に保存する
+        window.addEventListener("pagehide", () => {
+            if (startTime > 0 && selectedQuestions.length > 0
+                && document.getElementById("sprint-result-zone").style.display !== "flex") {
+                saveSession();
+            }
+        });
+
+
+        // ==========================================================================
+        // 🛠【関数定義群】(ReferenceErrorを防ぐため、先にすべて評価させます)
+        // ==========================================================================
+
+        // ✨ クラウドキャッシュ確認＆AI生成パイプライン
+        function setupDailySprintAI(uid) {
+            const now = new Date();
+            const todayStr = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
+            currentTodayStr = todayStr;
+
+            // クラウド上に「今日の問題」が既にキャッシュされているかチェック
+            const sprintCacheRef = ref(database, 'users/' + uid + '/daily_sprint/' + todayStr);
+            currentSprintCacheRef = sprintCacheRef;
+
+            onValue(sprintCacheRef, async (snapshot) => {
+                const cacheData = snapshot.val();
+                if (cacheData && cacheData.questions) {
+                    // 既に今日1回作っていたら、それを流用（リロード対策）
+                    selectedQuestions = cacheData.questions;
+
+                    // 🔁【新設】今日分の途中経過が保存されていれば、続きから再開する
+                    const session = loadSessionForToday(todayStr);
+                    if (session && session.finished) {
+                        document.getElementById("sprint-play-zone").style.display = "none";
+                        document.getElementById("sprint-result-zone").style.display = "flex";
+                        document.getElementById("final-time-display").textContent = session.finalTime || "00:00.00";
+                    } else if (session && typeof session.currentQuestionIndex === "number" && session.currentQuestionIndex < selectedQuestions.length) {
+                        currentQuestionIndex = session.currentQuestionIndex;
+                        startSprintTimer(session.elapsedMs || 0);
+                    } else {
+                        currentQuestionIndex = 0;
+                        startSprintTimer(0);
+                    }
+                } else {
+                    // 今日まだ作ってないなら、あなたの弱点データを集計してAIに生成させる
+                    await generateSprintWithAI(uid, todayStr, sprintCacheRef);
+                }
+            }, { onlyOnce: true });
+        }
+
+        // 🔄【新設】1周終わった後、新しい10問を再生成してもう一周プレイする
+        async function regenerateSprint() {
+            if (!loginUid || !currentTodayStr || !currentSprintCacheRef) return;
+
+            currentQuestionIndex = 0;
+            clearInterval(timerInterval);
+            clearSession();
+            document.getElementById("sprint-timer").textContent = "00:00.00";
+
+            document.getElementById("sprint-result-zone").style.display = "none";
+            document.getElementById("sprint-play-zone").style.display = "flex";
+            document.getElementById("sprint-progress").textContent = "ANALYZING...";
+            document.getElementById("sprint-reveal-zone").style.display = "none";
+            document.getElementById("btn-reveal-ans").style.display = "none";
+            document.getElementById("problem-title-display").innerHTML = "🤖 新しい10問を生成しています。少々お待ちください（約5秒）...";
+
+            await generateSprintWithAI(loginUid, currentTodayStr, currentSprintCacheRef);
+        }
+
+        // ✨ 誤答自動スキャン＆Gemini問題作成処理
+        // 🔒【新設】デイリースプリント生成の「JSON配列」構造をAPI側で強制するためのスキーマ
+        const DAILY_SPRINT_RESPONSE_SCHEMA = {
+            type: "ARRAY",
+            items: {
+                type: "OBJECT",
+                properties: {
+                    id: { type: "STRING" },
+                    subject: { type: "STRING" },
+                    field: { type: "STRING" },
+                    title: { type: "STRING" },
+                    answer: { type: "STRING" },
+                    steps: { type: "STRING" }
+                },
+                required: ["id", "subject", "field", "title", "answer", "steps"]
+            }
+        };
+
+        async function generateSprintWithAI(uid, todayStr, sprintCacheRef) {
+            // 🔁【新設】直近数日分の出題履歴を取得し、「最近扱った分野」を集計する
+            //    → 弱点分野の自動抽出はやめて、代わりに「直近と被らないようにする」ための重複回避に使う
+            const historyRootRef = ref(database, 'users/' + uid + '/daily_sprint');
+            const historySnapshot = await get(historyRootRef);
+            const historyData = historySnapshot.val() || {};
+
+            const recentFields = [];
+            Object.keys(historyData)
+                .filter(dateKey => dateKey !== todayStr) // 今日の分は除く
+                .sort((a, b) => new Date(historyData[b].generatedAt || 0) - new Date(historyData[a].generatedAt || 0))
+                .slice(0, 4) // 直近4回分だけ見る
+                .forEach(dateKey => {
+                    const qs = historyData[dateKey].questions || [];
+                    qs.forEach(q => { if (q.field) recentFields.push(q.field); });
+                });
+
+            const uniqueRecentFields = [...new Set(recentFields)].slice(0, 15);
+            const recentFieldsText = uniqueRecentFields.length > 0
+                ? uniqueRecentFields.join("、")
+                : "（まだ出題履歴がありません）";
+
+            // Geminiの推論力を引き出すプロンプト
+            const systemPrompt = `
+あなたは日本の高校数学の教育に精通した、極めて優秀なAI数学教師です。
+生徒の数学目的思考力と計算力を限界まで引き上げるため、本日の【数学I,A,II,B,C】の計算特訓タイムアタック問題を【厳密に10問】作成してください（数学IIIの範囲は対象外とします）。
+
+【🚫 除外分野・禁止事項】
+- 「軌跡」「軌跡と領域」に関する問題は完全に除外してください。
+- 「複素数」「複素数平面」に関する問題は完全に除外してください。
+- 数学IIIの範囲（微分法・積分法の発展的内容、極限、媒介変数・極座標など）に関する問題は完全に除外してください。
+- 上記以外で、タイムアタックに適した、純粋な式変形や計算・展開・評価問題のみを選定すること。
+
+【🔁 出題の多様性（重複回避）】
+- 直近の演習で扱った分野は次の通りです：${recentFieldsText}
+- 最近似たような分野・パターンの問題ばかりが続いている可能性があるため、上記の分野には可能な限り偏らせず、別の分野・別の解法アプローチを積極的に選ぶこと。ただし前述の除外分野を避けた上での話であり、無理に不自然な分野へこじつける必要はない。
+
+【出題テーマ・難易度】
+1. 対象範囲：【数学I,A,II,B,C】の全範囲（数学IIIは含まない）から、特定の分野に偏らないようバランスよく10問を構成。
+2. 難易度設定：国立大学入学レベルの問題。難しめにすること。
+3. 質的アプローチ：単なる数字が大きくて面倒なだけの計算ではなく、公式の鮮やかな組み合わせ、対称性の利用、適切な文字の置き換え（置換）、因数分解の一工夫など、数学的な「視点や気付き」を必要とする少しひねりのある良質な計算・標準問題にしてください。紙とペンを使い、1問あたり3〜5分程度で完結するもの。
+
+【数式・解説ルール】
+1. 数式フォーマット：問題文(title)、答え(answer)、解説(steps)に含まれる数式や変数は、必ず前後に $ または $$ をつけて美しいLaTeX数式形式にしてください。
+2. 解説の構造化：steps（解説）は1行に詰め込まず、計算過程や使用した公式、思考のステップごとに必ず改行コード（\\\\n）を挟んで、論理の飛躍がない見やすい箇条書き形式にしてください。
+
+【JSONフォーマット】
+[
+  {
+    "id": "AI_SPRINT_${Date.now()}_1",
+    "subject": "数学II",
+    "field": "分野名（例: 三角関数）",
+    "title": "問題文（数式は$ $で挟む）",
+    "answer": "最終的な正しい答え（数式は$ $で挟む）",
+    "steps": "ステップごとの解説（\\\\nで改行を挟む）"
+  }
+]
+`;
+
+            try {
+                    // 🛡️【キーの防衛チェック】1件も登録されていないか検証
+                    if (getGeminiKeys().length === 0) {
+                        throw new Error("GeminiのAPIキーがブラウザに設定されていません。右下の🔑ボタンから登録してください。");
+                    }
+
+                    // 🚀 Gemini（モデル×キーの二重フォールバックは api-key-manager.js の callGeminiJSON に共通化済み）
+                    const aiQuestions = await callGeminiJSON(
+                        [{ text: systemPrompt }],
+                        "あなたは優秀なAI数学教師です。指定されたJSONフォーマットの配列のみを厳密に返してください。",
+                        { temperature: 0.4, arrayMode: true, responseSchema: DAILY_SPRINT_RESPONSE_SCHEMA, featureId: "daily" }
+                    );
+
+                    if (!Array.isArray(aiQuestions) || aiQuestions.length === 0) {
+                        throw new Error("AIの応答が期待した配列形式ではありませんでした。");
+                    }
+
+                    const uniqueAiQuestions = aiQuestions.map((q, idx) => ({
+    ...q,
+    id: `AI_SPRINT_${Date.now()}_${idx + 1}`
+}));
+await set(sprintCacheRef, { questions: uniqueAiQuestions, generatedAt: new Date().toISOString() });
+selectedQuestions = uniqueAiQuestions;
+startSprintTimer()
+
+                // ──────────────────────────────────────────────────────────
+// 【差し替え】予備問題バンクからランダムに10問選出するロジックに更新
+// ──────────────────────────────────────────────────────────
+                } catch (error) {
+                    console.error("AI問題生成エラー:", error);
+                    showToast("Geminiによる問題生成に失敗しました。\n\n【エラー内容】" + error.message + "\n\n※予備問題データベース（200問）からランダムに10問選出して特訓を開始します！", "error", 8000);
+                    
+                    // 200問の予備問題バンクからランダムにシャッフルして10問を抽出
+                    const shuffled = [...dailyProblemBank].sort(() => 0.5 - Math.random());
+selectedQuestions = shuffled.slice(0, 10).map((q, idx) => ({
+    ...q,
+    id: `FALLBACK_SPRINT_${Date.now()}_${idx + 1}`
+}));
+startSprintTimer();
+                }
+        }
+
+        function startSprintTimer(resumeElapsedMs = 0) {
+            document.getElementById("btn-reveal-ans").style.display = "block";
+            startTime = Date.now() - resumeElapsedMs;
+            timerInterval = setInterval(updateTimer, 10);
+            renderQuestion();
+            saveSession();
+        }
+
+        function updateTimer() {
+            const diff = Date.now() - startTime;
+            const min = String(Math.floor(diff / 60000)).padStart(2, '0');
+            const sec = String(Math.floor((diff % 60000) / 1000)).padStart(2, '0');
+            const ms = String(Math.floor((diff % 1000) / 10)).padStart(2, '0');
+            document.getElementById("sprint-timer").textContent = `${min}:${sec}.${ms}`;
+        }
+
+        async function forceTriggerMathJax() {
+            if (window.MathJax && MathJax.typesetPromise) {
+                try { await MathJax.typesetPromise(); } catch (err) { console.log(err.message); }
+            }
+        }
+
+        // 🧠【移植】insights.html/problem.htmlと共通の数式正規化＆穴埋め枠の修復処理。
+        //    AI生成の問題文で $...$ の外に \fbox{ア} 等が取り残されて生テキスト表示に
+        //    なってしまう不具合の対策。
+        function normalizeMathSyntax(str) {
+            if (!str) return "";
+            let s = String(str);
+
+            s = s.replace(/\\bbox\s*\[[^\]]*\]\s*\{([^}]*)\}/g, (_, content) => {
+                let c = content.trim();
+                if (!c) c = "\\quad";
+                else c = c.replace(/^\\text\{([\s\S]*)\}$/, "$1").trim();
+                return `\\bbox[2px,border:1px solid]{\\text{${c}}}`;
+            });
+            s = s.replace(/\\bbox\s*\[[^\]]*\]\s*([0-9A-Za-zぁ-んァ-ヶー一-龠々]+)/g, (_, content) => {
+                return `\\bbox[2px,border:1px solid]{\\text{${content.trim()}}}`;
+            });
+            s = s.replace(/\\bbox\s*\[[^\]]*\]/g, `\\bbox[2px,border:1px solid]{\\text{\\quad}}`);
+
+            s = s.replace(/\\(?:fbox|boxed|framebox)(?:\s*\[[^\]]*\])?\s*\{([^}]*)\}/g, (_, content) => {
+                let c = content.trim();
+                if (!c) c = "\\quad";
+                else c = c.replace(/^\\text\{([\s\S]*)\}$/, "$1").trim();
+                return `\\bbox[2px,border:1px solid]{\\text{${c}}}`;
+            });
+            s = s.replace(/\\(?:fbox|boxed|framebox)(?:\s*\[[^\]]*\])?\s+([0-9A-Za-zぁ-んァ-ヶー一-龠々]+)/g, (_, content) => {
+                return `\\bbox[2px,border:1px solid]{\\text{${content.trim()}}}`;
+            });
+
+            const parts = s.split(/(\$\$[\s\S]*?\$\$|\$[^\$\n]+?\$)/g);
+            for (let i = 0; i < parts.length; i += 2) {
+                let chunk = parts[i];
+                if (!chunk) continue;
+                chunk = chunk.replace(/(\\bbox\[2px,border:1px solid\]\{\\text\{[^}]*\}\}(?:\^[0-9A-Za-z^\circ]+)?)/g, '$$$1$$');
+                chunk = chunk.replace(/(\\(?:triangle|angle|sqrt|frac|vec|alpha|beta|gamma|theta|pi|pm|mp|le|ge|leqq|geqq|neq|approx|sim|equiv|subset|supset|cap|cup|times|div|cdot|int|sum|lim|log|ln|sin|cos|tan)\b[^\s$、。,.)）]*)/g, '$$$1$$');
+                chunk = chunk.replace(/\$\s*\$/g, '');
+                parts[i] = chunk;
+            }
+            return parts.join("");
+        }
+
+        function renderQuestion() {
+            if (currentQuestionIndex >= selectedQuestions.length) {
+                finishSprint();
+                return;
+            }
+
+            document.getElementById("sprint-reveal-zone").style.display = "none";
+            document.getElementById("btn-reveal-ans").style.display = "block";
+            document.getElementById("sprint-progress").textContent = `Q. ${currentQuestionIndex + 1} / ${selectedQuestions.length}`;
+
+            const q = selectedQuestions[currentQuestionIndex];
+            document.getElementById("problem-meta").textContent = `${q.subject} // ${q.field} // AI生成`;
+            
+            document.getElementById("problem-title-display").innerHTML = normalizeMathSyntax(q.title);
+            
+            let stepsRaw = q.steps || "";
+            if (!stepsRaw && q.answerFormula) {
+                stepsRaw = q.answerFormula;
+            } else if (!stepsRaw && q.answer) {
+                stepsRaw = q.answer;
+            }
+            let cleanSteps = normalizeMathSyntax(stepsRaw);
+            cleanSteps = cleanSteps.replace(/\\n/g, '<br>').replace(/\n/g, '<br>');
+            document.getElementById("sprint-steps-display").innerHTML = cleanSteps;
+
+            forceTriggerMathJax();
+        }
+
+        async function sendToMainRemindList() {
+    if (!loginUid) return;
+    const q = selectedQuestions[currentQuestionIndex];
+
+    const targetRef = ref(database, 'users/' + loginUid + '/problems/' + q.id);
+    const nowIso = new Date().toISOString();
+
+    const remindProblem = {
+        id: q.id,
+        title: q.title,
+        short_title: `【DS】${q.field || "計算"}`,
+        subject: q.subject || "数学",
+        field: q.field || "計算特訓",
+        trap_description: "デイリースプリントノックでミスした問題。数式の展開や符号ミス、計算ルートの選定を見直してください。",
+        strategyPattern: "",
+        errorCount: 1,
+        lastAttemptAt: nowIso,
+        createdAt: nowIso,
+        lastResult: false,
+        thumb: null,
+        imageCount: 0,
+        answerFormula: `${q.answer}\n\n【解説】\n${q.steps}`
+    };
+
+    try {
+        await set(targetRef, remindProblem);
+        showToast("弱点としてロックオン！ダッシュボード（LOLZ）の復習リストに自動転送・同期しました！", "success", 3000);
+        nextQuestion();
+    } catch (e) {
+        console.error(e);
+        showToast("クラウドへの転送に失敗しました。", "error");
+    }
+}
+        function nextQuestion() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < selectedQuestions.length) {
+                saveSession();
+            }
+            renderQuestion();
+        }
+
+        function finishSprint() {
+            clearInterval(timerInterval);
+            const finalTime = document.getElementById("sprint-timer").textContent;
+            document.getElementById("sprint-play-zone").style.display = "none";
+            document.getElementById("sprint-result-zone").style.display = "flex";
+            document.getElementById("final-time-display").textContent = finalTime;
+            saveFinishedSession(finalTime);
+        }
+
+
+        // ==========================================================================
+        // 📋【共通イベントリスナー登録群】
+        // ==========================================================================
+        document.getElementById("btn-reveal-ans").addEventListener("click", () => {
+            document.getElementById("btn-reveal-ans").style.display = "none";
+            document.getElementById("sprint-reveal-zone").style.display = "flex";
+            forceTriggerMathJax();
+        });
+
+        document.getElementById("btn-sprint-correct").addEventListener("click", nextQuestion);
+        document.getElementById("btn-sprint-wrong").addEventListener("click", sendToMainRemindList);
+        document.getElementById("btn-regenerate-sprint").addEventListener("click", regenerateSprint);
+
+
+        // ==========================================================================
+        // 🚀【重要】最下部へ引越し：すべての関数が出揃った後に認証状態を監視開始
+        // ==========================================================================
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                loginUid = user.uid;
+                setupDailySprintAI(user.uid);
+            } else {
+                location.href = "index.html";
+            }
+        });
+    </script>
+</body>
+</html>
