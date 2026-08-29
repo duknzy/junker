@@ -22,7 +22,14 @@
             {
                 title: '演習・ツール',
                 items: [
-                    { href: 'study/index.html', icon: '⏱️', label: 'StudyClock (学習計測)', match: ['study/index.html', 'study/'] },
+                    { 
+                        href: 'javascript:void(0)', 
+                        onclick: 'if(window.openStudyClockPopout)window.openStudyClockPopout(event)', 
+                        icon: '⏱️', 
+                        label: 'StudyClock', 
+                        badge: '小窓で開く',
+                        match: [] 
+                    },
                     { href: 'daily.html', icon: '📅', label: 'デイリースプリント10', match: ['daily.html'] },
                     { href: 'custom-sprint.html', icon: '⚡', label: 'カスタムスプリント', match: ['custom-sprint.html'] },
                     { href: 'answer-check.html', icon: '✅', label: 'クイック答え合わせ', match: ['answer-check.html'] },
@@ -43,11 +50,14 @@
             navHtml += `<div class="sidebar-section">`;
             navHtml += `<div class="sidebar-section-title">${section.title}</div>`;
             section.items.forEach(item => {
-                const isActive = item.match.includes(currentPath);
+                const isActive = item.match && item.match.includes(currentPath);
+                const onclickAttr = item.onclick ? `onclick="${item.onclick}"` : '';
+                const badgeHtml = item.badge ? `<span class="sidebar-item-badge" style="background: var(--brand-light); color: var(--brand-primary); font-size: 0.65rem; padding: 0.15rem 0.4rem; border-radius: 4px; font-weight: 700; margin-left: auto;">${item.badge}</span>` : '';
                 navHtml += `
-                    <a href="${item.href}" class="sidebar-item ${isActive ? 'active' : ''}">
+                    <a href="${item.href}" ${onclickAttr} class="sidebar-item ${isActive ? 'active' : ''}">
                         <span class="sidebar-item-icon">${item.icon}</span>
                         <span>${item.label}</span>
+                        ${badgeHtml}
                     </a>
                 `;
             });
@@ -103,6 +113,20 @@
         updateSidebarUser();
         setupWallpaperControls();
     }
+
+    // ⏱️ StudyClock 小窓ポップアップ関数
+    window.openStudyClockPopout = function(e) {
+        if (e) e.preventDefault();
+        const w = 1180;
+        const h = 800;
+        const left = Math.max(0, Math.floor((window.screen.width - w) / 2));
+        const top = Math.max(0, Math.floor((window.screen.height - h) / 2));
+        window.open(
+            'study/index.html',
+            'StudyClockPopoutWindow',
+            `width=${w},height=${h},top=${top},left=${left},menubar=no,toolbar=no,location=no,status=no,resizable=yes,scrollbars=yes`
+        );
+    };
 
     // 🖼️ 壁紙 & 透過カスタマイザー モーダル
     function setupWallpaperControls() {
