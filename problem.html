@@ -3,16 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="theme-color" content="#050508">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="LOLZ">
-    <meta name="format-detection" content="telephone=no">
+    <meta name="theme-color" content="#059669">
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="icons/icon.png">
     <link rel="apple-touch-icon" href="icons/icon.png">
-    <title>LOLZ // 問題解答セッション</title>
+    <title>Flora | 問題解答セッション</title>
     <link rel="stylesheet" href="style.css">
     
     <script>
@@ -35,302 +30,103 @@
     </script>
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" async></script>
 
-
     <style>
-        /* 🌌 スマホ用：縦スクロール前提のダッシュボードCSS */
-        html, body {
-            height: auto;
-            overflow: auto;
-            padding: 1rem;
-            padding-top: calc(1rem + env(safe-area-inset-top, 0px));
-            padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+        .problem-bento-grid {
+            display: grid;
+            grid-template-columns: 1.15fr 0.85fr;
+            gap: 1.5rem;
+            align-items: start;
         }
-        
-        .workspace-container {
-            height: 100%;
+
+        .main-question-tile {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 1.6rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .answer-formula-tile {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 1.6rem;
+            box-shadow: var(--shadow-sm);
+            margin-top: 1.25rem;
+        }
+
+        .ai-sidebar-tile {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 1.4rem;
+            box-shadow: var(--shadow-sm);
+            position: sticky;
+            top: 1.5rem;
+            max-height: calc(100vh - 3rem);
             display: flex;
             flex-direction: column;
-            gap: 1rem;
+            overflow: hidden;
         }
 
-        /* 💻 PC大画面用の最強3分割タイル配置 */
-        @media screen and (min-width: 1101px) {
-            /* 💡 問題文・解説が長い時にANSWER CHECK欄が画面半分に押し込まれて
-               内部スクロールしか出来なくなる問題への対処。
-               ページ全体を通常スクロールできるようにし、AIサイドバーだけ
-               position:sticky で画面内に留める形に変更 */
-            html, body {
-                height: auto;
-                overflow: auto;
-            }
-            .workspace-container {
-                height: auto;
-                min-height: 100vh;
-            }
-            .bento-grid {
-                display: grid;
-                grid-template-columns: 1.2fr 0.8fr; /* 左60% : 右40% */
-                grid-template-rows: auto auto;    /* 💡 左列は内容量に応じて自然に伸びる */
-                gap: 1.5rem;
-                align-items: start;
-            }
-            .main-question-tile {
-                grid-column: 1;
-                grid-row: 1;
-                /* 💡【修正】以前はここに max-height:35vh; overflow-y:auto; を設定し、画像肥大化を防止していたが、
-                   内側の .question-collapsible-area で「全文を表示」を押して問題文を展開しても、
-                   この外枠が35vhで強制的に切ってしまい、下の方が見えなくなる不具合があった。
-                   .answer-formula-tile と同様に外枠の高さ制限を撤廃し、中身の長さに応じて
-                   自然に伸びる（＝ページ全体の通常スクロールで読める）形に変更 */
-            }
-            .answer-formula-tile {
-                grid-column: 1;
-                grid-row: 2;
-                /* 💡 内部スクロールの天井を撤廃。中身の長さに合わせて素直に伸びて、
-                   ページ全体のスクロールで読めるようにする */
-            }
-            .ai-sidebar-tile {
-                grid-column: 2;
-                grid-row: 1 / span 2; /* 右側を縦いっぱいにぶち抜く */
-                position: sticky;
-                top: 1rem;
-                max-height: calc(100vh - 2rem); /* 💡 画面内に収まる高さを維持しつつ追従表示 */
-                display: flex;
-                flex-direction: column;
-                min-width: 0; /* 💡 子要素の長文や数式でグリッド枠を破らないように保護 */
-                overflow: hidden;
-            }
-            .chat-history {
-                flex-grow: 1;
-                overflow-y: auto; /* チャット履歴だけが独立スクロール */
-                overflow-x: hidden;
-                min-width: 0;
-                width: 100%;
-                padding: 0.5rem 0.2rem;
-                display: flex;
-                flex-direction: column;
-                gap: 0.8rem;
-            }
-
-            /* 💡 カスタム・サイバーパンクススクロールバー */
-            .chat-history::-webkit-scrollbar {
-                width: 6px;
-            }
-            .chat-history::-webkit-scrollbar-track {
-                background: rgba(0, 0, 0, 0.2);
-                border-radius: 3px;
-            }
-            .chat-history::-webkit-scrollbar-thumb {
-                background: rgba(0, 243, 255, 0.3);
-                border-radius: 3px;
-            }
-            .chat-history::-webkit-scrollbar-thumb:hover {
-                background: var(--accent-cyan);
-            }
-
-        }
-
-        /* 📱 スマホ・タブレット用のレスポンシブ（従来通り縦並び） */
-        @media (max-width: 1100px) {
-            html, body { overflow: auto; height: auto; }
-            .workspace-container { height: auto; }
-            .bento-grid { grid-template-rows: auto; }
-            .main-question-tile, .answer-formula-tile, .ai-sidebar-tile { grid-column: span 12; }
-            .ai-sidebar-tile { height: min(60vh, 640px); min-height: 420px; }
-            /* 💡 サイドバー内部を縦のflexboxとして扱い、chat-historyだけを
-               伸縮させて独立スクロールさせる（これが無いと400pxを超えた分の
-               会話が表示上あふれるだけでスクロールできなくなる） */
-            .chat-history {
-                flex-grow: 1;
-                min-height: 0;
-                overflow-y: auto;
-                overflow-x: hidden;
-                -webkit-overflow-scrolling: touch;
-            }
-        }
-
-        /* 共通コンポーネント */
-        .chat-bubble { 
-            padding: 0.9rem 1.2rem; 
-            border-radius: 16px; 
-            font-size: 1.08rem; 
-            line-height: 1.7; 
-            max-width: 92%; 
+        .chat-history {
+            flex-grow: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
             min-width: 0;
-            margin-bottom: 0.4rem; 
-            box-sizing: border-box;
-            word-break: break-word;
-            overflow-wrap: anywhere;
-            white-space: pre-wrap;
-        }
-        .bubble-ai { 
-            background: rgba(18, 22, 34, 0.85); 
-            border-left: 3px solid var(--accent-cyan); 
-            color: #e0f2fe; 
-            align-self: flex-start;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-        }
-        .bubble-user { 
-            background: rgba(255, 0, 127, 0.15); 
-            border-right: 3px solid var(--accent-magenta); 
-            color: #ffffff; 
-            align-self: flex-end; 
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-        }
-
-        /* 💡 MathJax数式の溢れ完全防護 */
-        .chat-bubble mjx-container {
-            max-width: 100% !important;
-            overflow-x: auto !important;
-            overflow-y: hidden !important;
-            vertical-align: middle;
-            padding: 0.2em 0;
-        }
-        .chat-bubble mjx-container[jax="CHTML"][display="true"] {
-            display: block !important;
-            margin: 0.5em 0 !important;
-            background: rgba(0, 0, 0, 0.3);
-            padding: 0.6rem;
-            border-radius: 8px;
-        }
-
-        /* 💡 数式の構文エラー時、MathJax標準の派手な赤エラー表示を配色に馴染む形に上書き */
-        .chat-bubble mjx-merror,
-        .chat-bubble mjx-merror * {
-            color: var(--accent-yellow) !important;
-            background-color: rgba(255, 245, 0, 0.08) !important;
-            border: 1px dashed rgba(255, 245, 0, 0.25) !important;
-            border-radius: 4px;
-        }
-
-        /* 💬【新設】質問ログの保存・閲覧まわりのCSS */
-        .qna-save-row {
-            display: none;
-            justify-content: flex-end;
-            margin-top: 0.5rem;
-        }
-        .qna-save-btn {
-            font-size: 0.75rem;
-            padding: 0.5rem 0.9rem;
-            background: rgba(0, 243, 255, 0.08);
-            color: var(--accent-cyan);
-            border: 1px dashed var(--accent-cyan);
-            box-shadow: none;
-        }
-        .qna-past-logs-btn {
-            display: none;
             width: 100%;
-            font-size: 0.78rem;
-            padding: 0.5rem 0.8rem;
-            margin-bottom: 0.6rem;
-            background: rgba(255, 255, 255, 0.04);
-            color: var(--text-bright-muted);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            box-shadow: none;
+            padding: 0.5rem 0.2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
         }
-        .qna-past-log-item {
-            padding: 0.8rem 1rem;
-            border: 1px solid #1a2a35;
-            border-radius: 12px;
-            margin-bottom: 0.7rem;
-            cursor: pointer;
-            transition: border-color 0.15s ease;
-        }
-        .qna-past-log-item:hover { border-color: var(--accent-cyan); }
-        .qna-past-log-item .qna-log-date { font-size: 0.7rem; color: var(--text-muted); margin-bottom: 0.3rem; }
-        .qna-past-log-item .qna-log-preview { font-size: 0.85rem; color: var(--text-bright-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .qna-log-detail-messages .chat-bubble { max-width: 100%; }
 
-        /* 🖼️【新設】図解リクエスト（AIに図・イメージで説明してもらう機能。lesson.htmlの図解機能を移植） */
-        .diagram-controls-wrap { display: none; flex-direction: column; gap: 0.5rem; margin-top: 0.6rem; }
-        .diagram-request-toggle-btn {
-            background: rgba(0, 243, 255, 0.08);
-            border: 1px solid var(--accent-cyan);
-            color: var(--accent-cyan);
-            box-shadow: none;
-            font-size: 0.78rem;
-            padding: 0.5rem 0.9rem;
-            align-self: flex-start;
-        }
-        .diagram-request-toggle-btn:hover { background: rgba(0, 243, 255, 0.16); }
-        .diagram-request-row { display: flex; gap: 0.5rem; }
-        .diagram-request-row.hidden { display: none; }
-        .diagram-request-input {
-            flex-grow: 1; background: #000; border: 1px solid var(--accent-cyan);
-            padding: 0.6rem 0.9rem; color: #fff; border-radius: 10px; font-size: 0.85rem;
-        }
-        .ai-diagram-box {
-            margin-top: 0.7rem;
-            background: rgba(0, 0, 0, 0.35);
-            border: 1px solid rgba(0, 243, 255, 0.25);
-            border-radius: 12px;
-            padding: 0.7rem;
-            overflow-x: auto;
-        }
-        .ai-diagram-box svg { max-width: 100%; height: auto; display: block; margin: 0 auto; }
-
-        .chat-input-wrapper { display: flex; align-items: flex-end; gap: 0.5rem; border-top: 1px solid #1a2a35; padding-top: 1rem; margin-top: auto; }
-        .chat-input {
-            flex-grow: 1; background: #000; border: 1px solid #222; padding: 0.6rem 1rem; color: #fff; border-radius: 10px;
-            font-family: inherit; font-size: 0.9rem; line-height: 1.5;
-            resize: none; overflow-y: auto; max-height: 8.5em; white-space: pre-wrap; word-break: break-word;
-        }
-        .self-check-container { display: flex; flex-direction: column; gap: 1rem; width: 100%; margin-top: 0.5rem; }
-        .reveal-btn-area { display: flex; width: 100%; }
-        
-        .reveal-zone { 
-            display: none; flex-direction: column; gap: 1rem; width: 100%; 
-            background: rgba(255,255,255,0.01); padding: 1.5rem; border-radius: 16px; 
-            border: 1px dashed #222; margin-top: 0.5rem;
-        }
-        
-        .model-answer-text { font-size: 1.18rem; color: var(--text-bright-muted); font-weight: 500; margin-bottom: 0.5rem; white-space: pre-wrap; line-height: 1.85; letter-spacing: 0.5px; overflow-wrap: anywhere; word-break: break-word; max-width: 100%; }
-        .model-answer-text mjx-container {
-            max-width: 100% !important;
-            overflow-x: auto !important;
-            overflow-y: hidden !important;
-            vertical-align: middle;
-            padding: 0.2em 0;
-        }
-        .model-answer-text mjx-container[jax="CHTML"][display="true"] {
-            display: block !important;
-            margin: 0.5em 0 !important;
-            background: rgba(0, 0, 0, 0.3);
+        .chat-input-wrapper {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.85rem;
+            background: var(--bg-subtle);
             padding: 0.6rem;
-            border-radius: 8px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+        }
+        .chat-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-size: var(--fs-sm);
+            outline: none;
+            resize: none;
+            min-height: 38px;
+            font-family: inherit;
         }
 
-        /* 📦【新設】問題文エリアの折りたたみ機能。
-           質問・解説の方が重要なので、問題文はデフォルトで小さくプレビュー表示にし、
-           必要な時だけ「全文を表示」で開けるようにする */
         .question-text-block {
-            color: var(--text-main);
-            font-weight: 700;
-            line-height: 1.7;
+            color: var(--text-primary);
+            font-weight: 600;
+            line-height: 1.75;
             text-align: left;
             width: 100%;
             padding: 0.5rem 0;
-            font-size: 1.35rem;
+            font-size: 1.15rem;
         }
+
         .question-collapsible-area {
             position: relative;
             overflow: hidden;
-            max-height: 240px;
+            max-height: 320px;
             transition: max-height 0.3s ease;
         }
         .question-collapsible-area.is-expanded {
-            /* 💡【修正】以前は max-height:2000px の固定値だったため、
-               それを超える長さの問題文だと途中で切れてしまう不具合があった。
-               実際の高さは JS 側で scrollHeight を測って inline style に設定するので、
-               ここは JS が万一効かなかった場合の保険として十分大きな値にしておく。 */
             max-height: 20000px;
         }
         .question-collapsible-area.has-overflow:not(.is-expanded)::after {
             content: "";
             position: absolute;
             left: 0; right: 0; bottom: 0;
-            height: 48px;
-            background: linear-gradient(to bottom, rgba(5,5,8,0) 0%, var(--card-bg) 85%);
+            height: 54px;
+            background: linear-gradient(to bottom, rgba(255,255,255,0) 0%, var(--bg-surface) 90%);
             pointer-events: none;
         }
         .question-collapse-toggle {
@@ -340,178 +136,106 @@
             gap: 0.3rem;
             width: 100%;
             margin-top: 0.6rem;
-            background: rgba(255,255,255,0.06);
-            border: 1px solid rgba(255,255,255,0.15);
-            color: var(--text-bright-muted);
-            font-size: 0.78rem;
-            font-weight: 800;
-            padding: 0.55rem 0.7rem;
-            border-radius: 10px;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-size: var(--fs-xs);
+            font-weight: 700;
+            padding: 0.5rem 0.8rem;
+            border-radius: var(--radius-md);
             cursor: pointer;
-            touch-action: manipulation;
-            min-height: 40px;
+            transition: all 0.15s ease;
         }
-        .question-collapse-toggle:active { transform: scale(0.97); }
-
-        /* 💬【新設】質問チャットだけを別タブで開く「チャット専用モード」。
-           ?chatOnly=1 付きでこのページを新しいタブで開いた時に body へ付与される。
-           問題文・解答欄・ナビ等はすべて非表示にし、AIサイドバー（質問チャット）だけを
-           画面いっぱいに表示する。同じページ・同じロジックを使い回すので、
-           そのまま続けてAIに質問できる。 */
-        body.chat-only-mode .global-cyber-nav,
-        body.chat-only-mode .nav-drawer-overlay,
-        body.chat-only-mode header,
-        body.chat-only-mode .main-question-tile,
-        body.chat-only-mode .answer-formula-tile {
-            display: none !important;
-        }
-        body.chat-only-mode .workspace-container {
-            max-width: 760px;
-            margin: 0 auto;
-            height: 100vh;
-            padding: 0;
-        }
-        body.chat-only-mode .bento-grid {
-            display: block !important;
-            height: 100%;
-        }
-        body.chat-only-mode .ai-sidebar-tile {
-            grid-column: unset !important;
-            grid-row: unset !important;
-            position: static !important;
-            top: auto !important;
-            max-height: none !important;
-            height: 100% !important;
-            width: 100% !important;
-            max-width: 100% !important;
-            margin: 0 !important;
-            border-radius: 0 !important;
-            display: flex !important;
-            flex-direction: column !important;
-        }
-        body.chat-only-mode .chat-history {
-            flex-grow: 1 !important;
-            max-height: none !important;
-        }
-        body.chat-only-mode .chat-bubble {
-            font-size: 1.15rem;
-            line-height: 1.8;
+        .question-collapse-toggle:hover {
+            color: var(--text-primary);
+            background: #E2E8F0;
         }
 
-        @media (max-width: 1100px) {
-            /* 💡 問題文は「大事なのはAIとの質問・解説」という方針で、スマホでは控えめなサイズに */
-            .question-text-block { font-size: 1.05rem; line-height: 1.6; }
-            .question-collapsible-area { max-height: 150px; }
-        }
-        .judgment-buttons { display: flex; gap: 1.5rem; width: 100%; }
-        .btn-correct { background: var(--accent-cyan) !important; box-shadow: 4px 4px 0px #008b94 !important; flex: 1; height: 54px; font-size: 1.1rem; }
-        .btn-incorrect { background: var(--accent-magenta) !important; color: #000 !important; box-shadow: 4px 4px 0px #9e004f !important; flex: 1; height: 54px; font-size: 1.1rem; }
-        #neon-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 99999; display: block; }
-        .btn-analyze-now { background: #111 !important; color: var(--accent-cyan) !important; border: 1px solid var(--accent-cyan) !important; box-shadow: 3px 3px 0px rgba(0,243,255,0.2) !important; font-size: 0.85rem; padding: 0.3rem 0.8rem; border-radius: 8px; cursor: pointer; display: none; font-weight: 800; }
-        .btn-analyze-now:hover { background: rgba(0,243,255,0.05) !important; }
+        .judgment-buttons { display: flex; gap: 1rem; width: 100%; margin-top: 1rem; }
 
-        /* 🧠【新設】解答生成AIエンジン選択トグル（Gemini / DeepSeek） */
+        /* AIエンジン選択トグル */
         .engine-toggle-group {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.4rem;
             flex-wrap: wrap;
-            margin-top: 0.6rem;
+            margin-top: 0.4rem;
         }
         .engine-toggle-label {
-            font-size: 0.7rem;
+            font-size: 0.72rem;
             color: var(--text-muted);
-            font-weight: 800;
-            letter-spacing: 0.5px;
+            font-weight: 700;
         }
         .engine-btn {
-            background: #0a0a0a;
-            border: 1px solid #22222a;
-            color: var(--text-muted);
-            font-size: 0.75rem;
-            font-weight: 800;
-            padding: 0.35rem 0.8rem;
-            border-radius: 20px;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-size: var(--fs-xs);
+            font-weight: 700;
+            padding: 0.25rem 0.65rem;
+            border-radius: var(--radius-full);
             cursor: pointer;
             transition: all 150ms ease;
-            letter-spacing: 0.3px;
         }
-        .engine-btn:hover { border-color: var(--border-glow); color: var(--text-bright-muted); }
-        .engine-btn.active[data-engine="gemini"] {
-            background: rgba(0, 243, 255, 0.12);
-            border-color: var(--accent-cyan);
-            color: var(--accent-cyan);
-            box-shadow: 2px 2px 0px rgba(0,243,255,0.15);
+        .engine-btn:hover { border-color: #94A3B8; color: var(--text-primary); }
+        .engine-btn.active {
+            background: var(--brand-light);
+            border-color: var(--brand-border);
+            color: var(--brand-primary);
+            font-weight: 800;
         }
-        .engine-btn.active[data-engine="deepseek"] {
-            background: rgba(255, 245, 0, 0.1);
-            border-color: var(--accent-yellow);
-            color: var(--accent-yellow);
-            box-shadow: 2px 2px 0px rgba(255,245,0,0.15);
-        }
-        /* 🧠 気づきメモ用サイドドロワー（右からスライドイン、左の解説は隠さない）CSS */
-        .modal-overlay {
+
+        /* 🧠 気づきメモ用サイドドロワー */
+        .insight-drawer-overlay {
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0, 0, 0, 0.15); /* 💡 左の解説が透けて見えるよう、ごく薄いトーンダウンのみ */
+            background: rgba(15, 23, 42, 0.3);
+            backdrop-filter: blur(2px);
             display: none;
             align-items: stretch;
-            justify-content: flex-end; /* 💡 ドロワーを右端に寄せる */
+            justify-content: flex-end;
             z-index: 100000;
         }
-        .modal-content {
-            width: min(460px, 92vw);
+        .insight-drawer-content {
+            width: min(480px, 92vw);
             height: 100%;
-            max-width: none;
-            background: rgba(6, 8, 14, 0.98);
-            border: none;
-            border-left: 1px solid var(--accent-cyan);
-            box-shadow: -8px 0 30px rgba(0, 243, 255, 0.2);
-            padding: 1.8rem;
+            background: var(--bg-surface);
+            border-left: 1px solid var(--border-color);
+            box-shadow: var(--shadow-xl);
+            padding: 2rem;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            animation: slideInInsightDrawer 220ms cubic-bezier(0.16, 0.8, 0.3, 1);
+            animation: slideInInsightDrawer 0.22s cubic-bezier(0.16, 1, 0.3, 1);
         }
         @keyframes slideInInsightDrawer {
-            from { transform: translateX(24px); opacity: 0.4; }
+            from { transform: translateX(28px); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
         }
         .insight-drawer-answer-ref {
             margin-top: 1.2rem;
-            padding: 0.9rem 1rem;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid #1a2a35;
-            border-radius: 14px;
-            max-height: 34vh;
+            padding: 1rem;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            max-height: 32vh;
             overflow-y: auto;
         }
-        .insight-drawer-answer-ref .model-answer-text { font-size: 0.85rem; color: var(--text-bright-muted); }
-        .modal-textarea {
-            width: 100%;
-            background: #000;
-            border: 1px solid #22222a;
-            color: #fff;
-            padding: 1rem;
-            border-radius: 12px;
-            font-size: 0.95rem;
-            resize: none;
-            line-height: 1.6;
-            font-family: inherit;
-        }
-        .modal-textarea:focus {
-            outline: none;
-            border-color: var(--accent-cyan);
-            box-shadow: 0 0 10px rgba(0, 243, 255, 0.2);
+
+        .qna-save-row {
+            display: none;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 0.6rem;
+            gap: 0.5rem;
+            flex-wrap: wrap;
         }
 
-        /* 💬【新設】質問ログ一覧・詳細表示用の中央配置モーダル（気づきドロワーとは別物） */
         .qna-modal-overlay {
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0, 0, 0, 0.75);
-            backdrop-filter: blur(6px);
-            -webkit-backdrop-filter: blur(6px);
+            background: rgba(15, 23, 42, 0.45);
+            backdrop-filter: blur(4px);
             display: none;
             align-items: center;
             justify-content: center;
@@ -519,16 +243,16 @@
         }
         .qna-modal-content {
             width: 90%;
-            max-width: 600px;
+            max-width: 620px;
             max-height: 85vh;
             overflow-y: auto;
-            background: rgba(10, 10, 18, 0.97);
-            border: 1px solid var(--accent-cyan);
-            box-shadow: 0 0 30px rgba(0, 243, 255, 0.2);
-            padding: 1.8rem;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-modal);
+            padding: 2rem;
         }
 
-        /* 🖼️【新設】複数枚写真ギャラリー用ストリップ（サムネイル並べてタップで拡大） */
         .photo-gallery-strip {
             display: flex;
             flex-wrap: wrap;
@@ -537,223 +261,201 @@
         }
         .photo-gallery-thumb {
             position: relative;
-            width: 74px;
-            height: 74px;
-            border-radius: 10px;
+            width: 80px;
+            height: 80px;
+            border-radius: var(--radius-md);
             overflow: hidden;
             border: 1px solid var(--border-color);
             cursor: zoom-in;
             flex-shrink: 0;
-            transition: border-color 0.15s ease, transform 0.15s ease;
+            transition: all 0.15s ease;
         }
         .photo-gallery-thumb:hover {
-            border-color: var(--accent-cyan);
+            border-color: var(--brand-primary);
             transform: translateY(-2px);
         }
         .photo-gallery-thumb img { width: 100%; height: 100%; object-fit: cover; }
         .photo-gallery-thumb .photo-gallery-thumb-index {
-            position: absolute; bottom: 2px; left: 2px; background: rgba(0,0,0,0.75); color: var(--accent-cyan);
-            font-size: 0.6rem; font-weight: 900; padding: 0.05rem 0.3rem; border-radius: 6px;
+            position: absolute; bottom: 3px; left: 3px; background: rgba(15,23,42,0.75); color: #fff;
+            font-size: 0.65rem; font-weight: 700; padding: 0.05rem 0.35rem; border-radius: 4px;
         }
         #photo-lightbox .lightbox-nav-btn {
             position: absolute; top: 50%; transform: translateY(-50%);
-            width: 48px; height: 48px; border-radius: 50%;
-            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.25);
-            color: #fff; font-size: 1.4rem; font-weight: 900;
+            width: 44px; height: 44px; border-radius: 50%;
+            background: rgba(255,255,255,0.85); border: 1px solid var(--border-color);
+            color: var(--text-primary); font-size: 1.2rem; font-weight: 800;
             display: flex; align-items: center; justify-content: center; cursor: pointer;
         }
-        #photo-lightbox .lightbox-nav-btn:hover { background: rgba(0,243,255,0.25); border-color: var(--accent-cyan); }
         #photo-lightbox .lightbox-counter {
             position: absolute; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
-            color: #fff; font-size: 0.85rem; font-weight: 800; background: rgba(0,0,0,0.6);
+            color: #fff; font-size: 0.85rem; font-weight: 700; background: rgba(15,23,42,0.7);
             padding: 0.3rem 0.9rem; border-radius: 20px;
         }
     </style>
 </head>
 <body>
 
-    <canvas id="neon-canvas"></canvas>
+    <div class="app-layout">
+        <div id="flora-sidebar"></div>
 
-    <div class="workspace-container">
-        <!-- GLOBAL CYBER HUD NAV -->
-        <nav class="global-cyber-nav">
-            <div class="nav-brand">//Lolz</div>
-            <button type="button" class="nav-hamburger-btn" aria-label="メニューを開く" aria-expanded="false">
-                <span></span><span></span><span></span>
-            </button>
-            <div class="nav-links">
-                <a href="index.html" class="nav-btn">🧠 誤答ノート</a>
-                <a href="daily.html" class="nav-btn">🏁 計算スプリント</a>
-                <a href="custom-sprint.html" class="nav-btn">🎯 カスタムスプリント</a>
-                <a href="lesson.html" class="nav-btn">📖 授業・解説</a>
-                <a href="answer-check.html" class="nav-btn">⚡ 答え合わせ</a>
-                <a href="insights.html" class="nav-btn">💡 気づき・質問ログ</a>  
-                <a href="refbook.html" class="nav-btn">📚 参考書問題集</a>
-              <a href="timeline.html" class="nav-btn">🌍 世界史年表</a>
-                <a href="ai-settings.html" class="nav-btn">⚙️ AI設定</a>
-                <a href="tokei/index.html" class="nav-btn global-timer-link">⏱️ 集中タイマー</a>
-                <a href="#" onclick="openTimerPopout(event)" class="nav-btn" title="別ウィンドウでタイマーを開く">🗔 小窓</a>
-                <a href="#" onclick="openLogPopout(event)" class="nav-btn" title="24hログを小窓で開く">📊 24hログ</a>
-                <a href="#" onclick="openGooglePhotosPopout(event)" class="nav-btn" title="Google Photosを小窓で開く">📷 Photos</a>
-        </nav>
-        <div class="nav-drawer-overlay"></div>
-        <script src="global-timer-sync.js"></script>
-        <script src="mobile-nav.js"></script>
+        <main class="app-main">
+            <div class="workspace-content-wrap">
 
-        <header>
-            <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
-                <span style="font-weight: 900; letter-spacing: -1px; color: var(--accent-cyan)">LOLZ // SESSION</span>
-                <span style="color: var(--text-muted); font-size: var(--fs-sm);" id="problem-id-display">PROBLEM ID: --</span>
-                <span style="color: var(--text-muted); font-size: 0.75rem;" id="problem-dates-display"></span>
-                
-                <div style="display: flex; align-items: center; gap: 0.4rem; margin-left: 0.5rem; border-left: 1px solid #1a2a35; padding-left: 1rem;">
-                    <span id="problem-title-display" style="font-weight: 800; color: #fff; font-size: 0.95rem;">問題名: 読込中...</span>
-                    <button type="button" id="edit-title-btn" style="background: transparent; border: 1px solid #22222a; color: var(--accent-cyan); font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 6px; cursor: pointer; font-weight: 800;">✏️ 名前変更</button>
-                    <button type="button" id="delete-prob-btn" style="background: transparent; border: 1px solid #2a0000; color: #ff4545; font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 6px; cursor: pointer; font-weight: 800;">🗑️ 問題を削除</button>
-                </div>
-                <a id="source-lesson-badge" href="#" style="display:none; align-items:center; gap:0.3rem; background: linear-gradient(135deg, rgba(255,0,127,0.15), rgba(0,243,255,0.15)); border: 1px solid var(--accent-magenta); border-radius: 8px; padding: 0.3rem 0.7rem; font-size: 0.78rem; font-weight: 700; color: #fff; text-decoration: none;">
-                    🎓 元の授業: <span id="source-lesson-title-text"></span>
-                </a>
-            </div>
-            <div>
-                <button type="button" class="tactile-btn tactile-btn-secondary" onclick="location.href='index.html'">
-                    ダッシュボードに戻る
-                </button>
-            </div>
-        </header>
-
-        <main class="bento-grid">
-            <section class="squircle-tile main-question-tile">
-                <div class="tile-header-group" style="display: flex; justify-content: space-between; align-items: center; width:100%;">
-                    <span class="badge badge-physics" id="question-badge">LOADING...</span>
-                    <select id="on-demand-subject-select" style="display:none; background:#0a0a0a; color:var(--accent-cyan); border:1px solid var(--accent-cyan); border-radius:8px; font-size:0.8rem; font-weight:800; padding:0.3rem 0.5rem;">
-                        <option value="数学">数学</option>
-                        <option value="物理">物理基礎</option>
-                        <option value="化学">化学基礎</option>
-                        <option value="英語">英語</option>
-                        <option value="国語">国語</option>
-                        <option value="地歴公民">地歴公民</option>
-                        <option value="世界史">世界史</option>
-                    </select>
-                    <button type="button" class="btn-analyze-now" id="on-demand-analyze-btn">⚡ この問題をAI解析する</button>
-                    <span id="analyze-engine-hint" style="display:none; font-size:0.7rem; color:var(--text-muted); font-weight:700; margin-left:0.3rem;"></span>
-                </div>
-                
-                <div class="question-collapsible-area" id="question-collapsible-area">
-                    <div class="physics-figure-box" id="figure-box"></div>
-                    <div class="photo-gallery-strip" id="photo-gallery-strip" style="display:none;"></div>
-                </div>
-                <button type="button" class="question-collapse-toggle" id="question-collapse-toggle">▼ 全文を表示</button>
-            </section>
-
-            <aside class="squircle-tile ai-sidebar-tile glass-sidebar">
-                <div class="tile-header-group">
-                    <span class="badge badge-ai" id="ai-status">AI TUTOR // ACTIVE</span>
-                    <h3 style="font-size: var(--fs-md); font-weight: 800;" id="current-step">INITIALIZING...</h3>
-
-                    <div class="engine-toggle-group" id="engine-toggle-group">
-                        <span class="engine-toggle-label">🧠 解答生成AI:</span>
-                        <button type="button" class="engine-btn" id="engine-btn-gemini" data-engine="gemini">✨ Gemini</button>
-                        <button type="button" class="engine-btn" id="engine-btn-deepseek" data-engine="deepseek">🐋 DeepSeek</button>
+                <div class="page-header">
+                    <div class="page-title-group">
+                        <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
+                            <h1 class="page-title" id="problem-title-display">問題演習セッション</h1>
+                            <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="edit-title-btn" style="color: var(--text-secondary);">✏️ 名前変更</button>
+                            <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="delete-prob-btn" style="color: var(--error);">🗑️ 削除</button>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 0.8rem; font-size: var(--fs-xs); color: var(--text-muted);">
+                            <span id="problem-id-display">ID: --</span>
+                            <span id="problem-dates-display"></span>
+                            <a id="source-lesson-badge" href="#" style="display:none; color: var(--brand-primary); font-weight: 600; text-decoration: none;">
+                                🎓 元の授業: <span id="source-lesson-title-text"></span>
+                            </a>
+                        </div>
                     </div>
-                    <button type="button" class="tactile-btn" id="open-wide-chat-btn" style="margin-top:0.5rem; font-size:0.75rem; padding:0.4rem 0.8rem; background:#111; color:var(--accent-cyan); border:1px solid var(--accent-cyan); box-shadow:none; align-self:flex-start;">🔗 質問チャットだけを別タブで開く</button>
-                </div>
-
-                <!-- 💬【新設】この問題に保存済みの質問ログがあれば表示（自分で開くまでは中身は出さない） -->
-                <button type="button" class="tactile-btn qna-past-logs-btn" id="qna-past-logs-btn">📜 過去の質問ログ（<span id="qna-past-logs-count">0</span>件）</button>
-
-                <div class="chat-history">
-                    <div class="chat-bubble bubble-ai" id="initial-ai-bubble">
-                        CONNECTING TO CLOUD...
-                    </div>
-                </div>
-
-                <div class="chat-input-wrapper" id="ai-chat-input-wrap" style="display: none;">
-    <textarea class="chat-input" id="ai-chat-question-field" rows="1" placeholder="解説のわからない部分を質問...（Shift+Enterで改行）" name="ai-chat-question-field" autocomplete="off" data-lpignore="true" data-1p-ignore="true"></textarea>
-    <button type="button" class="tactile-btn" style="padding: 0.5rem 1rem; align-self: flex-end;">送信</button>
-</div>
-                <div class="diagram-controls-wrap" id="diagram-controls-wrap">
-                    <button type="button" class="tactile-btn diagram-request-toggle-btn" id="request-diagram-btn">🖼️ 図で説明してほしい</button>
-                    <div class="diagram-request-row hidden" id="diagram-request-row">
-                        <input type="text" class="diagram-request-input" id="diagram-request-input" placeholder="例: 力のつり合いを図にして">
-                        <button type="button" class="tactile-btn diagram-request-toggle-btn" id="diagram-request-send-btn">送信</button>
-                    </div>
-                </div>
-                <div class="qna-save-row" id="qna-save-row">
-                    <button type="button" class="tactile-btn qna-save-btn" id="qna-save-btn">💾 この会話を記録する</button>
-                    <button type="button" class="tactile-btn" id="lesson-handoff-btn" style="background:#111; color:var(--accent-yellow); border:1px solid var(--accent-yellow); box-shadow:none;">🎓 前提から授業でやり直す</button>
-                </div>
-                <div id="lesson-handoff-linked-row" style="display:none; margin-top:0.6rem;">
-                    <a href="#" id="lesson-handoff-linked-link" class="tactile-btn" style="display:block; text-align:center; background:#111; color:var(--accent-cyan); border:1px solid var(--accent-cyan); box-shadow:none; text-decoration:none;"></a>
-                </div>
-            </aside>
-
-            <section class="squircle-tile answer-formula-tile">
-                <div class="tile-header-group">
-                    <h3 style="font-size: var(--fs-md); font-weight: 900;">ANSWER CHECK // 自己採点</h3>
-                </div>
-
-                <div class="self-check-container">
-                    <div class="reveal-btn-area" id="reveal-btn-wrap">
-                        <button type="button" class="tactile-btn" id="show-answer-btn" style="width:100%; height:54px; font-size:1.1rem;" disabled>
-                            🔒 LOADING...
+                    <div class="page-actions">
+                        <button type="button" class="flora-btn flora-btn-secondary" onclick="location.href='index.html'">
+                            ← ダッシュボードに戻る
                         </button>
                     </div>
+                </div>
 
-                    <div class="reveal-zone" id="answer-reveal-zone">
-                        <div id="strategy-pattern-box" style="display:none; background: rgba(255, 245, 0, 0.06); border: 1px dashed var(--accent-yellow); border-radius: 14px; padding: 1rem 1.2rem; margin-bottom: 1.2rem;">
-                            <div style="font-size:0.8rem; color: var(--accent-yellow); font-weight:800; margin-bottom:0.4rem;">🧭 考え方の定石 // まずこう考える</div>
-                            <div class="model-answer-text" id="target-strategy-pattern" style="font-size:0.95rem; line-height:1.7; color:var(--text-bright-muted);"></div>
-                        </div>
+                <div class="problem-bento-grid">
+                    
+                    <div style="display: flex; flex-direction: column;">
+                        
+                        <section class="main-question-tile">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem;">
+                                <span class="flora-badge badge-math" id="question-badge">LOADING...</span>
+                                <select id="on-demand-subject-select" class="flora-select" style="display:none; width: auto; font-size: var(--fs-xs); padding: 0.3rem 1.8rem 0.3rem 0.6rem;">
+                                    <option value="数学">数学</option>
+                                    <option value="物理">物理基礎</option>
+                                    <option value="化学">化学基礎</option>
+                                    <option value="英語">英語</option>
+                                    <option value="国語">国語</option>
+                                    <option value="地歴公民">地歴公民</option>
+                                    <option value="世界史">世界史</option>
+                                </select>
+                                <button type="button" class="flora-btn flora-btn-primary btn-sm" id="on-demand-analyze-btn" style="display:none;">⚡ この問題をAI解析する</button>
+                                <span id="analyze-engine-hint" style="display:none; font-size:0.72rem; color:var(--text-muted); font-weight:600;"></span>
+                            </div>
+                            
+                            <div class="question-collapsible-area" id="question-collapsible-area">
+                                <div class="physics-figure-box" id="figure-box"></div>
+                                <div class="photo-gallery-strip" id="photo-gallery-strip" style="display:none;"></div>
+                            </div>
+                            <button type="button" class="question-collapse-toggle" id="question-collapse-toggle">▼ 全文を表示</button>
+                        </section>
 
-                        <div id="strategy-generate-box" style="display:none; background: rgba(255, 245, 0, 0.04); border: 1px dashed rgba(255,245,0,0.4); border-radius: 14px; padding: 1rem 1.2rem; margin-bottom: 1.2rem; text-align:center;">
-                            <p style="font-size:0.82rem; color: var(--text-muted); margin-bottom:0.7rem;">この問題は答えだけ確認済みです。間違えた原因を深掘りしたい場合は、定石・罠の解説を追加で生成できます。</p>
-                            <button type="button" class="tactile-btn" id="generate-strategy-btn" style="background: rgba(255,245,0,0.1); color: var(--accent-yellow); border: 1px solid var(--accent-yellow); box-shadow: 3px 3px 0px rgba(255,245,0,0.2);">🧭 定石・罠の解説を追加生成する</button>
-                        </div>
+                        <section class="answer-formula-tile">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem;">
+                                <h3 style="font-family: var(--font-heading); font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">📝 解答・自己採点</h3>
+                            </div>
 
-                        <div style="font-size:0.8rem; color:var(--text-muted); font-weight:800; margin-bottom:0.2rem;">MODEL ANSWER</div>
-                        <div class="model-answer-text" id="target-model-answer"></div>
-                        <div class="judgment-buttons">
-                            <button type="button" class="tactile-btn btn-incorrect" id="btn-judge-wrong">❌ 間違えた（再挑戦）</button>
-                            <button type="button" class="tactile-btn btn-correct" id="btn-judge-right">🎉 合ってた（克服！）</button>
-                        </div>
-                        <!-- 🛠️【新設】間違っている部分をAIに伝えてから解説を再生成できる指摘欄 -->
-                        <div style="width:100%; margin-top:0.8rem;">
-                            <label for="regen-note-input" style="display:block; font-size:0.78rem; color:var(--text-muted); font-weight:800; margin-bottom:0.3rem;">
-                                🛠 （任意）どこが間違っているかAIに伝えて再生成
-                            </label>
-                            <textarea id="regen-note-input" rows="2" placeholder="例：△ARPの面積が計算に含まれていません。五角形PBQCRの面積に足す形で解き直してください。" style="width:100%; resize:vertical; background: rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.15); border-radius:10px; padding:0.6rem 0.7rem; color:var(--text-main); font-size:0.85rem; font-family:inherit;"></textarea>
-                        </div>
+                            <div class="self-check-container">
+                                <div class="reveal-btn-area" id="reveal-btn-wrap">
+                                    <button type="button" class="flora-btn flora-btn-primary btn-lg" id="show-answer-btn" style="width:100%;" disabled>
+                                        🔒 解答と解説を表示する
+                                    </button>
+                                </div>
 
-                        <div style="display: flex; gap: 1rem; margin-top: 1.2rem; width: 100%;">
-                            <button type="button" class="tactile-btn" id="activate-ai-question-btn" style="flex: 1; background: #111; color: var(--accent-cyan); border: 1px solid var(--accent-cyan); box-shadow: 3px 3px 0px rgba(0,243,255,0.2);">
-                                💡 AIに質問する
-                            </button>
-                            <button type="button" class="tactile-btn" id="regenerate-analysis-btn" style="flex: 1; background: #111; color: var(--accent-yellow); border: 1px solid var(--accent-yellow); box-shadow: 3px 3px 0px rgba(255,245,0,0.2);">
-                                🔄 解説を再生成する <span id="regen-engine-hint" style="font-size:0.65rem; opacity:0.8;"></span>
-                            </button>
-                        </div>
+                                <div class="reveal-zone" id="answer-reveal-zone" style="display:none; margin-top: 1.25rem;">
+                                    <div id="strategy-pattern-box" style="display:none; background: var(--warning-bg); border: 1px solid var(--warning); border-radius: var(--radius-md); padding: 1rem 1.2rem; margin-bottom: 1.2rem;">
+                                        <div style="font-size:0.82rem; color: var(--warning); font-weight:700; margin-bottom:0.3rem;">🧭 考え方の定石（まずこう考える）</div>
+                                        <div class="model-answer-text" id="target-strategy-pattern" style="font-size:0.92rem; line-height:1.65; color:var(--text-primary);"></div>
+                                    </div>
 
-                        <!-- 🧠【追加】気づきメモモーダルを呼ぶボタン -->
-                        <button type="button" class="tactile-btn" id="open-insight-modal-btn" style="width: 100%; margin-top: 0.8rem; background: rgba(0, 243, 255, 0.05); color: var(--accent-cyan); border: 1px dashed var(--accent-cyan); box-shadow: none;">
-                            🧠 この問題で得た「気づき・極意」をメモする
-                        </button>
+                                    <div id="strategy-generate-box" style="display:none; background: var(--bg-subtle); border: 1px dashed var(--border-color); border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1.2rem; text-align:center;">
+                                        <p style="font-size:0.84rem; color: var(--text-secondary); margin-bottom:0.6rem;">この問題は答えのみ確認済みです。間違えた原因を深掘りしたい場合、定石・罠の解説を追加生成できます。</p>
+                                        <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="generate-strategy-btn">🧭 定石・罠の解説を追加生成する</button>
+                                    </div>
+
+                                    <div style="font-size:0.78rem; color:var(--text-muted); font-weight:700; margin-bottom:0.3rem;">模範解答 & 解説</div>
+                                    <div class="model-answer-text" id="target-model-answer" style="font-size:0.95rem; line-height: 1.7; margin-bottom: 1.25rem;"></div>
+                                    
+                                    <div class="judgment-buttons">
+                                        <button type="button" class="flora-btn flora-btn-danger btn-lg" id="btn-judge-wrong" style="flex: 1;">❌ 間違えた（再挑戦）</button>
+                                        <button type="button" class="flora-btn btn-correct btn-lg" id="btn-judge-right" style="flex: 1;">🎉 合ってた（克服完了！）</button>
+                                    </div>
+
+                                    <div style="width:100%; margin-top:1rem;">
+                                        <label for="regen-note-input" style="display:block; font-size:0.78rem; color:var(--text-secondary); font-weight:600; margin-bottom:0.3rem;">
+                                            🛠 （任意）AIへの補足・修正指摘
+                                        </label>
+                                        <textarea id="regen-note-input" rows="2" placeholder="例：五角形の面積計算が抜けています。〜〜の解法で解き直してください。" class="flora-textarea" style="min-height: 60px;"></textarea>
+                                    </div>
+
+                                    <div style="display: flex; gap: 0.8rem; margin-top: 1rem; width: 100%; flex-wrap: wrap;">
+                                        <button type="button" class="flora-btn flora-btn-secondary" id="activate-ai-question-btn" style="flex: 1;">
+                                            💡 AIに質問する
+                                        </button>
+                                        <button type="button" class="flora-btn flora-btn-secondary" id="regenerate-analysis-btn" style="flex: 1;">
+                                            🔄 解説を再生成する <span id="regen-engine-hint" style="font-size:0.68rem; color:var(--text-muted);"></span>
+                                        </button>
+                                    </div>
+
+                                    <button type="button" class="flora-btn flora-btn-ghost" id="open-insight-modal-btn" style="width: 100%; margin-top: 0.8rem; border: 1px dashed var(--brand-border); color: var(--brand-primary);">
+                                        🧠 この問題で得た「気づき・極意」をメモする
+                                    </button>
+                                </div>
+                            </div>
+                        </section>
+
                     </div>
-                </div> <!-- 👈 ここで self-check-container が閉じる -->
-        </section> <!-- 👈 ここで answer-formula-tile が閉じる -->
+
+                    <aside class="ai-sidebar-tile">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.6rem;">
+                            <div>
+                                <span class="flora-badge badge-safe" id="ai-status">AI TUTOR</span>
+                                <h3 style="font-family: var(--font-heading); font-size: 1rem; font-weight: 700; margin-top: 0.3rem;" id="current-step">対話チューター</h3>
+                            </div>
+                            <div class="engine-toggle-group" id="engine-toggle-group">
+                                <button type="button" class="engine-btn active" id="engine-btn-gemini" data-engine="gemini">✨ Gemini</button>
+                                <button type="button" class="engine-btn" id="engine-btn-deepseek" data-engine="deepseek">🐋 DeepSeek</button>
+                            </div>
+                        </div>
+
+                        <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="qna-past-logs-btn" style="display:none; width:100%; margin-bottom:0.5rem; justify-content:flex-start;">
+                            📜 過去の質問ログ（<span id="qna-past-logs-count">0</span>件）
+                        </button>
+
+                        <div class="chat-history">
+                            <div class="chat-bubble bubble-ai" id="initial-ai-bubble">
+                                接続中...
+                            </div>
+                        </div>
+
+                        <div class="chat-input-wrapper" id="ai-chat-input-wrap" style="display: none;">
+                            <textarea class="chat-input" id="ai-chat-question-field" rows="1" placeholder="解説の疑問点や解き方を質問...（Shift+Enterで改行）" name="ai-chat-question-field" autocomplete="off"></textarea>
+                            <button type="button" class="flora-btn flora-btn-primary btn-sm" style="align-self: flex-end;">送信</button>
+                        </div>
+
+                        <div class="diagram-controls-wrap" id="diagram-controls-wrap" style="margin-top: 0.5rem;">
+                            <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="request-diagram-btn">🖼️ 図で説明してほしい</button>
+                            <div class="diagram-request-row hidden" id="diagram-request-row" style="display: flex; gap: 0.4rem; margin-top: 0.4rem;">
+                                <input type="text" class="flora-input" id="diagram-request-input" placeholder="例: 力のつり合いを図にして" style="font-size: var(--fs-xs); padding: 0.35rem 0.6rem;">
+                                <button type="button" class="flora-btn flora-btn-primary btn-sm" id="diagram-request-send-btn">送信</button>
+                            </div>
+                        </div>
+
+                        <div class="qna-save-row" id="qna-save-row">
+                            <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="qna-save-btn" style="color: var(--brand-primary);">💾 この対話を記録する</button>
+                            <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="lesson-handoff-btn" style="color: var(--warning);">🎓 前提から授業でやり直す</button>
+                        </div>
+                        <div id="lesson-handoff-linked-row" style="display:none; margin-top:0.4rem;">
+                            <a href="#" id="lesson-handoff-linked-link" class="flora-btn flora-btn-secondary btn-sm" style="display:block; text-align:center;"></a>
+                        </div>
+                    </aside>
+
+                </div>
+
+            </div>
         </main>
     </div>
 
-    <!-- 🧠【追加】気づきメモ用ポップアップ（モーダル） -->
-    <div class="modal-overlay" id="insight-modal">
-        <div class="squircle-tile modal-content glass-card">
-            <div class="tile-header-group">
-                <span class="badge badge-ai" style="color: var(--accent-cyan);">MEMORY LOG // 気づき・極意ノート</span>
-                <h3 style="font-size: 1.2rem; font-weight: 800; margin-top: 0.4rem;" id="insight-modal-title">この問題の気づきメモ</h3>
-                <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.2rem;">解法パターンや引っかかった罠、次に活かしたいテクニックを記録しておこう。</p>
-            </div>
-
-            <textarea class="modal-textarea" id="insight-text-input" placeholder="例: 頂点フォームより2点代入の方が圧倒的に速い！ / $x^2+y^2$ を見たら極座標表示を疑う" style="height: 110px; margin-top: 1rem;"></textarea>
 
             <!-- 💡 数式リアルタイムプレビュー表示エリア -->
             <div id="insight-preview-box" style="display: none; margin-top: 0.8rem; padding: 0.8rem 1rem; background: rgba(0, 243, 255, 0.04); border: 1px dashed rgba(0, 243, 255, 0.3); border-radius: 12px; font-size: 0.9rem; line-height: 1.6; color: var(--text-main); word-break: break-word;">

@@ -3,16 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#050508">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="LOLZ">
-    <meta name="format-detection" content="telephone=no">
+    <meta name="theme-color" content="#059669">
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="icons/icon.png">
     <link rel="apple-touch-icon" href="icons/icon.png">
-    <title>LOLZ // 参考書 授業モード</title>
+    <title>Flora | 参考書 授業モード</title>
     <link rel="stylesheet" href="style.css">
 
     <script>
@@ -27,131 +22,167 @@
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" async></script>
 
     <style>
-        /* 🌌 レスポンシブ＆PC大画面フィット型レイアウト */
-        html, body {
-            min-height: 100vh;
-        }
-
-        .lesson-container { 
-            max-width: 1550px; 
-            margin: 0 auto; 
-            display: flex; 
-            flex-direction: column; 
-            gap: 1.2rem; 
-            width: 100%;
-            padding: 0 0.5rem;
-        }
-
-        header.lesson-header { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            border-bottom: 1px solid #1a2a35; 
-            padding-bottom: 0.8rem; 
-            flex-wrap: wrap; 
-            gap: 0.8rem; 
-        }
-        .lesson-header h1 { font-size: 1.6rem; font-weight: 900; color: var(--accent-yellow); }
-        .back-link { color: var(--text-muted); font-size: 0.85rem; text-decoration: none; }
-        .back-link:hover { color: var(--accent-cyan); }
-
         /* ── リスト＆新規作成 ── */
-        .lesson-card-row { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 1rem; margin-bottom: 0.7rem; cursor: pointer; }
-        .lesson-card-row:hover { border-color: var(--border-glow); }
-        .lesson-card-title { font-weight: 800; font-size: 1rem; margin-bottom: 0.3rem; }
-        .lesson-card-meta { font-size: 0.75rem; color: var(--text-muted); display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap; }
-        .lesson-progress-badge { font-size: 0.7rem; font-weight: 800; padding: 0.25rem 0.6rem; border-radius: 20px; flex-shrink: 0; }
-        .badge-teaching { background: rgba(0,243,255,0.1); color: var(--accent-cyan); border: 1px solid var(--accent-cyan); }
-        .badge-completed { background: rgba(255,245,0,0.1); color: var(--accent-yellow); border: 1px solid var(--accent-yellow); }
-        .lesson-level-badge { display:inline-block; padding:0.1rem 0.5rem; border-radius:8px; background:rgba(255,255,255,0.05); border:1px solid var(--border-color); color:var(--text-bright-muted); font-size:0.7rem; }
-        .lesson-style-badge { display:inline-block; padding:0.1rem 0.5rem; border-radius:8px; font-size:0.7rem; font-weight:800; }
-        .badge-style-socratic { background: rgba(255,0,127,0.12); border: 1px solid var(--accent-magenta); color: var(--accent-magenta); }
-        .badge-style-standard { background: rgba(0,243,255,0.08); border: 1px solid var(--accent-cyan); color: var(--accent-cyan); }
-
-        /* 🪜 単元別レベルロードマップ（コンパクト表示） */
-        .roadmap-tile { margin-bottom: 0.45rem; padding: 0.6rem 0.75rem; cursor: default; }
-        .roadmap-topic-title { font-weight: 800; font-size: 0.78rem; margin-bottom: 0.4rem; }
-        .roadmap-steps { display: flex; align-items: center; gap: 0.15rem; flex-wrap: nowrap; }
-        .roadmap-step { flex: 1 1 0; min-width: 0; text-align: center; padding: 0.28rem 0.2rem; border-radius: 8px; font-size: 0.6rem; font-weight: 700; line-height: 1.25; border: 1px solid var(--border-color); color: var(--text-muted); background: rgba(255,255,255,0.02); transition: all 0.15s ease; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .roadmap-step.rm-done { background: rgba(0,243,255,0.1); color: var(--accent-cyan); border-color: var(--accent-cyan); cursor: pointer; }
-        .roadmap-step.rm-teaching { background: rgba(255,245,0,0.1); color: var(--accent-yellow); border-color: var(--accent-yellow); cursor: pointer; animation: pulse-timer-btn 1.8s infinite alternate; }
-        .roadmap-step.rm-next { background: rgba(255,0,127,0.08); color: var(--accent-magenta); border: 1px dashed var(--accent-magenta); cursor: pointer; }
-        .roadmap-step.rm-locked { opacity: 0.45; }
-        .roadmap-arrow { color: var(--text-muted); font-size: 0.6rem; flex-shrink: 0; }
-        @media (max-width: 480px) {
-            .roadmap-step { font-size: 0.52rem; padding: 0.26rem 0.1rem; }
+        .lesson-card-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            padding: 1.1rem 1.3rem;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            margin-bottom: 0.65rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            box-shadow: var(--shadow-xs);
         }
+        .lesson-card-row:hover {
+            border-color: var(--brand-border);
+            box-shadow: var(--shadow-md);
+            transform: translateY(-1px);
+        }
+        .lesson-card-title { font-weight: 700; font-size: 1rem; color: var(--text-primary); margin-bottom: 0.25rem; }
+        .lesson-card-meta { font-size: 0.76rem; color: var(--text-secondary); display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap; }
+        
+        .lesson-progress-badge { font-size: 0.72rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: var(--radius-full); flex-shrink: 0; }
+        .badge-teaching { background: var(--brand-light); color: var(--brand-primary); border: 1px solid var(--brand-border); }
+        .badge-completed { background: var(--warning-bg); color: var(--warning); border: 1px solid #FDE68A; }
+        .lesson-level-badge { display:inline-block; padding:0.15rem 0.5rem; border-radius:var(--radius-sm); background:var(--bg-subtle); border:1px solid var(--border-color); color:var(--text-secondary); font-size:0.72rem; font-weight:600; }
+        .lesson-style-badge { display:inline-block; padding:0.15rem 0.5rem; border-radius:var(--radius-sm); font-size:0.72rem; font-weight:700; }
+        .badge-style-socratic { background: var(--subj-japanese-bg); border: 1px solid var(--subj-japanese-border); color: var(--subj-japanese); }
+        .badge-style-standard { background: var(--subj-physics-bg); border: 1px solid var(--subj-physics-border); color: var(--subj-physics); }
 
-        /* 📚 授業一覧（見やすさ改善版） */
-        .lesson-list-toolbar { display: flex; gap: 0.6rem; margin-bottom: 0.9rem; flex-wrap: wrap; align-items: center; }
+        /* 🪜 単元別レベルロードマップ */
+        .roadmap-tile {
+            margin-bottom: 0.5rem;
+            padding: 0.8rem 1rem;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            cursor: default;
+        }
+        .roadmap-topic-title { font-weight: 700; font-size: 0.84rem; color: var(--text-primary); margin-bottom: 0.45rem; }
+        .roadmap-steps { display: flex; align-items: center; gap: 0.3rem; flex-wrap: nowrap; }
+        .roadmap-step {
+            flex: 1 1 0;
+            min-width: 0;
+            text-align: center;
+            padding: 0.35rem 0.3rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.7rem;
+            font-weight: 700;
+            line-height: 1.25;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            background: var(--bg-subtle);
+            transition: all 0.15s ease;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .roadmap-step.rm-done { background: var(--brand-light); color: var(--brand-primary); border-color: var(--brand-border); cursor: pointer; }
+        .roadmap-step.rm-teaching { background: var(--warning-bg); color: var(--warning); border-color: #FDE68A; cursor: pointer; }
+        .roadmap-step.rm-next { background: var(--subj-japanese-bg); color: var(--subj-japanese); border: 1px dashed var(--subj-japanese-border); cursor: pointer; }
+        .roadmap-step.rm-locked { opacity: 0.45; }
+        .roadmap-arrow { color: var(--text-muted); font-size: 0.65rem; flex-shrink: 0; }
+
+        /* 📚 授業一覧ツールバー */
+        .lesson-list-toolbar { display: flex; gap: 0.6rem; margin-bottom: 1rem; flex-wrap: wrap; align-items: center; }
         .lesson-search-input {
-            flex: 1; min-width: 160px; background: #000; border: 1px solid #22222a; color: #fff;
-            padding: 0.6rem 0.9rem; border-radius: 10px; font-size: 0.85rem;
+            flex: 1;
+            min-width: 180px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.55rem 0.9rem;
+            border-radius: var(--radius-md);
+            font-size: var(--fs-sm);
         }
         .lesson-subject-chips { display: flex; gap: 0.4rem; flex-wrap: wrap; }
         .lesson-subject-chip {
-            font-size: 0.75rem; font-weight: 800; padding: 0.4rem 0.8rem; border-radius: 20px;
-            border: 1px solid var(--border-color); color: var(--text-muted); background: rgba(255,255,255,0.03);
-            cursor: pointer; transition: all 0.15s ease; white-space: nowrap;
+            font-size: 0.76rem;
+            font-weight: 700;
+            padding: 0.35rem 0.8rem;
+            border-radius: var(--radius-full);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            background: var(--bg-subtle);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            white-space: nowrap;
         }
-        .lesson-subject-chip:hover { border-color: var(--accent-cyan); color: #fff; }
-        .lesson-subject-chip.active { background: var(--accent-cyan); color: #000; border-color: var(--accent-cyan); }
+        .lesson-subject-chip:hover { border-color: #94A3B8; color: var(--text-primary); }
+        .lesson-subject-chip.active { background: var(--brand-primary); color: #fff; border-color: var(--brand-primary); }
 
-        .lesson-subject-group { margin-bottom: 1.4rem; }
+        .lesson-subject-group { margin-bottom: 1.5rem; }
         .lesson-subject-group-header {
-            display: flex; align-items: center; gap: 0.5rem; font-weight: 900; font-size: 0.92rem;
-            color: var(--text-bright-muted); margin-bottom: 0.6rem; padding-left: 0.2rem;
+            display: flex; align-items: center; gap: 0.5rem; font-weight: 700; font-size: 0.92rem;
+            color: var(--text-primary); margin-bottom: 0.6rem; padding-left: 0.2rem;
         }
-        .lesson-subject-group-count { font-size: 0.72rem; font-weight: 700; color: var(--text-muted); background: rgba(255,255,255,0.05); padding: 0.1rem 0.5rem; border-radius: 10px; }
+        .lesson-subject-group-count { font-size: 0.72rem; font-weight: 700; color: var(--text-secondary); background: var(--bg-subtle); padding: 0.15rem 0.55rem; border-radius: var(--radius-full); }
 
-        .lesson-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0.7rem; }
+        .lesson-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.85rem; }
         .lesson-grid-card {
-            display: flex; flex-direction: column; gap: 0.5rem; padding: 1rem;
-            cursor: pointer; position: relative;
+            display: flex; flex-direction: column; gap: 0.5rem; padding: 1.15rem;
+            background: var(--bg-surface); border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg); cursor: pointer; position: relative;
+            box-shadow: var(--shadow-xs); transition: all 0.15s ease;
         }
-        .lesson-grid-card:hover { border-color: var(--border-glow); }
+        .lesson-grid-card:hover { border-color: var(--brand-border); box-shadow: var(--shadow-md); transform: translateY(-1px); }
         .lesson-grid-card-top { display: flex; justify-content: space-between; align-items: center; gap: 0.4rem; }
-        .lesson-grid-card-title { font-weight: 800; font-size: 0.92rem; line-height: 1.35; }
-        .lesson-grid-card-meta { font-size: 0.72rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; }
-        .lesson-grid-card-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 0.2rem; }
+        .lesson-grid-card-title { font-weight: 700; font-size: 0.95rem; line-height: 1.35; color: var(--text-primary); }
+        .lesson-grid-card-meta { font-size: 0.74rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; }
+        .lesson-grid-card-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 0.3rem; border-top: 1px solid var(--border-subtle); padding-top: 0.5rem; }
         .lesson-grid-card-delete {
-            background: transparent; color: #ff4545; border: 1px solid #2a0000; box-shadow: none;
-            padding: 0.3rem 0.55rem; font-size: 0.82rem; border-radius: 10px; cursor: pointer;
+            background: transparent; color: var(--error); border: 1px solid #FECACA;
+            padding: 0.25rem 0.55rem; font-size: var(--fs-xs); border-radius: var(--radius-sm); cursor: pointer;
+            transition: all 0.15s ease;
         }
-        .lesson-list-empty-state { color: var(--text-muted); font-size: 0.85rem; text-align: center; padding: 2rem 0; }
+        .lesson-grid-card-delete:hover { background: var(--error-bg); }
 
-        .new-lesson-form { display: flex; flex-direction: column; }
+        .new-lesson-form {
+            display: flex; flex-direction: column;
+            background: var(--bg-surface); border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg); padding: 1.3rem; box-shadow: var(--shadow-xs);
+        }
         .new-lesson-toggle {
             display: flex; justify-content: space-between; align-items: center; width: 100%;
-            background: none; border: none; color: var(--text-main); cursor: pointer;
-            font-weight: 900; font-size: 1.05rem; padding: 0.2rem 0;
+            background: none; border: none; color: var(--text-primary); cursor: pointer;
+            font-family: var(--font-heading); font-weight: 700; font-size: 1.05rem; padding: 0.2rem 0;
         }
-        .new-lesson-toggle-icon { color: var(--accent-cyan); font-size: 0.9rem; transition: transform 0.2s ease; flex-shrink: 0; }
+        .new-lesson-toggle-icon { color: var(--brand-primary); font-size: 0.9rem; transition: transform 0.2s ease; flex-shrink: 0; }
         .new-lesson-toggle.open .new-lesson-toggle-icon { transform: rotate(180deg); }
-        .new-lesson-body { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
+        .new-lesson-body { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; border-top: 1px solid var(--border-subtle); padding-top: 1rem; }
         .new-lesson-body.hidden { display: none; }
 
         /* ▶ 続きから再開カード */
         .continue-card {
             display: flex; align-items: center; justify-content: space-between; gap: 0.8rem;
-            padding: 1rem 1.1rem; margin-bottom: 1rem; cursor: pointer;
-            border: 1px solid var(--accent-yellow); background: rgba(255,245,0,0.06);
-            box-shadow: 4px 4px 0px rgba(255,245,0,0.15);
+            padding: 1rem 1.25rem; margin-bottom: 1rem; cursor: pointer;
+            border: 1px solid var(--brand-border); background: var(--brand-light);
+            border-radius: var(--radius-lg); box-shadow: var(--shadow-xs);
+            transition: all 0.15s ease;
         }
-        .continue-card:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0px rgba(255,245,0,0.2); }
-        .continue-card-label { font-size: 0.7rem; font-weight: 800; color: var(--accent-yellow); margin-bottom: 0.25rem; }
-        .continue-card-title { font-weight: 800; font-size: 0.95rem; line-height: 1.3; }
-        .continue-card-meta { font-size: 0.72rem; color: var(--text-muted); margin-top: 0.3rem; }
-        .continue-card-arrow { font-size: 1.3rem; color: var(--accent-yellow); flex-shrink: 0; }
-        .file-drop-label { border: 1px dashed #3a3a4a; border-radius: 14px; padding: 1.2rem; text-align: center; cursor: pointer; color: var(--text-muted); font-size: 0.9rem; }
-        .file-drop-label:hover { border-color: var(--accent-cyan); color: var(--accent-cyan); }
-        .thumb-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-        .thumb-row img { width: 64px; height: 64px; object-fit: cover; border-radius: 8px; border: 1px solid #22222a; }
-        .note-textarea { width: 100%; min-height: 80px; background: #000; border: 1px solid #22222a; color: #fff; padding: 0.8rem; border-radius: 10px; font-family: inherit; resize: vertical; }
-        .settings-link { font-size: 0.8rem; color: var(--text-muted); background: none; border: none; cursor: pointer; text-decoration: underline; align-self: flex-start; }
-        .settings-link:hover { color: var(--accent-cyan); }
+        .continue-card:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+        .continue-card-label { font-size: 0.72rem; font-weight: 700; color: var(--brand-primary); margin-bottom: 0.2rem; }
+        .continue-card-title { font-weight: 700; font-size: 0.98rem; line-height: 1.3; color: var(--text-primary); }
+        .continue-card-meta { font-size: 0.74rem; color: var(--text-secondary); margin-top: 0.25rem; }
+        .continue-card-arrow { font-size: 1.2rem; color: var(--brand-primary); flex-shrink: 0; }
 
-        /* ── スタイル選択スイッチ ── */
+        .file-drop-label {
+            border: 2px dashed var(--border-color); border-radius: var(--radius-md); padding: 1.5rem;
+            text-align: center; cursor: pointer; color: var(--text-secondary); font-size: var(--fs-sm);
+            background: var(--bg-subtle); transition: all 0.15s ease; display: block;
+        }
+        .file-drop-label:hover { border-color: var(--brand-primary); color: var(--brand-primary); background: var(--brand-light); }
+        .thumb-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.6rem; }
+        .thumb-row img { width: 64px; height: 64px; object-fit: cover; border-radius: var(--radius-sm); border: 1px solid var(--border-color); }
+        .note-textarea {
+            width: 100%; min-height: 70px; background: var(--bg-surface); border: 1px solid var(--border-color);
+            color: var(--text-primary); padding: 0.75rem; border-radius: var(--radius-md); font-family: inherit; font-size: var(--fs-sm); resize: vertical; margin-top: 0.6rem;
+        }
+
         .style-selector-container {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -159,216 +190,146 @@
             margin-bottom: 0.4rem;
         }
         .style-card-btn {
-            background: rgba(255,255,255,0.02);
-            border: 1px solid #222233;
-            border-radius: 14px;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
             padding: 0.9rem 1rem;
             text-align: left;
             cursor: pointer;
-            transition: all 0.2s ease;
-            color: var(--text-bright-muted);
+            transition: all 0.15s ease;
+            color: var(--text-secondary);
         }
         .style-card-btn:hover {
-            border-color: var(--border-glow);
-            background: rgba(0,243,255,0.04);
+            border-color: #94A3B8;
+            background: var(--bg-surface);
         }
         .style-card-btn.active {
-            border-color: var(--accent-cyan);
-            background: rgba(0,243,255,0.08);
-            box-shadow: 0 0 15px rgba(0,243,255,0.2);
-            color: #fff;
+            border-color: var(--brand-primary);
+            background: var(--brand-light);
+            color: var(--text-primary);
         }
         .style-card-btn.active.socratic-style {
-            border-color: var(--accent-magenta);
-            background: rgba(255,0,127,0.08);
-            box-shadow: 0 0 15px rgba(255,0,127,0.2);
+            border-color: var(--subj-japanese-border);
+            background: var(--subj-japanese-bg);
         }
         .style-card-title {
-            font-size: 0.95rem;
-            font-weight: 900;
+            font-size: 0.92rem;
+            font-weight: 700;
             display: flex;
             align-items: center;
             gap: 0.4rem;
-            margin-bottom: 0.3rem;
+            margin-bottom: 0.25rem;
+            color: var(--text-primary);
         }
         .style-card-desc {
             font-size: 0.76rem;
-            color: var(--text-muted);
+            color: var(--text-secondary);
             line-height: 1.45;
         }
 
         /* ── プランプレビュー ── */
-        .plan-part-item { border-left: 3px solid var(--accent-yellow); padding: 0.6rem 1rem; margin-bottom: 0.6rem; background: rgba(255,245,0,0.03); border-radius: 0 10px 10px 0; }
-        .plan-part-item b { color: var(--accent-yellow); }
-        .plan-part-item p { font-size: 0.85rem; color: var(--text-bright-muted); margin-top: 0.2rem; }
-
-        /* 💻 PC大画面用 2カラムGrid構成 */
-        @media screen and (min-width: 1025px) {
-            .lesson-layout-grid {
-                display: grid;
-                grid-template-columns: 1fr 420px;
-                gap: 1.5rem;
-                align-items: start;
-                min-height: calc(100vh - 140px);
-            }
-            .lesson-main-card {
-                display: flex;
-                flex-direction: column;
-                min-height: calc(100vh - 140px);
-                max-height: calc(100vh - 140px);
-                min-width: 0;
-            }
-            .lesson-sidebar-card {
-                display: flex;
-                flex-direction: column;
-                min-height: calc(100vh - 140px);
-                max-height: calc(100vh - 140px);
-                min-width: 0;
-            }
-            .chat-transcript {
-                flex-grow: 1;
-                overflow-y: auto;
-                max-height: none !important;
-                padding-right: 0.5rem;
-            }
+        .plan-part-item {
+            border-left: 3px solid var(--brand-primary);
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.6rem;
+            background: var(--bg-subtle);
+            border-radius: 0 var(--radius-md) var(--radius-md) 0;
         }
+        .plan-part-item b { color: var(--brand-primary); font-size: 0.95rem; }
+        .plan-part-item p { font-size: 0.86rem; color: var(--text-secondary); margin-top: 0.25rem; line-height: 1.5; }
 
-        /* 📱 スマホ・タブレット用（縦並び） */
-        @media (max-width: 1024px) {
-            .lesson-layout-grid {
-                display: flex;
-                flex-direction: column;
-                gap: 1.2rem;
-            }
-            .chat-transcript {
-                max-height: 55vh;
-            }
-            .style-selector-container {
-                grid-template-columns: 1fr;
-            }
+        /* 💻 PC用 2カラムGrid構成 */
+        .lesson-layout-grid {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 1.5rem;
+            align-items: start;
         }
-
-        /* ── 授業（チャット）画面 ── */
-        .progress-strip { display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.8rem; flex-wrap: wrap; gap: 0.5rem; }
-        .progress-strip b { color: var(--accent-cyan); }
-        .chat-transcript { 
-            display: flex; 
-            flex-direction: column; 
-            overflow-y: auto; 
-            padding: 0.5rem;
-            gap: 1rem;
+        .lesson-main-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 1.6rem;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            flex-direction: column;
+            min-height: calc(100vh - 160px);
+            max-height: calc(100vh - 160px);
             min-width: 0;
         }
-        .chat-bubble { 
+        .lesson-sidebar-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 1.4rem;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            flex-direction: column;
+            min-height: calc(100vh - 160px);
+            max-height: calc(100vh - 160px);
+            min-width: 0;
+            position: sticky;
+            top: 1.5rem;
+        }
+        .chat-transcript {
+            flex-grow: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+            padding-right: 0.4rem;
+        }
+
+        .chat-bubble {
             position: relative;
-            padding: 1rem 1.3rem; 
-            border-radius: 18px; 
-            font-size: 1.02rem; 
-            line-height: 1.65; 
-            max-width: 94%; 
+            padding: 0.9rem 1.15rem;
+            border-radius: var(--radius-lg);
+            font-size: 0.96rem;
+            line-height: 1.65;
+            max-width: 90%;
             min-width: 0;
             box-sizing: border-box;
             word-break: break-word;
             overflow-wrap: anywhere;
             white-space: pre-wrap;
-            box-shadow: 0 4px 14px rgba(0,0,0,0.3);
         }
-        .bubble-ai { 
-            background: rgba(18, 22, 34, 0.85); 
-            border-left: 4px solid var(--accent-yellow); 
-            color: #f0f4f8; 
-            align-self: flex-start; 
-            display: flex;
-            flex-direction: column;
+        .bubble-ai {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            border-left: 3px solid var(--brand-primary);
+            color: var(--text-primary);
+            align-self: flex-start;
         }
         .bubble-ai.socratic-bubble {
-            border-left: 4px solid var(--accent-magenta);
-            background: rgba(22, 16, 28, 0.9);
+            border-left: 3px solid var(--subj-japanese);
+            background: var(--subj-japanese-bg);
         }
-        .bubble-content-text {
-            min-width: 0;
-            white-space: pre-wrap;
+        .bubble-user {
+            background: var(--brand-primary);
+            color: #FFFFFF;
+            align-self: flex-end;
         }
-        .bubble-actions {
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-            gap: 0.4rem;
-            margin-top: 0.6rem;
-            padding-top: 0.45rem;
-            border-top: 1px dashed rgba(255, 255, 255, 0.08);
-            opacity: 0.85;
-            transition: opacity 0.2s ease;
-        }
-        .chat-bubble:hover .bubble-actions {
-            opacity: 1;
-        }
-        .bubble-action-btn {
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            color: var(--text-bright-muted);
-            font-size: 0.72rem;
+        .bubble-divider {
+            align-self: center;
+            font-size: 0.76rem;
+            color: var(--brand-primary);
             font-weight: 700;
-            padding: 0.22rem 0.55rem;
-            border-radius: 6px;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.25rem;
-            transition: all 0.15s ease;
-        }
-        .bubble-action-btn:hover {
-            background: rgba(0, 243, 255, 0.1);
-            border-color: var(--accent-cyan);
-            color: var(--accent-cyan);
-        }
-        .bubble-action-btn.regen-btn:hover {
-            background: rgba(255, 245, 0, 0.1);
-            border-color: var(--accent-yellow);
-            color: var(--accent-yellow);
-        }
-        .bubble-action-btn:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-        }
-        .bubble-regenerating-overlay {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.88rem;
-            color: var(--accent-yellow);
-            font-weight: 800;
-            padding: 0.4rem 0;
-            animation: pulse-timer-btn 1.5s infinite alternate;
-        }
-        .bubble-user { 
-            background: rgba(255, 0, 127, 0.15); 
-            border-right: 4px solid var(--accent-magenta); 
-            color: #ffffff; 
-            align-self: flex-end; 
-        }
-        .bubble-divider { 
-            align-self: center; 
-            font-size: 0.8rem; 
-            color: var(--accent-yellow); 
-            font-weight: 800; 
-            margin: 1.2rem 0 0.8rem; 
-            letter-spacing: 0.5px; 
-            background: rgba(255, 245, 0, 0.08);
-            padding: 0.4rem 1rem;
-            border-radius: 20px;
-            border: 1px solid rgba(255, 245, 0, 0.2);
+            margin: 0.8rem 0;
+            background: var(--brand-light);
+            border: 1px solid var(--brand-border);
+            padding: 0.25rem 0.8rem;
+            border-radius: var(--radius-full);
         }
 
-        /* ⚡ 即時アウトプット演習（ドリル）カード：スクロール＆レイアウト最適化 */
+        /* ⚡ 即時アウトプット演習（ドリル）カード */
         .drill-section-box {
-            background: rgba(10, 15, 25, 0.95);
-            border: 1px solid var(--accent-cyan);
-            border-radius: 16px;
-            padding: 1.2rem;
+            background: var(--bg-surface);
+            border: 1px solid var(--brand-border);
+            border-radius: var(--radius-md);
+            padding: 1.15rem;
             margin: 0.8rem 0 0.5rem 0;
-            box-shadow: 0 0 20px rgba(0, 243, 255, 0.15);
-            max-height: 55vh;
+            box-shadow: var(--shadow-sm);
+            max-height: 50vh;
             overflow-y: auto;
             flex-shrink: 0;
             display: flex;
@@ -378,570 +339,370 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 0.8rem;
-            border-bottom: 1px solid rgba(0, 243, 255, 0.2);
-            padding-bottom: 0.5rem;
-            flex-shrink: 0;
+            margin-bottom: 0.6rem;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 0.4rem;
         }
-        .drill-title {
-            font-weight: 900;
-            color: var(--accent-cyan);
-            font-size: 0.98rem;
-        }
-        .drill-content-body {
-            font-size: 0.95rem;
-            line-height: 1.6;
-            margin-bottom: 1rem;
-            white-space: pre-wrap;
-        }
-        .drill-answer-box {
-            background: rgba(0, 0, 0, 0.5);
-            border: 1px dashed rgba(255, 245, 0, 0.4);
-            border-radius: 12px;
-            padding: 1rem;
-            margin-top: 0.8rem;
-            display: none;
-        }
-
-        /* MathJax溢れ防止 */
-        .chat-bubble mjx-container, .drill-section-box mjx-container {
-            max-width: 100% !important;
-            overflow-x: auto !important;
-            overflow-y: hidden !important;
-            vertical-align: middle;
-            padding: 0.2em 0;
-        }
-        .chat-bubble mjx-container[jax="CHTML"][display="true"],
-        .drill-section-box mjx-container[jax="CHTML"][display="true"] {
-            display: block !important;
-            margin: 0.6em 0 !important;
-            background: rgba(0, 0, 0, 0.3);
-            padding: 0.6rem;
-            border-radius: 8px;
-        }
-
-        /* カスタムスクロールバー */
-        .chat-transcript::-webkit-scrollbar,
-        .parts-toc-container::-webkit-scrollbar,
-        .source-text-box::-webkit-scrollbar,
-        .drill-section-box::-webkit-scrollbar {
-            width: 6px;
-        }
-        .chat-transcript::-webkit-scrollbar-track,
-        .parts-toc-container::-webkit-scrollbar-track,
-        .source-text-box::-webkit-scrollbar-track,
-        .drill-section-box::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 3px;
-        }
-        .chat-transcript::-webkit-scrollbar-thumb,
-        .parts-toc-container::-webkit-scrollbar-thumb,
-        .source-text-box::-webkit-scrollbar-thumb,
-        .drill-section-box::-webkit-scrollbar-thumb {
-            background: var(--accent-yellow);
-            border-radius: 3px;
-        }
+        .drill-title { font-weight: 700; color: var(--brand-primary); font-size: 0.95rem; }
+        .drill-content-body { font-size: 0.92rem; line-height: 1.6; margin-bottom: 0.8rem; white-space: pre-wrap; }
+        .drill-answer-box { background: var(--bg-subtle); border: 1px dashed var(--border-color); border-radius: var(--radius-md); padding: 0.9rem; margin-top: 0.6rem; display: none; }
 
         /* ── サイドバー（タブ＆コンテンツ） ── */
         .sidebar-tab-group {
             display: flex;
-            gap: 0.4rem;
-            border-bottom: 1px solid #22222a;
+            gap: 0.3rem;
+            border-bottom: 1px solid var(--border-color);
             padding-bottom: 0.6rem;
-            margin-bottom: 1rem;
+            margin-bottom: 0.85rem;
         }
         .sidebar-tab-btn {
             flex: 1;
             text-align: center;
             white-space: nowrap;
-            background: transparent;
-            border: 1px solid #22222a;
-            color: var(--text-muted);
-            font-size: 0.8rem;
-            font-weight: 800;
-            padding: 0.5rem 0.3rem;
-            border-radius: 8px;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-size: var(--fs-xs);
+            font-weight: 700;
+            padding: 0.4rem 0.3rem;
+            border-radius: var(--radius-sm);
             cursor: pointer;
             transition: all 0.15s ease;
         }
         .sidebar-tab-btn.active {
-            background: rgba(0, 243, 255, 0.12);
-            border-color: var(--accent-cyan);
-            color: var(--accent-cyan);
-            box-shadow: 0 0 10px rgba(0, 243, 255, 0.15);
+            background: var(--brand-light);
+            border-color: var(--brand-border);
+            color: var(--brand-primary);
         }
-        .sidebar-panel {
-            display: none;
-            flex-grow: 1;
-            flex-direction: column;
-            overflow-y: auto;
-            min-height: 0;
-        }
-        .sidebar-panel.active {
-            display: flex;
-        }
+        .sidebar-panel { display: none; flex-grow: 1; flex-direction: column; overflow-y: auto; min-height: 0; }
+        .sidebar-panel.active { display: flex; }
 
-        .parts-toc-container {
-            overflow-y: auto;
-            flex-grow: 1;
-            padding-right: 0.3rem;
-        }
         .toc-item {
-            padding: 0.9rem 1.1rem;
-            border-radius: 14px;
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid #1a2a35;
-            margin-bottom: 0.7rem;
+            padding: 0.8rem 1rem;
+            border-radius: var(--radius-md);
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            margin-bottom: 0.55rem;
             transition: all 0.15s ease;
         }
         .toc-item.current-active {
-            background: rgba(255, 245, 0, 0.08);
-            border-color: var(--accent-yellow);
-            box-shadow: 0 0 14px rgba(255, 245, 0, 0.15);
+            background: var(--brand-light);
+            border-color: var(--brand-primary);
         }
-        .toc-item-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 0.6rem;
-        }
-        .toc-item-title {
-            font-size: 0.88rem;
-            font-weight: 800;
-            color: #ffffff;
-            line-height: 1.45;
-            word-break: break-word;
-            flex-grow: 1;
-        }
-        .toc-item.current-active .toc-item-title {
-            color: var(--accent-yellow);
-        }
-        .toc-status-badge {
-            font-size: 0.72rem;
-            font-weight: 800;
-            padding: 0.2rem 0.55rem;
-            border-radius: 12px;
-            white-space: nowrap;
-            flex-shrink: 0;
-            line-height: 1.2;
-        }
-        .toc-regen-btn {
-            font-size: 0.7rem;
-            font-weight: 800;
-            padding: 0.2rem 0.5rem;
-            border-radius: 10px;
-            white-space: nowrap;
-            flex-shrink: 0;
-            line-height: 1.2;
-            background: transparent;
-            border: 1px solid var(--accent-magenta, #ff007f);
-            color: var(--accent-magenta, #ff007f);
-            cursor: pointer;
-            transition: all 0.15s ease;
-        }
-        .toc-regen-btn:hover { background: rgba(255, 0, 127, 0.12); }
-        .toc-regen-btn:disabled { opacity: 0.5; cursor: default; }
-        .badge-toc-active {
-            color: var(--accent-yellow);
-            border: 1px solid var(--accent-yellow);
-            background: rgba(255, 245, 0, 0.15);
-        }
-        .badge-toc-done {
-            color: var(--text-muted);
-            border: 1px solid #3a3a4a;
-            background: rgba(255, 255, 255, 0.05);
-        }
-        .badge-toc-upcoming {
-            color: #607080;
-            border: 1px dashed #222233;
-        }
-        .toc-item-summary {
-            font-size: 0.78rem;
-            color: var(--text-muted);
-            margin-top: 0.4rem;
-            line-height: 1.45;
-        }
+        .toc-item-title { font-size: 0.86rem; font-weight: 700; color: var(--text-primary); line-height: 1.4; word-break: break-word; flex-grow: 1; }
+        .toc-item.current-active .toc-item-title { color: var(--brand-primary); }
 
         .source-text-box {
-            background: #000;
-            border: 1px solid #1a2a35;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
             padding: 0.9rem;
-            border-radius: 12px;
+            border-radius: var(--radius-md);
             font-size: 0.85rem;
             line-height: 1.6;
-            color: var(--text-bright-muted);
+            color: var(--text-primary);
             overflow-y: auto;
             white-space: pre-wrap;
             word-break: break-word;
             flex-grow: 1;
         }
 
-        .chat-input-wrap { display: flex; flex-direction: column; gap: 0.5rem; border-top: 1px solid #1a2a35; padding-top: 1rem; margin-top: 0.5rem; }
+        .chat-input-wrap { display: flex; flex-direction: column; gap: 0.5rem; border-top: 1px solid var(--border-color); padding-top: 0.85rem; margin-top: 0.5rem; }
         .chat-input-row { display: flex; gap: 0.5rem; }
-        .chat-input { flex-grow: 1; background: #000; border: 1px solid #222; padding: 0.7rem 1rem; color: #fff; border-radius: 10px; }
+        .chat-input {
+            flex-grow: 1; background: var(--bg-surface); border: 1px solid var(--border-color);
+            padding: 0.65rem 0.9rem; color: var(--text-primary); border-radius: var(--radius-md); font-size: var(--fs-sm);
+        }
 
-        /* 🖼️ 図解リクエスト */
-        .diagram-request-btn {
-            background: rgba(255, 245, 0, 0.08);
-            border: 1px solid var(--accent-yellow);
-            color: var(--accent-yellow);
-            box-shadow: none;
-            font-size: 0.85rem;
+        .lesson-memo-item {
+            background: var(--bg-surface); border: 1px solid var(--border-color);
+            border-left: 3px solid var(--brand-primary); border-radius: 0 var(--radius-md) var(--radius-md) 0;
+            padding: 0.65rem 0.85rem; margin-bottom: 0.5rem;
         }
-        .diagram-request-btn:hover { background: rgba(255, 245, 0, 0.16); }
-        .diagram-request-row { display: flex; gap: 0.5rem; margin-top: 0.4rem; }
-        .diagram-request-row.hidden { display: none; }
-        .diagram-request-input {
-            flex-grow: 1; background: #000; border: 1px solid var(--accent-yellow);
-            padding: 0.6rem 0.9rem; color: #fff; border-radius: 10px; font-size: 0.9rem;
+        .memorize-item {
+            background: var(--bg-surface); border: 1px solid var(--border-color);
+            border-left: 3px solid var(--accent-cyan); border-radius: 0 var(--radius-md) var(--radius-md) 0;
+            padding: 0.65rem 0.85rem; margin-bottom: 0.5rem;
         }
-        .ai-diagram-box {
-            margin-top: 0.8rem;
-            background: rgba(0, 0, 0, 0.35);
-            border: 1px solid rgba(255, 245, 0, 0.25);
-            border-radius: 12px;
-            padding: 0.8rem;
-            overflow-x: auto;
-        }
-        .ai-diagram-box svg { max-width: 100%; height: auto; display: block; margin: 0 auto; }
 
-        /* 📝 授業メモ一覧 */
-        .memo-add-row { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.9rem; }
-        .memo-add-textarea {
-            width: 100%; background: #000; border: 1px solid #22222a; color: #fff; padding: 0.7rem 0.8rem;
-            border-radius: 10px; font-size: 0.85rem; font-family: inherit; line-height: 1.6; resize: vertical;
-            min-height: 70px; white-space: pre-wrap;
-        }
-        .memo-add-hint { font-size: 0.68rem; color: var(--text-muted); margin-top: -0.2rem; }
-        .memo-add-submit-row { display: flex; justify-content: flex-end; }
-        .lesson-memo-list { display: flex; flex-direction: column; gap: 0.5rem; }
-        .lesson-memo-item { background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-left: 3px solid var(--accent-yellow); border-radius: 0 10px 10px 0; padding: 0.6rem 0.8rem; }
-        .lesson-memo-item-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; }
-        .lesson-memo-text { font-size: 0.85rem; color: var(--text-bright-muted); line-height: 1.5; flex-grow: 1; white-space: pre-wrap; word-break: break-word; cursor: pointer; }
-        .lesson-memo-meta { font-size: 0.68rem; color: var(--text-muted); margin-top: 0.35rem; }
-        .lesson-memo-actions { display: flex; gap: 0.4rem; flex-shrink: 0; }
-        .lesson-memo-del-btn, .lesson-memo-edit-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.9rem; flex-shrink: 0; line-height: 1; padding: 0.1rem; }
-        .lesson-memo-del-btn:hover { color: var(--accent-magenta); }
-        .lesson-memo-edit-btn:hover { color: var(--accent-cyan); }
-        .lesson-memo-empty { font-size: 0.8rem; color: var(--text-muted); text-align: center; padding: 1.4rem 0; }
-        .lesson-memo-edit-textarea {
-            width: 100%; background: #000; border: 1px solid var(--accent-cyan); color: #fff; padding: 0.6rem 0.8rem;
-            border-radius: 8px; font-size: 0.85rem; font-family: inherit; line-height: 1.6; resize: vertical; min-height: 70px;
-        }
-        .lesson-memo-edit-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.5rem; }
-
-        /* 🧠 暗記事項リスト */
-        .memorize-list { display: flex; flex-direction: column; gap: 0.5rem; }
-        .memorize-item { background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-left: 3px solid var(--accent-cyan); border-radius: 0 10px 10px 0; padding: 0.6rem 0.8rem; }
-        .memorize-item-category { display: inline-block; font-size: 0.68rem; font-weight: 900; color: var(--accent-cyan); background: rgba(0,243,255,0.1); border-radius: 6px; padding: 0.1rem 0.5rem; margin-bottom: 0.35rem; }
-        .memorize-item-content { font-size: 0.85rem; color: var(--text-bright-muted); line-height: 1.55; white-space: pre-wrap; }
-        .memorize-item-note { font-size: 0.72rem; color: var(--text-muted); margin-top: 0.35rem; line-height: 1.5; }
-        .memorize-empty { font-size: 0.8rem; color: var(--text-muted); text-align: center; padding: 1.4rem 0; }
-        .memorize-loading { font-size: 0.8rem; color: var(--accent-cyan); text-align: center; padding: 1.4rem 0; }
-        .memorize-error-retry { display: block; margin: 0.6rem auto 0; }
         .chat-attach-btn {
-            flex-shrink: 0;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 42px;
-            background: #111;
-            border: 1px solid #333;
-            color: var(--accent-cyan);
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 1.1rem;
-            transition: all 0.15s ease;
+            flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 40px;
+            background: var(--bg-subtle); border: 1px solid var(--border-color); color: var(--text-secondary);
+            border-radius: var(--radius-md); cursor: pointer; font-size: 1.1rem; transition: all 0.15s ease;
         }
-        .chat-attach-btn:hover { border-color: var(--accent-cyan); background: rgba(0,243,255,0.08); }
-        .chat-attach-btn.has-images { border-color: var(--accent-yellow); color: var(--accent-yellow); }
+        .chat-attach-btn:hover { border-color: var(--brand-primary); color: var(--brand-primary); }
+        .chat-attach-btn.has-images { border-color: var(--brand-primary); color: var(--brand-primary); background: var(--brand-light); }
         .chat-image-thumb-row { display: flex; gap: 0.4rem; flex-wrap: wrap; }
         .chat-image-thumb-wrap { position: relative; }
-        .chat-image-thumb-wrap img { width: 52px; height: 52px; object-fit: cover; border-radius: 8px; border: 1px solid #22222a; }
+        .chat-image-thumb-wrap img { width: 50px; height: 50px; object-fit: cover; border-radius: var(--radius-sm); border: 1px solid var(--border-color); }
         .chat-image-thumb-remove {
-            position: absolute; top: -6px; right: -6px;
-            width: 18px; height: 18px; border-radius: 50%;
-            background: var(--accent-magenta); color: #fff;
-            border: none; font-size: 0.7rem; font-weight: 900;
+            position: absolute; top: -5px; right: -5px; width: 18px; height: 18px; border-radius: 50%;
+            background: var(--error); color: #fff; border: none; font-size: 0.7rem; font-weight: 800;
             line-height: 18px; text-align: center; cursor: pointer; padding: 0;
         }
-        .bubble-user-images { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.6rem; }
-        .bubble-user-images img { width: 90px; height: 90px; object-fit: cover; border-radius: 10px; border: 1px solid rgba(255,255,255,0.15); cursor: pointer; }
-        .lesson-controls { display: flex; gap: 0.8rem; flex-wrap: wrap; margin-top: 0.8rem; }
-        .completed-banner { text-align: center; padding: 1.5rem; color: var(--accent-yellow); font-weight: 800; }
-
-        /* ── モーダル（設定） ── */
-        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); align-items: center; justify-content: center; z-index: 100000; padding: 1rem; }
-        .modal-content { width: 100%; max-width: 600px; background: rgba(10,10,18,0.97); border: 1px solid var(--accent-cyan); box-shadow: 0 0 30px rgba(0,243,255,0.25); border-radius: 20px; padding: 1.8rem; }
-        .modal-content textarea { width: 100%; min-height: 220px; background: #000; border: 1px solid #22222a; color: #fff; padding: 1rem; border-radius: 12px; font-size: 0.9rem; font-family: inherit; resize: vertical; line-height: 1.6; }
-        .modal-actions { display: flex; justify-content: flex-end; gap: 0.7rem; margin-top: 1rem; }
-        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-    <div class="lesson-container">
-        <!-- GLOBAL CYBER HUD NAV -->
-        <nav class="global-cyber-nav">
-            <div class="nav-brand">//Lolz</div>
-            <div class="nav-links">
-                <a href="index.html" class="nav-btn">🧠 誤答ノート</a>
-                <a href="daily.html" class="nav-btn">🏁 計算スプリント</a>
-                <a href="custom-sprint.html" class="nav-btn">🎯 カスタムスプリント</a>
-                <a href="lesson.html" class="nav-btn">📖 授業・解説</a>
-                <a href="answer-check.html" class="nav-btn">⚡ 答え合わせ</a>
-                <a href="insights.html" class="nav-btn">💡 気づき・質問ログ</a>  
-                <a href="refbook.html" class="nav-btn">📚 参考書問題集</a>
-                <a href="timeline.html" class="nav-btn">🌍 世界史年表</a>
-                <a href="ai-settings.html" class="nav-btn">⚙️ AI設定</a>
-                <a href="tokei/index.html" class="nav-btn global-timer-link">⏱️ 集中タイマー</a>
-                <a href="#" onclick="openTimerPopout(event)" class="nav-btn" title="別ウィンドウでタイマーを開く">🗔 小窓</a>
-                <a href="#" onclick="openLogPopout(event)" class="nav-btn" title="24hログを小窓で開く">📊 24hログ</a>
-                <a href="#" onclick="openGooglePhotosPopout(event)" class="nav-btn" title="Google Photosを小窓で開く">📷 Photos</a>
-            </div>
-        </nav>
-        <script src="global-timer-sync.js"></script>
+    <div class="app-layout">
+        <!-- 🌿 左側共通サイドバー -->
+        <div id="flora-sidebar"></div>
 
-        <header class="lesson-header">
-            <div>
-                <h1>📖 参考書 授業モード</h1>
-                <div style="display: flex; gap: 1rem; align-items: center; margin-top: 0.3rem;">
-                    <a class="back-link" href="lesson.html" style="color: var(--accent-cyan); font-weight: 700;">📚 授業一覧・新しい授業</a>
-                    <span style="color: #334455;">|</span>
-                    <a class="back-link" href="index.html">← ダッシュボードに戻る</a>
-                </div>
-            </div>
-            <button type="button" class="settings-link" id="open-settings-btn">⚙️ 授業の方針を編集</button>
-        </header>
+        <!-- 💻 右側メインコンテンツ -->
+        <main class="app-main">
+            <div class="workspace-content-wrap">
 
-        <div id="login-required-notice" style="display:none; padding: 2rem; text-align:center; color: var(--text-muted);">
-            ログインが必要です。<a href="index.html" style="color: var(--accent-cyan);">ダッシュボードに戻ってログインしてください。</a>
-        </div>
-
-        <!-- ============ 一覧・新規作成 ============ -->
-        <div id="view-list">
-            <div id="continue-card-wrap"></div>
-
-            <div class="squircle-card new-lesson-form">
-                <button type="button" class="new-lesson-toggle" id="new-lesson-toggle">
-                    <span>🆕 新しい授業を始める</span>
-                    <span class="new-lesson-toggle-icon" id="new-lesson-toggle-icon">▾</span>
-                </button>
-
-                <div id="new-lesson-body" class="new-lesson-body hidden">
-                <!-- 🌟 授業スタイル選択スイッチ -->
-                <div>
-                    <label style="font-size:0.82rem; font-weight:800; color:var(--text-muted); display:block; margin-bottom:0.4rem;">
-                        🎓 授業スタイルを選択：
-                    </label>
-                    <div class="style-selector-container">
-                        <button type="button" class="style-card-btn active" id="style-btn-standard">
-                            <div class="style-card-title">📖 標準講義モード</div>
-                            <div class="style-card-desc">参考書に沿って順序立てて解説し、疑問を質問するインプット重視スタイル</div>
-                        </button>
-                        <button type="button" class="style-card-btn socratic-style" id="style-btn-socratic">
-                            <div class="style-card-title" style="color:var(--accent-magenta);">🧠 ソクラテス対話ゼミ</div>
-                            <div class="style-card-desc">多角的アプローチ（別解比較）＋ 罠見破り ＋ 問答式で能動的に鍛える実践スタイル</div>
-                        </button>
+                <!-- ページヘッダー -->
+                <div class="page-header">
+                    <div class="page-title-group">
+                        <h1 class="page-title">📖 参考書 授業モード</h1>
+                        <div style="display: flex; gap: 0.8rem; align-items: center; font-size: var(--fs-xs);">
+                            <a class="back-link" href="lesson.html" style="color: var(--brand-primary); font-weight: 700; text-decoration: none;">📚 授業一覧・新しい授業</a>
+                            <span style="color: var(--border-color);">|</span>
+                            <a class="back-link" href="index.html" style="color: var(--text-secondary); text-decoration: none;">← ダッシュボードに戻る</a>
+                        </div>
+                    </div>
+                    <div class="page-actions">
+                        <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="open-settings-btn">⚙️ 授業方針を編集</button>
                     </div>
                 </div>
 
-                <div style="display:flex; gap:0.5rem; margin: 0.4rem 0 0.8rem 0;">
-                    <button type="button" class="tactile-btn mode-tab-btn active" id="mode-tab-photo" style="flex:1; background: var(--accent-cyan); color:#000; box-shadow: 3px 3px 0px #008b94;">📷 参考書から</button>
-                    <button type="button" class="tactile-btn mode-tab-btn" id="mode-tab-topic" style="flex:1; background:#111; color:var(--text-bright-muted); border:1px solid #333; box-shadow:none;">✏️ 単元名だけで</button>
+                <div id="login-required-notice" style="display:none; padding: 2rem; text-align:center; color: var(--text-secondary);">
+                    ログインが必要です。<a href="index.html" style="color: var(--brand-primary); font-weight: 600;">ダッシュボードに戻ってログインしてください。</a>
                 </div>
 
-                <div style="margin-bottom: 0.6rem;">
-                    <label for="continuation-select" style="font-size:0.85rem; color:var(--text-muted); display:block; margin-bottom:0.3rem;">
-                        🔗 これは以前の授業の続きですか？（同じ参考書の前の講など）
-                    </label>
-                    <select id="continuation-select" style="width:100%; background:#0a0a12; color:#fff; border:1px solid var(--border-color); border-radius:10px; padding:0.6rem; font-size:0.9rem;">
-                        <option value="">続きではない（新規シリーズとして開始）</option>
-                    </select>
-                </div>
+                <!-- ============ 一覧・新規作成 ============ -->
+                <div id="view-list">
+                    <div id="continue-card-wrap"></div>
 
-                <div id="mode-group-photo">
-                    <label class="file-drop-label" id="file-drop-label" for="image-input">
-                        📷 参考書のページ写真をアップロード（複数枚OK）
-                    </label>
-                    <input type="file" id="image-input" accept="image/*" multiple style="display:none;">
-                    <div class="thumb-row" id="thumb-row"></div>
-                    <textarea class="note-textarea" id="note-input" placeholder="（任意）特にここが分からない、というメモがあれば入力してください"></textarea>
-                </div>
-
-                <div id="mode-group-topic" style="display:none;">
-                    <label style="font-size:0.85rem; color:var(--text-muted); display:block; margin-bottom:0.3rem;">
-                        📝 学びたい単元名
-                    </label>
-                    <input type="text" id="topic-input" placeholder="例：数学III 微分方程式／物理 コンデンサー回路 など"
-                        style="width:100%; background:#000; border:1px solid #22222a; color:#fff; padding:0.9rem; border-radius:12px; font-size:1rem; margin-bottom:0.8rem;">
-                    <label style="font-size:0.85rem; color:var(--text-muted); display:block; margin-bottom:0.3rem;">
-                        🎚️ レベル感
-                    </label>
-                    <select id="topic-level-select" style="width:100%; background:#0a0a12; color:#fff; border:1px solid var(--border-color); border-radius:10px; padding:0.6rem; font-size:0.9rem; margin-bottom:0.8rem;">
-                        <option value="教科書レベル（基礎の基礎から）">教科書レベル（基礎の基礎から）</option>
-                        <option value="定期テストレベル">定期テストレベル</option>
-                        <option value="入試基礎レベル" selected>入試基礎レベル</option>
-                        <option value="入試標準〜応用レベル">入試標準〜応用レベル</option>
-                    </select>
-                    <textarea class="note-textarea" id="topic-note-input" placeholder="（任意）特に重点を置いてほしい内容、すでに知っている前提などがあれば入力してください"></textarea>
-                    <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.4rem;">※参考書がないため、AIが自身の知識だけでカリキュラムと解説を作成します。まれに細部が不正確な場合があるので、重要な公式・定義は自分でも確認してください。</div>
-                </div>
-
-                <button type="button" class="tactile-btn" id="generate-plan-btn" style="background: var(--accent-yellow); color:#000; box-shadow: 3px 3px 0px #a89f00; margin-top: 0.8rem;">
-                    🧑‍🏫 授業プランを作ってもらう
-                </button>
-                </div>
-            </div>
-
-            <div id="roadmap-wrap" style="display:none; margin-bottom: 1.2rem;">
-                <div style="font-weight:900; font-size:1rem; margin: 0.5rem 0;">🗺️ 単元別 レベルアップ・ロードマップ</div>
-                <div id="roadmap-list"></div>
-            </div>
-
-            <div id="lesson-list-wrap">
-                <div style="font-weight:900; font-size:1rem; margin: 0.5rem 0;">📚 その他の授業</div>
-                <div class="lesson-list-toolbar">
-                    <input type="text" class="lesson-search-input" id="lesson-search-input" placeholder="🔍 授業名で検索...">
-                    <div class="lesson-subject-chips" id="lesson-subject-chips"></div>
-                </div>
-                <div id="lesson-list"></div>
-                <div id="lesson-list-empty" style="color: var(--text-muted); font-size:0.85rem; display:none;">まだ授業履歴はありません。</div>
-            </div>
-        </div>
-
-        <!-- ============ プランプレビュー（未保存） ============ -->
-        <div id="view-plan-preview" class="squircle-card hidden">
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.3rem;">
-                <div style="font-weight:900; font-size:1.1rem; color: var(--accent-yellow);" id="plan-preview-title">授業プラン</div>
-                <span id="plan-preview-style-badge" class="lesson-style-badge"></span>
-            </div>
-            <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:1rem;">この内容で進めてよければ「授業を始める」を押してください。分割が気に入らなければ作り直せます。</div>
-            <div id="plan-preview-parts"></div>
-            <div class="lesson-controls">
-                <button type="button" class="tactile-btn" id="confirm-plan-btn" style="background: var(--accent-cyan); box-shadow: 3px 3px 0px #008b94;">✅ この内容で授業を始める</button>
-                <button type="button" class="tactile-btn" id="regenerate-plan-btn" style="background:#111; color: var(--accent-yellow); border:1px solid var(--accent-yellow);">🔄 作り直す</button>
-                <button type="button" class="tactile-btn" id="cancel-plan-btn" style="background:#111; color:#fff; border:1px solid #333;">キャンセル</button>
-            </div>
-        </div>
-
-        <!-- ============ 授業（チャット）画面 ============ -->
-        <div id="view-lesson" class="hidden">
-            <div class="lesson-layout-grid">
-                <!-- 左メイン：授業チャット -->
-                <div class="squircle-card lesson-main-card">
-                    <div class="progress-strip">
-                        <span id="lesson-title-display" style="font-weight: 800; color: var(--accent-yellow); font-size: 1.05rem;">---</span>
-                        <span id="lesson-style-display-badge" class="lesson-style-badge"></span>
-                        <span id="continuation-source-badge" style="display:none; font-size: 0.78rem; color: var(--accent-cyan); font-weight:700;"></span>
-                        <span style="font-size: 0.85rem; color: var(--text-muted);">パート <b id="part-progress-display" style="color: var(--accent-cyan); font-weight: 900;">-/-</b></span>
-                        <button type="button" class="tactile-btn" id="solve-related-problem-btn" style="background: var(--accent-magenta); box-shadow: 3px 3px 0px #8a004f; font-size: 0.8rem; padding: 0.5rem 0.9rem; margin-left: auto;">
-                            🎯 誤答ノートに連携
+                    <div class="new-lesson-form">
+                        <button type="button" class="new-lesson-toggle" id="new-lesson-toggle">
+                            <span>🆕 新しい授業を始める</span>
+                            <span class="new-lesson-toggle-icon" id="new-lesson-toggle-icon">▾</span>
                         </button>
-                    </div>
 
-                    <div class="chat-transcript" id="chat-transcript"></div>
+                        <div id="new-lesson-body" class="new-lesson-body hidden">
+                            <!-- 🌟 授業スタイル選択スイッチ -->
+                            <div>
+                                <label style="font-size:0.8rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:0.4rem;">
+                                    🎓 授業スタイルを選択：
+                                </label>
+                                <div class="style-selector-container">
+                                    <button type="button" class="style-card-btn active" id="style-btn-standard">
+                                        <div class="style-card-title">📖 標準講義モード</div>
+                                        <div class="style-card-desc">参考書に沿って順序立てて解説し、疑問を質問するインプット重視スタイル</div>
+                                    </button>
+                                    <button type="button" class="style-card-btn socratic-style" id="style-btn-socratic">
+                                        <div class="style-card-title" style="color:var(--subj-japanese);">🧠 ソクラテス対話ゼミ</div>
+                                        <div class="style-card-desc">多角的アプローチ（別解比較）＋ 罠見破り ＋ 問答式で能動的に鍛える実践スタイル</div>
+                                    </button>
+                                </div>
+                            </div>
 
-                    <!-- ⚡ 即時アウトプット演習エリア -->
-                    <div id="drill-container-area"></div>
+                            <div style="display:flex; gap:0.5rem; margin: 0.4rem 0 0.8rem 0;">
+                                <button type="button" class="flora-btn flora-btn-primary mode-tab-btn active" id="mode-tab-photo" style="flex:1;">📷 参考書から</button>
+                                <button type="button" class="flora-btn flora-btn-secondary mode-tab-btn" id="mode-tab-topic" style="flex:1;">✏️ 単元名だけで</button>
+                            </div>
 
-                    <div id="completed-banner" class="completed-banner hidden">
-                        🎉 この授業はすべてのパートが終了しました！お疲れさまでした。
-                        <div id="level-up-cta-wrap" style="margin-top:1rem; display:none;">
-                            <button type="button" class="tactile-btn" id="level-up-cta-btn" style="background: var(--accent-magenta); box-shadow: 3px 3px 0px #8a004f; font-size:0.95rem;"></button>
+                            <div style="margin-bottom: 0.6rem;">
+                                <label for="continuation-select" style="font-size:0.8rem; color:var(--text-secondary); display:block; margin-bottom:0.3rem; font-weight:600;">
+                                    🔗 これは以前の授業の続きですか？（同じ参考書の前の講など）
+                                </label>
+                                <select id="continuation-select" class="flora-select">
+                                    <option value="">続きではない（新規シリーズとして開始）</option>
+                                </select>
+                            </div>
+
+                            <div id="mode-group-photo">
+                                <label class="file-drop-label" id="file-drop-label" for="image-input">
+                                    📷 参考書のページ写真をアップロード（複数枚OK）
+                                </label>
+                                <input type="file" id="image-input" accept="image/*" multiple style="display:none;">
+                                <div class="thumb-row" id="thumb-row"></div>
+                                <textarea class="note-textarea" id="note-input" placeholder="（任意）特にここが分からない、というメモがあれば入力してください"></textarea>
+                            </div>
+
+                            <div id="mode-group-topic" style="display:none;">
+                                <label style="font-size:0.8rem; color:var(--text-secondary); display:block; margin-bottom:0.3rem; font-weight:600;">
+                                    📝 学びたい単元名
+                                </label>
+                                <input type="text" id="topic-input" class="flora-input" placeholder="例：数学III 微分方程式／物理 コンデンサー回路 など" style="margin-bottom:0.6rem;">
+                                <label style="font-size:0.8rem; color:var(--text-secondary); display:block; margin-bottom:0.3rem; font-weight:600;">
+                                    🎚️ レベル感
+                                </label>
+                                <select id="topic-level-select" class="flora-select" style="margin-bottom:0.6rem;">
+                                    <option value="教科書レベル（基礎の基礎から）">教科書レベル（基礎の基礎から）</option>
+                                    <option value="定期テストレベル">定期テストレベル</option>
+                                    <option value="入試基礎レベル" selected>入試基礎レベル</option>
+                                    <option value="入試標準〜応用レベル">入試標準〜応用レベル</option>
+                                </select>
+                                <textarea class="note-textarea" id="topic-note-input" placeholder="（任意）特に重点を置いてほしい内容、すでに知っている前提などがあれば入力してください"></textarea>
+                                <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.4rem;">※参考書がないため、AIが自身の知識だけでカリキュラムと解説を作成します。</div>
+                            </div>
+
+                            <button type="button" class="flora-btn flora-btn-primary btn-lg" id="generate-plan-btn" style="margin-top: 0.8rem;">
+                                🧑‍🏫 授業プランを作ってもらう
+                            </button>
                         </div>
                     </div>
 
-                    <div class="chat-input-wrap" id="chat-input-wrap">
-                        <div class="chat-image-thumb-row" id="chat-image-thumb-row"></div>
-                        <div class="chat-input-row">
-                            <button type="button" class="chat-attach-btn" id="chat-attach-btn" title="参考書のページ写真を添付して質問する">📷</button>
-                            <input type="file" id="chat-image-input" accept="image/*" multiple style="display:none;">
-                            <input type="text" class="chat-input" id="chat-input" placeholder="このパートについて質問する...（📷で該当ページの写真を添付できます）">
-                            <button type="button" class="tactile-btn" id="send-chat-btn">送信</button>
-                        </div>
-                        <div class="diagram-request-row hidden" id="diagram-request-row">
-                            <input type="text" class="diagram-request-input" id="diagram-request-input" placeholder="例: 円と接線の位置関係を図にして">
-                            <button type="button" class="tactile-btn diagram-request-btn" id="diagram-request-send-btn">送信</button>
-                        </div>
+                    <div id="roadmap-wrap" style="display:none; margin-top: 1.5rem;">
+                        <div style="font-family: var(--font-heading); font-weight:700; font-size:1.05rem; margin-bottom: 0.6rem;">🗺️ 単元別 レベルアップ・ロードマップ</div>
+                        <div id="roadmap-list"></div>
                     </div>
 
-                    <div class="lesson-controls">
-                        <button type="button" class="tactile-btn diagram-request-btn" id="request-diagram-btn">
-                            🖼️ 図で説明してほしい
-                        </button>
-                        <button type="button" class="tactile-btn" id="trigger-drill-btn" style="background: rgba(0, 243, 255, 0.12); border: 1px solid var(--accent-cyan); color: var(--accent-cyan); box-shadow: none;">
-                            ⚡ 類題で即時アウトプット
-                        </button>
-                        <button type="button" class="tactile-btn" id="next-part-btn" style="background: var(--accent-yellow); color:#000; box-shadow: 3px 3px 0px #a89f00;">▶ 次のパートへ進む</button>
+                    <div id="lesson-list-wrap" style="margin-top: 1.5rem;">
+                        <div style="font-family: var(--font-heading); font-weight:700; font-size:1.05rem; margin-bottom: 0.8rem;">📚 過去の授業一覧</div>
+                        <div class="lesson-list-toolbar">
+                            <input type="text" class="lesson-search-input" id="lesson-search-input" placeholder="🔍 授業名で検索...">
+                            <div class="lesson-subject-chips" id="lesson-subject-chips"></div>
+                        </div>
+                        <div id="lesson-list"></div>
+                        <div id="lesson-list-empty" style="color: var(--text-muted); font-size:0.85rem; display:none; text-align:center; padding: 2rem 0;">まだ授業履歴はありません。</div>
                     </div>
                 </div>
 
-                <!-- 右サイドバー：目次・ノート・原本参照 -->
-                <div class="squircle-card lesson-sidebar-card">
-                    <div class="sidebar-tab-group">
-                        <button type="button" class="sidebar-tab-btn active" data-tab="tab-parts">📚 パート目次</button>
-                        <button type="button" class="sidebar-tab-btn" data-tab="tab-notes">📝 授業ノート</button>
-                        <button type="button" class="sidebar-tab-btn" data-tab="tab-memorize">🧠 暗記事項</button>
-                        <button type="button" class="sidebar-tab-btn" data-tab="tab-source">📖 原本テキスト</button>
+                <!-- ============ プランプレビュー（未保存） ============ -->
+                <div id="view-plan-preview" class="new-lesson-form hidden">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.3rem;">
+                        <div style="font-family: var(--font-heading); font-weight:700; font-size:1.15rem; color: var(--brand-primary);" id="plan-preview-title">授業プラン</div>
+                        <span id="plan-preview-style-badge" class="lesson-style-badge"></span>
                     </div>
-
-                    <!-- パネル1: パート目次 -->
-                    <div class="sidebar-panel active" id="tab-parts">
-                        <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.8rem; font-weight: 700;">
-                            💡 全パートの構成一覧です。
-                        </div>
-                        <div id="lesson-parts-toc-list" class="parts-toc-container"></div>
+                    <div style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:1rem;">この内容で進めてよければ「授業を始める」を押してください。</div>
+                    <div id="plan-preview-parts"></div>
+                    <div style="display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 1rem;">
+                        <button type="button" class="flora-btn flora-btn-primary btn-lg" id="confirm-plan-btn">✅ この内容で授業を始める</button>
+                        <button type="button" class="flora-btn flora-btn-secondary" id="regenerate-plan-btn">🔄 作り直す</button>
+                        <button type="button" class="flora-btn flora-btn-ghost" id="cancel-plan-btn">キャンセル</button>
                     </div>
+                </div>
 
-                    <!-- パネル2: 授業メモ一覧 -->
-                    <div class="sidebar-panel" id="tab-notes">
-                        <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.6rem; font-weight: 700;">
-                            ✏️ 授業で気づいたことをその場でメモ（一覧で残ります）
-                        </div>
-                        <div class="memo-add-row">
-                            <textarea class="memo-add-textarea" id="memo-add-input" rows="3" placeholder="気づいたことを入力（複数行OK）"></textarea>
-                            <div class="memo-add-hint">Ctrl+Enter（Macは⌘+Enter）で追加 / Enterで改行</div>
-                            <div class="memo-add-submit-row">
-                                <button type="button" class="tactile-btn" id="memo-add-btn" style="font-size: 0.75rem; padding: 0.5rem 0.9rem; background: var(--accent-cyan); color:#000; box-shadow: 2px 2px 0px #008b94;">＋追加</button>
+                <!-- ============ 授業（チャット）画面 ============ -->
+                <div id="view-lesson" class="hidden">
+                    <div class="lesson-layout-grid">
+                        <!-- 左メイン：授業チャット -->
+                        <div class="lesson-main-card">
+                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.6rem; margin-bottom: 0.8rem; flex-wrap: wrap; gap: 0.5rem;">
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <span id="lesson-title-display" style="font-weight: 700; color: var(--text-primary); font-size: 1.05rem;">---</span>
+                                    <span id="lesson-style-display-badge" class="lesson-style-badge"></span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 0.6rem; margin-left: auto;">
+                                    <span id="continuation-source-badge" style="display:none; font-size: 0.76rem; color: var(--brand-primary); font-weight:600;"></span>
+                                    <span style="font-size: 0.82rem; color: var(--text-secondary);">パート <b id="part-progress-display" style="color: var(--brand-primary); font-weight: 700;">-/-</b></span>
+                                    <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="solve-related-problem-btn">
+                                        🎯 誤答ノート連携
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="chat-transcript" id="chat-transcript"></div>
+
+                            <!-- ⚡ 即時アウトプット演習エリア -->
+                            <div id="drill-container-area"></div>
+
+                            <div id="completed-banner" class="completed-banner hidden" style="text-align: center; padding: 1.5rem; background: var(--brand-light); border-radius: var(--radius-md); border: 1px solid var(--brand-border); margin: 0.8rem 0;">
+                                <div style="font-size: 1.1rem; font-weight: 700; color: var(--brand-primary);">🎉 この授業の全パートが修了しました！お疲れさまでした。</div>
+                                <div id="level-up-cta-wrap" style="margin-top:0.8rem; display:none;">
+                                    <button type="button" class="flora-btn flora-btn-primary" id="level-up-cta-btn"></button>
+                                </div>
+                            </div>
+
+                            <div class="chat-input-wrap" id="chat-input-wrap">
+                                <div class="chat-image-thumb-row" id="chat-image-thumb-row"></div>
+                                <div class="chat-input-row">
+                                    <button type="button" class="chat-attach-btn" id="chat-attach-btn" title="参考書のページ写真を添付して質問する">📷</button>
+                                    <input type="file" id="chat-image-input" accept="image/*" multiple style="display:none;">
+                                    <input type="text" class="chat-input" id="chat-input" placeholder="このパートについて質問する...（📷で写真を添付可）">
+                                    <button type="button" class="flora-btn flora-btn-primary btn-sm" id="send-chat-btn">送信</button>
+                                </div>
+                                <div class="diagram-request-row hidden" id="diagram-request-row" style="display: flex; gap: 0.4rem; margin-top: 0.4rem;">
+                                    <input type="text" class="flora-input" id="diagram-request-input" placeholder="例: 円と接線の位置関係を図にして" style="font-size: var(--fs-xs);">
+                                    <button type="button" class="flora-btn flora-btn-primary btn-sm" id="diagram-request-send-btn">送信</button>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.8rem; justify-content: space-between;">
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="request-diagram-btn">🖼️ 図で説明してほしい</button>
+                                    <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="trigger-drill-btn" style="color: var(--brand-primary);">⚡ 類題で即時アウトプット</button>
+                                </div>
+                                <button type="button" class="flora-btn flora-btn-primary btn-sm" id="next-part-btn">▶ 次のパートへ進む</button>
                             </div>
                         </div>
-                        <div id="lesson-memo-list" class="lesson-memo-list"></div>
-                    </div>
 
-                    <!-- パネル3: 暗記事項リスト（授業プランとは別のAIリクエストで自動生成） -->
-                    <div class="sidebar-panel" id="tab-memorize">
-                        <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.6rem; font-weight: 700;">
-                            🧠 この単元で暗記すべき公式・反応式・用語・数値などの一覧です（授業と別リクエストでAIが自動生成）。
-                        </div>
-                        <div id="lesson-memorization-list" class="memorize-list tex2jax_process"></div>
-                    </div>
+                        <!-- 右サイドバー：目次・ノート・原本参照 -->
+                        <aside class="lesson-sidebar-card">
+                            <div class="sidebar-tab-group">
+                                <button type="button" class="sidebar-tab-btn active" data-tab="tab-parts">📚 パート目次</button>
+                                <button type="button" class="sidebar-tab-btn" data-tab="tab-notes">📝 授業ノート</button>
+                                <button type="button" class="sidebar-tab-btn" data-tab="tab-memorize">🧠 暗記事項</button>
+                                <button type="button" class="sidebar-tab-btn" data-tab="tab-source">📖 原本テキスト</button>
+                            </div>
 
-                    <!-- パネル4: 原本テキスト -->
-                    <div class="sidebar-panel" id="tab-source">
-                        <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.6rem; font-weight: 700;" id="source-panel-label">
-                            🔍 参考書の文字起こし全文
-                        </div>
-                        <div id="lesson-extracted-source-text" class="source-text-box tex2jax_process"></div>
+                            <!-- パネル1: パート目次 -->
+                            <div class="sidebar-panel active" id="tab-parts">
+                                <div style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 0.6rem; font-weight: 600;">
+                                    💡 全パートの構成一覧
+                                </div>
+                                <div id="lesson-parts-toc-list" class="parts-toc-container"></div>
+                            </div>
+
+                            <!-- パネル2: 授業メモ一覧 -->
+                            <div class="sidebar-panel" id="tab-notes">
+                                <div style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 0.6rem; font-weight: 600;">
+                                    ✏️ 授業で気づいたことをその場でメモ
+                                </div>
+                                <div class="memo-add-row" style="margin-bottom: 0.8rem;">
+                                    <textarea class="flora-textarea" id="memo-add-input" rows="3" placeholder="気づいたことを入力（Ctrl+Enterで追加）" style="font-size: var(--fs-xs);"></textarea>
+                                    <div style="display: flex; justify-content: flex-end; margin-top: 0.4rem;">
+                                        <button type="button" class="flora-btn flora-btn-primary btn-sm" id="memo-add-btn">＋追加</button>
+                                    </div>
+                                </div>
+                                <div id="lesson-memo-list" class="lesson-memo-list"></div>
+                            </div>
+
+                            <!-- パネル3: 暗記事項リスト -->
+                            <div class="sidebar-panel" id="tab-memorize">
+                                <div style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 0.6rem; font-weight: 600;">
+                                    🧠 この単元で暗記すべき公式・反応式・用語一覧
+                                </div>
+                                <div id="lesson-memorization-list" class="memorize-list tex2jax_process"></div>
+                            </div>
+
+                            <!-- パネル4: 原本テキスト -->
+                            <div class="sidebar-panel" id="tab-source">
+                                <div style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 0.6rem; font-weight: 600;" id="source-panel-label">
+                                    🔍 参考書の文字起こし全文
+                                </div>
+                                <div id="lesson-extracted-source-text" class="source-text-box tex2jax_process"></div>
+                            </div>
+                        </aside>
                     </div>
                 </div>
+
             </div>
-        </div>
+        </main>
     </div>
 
     <!-- 設定モーダル -->
     <div class="modal-overlay" id="settings-modal">
         <div class="modal-content">
-            <div style="font-weight:900; font-size:1.1rem; margin-bottom:0.3rem;">⚙️ 授業の方針（システムプロンプト）</div>
-            <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.8rem;">AIが授業をする際の基本方針です。自由に編集できます。アカウントに保存されるので、どの端末からでも同じ方針が使われます。</div>
-            <textarea id="settings-textarea"></textarea>
-            <div class="modal-actions">
-                <button type="button" class="tactile-btn" id="reset-settings-btn" style="background:#111; color:#fff; border:1px solid #333;">デフォルトに戻す</button>
-                <button type="button" class="tactile-btn" id="close-settings-btn" style="background:#111; color:#fff; border:1px solid #333;">キャンセル</button>
-                <button type="button" class="tactile-btn" id="save-settings-btn" style="background: var(--accent-cyan); box-shadow: 3px 3px 0px #008b94;">💾 保存</button>
+            <div class="modal-header">
+                <h3 class="modal-title">⚙️ 授業の方針（システムプロンプト）</h3>
+                <button type="button" class="modal-close-btn" onclick="document.getElementById('close-settings-btn').click();">✕</button>
+            </div>
+            <p style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:0.8rem;">AIが授業をする際の基本方針です。アカウントに保存され同期されます。</p>
+            <textarea id="settings-textarea" class="flora-textarea" style="min-height: 200px; font-size: var(--fs-xs);"></textarea>
+            <div style="display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 1rem;">
+                <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="reset-settings-btn">デフォルトに戻す</button>
+                <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="close-settings-btn">キャンセル</button>
+                <button type="button" class="flora-btn flora-btn-primary btn-sm" id="save-settings-btn">💾 保存</button>
             </div>
         </div>
     </div>
+
+    <script src="global-timer-sync.js"></script>
+    <script src="sidebar.js"></script>
 
    <script type="module">
         import {

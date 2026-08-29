@@ -3,26 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#050508">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="LOLZ">
-    <meta name="format-detection" content="telephone=no">
+    <meta name="theme-color" content="#059669">
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="icons/icon.png">
     <link rel="apple-touch-icon" href="icons/icon.png">
-    <title>LOLZ // カスタムスプリント</title>
+    <title>Flora | カスタムスプリント</title>
     <link rel="stylesheet" href="style.css">
 
- <script>
+    <script>
         window.MathJax = {
             tex: {
                 inlineMath: [['$', '$'], ['\\(', '\\)']],
                 displayMath: [['$$', '$$'], ['\\[', '\\]']],
                 processEscapes: true,
-                // 🩹【修正】\fbox{...} は数式モードの標準TeXマクロではなく未定義コマンドとして
-                // そのまま表示されてしまうため、ams標準の \boxed{...} の別名として登録する
                 macros: { fbox: ["\\bbox[2px,border:1px solid]{#1}", 1] }
             },
             options: {
@@ -37,330 +30,320 @@
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" async></script>
 
     <style>
-        .sprint-container { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem; min-height: calc(100vh - 3rem); }
-        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1a2a35; padding-bottom: 1rem; flex-wrap: wrap; gap: 0.8rem; }
-        .timer-display { font-size: 2rem; font-weight: 900; color: var(--accent-magenta); font-family: monospace; letter-spacing: 1px; text-shadow: 0 0 10px rgba(255, 0, 127, 0.3); }
-        .progress-badge { background: transparent; color: var(--accent-cyan); border: 1px solid var(--accent-cyan); }
+        .timer-display {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--brand-primary);
+            font-family: var(--font-mono);
+            letter-spacing: -0.5px;
+        }
 
         .problem-card {
             display: flex;
             flex-direction: column;
             gap: 1.5rem;
-            padding: 2rem;
-            background: var(--card-bg-glass);
-            border: 1px solid rgba(0, 243, 255, 0.2);
-            box-shadow: 4px 4px 0px rgba(0, 243, 255, 0.05);
-            height: auto !important;
-            position: relative;
+            padding: 2.4rem;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-sm);
+            max-width: 900px;
+            margin: 0 auto;
+            width: 100%;
         }
 
-        .sprint-title { font-size: 1.25rem; font-weight: 800; line-height: 1.9; color: var(--text-main); min-height: auto; margin-bottom: 1rem; word-break: break-word; }
-        .sprint-title br + br { display: block; content: ''; margin-top: 0.6em; }
-
-        .control-panel { display: flex; gap: 1rem; width: 100%; margin-top: 1rem; position: relative; z-index: 10; }
-        .btn-action { flex: 1; height: 54px; font-size: 1.1rem; font-weight: 800; cursor: pointer; }
-        .btn-wrong { background: var(--accent-magenta) !important; color: #000 !important; box-shadow: 4px 4px 0px #9e004f !important; }
-        .btn-correct { background: var(--accent-cyan) !important; color: #000 !important; box-shadow: 4px 4px 0px #008b94 !important; }
-
-        .reveal-zone { display: none; flex-direction: column; gap: 1.2rem; background: rgba(255,255,255,0.02); padding: 1.5rem; border-radius: 16px; border: 1px dashed #3a3a4a; margin-top: 1.5rem; width: 100%; }
-        .result-screen { display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 4rem 2rem; border: 1px solid var(--accent-cyan); background: var(--card-bg-glass); }
-
-        .mjx-chtml { margin: 0.5rem 0 !important; padding-left: 2px; }
-
-        /* 🖼️ 図・写真ビューア */
-        .mini-badge-figure {
-            background: rgba(255, 245, 0, 0.14); color: var(--accent-yellow); border: 1px solid rgba(255, 245, 0, 0.35);
-            font-size: 0.72rem; font-weight: 800; padding: 0.25rem 0.6rem; border-radius: 8px;
+        .sprint-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            line-height: 1.85;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            word-break: break-word;
         }
-        .figure-toggle-btn {
-            font-size: 0.85rem; padding: 0.55rem 1rem; border: 1px solid rgba(255, 245, 0, 0.4);
-            color: var(--accent-yellow); background: rgba(255, 245, 0, 0.05); border-radius: 10px;
-            cursor: pointer; transition: all 150ms ease; display: inline-flex; align-items: center; gap: 0.4rem;
-            font-weight: 800; font-family: inherit; width: fit-content; margin-bottom: 0.8rem;
+
+        .control-panel { display: flex; gap: 1rem; width: 100%; margin-top: 1rem; }
+        .btn-wrong { background: var(--error) !important; color: #fff !important; flex: 1; }
+        .btn-correct { background: var(--brand-primary) !important; color: #fff !important; flex: 1; }
+
+        .reveal-zone {
+            display: none;
+            flex-direction: column;
+            gap: 1.2rem;
+            background: var(--bg-subtle);
+            padding: 1.5rem;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            margin-top: 1rem;
+            width: 100%;
         }
-        .figure-toggle-btn:hover { background: rgba(255, 245, 0, 0.15); border-color: var(--accent-yellow); color: #fff; }
+
+        .result-screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 4rem 2rem;
+            border: 1px solid var(--border-color);
+            background: var(--bg-surface);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-sm);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
         .figure-gallery {
             display: none; gap: 0.8rem; flex-wrap: wrap; margin-bottom: 1rem;
-            padding: 0.9rem; border: 1px dashed rgba(255, 245, 0, 0.35); border-radius: 14px; background: rgba(0,0,0,0.3);
+            padding: 0.9rem; border: 1px dashed var(--brand-border); border-radius: var(--radius-md); background: var(--bg-subtle);
         }
         .figure-gallery.open { display: flex; }
         .figure-gallery img {
-            height: 160px; max-width: 100%; border-radius: 8px; border: 1px solid #22222a; cursor: zoom-in;
-            transition: transform 150ms ease; object-fit: contain; background: #000;
+            height: 160px; max-width: 100%; border-radius: var(--radius-sm); border: 1px solid var(--border-color); cursor: zoom-in;
+            transition: transform 150ms ease; object-fit: contain; background: #fff;
         }
         .figure-gallery img:hover { transform: scale(1.02); }
 
         .lightbox-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.88); z-index: 20000;
+            position: fixed; inset: 0; background: rgba(15, 23, 42, 0.75); z-index: 20000;
             display: none; align-items: center; justify-content: center; padding: 2rem; cursor: zoom-out;
         }
         .lightbox-overlay.open { display: flex; }
-        .lightbox-overlay img { max-width: 100%; max-height: 100%; border-radius: 6px; box-shadow: 0 0 30px rgba(0,0,0,0.8); }
+        .lightbox-overlay img { max-width: 100%; max-height: 100%; border-radius: var(--radius-md); }
 
         /* ===== セットアップフォーム ===== */
-        .setup-card { padding: 2rem; display: flex; flex-direction: column; gap: 1.2rem; }
-        .setup-label { font-size: 0.85rem; color: var(--text-muted); font-weight: 800; display: flex; align-items: center; gap: 0.4rem; }
-        .setup-input, .setup-select {
-            width: 100%; background: #0a0a12; color: #fff; border: 1px solid var(--border-color);
-            border-radius: 10px; padding: 0.8rem; font-size: 1rem;
+        .setup-card {
+            padding: 2.2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.4rem;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-sm);
+            max-width: 800px;
+            margin: 0 auto;
+            width: 100%;
         }
-        .setup-input::placeholder { color: #4a5560; }
+        .setup-label { font-size: 0.82rem; color: var(--text-secondary); font-weight: 700; display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.4rem; }
+        
         .count-btn-group { display: flex; gap: 0.6rem; flex-wrap: wrap; }
         .count-btn {
-            flex: 1; min-width: 64px; text-align: center; padding: 0.7rem 0.5rem; border-radius: 10px;
-            border: 1px solid var(--border-color); background: #0a0a12; color: var(--text-bright-muted);
-            font-weight: 800; cursor: pointer; transition: all 150ms ease;
+            flex: 1; min-width: 64px; text-align: center; padding: 0.6rem 0.5rem; border-radius: var(--radius-md);
+            border: 1px solid var(--border-color); background: var(--bg-subtle); color: var(--text-secondary);
+            font-weight: 700; font-size: var(--fs-sm); cursor: pointer; transition: all 150ms ease;
         }
-        .count-btn.active { background: var(--accent-cyan); color: #000; border-color: var(--accent-cyan); box-shadow: 0 0 10px rgba(0,243,255,0.3); }
-        .setup-hint { font-size: 0.75rem; color: var(--text-muted); }
+        .count-btn:hover { border-color: #94A3B8; color: var(--text-primary); }
+        .count-btn.active { background: var(--brand-primary); color: #fff; border-color: var(--brand-primary); }
 
         /* ===== モード切り替えトグル ===== */
         .mode-toggle-group {
             display: flex;
-            gap: 0;
-            border-radius: 12px;
+            border-radius: var(--radius-md);
             overflow: hidden;
             border: 1px solid var(--border-color);
+            background: var(--bg-subtle);
+            padding: 3px;
+            gap: 3px;
         }
         .mode-toggle-btn {
             flex: 1;
-            padding: 0.8rem 1rem;
-            background: #0a0a12;
-            color: var(--text-bright-muted);
+            padding: 0.65rem 1rem;
+            background: transparent;
+            color: var(--text-secondary);
             border: none;
-            font-size: 0.9rem;
-            font-weight: 800;
+            border-radius: var(--radius-sm);
+            font-size: var(--fs-sm);
+            font-weight: 700;
             cursor: pointer;
-            transition: all 200ms ease;
+            transition: all 150ms ease;
             text-align: center;
-            letter-spacing: 0.3px;
         }
-        .mode-toggle-btn:first-child { border-right: 1px solid var(--border-color); }
         .mode-toggle-btn.active {
-            background: rgba(0, 243, 255, 0.12);
-            color: var(--accent-cyan);
-            box-shadow: inset 0 0 16px rgba(0,243,255,0.08);
-        }
-        .mode-toggle-btn[data-mode="registered"].active {
-            background: rgba(255, 245, 0, 0.1);
-            color: var(--accent-yellow);
-            box-shadow: inset 0 0 16px rgba(255,245,0,0.08);
+            background: var(--bg-surface);
+            color: var(--brand-primary);
+            box-shadow: var(--shadow-xs);
         }
 
         /* ===== 登録済みモード用UI ===== */
         .registered-mode-section { display: none; flex-direction: column; gap: 1rem; }
         .registered-mode-section.visible { display: flex; }
 
-        .subject-tab-group {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-        }
+        .subject-tab-group { display: flex; gap: 0.4rem; flex-wrap: wrap; }
         .reg-subject-btn {
-            background: rgba(255, 255, 255, 0.03);
-            color: var(--text-bright-muted);
-            border: 1px solid #22222a;
-            padding: 0.45rem 0.9rem;
-            border-radius: 8px;
-            font-size: 0.8rem;
-            font-weight: 800;
+            background: var(--bg-subtle);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+            padding: 0.4rem 0.85rem;
+            border-radius: var(--radius-full);
+            font-size: var(--fs-xs);
+            font-weight: 700;
             cursor: pointer;
-            transition: all 0.2s cubic-bezier(0.1, 0.8, 0.2, 1);
+            transition: all 0.15s ease;
         }
-        .reg-subject-btn:hover {
-            background: rgba(255, 245, 0, 0.08);
-            border-color: var(--accent-yellow);
-            color: #fff;
-        }
+        .reg-subject-btn:hover { border-color: #94A3B8; color: var(--text-primary); }
         .reg-subject-btn.active {
-            background: var(--accent-yellow) !important;
-            color: #000 !important;
-            font-weight: 900;
-            box-shadow: 0 0 12px rgba(255, 245, 0, 0.25);
-            border-color: var(--accent-yellow) !important;
-        }
-
-        .reg-field-select {
-            width: 100%;
-            background: #0a0a12;
-            color: var(--accent-yellow);
-            border: 1px solid rgba(255, 245, 0, 0.4);
-            padding: 0.7rem 1rem;
-            border-radius: 10px;
-            font-size: 0.9rem;
-            font-weight: 800;
-            cursor: pointer;
-            outline: none;
-            box-shadow: 0 0 8px rgba(255, 245, 0, 0.1);
+            background: var(--brand-primary);
+            color: #fff;
+            border-color: var(--brand-primary);
         }
 
         .reg-stats-badge {
-            font-size: 0.78rem;
-            color: var(--text-muted);
-            padding: 0.4rem 0.8rem;
-            border-radius: 8px;
-            background: rgba(255,255,255,0.03);
-            border: 1px dashed rgba(255,255,255,0.08);
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            padding: 0.6rem 0.9rem;
+            border-radius: var(--radius-md);
+            background: var(--bg-subtle);
+            border: 1px dashed var(--border-color);
             text-align: center;
         }
-        .reg-stats-badge strong { color: var(--accent-yellow); }
+        .reg-stats-badge strong { color: var(--brand-primary); }
     </style>
 </head>
 <body>
 
-    <div class="sprint-container">
-        <!-- GLOBAL CYBER HUD NAV -->
-         <nav class="global-cyber-nav">
-            <div class="nav-brand">//Lolz</div>
-            <div class="nav-links">
-                <a href="index.html" class="nav-btn">🧠 誤答ノート</a>
-                <a href="daily.html" class="nav-btn active">🏁 計算スプリント</a>
-                <a href="custom-sprint.html" class="nav-btn">🎯 カスタムスプリント</a>
-                <a href="lesson.html" class="nav-btn">📖 授業・解説</a>
-                <a href="answer-check.html" class="nav-btn">⚡ 答え合わせ</a>
-                <a href="insights.html" class="nav-btn">💡 気づき・質問ログ</a>  
-                <a href="timeline.html" class="nav-btn">🌍 世界史年表</a>
-                <a href="ai-settings.html" class="nav-btn">⚙️ AI設定</a>
-                <a href="tokei/index.html" class="nav-btn global-timer-link">⏱️ 集中タイマー</a>
-                <a href="#" onclick="openTimerPopout(event)" class="nav-btn" title="別ウィンドウでタイマーを開く">🗔 小窓</a>
-                <a href="#" onclick="openLogPopout(event)" class="nav-btn" title="24hログを小窓で開く">📊 24hログ</a>
-                <a href="#" onclick="openGooglePhotosPopout(event)" class="nav-btn" title="Google Photosを小窓で開く">📷 Photos</a>
-            </div>
-        </nav>
-        <script src="global-timer-sync.js"></script>
+    <div class="app-layout">
+        <!-- 🌿 左側共通サイドバー -->
+        <div id="flora-sidebar"></div>
 
-        <!-- ============ セットアップ画面 ============ -->
-        <div id="sprint-setup-zone" class="squircle-tile setup-card">
-            <div>
-                <span style="font-weight: 900; letter-spacing: -1px; color: var(--accent-cyan); font-size: 1.3rem;">🎯 CUSTOM SPRINT</span>
-                <p style="color: var(--text-muted); margin-top: 0.4rem; font-size: 0.85rem;" id="setup-desc">分野・難易度・問題数を指定して、AIにその場でタイムアタック問題を作らせます。（数学）</p>
-            </div>
+        <!-- 💻 右側メインコンテンツ -->
+        <main class="app-main">
+            <div class="workspace-content-wrap">
 
-            <!-- ① モード切り替えトグル -->
-            <div>
-                <div class="setup-label">⚡ 出題モード</div>
-                <div class="mode-toggle-group" id="mode-toggle-group">
-                    <button type="button" class="mode-toggle-btn active" data-mode="ai" id="btn-mode-ai">🤖 AIに新規生成させる</button>
-                    <button type="button" class="mode-toggle-btn" data-mode="registered" id="btn-mode-registered">📚 登録済みの誤答から出題</button>
+                <!-- ページヘッダー（セットアップ時） -->
+                <div class="page-header" id="page-header-setup">
+                    <div class="page-title-group">
+                        <h1 class="page-title">🎯 カスタムスプリント</h1>
+                        <p class="page-subtitle">分野・難易度・問題数を自由に設定して弱点を集中攻略する特訓モード</p>
+                    </div>
                 </div>
-            </div>
 
-            <!-- ② AIモード専用フォーム -->
-            <div id="ai-mode-section">
-                <div style="display: flex; flex-direction: column; gap: 1.2rem;">
+                <!-- ============ セットアップ画面 ============ -->
+                <div id="sprint-setup-zone" class="setup-card">
                     <div>
-                        <div class="setup-label">📝 分野・単元（空欄なら数学全範囲からランダム）</div>
-                        <input type="text" id="field-input" class="setup-input" placeholder="例：三角関数、ベクトル、数列、確率 など">
-                        <div class="setup-hint">カンマ区切りで複数指定してもOK（例：三角関数, 図形と方程式）</div>
+                        <div class="setup-label">⚡ 出題モード</div>
+                        <div class="mode-toggle-group" id="mode-toggle-group">
+                            <button type="button" class="mode-toggle-btn active" data-mode="ai" id="btn-mode-ai">🤖 AIに新規生成させる</button>
+                            <button type="button" class="mode-toggle-btn" data-mode="registered" id="btn-mode-registered">📚 登録済みの誤答から出題</button>
+                        </div>
                     </div>
 
+                    <!-- ② AIモード専用フォーム -->
+                    <div id="ai-mode-section">
+                        <div style="display: flex; flex-direction: column; gap: 1.2rem;">
+                            <div>
+                                <div class="setup-label">📝 分野・単元（空欄なら数学全範囲からランダム）</div>
+                                <input type="text" id="field-input" class="flora-input" placeholder="例：三角関数、ベクトル、数列、確率 など">
+                                <div style="font-size: 0.74rem; color: var(--text-secondary); margin-top: 0.3rem;">カンマ区切りで複数指定も可能（例：三角関数, 図形と方程式）</div>
+                            </div>
+
+                            <div>
+                                <div class="setup-label">🎚️ 難易度</div>
+                                <select id="level-select" class="flora-select">
+                                    <option value="教科書レベル（基礎の基礎から）">教科書レベル（基礎の基礎から）</option>
+                                    <option value="定期テストレベル">定期テストレベル</option>
+                                    <option value="入試基礎レベル">入試基礎レベル</option>
+                                    <option value="入試標準〜応用レベル" selected>入試標準〜応用レベル</option>
+                                    <option value="最難関大学レベル（超ハイレベル・かなり難しめ）">最難関大学レベル（超ハイレベル・かなり難しめ）</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ③ 登録済みモード専用フォーム -->
+                    <div id="registered-mode-section" class="registered-mode-section">
+                        <div>
+                            <div class="setup-label">📚 教科</div>
+                            <div class="subject-tab-group" id="reg-subject-tab-group">
+                                <button type="button" class="reg-subject-btn active" data-subject="ALL">✨ すべて</button>
+                            </div>
+                        </div>
+
+                        <div id="reg-field-row" style="display: none;">
+                            <div class="setup-label">🎯 分類（単元）</div>
+                            <select class="flora-select" id="reg-field-select">
+                                <option value="ALL">✨ すべての分類</option>
+                            </select>
+                        </div>
+
+                        <div class="reg-stats-badge" id="reg-stats-badge">
+                            📋 問題を読み込み中...
+                        </div>
+                    </div>
+
+                    <!-- ④ 問題数（共通） -->
                     <div>
-                        <div class="setup-label">🎚️ 難易度</div>
-                        <select id="level-select" class="setup-select">
-                            <option value="教科書レベル（基礎の基礎から）">教科書レベル（基礎の基礎から）</option>
-                            <option value="定期テストレベル">定期テストレベル</option>
-                            <option value="入試基礎レベル">入試基礎レベル</option>
-                            <option value="入試標準〜応用レベル" selected>入試標準〜応用レベル</option>
-                            <option value="最難関大学レベル（超ハイレベル・かなり難しめ）">最難関大学レベル（超ハイレベル・かなり難しめ）</option>
-                        </select>
+                        <div class="setup-label">🔢 問題数</div>
+                        <div class="count-btn-group" id="count-btn-group">
+                            <div class="count-btn" data-count="5">5問</div>
+                            <div class="count-btn active" data-count="10">10問</div>
+                            <div class="count-btn" data-count="15">15問</div>
+                            <div class="count-btn" data-count="20">20問</div>
+                        </div>
+                    </div>
+
+                    <button type="button" class="flora-btn flora-btn-primary btn-lg" id="btn-start-custom-sprint" style="margin-top: 0.5rem;">
+                        🚀 この条件でスプリント開始
+                    </button>
+                </div>
+
+                <!-- ============ プレイ画面 ============ -->
+                <div id="sprint-header" style="display:none; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; max-width: 900px; margin-left: auto; margin-right: auto; width: 100%;">
+                    <div style="display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap;">
+                        <span class="flora-badge badge-primary" id="sprint-progress">ANALYZING...</span>
+                        <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="btn-abandon-session">🎛 条件を変えてやり直す</button>
+                    </div>
+                    <div class="timer-display" id="sprint-timer">00:00.00</div>
+                </div>
+
+                <div id="sprint-play-zone" class="problem-card" style="display:none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                        <span class="flora-badge badge-math" id="problem-meta">AI // SYNAPSES</span>
+                        <span class="flora-badge badge-warning" id="sprint-figure-badge" style="display:none;">🖼️ 図・写真あり</span>
+                    </div>
+
+                    <div class="sprint-title" id="problem-title-display">🤖 指定条件でAIが問題を生成しています。少々お待ちください（約5〜10秒）...</div>
+
+                    <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="sprint-figure-toggle-btn" style="display:none; width: fit-content; margin-bottom: 0.8rem;">🖼️ 元の写真・図を見る（図・表を確認）</button>
+                    <div class="figure-gallery" id="sprint-figure-gallery"></div>
+
+                    <div class="control-panel" id="action-trigger-zone">
+                        <button type="button" class="flora-btn flora-btn-primary btn-lg" id="btn-reveal-ans" style="display:none; width: 100%;">👁 答えを確認する</button>
+                    </div>
+
+                    <div class="reveal-zone" id="sprint-reveal-zone">
+                        <div style="font-size:0.76rem; color:var(--brand-primary); font-weight:700; text-transform: uppercase;">STEPS & EXPLANATION</div>
+                        <div class="model-answer-text" id="sprint-steps-display" style="font-size:1rem; white-space:pre-wrap; line-height:1.7; color:var(--text-primary); margin-bottom:1rem;">---</div>
+
+                        <div class="control-panel">
+                            <button type="button" class="flora-btn btn-wrong btn-lg" id="btn-sprint-wrong">❌ ミスった（誤答ノートへ）</button>
+                            <button type="button" class="flora-btn btn-correct btn-lg" id="btn-sprint-correct">🎉 解けた！(次へ)</button>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- ③ 登録済みモード専用フォーム -->
-            <div id="registered-mode-section" class="registered-mode-section">
-                <!-- 教科タブ -->
-                <div>
-                    <div class="setup-label">📚 教科</div>
-                    <div class="subject-tab-group" id="reg-subject-tab-group">
-                        <button type="button" class="reg-subject-btn active" data-subject="ALL">✨ すべて</button>
+                <div id="sprint-result-zone" class="result-screen">
+                    <h2 style="font-family: var(--font-heading); font-size: 1.8rem; font-weight: 700; color: var(--brand-primary); margin-bottom: 0.6rem;">🏁 スプリント完了！</h2>
+                    <p style="color:var(--text-secondary); margin-bottom: 2rem; font-size: var(--fs-sm);" id="result-summary-text">カスタムスプリントをすべてクリアしました。</p>
+                    <div style="font-size: 0.82rem; color:var(--text-secondary); margin-bottom: 0.3rem; font-weight: 700;">TOTAL TIME</div>
+                    <div class="timer-display" id="final-time-display" style="font-size: 3.2rem; margin-bottom: 2.5rem;">00:00.00</div>
+                    <div style="display: flex; gap: 0.8rem; flex-wrap: wrap; justify-content: center;">
+                        <button type="button" class="flora-btn flora-btn-secondary btn-lg" id="btn-retry-same-condition">🔄 同じ条件でもう一周する</button>
+                        <button type="button" class="flora-btn flora-btn-secondary btn-lg" id="btn-new-condition">🎛 条件を変えて作り直す</button>
+                        <button type="button" class="flora-btn flora-btn-primary btn-lg" onclick="location.href='index.html'">ダッシュボードに戻る</button>
                     </div>
                 </div>
 
-                <!-- 分類プルダウン -->
-                <div id="reg-field-row" style="display: none;">
-                    <div class="setup-label">🎯 分類（単元）</div>
-                    <select class="reg-field-select" id="reg-field-select">
-                        <option value="ALL">✨ すべての分類</option>
-                    </select>
-                </div>
-
-                <!-- マッチ件数バッジ -->
-                <div class="reg-stats-badge" id="reg-stats-badge">
-                    📋 問題を読み込み中...
-                </div>
-            </div>
-
-            <!-- ④ 問題数（共通） -->
-            <div>
-                <div class="setup-label">🔢 問題数</div>
-                <div class="count-btn-group" id="count-btn-group">
-                    <div class="count-btn" data-count="5">5問</div>
-                    <div class="count-btn active" data-count="10">10問</div>
-                    <div class="count-btn" data-count="15">15問</div>
-                    <div class="count-btn" data-count="20">20問</div>
-                </div>
-            </div>
-
-            <button type="button" class="tactile-btn" id="btn-start-custom-sprint" style="background: var(--accent-yellow); color:#000; box-shadow: 4px 4px 0px #a89f00; margin-top: 0.5rem; height: 56px; font-size: 1.05rem; font-weight: 900;">
-                🚀 この条件でスプリント開始
-            </button>
-        </div>
-
-        <!-- ============ プレイ画面 ============ -->
-        <header id="sprint-header" style="display:none;">
-            <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
-                <span style="font-weight: 900; letter-spacing: -1px; color: var(--accent-cyan)">CUSTOM SPRINT</span>
-                <span class="badge progress-badge" id="sprint-progress">ANALYZING...</span>
-                <button type="button" class="nav-btn" id="btn-abandon-session" title="今のセッションを破棄して条件から選び直す">🎛 条件を変えてやり直す</button>
-            </div>
-            <div class="timer-display" id="sprint-timer">00:00.00</div>
-        </header>
-
-        <main id="sprint-play-zone" class="squircle-tile problem-card" style="display:none;">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
-                <span class="badge badge-math" id="problem-meta">AI // SYNAPSES</span>
-                <span class="mini-badge mini-badge-figure" id="sprint-figure-badge" style="display:none;">🖼️ 図・写真あり</span>
-            </div>
-
-            <div class="sprint-title" id="problem-title-display">🤖 指定条件でAIが問題を生成しています。少々お待ちください（約5〜10秒）...</div>
-
-            <button type="button" class="figure-toggle-btn" id="sprint-figure-toggle-btn" style="display:none;">🖼️ 元の写真・図を見る（図・表を確認）</button>
-            <div class="figure-gallery" id="sprint-figure-gallery"></div>
-
-            <div class="control-panel" id="action-trigger-zone">
-                <button type="button" class="tactile-btn btn-action" id="btn-reveal-ans" style="background:#111; color:#fff; border:1px solid #333; display:none;">👁 答えを確認する</button>
-            </div>
-
-            <div class="reveal-zone" id="sprint-reveal-zone">
-                <hr style="border: 0; border-top: 1px dashed #22222a; margin-bottom: 0.5rem;">
-                <div style="font-size:0.8rem; color:var(--text-muted); font-weight:800; margin-bottom:0.2rem;">STEPS</div>
-                <div class="model-answer-text" id="sprint-steps-display" style="font-size:1rem; white-space:pre-wrap; line-height:1.6; color:var(--text-bright-muted); margin-bottom:1rem;">---</div>
-
-                <div class="control-panel">
-                    <button type="button" class="tactile-btn btn-action btn-wrong" id="btn-sprint-wrong">❌ ミスった（LOLZへ送る）</button>
-                    <button type="button" class="tactile-btn btn-action btn-correct" id="btn-sprint-correct">🎉 解けた！(次へ)</button>
-                </div>
             </div>
         </main>
-
-        <div id="sprint-result-zone" class="squircle-tile result-screen">
-            <h2 style="font-size: 2rem; font-weight: 900; color: var(--accent-cyan); margin-bottom: 1rem;">🏁 FINISH // チェッカーフラッグ！</h2>
-            <p style="color:var(--text-muted); margin-bottom: 2rem;" id="result-summary-text">カスタムスプリントをすべてクリアしました。</p>
-            <div style="font-size: 1rem; color:var(--text-bright-muted); margin-bottom: 0.5rem; font-weight: 800;">TOTAL TIME</div>
-            <div class="timer-display" id="final-time-display" style="font-size: 3.5rem; margin-bottom: 3rem;">00:00.00</div>
-            <div style="display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center;">
-                <button type="button" class="tactile-btn" id="btn-retry-same-condition" style="padding: 1rem 2rem; background: #111; color: var(--accent-yellow); border: 1px solid var(--accent-yellow); box-shadow: 4px 4px 0px rgba(255,245,0,0.2);">🔄 同じ条件でもう一周する</button>
-                <button type="button" class="tactile-btn" id="btn-new-condition" style="padding: 1rem 2rem; background: #111; color: var(--accent-cyan); border: 1px solid var(--accent-cyan); box-shadow: 4px 4px 0px rgba(0,243,255,0.2);">🎛 条件を変えて作り直す</button>
-                <button type="button" class="tactile-btn" onclick="location.href='index.html'" style="padding: 1rem 2rem; background: var(--accent-cyan); box-shadow: 4px 4px 0px #008b94;">ダッシュボードに戻る</button>
-            </div>
-        </div>
     </div>
 
     <!-- 🔍 画像拡大表示用ライトボックス -->
     <div class="lightbox-overlay" id="sprint-lightbox-overlay">
         <img id="sprint-lightbox-img" src="" alt="拡大画像">
     </div>
+
+    <script src="global-timer-sync.js"></script>
+    <script src="sidebar.js"></script>
 
 
 

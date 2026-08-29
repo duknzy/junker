@@ -3,26 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#050508">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="LOLZ">
-    <meta name="format-detection" content="telephone=no">
+    <meta name="theme-color" content="#059669">
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="icons/icon.png">
     <link rel="apple-touch-icon" href="icons/icon.png">
-    <title>LOLZ // DAILY SPRINT 10</title>
+    <title>Flora | 計算スプリント</title>
     <link rel="stylesheet" href="style.css">
     
- <script>
+    <script>
         window.MathJax = {
             tex: {
                 inlineMath: [['$', '$'], ['\\(', '\\)']],
                 displayMath: [['$$', '$$'], ['\\[', '\\]']],
                 processEscapes: true,
-                // 🩹【修正】\fbox{...} は数式モードの標準TeXマクロではなく未定義コマンドとして
-                // そのまま表示されてしまうため、ams標準の \boxed{...} の別名として登録する
                 macros: { fbox: ["\\bbox[2px,border:1px solid]{#1}", 1] }
             },
             options: {
@@ -37,104 +30,119 @@
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" async></script>
 
     <style>
-        .sprint-container { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem; min-height: calc(100vh - 3rem); }
-        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1a2a35; padding-bottom: 1rem; }
-        .timer-display { font-size: 2rem; font-weight: 900; color: var(--accent-magenta); font-family: monospace; letter-spacing: 1px; text-shadow: 0 0 10px rgba(255, 0, 127, 0.3); }
-        .progress-badge { background: transparent; color: var(--accent-cyan); border: 1px solid var(--accent-cyan); }
+        .timer-display {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--brand-primary);
+            font-family: var(--font-mono);
+            letter-spacing: -0.5px;
+        }
         
         .problem-card { 
             display: flex; 
             flex-direction: column; 
             gap: 1.5rem; 
-            padding: 2rem; 
-            background: var(--card-bg-glass); 
-            border: 1px solid rgba(0, 243, 255, 0.2); 
-            box-shadow: 4px 4px 0px rgba(0, 243, 255, 0.05);
-            height: auto !important;
-            position: relative;
+            padding: 2.4rem; 
+            background: var(--bg-surface); 
+            border: 1px solid var(--border-color); 
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-sm);
+            max-width: 900px;
+            margin: 0 auto;
+            width: 100%;
         }
         
-        .sprint-title { font-size: 1.4rem; font-weight: 800; line-height: 1.6; color: var(--text-main); min-height: auto; margin-bottom: 1rem; }
-        .control-panel { display: flex; gap: 1rem; width: 100%; margin-top: 1rem; position: relative; z-index: 10; }
-        .btn-action { flex: 1; height: 54px; font-size: 1.1rem; font-weight: 800; cursor: pointer; }
-        .btn-wrong { background: var(--accent-magenta) !important; color: #000 !important; box-shadow: 4px 4px 0px #9e004f !important; }
-        .btn-correct { background: var(--accent-cyan) !important; color: #000 !important; box-shadow: 4px 4px 0px #008b94 !important; }
+        .sprint-title { font-size: 1.3rem; font-weight: 700; line-height: 1.8; color: var(--text-primary); margin-bottom: 1rem; }
+        .control-panel { display: flex; gap: 1rem; width: 100%; margin-top: 1rem; }
+        .btn-wrong { background: var(--error) !important; color: #fff !important; flex: 1; }
+        .btn-correct { background: var(--brand-primary) !important; color: #fff !important; flex: 1; }
         
-        .reveal-zone { display: none; flex-direction: column; gap: 1.2rem; background: rgba(255,255,255,0.02); padding: 1.5rem; border-radius: 16px; border: 1px dashed #3a3a4a; margin-top: 1.5rem; width: 100%; }
-        .result-screen { display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 4rem 2rem; border: 1px solid var(--accent-cyan); background: var(--card-bg-glass); }
-        
-        .mjx-chtml { margin: 0.5rem 0 !important; padding-left: 2px; }
+        .reveal-zone {
+            display: none;
+            flex-direction: column;
+            gap: 1.2rem;
+            background: var(--bg-subtle);
+            padding: 1.5rem;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            margin-top: 1rem;
+            width: 100%;
+        }
+        .result-screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 4rem 2rem;
+            border: 1px solid var(--border-color);
+            background: var(--bg-surface);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-sm);
+            max-width: 800px;
+            margin: 0 auto;
+        }
     </style>
 </head>
 <body>
 
-    <div class="sprint-container">
-        <!-- GLOBAL CYBER HUD NAV -->
-        <nav class="global-cyber-nav">
-            <div class="nav-brand">//Lolz</div>
-            <div class="nav-links">
-                <a href="index.html" class="nav-btn">🧠 誤答ノート</a>
-                <a href="daily.html" class="nav-btn active">🏁 計算スプリント</a>
-                <a href="custom-sprint.html" class="nav-btn">🎯 カスタムスプリント</a>
-                <a href="lesson.html" class="nav-btn">📖 授業・解説</a>
-                <a href="answer-check.html" class="nav-btn">⚡ 答え合わせ</a>
-                <a href="insights.html" class="nav-btn">💡 気づき・質問ログ</a>  
-                <a href="timeline.html" class="nav-btn">🌍 世界史年表</a>
-                <a href="ai-settings.html" class="nav-btn">⚙️ AI設定</a>
-                <a href="tokei/index.html" class="nav-btn global-timer-link">⏱️ 集中タイマー</a>
-                <a href="#" onclick="openTimerPopout(event)" class="nav-btn" title="別ウィンドウでタイマーを開く">🗔 小窓</a>
-                <a href="#" onclick="openLogPopout(event)" class="nav-btn" title="24hログを小窓で開く">📊 24hログ</a>
-                <a href="#" onclick="openGooglePhotosPopout(event)" class="nav-btn" title="Google Photosを小窓で開く">📷 Photos</a>
-            </div>
-        </nav>
-        <script src="global-timer-sync.js"></script>
+    <div class="app-layout">
+        <!-- 🌿 左側共通サイドバー -->
+        <div id="flora-sidebar"></div>
 
-        <header>
-            <div style="display: flex; align-items: center; gap: 1rem;">
-                <span style="font-weight: 900; letter-spacing: -1px; color: var(--accent-cyan)">DAILY SPRINT 10</span>
-                <span class="badge progress-badge" id="sprint-progress">ANALYZING...</span>
-            </div>
-            <div class="timer-display" id="sprint-timer">00:00.00</div>
-        </header>
+        <!-- 💻 右側メインコンテンツ -->
+        <main class="app-main">
+            <div class="workspace-content-wrap">
 
-        <main id="sprint-play-zone" class="squircle-tile problem-card">
-            <div style="display: flex; gap: 0.5rem;">
-                <span class="badge badge-physics" id="problem-meta">AI // SYNAPSES</span>
-            </div>
-            
-            <div class="sprint-title" id="problem-title-display">🤖 クラウド同期完了。AIがあなたの誤答データをスキャンし、本日の特訓問題10問を生成しています。少々お待ちください（約5秒）...</div>
-
-            <div class="control-panel" id="action-trigger-zone">
-                <button type="button" class="tactile-btn btn-action" id="btn-reveal-ans" style="background:#111; color:#fff; border:1px solid #333; display:none;">👁 答えを確認する</button>
-            </div>
-
-            <div class="reveal-zone" id="sprint-reveal-zone">
-                <hr style="border: 0; border-top: 1px dashed #22222a; margin-bottom: 0.5rem;">
-                <div style="font-size:0.8rem; color:var(--text-muted); font-weight:800; margin-bottom:0.2rem;">STEPS</div>
-                <div class="model-answer-text" id="sprint-steps-display" style="font-size:1rem; white-space:pre-wrap; line-height:1.6; color:var(--text-bright-muted); margin-bottom:1rem;">---</div>
-                
-                <div class="control-panel">
-                    <button type="button" class="tactile-btn btn-action btn-wrong" id="btn-sprint-wrong">❌ ミスった（LOLZへ送る）</button>
-                    <button type="button" class="tactile-btn btn-action btn-correct" id="btn-sprint-correct">🎉 解けた！(次へ)</button>
+                <!-- ページヘッダー -->
+                <div class="page-header" style="justify-content: space-between; align-items: center; max-width: 900px; margin-left: auto; margin-right: auto; width: 100%;">
+                    <div style="display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap;">
+                        <h1 class="page-title" style="font-size: 1.3rem; margin: 0;">🏁 計算スプリント</h1>
+                        <span class="flora-badge badge-primary" id="sprint-progress">ANALYZING...</span>
+                    </div>
+                    <div class="timer-display" id="sprint-timer">00:00.00</div>
                 </div>
+
+                <div id="sprint-play-zone" class="problem-card">
+                    <div style="display: flex; gap: 0.5rem;">
+                        <span class="flora-badge badge-physics" id="problem-meta">AI // SYNAPSES</span>
+                    </div>
+                    
+                    <div class="sprint-title" id="problem-title-display">🤖 クラウド同期完了。AIがあなたの誤答データをスキャンし、本日の特訓問題10問を生成しています。少々お待ちください（約5秒）...</div>
+
+                    <div class="control-panel" id="action-trigger-zone">
+                        <button type="button" class="flora-btn flora-btn-primary btn-lg" id="btn-reveal-ans" style="display:none; width: 100%;">👁 答えを確認する</button>
+                    </div>
+
+                    <div class="reveal-zone" id="sprint-reveal-zone">
+                        <div style="font-size:0.76rem; color:var(--brand-primary); font-weight:700; text-transform: uppercase;">STEPS & EXPLANATION</div>
+                        <div class="model-answer-text" id="sprint-steps-display" style="font-size:1rem; white-space:pre-wrap; line-height:1.7; color:var(--text-primary); margin-bottom:1rem;">---</div>
+                        
+                        <div class="control-panel">
+                            <button type="button" class="flora-btn btn-wrong btn-lg" id="btn-sprint-wrong">❌ ミスった（誤答ノートへ）</button>
+                            <button type="button" class="flora-btn btn-correct btn-lg" id="btn-sprint-correct">🎉 解けた！(次へ)</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="sprint-result-zone" class="result-screen">
+                    <h2 style="font-family: var(--font-heading); font-size: 1.8rem; font-weight: 700; color: var(--brand-primary); margin-bottom: 0.6rem;">🏁 スプリント完了！</h2>
+                    <p style="color:var(--text-secondary); margin-bottom: 2rem; font-size: var(--fs-sm);">本日の計算スプリント10問をすべてクリアしました。</p>
+                    <div style="font-size: 0.82rem; color:var(--text-secondary); margin-bottom: 0.3rem; font-weight: 700;">TOTAL TIME</div>
+                    <div class="timer-display" id="final-time-display" style="font-size: 3.2rem; margin-bottom: 2.5rem;">00:00.00</div>
+                    <div style="display: flex; gap: 0.8rem; flex-wrap: wrap; justify-content: center;">
+                        <button type="button" class="flora-btn flora-btn-secondary btn-lg" id="btn-regenerate-sprint">🔄 新しい10問でもう一周する</button>
+                        <button type="button" class="flora-btn flora-btn-primary btn-lg" onclick="location.href='index.html'">ダッシュボードに戻る</button>
+                    </div>
+                </div>
+
             </div>
         </main>
-
-        <div id="sprint-result-zone" class="squircle-tile result-screen">
-            <h2 style="font-size: 2rem; font-weight: 900; color: var(--accent-cyan); margin-bottom: 1rem;">🏁 FINISH // チェッカーフラッグ！</h2>
-            <p style="color:var(--text-muted); margin-bottom: 2rem;">本日の計算スプリント10問をすべてクリアしました。</p>
-            <div style="font-size: 1rem; color:var(--text-bright-muted); margin-bottom: 0.5rem; font-weight: 800;">TOTAL TIME</div>
-            <div class="timer-display" id="final-time-display" style="font-size: 3.5rem; margin-bottom: 3rem;">00:00.00</div>
-            <div style="display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center;">
-                <button type="button" class="tactile-btn" id="btn-regenerate-sprint" style="padding: 1rem 2rem; background: #111; color: var(--accent-yellow); border: 1px solid var(--accent-yellow); box-shadow: 4px 4px 0px rgba(255,245,0,0.2);">🔄 新しい10問でもう一周する</button>
-                <button type="button" class="tactile-btn" onclick="location.href='index.html'" style="padding: 1rem 2rem; background: var(--accent-cyan); box-shadow: 4px 4px 0px #008b94;">ダッシュボードに戻る</button>
-            </div>
-        </div>
     </div>
 
+    <script src="global-timer-sync.js"></script>
+    <script src="sidebar.js"></script>
 
-    
-    
     <script type="module">
         import { dailyProblemBank } from "./daily-data.js";
         import {

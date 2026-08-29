@@ -3,16 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#050508">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="LOLZ">
-    <meta name="format-detection" content="telephone=no">
+    <meta name="theme-color" content="#059669">
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="icons/icon.png">
     <link rel="apple-touch-icon" href="icons/icon.png">
-    <title>LOLZ // クイック答え合わせ</title>
+    <title>Flora | クイック答え合わせ</title>
     <link rel="stylesheet" href="style.css">
 
     <script>
@@ -20,8 +15,6 @@
             tex: {
                 inlineMath: [['$', '$'], ['\\(', '\\)']],
                 displayMath: [['$$', '$$'], ['\\[', '\\]']],
-                // 🩹【修正】\fbox{...} は数式モードの標準TeXマクロではなく未定義コマンドとして
-                // そのまま表示されてしまうため、ams標準の \boxed{...} の別名として登録する
                 macros: { fbox: ["\\bbox[2px,border:1px solid]{#1}", 1] }
             },
             options: {
@@ -32,275 +25,228 @@
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
 
     <style>
-        .page-container {
+        .check-workspace-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-sm);
+            padding: 2rem;
             max-width: 860px;
             margin: 0 auto;
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
+            width: 100%;
         }
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            border-bottom: 1px solid #22222a;
-            padding-bottom: 1.5rem;
-        }
-        .logo {
-            font-size: var(--fs-xl);
-            font-weight: 900;
-            text-transform: uppercase;
-            letter-spacing: -2px;
-            line-height: 0.9;
-            background: linear-gradient(90deg, var(--text-main) 70%, var(--accent-cyan));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        .auth-status-container { display: flex; align-items: center; gap: 1rem; }
-        .user-profile { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; font-weight: 700; }
-        .user-avatar { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--accent-cyan); }
-        #logout-btn { background: transparent; border: 1px solid #222; color: var(--text-muted); font-size: 0.8rem; padding: 0.3rem 0.6rem; border-radius: 8px; cursor: pointer; }
-        #logout-btn:hover { border-color: var(--accent-magenta); color: var(--accent-magenta); }
-        .login-overlay-box { padding: 4rem; text-align: center; background: rgba(5,5,8,0.6); border: 1px dashed #22222a; border-radius: 16px; }
 
         .filter-label {
-            font-size: 0.75rem;
-            font-weight: 900;
-            color: var(--text-muted);
-            letter-spacing: 1px;
-            min-width: 70px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            margin-bottom: 0.4rem;
+            display: block;
         }
         .subject-select-btn {
-            background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(255,255,255,0.12);
-            color: var(--text-bright-muted);
-            padding: 0.45rem 0.9rem;
-            border-radius: 10px;
-            font-size: 0.85rem;
-            font-weight: 800;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 0.4rem 0.9rem;
+            border-radius: var(--radius-full);
+            font-size: var(--fs-xs);
+            font-weight: 700;
             cursor: pointer;
             transition: all 0.15s ease;
         }
-        .subject-select-btn:hover { border-color: var(--accent-cyan); color: #fff; }
+        .subject-select-btn:hover { border-color: #94A3B8; color: var(--text-primary); }
         .subject-select-btn.active {
-            background: var(--accent-cyan);
-            color: #000;
-            border-color: var(--accent-cyan);
-            box-shadow: 0 0 10px rgba(0,243,255,0.4);
+            background: var(--brand-primary);
+            color: #fff;
+            border-color: var(--brand-primary);
         }
 
         .target-note-box {
-            background: rgba(255, 245, 0, 0.05);
-            border: 1px dashed var(--accent-yellow);
-            border-radius: 14px;
-            padding: 0.9rem 1.1rem;
-            margin: 1rem 0 0.4rem 0;
+            background: var(--bg-subtle);
+            border: 1px dashed var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 1.1rem 1.3rem;
+            margin: 1.2rem 0 0.6rem 0;
         }
         .target-note-box .note-title {
-            font-size: 0.82rem;
-            font-weight: 800;
-            color: var(--accent-yellow);
-            margin-bottom: 0.5rem;
+            font-size: 0.84rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.4rem;
         }
         .target-note-box .note-sub {
-            font-size: 0.76rem;
-            color: var(--text-muted);
+            font-size: 0.74rem;
+            color: var(--text-secondary);
             margin-top: 0.4rem;
+            line-height: 1.5;
         }
 
-        .modal-textarea {
-            width: 100%; min-height: 70px; background: #000; border: 1px solid #222;
-            color: #fff; padding: 0.9rem; border-radius: 12px; font-size: 1rem; margin-top: 0.5rem;
-            resize: vertical; font-family: inherit;
-        }
         .math-preview {
             margin-top: 0.6rem;
-            padding: 0.8rem;
-            background: #020205;
-            border: 1px dashed #22222a;
-            border-radius: 12px;
+            padding: 0.8rem 1rem;
+            background: var(--bg-surface);
+            border: 1px dashed var(--border-color);
+            border-radius: var(--radius-md);
             min-height: 40px;
-            font-size: 0.9rem;
-            color: var(--text-muted);
+            font-size: var(--fs-sm);
+            color: var(--text-primary);
             word-break: break-all;
         }
-        .image-upload-zone {
-            display: flex; align-items: center; justify-content: center; gap: 0.5rem;
-            width: 100%; padding: 0.8rem; margin: 0.8rem 0 0 0;
-            border: 1px dashed rgba(0, 243, 255, 0.4); border-radius: 12px;
-            background: rgba(0, 243, 255, 0.02); cursor: pointer;
-            font-size: 0.9rem; font-weight: 700; color: var(--accent-cyan);
-        }
+
         .preview-box {
             width: 100%; display: none; flex-wrap: wrap; gap: 0.6rem; margin-top: 0.8rem;
         }
         .preview-box.has-images { display: flex; }
         .photo-thumb-wrap {
-            position: relative; width: 92px; height: 92px; border-radius: 10px; overflow: hidden;
-            border: 1px solid #222; background: #020205; flex-shrink: 0;
+            position: relative; width: 88px; height: 88px; border-radius: var(--radius-md); overflow: hidden;
+            border: 1px solid var(--border-color); background: var(--bg-subtle); flex-shrink: 0;
         }
         .photo-thumb-wrap img { width: 100%; height: 100%; object-fit: cover; }
         .photo-thumb-remove {
-            position: absolute; top: 3px; right: 3px; width: 20px; height: 20px; border-radius: 50%;
-            background: rgba(0,0,0,0.75); color: #fff; border: 1px solid rgba(255,255,255,0.35);
-            font-size: 0.75rem; line-height: 1; display: flex; align-items: center; justify-content: center;
-            cursor: pointer; font-weight: 900;
+            position: absolute; top: 4px; right: 4px; width: 20px; height: 20px; border-radius: 50%;
+            background: var(--error); color: #fff;
+            font-size: 0.72rem; line-height: 20px; text-align: center; cursor: pointer; font-weight: 800;
         }
         .photo-thumb-index {
-            position: absolute; bottom: 3px; left: 3px; background: rgba(0,0,0,0.75); color: var(--accent-cyan);
-            font-size: 0.65rem; font-weight: 900; padding: 0.05rem 0.35rem; border-radius: 6px;
+            position: absolute; bottom: 3px; left: 3px; background: rgba(15,23,42,0.75); color: #fff;
+            font-size: 0.65rem; font-weight: 700; padding: 0.05rem 0.35rem; border-radius: 4px;
         }
 
-        #quick-answer-btn { width: 100%; margin-top: 1.2rem; height: 54px; font-size: 1.05rem; }
-
-        #result-list { display: none; flex-direction: column; gap: 1rem; }
+        #result-list { display: none; flex-direction: column; gap: 1.25rem; max-width: 860px; margin: 1.5rem auto 0 auto; width: 100%; }
 
         .result-item {
-            padding: 1.4rem;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-xl);
+            padding: 1.8rem;
+            box-shadow: var(--shadow-sm);
         }
-        .result-item.item-done {
-            opacity: 0.55;
-        }
+        .result-item.item-done { opacity: 0.6; }
         .result-item-label {
-            font-size: 0.8rem;
-            font-weight: 900;
-            color: var(--accent-cyan);
+            font-size: 0.84rem;
+            font-weight: 700;
+            color: var(--brand-primary);
             margin-bottom: 0.6rem;
-            letter-spacing: 0.5px;
         }
         .result-note {
-            background: rgba(0, 243, 255, 0.05);
-            border: 1px dashed var(--accent-cyan);
-            border-radius: 12px;
+            background: var(--bg-subtle);
+            border: 1px dashed var(--border-color);
+            border-radius: var(--radius-md);
             padding: 0.8rem 1rem;
-            font-size: 0.85rem;
-            color: var(--text-bright-muted);
+            font-size: 0.86rem;
+            color: var(--text-primary);
             margin-bottom: 1rem;
         }
         .model-answer-text {
-            font-size: 1rem;
+            font-size: 1.05rem;
             line-height: 1.8;
-            color: var(--text-main);
+            color: var(--text-primary);
             white-space: normal;
         }
         .judgment-buttons {
             display: flex; gap: 0.8rem; margin-top: 1.2rem; flex-wrap: wrap;
         }
-        .judgment-buttons .tactile-btn { flex: 1; min-width: 160px; height: 48px; font-size: 0.95rem; }
-        .btn-correct { background: #00ff78 !important; color: #000 !important; box-shadow: 3px 3px 0px #00994a !important; }
-        .btn-incorrect { background: var(--accent-magenta) !important; color: #fff !important; box-shadow: 3px 3px 0px #9e004f !important; }
-        .item-status-row {
-            display: flex; align-items: center; justify-content: space-between;
-            margin-top: 1.2rem; gap: 0.8rem; flex-wrap: wrap;
-        }
+        .btn-correct { background: var(--brand-primary) !important; color: #fff !important; }
+        .btn-incorrect { background: var(--error) !important; color: #fff !important; }
         .item-status-badge {
-            font-size: 0.85rem; font-weight: 800; padding: 0.5rem 0.9rem; border-radius: 10px;
+            font-size: 0.82rem; font-weight: 700; padding: 0.4rem 0.85rem; border-radius: var(--radius-full);
         }
-        .item-status-badge.status-correct { background: rgba(0,255,120,0.1); color: #00ff78; }
-        .item-status-badge.status-wrong { background: rgba(255,0,127,0.1); color: var(--accent-magenta); }
-
-        #next-batch-btn { display: none; width: 100%; margin-top: 0.5rem; }
+        .item-status-badge.status-correct { background: var(--brand-light); color: var(--brand-primary); border: 1px solid var(--brand-border); }
+        .item-status-badge.status-wrong { background: var(--error-bg); color: var(--error); border: 1px solid #FECACA; }
     </style>
 </head>
 <body>
 
-    <div class="dashboard-container page-container">
-        <nav class="global-cyber-nav">
-            <div class="nav-brand">//Lolz</div>
-            <div class="nav-links">
-                <a href="index.html" class="nav-btn">🧠 誤答ノート</a>
-                <a href="daily.html" class="nav-btn">🏁 計算スプリント</a>
-                <a href="custom-sprint.html" class="nav-btn">🎯 カスタムスプリント</a>
-                <a href="lesson.html" class="nav-btn">📖 授業・解説</a>
-                <a href="answer-check.html" class="nav-btn active">⚡ 答え合わせ</a>
-                <a href="insights.html" class="nav-btn">💡 気づき・質問ログ</a>  
-                <a href="timeline.html" class="nav-btn">🌍 世界史年表</a>
-                <a href="ai-settings.html" class="nav-btn">⚙️ AI設定</a>
-                <a href="tokei/index.html" class="nav-btn global-timer-link">⏱️ 集中タイマー</a>
-                <a href="#" onclick="openTimerPopout(event)" class="nav-btn" title="別ウィンドウでタイマーを開く">🗔 小窓</a>
-                <a href="#" onclick="openLogPopout(event)" class="nav-btn" title="24hログを小窓で開く">📊 24hログ</a>
-                <a href="#" onclick="openGooglePhotosPopout(event)" class="nav-btn" title="Google Photosを小窓で開く">📷 Photos</a>
-            </div>
-        </nav>
-        <script src="global-timer-sync.js"></script>
+    <div class="app-layout">
+        <!-- 🌿 左側共通サイドバー -->
+        <div id="flora-sidebar"></div>
 
-        <header>
-            <div>
-                <h1 class="logo">CHECK</h1>
-                <p style="color: var(--text-muted); margin-top: 0.5rem; font-weight: 600;">答えだけサクッと確認 → 間違えた問題だけ個別に登録</p>
-            </div>
-            <div class="auth-status-container">
-                <div id="auth-panel" style="font-weight: 800; border: 1px solid #22222a; padding: 0.5rem 1rem; border-radius: 12px;" class="glass-card">
-                    LOADING...
-                </div>
-            </div>
-        </header>
+        <!-- 💻 右側メインコンテンツ -->
+        <main class="app-main">
+            <div class="workspace-content-wrap">
 
-        <div id="login-required-notice" class="login-overlay-box" style="display: none;">
-            <h2 style="font-size: 1.5rem; font-weight: 900; color: var(--accent-cyan); margin-bottom: 1rem;">CLOUD SYNC // クラウド同期未接続</h2>
-            <p style="color: var(--text-muted); margin-bottom: 2rem;">間違えた問題を登録するために、Googleアカウントでログインしてください。</p>
-            <button type="button" class="tactile-btn" id="main-login-btn" style="padding: 1rem 2rem; font-size: 1.1rem; background:var(--accent-cyan); box-shadow: 4px 4px 0px #008b94;">
-                Googleアカウントでサインイン
-            </button>
-        </div>
-
-        <main id="answer-check-main" style="display:none;">
-            <div class="squircle-card glass-card" id="input-card" style="padding: 1.6rem;">
-                <span class="badge badge-alert">QUICK CHECK // 軽量AIコール</span>
-                <h3 style="font-size: 1.2rem; font-weight: 800; margin-top: 0.6rem;">①答えだけAIに聞く</h3>
-                <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.3rem;">定石解説や罠の解説は作らせません。正解の確認だけを高速に行います。複数の小問をまとめて聞くこともできます。</p>
-
-                <div style="margin: 1.1rem 0 0.6rem 0;">
-                    <span class="filter-label" style="display:block; margin-bottom:0.4rem;">📚 教科を選択：</span>
-                    <div id="subject-select-group" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                        <button type="button" class="subject-select-btn active" data-subject="数学" onclick="setSelectedSubject('数学')">数学</button>
-                        <button type="button" class="subject-select-btn" data-subject="物理" onclick="setSelectedSubject('物理')">物理基礎</button>
-                        <button type="button" class="subject-select-btn" data-subject="化学" onclick="setSelectedSubject('化学')">化学基礎</button>
-                        <button type="button" class="subject-select-btn" data-subject="英語" onclick="setSelectedSubject('英語')">英語</button>
-                        <button type="button" class="subject-select-btn" data-subject="国語" onclick="setSelectedSubject('国語')">国語</button>
-                        <button type="button" class="subject-select-btn" data-subject="地歴公民" onclick="setSelectedSubject('地歴公民')">地歴公民</button>
+                <!-- ページヘッダー -->
+                <div class="page-header">
+                    <div class="page-title-group">
+                        <h1 class="page-title">⚡ クイック答え合わせ</h1>
+                        <p class="page-subtitle">答えだけをサクッと高速確認し、間違えた問題だけを誤答ノートに連携</p>
+                    </div>
+                    <div class="page-actions" id="auth-panel" style="font-size: var(--fs-xs); color: var(--text-secondary);">
+                        読込中...
                     </div>
                 </div>
 
-                <div class="target-note-box">
-                    <div class="note-title">🎯 対象指定メモ（範囲や複数指定OK）</div>
-                    <textarea class="modal-textarea" id="target-note-input" placeholder="例：287番だけ／290~293の4問全部／287と289と291　など"></textarea>
-                    <div class="note-sub">・1問だけ指定 → その1問だけ回答<br>・「290~293」のような範囲や「287, 289」のような複数指定 → 指定した数だけそれぞれ別々に回答（まとめて要約しません）<br>・空欄 → 写真内で最も分かりやすい1問だけをAIが自動選択</div>
-                    <div class="math-keyboard" id="math-keyboard-group" style="margin-top:0.6rem;">
-                        <button type="button" class="math-key btn-accent" onclick="insertMathSymbol('$', '$')">$$</button>
-                        <button type="button" class="math-key" onclick="insertMathSymbol('\\frac{', '}{}')">分数</button>
-                        <button type="button" class="math-key" onclick="insertMathSymbol('\\sqrt{', '}')">√</button>
-                        <button type="button" class="math-key" onclick="insertMathSymbol('^{', '}')">xⁿ</button>
-                        <button type="button" class="math-key" onclick="insertMathSymbol('_{', '}')">xₙ</button>
-                        <button type="button" class="math-key" onclick="insertMathSymbol('\\theta')">θ</button>
-                        <button type="button" class="math-key" onclick="insertMathSymbol('\\pi')">π</button>
-                        <button type="button" class="math-key" onclick="insertMathSymbol('\\Delta')">Δ</button>
-                        <button type="button" class="math-key" onclick="insertMathSymbol('\\pm')">±</button>
-                        <button type="button" class="math-key" onclick="insertMathSymbol('\\vec{', '}')">ベクトル</button>
-                    </div>
-                    <div id="math-preview" class="math-preview tex2jax_process">入力プレビューがここに表示されます</div>
-                </div>
-
-                <div style="display: flex; gap: 0.5rem; align-items: center; margin-top: 0.8rem; flex-wrap: wrap;">
-                    <label for="problem-image-input" class="image-upload-zone" style="flex: 1; margin-bottom: 0; white-space: nowrap; font-size: 0.9rem; min-width: 150px;">
-                        📸 写真を追加（複数可・任意）
-                    </label>
-                    <button type="button" onclick="openGooglePhotosPopout(event)" title="Google Photosを小窓で開く"
-                        style="flex-shrink: 0; padding: 0.6rem 1rem; background: #1a1a2e; color: #4fc3f7; border: 1px solid #4fc3f7; border-radius: 8px; font-weight: 700; font-size: 0.85rem; cursor: pointer; white-space: nowrap;">
-                        📷 Google Photos
+                <div id="login-required-notice" class="squircle-card login-overlay-box" style="display: none; text-align: center; padding: 3rem 1.5rem; max-width: 600px; margin: 2rem auto;">
+                    <h2 style="font-family: var(--font-heading); font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.6rem;">クラウド同期未接続</h2>
+                    <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: var(--fs-sm);">間違えた問題を登録するために、Googleアカウントでログインしてください。</p>
+                    <button type="button" class="flora-btn flora-btn-primary btn-lg" id="main-login-btn">
+                        Googleアカウントでサインイン
                     </button>
                 </div>
-                <input type="file" id="problem-image-input" accept="image/*" multiple style="display: none;">
-                <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.4rem;">💡 問題文＋解答用紙など、複数枚をまとめて選択・追加できます。×で個別に削除できます。</p>
-                <div class="preview-box" id="image-preview-container"></div>
 
-                <button type="button" class="tactile-btn" id="quick-answer-btn">① 答えだけAIに聞く</button>
+                <main id="answer-check-main" style="display:none;">
+                    <div class="check-workspace-card" id="input-card">
+                        <span class="flora-badge badge-warning">⚡ QUICK CHECK</span>
+                        <h3 style="font-family: var(--font-heading); font-size: 1.15rem; font-weight: 700; margin-top: 0.6rem; color: var(--text-primary);">① 答えだけをAIに聞く</h3>
+                        <p style="color: var(--text-secondary); font-size: 0.84rem; margin-top: 0.25rem;">定石解説や罠の解説は省略し、正解の確認だけを高速に行います。複数問をまとめて判定も可能です。</p>
+
+                        <div style="margin: 1.2rem 0 0.6rem 0;">
+                            <span class="filter-label">📚 教科を選択：</span>
+                            <div id="subject-select-group" style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                                <button type="button" class="subject-select-btn active" data-subject="数学" onclick="setSelectedSubject('数学')">数学</button>
+                                <button type="button" class="subject-select-btn" data-subject="物理" onclick="setSelectedSubject('物理')">物理基礎</button>
+                                <button type="button" class="subject-select-btn" data-subject="化学" onclick="setSelectedSubject('化学')">化学基礎</button>
+                                <button type="button" class="subject-select-btn" data-subject="英語" onclick="setSelectedSubject('英語')">英語</button>
+                                <button type="button" class="subject-select-btn" data-subject="国語" onclick="setSelectedSubject('国語')">国語</button>
+                                <button type="button" class="subject-select-btn" data-subject="地歴公民" onclick="setSelectedSubject('地歴公民')">地歴公民</button>
+                            </div>
+                        </div>
+
+                        <div class="target-note-box">
+                            <div class="note-title">🎯 対象指定メモ（範囲や複数指定OK）</div>
+                            <textarea class="flora-textarea" id="target-note-input" placeholder="例：287番だけ／290~293の4問全部／287と289と291 など" style="min-height: 60px; font-size: var(--fs-sm);"></textarea>
+                            <div class="note-sub">・1問だけ指定 → その1問だけ回答<br>・「290~293」や「287, 289」→ それぞれ独立した項目として回答<br>・空欄 → 写真内で最も分かりやすい1問をAIが自動選択</div>
+                            
+                            <div class="math-keyboard" id="math-keyboard-group" style="margin-top:0.6rem;">
+                                <button type="button" class="math-key btn-accent" onclick="insertMathSymbol('$', '$')">$$</button>
+                                <button type="button" class="math-key" onclick="insertMathSymbol('\\frac{', '}{}')">分数</button>
+                                <button type="button" class="math-key" onclick="insertMathSymbol('\\sqrt{', '}')">√</button>
+                                <button type="button" class="math-key" onclick="insertMathSymbol('^{', '}')">xⁿ</button>
+                                <button type="button" class="math-key" onclick="insertMathSymbol('_{', '}')">xₙ</button>
+                                <button type="button" class="math-key" onclick="insertMathSymbol('\\theta')">θ</button>
+                                <button type="button" class="math-key" onclick="insertMathSymbol('\\pi')">π</button>
+                                <button type="button" class="math-key" onclick="insertMathSymbol('\\Delta')">Δ</button>
+                                <button type="button" class="math-key" onclick="insertMathSymbol('\\pm')">±</button>
+                                <button type="button" class="math-key" onclick="insertMathSymbol('\\vec{', '}')">ベクトル</button>
+                            </div>
+                            <div id="math-preview" class="math-preview tex2jax_process">入力プレビューがここに表示されます</div>
+                        </div>
+
+                        <div style="display: flex; gap: 0.5rem; align-items: center; margin-top: 1rem; flex-wrap: wrap;">
+                            <label for="problem-image-input" class="image-upload-zone" style="flex: 1; margin: 0; min-width: 150px;">
+                                📸 写真を追加（複数可・任意）
+                            </label>
+                            <button type="button" onclick="openGooglePhotosPopout(event)" title="Google Photosを小窓で開く" class="flora-btn flora-btn-secondary btn-sm" style="flex-shrink: 0;">
+                                📷 Google Photos
+                            </button>
+                        </div>
+                        <input type="file" id="problem-image-input" accept="image/*" multiple style="display: none;">
+                        <p style="font-size: 0.74rem; color: var(--text-secondary); margin-top: 0.4rem;">💡 問題文＋解答用紙など、複数枚をまとめて選択・追加できます。</p>
+                        <div class="preview-box" id="image-preview-container"></div>
+
+                        <button type="button" class="flora-btn flora-btn-primary btn-lg" id="quick-answer-btn" style="width: 100%; margin-top: 1.2rem;">① 答えだけAIに聞く</button>
+                    </div>
+
+                    <div id="result-list"></div>
+                    <button type="button" class="flora-btn flora-btn-secondary" id="next-batch-btn" style="width: 100%; max-width: 860px; margin: 1rem auto 0 auto; display: none;">🔄 次の写真・問題をチェックする</button>
+                </main>
+
             </div>
-
-            <div id="result-list"></div>
-            <button type="button" class="tactile-btn tactile-btn-secondary" id="next-batch-btn">🔄 次の写真・問題をチェックする</button>
         </main>
     </div>
+
+    <script src="global-timer-sync.js"></script>
+    <script src="sidebar.js"></script>
 
     <script type="module">
         import {

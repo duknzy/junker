@@ -3,19 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#050508">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="LOLZ">
-    <meta name="format-detection" content="telephone=no">
+    <meta name="theme-color" content="#059669">
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="icons/icon.png">
     <link rel="apple-touch-icon" href="icons/icon.png">
-    <title>LOLZ // ナレッジ＆質問アーカイブ</title>
+    <title>Flora | ナレッジ＆質問アーカイブ</title>
     <link rel="stylesheet" href="style.css">
 
-    <!-- MathJax 3 (bbox / color 拡張パッケージを完全有効化) -->
+    <!-- MathJax 3 -->
     <script>
         window.MathJax = {
             loader: { load: ['[tex]/bbox', '[tex]/color'] },
@@ -40,413 +35,341 @@
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" async></script>
 
     <style>
-        .archive-container {
-            max-width: 1440px;
-            margin: 0 auto;
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-            min-height: calc(100vh - 4rem);
-        }
-
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            border-bottom: 1px solid #22222a;
-            padding-bottom: 1.2rem;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-
-        .logo {
-            font-size: var(--fs-xl);
-            font-weight: 900;
-            letter-spacing: -2px;
-            line-height: 0.9;
-            background: linear-gradient(90deg, var(--text-main) 70%, var(--accent-cyan));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        /* 🎛 モード切り替え大タブ */
-        .main-tab-bar { display: flex; gap: 0.8rem; flex-wrap: wrap; }
+        /* 🎛 モード切り替えタブ */
+        .main-tab-bar { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.2rem; }
         .main-tab-btn {
-            background: rgba(255, 255, 255, 0.03);
-            color: var(--text-bright-muted);
+            background: var(--bg-surface);
+            color: var(--text-secondary);
             border: 1px solid var(--border-color);
-            padding: 0.8rem 1.6rem;
-            border-radius: 14px;
-            font-size: 0.95rem;
-            font-weight: 800;
+            padding: 0.6rem 1.2rem;
+            border-radius: var(--radius-md);
+            font-size: var(--fs-sm);
+            font-weight: 700;
             cursor: pointer;
-            transition: all 0.2s cubic-bezier(0.1, 0.8, 0.2, 1);
+            transition: all 0.15s ease;
             display: inline-flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.4rem;
         }
-        .main-tab-btn:hover { background: rgba(0, 243, 255, 0.08); border-color: var(--accent-cyan); color: #fff; }
+        .main-tab-btn:hover { border-color: #94A3B8; color: var(--text-primary); }
         .main-tab-btn.active {
-            background: var(--accent-cyan) !important; color: #000 !important;
-            font-weight: 900; border-color: var(--accent-cyan) !important;
-            box-shadow: 0 0 20px rgba(0, 243, 255, 0.35);
-        }
-        .main-tab-btn.tab-yellow.active {
-            background: var(--accent-yellow) !important; border-color: var(--accent-yellow) !important;
-            box-shadow: 0 0 20px rgba(255, 245, 0, 0.35);
+            background: var(--brand-primary) !important;
+            color: #fff !important;
+            border-color: var(--brand-primary) !important;
+            box-shadow: var(--shadow-xs);
         }
 
         /* ツールバー */
         .toolbar-card {
-            padding: 1.2rem 1.6rem;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 1.2rem 1.4rem;
             display: flex;
             flex-direction: column;
             gap: 0.8rem;
+            box-shadow: var(--shadow-xs);
+            margin-bottom: 1.5rem;
         }
         .filter-row { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
-        .filter-label { font-size: 0.75rem; font-weight: 900; color: var(--text-muted); letter-spacing: 1px; min-width: 70px; }
+        .filter-label { font-size: 0.76rem; font-weight: 700; color: var(--text-secondary); }
+
         .search-input {
-            flex-grow: 1; min-width: 200px; background: rgba(0, 0, 0, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.12); color: #fff;
-            padding: 0.6rem 1rem; border-radius: 10px; font-size: 0.9rem;
+            flex-grow: 1; min-width: 200px; background: var(--bg-subtle);
+            border: 1px solid var(--border-color); color: var(--text-primary);
+            padding: 0.55rem 0.9rem; border-radius: var(--radius-md); font-size: var(--fs-sm);
         }
-        .search-input:focus { outline: none; border-color: var(--accent-cyan); }
-        .field-select {
-            background: #000; color: var(--accent-cyan); border: 1px solid var(--accent-cyan);
-            padding: 0.45rem 0.8rem; border-radius: 8px; font-size: 0.8rem; font-weight: 800; cursor: pointer; outline: none;
-        }
+        .search-input:focus { outline: none; border-color: var(--brand-primary); }
+
         .toggle-btn {
-            background: rgba(255, 255, 255, 0.04); color: var(--text-bright-muted);
-            border: 1px solid var(--border-color); padding: 0.45rem 0.85rem; border-radius: 8px;
-            font-size: 0.78rem; font-weight: 800; cursor: pointer; transition: all 0.15s ease;
-            display: inline-flex; align-items: center; gap: 0.35rem;
+            background: var(--bg-subtle); color: var(--text-secondary);
+            border: 1px solid var(--border-color); padding: 0.35rem 0.75rem; border-radius: var(--radius-sm);
+            font-size: var(--fs-xs); font-weight: 700; cursor: pointer; transition: all 0.15s ease;
+            display: inline-flex; align-items: center; gap: 0.3rem;
         }
-        .toggle-btn:hover { border-color: var(--accent-cyan); color: #fff; }
+        .toggle-btn:hover { border-color: #94A3B8; color: var(--text-primary); }
         .toggle-btn.active {
-            background: rgba(0, 243, 255, 0.15); border-color: var(--accent-cyan); color: var(--accent-cyan);
-            box-shadow: 0 0 10px rgba(0, 243, 255, 0.2);
+            background: var(--brand-light); border-color: var(--brand-border); color: var(--brand-primary);
         }
 
         /* 🎴 リッチ対比カード表示 */
         .insight-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(520px, 1fr));
-            gap: 1.4rem;
+            grid-template-columns: repeat(auto-fill, minmax(480px, 1fr));
+            gap: 1.25rem;
         }
-        @media (max-width: 700px) {
+        @media (max-width: 600px) {
             .insight-grid { grid-template-columns: 1fr; }
         }
 
         .insight-card {
-            background: var(--card-bg-glass);
+            background: var(--bg-surface);
             border: 1px solid var(--border-color);
-            border-left: 4px solid var(--accent-cyan);
-            border-radius: 18px;
-            padding: 1.3rem 1.5rem;
+            border-left: 4px solid var(--brand-primary);
+            border-radius: var(--radius-lg);
+            padding: 1.4rem;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             gap: 1rem;
+            box-shadow: var(--shadow-xs);
             transition: all 0.15s ease;
         }
         .insight-card.pinned {
-            border-left-color: var(--accent-yellow);
-            background: rgba(255, 245, 0, 0.03);
+            border-left-color: var(--warning);
+            background: #FFFBEB;
         }
         .insight-card:hover {
-            border-color: var(--accent-cyan);
+            border-color: var(--brand-border);
             transform: translateY(-2px);
-            background: rgba(255, 255, 255, 0.04);
+            box-shadow: var(--shadow-md);
         }
-        .insight-card.pinned:hover { border-color: var(--accent-yellow); }
 
-        /* 上半分：問題の型・問題文プレビュー */
         .insight-problem-preview {
-            background: rgba(0, 243, 255, 0.03);
-            border: 1px dashed rgba(0, 243, 255, 0.25);
-            border-radius: 12px;
+            background: var(--bg-subtle);
+            border: 1px dashed var(--border-color);
+            border-radius: var(--radius-md);
             padding: 0.8rem 1rem;
             display: flex;
             flex-direction: column;
-            gap: 0.4rem;
+            gap: 0.3rem;
         }
         .insight-problem-title {
-            font-size: 0.95rem;
-            font-weight: 800;
-            color: #ffffff;
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: var(--text-primary);
         }
         .insight-problem-snippet {
-            font-size: 0.88rem;
-            color: var(--text-bright-muted);
+            font-size: 0.84rem;
+            color: var(--text-secondary);
             line-height: 1.6;
-            max-height: 130px;
+            max-height: 120px;
             overflow-y: auto;
             word-break: break-word;
         }
 
-        /* 下半分：極意・気づき */
-        .insight-body-box {
-            display: flex;
-            flex-direction: column;
-            gap: 0.4rem;
-        }
         .insight-body-label {
             font-size: 0.72rem;
-            font-weight: 900;
-            color: var(--accent-cyan);
-            letter-spacing: 0.5px;
+            font-weight: 700;
+            color: var(--brand-primary);
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
         .insight-text {
-            font-size: 1.05rem;
+            font-size: 0.98rem;
             line-height: 1.7;
-            color: var(--text-main);
+            color: var(--text-primary);
             white-space: pre-wrap;
             word-break: break-word;
             font-weight: 600;
         }
 
         /* 📋 爆速コンパクトリスト表示 */
-        .insight-compact-list {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
+        .insight-compact-list { display: flex; flex-direction: column; gap: 0.5rem; }
         .insight-compact-row {
             display: flex;
             align-items: center;
             gap: 0.8rem;
-            background: var(--card-bg-glass);
+            background: var(--bg-surface);
             border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 0.7rem 1rem;
+            border-radius: var(--radius-md);
+            padding: 0.75rem 1rem;
+            box-shadow: var(--shadow-xs);
             transition: all 0.15s ease;
         }
-        .insight-compact-row.pinned { border-left: 3px solid var(--accent-yellow); }
+        .insight-compact-row.pinned { border-left: 4px solid var(--warning); }
         .insight-compact-row:hover {
-            border-color: var(--accent-cyan);
-            transform: translateX(3px);
-            background: rgba(255, 255, 255, 0.04);
+            border-color: var(--brand-border);
+            transform: translateX(2px);
         }
         .compact-main { flex-grow: 1; min-width: 0; }
         .compact-text {
-            font-size: 0.95rem; font-weight: 700; color: #fff;
+            font-size: 0.92rem; font-weight: 700; color: var(--text-primary);
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
         .compact-sub {
-            font-size: 0.74rem; color: var(--text-muted); margin-top: 0.2rem;
+            font-size: 0.74rem; color: var(--text-secondary); margin-top: 0.2rem;
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
 
         /* 📁 単元グループ見出し（アコーディオン） */
         .group-header {
-            font-size: 0.95rem; font-weight: 900; color: var(--accent-yellow);
-            padding: 0.6rem 0.8rem; margin: 1.2rem 0 0.6rem 0;
-            background: rgba(255, 245, 0, 0.06); border-left: 3px solid var(--accent-yellow);
-            border-radius: 0 8px 8px 0; cursor: pointer; display: flex;
+            font-size: 0.92rem; font-weight: 700; color: var(--brand-primary);
+            padding: 0.6rem 0.9rem; margin: 1.4rem 0 0.6rem 0;
+            background: var(--brand-light); border-left: 3px solid var(--brand-primary);
+            border-radius: 0 var(--radius-sm) var(--radius-sm) 0; cursor: pointer; display: flex;
             align-items: center; justify-content: space-between; user-select: none;
         }
-        .group-header:hover { background: rgba(255, 245, 0, 0.12); }
         .group-header.collapsed .group-chevron { transform: rotate(-90deg); }
         .group-chevron { transition: transform 0.15s ease; font-size: 0.75rem; }
         .group-content.collapsed { display: none; }
 
         /* ⭐ スターボタン */
         .star-btn {
-            background: none; border: none; font-size: 1.1rem; cursor: pointer;
-            color: #555; transition: transform 0.15s ease, color 0.15s ease; padding: 0.1rem;
+            background: none; border: none; font-size: 1.15rem; cursor: pointer;
+            color: #CBD5E1; transition: transform 0.15s ease, color 0.15s ease; padding: 0.1rem;
         }
         .star-btn:hover { transform: scale(1.25); }
-        .star-btn.active { color: var(--accent-yellow); text-shadow: 0 0 10px rgba(255, 245, 0, 0.6); }
-
-        /* ✏️ インライン編集エリア */
-        .inline-edit-textarea {
-            width: 100%; min-height: 80px; background: #000; border: 1px solid var(--accent-cyan);
-            color: #fff; padding: 0.6rem; border-radius: 8px; font-size: 0.95rem; font-family: inherit; resize: vertical;
-        }
+        .star-btn.active { color: var(--warning); }
 
         /* 💬 質問ログ用スタイル */
         .qna-layout {
-            display: grid; grid-template-columns: 380px 1fr; gap: 1.5rem; align-items: start; min-height: 600px;
+            display: grid; grid-template-columns: 360px 1fr; gap: 1.25rem; align-items: start; min-height: 600px;
         }
-        @media (max-width: 1000px) { .qna-layout { grid-template-columns: 1fr; } }
+        @media (max-width: 900px) { .qna-layout { grid-template-columns: 1fr; } }
         .qna-list-pane {
             max-height: calc(100vh - 280px); overflow-y: auto; display: flex; flex-direction: column; gap: 0.6rem; padding-right: 0.4rem;
         }
         .qna-list-item {
-            background: var(--card-bg-glass); border: 1px solid var(--border-color); border-radius: 12px;
-            padding: 0.9rem 1.1rem; cursor: pointer; transition: all 0.15s ease;
+            background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md);
+            padding: 0.9rem 1.1rem; cursor: pointer; transition: all 0.15s ease; box-shadow: var(--shadow-xs);
         }
-        .qna-list-item:hover { border-color: var(--accent-yellow); transform: translateX(3px); }
+        .qna-list-item:hover { border-color: var(--brand-border); transform: translateX(2px); }
         .qna-list-item.active {
-            background: rgba(255, 245, 0, 0.08); border-color: var(--accent-yellow); box-shadow: 0 0 15px rgba(255, 245, 0, 0.15);
+            background: var(--brand-light); border-color: var(--brand-primary);
         }
         .qna-item-preview {
-            font-size: 0.85rem; color: var(--text-bright-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 0.3rem;
+            font-size: 0.82rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 0.3rem;
         }
         .qna-detail-pane {
-            background: var(--card-bg-glass); border: 1px solid var(--border-color); border-radius: 20px;
-            padding: 1.4rem; display: flex; flex-direction: column; gap: 0.8rem; min-height: 600px; max-height: calc(100vh - 280px);
+            background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-xl);
+            padding: 1.5rem; display: flex; flex-direction: column; gap: 0.8rem; min-height: 600px; max-height: calc(100vh - 280px);
+            box-shadow: var(--shadow-sm);
         }
         .qna-detail-problem-card {
-            background: rgba(0, 243, 255, 0.04); border: 1px dashed rgba(0, 243, 255, 0.25); border-radius: 12px;
+            background: var(--bg-subtle); border: 1px dashed var(--border-color); border-radius: var(--radius-md);
             padding: 0.8rem 1rem; display: flex; flex-direction: column; gap: 0.3rem; flex-shrink: 0;
         }
-        .qna-problem-header { font-size: 0.72rem; font-weight: 900; color: var(--accent-cyan); letter-spacing: 0.5px; }
-        .qna-problem-body { font-size: 0.88rem; color: var(--text-bright-muted); line-height: 1.6; max-height: 120px; overflow-y: auto; word-break: break-word; }
         .qna-messages-stream { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 0.6rem; padding-right: 0.4rem; }
         .chat-bubble { padding: 0.75rem 1.1rem; border-radius: 14px; font-size: 0.92rem; line-height: 1.65; max-width: 88%; word-break: break-word; box-sizing: border-box; }
-        .bubble-user { background: rgba(255, 0, 127, 0.15); border-right: 3px solid var(--accent-magenta); color: #fff; align-self: flex-end; }
-        .bubble-ai { background: rgba(18, 22, 34, 0.85); border-left: 3px solid var(--accent-cyan); color: #e0f2fe; align-self: flex-start; }
+        .bubble-user { background: var(--brand-primary); color: #fff; align-self: flex-end; border-radius: 14px 14px 2px 14px; }
+        .bubble-ai { background: var(--bg-subtle); border: 1px solid var(--border-color); color: var(--text-primary); align-self: flex-start; border-radius: 14px 14px 14px 2px; }
 
         /* 🎴 語呂合わせカード */
         .mnemonic-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem; }
         .mnemonic-card {
-            background: var(--card-bg-glass); border: 1px solid var(--border-color); border-left: 4px solid var(--accent-yellow);
-            border-radius: 14px; padding: 1.2rem; display: flex; flex-direction: column; gap: 0.6rem; transition: all 0.15s ease;
+            background: var(--bg-surface); border: 1px solid var(--border-color); border-left: 4px solid var(--brand-primary);
+            border-radius: var(--radius-md); padding: 1.2rem; display: flex; flex-direction: column; gap: 0.6rem; box-shadow: var(--shadow-xs); transition: all 0.15s ease;
         }
-        .mnemonic-card:hover { border-color: var(--accent-yellow); transform: translateY(-2px); }
-        .mnemonic-body { font-size: 1.05rem; font-weight: 800; color: #ffffff; line-height: 1.6; }
-
-        .goto-btn {
-            font-size: 0.78rem; font-weight: 800; padding: 0.3rem 0.7rem; border-radius: 8px;
-            background: rgba(0, 243, 255, 0.08); color: var(--accent-cyan); border: 1px solid var(--accent-cyan);
-            text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem; transition: all 0.15s ease;
-        }
-        .goto-btn:hover { background: rgba(0, 243, 255, 0.2); }
-
-        /* 🔲 MathJax 穴埋め四角枠（\bbox）の美しいサイバーパンク風スタイル */
-        mjx-box {
-            border-color: rgba(0, 243, 255, 0.6) !important;
-            background: rgba(0, 243, 255, 0.08) !important;
-            border-radius: 4px !important;
-            padding: 1px 5px !important;
-            color: #ffffff !important;
-            font-weight: 700;
-        }
+        .mnemonic-card:hover { border-color: var(--brand-border); transform: translateY(-2px); }
+        .mnemonic-body { font-size: 1rem; font-weight: 700; color: var(--text-primary); line-height: 1.6; }
     </style>
 </head>
 <body>
 
-    <div class="archive-container">
-        <!-- GLOBAL CYBER HUD NAV -->
-        <nav class="global-cyber-nav">
-            <div class="nav-brand">//Lolz</div>
-            <div class="nav-links">
-                <a href="index.html" class="nav-btn">🧠 誤答ノート</a>
-                <a href="daily.html" class="nav-btn">🏁 計算スプリント</a>
-                <a href="custom-sprint.html" class="nav-btn">🎯 カスタムスプリント</a>
-                <a href="lesson.html" class="nav-btn">📖 授業・解説</a>
-                <a href="answer-check.html" class="nav-btn">⚡ 答え合わせ</a>
-                <a href="insights.html" class="nav-btn active">💡 気づき・質問ログ</a>
-                <a href="refbook.html" class="nav-btn">📚 参考書問題集</a>
-                <a href="timeline.html" class="nav-btn">🌍 世界史年表</a>
-                <a href="tokei/index.html" class="nav-btn global-timer-link">⏱️ 集中タイマー</a>
-                <a href="#" onclick="openTimerPopout(event)" class="nav-btn" title="別ウィンドウでタイマーを開く">🗔 小窓</a>
-                <a href="#" onclick="openLogPopout(event)" class="nav-btn" title="24hログを小窓で開く">📊 24hログ</a>
-                <a href="#" onclick="openGooglePhotosPopout(event)" class="nav-btn" title="Google Photosを小窓で開く">📷 Photos</a>
-            </div>
-        </nav>
-        <script src="global-timer-sync.js"></script>
+    <div class="app-layout">
+        <!-- 🌿 左側共通サイドバー -->
+        <div id="flora-sidebar"></div>
 
-        <header>
-            <div>
-                <h1 class="logo">KNOWLEDGE</h1>
-                <p style="color: var(--text-muted); margin-top: 0.4rem; font-size: 0.85rem;">
-                    これまでの演習で記録した「気づき・極意」「AI質問ログ」「語呂合わせ」の統合ナレッジベースです。
-                </p>
-            </div>
-            <div style="font-size: 0.85rem; color: var(--accent-cyan); font-weight: 800;" id="stat-summary-text">
-                読み込み中...
-            </div>
-        </header>
+        <!-- 💻 右側メインコンテンツ -->
+        <main class="app-main">
+            <div class="workspace-content-wrap">
 
-        <!-- メインタブ切り替え -->
-        <div class="main-tab-bar">
-            <button type="button" class="main-tab-btn active" id="tab-btn-insights">
-                🧠 気づき・極意メモ (<span id="count-insights">0</span>)
-            </button>
-            <button type="button" class="main-tab-btn tab-yellow" id="tab-btn-memorize">
-                📌 暗記事項 (<span id="count-memorize">0</span>)
-            </button>
-            <button type="button" class="main-tab-btn tab-yellow" id="tab-btn-qna">
-                💬 AI質問ログ (<span id="count-qna">0</span>)
-            </button>
-            <button type="button" class="main-tab-btn tab-yellow" id="tab-btn-mnemonics">
-                🎴 世界史 語呂合わせ (<span id="count-mnemonics">0</span>)
-            </button>
-        </div>
-
-        <!-- ツールバー -->
-        <div class="squircle-card glass-card toolbar-card">
-            <div class="filter-row">
-                <span class="filter-label">🔎 検索：</span>
-                <input type="text" class="search-input" id="search-input" placeholder="キーワード・単元名・問題タイトルで検索...">
-                
-                <span class="filter-label" style="min-width:auto; margin-left:0.4rem;">📚 教科：</span>
-                <select class="field-select" id="subject-select">
-                    <option value="ALL">すべての教科</option>
-                </select>
-
-                <span class="filter-label" style="min-width:auto; margin-left:0.4rem;">🔀 並べ替え：</span>
-                <select class="field-select" id="sort-select">
-                    <option value="newest">更新が新しい順</option>
-                    <option value="oldest">更新が古い順</option>
-                    <option value="subject">教科・単元順</option>
-                </select>
-            </div>
-
-            <!-- 気づきメモタブ専用のサブツールバー -->
-            <div class="filter-row" id="insight-subtoolbar" style="border-top: 1px dashed rgba(255,255,255,0.08); padding-top:0.6rem;">
-                <span class="filter-label">🎛 表示：</span>
-                <button type="button" class="toggle-btn active" id="btn-view-card">🎴 対比カード</button>
-                <button type="button" class="toggle-btn" id="btn-view-compact">📋 爆速リスト</button>
-                <span style="color: #334455; margin: 0 0.3rem;">|</span>
-                <button type="button" class="toggle-btn active" id="btn-toggle-group">📁 単元ごとにまとめる</button>
-                <button type="button" class="toggle-btn" id="btn-toggle-pinned">⭐ スター付きのみ</button>
-            </div>
-        </div>
-
-        <!-- メイン表示領域 -->
-        <main>
-            <!-- 1. 気づきメモビュー -->
-            <div id="view-insights"></div>
-
-            <!-- 1.5. 暗記事項ビュー（授業ページで自動生成される暗記事項の一覧。気づき・極意メモとは別） -->
-            <div id="view-memorize" style="display: none;"></div>
-
-            <!-- 2. AI質問ログビュー（2カラム） -->
-            <div id="view-qna" class="qna-layout" style="display: none;">
-                <div class="qna-list-pane" id="qna-list-pane"></div>
-                <div class="qna-detail-pane" id="qna-detail-pane">
-                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #22222a; padding-bottom:0.6rem; flex-wrap:wrap; gap:0.5rem;">
-                        <div>
-                            <span class="badge badge-physics" id="qna-detail-subject">--</span>
-                            <span style="font-weight:800; font-size:0.95rem; margin-left:0.4rem;" id="qna-detail-title">質問を選択してください</span>
-                            <div style="font-size:0.72rem; color:var(--text-muted); margin-top:0.2rem;" id="qna-detail-date"></div>
-                        </div>
-                        <div style="display:flex; gap:0.6rem;">
-                            <a href="#" id="qna-detail-goto" class="goto-btn" style="display:none;">📌 問題を開く</a>
-                            <button type="button" id="qna-detail-delete" class="tactile-btn" style="display:none; font-size:0.75rem; padding:0.35rem 0.75rem; background:rgba(255,0,127,0.1); color:var(--accent-magenta); border:1px solid var(--accent-magenta); box-shadow:none;">🗑 削除</button>
-                        </div>
+                <!-- ページヘッダー -->
+                <div class="page-header">
+                    <div class="page-title-group">
+                        <h1 class="page-title">💡 ナレッジ＆質問アーカイブ</h1>
+                        <p class="page-subtitle">これまでの演習で記録した「気づき・極意」「AI質問ログ」「暗記事項」の統合ナレッジベース</p>
                     </div>
-
-                    <div class="qna-detail-problem-card" id="qna-detail-problem-box" style="display: none;">
-                        <div class="qna-problem-header">
-                            <span>📖 対象の問題文</span>
-                        </div>
-                        <div class="qna-problem-body tex2jax_process" id="qna-detail-problem-text"></div>
-                    </div>
-
-                    <div class="qna-messages-stream" id="qna-messages-stream">
-                        <div style="text-align:center; padding:5rem 1rem; color:var(--text-muted); font-size:0.9rem;">
-                            左のリストから質問ログを選択すると、ここに会話全文が表示されます。
-                        </div>
+                    <div class="page-actions" style="font-size: var(--fs-xs); color: var(--text-secondary);" id="stat-summary-text">
+                        読み込み中...
                     </div>
                 </div>
+
+                <!-- メインタブ切り替え -->
+                <div class="main-tab-bar">
+                    <button type="button" class="main-tab-btn active" id="tab-btn-insights">
+                        🧠 気づき・極意メモ (<span id="count-insights">0</span>)
+                    </button>
+                    <button type="button" class="main-tab-btn" id="tab-btn-memorize">
+                        📌 暗記事項 (<span id="count-memorize">0</span>)
+                    </button>
+                    <button type="button" class="main-tab-btn" id="tab-btn-qna">
+                        💬 AI質問ログ (<span id="count-qna">0</span>)
+                    </button>
+                    <button type="button" class="main-tab-btn" id="tab-btn-mnemonics">
+                        🎴 世界史 語呂合わせ (<span id="count-mnemonics">0</span>)
+                    </button>
+                </div>
+
+                <!-- ツールバー -->
+                <div class="toolbar-card">
+                    <div class="filter-row">
+                        <span class="filter-label">🔎 検索：</span>
+                        <input type="text" class="search-input" id="search-input" placeholder="キーワード・単元名・問題タイトルで検索...">
+                        
+                        <span class="filter-label" style="margin-left:0.4rem;">📚 教科：</span>
+                        <select class="flora-select" id="subject-select" style="width: auto; padding: 0.4rem 0.8rem; font-size: var(--fs-xs);">
+                            <option value="ALL">すべての教科</option>
+                        </select>
+
+                        <span class="filter-label" style="margin-left:0.4rem;">🔀 並べ替え：</span>
+                        <select class="flora-select" id="sort-select" style="width: auto; padding: 0.4rem 0.8rem; font-size: var(--fs-xs);">
+                            <option value="newest">更新が新しい順</option>
+                            <option value="oldest">更新が古い順</option>
+                            <option value="subject">教科・単元順</option>
+                        </select>
+                    </div>
+
+                    <!-- 気づきメモタブ専用のサブツールバー -->
+                    <div class="filter-row" id="insight-subtoolbar" style="border-top: 1px dashed var(--border-color); padding-top:0.6rem;">
+                        <span class="filter-label">🎛 表示：</span>
+                        <button type="button" class="toggle-btn active" id="btn-view-card">🎴 対比カード</button>
+                        <button type="button" class="toggle-btn" id="btn-view-compact">📋 爆速リスト</button>
+                        <span style="color: var(--border-color); margin: 0 0.2rem;">|</span>
+                        <button type="button" class="toggle-btn active" id="btn-toggle-group">📁 単元ごとにまとめる</button>
+                        <button type="button" class="toggle-btn" id="btn-toggle-pinned">⭐ スター付きのみ</button>
+                    </div>
+                </div>
+
+                <!-- メイン表示領域 -->
+                <div>
+                    <!-- 1. 気づきメモビュー -->
+                    <div id="view-insights"></div>
+
+                    <!-- 1.5. 暗記事項ビュー -->
+                    <div id="view-memorize" style="display: none;"></div>
+
+                    <!-- 2. AI質問ログビュー（2カラム） -->
+                    <div id="view-qna" class="qna-layout" style="display: none;">
+                        <div class="qna-list-pane" id="qna-list-pane"></div>
+                        <div class="qna-detail-pane" id="qna-detail-pane">
+                            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-color); padding-bottom:0.6rem; flex-wrap:wrap; gap:0.5rem;">
+                                <div>
+                                    <span class="flora-badge badge-physics" id="qna-detail-subject">--</span>
+                                    <span style="font-weight:700; font-size:0.95rem; margin-left:0.4rem; color: var(--text-primary);" id="qna-detail-title">質問を選択してください</span>
+                                    <div style="font-size:0.72rem; color:var(--text-secondary); margin-top:0.2rem;" id="qna-detail-date"></div>
+                                </div>
+                                <div style="display:flex; gap:0.4rem;">
+                                    <a href="#" id="qna-detail-goto" class="flora-btn flora-btn-secondary btn-sm" style="display:none; text-decoration: none;">📌 問題を開く</a>
+                                    <button type="button" id="qna-detail-delete" class="flora-btn flora-btn-ghost btn-sm" style="display:none; color: var(--error);">🗑 削除</button>
+                                </div>
+                            </div>
+
+                            <div class="qna-detail-problem-card" id="qna-detail-problem-box" style="display: none;">
+                                <div style="font-size: 0.74rem; font-weight: 700; color: var(--brand-primary);">📖 対象の問題文</div>
+                                <div class="qna-problem-body tex2jax_process" id="qna-detail-problem-text" style="font-size: 0.86rem; color: var(--text-secondary); line-height: 1.6; max-height: 120px; overflow-y: auto;"></div>
+                            </div>
+
+                            <div class="qna-messages-stream" id="qna-messages-stream">
+                                <div style="text-align:center; padding:5rem 1rem; color:var(--text-secondary); font-size: var(--fs-sm);">
+                                    左のリストから質問ログを選択すると、ここに会話全文が表示されます。
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. 世界史 語呂合わせビュー -->
+                    <div id="view-mnemonics" style="display: none;"></div>
+                </div>
+
             </div>
+        </main>
+    </div>
+
+    <script src="global-timer-sync.js"></script>
+    <script src="sidebar.js"></script>
 
             <!-- 3. 語呂合わせビュー -->
             <div id="view-mnemonics" class="mnemonic-grid" style="display: none;"></div>
