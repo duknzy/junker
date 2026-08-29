@@ -8,7 +8,7 @@
     <link rel="icon" href="icons/icon.png">
     <link rel="apple-touch-icon" href="icons/icon.png">
     <title>Flora | クイック答え合わせ</title>
-    <link rel="stylesheet" href="style.css?v=3.4">
+    <link rel="stylesheet" href="style.css?v=3.5">
 
     <script>
         window.MathJax = {
@@ -193,12 +193,17 @@
                         <div style="margin: 1.2rem 0 0.6rem 0;">
                             <span class="filter-label">📚 教科を選択：</span>
                             <div id="subject-select-group" style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
-                                <button type="button" class="subject-select-btn active" data-subject="数学" onclick="setSelectedSubject('数学')">数学</button>
-                                <button type="button" class="subject-select-btn" data-subject="物理" onclick="setSelectedSubject('物理')">物理基礎</button>
-                                <button type="button" class="subject-select-btn" data-subject="化学" onclick="setSelectedSubject('化学')">化学基礎</button>
-                                <button type="button" class="subject-select-btn" data-subject="英語" onclick="setSelectedSubject('英語')">英語</button>
-                                <button type="button" class="subject-select-btn" data-subject="国語" onclick="setSelectedSubject('国語')">国語</button>
-                                <button type="button" class="subject-select-btn" data-subject="地歴公民" onclick="setSelectedSubject('地歴公民')">地歴公民</button>
+                                <button type="button" class="subject-select-btn active" data-subject="数学" onclick="setSelectedSubject('数学')">📐 数学</button>
+                                <button type="button" class="subject-select-btn" data-subject="物理" onclick="setSelectedSubject('物理')">⚡ 物理</button>
+                                <button type="button" class="subject-select-btn" data-subject="化学" onclick="setSelectedSubject('化学')">🧪 化学</button>
+                                <button type="button" class="subject-select-btn" data-subject="生物" onclick="setSelectedSubject('生物')">🧬 生物</button>
+                                <button type="button" class="subject-select-btn" data-subject="情報" onclick="setSelectedSubject('情報')">💻 情報</button>
+                                <button type="button" class="subject-select-btn" data-subject="地理" onclick="setSelectedSubject('地理')">🗺️ 地理</button>
+                                <button type="button" class="subject-select-btn" data-subject="日本史" onclick="setSelectedSubject('日本史')">⛩️ 日本史</button>
+                                <button type="button" class="subject-select-btn" data-subject="世界史" onclick="setSelectedSubject('世界史')">🏛️ 世界史</button>
+                                <button type="button" class="subject-select-btn" data-subject="英語" onclick="setSelectedSubject('英語')">🔤 英語</button>
+                                <button type="button" class="subject-select-btn" data-subject="国語" onclick="setSelectedSubject('国語')">📜 国語</button>
+                                <button type="button" class="subject-select-btn" data-subject="公民" onclick="setSelectedSubject('公民')">⚖️ 公民 / 倫政</button>
                             </div>
                         </div>
 
@@ -254,7 +259,7 @@
             showToast, callGeminiJSON, generateTinyThumbnail
         } from "./api-key-manager.js";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { getAuth, signInWithPopup, signInWithEmailAndPassword, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
         import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
         const firebaseConfig = {
@@ -296,40 +301,70 @@
 
         const QUICK_SUBJECT_CONFIG = {
             "数学": {
-                role: "高校数学",
-                fieldExample: "分野名（例：数学II 式と証明、数学B ベクトル など）",
+                role: "高校数学（数学I・A・II・B・III・C）",
+                fieldExample: "分野名（例：数学II 式と証明、数学B ベクトル、数学III 微積分 など）",
                 extractedNote: "数式や記号を含む場合は必ず $ $ で挟むこと",
                 answerNote: "数式や変数を記述する場合は、必ず前後に $ または $$ をつけて美しいLaTeX形式にすること。手順ごとに改行コード（\\n）を挟んで箇条書き（1., 2.など）で出力すること"
             },
             "物理": {
-                role: "高校物理基礎",
-                fieldExample: "分野名（例：力学基礎 等加速度運動、熱 状態変化、波 音の性質、電気 オームの法則 など）",
+                role: "高校物理・物理基礎",
+                fieldExample: "分野名（例：力学 等加速度運動・円運動、電磁気、波動、熱力学 など）",
                 extractedNote: "数式や記号を含む場合は必ず $ $ で挟むこと",
                 answerNote: "数式や変数を記述する場合は、必ず前後に $ または $$ をつけて美しいLaTeX形式にすること。手順ごとに改行コード（\\n）を挟んで箇条書き（1., 2.など）で出力すること"
             },
             "化学": {
-                role: "高校化学基礎",
-                fieldExample: "分野名（例：物質の構成 mol計算、化学結合、酸と塩基、酸化還元反応 など）",
+                role: "高校化学・化学基礎",
+                fieldExample: "分野名（例：理論化学 mol計算・平衡、無機化学、有機化学 など）",
                 extractedNote: "化学式や数値は $H_2O$ のようにLaTeX形式（$で囲む）で表現すること",
                 answerNote: "化学反応式・化学式・数値・単位は必ず $ で囲んだLaTeX形式（例：$2H_2 + O_2 \\rightarrow 2H_2O$）で書くこと。手順ごとに改行コード（\\n）を挟んで箇条書き（1., 2.など）で出力すること"
             },
-            "国語": {
-                role: "高校国語（現代文・古文・漢文）",
-                fieldExample: "分野名（例：現代文 論理的文章、古文 助動詞の識別、漢文 句法 など）",
-                extractedNote: "古文・漢文は原文のまま。LaTeX記法は使わないこと",
-                answerNote: "根拠となる本文箇所を明示すること。古文・漢文は現代語訳や句法の説明も含めること。手順ごとに改行コード（\\n）を挟んで箇条書き（1., 2.など）で出力すること"
+            "生物": {
+                role: "高校生物・生物基礎",
+                fieldExample: "分野名（例：細胞と代謝、遺伝情報の発現、恒常性・免疫、生態系・進化 など）",
+                extractedNote: "専門用語や遺伝子記号（例：$AaBb$）は正確に書き写すこと",
+                answerNote: "生物用語・反応経路は正確に記述し、計算問題では導出過程を簡潔に書くこと。手順ごとに改行コード（\\n）を挟んで箇条書き（1., 2.など）で出力すること"
             },
-            "地歴公民": {
-                role: "高校地理・公民（地理総合、公共・現代社会など）",
-                fieldExample: "分野名（例：地理総合 気候区分、公共 政治のしくみ、公共 経済のしくみ など）",
-                extractedNote: "統計・資料の内容が問題に含まれる場合はその要点も書き起こすこと",
-                answerNote: "用語・制度名は正確に使うこと。手順ごとに改行コード（\\n）を挟んで箇条書き（1., 2.など）で出力すること"
+            "情報": {
+                role: "高校情報（情報I）",
+                fieldExample: "分野名（例：情報社会とセキュリティ、暗号化、データ通信・ネットワーク、プログラミング・アルゴリズム、データの活用 など）",
+                extractedNote: "コードブロックや真理値表、2進数・16進数計算は正確に書き写すこと",
+                answerNote: "暗号化の鍵の種類（公開鍵/秘密鍵）や計算過程、論理式の変形を明示すること。コードや変数は正確に出力すること。手順ごとに改行コード（\\n）を挟んで箇条書き（1., 2.など）で出力すること"
+            },
+            "地理": {
+                role: "高校地理（地理総合・地理探究）",
+                fieldExample: "分野名（例：系統地理 気候・地形・産業、地誌 アジア・ヨーロッパ・南北アメリカ など）",
+                extractedNote: "雨温図・地図・統計グラフの内容が設問に含まれる場合はその要点も書き起こすこと",
+                answerNote: "国名・都市名・気候区・産業データを正確に示し、因果関係を簡潔に説明すること。手順ごとに改行コード（\\n）を挟んで箇条書き（1., 2.など）で出力すること"
+            },
+            "日本史": {
+                role: "高校日本史（日本史探究）",
+                fieldExample: "分野名（例：古代 律令国家、中世 鎌倉・室町幕府、近世 江戸幕政・外交、近代・現代 明治維新・戦後史 など）",
+                extractedNote: "史料文や人名・元号・寺社名・法令名は正確に書き写すこと",
+                answerNote: "年代（西暦・元号）、人物名、事件・制度の名称と背景を正確に記述すること。手順ごとに改行コード（\\n）を挟んで箇条書き（1., 2.など）で出力すること"
+            },
+            "世界史": {
+                role: "高校世界史（世界史探究）",
+                fieldExample: "分野名（例：オリエント・地中海世界、東アジア史・中国王朝、欧米近代革命、帝国主義・二度の世界大戦、冷戦と現代世界 など）",
+                extractedNote: "地域名・世紀・条約名・王朝名は正確に書き写すこと",
+                answerNote: "年代（西暦）、地域、国王・皇帝・指導者名、条約・戦争の名称を正確に記述すること。手順ごとに改行コード（\\n）を挟んで箇条書き（1., 2.など）で出力すること"
             },
             "英語": {
                 role: "高校英語",
-                fieldExample: "分野名（例：文法・語法、長文読解、英作文、語彙 など）",
-                extractedNote: "英語のまま。改行は\\nで保持すること。LaTeX記法は使わないこと",
-                answerNote: "最終的な答え・和訳と、簡潔なステップ解説（文構造や重要単語・文法の要点を含む）。LaTeX記法は使わないこと。手順ごとに改行コード（\\n）を挟んで箇条書き（1., 2.など）で出力すること"
+                fieldExample: "分野名（例：文法・語法、長文読解、英作文、整序英作文、語彙 など）",
+                extractedNote: "英文のまま。改行は\\nで保持すること。LaTeX記法は使わないこと",
+                answerNote: "最終的な答え・和訳と、簡潔なステップ解説（文構造 SVOC や重要熟語・文法ポイントを含む）。LaTeX記法は使わないこと。手順ごとに改行コード（\\n）を挟んで箇条書き（1., 2.など）で出力すること"
+            },
+            "国語": {
+                role: "高校国語（現代文・古文・漢文）",
+                fieldExample: "分野名（例：現代文 評論文・小説、古文 助動詞・敬語・和歌、漢文 句法・返り点 など）",
+                extractedNote: "古文・漢文は原文のまま。LaTeX記法は使わないこと",
+                answerNote: "根拠となる本文箇所を明示すること。古文・漢文は現代語訳や句法（返り点・送り仮名）の説明も含めること。手順ごとに改行コード（\\n）を挟んで箇条書き（1., 2.など）で出力すること"
+            },
+            "公民": {
+                role: "高校公民（公共・政治経済・倫理）",
+                fieldExample: "分野名（例：公共 民主政治の基本原理、政治経済 市場メカニズム・金融政策、倫理 西洋・東洋思想 など）",
+                extractedNote: "憲法条文・判例名・思想家名・経済指標は正確に書き写すこと",
+                answerNote: "用語・制度名・判例趣旨・計算式（GDPや比較優位など）を正確に示すこと。手順ごとに改行コード（\\n）を挟んで箇条書き（1., 2.など）で出力すること"
             }
         };
 
@@ -753,29 +788,38 @@ ${MULTI_QUESTION_INSTRUCTION}
             const loginNotice = document.getElementById("login-required-notice");
             const mainArea = document.getElementById("answer-check-main");
 
+            if (authPanel) authPanel.innerHTML = "";
+
             if (user) {
                 currentUser = user;
-                authPanel.innerHTML = `
-                    <div class="user-profile">
-                        <img src="${user.photoURL}" class="user-avatar">
-                        <span>${user.displayName}</span>
-                        <button id="logout-btn">ログアウト</button>
-                    </div>
-                `;
-                document.getElementById("logout-btn").addEventListener("click", () => signOut(auth));
                 loginNotice.style.display = "none";
                 mainArea.style.display = "block";
             } else {
                 currentUser = null;
-                authPanel.innerHTML = `<span style="color:var(--accent-magenta); cursor:pointer;" id="header-login-btn">SIGN IN</span>`;
-                document.getElementById("header-login-btn").addEventListener("click", doLogin);
                 loginNotice.style.display = "block";
                 mainArea.style.display = "none";
             }
         });
 
         function doLogin() { signInWithPopup(auth, provider).catch(e => console.error(e)); }
-        document.getElementById("main-login-btn").addEventListener("click", doLogin);
+        document.getElementById("main-login-btn")?.addEventListener("click", doLogin);
+
+        window.floraTestLogin = async function() {
+            try {
+                showToast("🧪 テスターアカウントでログイン中...", "info");
+                await signInWithEmailAndPassword(auth, "tester@flora.local", "flora1234");
+                showToast("✅ テスターログイン成功", "success");
+            } catch(e) {
+                console.error("Test login failed:", e);
+                showToast("⚠️ テスターログイン失敗: " + e.message, "error");
+            }
+        };
+
+        if (new URLSearchParams(window.location.search).has("autologin") || new URLSearchParams(window.location.search).has("test")) {
+            setTimeout(() => {
+                if (!auth.currentUser) window.floraTestLogin();
+            }, 500);
+        }
     </script>
 </body>
 </html>

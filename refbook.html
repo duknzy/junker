@@ -8,7 +8,7 @@
     <link rel="icon" href="icons/icon.png">
     <link rel="apple-touch-icon" href="icons/icon.png">
     <title>Flora | 参考書 一問一答</title>
-    <link rel="stylesheet" href="style.css?v=3.4">
+    <link rel="stylesheet" href="style.css?v=3.5">
 
     <script>
         window.MathJax = {
@@ -416,7 +416,7 @@
             getGeminiKeys, initApiKeyManager, showToast, callGeminiJSON, generateTinyThumbnail, getEffectiveGeminiKeys
         } from "./api-key-manager.js";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { getAuth, signInWithPopup, signInWithEmailAndPassword, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
         import { getDatabase, ref, set, get, update, onValue, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
         const firebaseConfig = {
@@ -508,17 +508,10 @@
             const loginNotice = document.getElementById("login-required-notice");
             const unitsView = document.getElementById("units-view");
 
+            if (authPanel) authPanel.innerHTML = "";
+
             if (user) {
                 currentUser = user;
-                authPanel.innerHTML = `
-                    <div class="user-profile" style="display:flex; align-items:center; gap:0.6rem;">
-                        <img src="${user.photoURL}" class="user-avatar">
-                        <span>${user.displayName}</span>
-                        <button id="logout-btn">ログアウト</button>
-                    </div>
-                `;
-                document.getElementById("logout-btn").addEventListener("click", () => signOut(auth));
-
                 loginNotice.style.display = "none";
                 unitsView.style.display = "flex";
 
@@ -526,9 +519,6 @@
                 listenToProblems(user.uid);
             } else {
                 currentUser = null;
-                authPanel.innerHTML = `<span style="color:var(--accent-magenta); cursor:pointer;" id="header-login-btn">SIGN IN</span>`;
-                document.getElementById("header-login-btn").addEventListener("click", doLogin);
-
                 loginNotice.style.display = "block";
                 unitsView.style.display = "none";
                 document.getElementById("unit-detail-view").style.display = "none";
@@ -536,7 +526,24 @@
         });
 
         function doLogin() { signInWithPopup(auth, provider).catch(e => console.error(e)); }
-        document.getElementById("main-login-btn").addEventListener("click", doLogin);
+        document.getElementById("main-login-btn")?.addEventListener("click", doLogin);
+
+        window.floraTestLogin = async function() {
+            try {
+                showToast("🧪 テスターアカウントでログイン中...", "info");
+                await signInWithEmailAndPassword(auth, "tester@flora.local", "flora1234");
+                showToast("✅ テスターログイン成功", "success");
+            } catch(e) {
+                console.error("Test login failed:", e);
+                showToast("⚠️ テスターログイン失敗: " + e.message, "error");
+            }
+        };
+
+        if (new URLSearchParams(window.location.search).has("autologin") || new URLSearchParams(window.location.search).has("test")) {
+            setTimeout(() => {
+                if (!auth.currentUser) window.floraTestLogin();
+            }, 500);
+        }
 
         // ----------------------------------------------------------------
         // Firebase監視

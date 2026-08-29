@@ -8,7 +8,7 @@
 <link rel="icon" href="icons/icon.png">
 <link rel="apple-touch-icon" href="icons/icon.png">
 <title>Flora | AI設定</title>
-<link rel="stylesheet" href="style.css?v=3.4">
+<link rel="stylesheet" href="style.css?v=3.5">
 <style>
     .settings-section { margin-bottom: 2.2rem; }
     .settings-section-title { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.3rem; display: flex; align-items: center; gap: 0.5rem; }
@@ -104,6 +104,81 @@
         background: var(--brand-primary); color: #fff; border-color: var(--brand-primary);
     }
     .chip-empty-note { font-size: var(--fs-xs); color: var(--text-secondary); padding: 0.3rem 0; }
+
+    /* --- モデル優先順位リスト --- */
+    .model-priority-box {
+        margin-top: 0.6rem;
+        background: var(--bg-subtle);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        padding: 0.8rem 1rem;
+    }
+    .model-priority-title {
+        font-size: 0.76rem;
+        font-weight: 700;
+        color: var(--brand-primary);
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+    .model-priority-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+    }
+    .model-priority-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        padding: 0.4rem 0.8rem;
+        font-size: var(--fs-xs);
+        box-shadow: var(--shadow-xs);
+    }
+    .priority-rank-badge {
+        font-weight: 800;
+        font-size: 0.72rem;
+        padding: 0.15rem 0.5rem;
+        border-radius: var(--radius-full);
+        background: var(--brand-light);
+        color: var(--brand-primary);
+        border: 1px solid var(--brand-border);
+        margin-right: 0.5rem;
+    }
+    .priority-model-name {
+        font-family: var(--font-mono);
+        font-weight: 700;
+        color: var(--text-primary);
+        flex-grow: 1;
+    }
+    .priority-actions {
+        display: flex;
+        gap: 0.3rem;
+    }
+    .priority-btn {
+        background: var(--bg-subtle);
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+        border-radius: var(--radius-sm);
+        padding: 0.2rem 0.45rem;
+        font-size: 0.7rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+    .priority-btn:hover {
+        border-color: var(--brand-primary);
+        color: var(--brand-primary);
+        background: var(--brand-light);
+    }
+    .priority-btn-remove:hover {
+        border-color: var(--danger, #EF4444);
+        color: var(--danger, #EF4444);
+        background: #FEE2E2;
+    }
 
     /* --- 設定のインポート/エクスポート --- */
     .io-card {
@@ -391,18 +466,21 @@ function keyDisplayLabel(key) {
     return label ? `${label}（${maskKey(key)}）` : maskKey(key);
 }
 
-function badgesHtml(items, isDefaultText) {
+function badgesHtml(items, isDefaultText, isOrdered = false) {
     if (!items || items.length === 0) {
         return `<span class="badge-pill is-default">${isDefaultText}</span>`;
     }
-    return items.map(t => `<span class="badge-pill is-custom">${t}</span>`).join("");
+    return items.map((t, idx) => {
+        const prefix = isOrdered ? `<b style="color:var(--brand-primary); margin-right:2px;">${idx + 1}.</b> ` : "";
+        return `<span class="badge-pill is-custom">${prefix}${t}</span>`;
+    }).join("");
 }
 
 function renderAssignTable() {
     const tbody = document.querySelector("[data-assign-table-body]");
     tbody.innerHTML = GEMINI_FEATURES.map(f => {
         const entry = getFeatureAssignment(f.id);
-        const modelBadges = badgesHtml(entry.models, "デフォルト（全モデル）");
+        const modelBadges = badgesHtml(entry.models, "デフォルト（全モデル）", true);
         const keyBadges = badgesHtml((entry.keys || []).map(keyDisplayLabel), "デフォルト（全キー）");
         return `
             <tr class="assign-row" data-jump-to="${f.id}">
@@ -423,12 +501,34 @@ function renderFeatureCards() {
 
     grid.innerHTML = GEMINI_FEATURES.map(f => {
         const entry = getFeatureAssignment(f.id);
-        const selectedModels = new Set(entry.models || []);
+        const selectedModelList = entry.models || [];
+        const selectedModelsSet = new Set(selectedModelList);
         const selectedKeys = new Set(entry.keys || []);
 
         const modelChips = GEMINI_MODEL_FALLBACK_LIST.map(m => `
-            <button type="button" class="chip-toggle ${selectedModels.has(m) ? "active" : ""}" data-chip-model="${f.id}:${m}">${m}</button>
+            <button type="button" class="chip-toggle ${selectedModelsSet.has(m) ? "active" : ""}" data-chip-model="${f.id}:${m}">
+                ${selectedModelsSet.has(m) ? `✓ ${m}` : `+ ${m}`}
+            </button>
         `).join("");
+
+        // 優先順位リストの生成
+        const priorityListHtml = selectedModelList.length === 0
+            ? `<div style="font-size: 0.74rem; color: var(--text-secondary); padding: 0.2rem 0;">💡 モデル未選択のため、デフォルトの優先順序（${GEMINI_MODEL_FALLBACK_LIST[0]} → ${GEMINI_MODEL_FALLBACK_LIST[1]} → ...）で自動実行されます。</div>`
+            : `
+                <div class="model-priority-list">
+                    ${selectedModelList.map((m, idx) => `
+                        <div class="model-priority-item">
+                            <span class="priority-rank-badge">第 ${idx + 1} 候補</span>
+                            <span class="priority-model-name">${m}</span>
+                            <div class="priority-actions">
+                                <button type="button" class="priority-btn" data-priority-move="${f.id}:${idx}:up" title="優先度を上げる" ${idx === 0 ? 'disabled style="opacity:0.3; cursor:default;"' : ''}>▲</button>
+                                <button type="button" class="priority-btn" data-priority-move="${f.id}:${idx}:down" title="優先度を下げる" ${idx === selectedModelList.length - 1 ? 'disabled style="opacity:0.3; cursor:default;"' : ''}>▼</button>
+                                <button type="button" class="priority-btn priority-btn-remove" data-priority-remove="${f.id}:${idx}" title="除外">✕</button>
+                            </div>
+                        </div>
+                    `).join("")}
+                </div>
+            `;
 
         const keyChips = allGeminiKeys.length === 0
             ? `<div class="chip-empty-note">Geminiキーが未登録です。上のセクションで先に登録してください。</div>`
@@ -445,9 +545,16 @@ function renderFeatureCards() {
                     </div>
                     <button type="button" class="feature-reset-btn" data-feature-reset="${f.id}">デフォルトに戻す</button>
                 </div>
-                <div class="chip-group-label">✨ 使用モデル（未選択＝全モデル対象）</div>
+                
+                <div class="chip-group-label">✨ 使用モデルを選択（クリックで追加/除外）</div>
                 <div class="chip-row">${modelChips}</div>
-                <div class="chip-group-label">🔑 使用キー（未選択＝全キー対象）</div>
+
+                <div class="model-priority-box">
+                    <div class="model-priority-title">🎯 モデル優先順位（フォールバック実行順）</div>
+                    ${priorityListHtml}
+                </div>
+
+                <div class="chip-group-label" style="margin-top: 1rem;">🔑 使用キー（未選択＝全キー対象）</div>
                 <div class="chip-row">${keyChips}</div>
             </div>
         `;
@@ -467,20 +574,60 @@ document.addEventListener("click", (e) => {
         return;
     }
 
+    // モデルチップクリック（追加または除外）
     const modelChip = e.target.closest("[data-chip-model]");
     if (modelChip) {
         const [featureId, modelName] = modelChip.getAttribute("data-chip-model").split(":");
         const entry = getFeatureAssignment(featureId);
-        const models = new Set(entry.models || []);
-        models.has(modelName) ? models.delete(modelName) : models.add(modelName);
-        setFeatureAssignment(featureId, { models: Array.from(models), keys: entry.keys });
+        let models = [...(entry.models || [])];
+        const existingIdx = models.indexOf(modelName);
+        if (existingIdx !== -1) {
+            models.splice(existingIdx, 1);
+        } else {
+            models.push(modelName);
+        }
+        setFeatureAssignment(featureId, { models: models.length > 0 ? models : null, keys: entry.keys });
         renderFeatureUI();
         return;
     }
 
+    // 優先順位の上下移動
+    const moveBtn = e.target.closest("[data-priority-move]");
+    if (moveBtn) {
+        const [featureId, idxStr, dir] = moveBtn.getAttribute("data-priority-move").split(":");
+        const idx = parseInt(idxStr, 10);
+        const entry = getFeatureAssignment(featureId);
+        let models = [...(entry.models || [])];
+        if (dir === "up" && idx > 0) {
+            const temp = models[idx];
+            models[idx] = models[idx - 1];
+            models[idx - 1] = temp;
+        } else if (dir === "down" && idx < models.length - 1) {
+            const temp = models[idx];
+            models[idx] = models[idx + 1];
+            models[idx + 1] = temp;
+        }
+        setFeatureAssignment(featureId, { models, keys: entry.keys });
+        renderFeatureUI();
+        return;
+    }
+
+    // 優先順位からの除外
+    const removePriorityBtn = e.target.closest("[data-priority-remove]");
+    if (removePriorityBtn) {
+        const [featureId, idxStr] = removePriorityBtn.getAttribute("data-priority-remove").split(":");
+        const idx = parseInt(idxStr, 10);
+        const entry = getFeatureAssignment(featureId);
+        let models = [...(entry.models || [])];
+        models.splice(idx, 1);
+        setFeatureAssignment(featureId, { models: models.length > 0 ? models : null, keys: entry.keys });
+        renderFeatureUI();
+        return;
+    }
+
+    // キーチップクリック
     const keyChip = e.target.closest("[data-chip-key]");
     if (keyChip) {
-        // キー本文にコロンが含まれる可能性は無いが、featureId側にコロンが無い前提で先頭のみ分割
         const raw = keyChip.getAttribute("data-chip-key");
         const sepIdx = raw.indexOf(":");
         const featureId = raw.slice(0, sepIdx);
@@ -493,6 +640,7 @@ document.addEventListener("click", (e) => {
         return;
     }
 
+    // デフォルトに戻す
     const resetBtn = e.target.closest("[data-feature-reset]");
     if (resetBtn) {
         resetFeatureAssignment(resetBtn.getAttribute("data-feature-reset"));

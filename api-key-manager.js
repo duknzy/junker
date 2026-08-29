@@ -380,9 +380,9 @@ export function getEffectiveModelList(featureId) {
     if (!featureId) return GEMINI_MODEL_FALLBACK_LIST;
     const entry = getFeatureEntry(featureId);
     if (!entry.models || entry.models.length === 0) return GEMINI_MODEL_FALLBACK_LIST;
-    const allowed = new Set(entry.models);
-    const filtered = GEMINI_MODEL_FALLBACK_LIST.filter(m => allowed.has(m));
-    return filtered.length > 0 ? filtered : GEMINI_MODEL_FALLBACK_LIST;
+    // 💡 ユーザーが設定した配列の順序（優先順位）をそのまま採用する
+    const validModels = entry.models.filter(m => GEMINI_MODEL_FALLBACK_LIST.includes(m));
+    return validModels.length > 0 ? validModels : GEMINI_MODEL_FALLBACK_LIST;
 }
 
 export function getEffectiveGeminiKeys(featureId) {
