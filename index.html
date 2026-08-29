@@ -8,7 +8,7 @@
     <link rel="icon" href="icons/icon.png">
     <link rel="apple-touch-icon" href="icons/icon.png">
     <title>Flora | 誤答克服ダッシュボード</title>
-    <link rel="stylesheet" href="style.css?v=3.4">
+    <link rel="stylesheet" href="style.css?v=3.5">
     
     <script>
         window.MathJax = {
@@ -411,9 +411,14 @@
                     <div style="font-size: 2.5rem; margin-bottom: 0.8rem;">🌱</div>
                     <h2 style="font-family: var(--font-heading); font-size: 1.4rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.6rem;">Flora クラウド同期に接続</h2>
                     <p style="color: var(--text-secondary); font-size: 0.92rem; margin-bottom: 1.6rem; max-width: 480px; margin-left: auto; margin-right: auto;">どの端末からでも誤答ノートを自動同期して復習するために、Googleアカウントでログインしてください。</p>
-                    <button type="button" class="flora-btn flora-btn-primary btn-lg" id="main-login-btn">
-                        Googleアカウントでサインイン
-                    </button>
+                    <div style="display: flex; flex-direction: column; gap: 0.8rem; align-items: center; max-width: 320px; margin: 0 auto;">
+                        <button type="button" class="flora-btn flora-btn-primary btn-lg" id="main-login-btn" style="width: 100%;">
+                            Googleアカウントでサインイン
+                        </button>
+                        <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="test-login-btn" style="width: 100%; font-weight: 700;">
+                            🧪 テスター用アカウントでログイン
+                        </button>
+                    </div>
                 </div>
 
                 <!-- 2段階スマートフィルターバー -->
@@ -696,7 +701,7 @@
             showToast, callGeminiJSON, generateTinyThumbnail
         } from "./api-key-manager.js";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { getAuth, signInWithPopup, signInWithEmailAndPassword, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
         import { getDatabase, ref, set, get, update, onValue, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
         const firebaseConfig = {
@@ -1091,6 +1096,26 @@ async function checkAndLoadLinkedLesson(uid) {
 
         function doLogin() { signInWithPopup(auth, provider).catch(e => console.error(e)); }
         document.getElementById("main-login-btn").addEventListener("click", doLogin);
+
+        async function doTestLogin() {
+            try {
+                showToast("🧪 テスターアカウントでログイン中...", "info");
+                await signInWithEmailAndPassword(auth, "tester@flora.local", "flora1234");
+                showToast("✅ テスターログイン成功", "success");
+            } catch(e) {
+                console.error("Test login failed:", e);
+                showToast("⚠️ テスターログイン失敗: " + e.message, "error");
+            }
+        }
+        document.getElementById("test-login-btn")?.addEventListener("click", doTestLogin);
+        window.floraTestLogin = doTestLogin;
+
+        // URLに ?autologin=tester または ?test=true があれば自動でログイン実行
+        if (new URLSearchParams(window.location.search).has("autologin") || new URLSearchParams(window.location.search).has("test")) {
+            setTimeout(() => {
+                if (!auth.currentUser) doTestLogin();
+            }, 500);
+        }
 
         function listenToCloudData(uid) {
             const userProblemsRef = ref(database, 'users/' + uid + '/problems');

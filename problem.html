@@ -8,7 +8,7 @@
     <link rel="icon" href="icons/icon.png">
     <link rel="apple-touch-icon" href="icons/icon.png">
     <title>Flora | 問題解答セッション</title>
-    <link rel="stylesheet" href="style.css?v=3.4">
+    <link rel="stylesheet" href="style.css?v=3.5">
     
     <script>
         window.MathJax = {
@@ -598,7 +598,7 @@
         const fbBase = proto + "www" + d + "gstatic" + d + "com/firebasejs/10.12.0/";
 
         const { initializeApp } = await import(fbBase + "firebase-app.js");
-        const { getAuth, onAuthStateChanged } = await import(fbBase + "firebase-auth.js");
+        const { getAuth, onAuthStateChanged, signInWithEmailAndPassword } = await import(fbBase + "firebase-auth.js");
         const { getDatabase, ref, set, onValue, push, remove, get } = await import(fbBase + "firebase-database.js");
 
         const firebaseConfig = {
@@ -1298,6 +1298,23 @@ ${glossaryBlock}`;
         let qnaLogsForThisProblem = {}; // 💬【新設】この問題に紐づく保存済みログのキャッシュ
         let currentProblemData = {};
         let loginUid = null;
+
+        window.floraTestLogin = async function() {
+            try {
+                showToast("🧪 テスターアカウントでログイン中...", "info");
+                await signInWithEmailAndPassword(auth, "tester@flora.local", "flora1234");
+                showToast("✅ テスターログイン成功", "success");
+            } catch(e) {
+                console.error("Test login failed:", e);
+                showToast("⚠️ テスターログイン失敗: " + e.message, "error");
+            }
+        };
+
+        if (new URLSearchParams(window.location.search).has("autologin") || new URLSearchParams(window.location.search).has("test")) {
+            setTimeout(() => {
+                if (!auth.currentUser) window.floraTestLogin();
+            }, 500);
+        }
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
