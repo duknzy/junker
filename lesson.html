@@ -2542,39 +2542,56 @@ ${socraticInstructionBlock}
             const targetMsg = history[msgIndex];
             if (!targetMsg || targetMsg.role !== "assistant") return;
 
-            // 1. このメッセージが属するパート（partIndex）を特定
+            // 1. このメッセージが属するパート（partIndex）およびそのパートの開始divider位置を特定
             let partIndex = 0;
+            let currentPartDividerIdx = -1;
             let dividerCount = -1;
             for (let i = 0; i <= msgIndex; i++) {
                 if (history[i].role === "divider") {
                     dividerCount++;
+                    currentPartDividerIdx = i;
                 }
             }
             partIndex = Math.max(0, dividerCount >= 0 ? dividerCount : (currentLesson.currentPartIndex || 0));
+            const part = (currentLesson.parts && currentLesson.parts[partIndex]) || { title: currentLesson.title, summary: "" };
 
-            // 2. このメッセージ直前までの会話コンテキストを構築
-            const contextHistory = [];
-            for (let i = 0; i < msgIndex; i++) {
-                const m = history[i];
-                if (m.role === "divider") continue;
-                if (m.role === "user") {
-                    const parts = [{ text: m.content }];
-                    if (Array.isArray(m.images) && m.images.length > 0) {
-                        m.images.forEach(img => parts.push({ inlineData: { mimeType: img.mimeType, data: img.data } }));
-                    }
-                    contextHistory.push({ role: "user", parts });
-                } else if (m.role === "assistant") {
-                    contextHistory.push({ role: "model", parts: [{ text: m.content }] });
-                }
-            }
+            // 2. パート初回1通目のAIメッセージかどうかを判定
+            const isFirstAiInPart = (currentPartDividerIdx >= 0 && msgIndex === currentPartDividerIdx + 1) || (currentPartDividerIdx === -1 && msgIndex === 0);
 
-            // 3. 直前の非dividerメッセージが user でない場合（パート開始1発目のAI返信の場合など）
-            const prevNonDivider = history.slice(0, msgIndex).reverse().find(m => m.role !== "divider");
-            if (!prevNonDivider || prevNonDivider.role !== "user") {
-                contextHistory.push({
+            let contextHistory = [];
+            if (isFirstAiInPart) {
+                // 💡 初回講義の場合は過去パートの雑談や正解ログを一切渡さず、第○回専用の純粋な初回リクエストを渡す
+                contextHistory = [{
                     role: "user",
-                    parts: [{ text: "このパートの授業を、前回とは違う切り口・説明でやり直してください。" }]
-                });
+                    parts: [{
+                        text: `【指令】第${partIndex + 1}回「${part.title}」（${part.summary}）の講義を、初回1通目として最初からわかりやすく始めてください。前回とは別の例えや切り口を用いてください。絶対に前パートのまとめやお礼を言わず、第${partIndex + 1}回の本題から始めてください。`
+                    }]
+                }];
+            } else {
+                // 💡 パート内の2通目以降の質疑応答の場合は、このパートのdivider以降の会話を中心にコンテキストを構築
+                const startFromIdx = currentPartDividerIdx >= 0 ? currentPartDividerIdx + 1 : 0;
+                for (let i = startFromIdx; i < msgIndex; i++) {
+                    const m = history[i];
+                    if (m.role === "divider") continue;
+                    if (m.role === "user") {
+                        const parts = [{ text: m.content }];
+                        if (Array.isArray(m.images) && m.images.length > 0) {
+                            m.images.forEach(img => parts.push({ inlineData: { mimeType: img.mimeType, data: img.data } }));
+                        }
+                        contextHistory.push({ role: "user", parts });
+                    } else if (m.role === "assistant") {
+                        contextHistory.push({ role: "model", parts: [{ text: m.content }] });
+                    }
+                }
+
+                // 直前の非dividerメッセージが user でない場合の補正
+                const prevNonDivider = history.slice(startFromIdx, msgIndex).reverse().find(m => m.role !== "divider");
+                if (!prevNonDivider || prevNonDivider.role !== "user") {
+                    contextHistory.push({
+                        role: "user",
+                        parts: [{ text: `第${partIndex + 1}回「${part.title}」について、前回とは別の切り口・解説でわかりやすく回答してください。` }]
+                    });
+                }
             }
 
             regeneratingMsgIndex = msgIndex;
@@ -2600,7 +2617,7 @@ ${socraticInstructionBlock}
                 };
 
                 await saveLesson();
-                showToast("返信を再生成しました。", "success", 2000);
+                showToast(`第${partIndex + 1}回の返信を再生成しました。`, "success", 2000);
             } catch (err) {
                 console.error(err);
                 showToast("再生成に失敗しました: " + err.message, "error", 8000);
@@ -2834,16 +2851,34 @@ ${EXPERT_TEACHER_PROMPT}
                     : "";
 
                 return `
-                    <div class="toc-item ${isActive ? 'current-active' : ''}">
+                    <div class="toc-item ${isActive ? 'current-active' : ''}" data-toc-part="${i}" style="cursor:pointer;">
                         <div class="toc-item-header">
                             <span class="toc-item-title">第${i + 1}回: ${p.title}</span>
                             <span class="toc-status-badge ${badgeClass}">${badgeText}</span>
                         </div>
                         <div class="toc-item-summary">${p.summary || ''}</div>
-                        ${regenBtn ? `<div style="margin-top:0.6rem; text-align:right;">${regenBtn}</div>` : ""}
+                        <div style="margin-top:0.6rem; display:flex; justify-content:space-between; align-items:center;">
+                            <span style="font-size:0.75rem; color:var(--text-secondary);">クリックで該当位置へ移動</span>
+                            ${regenBtn}
+                        </div>
                     </div>
                 `;
             }).join("");
+        }
+
+        // パートのチャット内位置（divider）へジャンプする関数
+        function scrollToPartDivider(partIndex) {
+            const wrap = el("chat-transcript");
+            if (!wrap) return;
+            const dividers = wrap.querySelectorAll(".bubble-divider");
+            if (dividers[partIndex]) {
+                dividers[partIndex].scrollIntoView({ behavior: "smooth", block: "center" });
+                dividers[partIndex].style.transition = "background 0.3s ease";
+                dividers[partIndex].style.background = "rgba(16, 185, 129, 0.15)";
+                setTimeout(() => {
+                    dividers[partIndex].style.background = "";
+                }, 1500);
+            }
         }
 
         function findPartDividerRange(partIndex) {
@@ -2867,35 +2902,63 @@ ${EXPERT_TEACHER_PROMPT}
                 return;
             }
 
-            const ok = confirm(`第${partIndex + 1}回「${part.title}」の授業を作り直します。\nこの回の説明・質問履歴は新しい内容に置き換わります。よろしいですか？`);
-            if (!ok) return;
+            const currentActive = currentLesson.currentPartIndex || 0;
+            let willResetSubsequent = false;
+
+            if (partIndex < currentActive) {
+                const choice = confirm(`第${partIndex + 1}回「${part.title}」の授業を作り直します。\n\n【OK】第${partIndex + 1}回からやり直す（受講中パートを第${partIndex + 1}回に戻します）\n【キャンセル】中止する`);
+                if (!choice) return;
+                willResetSubsequent = true;
+            } else {
+                const ok = confirm(`第${partIndex + 1}回「${part.title}」の授業を作り直します。\nこの回の説明・質問履歴は新しい内容に置き換わります。よろしいですか？`);
+                if (!ok) return;
+            }
 
             const btn = getRegenBtnEl(partIndex);
             if (btn) { btn.disabled = true; btn.textContent = "⚙️ 作り直し中..."; }
 
             try {
-                const contextHistory = currentLesson.chatHistory
-                    .slice(0, range.startIdx)
-                    .filter(m => m.role !== "divider")
-                    .map(m => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] }));
+                // 1通目の講義リクエスト（過去パートの会話に引っ張られないよう独立したプロンプトを構築）
+                const aiJson = await callGeminiChat(
+                    [{
+                        role: "user",
+                        parts: [{
+                            text: `【指令】第${partIndex + 1}回「${part.title}」（${part.summary}）の講義を、初回1通目として最初からわかりやすく始めてください。前回の説明とは別の例えや切り口を用いてください。絶対に前パートのまとめやお礼を言わず、第${partIndex + 1}回の本題から始めてください。`
+                        }]
+                    }],
+                    buildTeachSystemInstruction(partIndex),
+                    {
+                        responseSchema: TEACH_TURN_RESPONSE_SCHEMA,
+                        featureId: "lesson_teach"
+                    }
+                );
 
-                contextHistory.push({
-                    role: "user",
-                    parts: [{ text: "この回の授業を、前回とは違う例え方・切り口で、最初からもう一度わかりやすくやり直してください。" }]
-                });
-
-                const aiJson = await callGeminiChat(contextHistory, buildTeachSystemInstruction(partIndex), {
-                    responseSchema: TEACH_TURN_RESPONSE_SCHEMA, featureId: "lesson_teach"
-                });
-
-                currentLesson.chatHistory.splice(range.startIdx + 1, range.endIdx - range.startIdx - 1, {
+                const newAssistantMsg = {
                     role: "assistant",
                     content: aiJson.ai_response || "（応答の取得に失敗しました）"
-                });
+                };
+                const cleanedSvg = sanitizeDiagramSvg(aiJson.diagram_svg);
+                if (cleanedSvg) newAssistantMsg.diagramSvg = cleanedSvg;
+
+                if (willResetSubsequent) {
+                    // 後続パート（第3回など）が存在する場合、第2回より後ろをすべてリフレッシュして第2回受講中に巻き戻す
+                    currentLesson.chatHistory.splice(range.startIdx + 1);
+                    currentLesson.chatHistory.push(newAssistantMsg);
+                    currentLesson.currentPartIndex = partIndex;
+                    currentLesson.status = "in_progress";
+                } else {
+                    // 該当パート内のメッセージのみを差し替える
+                    currentLesson.chatHistory.splice(range.startIdx + 1, range.endIdx - range.startIdx - 1, newAssistantMsg);
+                    currentLesson.currentPartIndex = partIndex;
+                }
 
                 await saveLesson();
                 renderChatTranscript();
+                updateProgressStrip();
+                updateCompletionUI();
                 await forceTriggerMathJax();
+                scrollToPartDivider(partIndex);
+                showToast(`第${partIndex + 1}回の授業を作り直しました。`, "success", 3000);
             } catch (err) {
                 console.error(err);
                 showToast("この回の作り直しに失敗しました。原因: " + err.message, "error", 8000);
@@ -2913,10 +2976,19 @@ ${EXPERT_TEACHER_PROMPT}
             const container = el("lesson-parts-toc-list");
             if (!container) return;
             container.addEventListener("click", (e) => {
-                const target = e.target.closest("[data-regenerate-part]");
-                if (!target) return;
-                const partIndex = parseInt(target.getAttribute("data-regenerate-part"), 10);
-                regeneratePart(partIndex);
+                const regenTarget = e.target.closest("[data-regenerate-part]");
+                if (regenTarget) {
+                    e.stopPropagation();
+                    const partIndex = parseInt(regenTarget.getAttribute("data-regenerate-part"), 10);
+                    regeneratePart(partIndex);
+                    return;
+                }
+
+                const itemTarget = e.target.closest("[data-toc-part]");
+                if (itemTarget) {
+                    const partIndex = parseInt(itemTarget.getAttribute("data-toc-part"), 10);
+                    scrollToPartDivider(partIndex);
+                }
             });
         })();
 
@@ -3264,7 +3336,10 @@ ${EXPERT_TEACHER_PROMPT}
 
             btn.textContent = "⚙️ 準備中...";
             try {
-                await sendTurn(null, "次のパートの授業を始めてください。");
+                await sendTurn(
+                    null,
+                    `【指令】第${currentLesson.currentPartIndex + 1}回「${part.title}」（${part.summary}）の講義を、初回1通目としてわかりやすく始めてください。絶対に前パートのまとめやお礼を言わず、第${currentLesson.currentPartIndex + 1}回の本題から始めてください。`
+                );
             } catch (err) {
                 console.error(err);
                 showToast("授業の生成に失敗しました。原因: " + err.message, "error", 8000);
