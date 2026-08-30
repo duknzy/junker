@@ -10,9 +10,7 @@
     <link rel="stylesheet" href="style-m.css">
 
     <style>
-        /* ====== ダッシュボード固有スタイル ====== */
-
-        /* 統計サマリー（横スクロールの3カード） */
+        /* 統計サマリー */
         .stat-row {
             display: flex;
             gap: 0.6rem;
@@ -55,7 +53,6 @@
             margin-top: 0.15rem;
         }
 
-        /* 記憶定着バー */
         .retention-bar-wrap {
             height: 5px;
             background: var(--bg-subtle);
@@ -126,11 +123,6 @@
             flex-wrap: wrap;
             margin-top: 0.2rem;
         }
-        .p-meta {
-            font-size: 0.65rem;
-            color: var(--text-muted);
-            margin-top: 0.15rem;
-        }
 
         .p-err {
             font-family: var(--font-heading);
@@ -147,7 +139,6 @@
             color: var(--text-muted);
         }
 
-        /* セクションヘッダー */
         .section-header {
             display: flex;
             align-items: center;
@@ -183,7 +174,6 @@
         }
         .section-rows.collapsed { display: none; }
 
-        /* ログイン案内 */
         .login-notice {
             text-align: center;
             padding: 4rem 1.5rem;
@@ -193,17 +183,27 @@
             font-size: var(--fs-lg);
             margin-bottom: 0.5rem;
         }
-        .login-notice p {
-            color: var(--text-secondary);
-            margin-bottom: 1.5rem;
-            font-size: var(--fs-sm);
-        }
 
-        /* PC版リンク */
-        .pc-link-bar {
-            text-align: center;
-            padding: 0.5rem;
-            margin-top: 0.5rem;
+        /* 問題登録モーダル */
+        .add-prob-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 99990;
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+        }
+        .add-prob-modal-sheet {
+            background: var(--bg-surface);
+            border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 1.25rem;
+            box-shadow: var(--shadow-modal);
+            animation: slideUp 0.25s ease-out;
         }
     </style>
 </head>
@@ -215,13 +215,12 @@
             <span style="font-size:1.35rem;">🌱</span>
             <span class="m-header-title">Flora 誤答ノート</span>
         </div>
-        <a href="../index.html" class="m-header-action" title="PC版で開く" style="font-size:0.9rem;">💻</a>
     </header>
 
     <!-- ログイン案内（未ログイン時のみ） -->
     <div id="login-notice" class="login-notice" style="display:none;">
         <h2>🌱 Flora へようこそ</h2>
-        <p>ログインして誤答ノートを同期しましょう</p>
+        <p style="color:var(--text-secondary); margin-bottom:1.5rem; font-size:var(--fs-sm);">ログインして誤答ノートを同期しましょう</p>
         <button id="main-login-btn" class="m-btn m-btn-primary m-btn-full" style="max-width:280px;margin:0 auto;">
             Googleでログイン
         </button>
@@ -273,18 +272,63 @@
 
     </main>
 
-    <!-- FAB: 問題登録 -->
-    <a href="../index.html#add-problem-modal" class="m-fab" id="fab-add" style="display:none;text-decoration:none;">📸</a>
+    <!-- FAB: 問題登録ボタン -->
+    <button type="button" class="m-fab" id="fab-add" style="display:none;" title="問題を追加">📸</button>
+
+    <!-- 📸 写真から問題登録モーダル（スマホ完結） -->
+    <div class="add-prob-modal-overlay" id="add-prob-modal">
+        <div class="add-prob-modal-sheet">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.8rem;">
+                <h3 style="font-family:var(--font-heading); font-size:1.05rem; font-weight:800;">📸 写真から問題を登録</h3>
+                <button type="button" id="close-add-prob-modal-btn" style="background:none; border:none; font-size:1.2rem; cursor:pointer; color:var(--text-muted);">✕</button>
+            </div>
+
+            <!-- 教科選択 -->
+            <div style="margin-bottom:0.75rem;">
+                <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">教科</label>
+                <select id="prob-subject-select" class="m-input" style="padding:0.4rem 0.6rem;">
+                    <option value="数学">📐 数学</option>
+                    <option value="物理">⚡ 物理</option>
+                    <option value="化学">🧪 化学</option>
+                    <option value="生物">🧬 生物</option>
+                    <option value="情報">💻 情報</option>
+                    <option value="地理">🗺️ 地理</option>
+                    <option value="日本史">⛩️ 日本史</option>
+                    <option value="世界史">🏛️ 世界史</option>
+                    <option value="英語">🔤 英語</option>
+                    <option value="国語">📜 国語</option>
+                    <option value="公民">⚖️ 公民</option>
+                </select>
+            </div>
+
+            <!-- 写真選択 -->
+            <div style="margin-bottom:0.75rem;">
+                <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">問題の写真（カメラまたはアルバムから）</label>
+                <input type="file" accept="image/*" multiple id="prob-photo-input" class="m-input" style="padding:0.4rem;">
+                <div id="prob-thumb-preview" style="display:flex; gap:0.4rem; overflow-x:auto; margin-top:0.4rem;"></div>
+            </div>
+
+            <!-- メモ（任意） -->
+            <div style="margin-bottom:1rem;">
+                <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">自分のメモ・間違えた理由（任意）</label>
+                <input type="text" id="prob-memo-input" class="m-input" placeholder="例：計算ミス、公式をど忘れした">
+            </div>
+
+            <button type="button" class="m-btn m-btn-primary m-btn-full" id="run-add-prob-btn" style="min-height:48px; font-size:0.95rem;">
+                ✨ AIで解析して誤答ノートに追加
+            </button>
+        </div>
+    </div>
 
     <!-- ボトムナビ -->
     <script src="bottom-nav.js"></script>
 
     <!-- Firebase & ロジック -->
     <script type="module">
-        import { initApiKeyManager, showToast, getGeminiKeys } from "../api-key-manager.js";
+        import { initApiKeyManager, showToast, getGeminiKeys, callGeminiJSON, generateTinyThumbnail } from "../api-key-manager.js";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getAuth, signInWithPopup, signInWithEmailAndPassword, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-        import { getDatabase, ref, get, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+        import { getAuth, signInWithPopup, signInWithEmailAndPassword, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB55MdhpjJizQaLEdRu-XhBVJ4PqrHsAyY",
@@ -301,13 +345,13 @@
         const database = getDatabase(app);
         const provider = new GoogleAuthProvider();
 
-        // APIキー管理UI注入
         initApiKeyManager({ needGemini: true, needDeepseek: false });
 
         let currentUser = null;
         let lastProblems = {};
         let currentSubjectFilter = "ALL";
         let currentSearchQuery = "";
+        let probSelectedImages = [];
 
         // ==================== 認証 ====================
         onAuthStateChanged(auth, (user) => {
@@ -350,20 +394,20 @@
 
         // ==================== データ取得 ====================
         function listenToProblems(uid) {
-            const problemsRef = ref(database, 'users/' + uid + '/problems');
+            const problemsRef = ref(database, `users/${uid}/problems`);
             onValue(problemsRef, (snapshot) => {
                 lastProblems = snapshot.val() || {};
                 renderDashboard();
             });
         }
 
-        // ==================== 検索 & フィルター ====================
+        // ==================== 検索 ====================
         document.getElementById("search-input").addEventListener("input", (e) => {
             currentSearchQuery = e.target.value.trim().toLowerCase();
             renderDashboard();
         });
 
-        // ==================== 復習優先度の計算 ====================
+        // ==================== 復習優先度 ====================
         function getUrgency(p) {
             const boostedAt = p.lessonReviewPriorityAt ? new Date(p.lessonReviewPriorityAt) : null;
             const alreadyReviewed = boostedAt && p.lastAttemptAt && new Date(p.lastAttemptAt) >= boostedAt;
@@ -391,7 +435,6 @@
             pending:  { label: "⏳ 定着中",   color: "#b16eff" },
             safe:     { label: "✨ 克服済",   color: "var(--accent-cyan)" },
         };
-
         const sectionOrder = ["overdue", "critical", "new", "pending", "safe"];
 
         // ==================== 描画 ====================
@@ -399,11 +442,9 @@
             const listEl = document.getElementById("problem-list");
             const chipsEl = document.getElementById("subject-chips");
 
-            // 1. 教科一覧を抽出
             const subjects = new Set();
             Object.values(lastProblems).forEach(p => subjects.add(p.subject || "未分類"));
 
-            // 教科チップ描画
             let chipsHtml = `<button class="m-chip ${currentSubjectFilter === 'ALL' ? 'active' : ''}" data-subj="ALL">✨ すべて</button>`;
             subjects.forEach(s => {
                 chipsHtml += `<button class="m-chip ${currentSubjectFilter === s ? 'active' : ''}" data-subj="${s}">${s}</button>`;
@@ -416,7 +457,6 @@
                 });
             });
 
-            // 2. フィルタ&分類
             const buckets = { overdue: [], critical: [], new: [], pending: [], safe: [] };
             let totalErrors = 0, solvedToday = 0, safeCount = 0, criticalDue = 0, totalFiltered = 0;
             const todayStr = new Date().toDateString();
@@ -444,7 +484,6 @@
                 buckets[urgency].push({ id, ...p });
             });
 
-            // 統計更新
             document.getElementById("total-errors-display").textContent = String(totalErrors).padStart(2, '0');
             document.getElementById("solved-today-display").textContent = String(solvedToday).padStart(2, '0');
             const retention = totalFiltered > 0 ? Math.round((safeCount / totalFiltered) * 100) : 0;
@@ -452,7 +491,6 @@
             document.getElementById("retention-bar-display").style.width = `${retention}%`;
             document.getElementById("due-count-display").textContent = criticalDue;
 
-            // 3. 行描画
             let html = "";
             sectionOrder.forEach(key => {
                 const items = buckets[key];
@@ -471,7 +509,6 @@
                 `;
 
                 items.forEach(p => {
-                    // サムネイル
                     let thumbContent = "";
                     if (p.thumb) {
                         thumbContent = `<img src="${p.thumb}">`;
@@ -491,7 +528,6 @@
                         thumbContent = icon;
                     }
 
-                    // 教科バッジCSSクラス
                     const subjClass = getSubjectClass(p.subject || "");
 
                     html += `
@@ -520,7 +556,7 @@
                     <div class="m-empty-state" style="margin-top:2rem;">
                         <div class="m-empty-state-icon">📚</div>
                         <div class="m-empty-state-title">まだ問題が登録されていません</div>
-                        <div class="m-empty-state-text">PC版の「📸 写真から問題を登録」で<br>誤答問題を追加してみましょう</div>
+                        <div class="m-empty-state-text">右下の「📸」ボタンから<br>写真を撮って問題を追加してみましょう！</div>
                     </div>
                 `;
             } else if (totalFiltered === 0) {
@@ -529,6 +565,127 @@
 
             listEl.innerHTML = html;
         }
+
+        // ==================== 📸 問題登録モーダル（スマホ完結） ====================
+        const addProbModal = document.getElementById("add-prob-modal");
+        document.getElementById("fab-add")?.addEventListener("click", () => {
+            addProbModal.style.display = "flex";
+        });
+        document.getElementById("close-add-prob-modal-btn")?.addEventListener("click", () => {
+            addProbModal.style.display = "none";
+        });
+        addProbModal?.addEventListener("click", (e) => {
+            if (e.target === addProbModal) addProbModal.style.display = "none";
+        });
+
+        document.getElementById("prob-photo-input")?.addEventListener("change", (e) => {
+            const files = Array.from(e.target.files || []);
+            probSelectedImages = [];
+            const previewEl = document.getElementById("prob-thumb-preview");
+            previewEl.innerHTML = "";
+
+            files.forEach(f => {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    const dataUrl = ev.target.result;
+                    probSelectedImages.push({
+                        mimeType: f.type || "image/jpeg",
+                        data: dataUrl.split(",")[1],
+                        dataUrl
+                    });
+                    previewEl.innerHTML += `<img src="${dataUrl}" style="height:60px; border-radius:6px; border:1px solid var(--border-color);">`;
+                };
+                reader.readAsDataURL(f);
+            });
+        });
+
+        document.getElementById("run-add-prob-btn")?.addEventListener("click", async () => {
+            if (!currentUser) {
+                if (window.mToast) mToast("⚠️ ログインしてください");
+                return;
+            }
+            if (probSelectedImages.length === 0) {
+                if (window.mToast) mToast("⚠️ 写真を選択してください");
+                return;
+            }
+
+            const subject = document.getElementById("prob-subject-select").value;
+            const memo = document.getElementById("prob-memo-input").value.trim();
+            const btn = document.getElementById("run-add-prob-btn");
+
+            btn.disabled = true;
+            btn.textContent = "AIが問題を解析中...";
+
+            try {
+                const parts = [{ text: `教科「${subject}」の問題です。写真から問題文、罠の解説、定石パターン、模範解答を抽出してJSONで返してください。` }];
+                if (memo) parts[0].text += `\n生徒のメモ: ${memo}`;
+                probSelectedImages.forEach(img => {
+                    parts.push({ inlineData: { mimeType: img.mimeType, data: img.data } });
+                });
+
+                const schema = {
+                    type: "OBJECT",
+                    properties: {
+                        short_title: { type: "STRING" },
+                        extracted_text: { type: "STRING" },
+                        field: { type: "STRING" },
+                        trap_description: { type: "STRING" },
+                        strategy_pattern: { type: "STRING" },
+                        model_answer: { type: "STRING" }
+                    },
+                    required: ["short_title", "extracted_text", "model_answer"]
+                };
+
+                const res = await callGeminiJSON(parts, "高校各教科のエキスパート誤答分析AIです。数式は$ $で囲むこと。", {
+                    responseSchema: schema,
+                    featureId: "subject_analysis"
+                });
+
+                // サムネイル生成
+                let thumb = null;
+                try {
+                    thumb = await generateTinyThumbnail(probSelectedImages[0].dataUrl);
+                } catch(e) {
+                    thumb = probSelectedImages[0].dataUrl;
+                }
+
+                const newId = "CUSTOM_" + Date.now();
+                const nowIso = new Date().toISOString();
+                const newProblem = {
+                    id: newId,
+                    title: res.extracted_text || "問題文",
+                    short_title: res.short_title || `【${subject}】問題`,
+                    subject,
+                    field: res.field || "演習問題",
+                    trap_description: res.trap_description || "",
+                    strategyPattern: res.strategy_pattern || "",
+                    model_answer: res.model_answer || "",
+                    answerFormula: res.model_answer || "",
+                    errorCount: 1,
+                    lastAttemptAt: nowIso,
+                    lastResult: false,
+                    thumb,
+                    imageCount: probSelectedImages.length,
+                    createdAt: nowIso
+                };
+
+                // Firebase保存
+                await set(ref(database, `users/${currentUser.uid}/problems/${newId}`), newProblem);
+                await set(ref(database, `users/${currentUser.uid}/problemImages/${newId}`), {
+                    images: probSelectedImages.map(i => i.dataUrl)
+                });
+
+                addProbModal.style.display = "none";
+                if (window.mToast) mToast("🎉 誤答ノートに問題を追加しました！");
+
+            } catch(e) {
+                console.error(e);
+                if (window.mToast) mToast("⚠️ 解析エラー: " + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "✨ AIで解析して誤答ノートに追加";
+            }
+        });
 
         function getSubjectClass(subj) {
             if (subj.includes("数学")) return "subj-数学";

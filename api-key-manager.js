@@ -621,6 +621,9 @@ function injectStylesAndModal() {
             cursor: pointer; box-shadow: 3px 3px 0px rgba(0,243,255,0.2);
         }
         #apikm-fab:hover { background: rgba(0,243,255,0.08); }
+        @media (max-width: 600px) {
+            #apikm-fab { display: none !important; }
+        }
         #apikm-overlay {
             display: none; position: fixed; inset: 0; z-index: 100060;
             background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
@@ -843,8 +846,12 @@ function injectStylesAndModal() {
     window.__apikmOpen = openModal;
 }
 
-export function initApiKeyManager({ needGemini = false, needDeepseek = false } = {}) {
+export function initApiKeyManager({ needGemini = false, needDeepseek = false, autoOpen = true } = {}) {
     injectStylesAndModal();
+
+    // 📱 モバイル画面（/m/）または明示的な autoOpen=false の時は初回自動オープンを抑制
+    const isMobile = typeof window !== 'undefined' && (window.location.pathname.includes('/m/') || window.innerWidth <= 600);
+    if (!autoOpen || isMobile) return;
 
     const missingGemini = needGemini && getGeminiKeys().length === 0;
     const missingDeepseek = needDeepseek && getDeepseekKeys().length === 0;

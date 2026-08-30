@@ -133,13 +133,61 @@
         .lesson-input-bar {
             position: sticky;
             bottom: calc(var(--bottom-nav-height) + var(--safe-area-bottom));
-            background: rgba(255, 255, 255, 0.92);
+            background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(16px);
             padding: 0.5rem 0;
             border-top: 1px solid var(--border-subtle);
             display: flex;
             gap: 0.5rem;
             z-index: 20;
+        }
+
+        /* モバイル授業作成モーダル（ボトムシート） */
+        .create-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 99990;
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+        }
+        .create-modal-sheet {
+            background: var(--bg-surface);
+            border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 1.25rem;
+            box-shadow: var(--shadow-modal);
+            animation: slideUp 0.25s ease-out;
+        }
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+
+        .mode-toggle-group {
+            display: flex;
+            gap: 0.4rem;
+            margin-bottom: 0.8rem;
+        }
+        .mode-toggle-btn {
+            flex: 1;
+            padding: 0.55rem;
+            border: 1px solid var(--border-color);
+            background: var(--bg-subtle);
+            border-radius: var(--radius-md);
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            text-align: center;
+        }
+        .mode-toggle-btn.active {
+            background: var(--brand-primary);
+            color: #fff;
+            border-color: var(--brand-primary);
         }
     </style>
 </head>
@@ -149,7 +197,9 @@
     <header class="m-header">
         <button class="m-header-back" id="header-back-btn" onclick="location.href='index.html'">‹</button>
         <span class="m-header-title" id="header-title">📖 参考書 授業モード</span>
-        <a href="../lesson.html" class="m-header-action" title="PC版で開く" style="font-size:0.85rem;">💻</a>
+        <button class="m-btn m-btn-primary" id="open-create-modal-btn" style="padding:0.35rem 0.75rem; font-size:0.75rem; min-height:34px; border-radius:var(--radius-full);">
+            ＋ 新規作成
+        </button>
     </header>
 
     <!-- ログイン案内 -->
@@ -207,14 +257,82 @@
 
     </main>
 
+    <!-- 🎓 授業新規作成モーダル（ボトムシート） -->
+    <div class="create-modal-overlay" id="create-modal">
+        <div class="create-modal-sheet">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.8rem;">
+                <h3 style="font-family:var(--font-heading); font-size:1.05rem; font-weight:800;">✨ 新しい授業を作成</h3>
+                <button type="button" id="close-create-modal-btn" style="background:none; border:none; font-size:1.2rem; cursor:pointer; color:var(--text-muted);">✕</button>
+            </div>
+
+            <!-- モード切替 -->
+            <div class="mode-toggle-group">
+                <button type="button" class="mode-toggle-btn active" id="mode-topic-btn">✏️ テーマ名から</button>
+                <button type="button" class="mode-toggle-btn" id="mode-photo-btn">📸 写真から</button>
+            </div>
+
+            <!-- 教科選択 -->
+            <div style="margin-bottom:0.75rem;">
+                <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">教科</label>
+                <select id="create-subject-select" class="m-input" style="padding:0.4rem 0.6rem;">
+                    <option value="数学">📐 数学</option>
+                    <option value="物理">⚡ 物理</option>
+                    <option value="化学">🧪 化学</option>
+                    <option value="生物">🧬 生物</option>
+                    <option value="情報">💻 情報</option>
+                    <option value="地理">🗺️ 地理</option>
+                    <option value="日本史">⛩️ 日本史</option>
+                    <option value="世界史">🏛️ 世界史</option>
+                    <option value="英語">🔤 英語</option>
+                    <option value="国語">📜 国語</option>
+                    <option value="公民">⚖️ 公民</option>
+                </select>
+            </div>
+
+            <!-- レベル選択 -->
+            <div style="margin-bottom:0.75rem;">
+                <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">難易度・目標</label>
+                <select id="create-level-select" class="m-input" style="padding:0.4rem 0.6rem;">
+                    <option value="教科書レベル（基礎の基礎から）">🌱 教科書レベル（基礎の基礎から）</option>
+                    <option value="定期テストレベル" selected>📖 定期テストレベル</option>
+                    <option value="入試基礎レベル">🎯 入試基礎レベル</option>
+                    <option value="入試標準〜応用レベル">🔥 入試標準〜応用レベル</option>
+                </select>
+            </div>
+
+            <!-- テーマ名入力欄（テーマモード時） -->
+            <div id="field-topic-wrap" style="margin-bottom:0.75rem;">
+                <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">学びたい単元・テーマ</label>
+                <input type="text" id="create-topic-input" class="m-input" placeholder="例：3次関数の微分と極値、酸化還元反応 など">
+            </div>
+
+            <!-- 写真選択欄（写真モード時） -->
+            <div id="field-photo-wrap" style="display:none; margin-bottom:0.75rem;">
+                <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">参考書の写真（1〜3枚推奨）</label>
+                <input type="file" accept="image/*" multiple id="create-photo-input" class="m-input" style="padding:0.4rem;">
+                <div id="create-thumb-preview" style="display:flex; gap:0.4rem; overflow-x:auto; margin-top:0.4rem;"></div>
+            </div>
+
+            <!-- メモ・要望 -->
+            <div style="margin-bottom:1rem;">
+                <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">先生への要望（任意）</label>
+                <input type="text" id="create-note-input" class="m-input" placeholder="例：公式の導出を丁寧に、記述対策重視 など">
+            </div>
+
+            <button type="button" class="m-btn m-btn-primary m-btn-full" id="run-create-lesson-btn" style="min-height:48px; font-size:0.95rem;">
+                🚀 ギャル先生のAI授業を生成（AI3並列）
+            </button>
+        </div>
+    </div>
+
     <!-- ボトムナビ -->
     <script src="bottom-nav.js"></script>
 
     <script type="module">
-        import { initApiKeyManager, showToast, callGeminiChat } from "../api-key-manager.js";
+        import { initApiKeyManager, showToast, callGeminiJSON, callGeminiChat } from "../api-key-manager.js";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import { getAuth, signInWithPopup, signInWithEmailAndPassword, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-        import { getDatabase, ref, get, update, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+        import { getDatabase, ref, set, get, update, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB55MdhpjJizQaLEdRu-XhBVJ4PqrHsAyY",
@@ -238,6 +356,8 @@
         let activeLessonId = null;
         let currentSubjectFilter = "ALL";
         let currentSearchQuery = "";
+        let createMode = "topic"; // "topic" or "photo"
+        let createSelectedImages = [];
 
         // ==================== 認証 ====================
         onAuthStateChanged(auth, (user) => {
@@ -282,7 +402,6 @@
             const container = document.getElementById("lesson-list-container");
             const chipsEl = document.getElementById("lesson-subject-chips");
 
-            // 教科一覧
             const subjects = new Set();
             Object.values(lessonsCache).forEach(l => { if (l && l.subject) subjects.add(l.subject); });
 
@@ -298,7 +417,6 @@
                 });
             });
 
-            // リスト描画
             const entries = Object.entries(lessonsCache).sort((a, b) => new Date(b[1].createdAt || 0) - new Date(a[1].createdAt || 0));
             const filtered = entries.filter(([, l]) => {
                 if (!l) return false;
@@ -311,7 +429,7 @@
             });
 
             if (filtered.length === 0) {
-                container.innerHTML = `<div class="m-empty-state"><div class="m-empty-state-icon">📖</div><div class="m-empty-state-title">授業がありません</div><div class="m-empty-state-text">PC版から新しい授業を作成してみましょう</div></div>`;
+                container.innerHTML = `<div class="m-empty-state"><div class="m-empty-state-icon">📖</div><div class="m-empty-state-title">授業がありません</div><div class="m-empty-state-text">上の「＋ 新規作成」ボタンから<br>新しいAI授業を作ってみましょう！</div></div>`;
                 return;
             }
 
@@ -340,20 +458,20 @@
             });
         }
 
-        // ==================== 受講画面制御 ====================
+        // ==================== 授業受講画面 ====================
         function openLesson(lessonId) {
             const lesson = lessonsCache[lessonId];
             if (!lesson) return;
 
             activeLessonId = lessonId;
             document.getElementById("lessons-list-view").style.display = "none";
+            document.getElementById("open-create-modal-btn").style.display = "none";
             document.getElementById("lesson-active-view").style.display = "flex";
             document.getElementById("header-title").textContent = lesson.title || "授業受講";
 
             const chatFlow = document.getElementById("lesson-chat-flow");
             chatFlow.innerHTML = "";
 
-            // 導入講義ノートを最初に出す
             if (lesson.lectureNote) {
                 chatFlow.innerHTML += `
                     <div class="lesson-bubble teacher">
@@ -371,7 +489,6 @@
                 `;
             }
 
-            // チャットログがあれば復元
             if (Array.isArray(lesson.chatHistory)) {
                 lesson.chatHistory.forEach(msg => {
                     const cls = msg.role === "user" ? "student" : "teacher";
@@ -388,12 +505,13 @@
         function leaveLesson() {
             activeLessonId = null;
             document.getElementById("lesson-active-view").style.display = "none";
+            document.getElementById("open-create-modal-btn").style.display = "inline-flex";
             document.getElementById("lessons-list-view").style.display = "block";
             document.getElementById("header-title").textContent = "📖 参考書 授業モード";
         }
         document.getElementById("leave-lesson-btn")?.addEventListener("click", leaveLesson);
 
-        // チャット送信
+        // ==================== 授業チャット送信 ====================
         async function sendLessonMessage() {
             const input = document.getElementById("lesson-student-input");
             const text = input.value.trim();
@@ -413,10 +531,10 @@
                 const lesson = lessonsCache[activeLessonId];
                 const history = [{
                     role: "user",
-                    parts: [{ text: `あなたはギャル先生AIチューターです。以下の授業について生徒と対話してください。\nテーマ: ${lesson.title}\n講義内容: ${lesson.lectureNote || lesson.plan || ""}` }]
+                    parts: [{ text: `あなたは地頭チート系・ギャル先生AIチューターです。以下の授業について生徒と対話してください。\n一人称は「ウチ」、生徒のことは「あんた」と呼んで、バイブス高く、しかし論理と公式は一切妥協せず厳密に教えてください。\nテーマ: ${lesson.title}\n講義内容: ${lesson.lectureNote || lesson.plan || ""}` }]
                 }, {
                     role: "model",
-                    parts: [{ text: "了解！バイブス上げていくよ〜！" }]
+                    parts: [{ text: "了解！ウチに任せて〜！" }]
                 }, {
                     role: "user",
                     parts: [{ text }]
@@ -424,6 +542,12 @@
 
                 const reply = await callGeminiChat(history, "lesson_chat");
                 thinkingEl.innerHTML = formatText(reply || "了解！");
+
+                // Firebaseにチャット履歴を保存
+                const currentHistory = Array.isArray(lesson.chatHistory) ? lesson.chatHistory : [];
+                currentHistory.push({ role: "user", content: text }, { role: "assistant", content: reply || "" });
+                await update(ref(database, `users/${currentUser.uid}/lessons/${activeLessonId}`), { chatHistory: currentHistory });
+
                 if (window.MathJax && window.MathJax.typesetPromise) {
                     window.MathJax.typesetPromise([thinkingEl]).catch(() => {});
                 }
@@ -438,6 +562,205 @@
             if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
                 sendLessonMessage();
+            }
+        });
+
+        // ==================== 🎓 新規授業作成モーダル & AI3並列生成 ====================
+        const createModal = document.getElementById("create-modal");
+        document.getElementById("open-create-modal-btn")?.addEventListener("click", () => {
+            createModal.style.display = "flex";
+        });
+        document.getElementById("close-create-modal-btn")?.addEventListener("click", () => {
+            createModal.style.display = "none";
+        });
+        createModal?.addEventListener("click", (e) => {
+            if (e.target === createModal) createModal.style.display = "none";
+        });
+
+        // モード切替
+        document.getElementById("mode-topic-btn")?.addEventListener("click", () => {
+            createMode = "topic";
+            document.getElementById("mode-topic-btn").classList.add("active");
+            document.getElementById("mode-photo-btn").classList.remove("active");
+            document.getElementById("field-topic-wrap").style.display = "block";
+            document.getElementById("field-photo-wrap").style.display = "none";
+        });
+        document.getElementById("mode-photo-btn")?.addEventListener("click", () => {
+            createMode = "photo";
+            document.getElementById("mode-photo-btn").classList.add("active");
+            document.getElementById("mode-topic-btn").classList.remove("active");
+            document.getElementById("field-topic-wrap").style.display = "none";
+            document.getElementById("field-photo-wrap").style.display = "block";
+        });
+
+        // 写真選択
+        document.getElementById("create-photo-input")?.addEventListener("change", (e) => {
+            const files = Array.from(e.target.files || []);
+            createSelectedImages = [];
+            const previewEl = document.getElementById("create-thumb-preview");
+            previewEl.innerHTML = "";
+
+            files.forEach(f => {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    const dataUrl = ev.target.result;
+                    createSelectedImages.push({
+                        mimeType: f.type || "image/jpeg",
+                        data: dataUrl.split(",")[1],
+                        dataUrl
+                    });
+                    previewEl.innerHTML += `<img src="${dataUrl}" style="height:60px; border-radius:6px; border:1px solid var(--border-color);">`;
+                };
+                reader.readAsDataURL(f);
+            });
+        });
+
+        // 🚀 AI授業生成実行（AI3並列処理）
+        document.getElementById("run-create-lesson-btn")?.addEventListener("click", async () => {
+            if (!currentUser) {
+                if (window.mToast) mToast("⚠️ ログインしてください");
+                return;
+            }
+
+            const subject = document.getElementById("create-subject-select").value;
+            const level = document.getElementById("create-level-select").value;
+            const topic = document.getElementById("create-topic-input").value.trim();
+            const note = document.getElementById("create-note-input").value.trim();
+
+            if (createMode === "topic" && !topic) {
+                if (window.mToast) mToast("⚠️ 単元名・テーマを入力してください");
+                return;
+            }
+            if (createMode === "photo" && createSelectedImages.length === 0) {
+                if (window.mToast) mToast("⚠️ 写真を選択してください");
+                return;
+            }
+
+            const btn = document.getElementById("run-create-lesson-btn");
+            btn.disabled = true;
+            btn.textContent = "⚡ AI3並列で授業を爆速生成中...";
+
+            try {
+                let lessonTitle = "";
+                let lectureNote = "";
+                let parts = [];
+                let keyTerms = [];
+                let events = [];
+
+                if (createMode === "topic") {
+                    const basePrompt = `【教科：${subject}】\n【単元名】${topic}\n【レベル】${level}\n【生徒からの要望】${note}`;
+
+                    // Engine 1: カリキュラム構成
+                    const STRUCTURE_SCHEMA = {
+                        type: "OBJECT",
+                        properties: {
+                            lesson_title: { type: "STRING" },
+                            parts: {
+                                type: "ARRAY",
+                                items: {
+                                    type: "OBJECT",
+                                    properties: { title: { type: "STRING" }, summary: { type: "STRING" } },
+                                    required: ["title", "summary"]
+                                }
+                            }
+                        },
+                        required: ["lesson_title", "parts"]
+                    };
+
+                    // Engine 2: 講義ノート
+                    const LECTURE_SCHEMA = {
+                        type: "OBJECT",
+                        properties: { extracted_text: { type: "STRING" } },
+                        required: ["extracted_text"]
+                    };
+
+                    // Engine 3: 暗記事項・重要用語
+                    const MEMORIZE_SCHEMA = {
+                        type: "OBJECT",
+                        properties: {
+                            key_terms: {
+                                type: "ARRAY",
+                                items: {
+                                    type: "OBJECT",
+                                    properties: { name: { type: "STRING" }, definition: { type: "STRING" } },
+                                    required: ["name", "definition"]
+                                }
+                            }
+                        },
+                        required: ["key_terms"]
+                    };
+
+                    // 🚀 3並列同時ディスパッチ
+                    const [resStructure, resLecture, resMemorize] = await Promise.all([
+                        callGeminiJSON([{ text: basePrompt + "\n\nカリキュラム構成をJSONで出力してください。" }], "あなたは予備校のカリキュラム設計AIです。指定単元を2〜4パートに分割してください。", { responseSchema: STRUCTURE_SCHEMA, featureId: "lesson_parallel_structure" }),
+                        callGeminiJSON([{ text: basePrompt + "\n\n超詳細な講義ノート全文をJSONで出力してください。数式は$ $で囲むこと。" }], "あなたは大人気ギャル講師です。わかりやすく深い講義ノート全文を執筆してください。", { responseSchema: LECTURE_SCHEMA, featureId: "lesson_parallel_lecture" }),
+                        callGeminiJSON([{ text: basePrompt + "\n\n重要公式・用語リストをJSONで出力してください。" }], "暗記すべき重要公式・用語を抽出してください。", { responseSchema: MEMORIZE_SCHEMA, featureId: "lesson_parallel_memorize" })
+                    ]);
+
+                    lessonTitle = resStructure.lesson_title || `【${subject}】${topic}`;
+                    lectureNote = resLecture.extracted_text || "";
+                    parts = resStructure.parts || [];
+                    keyTerms = resMemorize.key_terms || [];
+
+                } else {
+                    // 写真モード
+                    const photoPromptParts = [{ text: `【教科：${subject}】\n添付した参考書の写真を解析し、講義ノート全文と構成をJSONで作成してください。` }];
+                    createSelectedImages.forEach(img => {
+                        photoPromptParts.push({ inlineData: { mimeType: img.mimeType, data: img.data } });
+                    });
+
+                    const PHOTO_SCHEMA = {
+                        type: "OBJECT",
+                        properties: {
+                            lesson_title: { type: "STRING" },
+                            extracted_text: { type: "STRING" },
+                            parts: {
+                                type: "ARRAY",
+                                items: {
+                                    type: "OBJECT",
+                                    properties: { title: { type: "STRING" }, summary: { type: "STRING" } },
+                                    required: ["title", "summary"]
+                                }
+                            }
+                        },
+                        required: ["lesson_title", "extracted_text", "parts"]
+                    };
+
+                    const res = await callGeminiJSON(photoPromptParts, "参考書写真から講義ノート全文を作成してください。", { responseSchema: PHOTO_SCHEMA, featureId: "lesson_plan_photo" });
+                    lessonTitle = res.lesson_title || `【${subject}】写真から作成した授業`;
+                    lectureNote = res.extracted_text || "";
+                    parts = res.parts || [];
+                }
+
+                // Firebaseへ保存
+                const newLessonId = "LESSON_" + Date.now();
+                const newLessonData = {
+                    id: newLessonId,
+                    title: lessonTitle,
+                    topic: topic || lessonTitle,
+                    subject,
+                    level,
+                    lectureNote,
+                    parts,
+                    keyTerms,
+                    events,
+                    status: "teaching",
+                    createdAt: new Date().toISOString(),
+                    chatHistory: []
+                };
+
+                await set(ref(database, `users/${currentUser.uid}/lessons/${newLessonId}`), newLessonData);
+
+                createModal.style.display = "none";
+                if (window.mToast) mToast("🎉 新しい授業が完成しました！受講を開始します");
+                openLesson(newLessonId);
+
+            } catch(e) {
+                console.error(e);
+                if (window.mToast) mToast("⚠️ 作成エラー: " + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "🚀 ギャル先生のAI授業を生成（AI3並列）";
             }
         });
 

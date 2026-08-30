@@ -227,13 +227,34 @@
             border: 1px solid var(--border-color);
         }
 
-        /* 完了画面 */
         .quiz-complete-box {
             text-align: center;
             padding: 3rem 1rem;
             background: var(--bg-surface);
             border-radius: var(--radius-xl);
             border: 1px solid var(--border-color);
+        }
+
+        /* 単元＆問題登録モーダル */
+        .rb-register-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 99990;
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+        }
+        .rb-register-modal-sheet {
+            background: var(--bg-surface);
+            border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 1.25rem;
+            box-shadow: var(--shadow-modal);
+            animation: slideUp 0.25s ease-out;
         }
     </style>
 </head>
@@ -243,7 +264,6 @@
     <header class="m-header">
         <button class="m-header-back" id="header-back-btn" onclick="location.href='index.html'">‹</button>
         <span class="m-header-title" id="header-title">📚 参考書 一問一答</span>
-        <a href="../refbook.html" class="m-header-action" title="PC版で開く" style="font-size:0.85rem;">💻</a>
     </header>
 
     <!-- ログイン案内 -->
@@ -262,7 +282,7 @@
         <div id="units-view">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
                 <span class="m-section-title">登録済み単元</span>
-                <button class="m-btn m-btn-primary" id="open-register-btn" style="padding:0.4rem 0.8rem; font-size:0.75rem; min-height:36px;">
+                <button class="m-btn m-btn-primary" id="open-register-btn" style="padding:0.4rem 0.8rem; font-size:0.75rem; min-height:36px; border-radius:var(--radius-full);">
                     📸 写真から登録
                 </button>
             </div>
@@ -343,11 +363,53 @@
 
     </main>
 
+    <!-- 📸 参考書 写真から単元＆問題登録モーダル（スマホ完結） -->
+    <div class="rb-register-modal-overlay" id="rb-register-modal">
+        <div class="rb-register-modal-sheet">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.8rem;">
+                <h3 style="font-family:var(--font-heading); font-size:1.05rem; font-weight:800;">📸 参考書の写真から登録</h3>
+                <button type="button" id="close-rb-register-modal-btn" style="background:none; border:none; font-size:1.2rem; cursor:pointer; color:var(--text-muted);">✕</button>
+            </div>
+
+            <div style="margin-bottom:0.75rem;">
+                <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">単元名（例：①物質の探究）</label>
+                <input type="text" id="rb-unit-name-input" class="m-input" placeholder="例：①物質の探究、微分と極値 など">
+            </div>
+
+            <div style="margin-bottom:0.75rem;">
+                <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">教科</label>
+                <select id="rb-unit-subject-select" class="m-input" style="padding:0.4rem 0.6rem;">
+                    <option value="数学">📐 数学</option>
+                    <option value="物理">⚡ 物理</option>
+                    <option value="化学" selected>🧪 化学</option>
+                    <option value="生物">🧬 生物</option>
+                    <option value="情報">💻 情報</option>
+                    <option value="地理">🗺️ 地理</option>
+                    <option value="日本史">⛩️ 日本史</option>
+                    <option value="世界史">🏛️ 世界史</option>
+                    <option value="英語">🔤 英語</option>
+                    <option value="国語">📜 国語</option>
+                    <option value="公民">⚖️ 公民</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom:0.75rem;">
+                <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">問題ページの写真（1〜3枚推奨）</label>
+                <input type="file" accept="image/*" multiple id="rb-photo-input" class="m-input" style="padding:0.4rem;">
+                <div id="rb-thumb-preview" style="display:flex; gap:0.4rem; overflow-x:auto; margin-top:0.4rem;"></div>
+            </div>
+
+            <button type="button" class="m-btn m-btn-primary m-btn-full" id="run-rb-extract-btn" style="min-height:48px; font-size:0.95rem;">
+                ✨ AIで問題を抽出して単元作成
+            </button>
+        </div>
+    </div>
+
     <!-- ボトムナビ -->
     <script src="bottom-nav.js"></script>
 
     <script type="module">
-        import { initApiKeyManager, showToast, generateTinyThumbnail, getEffectiveGeminiKeys } from "../api-key-manager.js";
+        import { initApiKeyManager, showToast, generateTinyThumbnail, callGeminiJSON } from "../api-key-manager.js";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import { getAuth, signInWithPopup, signInWithEmailAndPassword, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
         import { getDatabase, ref, set, get, update, onValue, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
@@ -377,6 +439,7 @@
         let currentQuizIndex = 0;
         let solvedInThisRun = {};
         let problemImagesCache = {};
+        let rbSelectedImages = [];
 
         // ==================== 認証 ====================
         onAuthStateChanged(auth, (user) => {
@@ -433,7 +496,7 @@
             const unitEntries = Object.entries(unitsCache).sort((a, b) => (a[1].order || 0) - (b[1].order || 0));
 
             if (unitEntries.length === 0) {
-                container.innerHTML = `<div class="m-empty-state"><div class="m-empty-state-icon">📚</div><div class="m-empty-state-title">まだ単元がありません</div><div class="m-empty-state-text">PC版から写真で問題を登録するか、右上の「写真から登録」をタップしてください。</div></div>`;
+                container.innerHTML = `<div class="m-empty-state"><div class="m-empty-state-icon">📚</div><div class="m-empty-state-title">まだ単元がありません</div><div class="m-empty-state-text">右上の「📸 写真から登録」をタップして<br>参考書の問題を追加してみましょう！</div></div>`;
                 return;
             }
 
@@ -486,6 +549,7 @@
             solvedInThisRun = {};
             rebuildQuizList();
             document.getElementById("units-view").style.display = "none";
+            document.getElementById("open-register-btn").style.display = "none";
             document.getElementById("unit-detail-view").style.display = "flex";
             const unit = unitsCache[unitId];
             document.getElementById("unit-detail-title-badge").textContent = unit ? unit.name : "単元";
@@ -496,6 +560,7 @@
         function closeUnit() {
             currentUnitId = null;
             document.getElementById("unit-detail-view").style.display = "none";
+            document.getElementById("open-register-btn").style.display = "inline-flex";
             document.getElementById("units-view").style.display = "block";
             document.getElementById("header-title").textContent = "📚 参考書 一問一答";
         }
@@ -611,7 +676,6 @@
             renderQuizCard();
         });
 
-        // わからなかった → 誤答ノートへ
         document.getElementById("quiz-dunno-btn")?.addEventListener("click", async () => {
             const pid = currentQuizList[currentQuizIndex];
             const p = problemsCache[pid];
@@ -665,8 +729,135 @@
             }
         });
 
+        // ==================== 📸 単元＆問題登録モーダル ====================
+        const rbModal = document.getElementById("rb-register-modal");
         document.getElementById("open-register-btn")?.addEventListener("click", () => {
-            location.href = "../refbook.html";
+            rbModal.style.display = "flex";
+        });
+        document.getElementById("close-rb-register-modal-btn")?.addEventListener("click", () => {
+            rbModal.style.display = "none";
+        });
+        rbModal?.addEventListener("click", (e) => {
+            if (e.target === rbModal) rbModal.style.display = "none";
+        });
+
+        document.getElementById("rb-photo-input")?.addEventListener("change", (e) => {
+            const files = Array.from(e.target.files || []);
+            rbSelectedImages = [];
+            const previewEl = document.getElementById("rb-thumb-preview");
+            previewEl.innerHTML = "";
+
+            files.forEach(f => {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    const dataUrl = ev.target.result;
+                    rbSelectedImages.push({
+                        mimeType: f.type || "image/jpeg",
+                        data: dataUrl.split(",")[1],
+                        dataUrl
+                    });
+                    previewEl.innerHTML += `<img src="${dataUrl}" style="height:60px; border-radius:6px; border:1px solid var(--border-color);">`;
+                };
+                reader.readAsDataURL(f);
+            });
+        });
+
+        document.getElementById("run-rb-extract-btn")?.addEventListener("click", async () => {
+            if (!currentUser) {
+                if (window.mToast) mToast("⚠️ ログインしてください");
+                return;
+            }
+            if (rbSelectedImages.length === 0) {
+                if (window.mToast) mToast("⚠️ 写真を選択してください");
+                return;
+            }
+
+            const unitName = document.getElementById("rb-unit-name-input").value.trim();
+            const subject = document.getElementById("rb-unit-subject-select").value;
+            const btn = document.getElementById("run-rb-extract-btn");
+
+            btn.disabled = true;
+            btn.textContent = "AIが問題を抽出中...";
+
+            try {
+                const parts = [{ text: "提出された参考書写真から、個別の問題をすべて抽出してください。" }];
+                rbSelectedImages.forEach(img => {
+                    parts.push({ inlineData: { mimeType: img.mimeType, data: img.data } });
+                });
+
+                const schema = {
+                    type: "OBJECT",
+                    properties: {
+                        unitLabelGuess: { type: "STRING" },
+                        problems: {
+                            type: "ARRAY",
+                            items: {
+                                type: "OBJECT",
+                                properties: {
+                                    number: { type: "STRING" },
+                                    type: { type: "STRING" },
+                                    question: { type: "STRING" },
+                                    hasFigure: { type: "BOOLEAN" },
+                                    answer: { type: "STRING" },
+                                    explanation: { type: "STRING" }
+                                },
+                                required: ["number", "question", "answer"]
+                            }
+                        }
+                    },
+                    required: ["problems"]
+                };
+
+                const res = await callGeminiJSON(parts, "参考書写真から個別問題をすべて抽出してJSONで返してください。", {
+                    responseSchema: schema,
+                    featureId: "refbook_extract"
+                });
+
+                const finalUnitName = unitName || res.unitLabelGuess || `【${subject}】単元`;
+                const newUnitId = "UNIT_" + Date.now();
+
+                // 単元作成
+                await set(ref(database, `users/${currentUser.uid}/refBookUnits/${newUnitId}`), {
+                    name: finalUnitName,
+                    subject,
+                    order: Date.now(),
+                    createdAt: new Date().toISOString()
+                });
+
+                // 問題作成
+                const extracted = res.problems || [];
+                const imagesToStore = rbSelectedImages.map(img => img.dataUrl);
+
+                let i = 0;
+                for (const item of extracted) {
+                    const pid = "RB_" + Date.now() + "_" + (i++);
+                    await set(ref(database, `users/${currentUser.uid}/refBookProblems/${pid}`), {
+                        id: pid,
+                        unitId: newUnitId,
+                        number: item.number || String(i),
+                        type: item.type || "問題",
+                        question: item.question || "",
+                        hasFigure: !!item.hasFigure,
+                        answer: item.answer || "",
+                        explanation: item.explanation || "",
+                        order: Date.now() + i,
+                        createdAt: new Date().toISOString()
+                    });
+                    if (imagesToStore.length > 0) {
+                        await set(ref(database, `users/${currentUser.uid}/refBookProblemImages/${pid}`), { images: imagesToStore });
+                    }
+                }
+
+                rbModal.style.display = "none";
+                if (window.mToast) mToast(`🎉 「${finalUnitName}」に${extracted.length}問を登録しました！`);
+
+            } catch(e) {
+                console.error(e);
+                if (window.mToast) mToast("⚠️ 登録エラー: " + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "✨ AIで問題を抽出して単元作成";
+            }
         });
 
         function escapeHtml(str) {
