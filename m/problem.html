@@ -608,8 +608,8 @@
             messagesEl.scrollTop = messagesEl.scrollHeight;
 
             try {
-                const result = await callGeminiChat(chatHistory, "problem_chat");
-                const aiText = result || "回答を取得できませんでした。";
+                const result = await callGeminiChat(chatHistory, "高校の学習指導エキスパートAIとして、生徒の質問に分かりやすく丁寧に答えてください。", { featureId: "chat" });
+                const aiText = typeof result === "string" ? result : (result?.message || result?.reply || JSON.stringify(result));
                 thinkingEl.innerHTML = formatText(aiText);
                 chatHistory.push({ role: "model", parts: [{ text: aiText }] });
                 if (window.MathJax && window.MathJax.typesetPromise) {

@@ -290,6 +290,24 @@ export const GEMINI_FEATURES = [
     { id: "refbook_answer_generate", label: "参考書問題のAIによる解答・解説生成", page: "refbook.html" },
 ];
 
+// サブ機能IDや旧機能IDを親の管理IDへ自動マッピングする辞書
+const FEATURE_ALIASES = {
+    "lesson_parallel_structure": "lesson_plan",
+    "lesson_parallel_lecture": "lesson_plan",
+    "lesson_parallel_memorize": "lesson_plan",
+    "lesson_plan_photo": "lesson_plan",
+    "answer_check": "quick_answer",
+    "problem_chat": "chat",
+    "lesson_chat": "lesson_teach"
+};
+
+function resolveFeatureId(featureId) {
+    if (!featureId) return null;
+    if (FEATURE_ALIASES[featureId]) return FEATURE_ALIASES[featureId];
+    if (featureId.startsWith("lesson_plan_") || featureId.startsWith("lesson_parallel_")) return "lesson_plan";
+    return featureId;
+}
+
 const FEATURE_CONFIG_STORAGE = "RE_MIND_FEATURE_CONFIG";
 
 function loadFeatureConfig() {
@@ -356,7 +374,10 @@ export function importAISettings(data) {
 
 function getFeatureEntry(featureId) {
     const cfg = loadFeatureConfig();
-    return cfg[featureId] || { models: null, keys: null };
+    if (featureId && cfg[featureId]) return cfg[featureId];
+    const resolvedId = resolveFeatureId(featureId);
+    if (resolvedId && cfg[resolvedId]) return cfg[resolvedId];
+    return { models: null, keys: null };
 }
 
 function setFeatureEntry(featureId, entry) {

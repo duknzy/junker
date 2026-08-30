@@ -543,12 +543,13 @@
                     parts: [{ text }]
                 }];
 
-                const reply = await callGeminiChat(history, "lesson_chat");
-                thinkingEl.innerHTML = formatText(reply || "了解！");
+                const reply = await callGeminiChat(history, "高校の学習指導エキスパートAIとして、授業内容に関する生徒の質問に分かりやすく丁寧に答えてください。", { featureId: "lesson_teach" });
+                const replyText = typeof reply === "string" ? reply : (reply?.message || reply?.reply || JSON.stringify(reply));
+                thinkingEl.innerHTML = formatText(replyText || "了解！");
 
                 // Firebaseにチャット履歴を保存
                 const currentHistory = Array.isArray(lesson.chatHistory) ? lesson.chatHistory : [];
-                currentHistory.push({ role: "user", content: text }, { role: "assistant", content: reply || "" });
+                currentHistory.push({ role: "user", content: text }, { role: "assistant", content: replyText || "" });
                 await update(ref(database, `users/${currentUser.uid}/lessons/${activeLessonId}`), { chatHistory: currentHistory });
 
                 if (window.MathJax && window.MathJax.typesetPromise) {
@@ -695,9 +696,9 @@
 
                     // 🚀 3並列同時ディスパッチ
                     const [resStructure, resLecture, resMemorize] = await Promise.all([
-                        callGeminiJSON([{ text: basePrompt + "\n\nカリキュラム構成をJSONで出力してください。" }], "あなたは予備校のカリキュラム設計AIです。指定単元を2〜4パートに分割してください。", { responseSchema: STRUCTURE_SCHEMA, featureId: "lesson_parallel_structure" }),
-                        callGeminiJSON([{ text: basePrompt + "\n\n超詳細な講義ノート全文をJSONで出力してください。数式は必ず$ $で囲むこと。" }], "あなたは難関大受験指導のプロ講師です。論理的で厳密、初学者にもわかりやすく深い講義ノート全文を執筆してください。無駄な前置きや過度な装飾は省いてください。", { responseSchema: LECTURE_SCHEMA, featureId: "lesson_parallel_lecture" }),
-                        callGeminiJSON([{ text: basePrompt + "\n\n重要公式・用語リストをJSONで出力してください。" }], "暗記すべき重要公式・用語を抽出してください。", { responseSchema: MEMORIZE_SCHEMA, featureId: "lesson_parallel_memorize" })
+                        callGeminiJSON([{ text: basePrompt + "\n\nカリキュラム構成をJSONで出力してください。" }], "あなたは予備校のカリキュラム設計AIです。指定単元を2〜4パートに分割してください。", { responseSchema: STRUCTURE_SCHEMA, featureId: "lesson_plan", keyOffset: 0 }),
+                        callGeminiJSON([{ text: basePrompt + "\n\n超詳細な講義ノート全文をJSONで出力してください。数式は必ず$ $で囲むこと。" }], "あなたは難関大受験指導のプロ講師です。論理的で厳密、初学者にもわかりやすく深い講義ノート全文を執筆してください。無駄な前置きや過度な装飾は省いてください。", { responseSchema: LECTURE_SCHEMA, featureId: "lesson_plan", keyOffset: 1 }),
+                        callGeminiJSON([{ text: basePrompt + "\n\n重要公式・用語リストをJSONで出力してください。" }], "暗記すべき重要公式・用語を抽出してください。", { responseSchema: MEMORIZE_SCHEMA, featureId: "lesson_plan", keyOffset: 2 })
                     ]);
 
                     lessonTitle = resStructure.lesson_title || `【${subject}】${topic}`;
@@ -729,7 +730,7 @@
                         required: ["lesson_title", "extracted_text", "parts"]
                     };
 
-                    const res = await callGeminiJSON(photoPromptParts, "参考書写真から講義ノート全文を作成してください。", { responseSchema: PHOTO_SCHEMA, featureId: "lesson_plan_photo" });
+                    const res = await callGeminiJSON(photoPromptParts, "参考書写真から講義ノート全文を作成してください。", { responseSchema: PHOTO_SCHEMA, featureId: "lesson_plan" });
                     lessonTitle = res.lesson_title || `【${subject}】写真から作成した授業`;
                     lectureNote = res.extracted_text || "";
                     parts = res.parts || [];
