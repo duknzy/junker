@@ -283,6 +283,19 @@
             <input type="text" id="search-input" placeholder="問題を検索...">
         </div>
 
+        <!-- 🔀 並べ替えセレクター -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin:0.5rem 0 0.4rem; padding:0 0.2rem;">
+            <span style="font-size:0.75rem; font-weight:700; color:var(--text-secondary);">🔀 並べ替え:</span>
+            <select id="sort-select" class="m-input" style="width:auto; padding:0.25rem 0.6rem; font-size:0.75rem; border-radius:var(--radius-sm);">
+                <option value="urgency">🧠 忘却曲線・優先度順</option>
+                <option value="errors_desc">🔥 誤答数が多い順</option>
+                <option value="attempt_desc">⏱️ 最近解いた順</option>
+                <option value="created_desc">📅 登録が新しい順</option>
+                <option value="created_asc">⏳ 登録が古い順</option>
+                <option value="subject">📚 教科・分野順</option>
+            </select>
+        </div>
+
         <!-- 教科フィルター（横スクロール） -->
         <div class="m-filter-chips" id="subject-chips"></div>
 
@@ -370,7 +383,19 @@
         let lastProblems = {};
         let currentSubjectFilter = "ALL";
         let currentSearchQuery = "";
+        let currentSortMode = localStorage.getItem("flora_mobile_sort") || "urgency";
         let probSelectedImages = [];
+
+        // 並べ替えセレクト初期化
+        const sortSelectEl = document.getElementById("sort-select");
+        if (sortSelectEl) {
+            sortSelectEl.value = currentSortMode;
+            sortSelectEl.addEventListener("change", (e) => {
+                currentSortMode = e.target.value;
+                localStorage.setItem("flora_mobile_sort", currentSortMode);
+                renderDashboard();
+            });
+        }
 
         // ==================== 認証 ====================
         onAuthStateChanged(auth, (user) => {
@@ -456,6 +481,50 @@
         };
         const sectionOrder = ["overdue", "critical", "new", "pending", "safe"];
 
+        // 1枚の問題カードHTML生成
+        function renderSingleProblemCard(p) {
+            const urgency = getUrgency(p);
+            const cfg = urgencyConfig[urgency] || urgencyConfig.new;
+
+            let thumbContent = "";
+            if (p.thumb) {
+                thumbContent = `<img src="${p.thumb}">`;
+            } else {
+                const subj = p.subject || "";
+                let icon = "📝";
+                if (subj.includes("数学")) icon = "📐";
+                else if (subj.includes("物理")) icon = "⚡";
+                else if (subj.includes("化学")) icon = "🧪";
+                else if (subj.includes("世界史")) icon = "🌍";
+                else if (subj.includes("日本史")) icon = "⛩️";
+                else if (subj.includes("英語")) icon = "🔤";
+                else if (subj.includes("国語")) icon = "📖";
+                else if (subj.includes("地理")) icon = "🗺️";
+                else if (subj.includes("情報")) icon = "💻";
+                else if (subj.includes("生物")) icon = "🧬";
+                thumbContent = icon;
+            }
+
+            const subjClass = getSubjectClass(p.subject || "");
+
+            return `
+                <div class="p-row" style="border-left-color:${cfg.color};" onclick="location.href='problem.html?id=${p.id}'">
+                    <div class="p-thumb">${thumbContent}</div>
+                    <div class="p-main">
+                        <div class="p-title tex2jax_process">${formatMathTitle(p.short_title || p.title || "無題")}</div>
+                        <div class="p-badges">
+                            <span class="m-subject-badge ${subjClass}">${escHtml(p.subject || "未分類")}</span>
+                            ${p.field ? `<span class="m-subject-badge" style="background:var(--bg-subtle);color:var(--text-secondary);border:1px solid var(--border-color);">${escHtml(truncate(p.field, 15))}</span>` : ""}
+                        </div>
+                    </div>
+                    <div class="p-err" style="color:${cfg.color};">
+                        <div>${String(p.errorCount || 0).padStart(2, '0')}</div>
+                        <div class="p-err-label">誤答</div>
+                    </div>
+                </div>
+            `;
+        }
+
         // ==================== 描画 ====================
         function renderDashboard() {
             const listEl = document.getElementById("problem-list");
@@ -477,6 +546,7 @@
             });
 
             const buckets = { overdue: [], critical: [], new: [], pending: [], safe: [] };
+            const allFilteredItems = [];
             let totalErrors = 0, solvedToday = 0, safeCount = 0, criticalDue = 0, totalFiltered = 0;
             const todayStr = new Date().toDateString();
 
@@ -500,7 +570,9 @@
                 if (urgency === "safe") safeCount++;
                 if (urgency === "overdue" || urgency === "critical" || urgency === "new") criticalDue++;
 
-                buckets[urgency].push({ id, ...p });
+                const item = { id, ...p, _urgency: urgency };
+                buckets[urgency].push(item);
+                allFilteredItems.push(item);
             });
 
             document.getElementById("total-errors-display").textContent = String(totalErrors).padStart(2, '0');
@@ -511,64 +583,53 @@
             document.getElementById("due-count-display").textContent = criticalDue;
 
             let html = "";
-            sectionOrder.forEach(key => {
-                const items = buckets[key];
-                if (!items || items.length === 0) return;
-                const cfg = urgencyConfig[key];
 
-                html += `
-                    <div class="section-header" data-section="${key}" onclick="this.classList.toggle('collapsed');this.nextElementSibling.classList.toggle('collapsed');">
-                        <div class="section-header-left">
-                            <span class="section-chevron">▼</span>
-                            <span>${cfg.label}</span>
-                        </div>
-                        <span class="section-count">${items.length}</span>
-                    </div>
-                    <div class="section-rows" data-section-rows="${key}">
-                `;
-
-                items.forEach(p => {
-                    let thumbContent = "";
-                    if (p.thumb) {
-                        thumbContent = `<img src="${p.thumb}">`;
-                    } else {
-                        const subj = p.subject || "";
-                        let icon = "📝";
-                        if (subj.includes("数学")) icon = "📐";
-                        else if (subj.includes("物理")) icon = "⚡";
-                        else if (subj.includes("化学")) icon = "🧪";
-                        else if (subj.includes("世界史")) icon = "🌍";
-                        else if (subj.includes("日本史")) icon = "⛩️";
-                        else if (subj.includes("英語")) icon = "🔤";
-                        else if (subj.includes("国語")) icon = "📖";
-                        else if (subj.includes("地理")) icon = "🗺️";
-                        else if (subj.includes("情報")) icon = "💻";
-                        else if (subj.includes("生物")) icon = "🧬";
-                        thumbContent = icon;
-                    }
-
-                    const subjClass = getSubjectClass(p.subject || "");
+            if (currentSortMode === "urgency") {
+                // 🧠 忘却曲線セクション別表示
+                sectionOrder.forEach(key => {
+                    const items = buckets[key];
+                    if (!items || items.length === 0) return;
+                    const cfg = urgencyConfig[key];
 
                     html += `
-                        <div class="p-row" style="border-left-color:${cfg.color};" onclick="location.href='problem.html?id=${p.id}'">
-                            <div class="p-thumb">${thumbContent}</div>
-                            <div class="p-main">
-                                <div class="p-title tex2jax_process">${formatMathTitle(p.short_title || p.title || "無題")}</div>
-                                <div class="p-badges">
-                                    <span class="m-subject-badge ${subjClass}">${escHtml(p.subject || "未分類")}</span>
-                                    ${p.field ? `<span class="m-subject-badge" style="background:var(--bg-subtle);color:var(--text-secondary);border:1px solid var(--border-color);">${escHtml(truncate(p.field, 15))}</span>` : ""}
-                                </div>
+                        <div class="section-header" data-section="${key}" onclick="this.classList.toggle('collapsed');this.nextElementSibling.classList.toggle('collapsed');">
+                            <div class="section-header-left">
+                                <span class="section-chevron">▼</span>
+                                <span>${cfg.label}</span>
                             </div>
-                            <div class="p-err" style="color:${cfg.color};">
-                                <div>${String(p.errorCount || 0).padStart(2, '0')}</div>
-                                <div class="p-err-label">誤答</div>
-                            </div>
+                            <span class="section-count">${items.length}</span>
                         </div>
+                        <div class="section-rows" data-section-rows="${key}">
                     `;
+                    items.forEach(p => { html += renderSingleProblemCard(p); });
+                    html += `</div>`;
+                });
+            } else {
+                // その他のソート順（フラット一覧表示）
+                allFilteredItems.sort((a, b) => {
+                    switch (currentSortMode) {
+                        case "errors_desc":
+                            return (Number(b.errorCount) || 0) - (Number(a.errorCount) || 0);
+                        case "attempt_desc":
+                            return new Date(b.lastAttemptAt || 0) - new Date(a.lastAttemptAt || 0);
+                        case "created_desc":
+                            return new Date(b.createdAt || b.id || 0) - new Date(a.createdAt || a.id || 0);
+                        case "created_asc":
+                            return new Date(a.createdAt || a.id || 0) - new Date(b.createdAt || b.id || 0);
+                        case "subject": {
+                            const sA = (a.subject || "") + (a.field || "");
+                            const sB = (b.subject || "") + (b.field || "");
+                            return sA.localeCompare(sB, "ja");
+                        }
+                        default:
+                            return 0;
+                    }
                 });
 
+                html += `<div class="section-rows" style="padding-top:0.3rem;">`;
+                allFilteredItems.forEach(p => { html += renderSingleProblemCard(p); });
                 html += `</div>`;
-            });
+            }
 
             if (totalFiltered === 0 && Object.keys(lastProblems).length === 0) {
                 html = `

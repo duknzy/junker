@@ -194,7 +194,7 @@
     <!-- ヘッダー -->
     <header class="m-header">
         <button class="m-header-back" onclick="location.href='index.html'">‹</button>
-        <span class="m-header-title" id="header-title">問題演習</span>
+        <span class="m-header-title tex2jax_process" id="header-title" style="max-width:72vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">問題演習</span>
     </header>
 
     <!-- ログイン案内 -->
@@ -236,9 +236,9 @@
             </button>
             <div id="answer-body" style="display:none;margin-top:0.5rem;">
                 <div class="model-answer-box" id="model-answer-text"></div>
-                <div id="no-answer-action" style="display:none; margin-top:0.6rem; text-align:center;">
+                <div id="answer-action-box" style="margin-top:0.75rem; text-align:center;">
                     <button class="m-btn m-btn-primary" id="btn-generate-answer" style="width:100%;">
-                        ✨ ギャル先生に模範解答・定石を生成してもらう
+                        🔄 ギャル先生に解説・定石を再生成してもらう
                     </button>
                 </div>
             </div>
@@ -271,6 +271,16 @@
             </div>
         </div>
 
+        <!-- 問題削除エリア -->
+        <div class="problem-section" style="border-color:#FCA5A5; background:#FEF2F2; text-align:center; margin-top:1.5rem;">
+            <button class="m-btn m-btn-danger" id="btn-delete-problem" style="width:100%; font-weight:700;">
+                🗑️ この問題を完全に削除する
+            </button>
+            <p style="font-size:0.72rem; color:#DC2626; margin-top:0.4rem; margin-bottom:0;">
+                ※削除すると問題データ、写真、質問履歴が完全に抹消されます。
+            </p>
+        </div>
+
     </main>
 
     <!-- ボトムナビ -->
@@ -294,7 +304,7 @@
         import { initApiKeyManager, showToast, callGeminiChat, callGeminiJSON, getGeminiKeys } from "../api-key-manager.js";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import { getAuth, signInWithPopup, signInWithEmailAndPassword, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-        import { getDatabase, ref, get, update, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+        import { getDatabase, ref, get, set, update, remove, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB55MdhpjJizQaLEdRu-XhBVJ4PqrHsAyY",
@@ -360,8 +370,9 @@
                 }
                 currentProblem = { ...p, id: pid };
 
-                // ヘッダータイトル更新
-                document.getElementById("header-title").textContent = p.short_title || "問題演習";
+                // ヘッダータイトル更新（数式対応）
+                const headerTitleEl = document.getElementById("header-title");
+                headerTitleEl.innerHTML = formatMathTitle(p.short_title || p.title || "問題演習");
 
                 // 問題文
                 const problemTextEl = document.getElementById("problem-text");
@@ -399,16 +410,23 @@
 
                 // 模範解答（PC版 answerFormula や model_answer、explanation、answer など全対応）
                 const answerContent = p.model_answer || p.answerFormula || p.explanation || p.answer || p.solution || "";
-                const noAnswerAction = document.getElementById("no-answer-action");
+                const generateBtn = document.getElementById("btn-generate-answer");
 
                 if (answerContent && answerContent.trim() !== "") {
                     document.getElementById("model-answer-text").innerHTML = formatText(answerContent);
-                    if (noAnswerAction) noAnswerAction.style.display = "none";
+                    if (generateBtn) {
+                        generateBtn.textContent = "🔄 ギャル先生に解説・定石を再生成してもらう";
+                        generateBtn.onclick = () => {
+                            if (confirm("現在の模範解答・定石・罠をAIで再生成して上書きしますか？")) {
+                                generateModelAnswer(uid, pid, p);
+                            }
+                        };
+                    }
                 } else {
                     document.getElementById("model-answer-text").innerHTML = '<span style="color:var(--text-muted); font-size:var(--fs-sm);">模範解答データがまだ登録されていません。</span>';
-                    if (noAnswerAction) {
-                        noAnswerAction.style.display = "block";
-                        document.getElementById("btn-generate-answer").onclick = () => generateModelAnswer(uid, pid, p);
+                    if (generateBtn) {
+                        generateBtn.textContent = "✨ ギャル先生に模範解答・定石を生成してもらう";
+                        generateBtn.onclick = () => generateModelAnswer(uid, pid, p);
                     }
                 }
 
@@ -416,9 +434,9 @@
                 const insightInput = document.getElementById("insight-input");
                 if (p.insight) insightInput.value = p.insight;
 
-                // MathJax レンダリング
+                // MathJax レンダリング（ヘッダーとコンテンツ全体）
                 if (window.MathJax && window.MathJax.typesetPromise) {
-                    window.MathJax.typesetPromise([document.getElementById("main-content")]).catch(() => {});
+                    window.MathJax.typesetPromise([headerTitleEl, document.getElementById("main-content")]).catch(() => {});
                 }
 
                 // AIチャット用コンテキスト初期化
@@ -435,6 +453,46 @@
                 document.getElementById("problem-text").textContent = "読み込みエラー: " + e.message;
             }
         }
+
+        // ==================== 問題削除 ====================
+        document.getElementById("btn-delete-problem")?.addEventListener("click", async () => {
+            if (!currentUser || !PROBLEM_ID) return;
+
+            const confirmDelete = confirm(
+                "⚠️ 本当にこの問題を削除しますか？\n\n登録された問題文、写真、解説、質問履歴がクラウドから完全に抹消され、復元できなくなります。"
+            );
+            if (!confirmDelete) return;
+
+            const deleteBtn = document.getElementById("btn-delete-problem");
+            deleteBtn.disabled = true;
+            deleteBtn.textContent = "🗑️ 削除処理中...";
+
+            try {
+                const uid = currentUser.uid;
+                // 1. 問題本体を削除
+                await remove(ref(database, `users/${uid}/problems/${PROBLEM_ID}`));
+                // 2. 高画質画像データを削除
+                await remove(ref(database, `users/${uid}/problemImages/${PROBLEM_ID}`)).catch(() => {});
+                // 3. 紐づく質問ログ（qna_logs）を削除
+                try {
+                    const qnaSnap = await get(ref(database, `users/${uid}/qna_logs`));
+                    const qnaData = qnaSnap.val() || {};
+                    const deletePromises = Object.keys(qnaData)
+                        .filter(logId => qnaData[logId] && qnaData[logId].problemId === PROBLEM_ID)
+                        .map(logId => remove(ref(database, `users/${uid}/qna_logs/${logId}`)));
+                    await Promise.all(deletePromises);
+                } catch(e) {}
+
+                if (window.mToast) mToast("🗑️ 問題を完全に削除しました");
+                setTimeout(() => { location.href = "index.html"; }, 900);
+
+            } catch (err) {
+                console.error("削除エラー:", err);
+                if (window.mToast) mToast("⚠️ 削除に失敗しました: " + err.message);
+                deleteBtn.disabled = false;
+                deleteBtn.textContent = "🗑️ この問題を完全に削除する";
+            }
+        });
 
         // ==================== 自己採点 ====================
         window.judgeResult = async function(isCorrect) {
@@ -593,6 +651,21 @@
             formatted = formatted.replace(/\\n/g, "<br>").replace(/\n/g, "<br>");
 
             // 数式ブロックを復元
+            formatted = formatted.replace(/%%%MATH_(\d+)%%%/g, (_, idx) => mathBlocks[idx]);
+            return formatted;
+        }
+
+        function formatMathTitle(text) {
+            if (!text) return "問題演習";
+            const mathBlocks = [];
+            let placeholderText = String(text).replace(/(\$\$[\s\S]*?\$\$|\$[^\$\n]+?\$)/g, (match) => {
+                mathBlocks.push(match);
+                return `%%%MATH_${mathBlocks.length - 1}%%%`;
+            });
+            let formatted = placeholderText
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;");
             formatted = formatted.replace(/%%%MATH_(\d+)%%%/g, (_, idx) => mathBlocks[idx]);
             return formatted;
         }
