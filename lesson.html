@@ -338,14 +338,26 @@
         .plan-part-item b { color: var(--brand-primary); font-size: 0.95rem; }
         .plan-part-item p { font-size: 0.86rem; color: var(--text-secondary); margin-top: 0.25rem; line-height: 1.5; }
 
-        /* 💻 PC用 2カラムGrid構成 */
+        /* 💻 PC用 2カラムGrid構成（右サイドバーに十分なスペースを確保） */
         .lesson-layout-grid {
             display: grid;
-            grid-template-columns: 1fr 380px;
+            grid-template-columns: minmax(0, 1fr) 420px;
             gap: 1.25rem;
             align-items: stretch;
             height: calc(100vh - 110px);
             min-height: 600px;
+        }
+        @media (min-width: 1500px) {
+            .lesson-layout-grid {
+                grid-template-columns: minmax(0, 1fr) 460px;
+            }
+        }
+        @media (max-width: 1100px) {
+            .lesson-layout-grid {
+                grid-template-columns: 1fr;
+                height: auto;
+                min-height: unset;
+            }
         }
         .lesson-main-card {
             background: var(--bg-surface);
@@ -363,7 +375,7 @@
             background: var(--bg-surface);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-lg);
-            padding: 1.25rem 1.2rem;
+            padding: 1.25rem 1.35rem;
             box-shadow: var(--shadow-sm);
             display: flex;
             flex-direction: column;
@@ -384,7 +396,7 @@
 
         .chat-bubble {
             position: relative;
-            padding: 1.1rem 1.3rem;
+            padding: 1.15rem 1.35rem;
             border-radius: var(--radius-lg);
             font-size: 0.95rem;
             line-height: 1.7;
@@ -423,6 +435,56 @@
             border-radius: var(--radius-full);
         }
 
+        /* 💬 メッセージアクション（再生成・コピー）のスタイリッシュなツールバー配置 */
+        .bubble-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 0.5rem;
+            margin-top: 0.85rem;
+            padding-top: 0.55rem;
+            border-top: 1px dashed var(--border-subtle);
+        }
+        .bubble-action-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.32rem 0.75rem;
+            font-size: 0.76rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            box-shadow: var(--shadow-xs);
+            white-space: nowrap;
+            user-select: none;
+        }
+        .bubble-action-btn:hover {
+            background: var(--brand-light);
+            color: var(--brand-primary);
+            border-color: var(--brand-border);
+            box-shadow: var(--shadow-sm);
+            transform: translateY(-1px);
+        }
+        .bubble-action-btn:active {
+            transform: scale(0.97);
+        }
+        .bubble-regenerating-overlay {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1rem;
+            font-size: 0.88rem;
+            color: var(--brand-primary);
+            font-weight: 600;
+            background: var(--brand-light);
+            border: 1px solid var(--brand-border);
+            border-radius: var(--radius-md);
+        }
+
         /* ⚡ 即時アウトプット演習（ドリル）カード */
         .drill-section-box {
             background: var(--bg-surface);
@@ -451,48 +513,141 @@
 
         /* ── サイドバー（タブ＆コンテンツ） ── */
         .sidebar-tab-group {
-            display: flex;
-            gap: 0.3rem;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.35rem;
             border-bottom: 1px solid var(--border-color);
-            padding-bottom: 0.6rem;
-            margin-bottom: 0.85rem;
+            padding-bottom: 0.75rem;
+            margin-bottom: 1rem;
         }
         .sidebar-tab-btn {
-            flex: 1;
             text-align: center;
             white-space: nowrap;
             background: var(--bg-subtle);
             border: 1px solid var(--border-color);
             color: var(--text-secondary);
-            font-size: var(--fs-xs);
+            font-size: 0.75rem;
             font-weight: 700;
-            padding: 0.4rem 0.3rem;
-            border-radius: var(--radius-sm);
+            padding: 0.5rem 0.35rem;
+            border-radius: var(--radius-md);
             cursor: pointer;
             transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.2rem;
+        }
+        .sidebar-tab-btn:hover {
+            border-color: #94A3B8;
+            color: var(--text-primary);
         }
         .sidebar-tab-btn.active {
             background: var(--brand-light);
             border-color: var(--brand-border);
             color: var(--brand-primary);
+            box-shadow: var(--shadow-xs);
         }
-        .sidebar-panel { display: none; flex-grow: 1; flex-direction: column; overflow-y: auto; min-height: 0; }
+        .sidebar-panel { display: none; flex-grow: 1; flex-direction: column; overflow-y: auto; min-height: 0; padding-right: 0.25rem; }
         .sidebar-panel.active { display: flex; }
 
+        /* 💡 パート目次カード */
+        .parts-toc-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            padding-bottom: 0.5rem;
+        }
         .toc-item {
-            padding: 0.8rem 1rem;
-            border-radius: var(--radius-md);
+            padding: 1rem 1.15rem;
+            border-radius: var(--radius-lg);
             background: var(--bg-surface);
             border: 1px solid var(--border-color);
-            margin-bottom: 0.55rem;
             transition: all 0.15s ease;
+            box-shadow: var(--shadow-xs);
+        }
+        .toc-item:hover {
+            border-color: var(--brand-border);
+            box-shadow: var(--shadow-sm);
         }
         .toc-item.current-active {
             background: var(--brand-light);
-            border-color: var(--brand-primary);
+            border: 1.5px solid var(--brand-primary);
+            box-shadow: 0 0 0 1px var(--brand-border);
         }
-        .toc-item-title { font-size: 0.86rem; font-weight: 700; color: var(--text-primary); line-height: 1.4; word-break: break-word; flex-grow: 1; }
-        .toc-item.current-active .toc-item-title { color: var(--brand-primary); }
+        .toc-item-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 0.6rem;
+            margin-bottom: 0.45rem;
+        }
+        .toc-item-title {
+            font-size: 0.92rem;
+            font-weight: 750;
+            color: var(--text-primary);
+            line-height: 1.4;
+            word-break: break-word;
+            flex-grow: 1;
+        }
+        .toc-item.current-active .toc-item-title {
+            color: var(--brand-primary);
+        }
+        .toc-status-badge {
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 0.2rem 0.6rem;
+            border-radius: var(--radius-full);
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+        .badge-toc-active {
+            background: var(--brand-primary);
+            color: #FFFFFF;
+        }
+        .badge-toc-done {
+            background: #ECFDF5;
+            color: #059669;
+            border: 1px solid #A7F3D0;
+        }
+        .badge-toc-upcoming {
+            background: var(--bg-subtle);
+            color: var(--text-muted);
+            border: 1px solid var(--border-color);
+        }
+        .toc-item-summary {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            line-height: 1.55;
+            margin-top: 0.25rem;
+            margin-bottom: 0.5rem;
+        }
+        .toc-regen-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.3rem 0.75rem;
+            font-size: 0.74rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            box-shadow: var(--shadow-xs);
+        }
+        .toc-regen-btn:hover {
+            background: var(--bg-surface);
+            color: var(--brand-primary);
+            border-color: var(--brand-border);
+            box-shadow: var(--shadow-sm);
+            transform: translateY(-1px);
+        }
+        .toc-regen-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
 
         .source-text-box {
             background: var(--bg-subtle);
@@ -2307,9 +2462,9 @@ ${socraticInstructionBlock}
                     : `
                         <div class="bubble-actions">
                             <button type="button" class="bubble-action-btn regen-btn" data-regenerate-msg="${idx}" title="この返信だけを再生成する">
-                                🔄 この返信を再生成
+                                🔄 再生成
                             </button>
-                            <button type="button" class="bubble-action-btn copy-btn" data-copy-msg="${idx}" title="テキストをコピー">
+                            <button type="button" class="bubble-action-btn copy-btn" data-copy-msg="${idx}" title="テキストをクリップボードにコピー">
                                 📋 コピー
                             </button>
                         </div>
