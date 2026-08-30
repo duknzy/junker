@@ -462,7 +462,10 @@
                     <div class="m-lesson-card" data-lesson-id="${id}">
                         <div class="m-lesson-top">
                             <span class="m-subject-badge subj-${l.subject || '数学'}">${escapeHtml(l.subject || '未分類')}</span>
-                            <span class="badge-status ${statusClass}">${statusText}</span>
+                            <div style="display:flex; align-items:center; gap:0.4rem;">
+                                <span class="badge-status ${statusClass}">${statusText}</span>
+                                <button type="button" class="m-card-delete-btn" data-delete-m-lesson="${id}" title="削除" style="background:transparent; border:1px solid #FECACA; color:var(--error); border-radius:var(--radius-sm); padding:0.1rem 0.4rem; font-size:0.7rem; cursor:pointer;">🗑️</button>
+                            </div>
                         </div>
                         <div class="m-lesson-title">${escapeHtml(l.title || l.topic || '無題の授業')}</div>
                         <div class="m-lesson-meta">
@@ -475,6 +478,21 @@
 
             container.querySelectorAll(".m-lesson-card").forEach(card => {
                 card.addEventListener("click", () => openLesson(card.dataset.lessonId));
+            });
+
+            container.querySelectorAll("[data-delete-m-lesson]").forEach(btn => {
+                btn.addEventListener("click", async (e) => {
+                    e.stopPropagation();
+                    const lessonId = btn.getAttribute("data-delete-m-lesson");
+                    const l = lessonsCache[lessonId];
+                    const title = l ? (l.title || l.topic || "この授業") : "この授業";
+                    if (!confirm(`「${title}」を削除します。よろしいですか？`)) return;
+                    try {
+                        await set(ref(database, `users/${currentUser.uid}/lessons/${lessonId}`), null);
+                    } catch (err) {
+                        alert("削除に失敗しました: " + err.message);
+                    }
+                });
             });
         }
 
