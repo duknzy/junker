@@ -462,7 +462,7 @@ export function extractJsonArray(text) {
 // 🧠 Gemini フォールバック実行ループ
 // --------------------------------------------------------------------------
 async function runGeminiFallbackLoop(contents, systemInstruction, options = {}) {
-    const { temperature = 0.4, arrayMode = false, silentFallback = false, responseSchema = null, featureId = null, requestTimeoutMs = 60000, keyOffset = 0 } = options;
+    const { temperature = 0.1, arrayMode = false, silentFallback = false, responseSchema = null, featureId = null, requestTimeoutMs = 60000, keyOffset = 0 } = options;
     const keys = getEffectiveGeminiKeys(featureId);
     const modelList = getEffectiveModelList(featureId);
 

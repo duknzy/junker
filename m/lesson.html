@@ -323,7 +323,7 @@
             </div>
 
             <button type="button" class="m-btn m-btn-primary m-btn-full" id="run-create-lesson-btn" style="min-height:48px; font-size:0.95rem;">
-                🚀 ギャル先生のAI授業を生成（AI3並列）
+                🚀 AI授業を生成（AI3並列）
             </button>
         </div>
     </div>
@@ -478,15 +478,15 @@
             if (lesson.lectureNote) {
                 chatFlow.innerHTML += `
                     <div class="lesson-bubble teacher">
-                        <strong>👩‍🏫 ギャル先生の講義ノート</strong>
+                        <strong>👨‍🏫 プロ講師の講義ノート</strong>
                         <div class="lecture-note-box tex2jax_process">${formatText(lesson.lectureNote)}</div>
-                        <div>準備ができたら、下の入力欄から質問するか「次へ進む」と伝えてね！</div>
+                        <div>準備ができたら、下の入力欄から質問するか「次へ進む」と伝えてください。</div>
                     </div>
                 `;
             } else if (lesson.plan) {
                 chatFlow.innerHTML += `
                     <div class="lesson-bubble teacher">
-                        <strong>👩‍🏫 今日の講義テーマ: ${escapeHtml(lesson.title || '')}</strong>
+                        <strong>👨‍🏫 今日の講義テーマ: ${escapeHtml(lesson.title || '')}</strong>
                         <div class="lecture-note-box tex2jax_process">${formatText(lesson.plan)}</div>
                     </div>
                 `;
@@ -534,10 +534,10 @@
                 const lesson = lessonsCache[activeLessonId];
                 const history = [{
                     role: "user",
-                    parts: [{ text: `あなたは地頭チート系・ギャル先生AIチューターです。以下の授業について生徒と対話してください。\n一人称は「ウチ」、生徒のことは「あんた」と呼んで、バイブス高く、しかし論理と公式は一切妥協せず厳密に教えてください。\nテーマ: ${lesson.title}\n講義内容: ${lesson.lectureNote || lesson.plan || ""}` }]
+                    parts: [{ text: `あなたは高校・難関大学受験指導の専任プロ講師AIです。以下の授業について生徒と対話してください。\n丁寧かつ簡潔・明瞭に、論理と公式・解法の厳密性を最優先に教えてください。無駄な前置きや過度な装飾は省いてください。\nテーマ: ${lesson.title}\n講義内容: ${lesson.lectureNote || lesson.plan || ""}` }]
                 }, {
                     role: "model",
-                    parts: [{ text: "了解！ウチに任せて〜！" }]
+                    parts: [{ text: "承知いたしました。どのような疑問点でもご質問ください。" }]
                 }, {
                     role: "user",
                     parts: [{ text }]
@@ -696,7 +696,7 @@
                     // 🚀 3並列同時ディスパッチ
                     const [resStructure, resLecture, resMemorize] = await Promise.all([
                         callGeminiJSON([{ text: basePrompt + "\n\nカリキュラム構成をJSONで出力してください。" }], "あなたは予備校のカリキュラム設計AIです。指定単元を2〜4パートに分割してください。", { responseSchema: STRUCTURE_SCHEMA, featureId: "lesson_parallel_structure" }),
-                        callGeminiJSON([{ text: basePrompt + "\n\n超詳細な講義ノート全文をJSONで出力してください。数式は$ $で囲むこと。" }], "あなたは大人気ギャル講師です。わかりやすく深い講義ノート全文を執筆してください。", { responseSchema: LECTURE_SCHEMA, featureId: "lesson_parallel_lecture" }),
+                        callGeminiJSON([{ text: basePrompt + "\n\n超詳細な講義ノート全文をJSONで出力してください。数式は必ず$ $で囲むこと。" }], "あなたは難関大受験指導のプロ講師です。論理的で厳密、初学者にもわかりやすく深い講義ノート全文を執筆してください。無駄な前置きや過度な装飾は省いてください。", { responseSchema: LECTURE_SCHEMA, featureId: "lesson_parallel_lecture" }),
                         callGeminiJSON([{ text: basePrompt + "\n\n重要公式・用語リストをJSONで出力してください。" }], "暗記すべき重要公式・用語を抽出してください。", { responseSchema: MEMORIZE_SCHEMA, featureId: "lesson_parallel_memorize" })
                     ]);
 
@@ -763,7 +763,7 @@
                 if (window.mToast) mToast("⚠️ 作成エラー: " + e.message);
             } finally {
                 btn.disabled = false;
-                btn.textContent = "🚀 ギャル先生のAI授業を生成（AI3並列）";
+                btn.textContent = "🚀 AI授業を生成（AI3並列）";
             }
         });
 

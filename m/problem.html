@@ -238,7 +238,7 @@
                 <div class="model-answer-box" id="model-answer-text"></div>
                 <div id="answer-action-box" style="margin-top:0.75rem; text-align:center;">
                     <button class="m-btn m-btn-primary" id="btn-generate-answer" style="width:100%;">
-                        🔄 ギャル先生に解説・定石を再生成してもらう
+                        🔄 AIに解説・定石を再生成してもらう
                     </button>
                 </div>
             </div>
@@ -415,7 +415,7 @@
                 if (answerContent && answerContent.trim() !== "") {
                     document.getElementById("model-answer-text").innerHTML = formatText(answerContent);
                     if (generateBtn) {
-                        generateBtn.textContent = "🔄 ギャル先生に解説・定石を再生成してもらう";
+                        generateBtn.textContent = "🔄 AIに解説・定石を再生成してもらう";
                         generateBtn.onclick = () => {
                             if (confirm("現在の模範解答・定石・罠をAIで再生成して上書きしますか？")) {
                                 generateModelAnswer(uid, pid, p);
@@ -425,7 +425,7 @@
                 } else {
                     document.getElementById("model-answer-text").innerHTML = '<span style="color:var(--text-muted); font-size:var(--fs-sm);">模範解答データがまだ登録されていません。</span>';
                     if (generateBtn) {
-                        generateBtn.textContent = "✨ ギャル先生に模範解答・定石を生成してもらう";
+                        generateBtn.textContent = "✨ AIに模範解答・定石を生成してもらう";
                         generateBtn.onclick = () => generateModelAnswer(uid, pid, p);
                     }
                 }
@@ -544,11 +544,11 @@
             const btn = document.getElementById("btn-generate-answer");
             if (!btn) return;
             btn.disabled = true;
-            btn.textContent = "✨ ギャル先生が解説を生成中...";
+            btn.textContent = "✨ AIが解説を生成中...";
 
             try {
                 const parts = [{
-                    text: `以下の問題について、生徒が理解しやすい完全な模範解答、罠ポイント、定石パターンをJSON形式で生成してください。\n\n教科: ${p.subject || "数学"}\n問題: ${p.title || p.extracted_text || p.short_title || ""}`
+                    text: `以下の問題について、論理的で厳密かつ分かりやすい完全な模範解答、罠ポイント、定石パターンをJSON形式で生成してください。\n無駄な前置きや絵文字は省き、最短・最高精度で出力してください。\n\n教科: ${p.subject || "数学"}\n問題: ${p.title || p.extracted_text || p.short_title || ""}`
                 }];
 
                 const schema = {
@@ -563,7 +563,7 @@
 
                 const res = await callGeminiJSON(
                     parts,
-                    "あなたは親切でわかりやすい高校学習エキスパートAI（ギャル先生）です。数式は必ず $...$ または $$...$$ のLaTeX形式で書き、ステップごとに分かりやすく解説してください。",
+                    "あなたは高校・難関大学受験指導のエキスパートプロ講師AIです。無駄な挨拶や装飾を排除し、厳密な論理とLaTeX数式（$...$ または $$...$$）でステップごとに分かりやすく解説してください。",
                     { responseSchema: schema, featureId: "subject_analysis" }
                 );
 
@@ -584,7 +584,7 @@
                 console.error("解説生成エラー:", err);
                 if (window.mToast) mToast("⚠️ 解説生成に失敗しました: " + err.message);
                 btn.disabled = false;
-                btn.textContent = "✨ ギャル先生に模範解答・定石を生成してもらう";
+                btn.textContent = "✨ AIに模範解答・定石を生成してもらう";
             }
         }
 
