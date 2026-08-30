@@ -13,6 +13,21 @@
     <link rel="icon" type="image/svg+xml" href="../favicon.svg">
     <link rel="stylesheet" href="style-m.css">
 
+    <!-- 数式レンダリング（LaTeX / MathJax） -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                macros: { fbox: ["\\bbox[2px,border:1px solid]{#1}", 1] }
+            },
+            options: {
+                skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
     <style>
         /* 統計サマリー */
         .stat-row {
@@ -538,7 +553,7 @@
                         <div class="p-row" style="border-left-color:${cfg.color};" onclick="location.href='problem.html?id=${p.id}'">
                             <div class="p-thumb">${thumbContent}</div>
                             <div class="p-main">
-                                <div class="p-title">${escHtml(p.short_title || p.title || "無題")}</div>
+                                <div class="p-title tex2jax_process">${formatMathTitle(p.short_title || p.title || "無題")}</div>
                                 <div class="p-badges">
                                     <span class="m-subject-badge ${subjClass}">${escHtml(p.subject || "未分類")}</span>
                                     ${p.field ? `<span class="m-subject-badge" style="background:var(--bg-subtle);color:var(--text-secondary);border:1px solid var(--border-color);">${escHtml(truncate(p.field, 15))}</span>` : ""}
@@ -568,6 +583,11 @@
             }
 
             listEl.innerHTML = html;
+
+            // 📐 数式レンダリング（LaTeX / MathJax）
+            if (window.MathJax && window.MathJax.typesetPromise) {
+                window.MathJax.typesetPromise([listEl]).catch(err => console.log("MathJax error:", err));
+            }
         }
 
         // ==================== 📸 問題登録モーダル（スマホ完結） ====================
@@ -704,6 +724,21 @@
             if (subj.includes("日本史")) return "subj-日本史";
             if (subj.includes("生物")) return "subj-生物";
             return "";
+        }
+
+        function formatMathTitle(text) {
+            if (!text) return "無題";
+            const mathBlocks = [];
+            let placeholderText = String(text).replace(/(\$\$[\s\S]*?\$\$|\$[^\$\n]+?\$)/g, (match) => {
+                mathBlocks.push(match);
+                return `%%%MATH_${mathBlocks.length - 1}%%%`;
+            });
+            let formatted = placeholderText
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;");
+            formatted = formatted.replace(/%%%MATH_(\d+)%%%/g, (_, idx) => mathBlocks[idx]);
+            return formatted;
         }
 
         function escHtml(s) {

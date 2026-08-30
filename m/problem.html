@@ -236,6 +236,11 @@
             </button>
             <div id="answer-body" style="display:none;margin-top:0.5rem;">
                 <div class="model-answer-box" id="model-answer-text"></div>
+                <div id="no-answer-action" style="display:none; margin-top:0.6rem; text-align:center;">
+                    <button class="m-btn m-btn-primary" id="btn-generate-answer" style="width:100%;">
+                        ✨ ギャル先生に模範解答・定石を生成してもらう
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -286,7 +291,7 @@
     </script>
 
     <script type="module">
-        import { initApiKeyManager, showToast, callGeminiChat, getGeminiKeys } from "../api-key-manager.js";
+        import { initApiKeyManager, showToast, callGeminiChat, callGeminiJSON, getGeminiKeys } from "../api-key-manager.js";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import { getAuth, signInWithPopup, signInWithEmailAndPassword, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
         import { getDatabase, ref, get, update, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
@@ -386,12 +391,26 @@
                     imagesEl.appendChild(img);
                 });
 
-                // 罠 & 定石
-                document.getElementById("trap-text").innerHTML = formatText(p.trap_description || "");
-                document.getElementById("strategy-text").innerHTML = formatText(p.strategy_pattern || "");
+                // 罠 & 定石（多様なキー名に対応）
+                const trapContent = p.trap_description || p.trapDescription || p.trap || "";
+                const stratContent = p.strategy_pattern || p.strategyPattern || p.strategy || "";
+                document.getElementById("trap-text").innerHTML = trapContent ? formatText(trapContent) : '<span style="color:var(--text-muted); font-size:var(--fs-sm);">まだ罠データがありません</span>';
+                document.getElementById("strategy-text").innerHTML = stratContent ? formatText(stratContent) : '<span style="color:var(--text-muted); font-size:var(--fs-sm);">まだ定石データがありません</span>';
 
-                // 模範解答
-                document.getElementById("model-answer-text").innerHTML = formatText(p.model_answer || "解答データなし");
+                // 模範解答（PC版 answerFormula や model_answer、explanation、answer など全対応）
+                const answerContent = p.model_answer || p.answerFormula || p.explanation || p.answer || p.solution || "";
+                const noAnswerAction = document.getElementById("no-answer-action");
+
+                if (answerContent && answerContent.trim() !== "") {
+                    document.getElementById("model-answer-text").innerHTML = formatText(answerContent);
+                    if (noAnswerAction) noAnswerAction.style.display = "none";
+                } else {
+                    document.getElementById("model-answer-text").innerHTML = '<span style="color:var(--text-muted); font-size:var(--fs-sm);">模範解答データがまだ登録されていません。</span>';
+                    if (noAnswerAction) {
+                        noAnswerAction.style.display = "block";
+                        document.getElementById("btn-generate-answer").onclick = () => generateModelAnswer(uid, pid, p);
+                    }
+                }
 
                 // 気づきメモ
                 const insightInput = document.getElementById("insight-input");
@@ -405,7 +424,7 @@
                 // AIチャット用コンテキスト初期化
                 chatHistory = [{
                     role: "user",
-                    parts: [{ text: `以下の問題について、生徒から質問があったら丁寧に答えてください。\n\n問題: ${p.title || p.extracted_text || ""}\n\n模範解答: ${p.model_answer || ""}` }]
+                    parts: [{ text: `以下の問題について、生徒から質問があったら丁寧に答えてください。\n\n問題: ${p.title || p.extracted_text || ""}\n\n模範解答: ${answerContent || ""}` }]
                 }, {
                     role: "model",
                     parts: [{ text: "この問題について理解しました。何でも質問してください！" }]
@@ -462,6 +481,55 @@
             }
         };
 
+        // ==================== 模範解答・定石のAI自動生成 ====================
+        async function generateModelAnswer(uid, pid, p) {
+            const btn = document.getElementById("btn-generate-answer");
+            if (!btn) return;
+            btn.disabled = true;
+            btn.textContent = "✨ ギャル先生が解説を生成中...";
+
+            try {
+                const parts = [{
+                    text: `以下の問題について、生徒が理解しやすい完全な模範解答、罠ポイント、定石パターンをJSON形式で生成してください。\n\n教科: ${p.subject || "数学"}\n問題: ${p.title || p.extracted_text || p.short_title || ""}`
+                }];
+
+                const schema = {
+                    type: "OBJECT",
+                    properties: {
+                        model_answer: { type: "STRING" },
+                        trap_description: { type: "STRING" },
+                        strategy_pattern: { type: "STRING" }
+                    },
+                    required: ["model_answer", "trap_description", "strategy_pattern"]
+                };
+
+                const res = await callGeminiJSON(
+                    parts,
+                    "あなたは親切でわかりやすい高校学習エキスパートAI（ギャル先生）です。数式は必ず $...$ または $$...$$ のLaTeX形式で書き、ステップごとに分かりやすく解説してください。",
+                    { responseSchema: schema, featureId: "subject_analysis" }
+                );
+
+                const updates = {
+                    model_answer: res.model_answer || "",
+                    answerFormula: res.model_answer || "",
+                    trap_description: res.trap_description || "",
+                    strategyPattern: res.strategy_pattern || ""
+                };
+
+                await update(ref(database, `users/${uid}/problems/${pid}`), updates);
+
+                if (window.mToast) mToast("🎉 模範解答と解説を生成しました！");
+                // 画面を再読み込みして反映
+                loadProblem(uid, pid);
+
+            } catch (err) {
+                console.error("解説生成エラー:", err);
+                if (window.mToast) mToast("⚠️ 解説生成に失敗しました: " + err.message);
+                btn.disabled = false;
+                btn.textContent = "✨ ギャル先生に模範解答・定石を生成してもらう";
+            }
+        }
+
         // ==================== AIチャット ====================
         window.sendChatMessage = async function() {
             const input = document.getElementById("chat-input");
@@ -506,11 +574,27 @@
         // ==================== ユーティリティ ====================
         function formatText(text) {
             if (!text) return "";
-            return String(text)
-                .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-                .replace(/\$([^$]+)\$/g, (m) => m) // MathJax用にそのまま残す
-                .replace(/\\n/g, "<br>")
-                .replace(/\n/g, "<br>");
+
+            // 数式ブロック（$ ... $ または $$ ... $$）を一時退避
+            const mathBlocks = [];
+            let placeholderText = String(text).replace(/(\$\$[\s\S]*?\$\$|\$[^\$\n]+?\$)/g, (match) => {
+                mathBlocks.push(match);
+                return `%%%MATH_${mathBlocks.length - 1}%%%`;
+            });
+
+            // HTMLエスケープ
+            let formatted = placeholderText
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;");
+
+            // マークダウン簡易変換 & 改行
+            formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            formatted = formatted.replace(/\\n/g, "<br>").replace(/\n/g, "<br>");
+
+            // 数式ブロックを復元
+            formatted = formatted.replace(/%%%MATH_(\d+)%%%/g, (_, idx) => mathBlocks[idx]);
+            return formatted;
         }
 
         function escHtml(s) {
