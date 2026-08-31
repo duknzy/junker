@@ -201,79 +201,164 @@ function injectActiveRequestUI() {
     style.id = "apikm-active-request-styles";
     style.textContent = `
         #apikm-active-request-bar {
-            position: fixed; top: 12px; left: 50%; transform: translateX(-50%);
-            z-index: 100075; width: min(94%, 480px);
-            background: rgba(13, 17, 23, 0.95);
+            position: fixed;
+            top: max(10px, env(safe-area-inset-top, 10px));
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100075;
+            width: min(calc(100vw - 20px), 500px);
+            background: rgba(13, 17, 23, 0.96);
             border: 1px solid var(--accent-cyan, #00f3ff);
-            box-shadow: 0 4px 20px rgba(0, 243, 255, 0.25), 0 0 0 1px rgba(0,0,0,0.5);
-            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-            border-radius: 14px; padding: 0.65rem 0.9rem;
-            color: #fff; display: none; align-items: center; justify-content: space-between; gap: 0.6rem;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6), 0 0 20px rgba(0, 243, 255, 0.2);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border-radius: 14px;
+            padding: 0.65rem 0.85rem;
+            color: #fff;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.55rem;
             font-family: system-ui, -apple-system, sans-serif;
             animation: apikm-bar-slide-down 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            -webkit-tap-highlight-color: transparent;
+            box-sizing: border-box;
         }
         @keyframes apikm-bar-slide-down {
-            from { opacity: 0; transform: translate(-50%, -12px); }
+            from { opacity: 0; transform: translate(-50%, -14px); }
             to { opacity: 1; transform: translate(-50%, 0); }
         }
         .apikm-req-info {
-            display: flex; align-items: center; gap: 0.5rem; flex: 1; min-width: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex: 1;
+            min-width: 0;
         }
         .apikm-req-spinner {
-            width: 16px; height: 16px; border: 2px solid rgba(0,243,255,0.3);
-            border-top-color: var(--accent-cyan, #00f3ff); border-radius: 50%;
-            animation: apikm-spin 0.8s linear infinite; flex-shrink: 0;
+            width: 18px;
+            height: 18px;
+            border: 2.5px solid rgba(0,243,255,0.25);
+            border-top-color: var(--accent-cyan, #00f3ff);
+            border-radius: 50%;
+            animation: apikm-spin 0.75s linear infinite;
+            flex-shrink: 0;
         }
         @keyframes apikm-spin { to { transform: rotate(360deg); } }
         .apikm-req-text-wrap {
-            display: flex; flex-direction: column; min-width: 0;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
         }
         .apikm-req-title {
-            font-size: 0.82rem; font-weight: 700; color: #fff;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-            display: flex; align-items: center; gap: 0.4rem;
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #fff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
         }
         .apikm-req-time {
             font-family: ui-monospace, SFMono-Regular, monospace;
-            font-size: 0.72rem; color: var(--accent-cyan, #00f3ff); font-weight: 700;
+            font-size: 0.75rem;
+            color: var(--accent-cyan, #00f3ff);
+            font-weight: 700;
+            background: rgba(0, 243, 255, 0.12);
+            padding: 0.1rem 0.35rem;
+            border-radius: 4px;
         }
         .apikm-req-sub {
-            font-size: 0.7rem; color: #8b949e;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            font-size: 0.68rem;
+            color: #94a3b8;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-top: 1px;
         }
         .apikm-req-actions {
-            display: flex; align-items: center; gap: 0.4rem; flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            flex-shrink: 0;
         }
         .apikm-btn-timeout {
-            background: rgba(245, 158, 11, 0.15);
+            background: rgba(245, 158, 11, 0.18);
             border: 1px solid #f59e0b;
             color: #fbbf24;
-            padding: 0.35rem 0.65rem; border-radius: 8px;
-            font-size: 0.75rem; font-weight: 800; cursor: pointer;
-            display: flex; align-items: center; gap: 0.25rem;
+            padding: 0.45rem 0.7rem;
+            border-radius: 8px;
+            font-size: 0.76rem;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
             transition: all 0.15s ease;
             white-space: nowrap;
+            min-height: 38px;
+            touch-action: manipulation;
         }
         .apikm-btn-timeout:hover {
-            background: rgba(245, 158, 11, 0.3);
-            box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
-            transform: translateY(-1px);
+            background: rgba(245, 158, 11, 0.35);
+            box-shadow: 0 0 12px rgba(245, 158, 11, 0.45);
         }
         .apikm-btn-timeout:active {
-            transform: translateY(0);
+            transform: scale(0.95);
+            background: rgba(245, 158, 11, 0.45);
         }
         .apikm-btn-cancel {
-            background: rgba(239, 68, 68, 0.12);
-            border: 1px solid rgba(239, 68, 68, 0.5);
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.6);
             color: #f87171;
-            padding: 0.35rem 0.55rem; border-radius: 8px;
-            font-size: 0.75rem; font-weight: 700; cursor: pointer;
+            padding: 0.45rem 0.55rem;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
             transition: all 0.15s ease;
             white-space: nowrap;
+            min-height: 38px;
+            touch-action: manipulation;
         }
         .apikm-btn-cancel:hover {
-            background: rgba(239, 68, 68, 0.25);
+            background: rgba(239, 68, 68, 0.3);
             border-color: #ef4444;
+        }
+        .apikm-btn-cancel:active {
+            transform: scale(0.95);
+            background: rgba(239, 68, 68, 0.4);
+        }
+
+        /* 📱 モバイル画面向け最適化 (480px以下) */
+        @media (max-width: 480px) {
+            #apikm-active-request-bar {
+                padding: 0.55rem 0.65rem;
+                gap: 0.4rem;
+                border-radius: 12px;
+            }
+            .apikm-req-title {
+                font-size: 0.76rem;
+            }
+            .apikm-req-time {
+                font-size: 0.7rem;
+                padding: 0.05rem 0.25rem;
+            }
+            .apikm-req-sub {
+                font-size: 0.62rem;
+            }
+            .apikm-btn-timeout {
+                padding: 0.38rem 0.55rem;
+                font-size: 0.72rem;
+                min-height: 36px;
+            }
+            .apikm-btn-cancel {
+                padding: 0.38rem 0.45rem;
+                font-size: 0.72rem;
+                min-height: 36px;
+            }
         }
     `;
     document.head.appendChild(style);
@@ -303,10 +388,16 @@ function injectActiveRequestUI() {
     document.body.appendChild(bar);
 
     bar.querySelector("#apikm-btn-timeout").addEventListener("click", () => {
+        if (typeof navigator !== "undefined" && navigator.vibrate) {
+            try { navigator.vibrate(20); } catch(e) {}
+        }
         manualTimeoutAllRequests();
     });
 
     bar.querySelector("#apikm-btn-cancel").addEventListener("click", () => {
+        if (typeof navigator !== "undefined" && navigator.vibrate) {
+            try { navigator.vibrate(20); } catch(e) {}
+        }
         manualAbortAllRequests();
     });
 }

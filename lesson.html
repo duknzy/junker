@@ -706,7 +706,44 @@
         .lesson-memo-item {
             background: var(--bg-surface); border: 1px solid var(--border-color);
             border-left: 3px solid var(--brand-primary); border-radius: 0 var(--radius-md) var(--radius-md) 0;
-            padding: 0.55rem 0.75rem; margin-bottom: 0.45rem; font-size: 0.8rem;
+            padding: 0.6rem 0.8rem; margin-bottom: 0.5rem; font-size: 0.84rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .lesson-memo-item-top {
+            display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;
+        }
+        .lesson-memo-text {
+            flex: 1; min-width: 0;
+            white-space: pre-wrap;
+            word-break: break-word;
+            overflow-wrap: break-word;
+            line-height: 1.6;
+            color: var(--text-primary);
+            cursor: pointer;
+        }
+        .lesson-memo-actions {
+            display: flex; gap: 0.25rem; flex-shrink: 0; margin-top: 0.1rem;
+        }
+        .lesson-memo-edit-btn, .lesson-memo-del-btn {
+            background: var(--bg-subtle); border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm); padding: 0.2rem 0.4rem; font-size: 0.75rem;
+            cursor: pointer; transition: all 0.15s ease; color: var(--text-secondary);
+        }
+        .lesson-memo-edit-btn:hover { border-color: var(--brand-primary); color: var(--brand-primary); }
+        .lesson-memo-del-btn:hover { border-color: var(--error); color: var(--error); }
+        .lesson-memo-meta {
+            margin-top: 0.4rem; font-size: 0.72rem; color: var(--text-muted);
+        }
+        .lesson-memo-edit-textarea {
+            width: 100%; box-sizing: border-box; background: var(--bg-surface);
+            border: 1px solid var(--brand-primary); border-radius: var(--radius-sm);
+            color: var(--text-primary); padding: 0.55rem; font-size: 0.85rem;
+            line-height: 1.55; resize: vertical; min-height: 70px;
+            white-space: pre-wrap; word-break: break-word;
+            font-family: inherit;
+        }
+        .lesson-memo-edit-actions {
+            display: flex; justify-content: flex-end; gap: 0.4rem; margin-top: 0.4rem;
         }
         .memorize-item {
             background: var(--bg-surface); border: 1px solid var(--border-color);
@@ -2010,9 +2047,27 @@
 
                                 <!-- パネル3: 暗記事項リスト -->
                                 <div class="sidebar-panel" id="tab-memorize">
-                                    <div style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 0.6rem; font-weight: 600;">
-                                        🧠 この単元で暗記すべき公式・反応式・用語一覧
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
+                                        <div style="font-size: 0.78rem; color: var(--text-secondary); font-weight: 600;">
+                                            🧠 暗記すべき公式・用語一覧
+                                        </div>
+                                        <button type="button" class="flora-btn flora-btn-secondary btn-sm" onclick="toggleAddMemorizePointForm(true)" style="padding: 0.2rem 0.5rem; font-size: 0.72rem;">＋項目追加</button>
                                     </div>
+
+                                    <!-- 新規暗記事項追加フォーム（トグル表示） -->
+                                    <div id="memorize-add-form" style="display: none; background: var(--bg-subtle); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.6rem; margin-bottom: 0.8rem;">
+                                        <div style="font-size: 0.74rem; font-weight: 700; color: var(--accent-cyan); margin-bottom: 0.4rem;">＋ 暗記事項を新規追加</div>
+                                        <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+                                            <input type="text" id="memorize-add-cat-input" placeholder="カテゴリ (例: 公式・法則、用語、反応式)" class="flora-input" style="padding: 0.35rem 0.5rem; font-size: 0.78rem; width: 100%; box-sizing: border-box;">
+                                            <textarea id="memorize-add-content-input" class="flora-textarea" rows="2" placeholder="暗記すべき内容を入力（数式は $...$ で記述可）" style="font-size: 0.82rem; width: 100%; box-sizing: border-box;"></textarea>
+                                            <input type="text" id="memorize-add-note-input" placeholder="💡 補足やコツなど（任意）" class="flora-input" style="padding: 0.35rem 0.5rem; font-size: 0.78rem; width: 100%; box-sizing: border-box;">
+                                            <div style="display: flex; justify-content: flex-end; gap: 0.35rem; margin-top: 0.2rem;">
+                                                <button type="button" class="tactile-btn tactile-btn-secondary" style="font-size: 0.72rem; padding: 0.3rem 0.6rem;" onclick="toggleAddMemorizePointForm(false)">閉じる</button>
+                                                <button type="button" class="tactile-btn" style="font-size: 0.72rem; padding: 0.3rem 0.6rem; background: var(--accent-cyan); color: #000; font-weight: 700;" onclick="addNewMemorizePoint()">＋ 追加</button>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <div id="lesson-memorization-list" class="memorize-list tex2jax_process"></div>
                                 </div>
 
@@ -3026,17 +3081,45 @@ ${subjectGuide}
 
             const points = Array.isArray(currentLesson?.memorizationPoints) ? currentLesson.memorizationPoints : [];
             if (points.length === 0) {
-                container.innerHTML = `<div class="memorize-empty">この単元では特筆すべき暗記事項が見つかりませんでした。</div>`;
+                container.innerHTML = `<div class="memorize-empty">この単元では特筆すべき暗記事項がまだ登録されていません。<br>上の「＋項目追加」ボタンから自由に追加できます。</div>`;
                 return;
             }
 
-            container.innerHTML = points.map(p => `
+            container.innerHTML = points.map((p, idx) => {
+                const curId = p.id || `mp_${idx}`;
+                if (editingMemorizePointId === curId) {
+                    return `
+                    <div class="memorize-item" style="border-left-color: var(--accent-cyan); background: var(--bg-surface);">
+                        <div style="display:flex; flex-direction:column; gap:0.4rem;">
+                            <input type="text" id="memorize-point-edit-cat-${curId}" value="${(p.category || '').replace(/"/g, '&quot;')}" placeholder="カテゴリ (例: 公式・法則、用語、反応式)" class="flora-input" style="padding:0.3rem 0.5rem; font-size:0.78rem; width:100%; box-sizing:border-box;">
+                            <textarea id="memorize-point-edit-content-${curId}" class="lesson-memo-edit-textarea" style="min-height:60px;" placeholder="暗記すべき内容">${(p.content || '').replace(/</g, '&lt;')}</textarea>
+                            <input type="text" id="memorize-point-edit-note-${curId}" value="${(p.note || '').replace(/"/g, '&quot;')}" placeholder="💡 補足・注意点（任意）" class="flora-input" style="padding:0.3rem 0.5rem; font-size:0.78rem; width:100%; box-sizing:border-box;">
+                            <div class="lesson-memo-edit-actions">
+                                <button type="button" class="tactile-btn tactile-btn-secondary" style="font-size:0.72rem; padding:0.35rem 0.7rem;" onclick="cancelEditMemorizePoint()">キャンセル</button>
+                                <button type="button" class="tactile-btn" style="font-size:0.72rem; padding:0.35rem 0.7rem; background:var(--accent-cyan); color:#000; font-weight:700;" onclick="saveEditMemorizePoint('${curId}')">💾 保存</button>
+                            </div>
+                        </div>
+                    </div>`;
+                }
+
+                return `
                 <div class="memorize-item">
-                    <span class="memorize-item-category">${(p.category || "").replace(/</g, "&lt;")}</span>
-                    <div class="memorize-item-content">${renderFormattedMarkdown(p.content || "")}</div>
-                    ${p.note ? `<div class="memorize-item-note">💡 ${renderFormattedMarkdown(p.note)}</div>` : ""}
+                    <div class="memorize-item-top" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.3rem;">
+                        <span class="memorize-item-category">${(p.category || "重要事項").replace(/</g, "&lt;")}</span>
+                        <div class="lesson-memo-actions">
+                            <button type="button" class="lesson-memo-edit-btn" onclick="startEditMemorizePoint('${curId}')" title="編集">✏️</button>
+                            <button type="button" class="lesson-memo-del-btn" onclick="deleteMemorizePoint('${curId}')" title="削除">🗑</button>
+                        </div>
+                    </div>
+                    <div class="memorize-item-content tex2jax_process" onclick="startEditMemorizePoint('${curId}')" title="クリックして編集">${renderFormattedMarkdown(p.content || "")}</div>
+                    ${p.note ? `<div class="memorize-item-note tex2jax_process" style="margin-top:0.35rem; padding-top:0.35rem; border-top:1px dashed var(--border-subtle); font-size:0.78rem; color:var(--accent-yellow);">💡 ${renderFormattedMarkdown(p.note)}</div>` : ""}
                 </div>
-            `).join("");
+                `;
+            }).join("");
+
+            if (window.MathJax && MathJax.typesetPromise) {
+                MathJax.typesetPromise([container]).catch(err => console.log('MathJax typeset error:', err));
+            }
         }
 
         function renderPlanPreview() {
@@ -3664,6 +3747,8 @@ ${socraticInstructionBlock}
             formatted = formatted.replace(/^-\s+(.+)$/gm, '<div style="margin-left:0.8rem; text-indent:-0.8rem; margin-top:0.2rem;">• $1</div>');
 
             formatted = formatted.replace(/%%%MATH_(\d+)%%%/g, (_, idx) => mathBlocks[idx]);
+            formatted = formatted.replace(/\n/g, '<br>');
+            formatted = formatted.replace(/(<\/h4>|<\/div>|<hr[^>]*>)\s*<br>/gi, '$1');
             return formatted;
         }
 
@@ -4340,6 +4425,110 @@ ${EXPERT_TEACHER_PROMPT}
             }
         }
 
+        let editingMemorizePointId = null;
+
+        window.startEditMemorizePoint = function(id) {
+            editingMemorizePointId = id;
+            renderMemorizationPoints();
+            const elContent = document.getElementById(`memorize-point-edit-content-${id}`);
+            if (elContent) elContent.focus();
+        };
+
+        window.cancelEditMemorizePoint = function() {
+            editingMemorizePointId = null;
+            renderMemorizationPoints();
+        };
+
+        window.saveEditMemorizePoint = async function(id) {
+            if (!currentLesson || !Array.isArray(currentLesson.memorizationPoints)) return;
+            const elCat = document.getElementById(`memorize-point-edit-cat-${id}`);
+            const elContent = document.getElementById(`memorize-point-edit-content-${id}`);
+            const elNote = document.getElementById(`memorize-point-edit-note-${id}`);
+            const content = elContent ? elContent.value.trim() : "";
+            const category = elCat ? elCat.value.trim() : "";
+            const note = elNote ? elNote.value.trim() : "";
+
+            if (!content) {
+                showToast("暗記内容を入力してください。", "error");
+                return;
+            }
+
+            currentLesson.memorizationPoints = currentLesson.memorizationPoints.map((p, idx) => {
+                const curId = p.id || `mp_${idx}`;
+                if (curId === id) {
+                    return {
+                        ...p,
+                        id: curId,
+                        category: category || "重要事項",
+                        content,
+                        note,
+                        updatedAt: new Date().toISOString()
+                    };
+                }
+                return p;
+            });
+
+            editingMemorizePointId = null;
+            renderMemorizationPoints();
+            await forceTriggerMathJax();
+            await saveLesson();
+            showToast("暗記事項を更新しました！", "success", 1500);
+        };
+
+        window.deleteMemorizePoint = async function(id) {
+            if (!currentLesson || !Array.isArray(currentLesson.memorizationPoints)) return;
+            if (!confirm("この暗記事項を削除しますか？")) return;
+            currentLesson.memorizationPoints = currentLesson.memorizationPoints.filter((p, idx) => {
+                const curId = p.id || `mp_${idx}`;
+                return curId !== id;
+            });
+            renderMemorizationPoints();
+            await saveLesson();
+            showToast("暗記事項を削除しました。", "success", 1500);
+        };
+
+        window.toggleAddMemorizePointForm = function(show) {
+            const form = el("memorize-add-form");
+            if (!form) return;
+            form.style.display = show ? "block" : "none";
+            if (show) {
+                const input = el("memorize-add-content-input");
+                if (input) input.focus();
+            }
+        };
+
+        window.addNewMemorizePoint = async function() {
+            if (!currentLesson) return;
+            const elCat = el("memorize-add-cat-input");
+            const elContent = el("memorize-add-content-input");
+            const elNote = el("memorize-add-note-input");
+            const content = elContent ? elContent.value.trim() : "";
+            const category = elCat ? elCat.value.trim() : "";
+            const note = elNote ? elNote.value.trim() : "";
+
+            if (!content) {
+                showToast("暗記内容を入力してください。", "error");
+                return;
+            }
+
+            if (!Array.isArray(currentLesson.memorizationPoints)) currentLesson.memorizationPoints = [];
+            currentLesson.memorizationPoints.push({
+                id: "mp_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
+                category: category || "重要事項",
+                content,
+                note,
+                createdAt: new Date().toISOString()
+            });
+
+            if (elContent) elContent.value = "";
+            if (elNote) elNote.value = "";
+            window.toggleAddMemorizePointForm(false);
+            renderMemorizationPoints();
+            await forceTriggerMathJax();
+            await saveLesson();
+            showToast("暗記事項を追加しました！", "success", 1500);
+        };
+
         function renderSourceText() {
             const container = el("lesson-extracted-source-text");
             const label = el("source-panel-label");
@@ -4857,7 +5046,7 @@ ${EXPERT_TEACHER_PROMPT}
                                 <span>🗓️ ${formatMemoDate(m.updatedAt || m.createdAt)}</span>
                                 <button type="button" class="vsc-tab-close" onclick="deleteLessonMemo('${m.id}')" title="削除">🗑</button>
                             </div>
-                            <div class="tex2jax_process" style="font-size:13px; line-height:1.5; color:#d4d4d4;">
+                            <div class="tex2jax_process" style="font-size:13px; line-height:1.6; color:#d4d4d4; white-space:pre-wrap; word-break:break-word;">
                                 ${renderFormattedMarkdown(m.text)}
                             </div>
                         </div>
@@ -5020,7 +5209,7 @@ ${EXPERT_TEACHER_PROMPT}
                 <div class="vsc-log-line" style="display:flex; justify-content:space-between; align-items:center; background:#252526; padding:6px 10px; border-radius:4px; margin-bottom:4px;">
                     <div>
                         <span style="color:#ce9178; font-weight:700; margin-right:6px;">[NOTE]</span>
-                        <span style="color:#d4d4d4;">${m.text.replace(/</g, "&lt;")}</span>
+                        <span style="color:#d4d4d4; white-space:pre-wrap; word-break:break-word;">${m.text.replace(/</g, "&lt;")}</span>
                         <span style="color:#858585; font-size:11px; margin-left:8px;">(${formatMemoDate(m.createdAt)})</span>
                     </div>
                     <button type="button" class="vsc-tab-close" onclick="deleteLessonMemo('${m.id}')" title="削除">✕</button>

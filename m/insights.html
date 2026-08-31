@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#059669">
-    <title>Flora | 気づき・極意ノート</title>
+    <title>Flora | 気づき・暗記ノート</title>
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" sizes="180x180" href="../icons/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="192x192" href="../icons/icon-192.png">
@@ -23,28 +23,53 @@
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
 
     <style>
+        .m-tab-nav {
+            display: flex;
+            gap: 0.4rem;
+            margin-bottom: 0.65rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.4rem;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .m-tab-btn {
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: var(--radius-full);
+            padding: 0.35rem 0.8rem;
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            cursor: pointer;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .m-tab-btn.active {
+            background: var(--brand-light);
+            border-color: var(--brand-border);
+            color: var(--brand-primary);
+        }
+
         .insight-card {
             background: var(--bg-surface);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-lg);
             padding: 1rem;
-            margin-bottom: 0.65rem;
+            margin-bottom: 0.75rem;
             box-shadow: var(--shadow-xs);
-            cursor: pointer;
             transition: all 0.15s;
-        }
-        .insight-card:active {
-            transform: scale(0.985);
-            box-shadow: var(--shadow-sm);
         }
 
         .insight-text {
             font-size: var(--fs-base);
             line-height: 1.7;
             color: var(--text-primary);
-            font-weight: 600;
-            margin-bottom: 0.5rem;
+            font-weight: 500;
+            margin: 0.5rem 0;
             word-break: break-word;
+            white-space: pre-wrap;
         }
 
         .insight-meta {
@@ -53,8 +78,88 @@
             align-items: center;
             font-size: 0.72rem;
             color: var(--text-muted);
-            padding-top: 0.4rem;
-            border-top: 1px solid var(--border-subtle);
+            padding-top: 0.5rem;
+            border-top: 1px dashed var(--border-color);
+            margin-top: 0.5rem;
+        }
+
+        .action-btn-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .icon-action-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 0.88rem;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            color: var(--text-secondary);
+        }
+        .icon-action-btn:active {
+            background: var(--bg-subtle);
+        }
+
+        .inline-edit-box {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            margin-top: 0.4rem;
+        }
+        .inline-textarea {
+            width: 100%;
+            box-sizing: border-box;
+            font-size: 0.88rem;
+            line-height: 1.6;
+            padding: 0.5rem;
+            border: 1px solid var(--border-focus);
+            border-radius: var(--radius-sm);
+            background: var(--bg-subtle);
+            color: var(--text-primary);
+            min-height: 70px;
+            resize: vertical;
+        }
+        .inline-input {
+            width: 100%;
+            box-sizing: border-box;
+            font-size: 0.82rem;
+            padding: 0.4rem 0.6rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            background: var(--bg-subtle);
+            color: var(--text-primary);
+        }
+
+        /* トースト通知 */
+        #m-toast-container {
+            position: fixed;
+            bottom: calc(var(--bottom-nav-height, 60px) + 16px);
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: center;
+            width: 90%;
+            max-width: 360px;
+        }
+        .m-toast {
+            background: rgba(15, 23, 42, 0.92);
+            color: #fff;
+            padding: 0.6rem 1.1rem;
+            border-radius: 9999px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+            animation: mFadeInUp 0.25s ease-out;
+            text-align: center;
+        }
+        @keyframes mFadeInUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
@@ -63,15 +168,22 @@
     <!-- ヘッダー -->
     <header class="m-header">
         <button class="m-header-back" onclick="location.href='index.html'">‹</button>
-        <span class="m-header-title">💡 気づき・極意ノート</span>
+        <span class="m-header-title">💡 気づき・暗記ノート</span>
     </header>
 
     <main class="m-content">
 
+        <!-- タブ切り替え -->
+        <div class="m-tab-nav">
+            <button class="m-tab-btn active" id="tab-btn-insights" onclick="switchTab('insights')">💡 気づき・極意</button>
+            <button class="m-tab-btn" id="tab-btn-memorize" onclick="switchTab('memorize')">🧠 暗記事項</button>
+            <button class="m-tab-btn" id="tab-btn-lessons" onclick="switchTab('lessons')">📖 授業メモ</button>
+        </div>
+
         <!-- 検索バー -->
         <div class="m-search-bar">
             <span class="search-icon">🔍</span>
-            <input type="text" id="insight-search" placeholder="気づき・解法パターンを検索...">
+            <input type="text" id="insight-search" placeholder="キーワード・公式を検索...">
         </div>
 
         <!-- 教科フィルター -->
@@ -82,13 +194,15 @@
 
     </main>
 
+    <div id="m-toast-container"></div>
+
     <!-- ボトムナビ -->
     <script src="bottom-nav.js"></script>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+        import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB55MdhpjJizQaLEdRu-XhBVJ4PqrHsAyY",
@@ -104,15 +218,38 @@
         const auth = getAuth(app);
         const database = getDatabase(app);
 
+        let currentUser = null;
         let allProblems = {};
+        let allLessons = {};
+        let currentTab = "insights"; // 'insights' | 'memorize' | 'lessons'
         let currentSubject = "ALL";
         let searchQuery = "";
 
+        // 編集ステート
+        let editingProblemId = null;
+        let editingMemorizeKey = null; // 'lessonId:mpId'
+        let editingLessonMemoKey = null; // 'lessonId:memoId'
+
+        window.showMToast = function(msg) {
+            const container = document.getElementById("m-toast-container");
+            if (!container) return;
+            const toast = document.createElement("div");
+            toast.className = "m-toast";
+            toast.textContent = msg;
+            container.appendChild(toast);
+            setTimeout(() => { toast.remove(); }, 2500);
+        };
+
         onAuthStateChanged(auth, (user) => {
+            currentUser = user;
             if (user) {
                 onValue(ref(database, `users/${user.uid}/problems`), snap => {
                     allProblems = snap.val() || {};
-                    renderInsights();
+                    renderActiveView();
+                });
+                onValue(ref(database, `users/${user.uid}/lessons`), snap => {
+                    allLessons = snap.val() || {};
+                    renderActiveView();
                 });
             }
         });
@@ -124,21 +261,88 @@
             setTimeout(() => { if (!auth.currentUser) window.floraTestLogin(); }, 500);
         }
 
-        document.getElementById("insight-search").oninput = (e) => {
-            searchQuery = e.target.value.trim().toLowerCase();
-            renderInsights();
+        window.switchTab = function(tab) {
+            currentTab = tab;
+            document.querySelectorAll(".m-tab-btn").forEach(btn => btn.classList.remove("active"));
+            const activeBtn = document.getElementById(`tab-btn-${tab}`);
+            if (activeBtn) activeBtn.classList.add("active");
+            renderActiveView();
         };
 
-        function renderInsights() {
-            const listEl = document.getElementById("insight-list");
+        document.getElementById("insight-search").oninput = (e) => {
+            searchQuery = e.target.value.trim().toLowerCase();
+            renderActiveView();
+        };
+
+        function renderActiveView() {
+            renderSubjectChips();
+            if (currentTab === "insights") {
+                renderProblemsInsights();
+            } else if (currentTab === "memorize") {
+                renderMemorizationList();
+            } else if (currentTab === "lessons") {
+                renderLessonMemosList();
+            }
+        }
+
+        function getActiveItems() {
+            if (currentTab === "insights") {
+                return Object.entries(allProblems)
+                    .filter(([, p]) => p && p.insight && p.insight.trim() !== "")
+                    .map(([id, p]) => ({ id, ...p, type: 'problem' }));
+            } else if (currentTab === "memorize") {
+                const list = [];
+                Object.entries(allLessons).forEach(([lessonId, l]) => {
+                    if (l && Array.isArray(l.memorizationPoints)) {
+                        l.memorizationPoints.forEach((mp, idx) => {
+                            const mpId = mp.id || `mp_${idx}`;
+                            list.push({
+                                id: `${lessonId}:${mpId}`,
+                                lessonId,
+                                memoId: mpId,
+                                subject: l.subject || "未分類",
+                                short_title: l.title || "授業",
+                                category: mp.category || "重要事項",
+                                content: mp.content || "",
+                                note: mp.note || "",
+                                updatedAt: mp.updatedAt || l.updatedAt || l.createdAt,
+                                type: 'memorize'
+                            });
+                        });
+                    }
+                });
+                return list;
+            } else if (currentTab === "lessons") {
+                const list = [];
+                Object.entries(allLessons).forEach(([lessonId, l]) => {
+                    if (l && Array.isArray(l.lessonMemos)) {
+                        l.lessonMemos.forEach((m) => {
+                            if (m && m.text && m.text.trim()) {
+                                list.push({
+                                    id: `${lessonId}:${m.id}`,
+                                    lessonId,
+                                    memoId: m.id,
+                                    subject: l.subject || "未分類",
+                                    short_title: l.title || "授業",
+                                    partTitle: m.partTitle || "",
+                                    partIndex: m.partIndex,
+                                    text: m.text,
+                                    pinned: !!m.pinned,
+                                    updatedAt: m.updatedAt || m.createdAt || l.updatedAt,
+                                    type: 'lessonmemo'
+                                });
+                            }
+                        });
+                    }
+                });
+                return list;
+            }
+            return [];
+        }
+
+        function renderSubjectChips() {
             const chipsEl = document.getElementById("insight-subject-chips");
-
-            // 気づきがある問題だけ抽出
-            const items = Object.entries(allProblems)
-                .filter(([, p]) => p && p.insight && p.insight.trim() !== "")
-                .map(([id, p]) => ({ id, ...p }));
-
-            // 教科チップ
+            const items = getActiveItems();
             const subjects = new Set();
             items.forEach(p => { if (p.subject) subjects.add(p.subject); });
 
@@ -150,53 +354,368 @@
             chipsEl.querySelectorAll(".m-chip").forEach(btn => {
                 btn.onclick = () => {
                     currentSubject = btn.dataset.subj;
-                    renderInsights();
+                    renderActiveView();
                 };
             });
+        }
 
-            // フィルター
-            const filtered = items.filter(p => {
-                if (currentSubject !== "ALL" && p.subject !== currentSubject) return false;
-                if (searchQuery) {
-                    const hay = [p.insight, p.short_title, p.field, p.subject].join(" ").toLowerCase();
-                    if (!hay.includes(searchQuery)) return false;
-                }
-                return true;
-            });
+        // 1. 問題の極意メモ一覧
+        function renderProblemsInsights() {
+            const listEl = document.getElementById("insight-list");
+            let items = getActiveItems();
 
-            if (filtered.length === 0) {
+            if (currentSubject !== "ALL") items = items.filter(p => p.subject === currentSubject);
+            if (searchQuery) {
+                items = items.filter(p => [p.insight, p.short_title, p.field, p.subject].join(" ").toLowerCase().includes(searchQuery));
+            }
+
+            if (items.length === 0) {
                 listEl.innerHTML = `
                     <div class="m-empty-state">
                         <div class="m-empty-state-icon">💡</div>
-                        <div class="m-empty-state-title">気づきメモがまだありません</div>
+                        <div class="m-empty-state-title">該当する極意メモがありません</div>
                         <div class="m-empty-state-text">問題を解いた後に「気づきメモ」を記録すると、ここに一覧表示されます。</div>
                     </div>
                 `;
                 return;
             }
 
-            listEl.innerHTML = filtered.map(p => `
-                <div class="insight-card" onclick="location.href='problem.html?id=${p.id}'">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem;">
-                        <span class="m-subject-badge subj-${p.subject || '数学'}">${escapeHtml(p.subject || '未分類')}</span>
-                        <span style="font-size:0.75rem; color:var(--text-muted);">${escapeHtml(p.short_title || '')}</span>
+            listEl.innerHTML = items.map(p => {
+                const isEditing = editingProblemId === p.id;
+                const bodyHtml = isEditing ? `
+                    <div class="inline-edit-box">
+                        <textarea class="inline-textarea" id="p-edit-text-${p.id}">${escapeHtml(p.insight)}</textarea>
+                        <div style="display:flex; justify-content:flex-end; gap:0.4rem;">
+                            <button type="button" class="tactile-btn tactile-btn-secondary" style="font-size:0.75rem; padding:0.3rem 0.6rem;" onclick="cancelEditProblemInsight(event)">キャンセル</button>
+                            <button type="button" class="tactile-btn" style="font-size:0.75rem; padding:0.3rem 0.6rem; background:var(--brand-primary); color:#fff;" onclick="saveEditProblemInsight('${p.id}', event)">💾 保存</button>
+                        </div>
                     </div>
+                ` : `
                     <div class="insight-text tex2jax_process">${escapeHtml(p.insight)}</div>
-                    <div class="insight-meta">
-                        <span>🏷️ ${escapeHtml(p.field || '')}</span>
-                        <span style="color:var(--brand-primary); font-weight:700;">問題を開く →</span>
-                    </div>
-                </div>
-            `).join("");
+                `;
 
-            if (window.MathJax && window.MathJax.typesetPromise) {
-                window.MathJax.typesetPromise([listEl]).catch(() => {});
+                return `
+                    <div class="insight-card">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem;">
+                            <span class="m-subject-badge subj-${p.subject || '数学'}">${escapeHtml(p.subject || '未分類')}</span>
+                            <div class="action-btn-group">
+                                ${!isEditing ? `<button type="button" class="icon-action-btn" onclick="startEditProblemInsight('${p.id}', event)" title="編集">✏️</button>` : ''}
+                                <button type="button" class="icon-action-btn" onclick="deleteProblemInsight('${p.id}', event)" title="削除" style="color:var(--error);">🗑</button>
+                            </div>
+                        </div>
+                        <div style="font-size:0.78rem; font-weight:700; color:var(--text-secondary); margin-bottom:0.25rem;">📌 ${escapeHtml(p.short_title || '問題')}</div>
+                        ${bodyHtml}
+                        <div class="insight-meta">
+                            <span>🏷️ ${escapeHtml(p.field || '全般')}</span>
+                            <a href="problem.html?id=${p.id}" style="color:var(--brand-primary); font-weight:700; text-decoration:none;">問題を開く →</a>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+
+            triggerMathJax(listEl);
+        }
+
+        // 2. 暗記事項一覧
+        function renderMemorizationList() {
+            const listEl = document.getElementById("insight-list");
+            let items = getActiveItems();
+
+            if (currentSubject !== "ALL") items = items.filter(p => p.subject === currentSubject);
+            if (searchQuery) {
+                items = items.filter(p => [p.content, p.category, p.note, p.short_title, p.subject].join(" ").toLowerCase().includes(searchQuery));
             }
+
+            if (items.length === 0) {
+                listEl.innerHTML = `
+                    <div class="m-empty-state">
+                        <div class="m-empty-state-icon">🧠</div>
+                        <div class="m-empty-state-title">暗記事項がまだありません</div>
+                        <div class="m-empty-state-text">授業を作成すると、重要な公式や用語が自動抽出されてここに表示されます。</div>
+                    </div>
+                `;
+                return;
+            }
+
+            listEl.innerHTML = items.map(p => {
+                const isEditing = editingMemorizeKey === p.id;
+                const bodyHtml = isEditing ? `
+                    <div class="inline-edit-box">
+                        <input type="text" class="inline-input" id="m-edit-cat-${p.lessonId}_${p.memoId}" value="${escapeHtml(p.category)}" placeholder="カテゴリ">
+                        <textarea class="inline-textarea" id="m-edit-content-${p.lessonId}_${p.memoId}">${escapeHtml(p.content)}</textarea>
+                        <input type="text" class="inline-input" id="m-edit-note-${p.lessonId}_${p.memoId}" value="${escapeHtml(p.note)}" placeholder="💡 補足・語呂合わせ">
+                        <div style="display:flex; justify-content:flex-end; gap:0.4rem; margin-top:0.2rem;">
+                            <button type="button" class="tactile-btn tactile-btn-secondary" style="font-size:0.75rem; padding:0.3rem 0.6rem;" onclick="cancelEditMemorize(event)">キャンセル</button>
+                            <button type="button" class="tactile-btn" style="font-size:0.75rem; padding:0.3rem 0.6rem; background:var(--brand-primary); color:#fff;" onclick="saveEditMemorize('${p.lessonId}', '${p.memoId}', event)">💾 保存</button>
+                        </div>
+                    </div>
+                ` : `
+                    <div class="insight-text tex2jax_process">${escapeHtml(p.content)}</div>
+                    ${p.note ? `<div class="tex2jax_process" style="font-size:0.8rem; color:var(--accent-yellow); margin-top:0.3rem;">💡 ${escapeHtml(p.note)}</div>` : ''}
+                `;
+
+                return `
+                    <div class="insight-card" style="border-left: 3px solid var(--accent-cyan);">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem;">
+                            <span class="m-subject-badge subj-${p.subject || '数学'}">🧠 ${escapeHtml(p.subject || '未分類')}</span>
+                            <div class="action-btn-group">
+                                ${!isEditing ? `<button type="button" class="icon-action-btn" onclick="startEditMemorize('${p.lessonId}', '${p.memoId}', event)" title="編集">✏️</button>` : ''}
+                                <button type="button" class="icon-action-btn" onclick="deleteMemorize('${p.lessonId}', '${p.memoId}', event)" title="削除" style="color:var(--error);">🗑</button>
+                            </div>
+                        </div>
+                        <div style="font-size:0.78rem; font-weight:700; color:var(--accent-cyan);">🏷️ ${escapeHtml(p.category || '重要事項')}</div>
+                        ${bodyHtml}
+                        <div class="insight-meta">
+                            <span>📘 ${escapeHtml(p.short_title)}</span>
+                            <a href="lesson.html?id=${p.lessonId}" style="color:var(--brand-primary); font-weight:700; text-decoration:none;">授業を開く →</a>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+
+            triggerMathJax(listEl);
+        }
+
+        // 3. 授業メモ一覧
+        function renderLessonMemosList() {
+            const listEl = document.getElementById("insight-list");
+            let items = getActiveItems();
+
+            if (currentSubject !== "ALL") items = items.filter(p => p.subject === currentSubject);
+            if (searchQuery) {
+                items = items.filter(p => [p.text, p.short_title, p.partTitle, p.subject].join(" ").toLowerCase().includes(searchQuery));
+            }
+
+            if (items.length === 0) {
+                listEl.innerHTML = `
+                    <div class="m-empty-state">
+                        <div class="m-empty-state-icon">📖</div>
+                        <div class="m-empty-state-title">授業メモがまだありません</div>
+                        <div class="m-empty-state-text">授業受講中にメモを記録すると、ここに一覧表示されます。</div>
+                    </div>
+                `;
+                return;
+            }
+
+            listEl.innerHTML = items.map(p => {
+                const memoKey = `${p.lessonId}:${p.memoId}`;
+                const isEditing = editingLessonMemoKey === memoKey;
+                const bodyHtml = isEditing ? `
+                    <div class="inline-edit-box">
+                        <textarea class="inline-textarea" id="lm-edit-text-${p.lessonId}_${p.memoId}">${escapeHtml(p.text)}</textarea>
+                        <div style="display:flex; justify-content:flex-end; gap:0.4rem;">
+                            <button type="button" class="tactile-btn tactile-btn-secondary" style="font-size:0.75rem; padding:0.3rem 0.6rem;" onclick="cancelEditLessonMemo(event)">キャンセル</button>
+                            <button type="button" class="tactile-btn" style="font-size:0.75rem; padding:0.3rem 0.6rem; background:var(--brand-primary); color:#fff;" onclick="saveEditLessonMemo('${p.lessonId}', '${p.memoId}', event)">💾 保存</button>
+                        </div>
+                    </div>
+                ` : `
+                    <div class="insight-text tex2jax_process">${escapeHtml(p.text)}</div>
+                `;
+
+                return `
+                    <div class="insight-card" style="border-left: 3px solid var(--accent-yellow);">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem;">
+                            <span class="m-subject-badge subj-${p.subject || '数学'}">📖 授業メモ</span>
+                            <div class="action-btn-group">
+                                ${!isEditing ? `<button type="button" class="icon-action-btn" onclick="startEditLessonMemo('${p.lessonId}', '${p.memoId}', event)" title="編集">✏️</button>` : ''}
+                                <button type="button" class="icon-action-btn" onclick="deleteLessonMemo('${p.lessonId}', '${p.memoId}', event)" title="削除" style="color:var(--error);">🗑</button>
+                            </div>
+                        </div>
+                        <div style="font-size:0.78rem; font-weight:700; color:var(--text-secondary); margin-bottom:0.25rem;">📘 ${escapeHtml(p.short_title)}${p.partTitle ? ` / ${escapeHtml(p.partTitle)}` : ''}</div>
+                        ${bodyHtml}
+                        <div class="insight-meta">
+                            <span>🗓️ ${formatDate(p.updatedAt)}</span>
+                            <a href="lesson.html?id=${p.lessonId}" style="color:var(--brand-primary); font-weight:700; text-decoration:none;">授業を開く →</a>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+
+            triggerMathJax(listEl);
+        }
+
+        function triggerMathJax(container) {
+            if (window.MathJax && window.MathJax.typesetPromise) {
+                window.MathJax.typesetPromise([container]).catch(() => {});
+            }
+        }
+
+        function formatDate(iso) {
+            if (!iso) return "";
+            try {
+                const d = new Date(iso);
+                return `${d.getMonth() + 1}/${d.getDate()}`;
+            } catch(e) { return ""; }
         }
 
         function escapeHtml(s) {
             return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         }
+
+        // =======================
+        // 編集・削除ハンドラー
+        // =======================
+
+        // 1. 問題の極意
+        window.startEditProblemInsight = function(id, e) {
+            if (e) e.stopPropagation();
+            editingProblemId = id;
+            renderProblemsInsights();
+        };
+        window.cancelEditProblemInsight = function(e) {
+            if (e) e.stopPropagation();
+            editingProblemId = null;
+            renderProblemsInsights();
+        };
+        window.saveEditProblemInsight = async function(id, e) {
+            if (e) e.stopPropagation();
+            if (!currentUser) return;
+            const textarea = document.getElementById(`p-edit-text-${id}`);
+            if (!textarea) return;
+            const text = textarea.value.trim();
+            try {
+                await update(ref(database, `users/${currentUser.uid}/problems/${id}`), {
+                    insight: text,
+                    insightUpdatedAt: new Date().toISOString()
+                });
+                editingProblemId = null;
+                showMToast("極意メモを更新しました！");
+            } catch (err) {
+                showMToast("更新に失敗しました");
+            }
+        };
+        window.deleteProblemInsight = async function(id, e) {
+            if (e) e.stopPropagation();
+            if (!currentUser) return;
+            if (!confirm("この極意メモを削除しますか？\n（問題の登録自体は残ります）")) return;
+            try {
+                await update(ref(database, `users/${currentUser.uid}/problems/${id}`), {
+                    insight: "",
+                    insightUpdatedAt: new Date().toISOString()
+                });
+                if (editingProblemId === id) editingProblemId = null;
+                showMToast("極意メモを削除しました");
+            } catch (err) {
+                showMToast("削除に失敗しました");
+            }
+        };
+
+        // 2. 暗記事項
+        window.startEditMemorize = function(lessonId, memoId, e) {
+            if (e) e.stopPropagation();
+            editingMemorizeKey = `${lessonId}:${memoId}`;
+            renderMemorizationList();
+        };
+        window.cancelEditMemorize = function(e) {
+            if (e) e.stopPropagation();
+            editingMemorizeKey = null;
+            renderMemorizationList();
+        };
+        window.saveEditMemorize = async function(lessonId, memoId, e) {
+            if (e) e.stopPropagation();
+            if (!currentUser) return;
+            const elCat = document.getElementById(`m-edit-cat-${lessonId}_${memoId}`);
+            const elContent = document.getElementById(`m-edit-content-${lessonId}_${memoId}`);
+            const elNote = document.getElementById(`m-edit-note-${lessonId}_${memoId}`);
+            const content = elContent ? elContent.value.trim() : "";
+            const category = elCat ? elCat.value.trim() : "";
+            const note = elNote ? elNote.value.trim() : "";
+
+            if (!content) {
+                showMToast("暗記内容を入力してください");
+                return;
+            }
+
+            const lesson = allLessons[lessonId];
+            if (!lesson || !Array.isArray(lesson.memorizationPoints)) return;
+
+            const newPoints = lesson.memorizationPoints.map((p, idx) => {
+                const curId = p.id || `mp_${idx}`;
+                if (curId === memoId) {
+                    return { ...p, id: curId, category: category || "重要事項", content, note, updatedAt: new Date().toISOString() };
+                }
+                return p;
+            });
+
+            try {
+                await update(ref(database, `users/${currentUser.uid}/lessons/${lessonId}`), { memorizationPoints: newPoints });
+                editingMemorizeKey = null;
+                showMToast("暗記事項を更新しました！");
+            } catch (err) {
+                showMToast("更新に失敗しました");
+            }
+        };
+        window.deleteMemorize = async function(lessonId, memoId, e) {
+            if (e) e.stopPropagation();
+            if (!currentUser) return;
+            if (!confirm("この暗記事項を削除しますか？")) return;
+            const lesson = allLessons[lessonId];
+            if (!lesson || !Array.isArray(lesson.memorizationPoints)) return;
+
+            const newPoints = lesson.memorizationPoints.filter((p, idx) => {
+                const curId = p.id || `mp_${idx}`;
+                return curId !== memoId;
+            });
+
+            try {
+                await update(ref(database, `users/${currentUser.uid}/lessons/${lessonId}`), { memorizationPoints: newPoints });
+                if (editingMemorizeKey === `${lessonId}:${memoId}`) editingMemorizeKey = null;
+                showMToast("暗記事項を削除しました");
+            } catch (err) {
+                showMToast("削除に失敗しました");
+            }
+        };
+
+        // 3. 授業メモ
+        window.startEditLessonMemo = function(lessonId, memoId, e) {
+            if (e) e.stopPropagation();
+            editingLessonMemoKey = `${lessonId}:${memoId}`;
+            renderLessonMemosList();
+        };
+        window.cancelEditLessonMemo = function(e) {
+            if (e) e.stopPropagation();
+            editingLessonMemoKey = null;
+            renderLessonMemosList();
+        };
+        window.saveEditLessonMemo = async function(lessonId, memoId, e) {
+            if (e) e.stopPropagation();
+            if (!currentUser) return;
+            const textarea = document.getElementById(`lm-edit-text-${lessonId}_${memoId}`);
+            if (!textarea) return;
+            const text = textarea.value.trim();
+            if (!text) {
+                showMToast("メモ内容を入力してください");
+                return;
+            }
+
+            const lesson = allLessons[lessonId];
+            if (!lesson || !Array.isArray(lesson.lessonMemos)) return;
+
+            const newMemos = lesson.lessonMemos.map(m => m.id === memoId ? { ...m, text, updatedAt: new Date().toISOString() } : m);
+            try {
+                await update(ref(database, `users/${currentUser.uid}/lessons/${lessonId}`), { lessonMemos: newMemos });
+                editingLessonMemoKey = null;
+                showMToast("授業メモを更新しました！");
+            } catch (err) {
+                showMToast("更新に失敗しました");
+            }
+        };
+        window.deleteLessonMemo = async function(lessonId, memoId, e) {
+            if (e) e.stopPropagation();
+            if (!currentUser) return;
+            if (!confirm("この授業メモを削除しますか？")) return;
+            const lesson = allLessons[lessonId];
+            if (!lesson || !Array.isArray(lesson.lessonMemos)) return;
+
+            const newMemos = lesson.lessonMemos.filter(m => m.id !== memoId);
+            try {
+                await update(ref(database, `users/${currentUser.uid}/lessons/${lessonId}`), { lessonMemos: newMemos });
+                if (editingLessonMemoKey === `${lessonId}:${memoId}`) editingLessonMemoKey = null;
+                showMToast("授業メモを削除しました");
+            } catch (err) {
+                showMToast("削除に失敗しました");
+            }
+        };
     </script>
 
 </body>

@@ -412,6 +412,7 @@
         let selectedQnaLogId = null;
         let editingProblemId = null; // その場編集中の問題ID
         let editingLessonMemoKey = null; // その場編集中の授業メモ（"lessonId:memoId"）
+        let editingMemorizeKey = null; // その場編集中の暗記事項（"lessonId:mpId"）
 
         // 🎛 タブ切り替え
         const tabBtnInsights = document.getElementById("tab-btn-insights");
@@ -559,12 +560,16 @@
                     items.push({
                         id: `memorize_${lessonId}_${mpId}`,
                         lessonId,
+                        memoId: mpId,
+                        rawContent: mp.content,
+                        rawCategory: mp.category || "",
+                        rawNote: mp.note || "",
                         insight: mp.content + (mp.note ? `\n💡 ${mp.note}` : ""),
                         category: mp.category || "",
                         subject: detectSubjectFromLesson(lesson),
                         field: lesson.topicKey || lesson.title || "暗記事項",
                         short_title: lesson.title || "暗記事項",
-                        insightUpdatedAt: lesson.updatedAt || lesson.createdAt,
+                        insightUpdatedAt: mp.updatedAt || lesson.updatedAt || lesson.createdAt,
                         createdAt: lesson.createdAt,
                         isPinned: false,
                         sourceType: "memorize"
@@ -573,6 +578,88 @@
             });
             return items;
         }
+
+        // 🧠 暗記事項のその場編集・削除
+        window.startEditMemorizeFromInsights = function(lessonId, mpId, e) {
+            if (e) e.stopPropagation();
+            editingMemorizeKey = `${lessonId}:${mpId}`;
+            renderActiveView();
+        };
+
+        window.cancelEditMemorizeFromInsights = function(e) {
+            if (e) e.stopPropagation();
+            editingMemorizeKey = null;
+            renderActiveView();
+        };
+
+        window.saveEditMemorizeFromInsights = async function(lessonId, mpId, e) {
+            if (e) e.stopPropagation();
+            if (!currentUser) return;
+            const lesson = rawLessons[lessonId];
+            if (!lesson || !Array.isArray(lesson.memorizationPoints)) return;
+
+            const catInput = document.getElementById(`memorize-edit-cat-${lessonId}_${mpId}`);
+            const contentInput = document.getElementById(`memorize-edit-content-${lessonId}_${mpId}`);
+            const noteInput = document.getElementById(`memorize-edit-note-${lessonId}_${mpId}`);
+
+            const newCat = catInput ? catInput.value.trim() : "";
+            const newContent = contentInput ? contentInput.value.trim() : "";
+            const newNote = noteInput ? noteInput.value.trim() : "";
+
+            if (!newContent) {
+                showToast("暗記すべき内容を入力してください。", "error");
+                return;
+            }
+
+            const newPoints = lesson.memorizationPoints.map((mp, idx) => {
+                const curId = mp.id || `idx${idx}`;
+                if (curId === mpId) {
+                    return {
+                        ...mp,
+                        id: curId,
+                        category: newCat || "重要事項",
+                        content: newContent,
+                        note: newNote,
+                        updatedAt: new Date().toISOString()
+                    };
+                }
+                return mp;
+            });
+
+            try {
+                await update(ref(database, 'users/' + currentUser.uid + '/lessons/' + lessonId), {
+                    memorizationPoints: newPoints,
+                    updatedAt: new Date().toISOString()
+                });
+                editingMemorizeKey = null;
+                showToast("暗記事項を更新しました！", "success", 2000);
+            } catch (err) {
+                showToast("保存に失敗しました。", "error");
+            }
+        };
+
+        window.deleteMemorizeFromInsights = async function(lessonId, mpId, e) {
+            if (e) e.stopPropagation();
+            if (!currentUser) return;
+            if (!confirm("この暗記事項を削除しますか？")) return;
+            const lesson = rawLessons[lessonId];
+            if (!lesson || !Array.isArray(lesson.memorizationPoints)) return;
+
+            const newPoints = lesson.memorizationPoints.filter((mp, idx) => {
+                const curId = mp.id || `idx${idx}`;
+                return curId !== mpId;
+            });
+
+            try {
+                await update(ref(database, 'users/' + currentUser.uid + '/lessons/' + lessonId), {
+                    memorizationPoints: newPoints,
+                    updatedAt: new Date().toISOString()
+                });
+                showToast("暗記事項を削除しました。", "success", 2000);
+            } catch (err) {
+                showToast("削除に失敗しました。", "error");
+            }
+        };
 
         window.toggleLessonMemoPin = async function(lessonId, memoId, e) {
             if (e) e.stopPropagation();
@@ -650,7 +737,7 @@
             }
         };
 
-        // ✏️ その場で編集（インライン編集）
+        // ✏️ 問題の極意メモ その場で編集（インライン編集）
         window.startEditInsight = function(problemId, e) {
             if (e) e.stopPropagation();
             editingProblemId = problemId;
@@ -678,6 +765,24 @@
                 showToast("極意メモを更新しました！", "success", 2000);
             } catch (err) {
                 showToast("保存に失敗しました。", "error");
+            }
+        };
+
+        // 🗑️ 問題の極意メモ 削除
+        window.deleteInsight = async function(problemId, e) {
+            if (e) e.stopPropagation();
+            if (!currentUser) return;
+            if (!confirm("この問題の極意メモを削除しますか？\n（問題の登録データは残ります）")) return;
+            try {
+                const nowIso = new Date().toISOString();
+                await update(ref(database, 'users/' + currentUser.uid + '/problems/' + problemId), {
+                    insight: "",
+                    insightUpdatedAt: nowIso
+                });
+                if (editingProblemId === problemId) editingProblemId = null;
+                showToast("極意メモを削除しました。", "success", 2000);
+            } catch (err) {
+                showToast("削除に失敗しました。", "error");
             }
         };
 
@@ -939,7 +1044,10 @@
                     <div class="insight-body-box">
                         <div class="insight-body-label">
                             <span>🧠 掴んだ極意・解法の地図</span>
-                            ${!isEditing ? `<button type="button" style="background:none; border:none; color:var(--accent-cyan); font-size:0.72rem; font-weight:800; cursor:pointer;" onclick="startEditInsight('${p.id}', event)">✏️ 編集</button>` : ''}
+                            <div style="display:flex; gap:0.6rem;">
+                                ${!isEditing ? `<button type="button" style="background:none; border:none; color:var(--accent-cyan); font-size:0.72rem; font-weight:800; cursor:pointer;" onclick="startEditInsight('${p.id}', event)">✏️ 編集</button>` : ''}
+                                <button type="button" style="background:none; border:none; color:var(--error); font-size:0.72rem; font-weight:800; cursor:pointer;" onclick="deleteInsight('${p.id}', event)">🗑 削除</button>
+                            </div>
                         </div>
                         ${bodyContent}
                     </div>
@@ -989,7 +1097,7 @@
                             <span>✏️ 授業中のメモ</span>
                             <div style="display:flex; gap:0.7rem;">
                                 ${!isEditing ? `<button type="button" style="background:none; border:none; color:var(--accent-cyan); font-size:0.72rem; font-weight:800; cursor:pointer;" onclick="startEditLessonMemoFromInsights('${p.lessonId}', '${p.memoId}', event)">✏️ 編集</button>` : ''}
-                                <button type="button" style="background:none; border:none; color:var(--accent-magenta); font-size:0.72rem; font-weight:800; cursor:pointer;" onclick="deleteLessonMemoFromInsights('${p.lessonId}', '${p.memoId}', event)">🗑 削除</button>
+                                <button type="button" style="background:none; border:none; color:var(--error); font-size:0.72rem; font-weight:800; cursor:pointer;" onclick="deleteLessonMemoFromInsights('${p.lessonId}', '${p.memoId}', event)">🗑 削除</button>
                             </div>
                         </div>
                         ${bodyHtml}
@@ -1002,8 +1110,35 @@
             `;
         }
 
-        // 🧠 暗記事項（lesson.htmlで自動生成）カードのHTML（読み取り専用・授業を横断して一覧表示）
+        // 🧠 暗記事項（lesson.html）カードのHTML（編集・削除対応）
         function renderMemorizeCardHtml(p) {
+            const memoKey = `${p.lessonId}:${p.memoId}`;
+            const isEditing = editingMemorizeKey === memoKey;
+
+            const editBody = isEditing ? `
+                <div style="display:flex; flex-direction:column; gap:0.45rem; margin-top:0.3rem;">
+                    <div>
+                        <label style="font-size:0.72rem; color:var(--text-muted); display:block; margin-bottom:0.2rem;">カテゴリ / 分類:</label>
+                        <input type="text" id="memorize-edit-cat-${p.lessonId}_${p.memoId}" value="${(p.rawCategory || '').replace(/"/g, '&quot;')}" placeholder="例: 公式・法則、用語、反応式" style="width:100%; box-sizing:border-box; padding:0.35rem 0.6rem; font-size:0.8rem; background:var(--bg-subtle); border:1px solid var(--border-color); border-radius:var(--radius-sm); color:var(--text-primary);">
+                    </div>
+                    <div>
+                        <label style="font-size:0.72rem; color:var(--text-muted); display:block; margin-bottom:0.2rem;">暗記事項（数式は $...$ で記述可）:</label>
+                        <textarea class="inline-edit-textarea" id="memorize-edit-content-${p.lessonId}_${p.memoId}" style="min-height:65px;">${(p.rawContent || '').replace(/</g, '&lt;')}</textarea>
+                    </div>
+                    <div>
+                        <label style="font-size:0.72rem; color:var(--text-muted); display:block; margin-bottom:0.2rem;">補足・語呂合わせ・注意点（任意）:</label>
+                        <input type="text" id="memorize-edit-note-${p.lessonId}_${p.memoId}" value="${(p.rawNote || '').replace(/"/g, '&quot;')}" placeholder="💡 補足やコツなど" style="width:100%; box-sizing:border-box; padding:0.35rem 0.6rem; font-size:0.8rem; background:var(--bg-subtle); border:1px solid var(--border-color); border-radius:var(--radius-sm); color:var(--text-primary);">
+                    </div>
+                    <div style="display:flex; justify-content:flex-end; gap:0.4rem; margin-top:0.3rem;">
+                        <button type="button" class="tactile-btn tactile-btn-secondary" style="font-size:0.72rem; padding:0.35rem 0.7rem;" onclick="cancelEditMemorizeFromInsights(event)">キャンセル</button>
+                        <button type="button" class="tactile-btn" style="font-size:0.72rem; padding:0.35rem 0.7rem; background:var(--accent-cyan); color:#000; font-weight:700;" onclick="saveEditMemorizeFromInsights('${p.lessonId}', '${p.memoId}', event)">💾 保存</button>
+                    </div>
+                </div>
+            ` : `
+                <div class="insight-text tex2jax_process" onclick="startEditMemorizeFromInsights('${p.lessonId}', '${p.memoId}', event)" title="クリックしてその場で編集">${normalizeMathSyntax(p.rawContent || p.insight)}</div>
+                ${p.rawNote ? `<div class="tex2jax_process" style="font-size:0.82rem; color:var(--accent-yellow); margin-top:0.4rem; padding-top:0.4rem; border-top:1px dashed rgba(255,255,255,0.08);">💡 ${normalizeMathSyntax(p.rawNote)}</div>` : ''}
+            `;
+
             return `
                 <div class="insight-card" style="border-left-color: var(--accent-cyan);">
                     <div>
@@ -1014,13 +1149,19 @@
 
                         <div class="insight-problem-preview" style="border-color: rgba(0,243,255,0.25); background: rgba(0,243,255,0.03);">
                             <div class="insight-problem-title">📘 ${p.short_title}</div>
-                            ${p.category ? `<div style="font-size:0.78rem; color:var(--text-muted);">${p.category}</div>` : ""}
+                            ${p.rawCategory ? `<div style="font-size:0.78rem; color:var(--accent-cyan); font-weight:600; margin-top:0.15rem;">🏷️ ${p.rawCategory}</div>` : ""}
                         </div>
                     </div>
 
                     <div class="insight-body-box">
-                        <div class="insight-body-label"><span>🧠 覚えるべきこと</span></div>
-                        <div class="insight-text tex2jax_process">${normalizeMathSyntax(p.insight)}</div>
+                        <div class="insight-body-label">
+                            <span>🧠 覚えるべきこと</span>
+                            <div style="display:flex; gap:0.6rem;">
+                                ${!isEditing ? `<button type="button" style="background:none; border:none; color:var(--accent-cyan); font-size:0.72rem; font-weight:800; cursor:pointer;" onclick="startEditMemorizeFromInsights('${p.lessonId}', '${p.memoId}', event)">✏️ 編集</button>` : ''}
+                                <button type="button" style="background:none; border:none; color:var(--error); font-size:0.72rem; font-weight:800; cursor:pointer;" onclick="deleteMemorizeFromInsights('${p.lessonId}', '${p.memoId}', event)">🗑 削除</button>
+                            </div>
+                        </div>
+                        ${editBody}
                     </div>
 
                     <div style="display:flex; justify-content:flex-end; border-top:1px dashed rgba(255,255,255,0.08); padding-top:0.6rem;">
@@ -1046,6 +1187,8 @@
                         <div class="compact-text tex2jax_process">${normalizeMathSyntax(p.insight)}</div>
                         <div class="compact-sub">📌 ${p.short_title || "問題"} ｜ ${formatDate(p.insightUpdatedAt || p.createdAt)}</div>
                     </div>
+                    <button type="button" onclick="startEditInsight('${p.id}', event)" style="flex-shrink:0; background:none; border:none; color:var(--accent-cyan); cursor:pointer; font-size:0.85rem;" title="編集">✏️</button>
+                    <button type="button" onclick="deleteInsight('${p.id}', event)" style="flex-shrink:0; background:none; border:none; color:var(--error); cursor:pointer; font-size:0.85rem;" title="削除">🗑</button>
                     <a href="problem.html?id=${encodeURIComponent(p.id)}" class="goto-btn" style="flex-shrink:0;">➔</a>
                 </div>
             `;
@@ -1063,7 +1206,8 @@
                         <div class="compact-text tex2jax_process">${normalizeMathSyntax(p.insight)}</div>
                         <div class="compact-sub">📘 ${p.short_title} ｜ ${formatDate(p.insightUpdatedAt || p.createdAt)}</div>
                     </div>
-                    <button type="button" onclick="deleteLessonMemoFromInsights('${p.lessonId}', '${p.memoId}', event)" style="flex-shrink:0; background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:0.85rem;" title="削除">🗑</button>
+                    <button type="button" onclick="startEditLessonMemoFromInsights('${p.lessonId}', '${p.memoId}', event)" style="flex-shrink:0; background:none; border:none; color:var(--accent-cyan); cursor:pointer; font-size:0.85rem;" title="編集">✏️</button>
+                    <button type="button" onclick="deleteLessonMemoFromInsights('${p.lessonId}', '${p.memoId}', event)" style="flex-shrink:0; background:none; border:none; color:var(--error); cursor:pointer; font-size:0.85rem;" title="削除">🗑</button>
                     <a href="lesson.html?id=${encodeURIComponent(p.lessonId)}" class="goto-btn" style="flex-shrink:0;">➔</a>
                 </div>
             `;
@@ -1074,9 +1218,11 @@
                 <div class="insight-compact-row">
                     <span class="badge badge-physics" style="font-size:0.68rem; flex-shrink:0; background: rgba(0,243,255,0.1); border-color: var(--accent-cyan); color: var(--accent-cyan);">🧠 ${p.subject || "未分類"}</span>
                     <div class="compact-main">
-                        <div class="compact-text tex2jax_process">${normalizeMathSyntax(p.insight)}</div>
-                        <div class="compact-sub">📘 ${p.short_title} ｜ ${formatDate(p.insightUpdatedAt || p.createdAt)}</div>
+                        <div class="compact-text tex2jax_process">${normalizeMathSyntax(p.rawContent || p.insight)}</div>
+                        <div class="compact-sub">📘 ${p.short_title} ${p.rawCategory ? `[${p.rawCategory}]` : ""} ｜ ${formatDate(p.insightUpdatedAt || p.createdAt)}</div>
                     </div>
+                    <button type="button" onclick="startEditMemorizeFromInsights('${p.lessonId}', '${p.memoId}', event)" style="flex-shrink:0; background:none; border:none; color:var(--accent-cyan); cursor:pointer; font-size:0.85rem;" title="編集">✏️</button>
+                    <button type="button" onclick="deleteMemorizeFromInsights('${p.lessonId}', '${p.memoId}', event)" style="flex-shrink:0; background:none; border:none; color:var(--error); cursor:pointer; font-size:0.85rem;" title="削除">🗑</button>
                     <a href="lesson.html?id=${encodeURIComponent(p.lessonId)}" class="goto-btn" style="flex-shrink:0;">➔</a>
                 </div>
             `;
