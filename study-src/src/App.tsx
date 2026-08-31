@@ -199,22 +199,48 @@ export default function App() {
             saveUserProfile(cloudData.userProfile);
           }
           if (cloudData.macroPlan) {
-            setMacroPlan(cloudData.macroPlan);
-            saveMacroPlan(cloudData.macroPlan);
+            const rawPlan = cloudData.macroPlan;
+            const safePlan: MacroPlan = {
+              ...DEFAULT_MACRO_PLAN,
+              ...rawPlan,
+              milestones: Array.isArray(rawPlan.milestones)
+                ? rawPlan.milestones
+                : (rawPlan.milestones && typeof rawPlan.milestones === 'object' ? Object.values(rawPlan.milestones) : []),
+              macroTasks: Array.isArray(rawPlan.macroTasks)
+                ? rawPlan.macroTasks
+                : (rawPlan.macroTasks && typeof rawPlan.macroTasks === 'object' ? Object.values(rawPlan.macroTasks) : []),
+              templates: {
+                phase1: { ...DEFAULT_PHASE1_TEMPLATE, ...(rawPlan.templates?.phase1 || {}) },
+                phase2: { ...DEFAULT_PHASE2_TEMPLATE, ...(rawPlan.templates?.phase2 || {}) },
+              },
+            };
+            setMacroPlan(safePlan);
+            saveMacroPlan(safePlan);
           }
-          if (cloudData.sessionLogs && Array.isArray(cloudData.sessionLogs)) {
-            setSessionLogs(cloudData.sessionLogs);
-            saveSessionLogs(cloudData.sessionLogs);
+          if (cloudData.sessionLogs) {
+            const rawLogs = cloudData.sessionLogs;
+            const safeLogs: StudySessionLog[] = Array.isArray(rawLogs)
+              ? rawLogs
+              : (rawLogs && typeof rawLogs === 'object' ? Object.values(rawLogs) : []);
+            setSessionLogs(safeLogs);
+            saveSessionLogs(safeLogs);
           }
-          if (cloudData.todos && Array.isArray(cloudData.todos)) {
-            setTodos(cloudData.todos);
-            saveTodos(cloudData.todos);
+          if (cloudData.todos) {
+            const rawTodos = cloudData.todos;
+            const safeTodos: TodoItem[] = Array.isArray(rawTodos)
+              ? rawTodos
+              : (rawTodos && typeof rawTodos === 'object' ? Object.values(rawTodos) : []);
+            setTodos(safeTodos);
+            saveTodos(safeTodos);
           }
           if (cloudData.dailyTasks && typeof cloudData.dailyTasks === 'object') {
             saveAllDailyTasks(cloudData.dailyTasks);
             const todayTasks = cloudData.dailyTasks[currentDateStr];
             if (todayTasks) {
-              setTasks(todayTasks);
+              const safeTodayTasks: TaskItem[] = Array.isArray(todayTasks)
+                ? todayTasks
+                : (todayTasks && typeof todayTasks === 'object' ? Object.values(todayTasks) : []);
+              setTasks(safeTodayTasks);
             }
           }
           if (cloudData.onboardingCompleted !== undefined) {

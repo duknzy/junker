@@ -38,9 +38,12 @@ export const MilestonesAndMacro: React.FC<MilestonesAndMacroProps> = ({
   const [newMacroGoal, setNewMacroGoal] = useState<string>('');
   const [showAddMacroTask, setShowAddMacroTask] = useState<boolean>(false);
 
+  const safeMilestones = Array.isArray(macroPlan?.milestones) ? macroPlan.milestones : [];
+  const safeMacroTasks = Array.isArray(macroPlan?.macroTasks) ? macroPlan.macroTasks : [];
+
   // Toggle Milestone
   const toggleMilestone = (id: string) => {
-    const updated = macroPlan.milestones.map((m) => {
+    const updated = safeMilestones.map((m) => {
       if (m.id === id) {
         const nextDone = !m.done;
         if (nextDone) {
@@ -51,12 +54,12 @@ export const MilestonesAndMacro: React.FC<MilestonesAndMacroProps> = ({
       }
       return m;
     });
-    onUpdateMacroPlan({ ...macroPlan, milestones: updated });
+    onUpdateMacroPlan({ ...macroPlan, milestones: updated, macroTasks: safeMacroTasks });
   };
 
   const deleteMilestone = (id: string) => {
-    const updated = macroPlan.milestones.filter((m) => m.id !== id);
-    onUpdateMacroPlan({ ...macroPlan, milestones: updated });
+    const updated = safeMilestones.filter((m) => m.id !== id);
+    onUpdateMacroPlan({ ...macroPlan, milestones: updated, macroTasks: safeMacroTasks });
   };
 
   const handleAddMilestone = (e: React.FormEvent) => {
@@ -71,10 +74,10 @@ export const MilestonesAndMacro: React.FC<MilestonesAndMacroProps> = ({
       done: false,
     };
 
-    const updated = [...macroPlan.milestones, newM].sort(
+    const updated = [...safeMilestones, newM].sort(
       (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
     );
-    onUpdateMacroPlan({ ...macroPlan, milestones: updated });
+    onUpdateMacroPlan({ ...macroPlan, milestones: updated, macroTasks: safeMacroTasks });
     setNewMileTitle('');
     setNewMileDate('');
     setNewMileContent('');
@@ -83,7 +86,7 @@ export const MilestonesAndMacro: React.FC<MilestonesAndMacroProps> = ({
 
   // Toggle Macro Task
   const toggleMacroTask = (id: string) => {
-    const updated = macroPlan.macroTasks.map((t) => {
+    const updated = safeMacroTasks.map((t) => {
       if (t.id === id) {
         const nextDone = !t.done;
         if (nextDone) {
@@ -94,12 +97,12 @@ export const MilestonesAndMacro: React.FC<MilestonesAndMacroProps> = ({
       }
       return t;
     });
-    onUpdateMacroPlan({ ...macroPlan, macroTasks: updated });
+    onUpdateMacroPlan({ ...macroPlan, macroTasks: updated, milestones: safeMilestones });
   };
 
   const deleteMacroTask = (id: string) => {
-    const updated = macroPlan.macroTasks.filter((t) => t.id !== id);
-    onUpdateMacroPlan({ ...macroPlan, macroTasks: updated });
+    const updated = safeMacroTasks.filter((t) => t.id !== id);
+    onUpdateMacroPlan({ ...macroPlan, macroTasks: updated, milestones: safeMilestones });
   };
 
   const handleAddMacroTask = (e: React.FormEvent) => {
@@ -114,18 +117,20 @@ export const MilestonesAndMacro: React.FC<MilestonesAndMacroProps> = ({
       done: false,
     };
 
-    onUpdateMacroPlan({ ...macroPlan, macroTasks: [...macroPlan.macroTasks, newT] });
+    onUpdateMacroPlan({ ...macroPlan, macroTasks: [...safeMacroTasks, newT], milestones: safeMilestones });
     setNewMacroGoal('');
     setNewMacroCategory('');
     setShowAddMacroTask(false);
   };
 
-  const completedMacroTasks = macroPlan.macroTasks.filter((t) => t.done).length;
-  const totalMacroTasks = macroPlan.macroTasks.length;
+  const completedMacroTasks = safeMacroTasks.filter((t) => t.done).length;
+  const totalMacroTasks = safeMacroTasks.length;
   const macroTaskPercent = totalMacroTasks > 0 ? Math.round((completedMacroTasks / totalMacroTasks) * 100) : 0;
 
-  const seasonProgressRate = macroPlan.totalTargetHours > 0
-    ? Math.min(100, Math.round((macroPlan.completedHours / macroPlan.totalTargetHours) * 100))
+  const totalTargetHours = macroPlan?.totalTargetHours || 300;
+  const completedHours = macroPlan?.completedHours || 0;
+  const seasonProgressRate = totalTargetHours > 0
+    ? Math.min(100, Math.round((completedHours / totalTargetHours) * 100))
     : 0;
 
   return (
@@ -241,12 +246,12 @@ export const MilestonesAndMacro: React.FC<MilestonesAndMacroProps> = ({
         )}
 
         <div className="space-y-2">
-          {macroPlan.milestones.length === 0 ? (
+          {safeMilestones.length === 0 ? (
             <div className="text-center py-5 text-slate-500 text-xs sm:text-sm border border-dashed border-slate-800/80 rounded-lg font-sans">
               まだチェックポイントはありません。「ADD_MILESTONE」から模試や本番日程を登録できます。
             </div>
           ) : (
-            macroPlan.milestones.map((mile) => (
+            safeMilestones.map((mile) => (
               <div
                 key={mile.id}
                 className={`flex items-center justify-between p-2.5 rounded-lg border transition-all ${
@@ -384,12 +389,12 @@ export const MilestonesAndMacro: React.FC<MilestonesAndMacroProps> = ({
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[300px] overflow-y-auto pr-1">
-          {macroPlan.macroTasks.length === 0 ? (
+          {safeMacroTasks.length === 0 ? (
             <div className="col-span-2 text-center py-6 text-slate-500 text-xs sm:text-sm border border-dashed border-slate-800/80 rounded-lg font-sans">
               登録された教材・目標はありません。「📚 教材マネージャー」から参考書を登録してください。
             </div>
           ) : (
-            macroPlan.macroTasks.map((t) => {
+            safeMacroTasks.map((t) => {
               const meta = SUBJECT_METAS[t.subject] || SUBJECT_METAS.math;
               return (
                 <div

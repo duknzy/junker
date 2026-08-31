@@ -63,12 +63,14 @@ export const AnalysisView: React.FC<AnalysisViewProps> = ({ logs, onAddManualLog
   const trendChartInstance = useRef<ChartJS | null>(null);
   const doughnutChartInstance = useRef<ChartJS | null>(null);
 
+  const safeLogs = Array.isArray(logs) ? logs : [];
+
   // Filter logs within selected period
   const cutoffTime = Date.now() - periodDays * 86400000;
-  const filteredLogs = logs.filter((l) => new Date(l.dateStr).getTime() >= cutoffTime - 86400000);
+  const filteredLogs = safeLogs.filter((l) => new Date(l.dateStr).getTime() >= cutoffTime - 86400000);
 
   // Summary Metrics
-  const totalMinutes = filteredLogs.reduce((acc, l) => acc + l.durationMinutes, 0);
+  const totalMinutes = filteredLogs.reduce((acc, l) => acc + (l.durationMinutes || 0), 0);
   const totalHours = (totalMinutes / 60).toFixed(1);
   const avgDailyHours = (totalMinutes / 60 / periodDays).toFixed(1);
   
@@ -96,8 +98,8 @@ export const AnalysisView: React.FC<AnalysisViewProps> = ({ logs, onAddManualLog
         const monthDay = `${d.getMonth() + 1}/${d.getDate()}`;
         labels.push(monthDay);
 
-        const dayLogs = logs.filter((l) => l.dateStr === dStr);
-        const dayMinutes = dayLogs.reduce((acc, l) => acc + l.durationMinutes, 0);
+        const dayLogs = safeLogs.filter((l) => l.dateStr === dStr);
+        const dayMinutes = dayLogs.reduce((acc, l) => acc + (l.durationMinutes || 0), 0);
         dataHours.push(Number((dayMinutes / 60).toFixed(1)));
       }
 

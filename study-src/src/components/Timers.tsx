@@ -212,9 +212,12 @@ export const Timers: React.FC<TimersProps> = ({
     setCdSecondsLeft(cdInitialMinutes * 60);
   };
 
-  const currentPomoBooks = macroTasks.filter((t) => t.subject === selectedSubject);
-  const currentSwBooks = macroTasks.filter((t) => t.subject === swSubject);
-  const currentCdBooks = macroTasks.filter((t) => t.subject === cdSubject);
+  const safeMacroTasks = Array.isArray(macroTasks) ? macroTasks : [];
+  const safeTodos = Array.isArray(todos) ? todos : [];
+
+  const currentPomoBooks = safeMacroTasks.filter((t) => t.subject === selectedSubject);
+  const currentSwBooks = safeMacroTasks.filter((t) => t.subject === swSubject);
+  const currentCdBooks = safeMacroTasks.filter((t) => t.subject === cdSubject);
 
   return (
     <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-4 shadow-lg text-slate-200">
@@ -350,12 +353,12 @@ export const Timers: React.FC<TimersProps> = ({
             </div>
 
             {/* Quick textbook & todo buttons */}
-            {(currentPomoBooks.length > 0 || todos.filter((t) => !t.done).length > 0) && (
+            {(currentPomoBooks.length > 0 || safeTodos.filter((t) => !t.done).length > 0) && (
               <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
-                {todos.filter((t) => !t.done).length > 0 && (
+                {safeTodos.filter((t) => !t.done).length > 0 && (
                   <>
                     <span className="text-[11px] text-emerald-400 font-mono whitespace-nowrap">やる事To-Do:</span>
-                    {todos
+                    {safeTodos
                       .filter((t) => !t.done)
                       .slice(0, 4)
                       .map((t) => (
@@ -475,12 +478,12 @@ export const Timers: React.FC<TimersProps> = ({
             </div>
 
             {/* Quick textbook & todo buttons */}
-            {(currentSwBooks.length > 0 || todos.filter((t) => !t.done).length > 0) && (
+            {(currentSwBooks.length > 0 || safeTodos.filter((t) => !t.done).length > 0) && (
               <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
-                {todos.filter((t) => !t.done).length > 0 && (
+                {safeTodos.filter((t) => !t.done).length > 0 && (
                   <>
                     <span className="text-[11px] text-emerald-400 font-mono whitespace-nowrap">やる事To-Do:</span>
-                    {todos
+                    {safeTodos
                       .filter((t) => !t.done)
                       .slice(0, 4)
                       .map((t) => (

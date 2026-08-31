@@ -79,6 +79,7 @@ export const TodoListSection: React.FC<TodoListSectionProps> = ({
   const [scheduleDuration, setScheduleDuration] = useState<number>(45);
 
   const todayStr = getTodayDateStr();
+  const safeTodos = Array.isArray(todos) ? todos : [];
 
   // Add new todo
   const handleAddTodo = (e?: React.FormEvent) => {
@@ -96,7 +97,7 @@ export const TodoListSection: React.FC<TodoListSectionProps> = ({
       createdAt: new Date().toISOString(),
     };
 
-    const updated = [newTodo, ...todos];
+    const updated = [newTodo, ...safeTodos];
     onUpdateTodos(updated);
     audioSynth.playTick();
     setNewText('');
@@ -104,10 +105,10 @@ export const TodoListSection: React.FC<TodoListSectionProps> = ({
 
   // Toggle todo done
   const handleToggleDone = (id: string) => {
-    const target = todos.find((t) => t.id === id);
+    const target = safeTodos.find((t) => t.id === id);
     const willBeDone = target ? !target.done : false;
 
-    const updated = todos.map((t) => {
+    const updated = safeTodos.map((t) => {
       if (t.id === id) {
         return { ...t, done: willBeDone };
       }
@@ -134,7 +135,7 @@ export const TodoListSection: React.FC<TodoListSectionProps> = ({
 
   // Delete single todo
   const handleDeleteTodo = (id: string) => {
-    const updated = todos.filter((t) => t.id !== id);
+    const updated = safeTodos.filter((t) => t.id !== id);
     onUpdateTodos(updated);
     audioSynth.playTick();
   };
@@ -142,7 +143,7 @@ export const TodoListSection: React.FC<TodoListSectionProps> = ({
   // Clear all completed todos
   const handleClearCompleted = () => {
     if (window.confirm('完了済みのTo-Doタスクをすべて削除しますか？')) {
-      const updated = todos.filter((t) => !t.done);
+      const updated = safeTodos.filter((t) => !t.done);
       onUpdateTodos(updated);
       audioSynth.playTick();
     }
@@ -200,7 +201,7 @@ export const TodoListSection: React.FC<TodoListSectionProps> = ({
 
   // Filtered todos
   const filteredTodos = useMemo(() => {
-    return todos.filter((t) => {
+    return safeTodos.filter((t) => {
       // Tab filter
       if (filterTab === 'active' && t.done) return false;
       if (filterTab === 'completed' && !t.done) return false;
@@ -222,11 +223,11 @@ export const TodoListSection: React.FC<TodoListSectionProps> = ({
 
       return true;
     });
-  }, [todos, filterTab, filterPriority, filterSubject, searchQuery]);
+  }, [safeTodos, filterTab, filterPriority, filterSubject, searchQuery]);
 
   // Statistics
-  const totalCount = todos.length;
-  const completedCount = todos.filter((t) => t.done).length;
+  const totalCount = safeTodos.length;
+  const completedCount = safeTodos.filter((t) => t.done).length;
   const activeCount = totalCount - completedCount;
   const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 

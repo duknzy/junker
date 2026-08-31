@@ -56,16 +56,9 @@ export function getFallbackCloudUid(): string {
   }
 }
 
-// Ensure Auth or Anonymous sign-in
+// Ensure Auth
 export async function ensureFirebaseAuth(): Promise<User | null> {
-  if (auth.currentUser) return auth.currentUser;
-  try {
-    const cred = await signInAnonymously(auth);
-    return cred.user;
-  } catch (err) {
-    console.warn('Anonymous auth unavailable, using persistent fallback cloud UID:', err);
-    return null;
-  }
+  return auth.currentUser;
 }
 
 // Google Sign In

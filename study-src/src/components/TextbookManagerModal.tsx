@@ -30,7 +30,8 @@ export const TextbookManagerModal: React.FC<TextbookManagerModalProps> = ({
   const [bookName, setBookName] = useState<string>('');
   const [goalScope, setGoalScope] = useState<string>('');
 
-  const currentSubjectTasks = macroTasks.filter((t) => t.subject === selectedSubject);
+  const safeMacroTasks = Array.isArray(macroTasks) ? macroTasks : [];
+  const currentSubjectTasks = safeMacroTasks.filter((t) => t.subject === selectedSubject);
 
   const handleAdd = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -44,7 +45,7 @@ export const TextbookManagerModal: React.FC<TextbookManagerModalProps> = ({
       done: false,
     };
 
-    onUpdateMacroTasks([...macroTasks, newTask]);
+    onUpdateMacroTasks([...safeMacroTasks, newTask]);
     setBookName('');
     setGoalScope('');
     audioSynth.playTick();
@@ -58,7 +59,7 @@ export const TextbookManagerModal: React.FC<TextbookManagerModalProps> = ({
   };
 
   const toggleDone = (id: string) => {
-    const updated = macroTasks.map((t) => {
+    const updated = safeMacroTasks.map((t) => {
       if (t.id === id) {
         const nextDone = !t.done;
         if (nextDone) audioSynth.playChime();
@@ -70,7 +71,7 @@ export const TextbookManagerModal: React.FC<TextbookManagerModalProps> = ({
   };
 
   const handleDelete = (id: string) => {
-    onUpdateMacroTasks(macroTasks.filter((t) => t.id !== id));
+    onUpdateMacroTasks(safeMacroTasks.filter((t) => t.id !== id));
     audioSynth.playTick();
   };
 

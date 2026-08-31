@@ -173,14 +173,30 @@ export function loadMacroPlan(): MacroPlan {
     const raw = localStorage.getItem(STORAGE_KEYS.MACRO_PLAN);
     if (raw) {
       const parsed = JSON.parse(raw);
-      // Clean legacy mock macroTasks if they match the old seed IDs
-      if (Array.isArray(parsed.macroTasks)) {
-        parsed.macroTasks = parsed.macroTasks.filter((t: MacroTask) => !t.id?.match(/^m[1-9]$/));
+      let macroTasks: MacroTask[] = [];
+      if (Array.isArray(parsed?.macroTasks)) {
+        macroTasks = parsed.macroTasks.filter((t: MacroTask) => !t.id?.match(/^m[1-9]$/));
+      } else if (parsed?.macroTasks && typeof parsed.macroTasks === 'object') {
+        macroTasks = Object.values(parsed.macroTasks) as MacroTask[];
       }
-      if (Array.isArray(parsed.milestones)) {
-        parsed.milestones = parsed.milestones.filter((m: Milestone) => !m.id?.match(/^mile-[1-3]$/));
+
+      let milestones: Milestone[] = [];
+      if (Array.isArray(parsed?.milestones)) {
+        milestones = parsed.milestones.filter((m: Milestone) => !m.id?.match(/^mile-[1-3]$/));
+      } else if (parsed?.milestones && typeof parsed.milestones === 'object') {
+        milestones = Object.values(parsed.milestones) as Milestone[];
       }
-      return { ...DEFAULT_MACRO_PLAN, ...parsed };
+
+      return {
+        ...DEFAULT_MACRO_PLAN,
+        ...parsed,
+        milestones,
+        macroTasks,
+        templates: {
+          phase1: { ...DEFAULT_PHASE1_TEMPLATE, ...(parsed?.templates?.phase1 || {}) },
+          phase2: { ...DEFAULT_PHASE2_TEMPLATE, ...(parsed?.templates?.phase2 || {}) },
+        },
+      };
     }
   } catch (e) {
     console.error('Failed to load macro plan', e);
@@ -190,7 +206,13 @@ export function loadMacroPlan(): MacroPlan {
 
 export function saveMacroPlan(plan: MacroPlan): void {
   try {
-    localStorage.setItem(STORAGE_KEYS.MACRO_PLAN, JSON.stringify(plan));
+    const sanitized: MacroPlan = {
+      ...DEFAULT_MACRO_PLAN,
+      ...plan,
+      milestones: Array.isArray(plan?.milestones) ? plan.milestones : [],
+      macroTasks: Array.isArray(plan?.macroTasks) ? plan.macroTasks : [],
+    };
+    localStorage.setItem(STORAGE_KEYS.MACRO_PLAN, JSON.stringify(sanitized));
   } catch (e) {
     console.error('Failed to save macro plan', e);
   }
@@ -423,7 +445,10 @@ export function loadTodos(): TodoItem[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.TODOS);
     if (raw !== null) {
-      return JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+      if (parsed && typeof parsed === 'object') return Object.values(parsed) as TodoItem[];
+      return [];
     } else {
       const defaults = getDefaultSampleTodos();
       saveTodos(defaults);
@@ -437,7 +462,8 @@ export function loadTodos(): TodoItem[] {
 
 export function saveTodos(todos: TodoItem[]): void {
   try {
-    localStorage.setItem(STORAGE_KEYS.TODOS, JSON.stringify(todos));
+    const safeTodos = Array.isArray(todos) ? todos : (todos && typeof todos === 'object' ? Object.values(todos) : []);
+    localStorage.setItem(STORAGE_KEYS.TODOS, JSON.stringify(safeTodos));
   } catch (e) {
     console.error('Failed to save todos', e);
   }
@@ -453,7 +479,12 @@ export function getAllDailyTasks(): Record<string, TaskItem[]> {
         const val = localStorage.getItem(key);
         if (val) {
           try {
-            dailyTasksMap[dateStr] = JSON.parse(val);
+            const parsed = JSON.parse(val);
+            if (Array.isArray(parsed)) {
+              dailyTasksMap[dateStr] = parsed;
+            } else if (parsed && typeof parsed === 'object') {
+              dailyTasksMap[dateStr] = Object.values(parsed) as TaskItem[];
+            }
           } catch {
             // ignore invalid parse
           }
@@ -470,12 +501,12 @@ export function saveAllDailyTasks(tasksMap: Record<string, TaskItem[]>): void {
   if (!tasksMap || typeof tasksMap !== 'object') return;
   try {
     Object.keys(tasksMap).forEach((dateStr) => {
-      if (Array.isArray(tasksMap[dateStr])) {
-        localStorage.setItem(
-          STORAGE_KEYS.DAILY_TASKS_PREFIX + dateStr,
-          JSON.stringify(tasksMap[dateStr])
-        );
-      }
+      const rawTasks = tasksMap[dateStr];
+      const safeTasks = Array.isArray(rawTasks) ? rawTasks : (rawTasks && typeof rawTasks === 'object' ? Object.values(rawTasks) : []);
+      localStorage.setItem(
+        STORAGE_KEYS.DAILY_TASKS_PREFIX + dateStr,
+        JSON.stringify(safeTasks)
+      );
     });
   } catch (e) {
     console.error('Failed to save daily tasks map', e);
@@ -502,11 +533,13 @@ export function saveFullStudyState(data: StudyCloudData): void {
   if (data.macroPlan) {
     saveMacroPlan(data.macroPlan);
   }
-  if (data.sessionLogs && Array.isArray(data.sessionLogs)) {
-    saveSessionLogs(data.sessionLogs);
+  if (data.sessionLogs) {
+    const logs = Array.isArray(data.sessionLogs) ? data.sessionLogs : (typeof data.sessionLogs === 'object' ? Object.values(data.sessionLogs) : []);
+    saveSessionLogs(logs as StudySessionLog[]);
   }
-  if (data.todos && Array.isArray(data.todos)) {
-    saveTodos(data.todos);
+  if (data.todos) {
+    const todos = Array.isArray(data.todos) ? data.todos : (typeof data.todos === 'object' ? Object.values(data.todos) : []);
+    saveTodos(todos as TodoItem[]);
   }
   if (data.dailyTasks && typeof data.dailyTasks === 'object') {
     saveAllDailyTasks(data.dailyTasks);

@@ -58,7 +58,8 @@ export const GlobalNav: React.FC<GlobalNavProps> = ({
   const [volume, setVolume] = useState<number>(0.5);
   const [showAudioMenu, setShowAudioMenu] = useState<boolean>(false);
 
-  const activeTodoCount = todos.filter((t) => !t.done).length;
+  const safeTodos = Array.isArray(todos) ? todos : [];
+  const activeTodoCount = safeTodos.filter((t) => !t.done).length;
 
   const handleSoundSelect = (type: AmbientSoundType) => {
     if (ambientSound === type) {
