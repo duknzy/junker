@@ -131,3 +131,15 @@ export interface TodoItem {
   estimatedMinutes?: number;
 }
 
+export interface StudyCloudData {
+  userProfile?: UserProfile;
+  macroPlan?: MacroPlan;
+  sessionLogs?: StudySessionLog[];
+  todos?: TodoItem[];
+  dailyTasks?: Record<string, TaskItem[]>;
+  onboardingCompleted?: boolean;
+  lastUpdated?: number;
+}
+
+export type CloudSyncStatus = 'idle' | 'syncing' | 'synced' | 'error';
+

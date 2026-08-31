@@ -208,11 +208,7 @@ export const GlobalNav: React.FC<GlobalNavProps> = ({
           >
             <ListTodo className="w-3.5 h-3.5" />
             <span>TODO: {activeTodoCount > 0 ? `${activeTodoCount}件 残り` : 'ALL DONE!'}</span>
-            {currentUser ? (
-              <span className="text-[10px] text-emerald-400 font-bold ml-1">☁️ 同期中</span>
-            ) : (
-              <span className="text-[10px] text-slate-400 ml-1">💾 ローカル</span>
-            )}
+            <span className="text-[10px] text-emerald-400 font-bold ml-1">☁️ Firebase保存中</span>
           </div>
 
           {/* Live Stopwatch HUD Badge */}
@@ -352,6 +348,33 @@ export const GlobalNav: React.FC<GlobalNavProps> = ({
             <Maximize2 className="w-3.5 h-3.5" />
             <span>DESK_MODE</span>
           </button>
+
+          {/* Cloud Sync Status / Login Button */}
+          {currentUser ? (
+            <div className="flex items-center gap-1.5 bg-slate-900 border border-emerald-700/60 px-2.5 py-1.5 rounded-md text-xs font-mono flex-shrink-0">
+              <Cloud className={`w-3.5 h-3.5 ${isSyncing ? 'text-blue-400 animate-spin' : 'text-emerald-400'}`} />
+              <span className="text-emerald-400 font-bold hidden xl:inline">
+                {isSyncing ? 'SYNCING...' : 'CLOUD_SAVED'}
+              </span>
+              <button
+                onClick={onLogout}
+                className="text-slate-400 hover:text-red-400 ml-1 transition-colors"
+                title="ログアウト"
+              >
+                <LogOut className="w-3 h-3" />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={onLoginWithGoogle}
+              disabled={isSyncing}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-900 border border-blue-600/50 hover:bg-blue-950/50 text-blue-300 rounded-md text-xs font-mono font-bold transition-all flex-shrink-0"
+              title="Googleアカウントでクラウド同期"
+            >
+              <Cloud className={`w-3.5 h-3.5 ${isSyncing ? 'text-blue-400 animate-spin' : 'text-blue-400'}`} />
+              <span className="hidden xl:inline">{isSyncing ? '同期中...' : 'Google同期'}</span>
+            </button>
+          )}
 
           {/* Driver profile chip */}
           <button

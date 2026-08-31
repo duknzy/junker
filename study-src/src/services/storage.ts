@@ -4,6 +4,7 @@ import {
   MacroTask,
   Milestone,
   PaddockUserStatus,
+  StudyCloudData,
   StudySessionLog,
   TaskItem,
   TodoItem,
@@ -112,8 +113,16 @@ const ONBOARDING_KEY = 'studyclock_onboarding_completed';
 export function isOnboardingCompleted(): boolean {
   try {
     const val = localStorage.getItem(ONBOARDING_KEY);
-    const profile = loadUserProfile();
-    return val === 'true' && Boolean(profile.name && profile.name.trim().length > 0 && profile.name !== 'Telemetry Driver');
+    if (val === 'true') return true;
+    const rawProfile = localStorage.getItem(STORAGE_KEYS.USER_PROFILE);
+    if (rawProfile) {
+      const parsed = JSON.parse(rawProfile);
+      if (parsed && parsed.name && parsed.name.trim() !== '' && parsed.name !== 'Telemetry Driver') {
+        localStorage.setItem(ONBOARDING_KEY, 'true');
+        return true;
+      }
+    }
+    return false;
   } catch {
     return false;
   }
@@ -433,4 +442,78 @@ export function saveTodos(todos: TodoItem[]): void {
     console.error('Failed to save todos', e);
   }
 }
+
+export function getAllDailyTasks(): Record<string, TaskItem[]> {
+  const dailyTasksMap: Record<string, TaskItem[]> = {};
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(STORAGE_KEYS.DAILY_TASKS_PREFIX)) {
+        const dateStr = key.replace(STORAGE_KEYS.DAILY_TASKS_PREFIX, '');
+        const val = localStorage.getItem(key);
+        if (val) {
+          try {
+            dailyTasksMap[dateStr] = JSON.parse(val);
+          } catch {
+            // ignore invalid parse
+          }
+        }
+      }
+    }
+  } catch (e) {
+    console.error('Failed to get all daily tasks', e);
+  }
+  return dailyTasksMap;
+}
+
+export function saveAllDailyTasks(tasksMap: Record<string, TaskItem[]>): void {
+  if (!tasksMap || typeof tasksMap !== 'object') return;
+  try {
+    Object.keys(tasksMap).forEach((dateStr) => {
+      if (Array.isArray(tasksMap[dateStr])) {
+        localStorage.setItem(
+          STORAGE_KEYS.DAILY_TASKS_PREFIX + dateStr,
+          JSON.stringify(tasksMap[dateStr])
+        );
+      }
+    });
+  } catch (e) {
+    console.error('Failed to save daily tasks map', e);
+  }
+}
+
+export function loadFullStudyState(): StudyCloudData {
+  return {
+    userProfile: loadUserProfile(),
+    macroPlan: loadMacroPlan(),
+    sessionLogs: loadSessionLogs(),
+    todos: loadTodos(),
+    dailyTasks: getAllDailyTasks(),
+    onboardingCompleted: isOnboardingCompleted(),
+    lastUpdated: Date.now(),
+  };
+}
+
+export function saveFullStudyState(data: StudyCloudData): void {
+  if (!data) return;
+  if (data.userProfile) {
+    saveUserProfile(data.userProfile);
+  }
+  if (data.macroPlan) {
+    saveMacroPlan(data.macroPlan);
+  }
+  if (data.sessionLogs && Array.isArray(data.sessionLogs)) {
+    saveSessionLogs(data.sessionLogs);
+  }
+  if (data.todos && Array.isArray(data.todos)) {
+    saveTodos(data.todos);
+  }
+  if (data.dailyTasks && typeof data.dailyTasks === 'object') {
+    saveAllDailyTasks(data.dailyTasks);
+  }
+  if (data.onboardingCompleted !== undefined) {
+    setOnboardingCompleted(Boolean(data.onboardingCompleted));
+  }
+}
+
 

@@ -29,6 +29,9 @@ import {
   isOnboardingCompleted,
   setOnboardingCompleted,
   clearAllDataAndRestartOnboarding,
+  getAllDailyTasks,
+  saveAllDailyTasks,
+  loadFullStudyState,
 } from './services/storage';
 import { GlobalNav } from './components/GlobalNav';
 import { ClockCanvas } from './components/ClockCanvas';
@@ -44,11 +47,18 @@ import { OnboardingModal } from './components/OnboardingModal';
 import { TextbookManagerModal } from './components/TextbookManagerModal';
 import { User } from 'firebase/auth';
 import {
+  ensureFirebaseAuth,
   onUserAuthStateChanged,
   loginWithGoogle,
   logoutUser,
+  getFallbackCloudUid,
+  saveStudyDataToCloud,
+  subscribeToCloudStudyData,
   saveTodosToCloud,
-  subscribeToCloudTodos,
+  saveDailyTasksToCloud,
+  saveMacroPlanToCloud,
+  saveUserProfileToCloud,
+  saveSessionLogsToCloud,
 } from './services/firebase';
 import { SUBJECT_METAS } from './constants/subjects';
 import { audioSynth } from './services/audio';
@@ -160,42 +170,72 @@ export default function App() {
     });
   }, []);
 
-  // Firebase Auth & Realtime Cloud Todo Listener
+  // Helper to get active user/device UID
+  const getActiveUid = () => currentUser?.uid || getFallbackCloudUid();
+
+  // Firebase Auth & Realtime Cloud Full Study State Listener
   useEffect(() => {
-    let unsubscribeTodos: (() => void) | null = null;
+    let unsubscribeCloud: (() => void) | null = null;
+
+    // Ensure Firebase auth/anonymous session
+    ensureFirebaseAuth().catch((err) => console.warn('Firebase auto auth:', err));
 
     const unsubscribeAuth = onUserAuthStateChanged((user) => {
       setCurrentUser(user);
-      if (user) {
-        setIsSyncing(true);
-        // Subscribe to real-time todos from Firebase Cloud
-        unsubscribeTodos = subscribeToCloudTodos(user.uid, (cloudTodos, exists) => {
-          setIsSyncing(false);
-          if (exists) {
-            setTodos(cloudTodos || []);
-            saveTodos(cloudTodos || []);
-          } else {
-            // Node does not exist yet on cloud (first time sync). Upload local todos if any.
-            const localTodos = loadTodos();
-            if (localTodos && localTodos.length > 0) {
-              saveTodosToCloud(user.uid, localTodos);
+      const activeUid = user?.uid || getFallbackCloudUid();
+
+      if (unsubscribeCloud) {
+        unsubscribeCloud();
+        unsubscribeCloud = null;
+      }
+
+      setIsSyncing(true);
+      unsubscribeCloud = subscribeToCloudStudyData(activeUid, (cloudData, exists) => {
+        setIsSyncing(false);
+        if (exists && cloudData) {
+          // Hydrate local cache and React states from Firebase Cloud
+          if (cloudData.userProfile) {
+            setUserProfile(cloudData.userProfile);
+            saveUserProfile(cloudData.userProfile);
+          }
+          if (cloudData.macroPlan) {
+            setMacroPlan(cloudData.macroPlan);
+            saveMacroPlan(cloudData.macroPlan);
+          }
+          if (cloudData.sessionLogs && Array.isArray(cloudData.sessionLogs)) {
+            setSessionLogs(cloudData.sessionLogs);
+            saveSessionLogs(cloudData.sessionLogs);
+          }
+          if (cloudData.todos && Array.isArray(cloudData.todos)) {
+            setTodos(cloudData.todos);
+            saveTodos(cloudData.todos);
+          }
+          if (cloudData.dailyTasks && typeof cloudData.dailyTasks === 'object') {
+            saveAllDailyTasks(cloudData.dailyTasks);
+            const todayTasks = cloudData.dailyTasks[currentDateStr];
+            if (todayTasks) {
+              setTasks(todayTasks);
             }
           }
-        });
-      } else {
-        if (unsubscribeTodos) {
-          unsubscribeTodos();
-          unsubscribeTodos = null;
+          if (cloudData.onboardingCompleted !== undefined) {
+            setOnboardingCompleted(Boolean(cloudData.onboardingCompleted));
+            setShowOnboarding(!cloudData.onboardingCompleted);
+          }
+        } else {
+          // Node does not exist yet on cloud (first time sync). Upload current local snapshot.
+          const currentLocal = loadFullStudyState();
+          saveStudyDataToCloud(activeUid, currentLocal).catch((e) =>
+            console.error('Initial cloud upload error:', e)
+          );
         }
-        setIsSyncing(false);
-      }
+      });
     });
 
     return () => {
       unsubscribeAuth();
-      if (unsubscribeTodos) unsubscribeTodos();
+      if (unsubscribeCloud) unsubscribeCloud();
     };
-  }, []);
+  }, [currentDateStr]);
 
   // Keyboard shortcut listener ('F' for desk mode, 'Esc' for closing overlay)
   useEffect(() => {
@@ -222,6 +262,7 @@ export default function App() {
   const handleUpdateTasks = (updatedTasks: TaskItem[]) => {
     setTasks(updatedTasks);
     saveTasksForDate(currentDateStr, updatedTasks);
+    saveDailyTasksToCloud(getActiveUid(), currentDateStr, updatedTasks);
 
     let currentLogs = loadSessionLogs();
     let logsChanged = false;
@@ -281,6 +322,7 @@ export default function App() {
     if (logsChanged) {
       saveSessionLogs(currentLogs);
       setSessionLogs(currentLogs);
+      saveSessionLogsToCloud(getActiveUid(), currentLogs);
     }
 
     // 累計勉強時間の再計算と更新
@@ -291,18 +333,17 @@ export default function App() {
     };
     setMacroPlan(updatedPlan);
     saveMacroPlan(updatedPlan);
+    saveMacroPlanToCloud(getActiveUid(), updatedPlan);
   };
 
   // Update To-Do items and persist (LocalStorage + Firebase Cloud)
   const handleUpdateTodos = (updatedTodos: TodoItem[]) => {
     setTodos(updatedTodos);
     saveTodos(updatedTodos);
-    if (currentUser) {
-      setIsSyncing(true);
-      saveTodosToCloud(currentUser.uid, updatedTodos)
-        .catch((err) => console.error('Cloud save failed:', err))
-        .finally(() => setIsSyncing(false));
-    }
+    setIsSyncing(true);
+    saveTodosToCloud(getActiveUid(), updatedTodos)
+      .catch((err) => console.error('Cloud save failed:', err))
+      .finally(() => setIsSyncing(false));
   };
 
   // Google Login / Logout Handlers
@@ -312,6 +353,9 @@ export default function App() {
       const user = await loginWithGoogle();
       if (user) {
         audioSynth.playChime();
+        // Sync local data to new logged-in user cloud account
+        const currentLocal = loadFullStudyState();
+        await saveStudyDataToCloud(user.uid, currentLocal);
       }
     } catch (err) {
       alert('Googleログインに失敗しました: ' + (err as Error).message);
@@ -361,12 +405,14 @@ export default function App() {
   const handleUpdateMacroPlan = (newPlan: MacroPlan) => {
     setMacroPlan(newPlan);
     saveMacroPlan(newPlan);
+    saveMacroPlanToCloud(getActiveUid(), newPlan);
   };
 
   // Update User Profile
   const handleSaveProfile = (newProfile: UserProfile) => {
     setUserProfile(newProfile);
     saveUserProfile(newProfile);
+    saveUserProfileToCloud(getActiveUid(), newProfile);
   };
 
   // Commit timer result into tasks & session logs
@@ -517,6 +563,11 @@ export default function App() {
     saveMacroPlan(newPlan);
     setOnboardingCompleted(true);
     setShowOnboarding(false);
+    saveStudyDataToCloud(getActiveUid(), {
+      userProfile: newProfile,
+      macroPlan: newPlan,
+      onboardingCompleted: true,
+    }).catch((e) => console.error('Failed to save onboarding to cloud:', e));
   };
 
   // Update Macro Tasks from Textbook modal
