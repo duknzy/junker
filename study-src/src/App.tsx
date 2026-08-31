@@ -32,6 +32,9 @@ import {
   getAllDailyTasks,
   saveAllDailyTasks,
   loadFullStudyState,
+  DEFAULT_MACRO_PLAN,
+  DEFAULT_PHASE1_TEMPLATE,
+  DEFAULT_PHASE2_TEMPLATE,
 } from './services/storage';
 import { GlobalNav } from './components/GlobalNav';
 import { ClockCanvas } from './components/ClockCanvas';
@@ -671,8 +674,8 @@ export default function App() {
               <div id="telemetry-timers-card">
                 <Timers
                   onCommitTimerResult={handleCommitTimerResult}
-                  macroTasks={macroPlan.macroTasks}
-                  todos={todos}
+                  macroTasks={Array.isArray(macroPlan?.macroTasks) ? macroPlan.macroTasks : []}
+                  todos={Array.isArray(todos) ? todos : []}
                   selectedTodoForTimer={selectedTodoForTimer}
                   swSeconds={swSeconds}
                   swIsRunning={swIsRunning}
@@ -692,17 +695,17 @@ export default function App() {
             <div className="lg:col-span-7 space-y-4">
               <TimelineSection
                 currentDateStr={currentDateStr}
-                tasks={tasks}
+                tasks={Array.isArray(tasks) ? tasks : []}
                 onDateChange={handleDateChange}
                 onUpdateTasks={handleUpdateTasks}
                 onDeployTemplate={handleDeployTemplate}
-                phase1Config={macroPlan.templates.phase1}
-                phase2Config={macroPlan.templates.phase2}
+                phase1Config={macroPlan?.templates?.phase1 || DEFAULT_PHASE1_TEMPLATE}
+                phase2Config={macroPlan?.templates?.phase2 || DEFAULT_PHASE2_TEMPLATE}
               />
 
               {/* To-Do Action Matrix (with Firebase Cloud Sync) */}
               <TodoListSection
-                todos={todos}
+                todos={Array.isArray(todos) ? todos : []}
                 onUpdateTodos={handleUpdateTodos}
                 onSelectTodoForTimer={handleSelectTodoForTimer}
                 onAddTodoToTimeline={handleAddTodoToTimeline}
@@ -713,9 +716,9 @@ export default function App() {
               />
 
               <MilestonesAndMacro
-                macroPlan={macroPlan}
+                macroPlan={macroPlan || DEFAULT_MACRO_PLAN}
                 onUpdateMacroPlan={handleUpdateMacroPlan}
-                paddockDrivers={paddockDrivers}
+                paddockDrivers={paddockDrivers || []}
                 onOpenTextbookManager={() => setShowTextbookModal(true)}
               />
             </div>
@@ -725,7 +728,7 @@ export default function App() {
         {/* --- 2. ANALYSIS VIEW --- */}
         {currentTab === 'analysis' && (
           <AnalysisView
-            logs={sessionLogs}
+            logs={Array.isArray(sessionLogs) ? sessionLogs : []}
             onAddManualLog={handleAddManualLog}
             onDeleteLog={handleDeleteLog}
           />
@@ -734,7 +737,7 @@ export default function App() {
         {/* --- 3. GARAGE VIEW --- */}
         {currentTab === 'garage' && (
           <GarageView
-            macroPlan={macroPlan}
+            macroPlan={macroPlan || DEFAULT_MACRO_PLAN}
             onUpdateMacroPlan={handleUpdateMacroPlan}
             onResetAllData={handleResetAllData}
           />
@@ -745,8 +748,8 @@ export default function App() {
       {showDeskOverlay && (
         <FocusDeskOverlay
           currentTime={currentTime}
-          tasks={tasks}
-          todos={todos}
+          tasks={Array.isArray(tasks) ? tasks : []}
+          todos={Array.isArray(todos) ? todos : []}
           swSeconds={swSeconds}
           swIsRunning={swIsRunning}
           swSubject={swSubject}
@@ -755,7 +758,8 @@ export default function App() {
           onResetStopwatch={handleResetStopwatch}
           onCommitStopwatch={handleCommitStopwatch}
           onToggleTodo={(id) => {
-            const updated = todos.map((t) => {
+            const safe = Array.isArray(todos) ? todos : [];
+            const updated = safe.map((t) => {
               if (t.id === id) {
                 const nextDone = !t.done;
                 if (nextDone) audioSynth.playChime();
@@ -789,7 +793,7 @@ export default function App() {
       {/* Textbook Manager Modal */}
       {showTextbookModal && (
         <TextbookManagerModal
-          macroTasks={macroPlan.macroTasks}
+          macroTasks={Array.isArray(macroPlan?.macroTasks) ? macroPlan.macroTasks : []}
           onUpdateMacroTasks={handleUpdateMacroTasks}
           onClose={() => setShowTextbookModal(false)}
         />

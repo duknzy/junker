@@ -79,7 +79,7 @@ export const GlobalNav: React.FC<GlobalNavProps> = ({
 
   // Calculate days remaining to exam (Timezone-safe)
   const getExamCountdown = () => {
-    if (!macroPlan.examDate) return null;
+    if (!macroPlan?.examDate) return null;
     const [y, m, d] = macroPlan.examDate.split('-').map(Number);
     if (!y || !m || !d) return null;
     const target = new Date(y, m - 1, d, 0, 0, 0).getTime();
@@ -93,7 +93,7 @@ export const GlobalNav: React.FC<GlobalNavProps> = ({
 
   const pad = (n: number) => n.toString().padStart(2, '0');
   const timeStr = `${pad(currentTime.getHours())}:${pad(currentTime.getMinutes())}:${pad(currentTime.getSeconds())}`;
-  const driverDisplayName = userProfile.name?.trim() ? userProfile.name.trim() : 'Flora';
+  const driverDisplayName = userProfile?.name?.trim() ? userProfile.name.trim() : 'Flora';
 
   return (
     <header className="sticky top-0 z-40 w-full bg-[#0f172a]/95 border-b border-slate-800 backdrop-blur-md text-slate-300 px-3 sm:px-6 py-2.5 transition-all">

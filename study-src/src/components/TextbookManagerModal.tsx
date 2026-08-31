@@ -110,7 +110,7 @@ export const TextbookManagerModal: React.FC<TextbookManagerModalProps> = ({
           {STUDY_SUBJECT_KEYS.map((k) => {
             const sm = SUBJECT_METAS[k];
             const isSelected = selectedSubject === k;
-            const count = macroTasks.filter((t) => t.subject === k).length;
+            const count = safeMacroTasks.filter((t) => t.subject === k).length;
 
             return (
               <button

@@ -49,6 +49,9 @@ export const FocusDeskOverlay: React.FC<FocusDeskOverlayProps> = ({
   const [ambientSound, setAmbientSound] = useState<AmbientSoundType>(audioSynth.getCurrentType());
   const [showDeskTodos, setShowDeskTodos] = useState<boolean>(true);
 
+  const safeTasks = Array.isArray(tasks) ? tasks : [];
+  const safeTodos = Array.isArray(todos) ? todos : [];
+
   // Keydown listener to close on ESC or F
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -183,14 +186,14 @@ export const FocusDeskOverlay: React.FC<FocusDeskOverlayProps> = ({
         )}
 
         {/* Quick To-Do Checklist in Focus Desk Mode */}
-        {todos.length > 0 && (
+        {safeTodos.length > 0 && (
           <div className="w-full max-w-2xl bg-slate-900/80 border border-slate-800/90 rounded-xl p-3 sm:p-4 backdrop-blur-md shadow-2xl space-y-2 mt-2">
             <div className="flex items-center justify-between border-b border-slate-800 pb-1.5 text-xs font-mono">
               <div className="flex items-center gap-2 text-slate-300">
                 <ListTodo className="w-4 h-4 text-emerald-400" />
                 <span className="font-bold uppercase tracking-wider">FOCUS_TODO_CHECKLIST</span>
                 <span className="text-[10px] text-slate-400">
-                  ({todos.filter((t) => t.done).length}/{todos.length} 完了)
+                  ({safeTodos.filter((t) => t.done).length}/{safeTodos.length} 完了)
                 </span>
               </div>
               <button
@@ -203,7 +206,7 @@ export const FocusDeskOverlay: React.FC<FocusDeskOverlayProps> = ({
 
             {showDeskTodos && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-36 overflow-y-auto pr-1 text-left">
-                {todos.map((todo) => {
+                {safeTodos.map((todo) => {
                   const subjectMeta = todo.subject ? SUBJECT_METAS[todo.subject] : null;
                   return (
                     <div

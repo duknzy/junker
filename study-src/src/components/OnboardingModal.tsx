@@ -34,19 +34,23 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   const [step, setStep] = useState<number>(1);
 
   // Step 1: User Profile
-  const [name, setName] = useState<string>(initialProfile.name || 'Flora');
-  const [targetUniversity, setTargetUniversity] = useState<string>(initialProfile.target || '');
+  const [name, setName] = useState<string>(initialProfile?.name || 'Flora');
+  const [targetUniversity, setTargetUniversity] = useState<string>(initialProfile?.target || '');
 
   // Step 2: Season Macro Goals
-  const [planTitle, setPlanTitle] = useState<string>(initialMacroPlan.title || '志望校合格大計画');
-  const [examDate, setExamDate] = useState<string>(initialMacroPlan.examDate || '');
-  const [totalTargetHours, setTotalTargetHours] = useState<number>(initialMacroPlan.totalTargetHours || 350);
+  const [planTitle, setPlanTitle] = useState<string>(initialMacroPlan?.title || '志望校合格大計画');
+  const [examDate, setExamDate] = useState<string>(initialMacroPlan?.examDate || '');
+  const [totalTargetHours, setTotalTargetHours] = useState<number>(initialMacroPlan?.totalTargetHours || 350);
 
   // Step 3: Registered Textbooks
-  const [macroTasks, setMacroTasks] = useState<MacroTask[]>(initialMacroPlan.macroTasks || []);
+  const [macroTasks, setMacroTasks] = useState<MacroTask[]>(
+    Array.isArray(initialMacroPlan?.macroTasks) ? initialMacroPlan.macroTasks : []
+  );
   const [activeSubject, setActiveSubject] = useState<SubjectKey>('math');
   const [customBookName, setCustomBookName] = useState<string>('');
   const [customGoalScope, setCustomGoalScope] = useState<string>('');
+
+  const safeMacroTasks = Array.isArray(macroTasks) ? macroTasks : [];
 
   const handleNextStep = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -72,14 +76,14 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
       done: false,
     };
 
-    setMacroTasks((prev) => [...prev, newTask]);
+    setMacroTasks((prev) => [...(Array.isArray(prev) ? prev : []), newTask]);
     setCustomBookName('');
     setCustomGoalScope('');
     audioSynth.playTick();
   };
 
   const handleQuickAdd = (bookTitle: string) => {
-    const isAlreadyAdded = macroTasks.some(
+    const isAlreadyAdded = safeMacroTasks.some(
       (t) => t.subject === activeSubject && t.category === bookTitle
     );
     if (isAlreadyAdded) return;
@@ -92,12 +96,12 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
       done: false,
     };
 
-    setMacroTasks((prev) => [...prev, newTask]);
+    setMacroTasks((prev) => [...(Array.isArray(prev) ? prev : []), newTask]);
     audioSynth.playTick();
   };
 
   const handleDeleteTask = (id: string) => {
-    setMacroTasks((prev) => prev.filter((t) => t.id !== id));
+    setMacroTasks((prev) => (Array.isArray(prev) ? prev.filter((t) => t.id !== id) : []));
   };
 
   const handleFinish = () => {
@@ -111,9 +115,9 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
       ...initialMacroPlan,
       title: planTitle.trim() || `${finalProfile.name}の合格計画`,
       totalTargetHours: Number(totalTargetHours) || 300,
-      completedHours: initialMacroPlan.completedHours || 0,
+      completedHours: initialMacroPlan?.completedHours || 0,
       examDate: examDate || '',
-      macroTasks,
+      macroTasks: safeMacroTasks,
       milestones: examDate
         ? [
             {
@@ -124,7 +128,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
               done: false,
             },
           ]
-        : (initialMacroPlan.milestones || []),
+        : (Array.isArray(initialMacroPlan?.milestones) ? initialMacroPlan.milestones : []),
     };
 
     audioSynth.playChime();
@@ -136,7 +140,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
     onComplete(finalProfile, finalPlan);
   };
 
-  const currentSubjectTasks = macroTasks.filter((t) => t.subject === activeSubject);
+  const currentSubjectTasks = safeMacroTasks.filter((t) => t.subject === activeSubject);
   const meta = SUBJECT_METAS[activeSubject] || SUBJECT_METAS.math;
   const suggestions = POPULAR_TEXTBOOKS[activeSubject] || [];
 
@@ -319,7 +323,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                 {STUDY_SUBJECT_KEYS.map((k) => {
                   const sm = SUBJECT_METAS[k];
                   const isSelected = activeSubject === k;
-                  const count = macroTasks.filter((t) => t.subject === k).length;
+                  const count = safeMacroTasks.filter((t) => t.subject === k).length;
 
                   return (
                     <button

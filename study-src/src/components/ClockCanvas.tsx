@@ -21,6 +21,8 @@ export const ClockCanvas: React.FC<ClockCanvasProps> = ({ tasks, currentTime = n
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [hoveredSegment, setHoveredSegment] = useState<SegmentHoverInfo | null>(null);
 
+  const safeTasks = Array.isArray(tasks) ? tasks : [];
+
   // Helper to convert "HH:MM" to angle (0:00 = -Math.PI / 2, top)
   const timeToAngle = useCallback((timeStr: string): number => {
     const [h, m] = timeStr.split(':').map(Number);
@@ -36,7 +38,7 @@ export const ClockCanvas: React.FC<ClockCanvasProps> = ({ tasks, currentTime = n
   // Compute active task under current time
   const currentTotalMinutes = currentTime.getHours() * 60 + currentTime.getMinutes() + currentTime.getSeconds() / 60;
   
-  const activeTask = tasks.find((t) => {
+  const activeTask = safeTasks.find((t) => {
     const [h, m] = t.time.split(':').map(Number);
     const startMin = h * 60 + (m || 0);
     const endMin = startMin + t.duration;
@@ -81,7 +83,7 @@ export const ClockCanvas: React.FC<ClockCanvasProps> = ({ tasks, currentTime = n
     const arcInnerRadius = radius * 0.58;
     const arcOuterRadius = radius * 0.88;
 
-    tasks.forEach((task) => {
+    safeTasks.forEach((task) => {
       const meta = SUBJECT_METAS[task.subject] || SUBJECT_METAS.life;
       const startAngle = timeToAngle(task.time);
       const angleSpan = durationToAngle(task.duration);
@@ -291,7 +293,7 @@ export const ClockCanvas: React.FC<ClockCanvasProps> = ({ tasks, currentTime = n
 
       const clickedMinutes = (normAngle / (2 * Math.PI)) * 1440;
 
-      const hit = tasks.find((t) => {
+      const hit = safeTasks.find((t) => {
         const [h, m] = t.time.split(':').map(Number);
         const startMin = h * 60 + (m || 0);
         const endMin = startMin + t.duration;

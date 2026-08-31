@@ -47,6 +47,8 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({
   const [editTaskDuration, setEditTaskDuration] = useState<number>(60);
   const [editTaskSubject, setEditTaskSubject] = useState<SubjectKey>('math');
 
+  const safeTasks = Array.isArray(tasks) ? tasks : [];
+
   // Date Navigation Handlers (Timezone-safe)
   const handlePrevDay = () => {
     const [y, m, d] = currentDateStr.split('-').map(Number);
@@ -78,7 +80,7 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({
 
   // Toggle Done
   const toggleTaskDone = (taskId: string) => {
-    const updated = tasks.map((t) => {
+    const updated = safeTasks.map((t) => {
       if (t.id === taskId) {
         const nextDone = !t.done;
         if (nextDone) {
@@ -95,7 +97,7 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({
 
   // Delete Task
   const deleteTask = (taskId: string) => {
-    onUpdateTasks(tasks.filter((t) => t.id !== taskId));
+    onUpdateTasks(safeTasks.filter((t) => t.id !== taskId));
     audioSynth.playTick();
   };
 
@@ -103,12 +105,12 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({
   const moveTask = (index: number, direction: 'up' | 'down') => {
     if (
       (direction === 'up' && index === 0) ||
-      (direction === 'down' && index === tasks.length - 1)
+      (direction === 'down' && index === safeTasks.length - 1)
     )
       return;
 
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    const updated = [...tasks];
+    const updated = [...safeTasks];
     const temp = updated[index];
     updated[index] = updated[targetIndex];
     updated[targetIndex] = temp;
@@ -129,7 +131,7 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({
   // Save Edit
   const saveEdit = () => {
     if (!editingTaskId) return;
-    const updated = tasks.map((t) => {
+    const updated = safeTasks.map((t) => {
       if (t.id === editingTaskId) {
         return {
           ...t,
@@ -157,10 +159,10 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({
       subject: newSubject,
       task: newTaskName.trim(),
       done: false,
-      order: tasks.length,
+      order: safeTasks.length,
     };
 
-    const updated = [...tasks, newTask].sort((a, b) => {
+    const updated = [...safeTasks, newTask].sort((a, b) => {
       const [h1, m1] = a.time.split(':').map(Number);
       const [h2, m2] = b.time.split(':').map(Number);
       return (h1 * 60 + m1) - (h2 * 60 + m2);
@@ -174,8 +176,8 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({
 
   // Auto-calculate start time for new task based on last task
   const openAddFormWithSmartTime = () => {
-    if (tasks.length > 0) {
-      const sorted = [...tasks].sort((a, b) => {
+    if (safeTasks.length > 0) {
+      const sorted = [...safeTasks].sort((a, b) => {
         const [h1, m1] = a.time.split(':').map(Number);
         const [h2, m2] = b.time.split(':').map(Number);
         return (h1 * 60 + m1) - (h2 * 60 + m2);
@@ -191,11 +193,11 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({
   };
 
   // Daily statistics
-  const totalStudyMinutes = tasks
+  const totalStudyMinutes = safeTasks
     .filter((t) => SUBJECT_METAS[t.subject]?.isStudy)
     .reduce((acc, t) => acc + t.duration, 0);
 
-  const completedStudyMinutes = tasks
+  const completedStudyMinutes = safeTasks
     .filter((t) => SUBJECT_METAS[t.subject]?.isStudy && t.done)
     .reduce((acc, t) => acc + t.duration, 0);
 
@@ -397,12 +399,12 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({
 
       {/* Task List */}
       <div className="space-y-1.5 max-h-[460px] overflow-y-auto pr-1">
-        {tasks.length === 0 ? (
+        {safeTasks.length === 0 ? (
           <div className="text-center py-8 text-slate-500 text-xs border border-dashed border-slate-800 rounded font-mono">
             NO_EVENTS_REGISTERED // Click "WEEKDAY" or "ADD_EVENT" to populate timeline.
           </div>
         ) : (
-          tasks.map((task, index) => {
+          safeTasks.map((task, index) => {
             const meta = SUBJECT_METAS[task.subject] || SUBJECT_METAS.life;
             const isEditing = editingTaskId === task.id;
 
