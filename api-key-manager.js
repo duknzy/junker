@@ -186,17 +186,228 @@ function nextGeminiQuotaResetAt() {
 }
 
 // --------------------------------------------------------------------------
-// 🔁 キー・ローテーション付きfetch
-// - そのモデルでお休み中ではないキーだけを順番に試す
-// - 429が返ってきたら即座に「そのモデル×キー」を日次リセットまでお休みに登録し、次のキーへ
-// - 全キーがお休み中の場合は通信を行わず即座にフォールバック
+// 🔁 アクティブリクエスト追跡 & ユーザー主導のタイムアウト制御
 // --------------------------------------------------------------------------
-export async function fetchWithKeyRotation(keys, buildRequest, { requestTimeoutMs = 60000, startIndex = 0, modelName = "" } = {}) {
+let activeRequestRegistry = new Map(); // id -> { id, controller, modelName, featureId, startTime, abortReason }
+let activeRequestCounter = 0;
+let requestUiUpdateTimer = null;
+let requestUiInjected = false;
+
+function injectActiveRequestUI() {
+    if (requestUiInjected || typeof document === "undefined") return;
+    requestUiInjected = true;
+
+    const style = document.createElement("style");
+    style.id = "apikm-active-request-styles";
+    style.textContent = `
+        #apikm-active-request-bar {
+            position: fixed; top: 12px; left: 50%; transform: translateX(-50%);
+            z-index: 100075; width: min(94%, 480px);
+            background: rgba(13, 17, 23, 0.95);
+            border: 1px solid var(--accent-cyan, #00f3ff);
+            box-shadow: 0 4px 20px rgba(0, 243, 255, 0.25), 0 0 0 1px rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            border-radius: 14px; padding: 0.65rem 0.9rem;
+            color: #fff; display: none; align-items: center; justify-content: space-between; gap: 0.6rem;
+            font-family: system-ui, -apple-system, sans-serif;
+            animation: apikm-bar-slide-down 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes apikm-bar-slide-down {
+            from { opacity: 0; transform: translate(-50%, -12px); }
+            to { opacity: 1; transform: translate(-50%, 0); }
+        }
+        .apikm-req-info {
+            display: flex; align-items: center; gap: 0.5rem; flex: 1; min-width: 0;
+        }
+        .apikm-req-spinner {
+            width: 16px; height: 16px; border: 2px solid rgba(0,243,255,0.3);
+            border-top-color: var(--accent-cyan, #00f3ff); border-radius: 50%;
+            animation: apikm-spin 0.8s linear infinite; flex-shrink: 0;
+        }
+        @keyframes apikm-spin { to { transform: rotate(360deg); } }
+        .apikm-req-text-wrap {
+            display: flex; flex-direction: column; min-width: 0;
+        }
+        .apikm-req-title {
+            font-size: 0.82rem; font-weight: 700; color: #fff;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            display: flex; align-items: center; gap: 0.4rem;
+        }
+        .apikm-req-time {
+            font-family: ui-monospace, SFMono-Regular, monospace;
+            font-size: 0.72rem; color: var(--accent-cyan, #00f3ff); font-weight: 700;
+        }
+        .apikm-req-sub {
+            font-size: 0.7rem; color: #8b949e;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .apikm-req-actions {
+            display: flex; align-items: center; gap: 0.4rem; flex-shrink: 0;
+        }
+        .apikm-btn-timeout {
+            background: rgba(245, 158, 11, 0.15);
+            border: 1px solid #f59e0b;
+            color: #fbbf24;
+            padding: 0.35rem 0.65rem; border-radius: 8px;
+            font-size: 0.75rem; font-weight: 800; cursor: pointer;
+            display: flex; align-items: center; gap: 0.25rem;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+        }
+        .apikm-btn-timeout:hover {
+            background: rgba(245, 158, 11, 0.3);
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
+            transform: translateY(-1px);
+        }
+        .apikm-btn-timeout:active {
+            transform: translateY(0);
+        }
+        .apikm-btn-cancel {
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239, 68, 68, 0.5);
+            color: #f87171;
+            padding: 0.35rem 0.55rem; border-radius: 8px;
+            font-size: 0.75rem; font-weight: 700; cursor: pointer;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+        }
+        .apikm-btn-cancel:hover {
+            background: rgba(239, 68, 68, 0.25);
+            border-color: #ef4444;
+        }
+    `;
+    document.head.appendChild(style);
+
+    const bar = document.createElement("div");
+    bar.id = "apikm-active-request-bar";
+    bar.innerHTML = `
+        <div class="apikm-req-info">
+            <div class="apikm-req-spinner"></div>
+            <div class="apikm-req-text-wrap">
+                <div class="apikm-req-title">
+                    <span>⚡ AI応答待機中</span>
+                    <span class="apikm-req-time" id="apikm-req-elapsed">00:00</span>
+                </div>
+                <div class="apikm-req-sub" id="apikm-req-detail">返信がない場合はタイムアウトできます</div>
+            </div>
+        </div>
+        <div class="apikm-req-actions">
+            <button type="button" class="apikm-btn-timeout" id="apikm-btn-timeout" title="待機を打ち切って次のキー/モデルへスキップします">
+                ⏱️ タイムアウト
+            </button>
+            <button type="button" class="apikm-btn-cancel" id="apikm-btn-cancel" title="AIリクエストを完全に中止します">
+                ✕ 中断
+            </button>
+        </div>
+    `;
+    document.body.appendChild(bar);
+
+    bar.querySelector("#apikm-btn-timeout").addEventListener("click", () => {
+        manualTimeoutAllRequests();
+    });
+
+    bar.querySelector("#apikm-btn-cancel").addEventListener("click", () => {
+        manualAbortAllRequests();
+    });
+}
+
+function updateActiveRequestUI() {
+    if (typeof document === "undefined") return;
+    injectActiveRequestUI();
+    const bar = document.getElementById("apikm-active-request-bar");
+    if (!bar) return;
+
+    const count = activeRequestRegistry.size;
+    if (count === 0) {
+        bar.style.display = "none";
+        if (requestUiUpdateTimer) {
+            clearInterval(requestUiUpdateTimer);
+            requestUiUpdateTimer = null;
+        }
+        return;
+    }
+
+    bar.style.display = "flex";
+
+    // 最初の（最古の）リクエストの経過時間を基準にする
+    let earliestTime = Date.now();
+    let details = [];
+    activeRequestRegistry.forEach(req => {
+        if (req.startTime < earliestTime) earliestTime = req.startTime;
+        if (req.modelName) details.push(req.modelName);
+    });
+
+    const elapsedSec = Math.max(0, Math.floor((Date.now() - earliestTime) / 1000));
+    const mins = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
+    const secs = String(elapsedSec % 60).padStart(2, '0');
+
+    const elapsedEl = bar.querySelector("#apikm-req-elapsed");
+    if (elapsedEl) elapsedEl.textContent = `${mins}:${secs}`;
+
+    const detailEl = bar.querySelector("#apikm-req-detail");
+    if (detailEl) {
+        const uniqueModels = Array.from(new Set(details));
+        const modelStr = uniqueModels.length > 0 ? `[${uniqueModels.join(", ")}] ` : "";
+        const countStr = count > 1 ? ` (${count}件並行通信中)` : "";
+        detailEl.textContent = `${modelStr}返信待機中${countStr}・任意のタイミングでタイムアウト可`;
+    }
+
+    if (!requestUiUpdateTimer) {
+        requestUiUpdateTimer = setInterval(updateActiveRequestUI, 1000);
+    }
+}
+
+export function manualTimeoutAllRequests() {
+    if (activeRequestRegistry.size === 0) {
+        showToast("現在待機中のAIリクエストはありません", "info", 3000);
+        return;
+    }
+    const count = activeRequestRegistry.size;
+    console.info(`⏱️ ユーザーによる手動タイムアウト実行 (${count}件)`);
+    activeRequestRegistry.forEach((req) => {
+        req.abortReason = "user_timeout";
+        try {
+            req.controller.abort("user_timeout");
+        } catch (e) { /* noop */ }
+    });
+    showToast(`⏱️ タイムアウトを実行しました（次のキー/モデルへ切り替えます）`, "info", 4000);
+}
+
+export function manualAbortAllRequests() {
+    if (activeRequestRegistry.size === 0) {
+        showToast("現在待機中のAIリクエストはありません", "info", 3000);
+        return;
+    }
+    const count = activeRequestRegistry.size;
+    console.info(`🛑 ユーザーによる手動中断実行 (${count}件)`);
+    activeRequestRegistry.forEach((req) => {
+        req.abortReason = "user_cancel";
+        try {
+            req.controller.abort("user_cancel");
+        } catch (e) { /* noop */ }
+    });
+    showToast(`⏹️ AIリクエストを中断しました`, "info", 4000);
+}
+
+// グローバルスコープにも公開（UIやコンソールから即時実行可能）
+if (typeof window !== "undefined") {
+    window.__apikmTimeout = manualTimeoutAllRequests;
+    window.__apikmAbort = manualAbortAllRequests;
+}
+
+// --------------------------------------------------------------------------
+// 🔁 キー・ローテーション付きfetch
+// - 自動タイムアウト（60秒など）はデフォルトで無効化
+// - ユーザーがタイムアウトボタンを押すか、APIから返信があるまで待機
+// - ユーザーがタイムアウトを押した場合は次のキーへ切り替え
+// - ユーザーが中止を押した場合は即座に例外を送出して終了
+// --------------------------------------------------------------------------
+export async function fetchWithKeyRotation(keys, buildRequest, { requestTimeoutMs = null, startIndex = 0, modelName = "", featureId = null } = {}) {
     if (!keys || keys.length === 0) {
         throw new Error("APIキーが1件も登録されていません。右下の🔑ボタンから登録してください。");
     }
 
-    // 💡【修正】先に「お休み中でない生きているキー」のインデックスだけを抽出する
+    // 💡 先に「お休み中でない生きているキー」のインデックスだけを抽出する
     const availableIndices = keys
         .map((k, idx) => ({ key: k, originalIndex: idx }))
         .filter(item => !isKeyCoolingDown(item.key, modelName));
@@ -217,11 +428,32 @@ export async function fetchWithKeyRotation(keys, buildRequest, { requestTimeoutM
         const i = item.originalIndex; // 元のキー番号（ログ用）
 
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), requestTimeoutMs);
+        const reqId = ++activeRequestCounter;
+        const reqEntry = {
+            id: reqId,
+            controller,
+            modelName,
+            featureId,
+            startTime: Date.now(),
+            abortReason: null
+        };
+        activeRequestRegistry.set(reqId, reqEntry);
+        updateActiveRequestUI();
+
+        let timeoutId = null;
+        if (typeof requestTimeoutMs === "number" && requestTimeoutMs > 0 && Number.isFinite(requestTimeoutMs)) {
+            timeoutId = setTimeout(() => {
+                reqEntry.abortReason = "auto_timeout";
+                controller.abort("auto_timeout");
+            }, requestTimeoutMs);
+        }
+
         try {
             const { url, options } = buildRequest(key);
             const response = await fetch(url, { ...options, signal: controller.signal });
-            clearTimeout(timeoutId);
+            if (timeoutId) clearTimeout(timeoutId);
+            activeRequestRegistry.delete(reqId);
+            updateActiveRequestUI();
 
             if (response.status === 429) {
                 const cooldownMs = Math.max(0, nextGeminiQuotaResetAt() - Date.now());
@@ -245,10 +477,25 @@ export async function fetchWithKeyRotation(keys, buildRequest, { requestTimeoutM
             }
             return response;
         } catch (networkErr) {
-            clearTimeout(timeoutId);
-            if (networkErr?.name === "AbortError") {
-                console.warn(`⚠️ キー#${i + 1} がタイムアウト(${requestTimeoutMs}ms)しました → 次のキーへフォールバック`);
-                lastError = new Error(`タイムアウト(${requestTimeoutMs}ms): キー#${i + 1}`);
+            if (timeoutId) clearTimeout(timeoutId);
+            activeRequestRegistry.delete(reqId);
+            updateActiveRequestUI();
+
+            const reason = reqEntry.abortReason;
+            if (reason === "user_cancel") {
+                console.warn(`⏹️ ユーザーによりAIリクエストが完全に中断されました`);
+                throw new Error("ユーザーによりAIリクエストが中断されました。");
+            }
+
+            if (reason === "user_timeout") {
+                console.warn(`⏱️ ユーザーの指示によりキー#${i + 1}をタイムアウト → 次のキー/モデルへフォールバック`);
+                lastError = new Error(`手動タイムアウト: キー#${i + 1}`);
+                continue;
+            }
+
+            if (networkErr?.name === "AbortError" || reason === "auto_timeout") {
+                console.warn(`⚠️ キー#${i + 1} がタイムアウトしました → 次のキーへフォールバック`);
+                lastError = new Error(`タイムアウト: キー#${i + 1}`);
                 continue;
             }
             console.warn(`⚠️ キー#${i + 1} で通信エラー → 次のキーへフォールバック`, networkErr);
@@ -483,7 +730,7 @@ export function extractJsonArray(text) {
 // 🧠 Gemini フォールバック実行ループ
 // --------------------------------------------------------------------------
 async function runGeminiFallbackLoop(contents, systemInstruction, options = {}) {
-    const { temperature = 0.1, arrayMode = false, silentFallback = false, responseSchema = null, featureId = null, requestTimeoutMs = 60000, keyOffset = 0 } = options;
+    const { temperature = 0.1, arrayMode = false, silentFallback = false, responseSchema = null, featureId = null, requestTimeoutMs = null, keyOffset = 0 } = options;
     const keys = getEffectiveGeminiKeys(featureId);
     const modelList = getEffectiveModelList(featureId);
 
@@ -507,7 +754,7 @@ async function runGeminiFallbackLoop(contents, systemInstruction, options = {}) 
             response = await fetchWithKeyRotation(keys, (key) => ({
                 url: buildGeminiUrl(modelName, key),
                 options: { method: "POST", headers: { "Content-Type": "application/json" }, body: requestBody }
-            }), { requestTimeoutMs, startIndex: keyOffset, modelName });
+            }), { requestTimeoutMs, startIndex: keyOffset, modelName, featureId });
         } catch (err) {
             return { ok: false, isFormatError: false, reason: err?.message || "不明な通信エラー", error: err };
         }
@@ -895,7 +1142,7 @@ export function openApiKeyManager() {
 let fallbackToastStyleInjected = false;
 
 function injectFallbackToastStyles() {
-    if (fallbackToastStyleInjected) return;
+    if (fallbackToastStyleInjected || typeof document === "undefined") return;
     fallbackToastStyleInjected = true;
     const style = document.createElement("style");
     style.textContent = `
@@ -922,6 +1169,7 @@ function injectFallbackToastStyles() {
 }
 
 function getFallbackToastWrap() {
+    if (typeof document === "undefined") return null;
     let wrap = document.getElementById("apikm-fallback-toast-wrap");
     if (!wrap) {
         wrap = document.createElement("div");
@@ -940,8 +1188,10 @@ export function notifyModelFallback(attempts, usedModel) {
     else console.error("⛔ 登録済みの全モデル・全キーで失敗しました");
     console.groupEnd();
 
+    if (typeof document === "undefined") return;
     injectFallbackToastStyles();
     const wrap = getFallbackToastWrap();
+    if (!wrap) return;
 
     const toast = document.createElement("div");
     toast.className = "apikm-fallback-toast";
@@ -973,7 +1223,7 @@ export function notifyModelFallback(attempts, usedModel) {
 let genericToastStyleInjected = false;
 
 function injectGenericToastStyles() {
-    if (genericToastStyleInjected) return;
+    if (genericToastStyleInjected || typeof document === "undefined") return;
     genericToastStyleInjected = true;
     const style = document.createElement("style");
     style.textContent = `
@@ -1003,6 +1253,7 @@ function injectGenericToastStyles() {
 }
 
 function getGenericToastWrap() {
+    if (typeof document === "undefined") return null;
     let wrap = document.getElementById("apikm-toast-wrap");
     if (!wrap) {
         wrap = document.createElement("div");
@@ -1013,8 +1264,10 @@ function getGenericToastWrap() {
 }
 
 export function showToast(message, type = "info", duration = 6000) {
+    if (typeof document === "undefined") return () => {};
     injectGenericToastStyles();
     const wrap = getGenericToastWrap();
+    if (!wrap) return () => {};
 
     const icon = type === "error" ? "⚠️" : type === "success" ? "✅" : "💡";
     const toast = document.createElement("div");
