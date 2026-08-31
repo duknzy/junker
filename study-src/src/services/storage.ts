@@ -154,7 +154,9 @@ export function loadTasksForDate(dateStr: string): TaskItem[] {
   } catch (e) {
     console.error('Failed to load tasks from localStorage', e);
   }
-  const isWeekend = new Date(dateStr).getDay() === 0 || new Date(dateStr).getDay() === 6;
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dateObj = new Date(y, (m || 1) - 1, d || 1);
+  const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
   const defaultTasks = generateDefaultTasksForDate(dateStr, isWeekend);
   saveTasksForDate(dateStr, defaultTasks);
   return defaultTasks;

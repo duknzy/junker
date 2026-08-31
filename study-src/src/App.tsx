@@ -441,7 +441,7 @@ export default function App() {
     saveUserProfileToCloud(getActiveUid(), newProfile);
   };
 
-  // Commit timer result into tasks & session logs
+  // Commit timer result into tasks & session logs (Always targets today's timeline)
   const handleCommitTimerResult = (
     subject: SubjectKey,
     durationMinutes: number,
@@ -450,6 +450,13 @@ export default function App() {
   ) => {
     const d = new Date();
     const nowTimeStr = startTimeStr || `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+    const todayStr = getTodayDateStr();
+
+    let targetTasks = tasks;
+    if (currentDateStr !== todayStr) {
+      setCurrentDateStr(todayStr);
+      targetTasks = loadTasksForDate(todayStr);
+    }
 
     const newTask: TaskItem = {
       id: `timer_${Date.now()}`,
@@ -458,11 +465,11 @@ export default function App() {
       subject,
       task: taskTitle || `${SUBJECT_METAS[subject].name} 集中演習`,
       done: true,
-      order: tasks.length,
+      order: targetTasks.length,
       quality: 5,
     };
 
-    const updatedTasks = [...tasks, newTask].sort((a, b) => {
+    const updatedTasks = [...targetTasks, newTask].sort((a, b) => {
       const [h1, m1] = a.time.split(':').map(Number);
       const [h2, m2] = b.time.split(':').map(Number);
       return h1 * 60 + m1 - (h2 * 60 + m2);

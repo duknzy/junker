@@ -162,7 +162,7 @@ export const TodoListSection: React.FC<TodoListSectionProps> = ({
   // Save edit
   const handleSaveEdit = () => {
     if (!editingId || !editText.trim()) return;
-    const updated = todos.map((t) => {
+    const updated = safeTodos.map((t) => {
       if (t.id === editingId) {
         return {
           ...t,

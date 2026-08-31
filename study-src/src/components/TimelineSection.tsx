@@ -47,23 +47,25 @@ export const TimelineSection: React.FC<TimelineSectionProps> = ({
   const [editTaskDuration, setEditTaskDuration] = useState<number>(60);
   const [editTaskSubject, setEditTaskSubject] = useState<SubjectKey>('math');
 
-  // Date Navigation Handlers
+  // Date Navigation Handlers (Timezone-safe)
   const handlePrevDay = () => {
-    const d = new Date(currentDateStr);
-    d.setDate(d.getDate() - 1);
-    const y = d.getFullYear();
-    const m = (d.getMonth() + 1).toString().padStart(2, '0');
-    const day = d.getDate().toString().padStart(2, '0');
-    onDateChange(`${y}-${m}-${day}`);
+    const [y, m, d] = currentDateStr.split('-').map(Number);
+    const dateObj = new Date(y, (m || 1) - 1, d || 1);
+    dateObj.setDate(dateObj.getDate() - 1);
+    const ny = dateObj.getFullYear();
+    const nm = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+    const nd = dateObj.getDate().toString().padStart(2, '0');
+    onDateChange(`${ny}-${nm}-${nd}`);
   };
 
   const handleNextDay = () => {
-    const d = new Date(currentDateStr);
-    d.setDate(d.getDate() + 1);
-    const y = d.getFullYear();
-    const m = (d.getMonth() + 1).toString().padStart(2, '0');
-    const day = d.getDate().toString().padStart(2, '0');
-    onDateChange(`${y}-${m}-${day}`);
+    const [y, m, d] = currentDateStr.split('-').map(Number);
+    const dateObj = new Date(y, (m || 1) - 1, d || 1);
+    dateObj.setDate(dateObj.getDate() + 1);
+    const ny = dateObj.getFullYear();
+    const nm = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+    const nd = dateObj.getDate().toString().padStart(2, '0');
+    onDateChange(`${ny}-${nm}-${nd}`);
   };
 
   const handleToday = () => {

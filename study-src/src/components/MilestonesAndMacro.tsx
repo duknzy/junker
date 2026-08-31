@@ -13,6 +13,10 @@ import {
   Users,
   Award,
   BookMarked,
+  Edit2,
+  Save,
+  X,
+  Calendar,
 } from 'lucide-react';
 
 interface MilestonesAndMacroProps {
@@ -28,6 +32,11 @@ export const MilestonesAndMacro: React.FC<MilestonesAndMacroProps> = ({
   paddockDrivers,
   onOpenTextbookManager,
 }) => {
+  const [showEditPlanModal, setShowEditPlanModal] = useState<boolean>(false);
+  const [editPlanTitle, setEditPlanTitle] = useState<string>(macroPlan.title || '志望校合格大計画');
+  const [editTargetHours, setEditTargetHours] = useState<number>(macroPlan.totalTargetHours || 300);
+  const [editExamDate, setEditExamDate] = useState<string>(macroPlan.examDate || '');
+
   const [newMileTitle, setNewMileTitle] = useState<string>('');
   const [newMileDate, setNewMileDate] = useState<string>('');
   const [newMileContent, setNewMileContent] = useState<string>('');
@@ -40,6 +49,20 @@ export const MilestonesAndMacro: React.FC<MilestonesAndMacroProps> = ({
 
   const safeMilestones = Array.isArray(macroPlan?.milestones) ? macroPlan.milestones : [];
   const safeMacroTasks = Array.isArray(macroPlan?.macroTasks) ? macroPlan.macroTasks : [];
+
+  const handleSavePlanSettings = (e: React.FormEvent) => {
+    e.preventDefault();
+    const updated: MacroPlan = {
+      ...macroPlan,
+      title: editPlanTitle.trim() || '志望校合格大計画',
+      totalTargetHours: Math.max(1, Number(editTargetHours) || 300),
+      examDate: editExamDate,
+    };
+    onUpdateMacroPlan(updated);
+    setShowEditPlanModal(false);
+    audioSynth.playTick();
+    confetti({ particleCount: 40, spread: 50 });
+  };
 
   // Toggle Milestone
   const toggleMilestone = (id: string) => {
@@ -144,6 +167,18 @@ export const MilestonesAndMacro: React.FC<MilestonesAndMacroProps> = ({
               <h3 className="font-bold text-xs sm:text-sm uppercase tracking-wider text-slate-100 font-sans">
                 {macroPlan.title || '志望校合格大計画'}
               </h3>
+              <button
+                onClick={() => {
+                  setEditPlanTitle(macroPlan.title || '志望校合格大計画');
+                  setEditTargetHours(macroPlan.totalTargetHours || 300);
+                  setEditExamDate(macroPlan.examDate || '');
+                  setShowEditPlanModal(true);
+                }}
+                className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-blue-400 border border-slate-700 transition-all text-xs"
+                title="計画・目標時間設定を編集"
+              >
+                <Edit2 className="w-3.5 h-3.5" />
+              </button>
             </div>
             <p className="text-xs text-slate-400 mt-1">
               TARGET_HOURS: <strong className="text-blue-400">{macroPlan.totalTargetHours}H</strong> | COMPLETED:{' '}
@@ -170,6 +205,85 @@ export const MilestonesAndMacro: React.FC<MilestonesAndMacroProps> = ({
           />
         </div>
       </div>
+
+      {/* Plan Settings Modal */}
+      {showEditPlanModal && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 max-w-md w-full shadow-2xl text-slate-200 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+              <h3 className="font-bold text-sm uppercase text-amber-400 flex items-center gap-2">
+                <Target className="w-4 h-4 text-amber-400" />
+                大計画・目標時間設定の編集
+              </h3>
+              <button
+                onClick={() => setShowEditPlanModal(false)}
+                className="p-1 rounded text-slate-400 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSavePlanSettings} className="space-y-3 text-xs">
+              <div>
+                <label className="text-[10px] text-slate-400 font-bold uppercase block mb-1">
+                  PLAN_TITLE (大計画タイトル)
+                </label>
+                <input
+                  type="text"
+                  value={editPlanTitle}
+                  onChange={(e) => setEditPlanTitle(e.target.value)}
+                  required
+                  className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-slate-200 text-xs font-sans"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] text-slate-400 font-bold uppercase block mb-1">
+                  TOTAL_TARGET_HOURS (目標総勉強時間: H)
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="5000"
+                  value={editTargetHours}
+                  onChange={(e) => setEditTargetHours(Number(e.target.value))}
+                  required
+                  className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-slate-200 text-xs font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] text-slate-400 font-bold uppercase block mb-1">
+                  EXAM_DATE (本番試験日 / 任意)
+                </label>
+                <input
+                  type="date"
+                  value={editExamDate}
+                  onChange={(e) => setEditExamDate(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-slate-200 text-xs font-mono"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setShowEditPlanModal(false)}
+                  className="px-3 py-1.5 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 font-bold text-xs"
+                >
+                  キャンセル
+                </button>
+                <button
+                  type="submit"
+                  className="px-3 py-1.5 rounded bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-1.5 shadow"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  保存する
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* 2. Milestones Checkpoints */}
       <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-4 shadow-lg text-slate-200 space-y-3">

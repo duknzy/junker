@@ -77,12 +77,15 @@ export const GlobalNav: React.FC<GlobalNavProps> = ({
     audioSynth.setVolume(val);
   };
 
-  // Calculate days remaining to exam
+  // Calculate days remaining to exam (Timezone-safe)
   const getExamCountdown = () => {
     if (!macroPlan.examDate) return null;
-    const target = new Date(macroPlan.examDate).getTime();
-    const today = new Date().getTime();
-    const diffDays = Math.ceil((target - today) / (1000 * 60 * 60 * 24));
+    const [y, m, d] = macroPlan.examDate.split('-').map(Number);
+    if (!y || !m || !d) return null;
+    const target = new Date(y, m - 1, d, 0, 0, 0).getTime();
+    const today = new Date();
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0).getTime();
+    const diffDays = Math.ceil((target - todayStart) / (1000 * 60 * 60 * 24));
     return diffDays;
   };
 

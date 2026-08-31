@@ -221,7 +221,7 @@ export const AnalysisView: React.FC<AnalysisViewProps> = ({ logs, onAddManualLog
     setShowAddLogModal(false);
   };
 
-  // Weekday Matrix Calculation (月〜日 × 各教科)
+  // Weekday Matrix Calculation (月〜日 × 各教科 - Timezone-safe)
   const weekdays = ['月', '火', '水', '木', '金', '土', '日'];
   const weekdaySubjectTotals: Record<number, Record<SubjectKey, number>> = {
     0: {} as Record<SubjectKey, number>,
@@ -233,13 +233,15 @@ export const AnalysisView: React.FC<AnalysisViewProps> = ({ logs, onAddManualLog
     6: {} as Record<SubjectKey, number>,
   };
 
-  logs.forEach((log) => {
-    const d = new Date(log.dateStr);
-    const dayOfWeek = (d.getDay() + 6) % 7; // 0=Mon, 6=Sun
+  safeLogs.forEach((log) => {
+    if (!log.dateStr) return;
+    const [y, m, d] = log.dateStr.split('-').map(Number);
+    const dateObj = new Date(y, (m || 1) - 1, d || 1);
+    const dayOfWeek = (dateObj.getDay() + 6) % 7; // 0=Mon, 6=Sun
     if (!weekdaySubjectTotals[dayOfWeek][log.subject]) {
       weekdaySubjectTotals[dayOfWeek][log.subject] = 0;
     }
-    weekdaySubjectTotals[dayOfWeek][log.subject] += log.durationMinutes;
+    weekdaySubjectTotals[dayOfWeek][log.subject] += log.durationMinutes || 0;
   });
 
   return (

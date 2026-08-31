@@ -729,6 +729,928 @@
             background: var(--error); color: #fff; border: none; font-size: 0.65rem; font-weight: 800;
             line-height: 16px; text-align: center; cursor: pointer; padding: 0;
         }
+
+        /* ==========================================================================
+           💻 VS Code IDE Mode Styles (Monaco / Visual Studio Code Dark Layout)
+           ========================================================================== */
+        .lesson-mode-switch-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 0.55rem 1rem;
+            margin-bottom: 0.75rem;
+            box-shadow: var(--shadow-xs);
+        }
+        .mode-switch-label {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+        }
+        .view-mode-pill-group {
+            display: inline-flex;
+            background: var(--bg-subtle);
+            padding: 3px;
+            border-radius: var(--radius-full);
+            border: 1px solid var(--border-color);
+            gap: 2px;
+        }
+        .view-mode-pill {
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 0.28rem 0.8rem;
+            border-radius: var(--radius-full);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+        }
+        .view-mode-pill:hover {
+            color: var(--text-primary);
+        }
+        .view-mode-pill.active {
+            background: var(--brand-primary);
+            color: #ffffff;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+        }
+        .view-mode-pill.pill-vscode.active {
+            background: #007acc;
+            color: #ffffff;
+        }
+
+        /* ── VS Code Window Container ── */
+        .vscode-ide-container {
+            display: flex;
+            flex-direction: column;
+            background: #1e1e1e;
+            color: #cccccc;
+            border: 1px solid #3c3c3c;
+            border-radius: 10px;
+            height: calc(100vh - 165px);
+            min-height: 640px;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            transition: all 0.2s ease;
+        }
+        .vscode-ide-container.vsc-fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100vw;
+            height: 100vh;
+            max-height: 100vh;
+            border-radius: 0;
+            border: none;
+            z-index: 99999;
+        }
+
+        /* ── 1. Titlebar ── */
+        .vsc-titlebar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #323233;
+            color: #cccccc;
+            height: 34px;
+            min-height: 34px;
+            padding: 0 10px;
+            font-size: 11.5px;
+            border-bottom: 1px solid #252526;
+            user-select: none;
+        }
+        .vsc-titlebar-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .vsc-logo {
+            color: #007acc;
+            font-weight: 900;
+            font-size: 14px;
+        }
+        .vsc-menu-list {
+            display: flex;
+            gap: 2px;
+        }
+        .vsc-menu-item {
+            padding: 2px 6px;
+            border-radius: 3px;
+            cursor: pointer;
+            color: #cccccc;
+            font-size: 11.5px;
+        }
+        .vsc-menu-item:hover {
+            background: #444444;
+        }
+        .vsc-titlebar-center {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            max-width: 500px;
+            margin: 0 12px;
+        }
+        .vsc-command-center {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: #252526;
+            border: 1px solid #3c3c3c;
+            border-radius: 6px;
+            padding: 2px 14px;
+            width: 100%;
+            max-width: 440px;
+            color: #9d9d9d;
+            font-size: 11px;
+            cursor: pointer;
+            justify-content: center;
+        }
+        .vsc-command-center:hover {
+            background: #2d2d2d;
+            border-color: #007acc;
+            color: #e0e0e0;
+        }
+        .vsc-titlebar-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .vsc-win-control-btn {
+            background: transparent;
+            border: none;
+            color: #9d9d9d;
+            width: 22px;
+            height: 22px;
+            border-radius: 3px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 11px;
+        }
+        .vsc-win-control-btn:hover {
+            background: #444444;
+            color: #ffffff;
+        }
+
+        /* ── 2. Main Workspace Body ── */
+        .vsc-main-body {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            background: #1e1e1e;
+        }
+
+        /* ── Activity Bar (Left 48px) ── */
+        .vsc-activity-bar {
+            width: 48px;
+            min-width: 48px;
+            background: #333333;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            border-right: 1px solid #252526;
+            padding: 6px 0;
+            user-select: none;
+        }
+        .vsc-activity-group {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            align-items: center;
+            gap: 2px;
+        }
+        .vsc-activity-btn {
+            width: 48px;
+            height: 44px;
+            background: transparent;
+            border: none;
+            border-left: 2px solid transparent;
+            color: #858585;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 19px;
+            transition: color 0.12s;
+            position: relative;
+        }
+        .vsc-activity-btn:hover {
+            color: #ffffff;
+        }
+        .vsc-activity-btn.active {
+            color: #ffffff;
+            border-left-color: #ffffff;
+        }
+        .vsc-activity-badge {
+            position: absolute;
+            top: 6px;
+            right: 8px;
+            background: #007acc;
+            color: #ffffff;
+            font-size: 9px;
+            font-weight: 800;
+            padding: 1px 4px;
+            border-radius: 8px;
+            line-height: 1;
+        }
+
+        /* ── Sidebar (Explorer) ── */
+        .vsc-sidebar {
+            width: 250px;
+            min-width: 200px;
+            max-width: 320px;
+            background: #252526;
+            border-right: 1px solid #1e1e1e;
+            display: flex;
+            flex-direction: column;
+            user-select: none;
+            overflow: hidden;
+            font-size: 12px;
+        }
+        .vsc-sidebar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #bbbbbb;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid #1e1e1e;
+        }
+        .vsc-sidebar-header-actions {
+            display: flex;
+            gap: 4px;
+        }
+        .vsc-icon-action-btn {
+            background: transparent;
+            border: none;
+            color: #858585;
+            cursor: pointer;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+        .vsc-icon-action-btn:hover {
+            background: #333333;
+            color: #ffffff;
+        }
+        .vsc-sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 6px 0;
+        }
+        .vsc-tree-section {
+            margin-bottom: 6px;
+        }
+        .vsc-tree-header {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            font-weight: 700;
+            color: #bbbbbb;
+            cursor: pointer;
+            font-size: 11px;
+        }
+        .vsc-tree-header:hover {
+            color: #ffffff;
+        }
+        .vsc-tree-arrow {
+            font-size: 9px;
+            color: #858585;
+            transition: transform 0.15s;
+        }
+        .vsc-tree-arrow.collapsed {
+            transform: rotate(-90deg);
+        }
+        .vsc-tree-list {
+            display: flex;
+            flex-direction: column;
+        }
+        .vsc-tree-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 14px 4px 22px;
+            cursor: pointer;
+            color: #cccccc;
+            border-left: 2px solid transparent;
+            font-size: 12px;
+            transition: background 0.1s;
+        }
+        .vsc-tree-item:hover {
+            background: #2a2d2e;
+        }
+        .vsc-tree-item.active {
+            background: #37373d;
+            color: #ffffff;
+            border-left-color: #007acc;
+        }
+        .vsc-tree-item-icon {
+            font-size: 13px;
+            flex-shrink: 0;
+        }
+        .vsc-tree-item-name {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex: 1;
+        }
+        .vsc-tree-item-badge {
+            font-size: 10px;
+            padding: 1px 5px;
+            border-radius: 4px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        .vsc-badge-done { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+        .vsc-badge-active { background: rgba(59, 130, 246, 0.25); color: #60a5fa; }
+        .vsc-badge-locked { color: #6b7280; }
+
+        /* ── 3. Center Area (Editor + Panel) ── */
+        .vsc-center-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: #1e1e1e;
+        }
+
+        /* ── Editor Tabs Bar ── */
+        .vsc-editor-tabs-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #252526;
+            height: 35px;
+            min-height: 35px;
+            border-bottom: 1px solid #1e1e1e;
+            user-select: none;
+            overflow: hidden;
+        }
+        .vsc-editor-tabs-list {
+            display: flex;
+            flex: 1;
+            overflow-x: auto;
+            height: 100%;
+        }
+        .vsc-editor-tab {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 0 14px;
+            height: 100%;
+            background: #2d2d2d;
+            color: #969696;
+            font-size: 12px;
+            cursor: pointer;
+            border-right: 1px solid #1e1e1e;
+            border-top: 2px solid transparent;
+            white-space: nowrap;
+            transition: all 0.1s;
+        }
+        .vsc-editor-tab:hover {
+            color: #cccccc;
+        }
+        .vsc-editor-tab.active {
+            background: #1e1e1e;
+            color: #ffffff;
+            border-top-color: #007acc;
+        }
+        .vsc-tab-close {
+            font-size: 11px;
+            color: #858585;
+            padding: 2px;
+            border-radius: 3px;
+        }
+        .vsc-tab-close:hover {
+            background: #3c3c3c;
+            color: #ffffff;
+        }
+        .vsc-editor-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 0 10px;
+        }
+        .vsc-editor-tool-btn {
+            background: transparent;
+            border: 1px solid #3c3c3c;
+            color: #cccccc;
+            padding: 3px 8px;
+            font-size: 11px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.15s;
+        }
+        .vsc-editor-tool-btn:hover {
+            background: #2d2d2d;
+            border-color: #555555;
+            color: #ffffff;
+        }
+        .vsc-editor-tool-btn.btn-run {
+            background: #0e639c;
+            border-color: #1177bb;
+            color: #ffffff;
+            font-weight: 700;
+        }
+        .vsc-editor-tool-btn.btn-run:hover {
+            background: #1177bb;
+        }
+
+        /* ── Breadcrumbs ── */
+        .vsc-breadcrumbs {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            height: 22px;
+            min-height: 22px;
+            background: #1e1e1e;
+            color: #858585;
+            font-size: 11px;
+            padding: 0 14px;
+            border-bottom: 1px solid #282828;
+            user-select: none;
+        }
+        .vsc-breadcrumbs span.active {
+            color: #cccccc;
+        }
+
+        /* ── Code Viewport (Editor Area) ── */
+        .vsc-editor-viewport {
+            flex: 1;
+            display: flex;
+            overflow-y: auto;
+            background: #1e1e1e;
+            position: relative;
+        }
+        .vsc-editor-gutter {
+            width: 48px;
+            min-width: 48px;
+            background: #181818;
+            color: #6e7681;
+            text-align: right;
+            padding: 16px 10px 16px 0;
+            user-select: none;
+            font-family: "JetBrains Mono", Consolas, "Courier New", monospace;
+            font-size: 12px;
+            line-height: 1.75;
+            border-right: 1px solid #2d2d2d;
+        }
+        .vsc-gutter-line {
+            line-height: 1.75;
+            color: #555e69;
+        }
+        .vsc-editor-content {
+            flex: 1;
+            padding: 16px 24px 32px 24px;
+            color: #d4d4d4;
+            font-family: "JetBrains Mono", Consolas, "Courier New", monospace;
+            font-size: 13px;
+            line-height: 1.75;
+            overflow-x: auto;
+            background: #1e1e1e;
+        }
+
+        /* ── Code syntax highlights inside Monaco view ── */
+        .vsc-code-comment { color: #6a9955; font-style: italic; }
+        .vsc-code-keyword { color: #569cd6; font-weight: 700; }
+        .vsc-code-string { color: #ce9178; }
+        .vsc-code-type { color: #4ec9b0; }
+        .vsc-code-fn { color: #dcdcaa; }
+        .vsc-code-const { color: #4fc1ff; }
+        .vsc-code-tag { color: #c586c0; font-weight: 700; }
+
+        /* Comment Block: VS Code Green with proper multi-line formatting */
+        .vsc-comment-block {
+            white-space: pre-wrap !important;
+            font-family: "JetBrains Mono", Consolas, "Courier New", monospace !important;
+            color: #7ee787 !important;
+            background: #161b22 !important;
+            border: 1px solid #30363d !important;
+            border-radius: 6px !important;
+            padding: 12px 16px !important;
+            margin-bottom: 14px !important;
+            line-height: 1.6 !important;
+            font-size: 12px !important;
+            user-select: text !important;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+        }
+
+        /* Section Divider */
+        .vsc-syntax-section {
+            color: #f2cc60 !important;
+            font-weight: 700 !important;
+            font-family: "JetBrains Mono", Consolas, "Courier New", monospace !important;
+            background: #21262d !important;
+            padding: 8px 14px !important;
+            border-radius: 6px !important;
+            border-left: 4px solid #58a6ff !important;
+            border: 1px solid #30363d !important;
+            border-left-width: 4px !important;
+            border-left-color: #58a6ff !important;
+            margin: 18px 0 14px 0 !important;
+            font-size: 13px !important;
+            display: flex !important;
+            align-items: center !important;
+        }
+
+        /* User Prompt Box */
+        .vsc-user-prompt-box {
+            background: #1f242c !important;
+            border: 1px solid #388bfd !important;
+            border-left: 4px solid #58a6ff !important;
+            border-radius: 6px !important;
+            padding: 12px 16px !important;
+            margin: 14px 0 !important;
+            color: #e6edf3 !important;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .vsc-user-prompt-header {
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            font-size: 11.5px !important;
+            font-weight: 700 !important;
+            color: #79c0ff !important;
+            margin-bottom: 8px !important;
+            border-bottom: 1px dashed #30363d !important;
+            padding-bottom: 4px !important;
+        }
+
+        /* AI Output Box */
+        .vsc-ai-output-box {
+            background: #181c24 !important;
+            border: 1px solid #30363d !important;
+            border-radius: 8px !important;
+            padding: 16px 20px !important;
+            margin: 14px 0 20px 0 !important;
+            color: #e6edf3 !important;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        }
+
+        .vsc-ai-output-header {
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            border-bottom: 1px solid #30363d !important;
+            padding-bottom: 8px !important;
+            margin-bottom: 14px !important;
+            font-size: 12px !important;
+        }
+
+        /* Card Block (Memorize, Notes, Drills) */
+        .vsc-card-block {
+            background: #181c24 !important;
+            border: 1px solid #30363d !important;
+            border-radius: 6px !important;
+            padding: 14px 18px !important;
+            margin-bottom: 14px !important;
+            color: #d4d4d4 !important;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .vsc-tag-cyan {
+            color: #79c0ff !important;
+            font-weight: 700 !important;
+            font-size: 12px !important;
+            background: rgba(56, 139, 253, 0.15) !important;
+            padding: 2px 8px !important;
+            border-radius: 4px !important;
+            border: 1px solid rgba(56, 139, 253, 0.3) !important;
+        }
+
+        /* ⚡ MathJax & LaTeX Dark Theme Optimization for VS Code IDE */
+        .vscode-ide-container mjx-container,
+        .vscode-ide-container mjx-container[jax="CHTML"],
+        .vscode-ide-container mjx-container * {
+            color: #f0f6fc !important;
+            background: transparent !important;
+            border-color: #58a6ff !important;
+        }
+
+        .vscode-ide-container mjx-container[jax="CHTML"][display="true"] {
+            background: #10141a !important;
+            padding: 12px 18px !important;
+            border-radius: 6px !important;
+            border: 1px solid #30363d !important;
+            margin: 10px 0 !important;
+            color: #ffffff !important;
+            overflow-x: auto !important;
+            box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.4) !important;
+            display: block !important;
+        }
+
+        .vscode-ide-container mjx-c {
+            color: #f0f6fc !important;
+        }
+
+        .vscode-ide-container mjx-box {
+            border-color: #58a6ff !important;
+            color: #79c0ff !important;
+            background: rgba(88, 166, 255, 0.12) !important;
+            padding: 2px 4px !important;
+            border-radius: 3px !important;
+        }
+
+        /* 🏷️ Headings & Highlights inside VS Code */
+        .vscode-ide-container .inline-section-header,
+        .vscode-ide-container strong.inline-section-header {
+            color: #79c0ff !important;
+            font-weight: 800 !important;
+            font-size: 14px !important;
+            display: inline-block !important;
+            margin-top: 10px !important;
+            margin-bottom: 4px !important;
+        }
+
+        .vscode-ide-container h4,
+        .vscode-ide-container [style*="var(--brand-primary)"] {
+            color: #58a6ff !important;
+            border-bottom-color: #30363d !important;
+        }
+
+        .vscode-ide-container [style*="var(--border-color)"] {
+            border-color: #30363d !important;
+        }
+
+        .vscode-ide-container strong {
+            color: #ffffff !important;
+            font-weight: 700 !important;
+        }
+
+        .vscode-ide-container .tex2jax_process {
+            color: #d4d4d4 !important;
+            font-family: "JetBrains Mono", Consolas, "Segoe UI", sans-serif !important;
+            font-size: 13.5px !important;
+            line-height: 1.75 !important;
+        }
+
+        .vsc-step-docblock {
+            background: #252526;
+            border-left: 3px solid #007acc;
+            border-radius: 0 6px 6px 0;
+            padding: 10px 14px;
+            margin: 12px 0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+        .vsc-step-docblock.socratic {
+            border-left-color: #c586c0;
+        }
+        .vsc-step-title {
+            color: #4fc1ff;
+            font-weight: 700;
+            font-size: 13.5px;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .vsc-step-body {
+            color: #d4d4d4;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-size: 13.5px;
+            line-height: 1.65;
+        }
+        .vsc-user-msg-block {
+            background: #2a2d2e;
+            border-left: 3px solid #4ec9b0;
+            border-radius: 0 6px 6px 0;
+            padding: 8px 12px;
+            margin: 10px 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-size: 13px;
+        }
+        .vsc-inline-actions {
+            display: flex;
+            gap: 6px;
+            margin-top: 8px;
+            justify-content: flex-end;
+        }
+
+        /* ── 4. Bottom Panel (Terminal / AI Copilot) ── */
+        .vsc-bottom-panel {
+            height: 220px;
+            min-height: 160px;
+            max-height: 480px;
+            background: #181818;
+            border-top: 1px solid #3c3c3c;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: height 0.2s cubic-bezier(0.2, 0.9, 0.3, 1);
+        }
+        .vsc-bottom-panel.expanded {
+            height: 380px;
+        }
+        .vsc-bottom-panel.collapsed {
+            height: 34px;
+        }
+        .vsc-panel-tabs-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #1e1e1e;
+            height: 32px;
+            min-height: 32px;
+            border-bottom: 1px solid #282828;
+            padding: 0 8px;
+            user-select: none;
+        }
+        .vsc-panel-tabs-list {
+            display: flex;
+            gap: 4px;
+        }
+        .vsc-panel-tab {
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            color: #858585;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 6px 10px;
+            cursor: pointer;
+            letter-spacing: 0.3px;
+        }
+        .vsc-panel-tab:hover {
+            color: #cccccc;
+        }
+        .vsc-panel-tab.active {
+            color: #ffffff;
+            border-bottom-color: #007acc;
+        }
+        .vsc-panel-controls {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .vsc-panel-ctrl-btn {
+            background: transparent;
+            border: none;
+            color: #858585;
+            padding: 2px 6px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+        .vsc-panel-ctrl-btn:hover {
+            background: #333333;
+            color: #ffffff;
+        }
+
+        /* Panel Content Area */
+        .vsc-panel-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: #181818;
+            padding: 8px 12px;
+        }
+        .vsc-terminal-view {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            font-family: "JetBrains Mono", Consolas, "Courier New", monospace;
+        }
+        .vsc-terminal-logs {
+            flex: 1;
+            overflow-y: auto;
+            font-size: 12px;
+            line-height: 1.6;
+            color: #cccccc;
+            padding-bottom: 6px;
+        }
+        .vsc-term-line {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 2px;
+        }
+        .vsc-term-info { color: #4fc1ff; }
+        .vsc-term-success { color: #34d399; }
+        .vsc-term-warn { color: #fbbf24; }
+        .vsc-term-error { color: #f87171; }
+        .vsc-term-ai { color: #d4d4d4; }
+        .vsc-term-user { color: #4ec9b0; }
+
+        /* Terminal Prompt Bar */
+        .vsc-terminal-prompt-box {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            border-top: 1px solid #282828;
+            padding-top: 6px;
+        }
+        .vsc-term-tools-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .vsc-term-tool-btn {
+            background: #252526;
+            border: 1px solid #3c3c3c;
+            color: #cccccc;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .vsc-term-tool-btn:hover {
+            background: #333333;
+            border-color: #007acc;
+            color: #ffffff;
+        }
+        .vsc-term-input-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .vsc-term-ps1 {
+            color: #34d399;
+            font-weight: 700;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+        .vsc-term-input {
+            flex: 1;
+            background: #1e1e1e;
+            border: 1px solid #3c3c3c;
+            color: #ffffff;
+            padding: 4px 8px;
+            font-family: "JetBrains Mono", Consolas, "Courier New", monospace;
+            font-size: 12.5px;
+            border-radius: 4px;
+            outline: none;
+        }
+        .vsc-term-input:focus {
+            border-color: #007acc;
+        }
+        .vsc-term-send-btn {
+            background: #007acc;
+            border: none;
+            color: #ffffff;
+            padding: 4px 12px;
+            font-size: 11.5px;
+            font-weight: 700;
+            border-radius: 4px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .vsc-term-send-btn:hover {
+            background: #0098ff;
+        }
+
+        /* ── 5. Statusbar (Bottom 22px) ── */
+        .vsc-statusbar {
+            height: 22px;
+            min-height: 22px;
+            background: #007acc;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 10px;
+            font-size: 11px;
+            user-select: none;
+        }
+        .vsc-statusbar-left, .vsc-statusbar-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .vsc-status-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            cursor: default;
+        }
+        .vsc-status-item-click {
+            cursor: pointer;
+            padding: 1px 4px;
+            border-radius: 2px;
+        }
+        .vsc-status-item-click:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
     </style>
 </head>
 <body>
@@ -990,105 +1912,333 @@
 
                 <!-- ============ 授業（チャット）画面 ============ -->
                 <div id="view-lesson" class="hidden">
-                    <div class="lesson-layout-grid">
-                        <!-- 左メイン：授業チャット -->
-                        <div class="lesson-main-card">
-                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 0.6rem; flex-wrap: wrap; gap: 0.4rem;">
-                                <div style="display: flex; align-items: center; gap: 0.45rem; min-width: 0;">
-                                    <span id="lesson-title-display" style="font-weight: 700; color: var(--text-primary); font-size: 0.98rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">---</span>
-                                    <span id="lesson-style-display-badge" class="lesson-style-badge" style="font-size: 0.72rem; padding: 0.15rem 0.5rem;"></span>
+                    <!-- 🎛️ 表示モード切り替えツールバー -->
+                    <div class="lesson-mode-switch-bar">
+                        <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
+                            <span class="mode-switch-label">🖥️ 表示スタイル:</span>
+                            <div class="view-mode-pill-group">
+                                <button type="button" class="view-mode-pill active" id="mode-btn-standard" title="通常の参考書・講義ビュー">📖 通常ビュー</button>
+                                <button type="button" class="view-mode-pill pill-vscode" id="mode-btn-vscode" title="Visual Studio Code風 IDEコーディングビュー (PC推奨)">💻 VS Codeモード</button>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-left: auto;">
+                            <span id="continuation-source-badge" style="display:none; font-size: 0.74rem; color: var(--brand-primary); font-weight:600;"></span>
+                            <span style="font-size: 0.78rem; color: var(--text-secondary);">パート <b id="part-progress-display" style="color: var(--brand-primary); font-weight: 700;">-/-</b></span>
+                            <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="solve-related-problem-btn" style="padding: 0.25rem 0.55rem; font-size: 0.74rem;">
+                                🎯 誤答ノート連携
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 1️⃣ 通常ビュー（標準参考書レイアウト） -->
+                    <div id="lesson-standard-container">
+                        <div class="lesson-layout-grid">
+                            <!-- 左メイン：授業チャット -->
+                            <div class="lesson-main-card">
+                                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 0.6rem; flex-wrap: wrap; gap: 0.4rem;">
+                                    <div style="display: flex; align-items: center; gap: 0.45rem; min-width: 0;">
+                                        <span id="lesson-title-display" style="font-weight: 700; color: var(--text-primary); font-size: 0.98rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">---</span>
+                                        <span id="lesson-style-display-badge" class="lesson-style-badge" style="font-size: 0.72rem; padding: 0.15rem 0.5rem;"></span>
+                                    </div>
                                 </div>
-                                <div style="display: flex; align-items: center; gap: 0.5rem; margin-left: auto; flex-shrink: 0;">
-                                    <span id="continuation-source-badge" style="display:none; font-size: 0.74rem; color: var(--brand-primary); font-weight:600;"></span>
-                                    <span style="font-size: 0.78rem; color: var(--text-secondary);">パート <b id="part-progress-display" style="color: var(--brand-primary); font-weight: 700;">-/-</b></span>
-                                    <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="solve-related-problem-btn" style="padding: 0.25rem 0.55rem; font-size: 0.74rem;">
-                                        🎯 誤答ノート連携
-                                    </button>
+
+                                <div class="chat-transcript" id="chat-transcript"></div>
+
+                                <!-- ⚡ 即時アウトプット演習エリア -->
+                                <div id="drill-container-area"></div>
+
+                                <div id="completed-banner" class="completed-banner hidden" style="text-align: center; padding: 1.2rem; background: var(--brand-light); border-radius: var(--radius-md); border: 1px solid var(--brand-border); margin: 0.6rem 0;">
+                                    <div style="font-size: 1rem; font-weight: 700; color: var(--brand-primary);">🎉 この授業の全パートが修了しました！お疲れさまでした。</div>
+                                    <div id="level-up-cta-wrap" style="margin-top:0.6rem; display:none;">
+                                        <button type="button" class="flora-btn flora-btn-primary btn-sm" id="level-up-cta-btn"></button>
+                                    </div>
+                                </div>
+
+                                <div class="chat-input-wrap" id="chat-input-wrap">
+                                    <div class="chat-image-thumb-row" id="chat-image-thumb-row"></div>
+                                    <div class="chat-input-row">
+                                        <button type="button" class="chat-attach-btn" id="chat-attach-btn" title="参考書のページ写真を添付して質問する">📷</button>
+                                        <input type="file" id="chat-image-input" accept="image/*" multiple style="display:none;">
+                                        <input type="text" class="chat-input" id="chat-input" placeholder="このパートについて質問する...（📷で写真を添付可）">
+                                        <button type="button" class="flora-btn flora-btn-primary btn-sm" id="send-chat-btn">送信</button>
+                                    </div>
+                                    <div class="diagram-request-row hidden" id="diagram-request-row" style="display: flex; gap: 0.4rem; margin-top: 0.3rem;">
+                                        <input type="text" class="flora-input" id="diagram-request-input" placeholder="例: 円と接線の位置関係を図にして" style="font-size: var(--fs-xs);">
+                                        <button type="button" class="flora-btn flora-btn-primary btn-sm" id="diagram-request-send-btn">送信</button>
+                                    </div>
+                                </div>
+
+                                <div style="display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.6rem; justify-content: space-between;">
+                                    <div style="display: flex; gap: 0.4rem;">
+                                        <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="request-diagram-btn" style="padding: 0.3rem 0.6rem; font-size: 0.74rem;">🖼️ 図で説明してほしい</button>
+                                        <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="trigger-drill-btn" style="color: var(--brand-primary); padding: 0.3rem 0.6rem; font-size: 0.74rem;">⚡ 類題で即時アウトプット</button>
+                                    </div>
+                                    <button type="button" class="flora-btn flora-btn-primary btn-sm" id="next-part-btn" style="padding: 0.3rem 0.8rem; font-size: 0.76rem;">▶ 次のパートへ進む</button>
                                 </div>
                             </div>
 
-                            <div class="chat-transcript" id="chat-transcript"></div>
+                            <!-- 右サイドバー：目次・ノート・原本参照 -->
+                            <aside class="lesson-sidebar-card">
+                                <div class="sidebar-tab-group">
+                                    <button type="button" class="sidebar-tab-btn active" data-tab="tab-parts">📚 パート目次</button>
+                                    <button type="button" class="sidebar-tab-btn" data-tab="tab-notes">📝 授業ノート</button>
+                                    <button type="button" class="sidebar-tab-btn" data-tab="tab-memorize">🧠 暗記事項</button>
+                                    <button type="button" class="sidebar-tab-btn" data-tab="tab-source">📖 原本テキスト</button>
+                                </div>
 
-                            <!-- ⚡ 即時アウトプット演習エリア -->
-                            <div id="drill-container-area"></div>
+                                <!-- パネル1: パート目次 -->
+                                <div class="sidebar-panel active" id="tab-parts">
+                                    <div style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 0.6rem; font-weight: 600;">
+                                        💡 全パートの構成一覧
+                                    </div>
+                                    <div id="lesson-parts-toc-list" class="parts-toc-container"></div>
+                                </div>
 
-                            <div id="completed-banner" class="completed-banner hidden" style="text-align: center; padding: 1.2rem; background: var(--brand-light); border-radius: var(--radius-md); border: 1px solid var(--brand-border); margin: 0.6rem 0;">
-                                <div style="font-size: 1rem; font-weight: 700; color: var(--brand-primary);">🎉 この授業の全パートが修了しました！お疲れさまでした。</div>
-                                <div id="level-up-cta-wrap" style="margin-top:0.6rem; display:none;">
-                                    <button type="button" class="flora-btn flora-btn-primary btn-sm" id="level-up-cta-btn"></button>
+                                <!-- パネル2: 授業メモ一覧 -->
+                                <div class="sidebar-panel" id="tab-notes">
+                                    <div style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 0.6rem; font-weight: 600;">
+                                        ✏️ 授業で気づいたことをその場でメモ
+                                    </div>
+                                    <div class="memo-add-row" style="margin-bottom: 0.8rem;">
+                                        <textarea class="flora-textarea" id="memo-add-input" rows="3" placeholder="気づいたことを入力（Ctrl+Enterで追加）" style="font-size: var(--fs-xs);"></textarea>
+                                        <div style="display: flex; justify-content: flex-end; margin-top: 0.4rem;">
+                                            <button type="button" class="flora-btn flora-btn-primary btn-sm" id="memo-add-btn">＋追加</button>
+                                        </div>
+                                    </div>
+                                    <div id="lesson-memo-list" class="lesson-memo-list"></div>
+                                </div>
+
+                                <!-- パネル3: 暗記事項リスト -->
+                                <div class="sidebar-panel" id="tab-memorize">
+                                    <div style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 0.6rem; font-weight: 600;">
+                                        🧠 この単元で暗記すべき公式・反応式・用語一覧
+                                    </div>
+                                    <div id="lesson-memorization-list" class="memorize-list tex2jax_process"></div>
+                                </div>
+
+                                <!-- パネル4: 原本テキスト -->
+                                <div class="sidebar-panel" id="tab-source">
+                                    <div style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 0.6rem; font-weight: 600;" id="source-panel-label">
+                                        🔍 参考書の文字起こし全文
+                                    </div>
+                                    <div id="lesson-extracted-source-text" class="source-text-box tex2jax_process"></div>
+                                </div>
+                            </aside>
+                        </div>
+                    </div>
+
+                    <!-- 2️⃣ 💻 VS Code IDE ビュー（Monaco風コードエディタ＋統合ターミナル） -->
+                    <div id="lesson-vscode-container" class="vscode-ide-container hidden">
+                        <!-- Top Titlebar -->
+                        <div class="vsc-titlebar">
+                            <div class="vsc-titlebar-left">
+                                <span class="vsc-logo">🟦</span>
+                                <div class="vsc-menu-list">
+                                    <span class="vsc-menu-item">File</span>
+                                    <span class="vsc-menu-item">Edit</span>
+                                    <span class="vsc-menu-item">Selection</span>
+                                    <span class="vsc-menu-item">View</span>
+                                    <span class="vsc-menu-item">Go</span>
+                                    <span class="vsc-menu-item">Run</span>
+                                    <span class="vsc-menu-item">Terminal</span>
                                 </div>
                             </div>
-
-                            <div class="chat-input-wrap" id="chat-input-wrap">
-                                <div class="chat-image-thumb-row" id="chat-image-thumb-row"></div>
-                                <div class="chat-input-row">
-                                    <button type="button" class="chat-attach-btn" id="chat-attach-btn" title="参考書のページ写真を添付して質問する">📷</button>
-                                    <input type="file" id="chat-image-input" accept="image/*" multiple style="display:none;">
-                                    <input type="text" class="chat-input" id="chat-input" placeholder="このパートについて質問する...（📷で写真を添付可）">
-                                    <button type="button" class="flora-btn flora-btn-primary btn-sm" id="send-chat-btn">送信</button>
-                                </div>
-                                <div class="diagram-request-row hidden" id="diagram-request-row" style="display: flex; gap: 0.4rem; margin-top: 0.3rem;">
-                                    <input type="text" class="flora-input" id="diagram-request-input" placeholder="例: 円と接線の位置関係を図にして" style="font-size: var(--fs-xs);">
-                                    <button type="button" class="flora-btn flora-btn-primary btn-sm" id="diagram-request-send-btn">送信</button>
+                            <div class="vsc-titlebar-center">
+                                <div class="vsc-command-center" id="vsc-command-center-btn" title="コマンドパレットを開く (Ctrl+Shift+P)">
+                                    <span>🔍</span>
+                                    <span id="vsc-titlebar-title-text">flora-workspace > lesson > 01_Part1.tex</span>
                                 </div>
                             </div>
-
-                            <div style="display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.6rem; justify-content: space-between;">
-                                <div style="display: flex; gap: 0.4rem;">
-                                    <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="request-diagram-btn" style="padding: 0.3rem 0.6rem; font-size: 0.74rem;">🖼️ 図で説明してほしい</button>
-                                    <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="trigger-drill-btn" style="color: var(--brand-primary); padding: 0.3rem 0.6rem; font-size: 0.74rem;">⚡ 類題で即時アウトプット</button>
+                            <div class="vsc-titlebar-right">
+                                <button type="button" class="vsc-editor-tool-btn" id="vsc-switch-to-standard-btn" style="background:#252526; color:#cccccc; font-size:11px; padding:2px 8px;">
+                                    📖 通常ビューに戻す
+                                </button>
+                                <div style="display:flex; gap:2px; margin-left:4px;">
+                                    <button class="vsc-win-control-btn" title="Minimize">🗕</button>
+                                    <button class="vsc-win-control-btn" id="vsc-btn-expand-ide" title="Maximize">🗖</button>
+                                    <button class="vsc-win-control-btn" title="Close" id="vsc-btn-close-ide">✕</button>
                                 </div>
-                                <button type="button" class="flora-btn flora-btn-primary btn-sm" id="next-part-btn" style="padding: 0.3rem 0.8rem; font-size: 0.76rem;">▶ 次のパートへ進む</button>
                             </div>
                         </div>
 
-                        <!-- 右サイドバー：目次・ノート・原本参照 -->
-                        <aside class="lesson-sidebar-card">
-                            <div class="sidebar-tab-group">
-                                <button type="button" class="sidebar-tab-btn active" data-tab="tab-parts">📚 パート目次</button>
-                                <button type="button" class="sidebar-tab-btn" data-tab="tab-notes">📝 授業ノート</button>
-                                <button type="button" class="sidebar-tab-btn" data-tab="tab-memorize">🧠 暗記事項</button>
-                                <button type="button" class="sidebar-tab-btn" data-tab="tab-source">📖 原本テキスト</button>
+                        <!-- Main IDE Body -->
+                        <div class="vsc-main-body">
+                            <!-- 1. Activity Bar -->
+                            <div class="vsc-activity-bar">
+                                <div class="vsc-activity-group">
+                                    <button type="button" class="vsc-activity-btn active" id="vsc-act-explorer" data-vsc-act="explorer" title="Explorer (Ctrl+Shift+E)">📁</button>
+                                    <button type="button" class="vsc-activity-btn" id="vsc-act-outline" data-vsc-act="outline" title="Part Outline / Curriculum">📑</button>
+                                    <button type="button" class="vsc-activity-btn" id="vsc-act-memorize" data-vsc-act="memorize" title="Key Terms & Formulas (暗記事項)">🧠</button>
+                                    <button type="button" class="vsc-activity-btn" id="vsc-act-notes" data-vsc-act="notes" title="Study Notes (授業メモ)">📝</button>
+                                    <button type="button" class="vsc-activity-btn" id="vsc-act-drill" data-vsc-act="drill" title="Instant Drill Runner (即時演習)">⚡</button>
+                                    <button type="button" class="vsc-activity-btn" id="vsc-act-source" data-vsc-act="source" title="Raw Source Text">📖</button>
+                                </div>
+                                <div class="vsc-activity-group">
+                                    <button type="button" class="vsc-activity-btn" id="vsc-act-settings" title="Lesson Settings (授業方針)">⚙️</button>
+                                </div>
                             </div>
 
-                            <!-- パネル1: パート目次 -->
-                            <div class="sidebar-panel active" id="tab-parts">
-                                <div style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 0.6rem; font-weight: 600;">
-                                    💡 全パートの構成一覧
-                                </div>
-                                <div id="lesson-parts-toc-list" class="parts-toc-container"></div>
-                            </div>
-
-                            <!-- パネル2: 授業メモ一覧 -->
-                            <div class="sidebar-panel" id="tab-notes">
-                                <div style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 0.6rem; font-weight: 600;">
-                                    ✏️ 授業で気づいたことをその場でメモ
-                                </div>
-                                <div class="memo-add-row" style="margin-bottom: 0.8rem;">
-                                    <textarea class="flora-textarea" id="memo-add-input" rows="3" placeholder="気づいたことを入力（Ctrl+Enterで追加）" style="font-size: var(--fs-xs);"></textarea>
-                                    <div style="display: flex; justify-content: flex-end; margin-top: 0.4rem;">
-                                        <button type="button" class="flora-btn flora-btn-primary btn-sm" id="memo-add-btn">＋追加</button>
+                            <!-- 2. Sidebar (Explorer) -->
+                            <div class="vsc-sidebar" id="vsc-sidebar">
+                                <div class="vsc-sidebar-header">
+                                    <span id="vsc-sidebar-title">EXPLORER: FLORA_WORKSPACE</span>
+                                    <div class="vsc-sidebar-header-actions">
+                                        <button type="button" class="vsc-icon-action-btn" id="vsc-new-memo-icon-btn" title="新しいノートを追加">＋</button>
+                                        <button type="button" class="vsc-icon-action-btn" id="vsc-refresh-tree-btn" title="リフレッシュ">🔄</button>
                                     </div>
                                 </div>
-                                <div id="lesson-memo-list" class="lesson-memo-list"></div>
+                                <div class="vsc-sidebar-content">
+                                    <!-- Tree Section: Lesson Parts -->
+                                    <div class="vsc-tree-section">
+                                        <div class="vsc-tree-header" id="vsc-header-parts" data-toggle="vsc-tree-parts-list">
+                                            <span class="vsc-tree-arrow">▼</span>
+                                            <span>LESSON_PARTS</span>
+                                            <span class="vsc-tree-item-badge vsc-badge-active" id="vsc-parts-badge-count" style="margin-left:auto;">1/4</span>
+                                        </div>
+                                        <div class="vsc-tree-list" id="vsc-tree-parts-list"></div>
+                                    </div>
+
+                                    <!-- Tree Section: Workspace Assets -->
+                                    <div class="vsc-tree-section">
+                                        <div class="vsc-tree-header" id="vsc-header-assets" data-toggle="vsc-tree-assets-list">
+                                            <span class="vsc-tree-arrow">▼</span>
+                                            <span>WORKSPACE_ASSETS</span>
+                                        </div>
+                                        <div class="vsc-tree-list" id="vsc-tree-assets-list">
+                                            <div class="vsc-tree-item" data-vsc-file="memorize" id="vsc-file-item-memorize">
+                                                <span class="vsc-tree-item-icon">🧠</span>
+                                                <span class="vsc-tree-item-name">02_Memorization.md</span>
+                                            </div>
+                                            <div class="vsc-tree-item" data-vsc-file="notes" id="vsc-file-item-notes">
+                                                <span class="vsc-tree-item-icon">📝</span>
+                                                <span class="vsc-tree-item-name">03_StudyNotes.md</span>
+                                            </div>
+                                            <div class="vsc-tree-item" data-vsc-file="drill" id="vsc-file-item-drill">
+                                                <span class="vsc-tree-item-icon">⚡</span>
+                                                <span class="vsc-tree-item-name">04_InstantDrill.tex</span>
+                                            </div>
+                                            <div class="vsc-tree-item" data-vsc-file="source" id="vsc-file-item-source">
+                                                <span class="vsc-tree-item-icon">📖</span>
+                                                <span class="vsc-tree-item-name">05_TextbookSource.txt</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
-                            <!-- パネル3: 暗記事項リスト -->
-                            <div class="sidebar-panel" id="tab-memorize">
-                                <div style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 0.6rem; font-weight: 600;">
-                                    🧠 この単元で暗記すべき公式・反応式・用語一覧
+                            <!-- 3. Center Area (Tabs + Breadcrumbs + Code + Bottom Terminal) -->
+                            <div class="vsc-center-area">
+                                <!-- Editor Tabs Bar -->
+                                <div class="vsc-editor-tabs-bar">
+                                    <div class="vsc-editor-tabs-list" id="vsc-editor-tabs-list"></div>
+                                    <div class="vsc-editor-actions">
+                                        <button type="button" class="vsc-editor-tool-btn" id="vsc-copy-code-btn" title="コード/解説をコピー">📋 Copy</button>
+                                        <button type="button" class="vsc-editor-tool-btn" id="vsc-regen-part-btn" title="AI解説を再生成">🔄 Regenerate</button>
+                                        <button type="button" class="vsc-editor-tool-btn btn-run" id="vsc-next-part-btn" title="次のパートへ進む">▶ Next Part</button>
+                                    </div>
                                 </div>
-                                <div id="lesson-memorization-list" class="memorize-list tex2jax_process"></div>
-                            </div>
 
-                            <!-- パネル4: 原本テキスト -->
-                            <div class="sidebar-panel" id="tab-source">
-                                <div style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 0.6rem; font-weight: 600;" id="source-panel-label">
-                                    🔍 参考書の文字起こし全文
+                                <!-- Breadcrumbs -->
+                                <div class="vsc-breadcrumbs" id="vsc-breadcrumbs-bar">
+                                    <span>flora-workspace</span>
+                                    <span>›</span>
+                                    <span id="vsc-crumb-subject">math</span>
+                                    <span>›</span>
+                                    <span id="vsc-crumb-lesson">Lesson</span>
+                                    <span>›</span>
+                                    <span class="active" id="vsc-crumb-file">01_Part1.tex</span>
                                 </div>
-                                <div id="lesson-extracted-source-text" class="source-text-box tex2jax_process"></div>
+
+                                <!-- Code Viewport (Editor Area) -->
+                                <div class="vsc-editor-viewport" id="vsc-editor-viewport">
+                                    <div class="vsc-editor-gutter" id="vsc-editor-gutter"></div>
+                                    <div class="vsc-editor-content tex2jax_process" id="vsc-editor-content"></div>
+                                </div>
+
+                                <!-- Bottom Panel (Terminal / AI Console / Quick Notes) -->
+                                <div class="vsc-bottom-panel" id="vsc-bottom-panel">
+                                    <div class="vsc-panel-tabs-bar">
+                                        <div class="vsc-panel-tabs-list">
+                                            <button type="button" class="vsc-panel-tab active" data-vsc-panel="terminal">TERMINAL</button>
+                                            <button type="button" class="vsc-panel-tab" data-vsc-panel="copilot">AI COPILOT</button>
+                                            <button type="button" class="vsc-panel-tab" data-vsc-panel="drill">⚡ DRILL RUNNER</button>
+                                            <button type="button" class="vsc-panel-tab" data-vsc-panel="notes">📝 QUICK NOTES</button>
+                                            <button type="button" class="vsc-panel-tab" data-vsc-panel="problems">PROBLEMS <span style="background:#333; padding:1px 5px; border-radius:4px; font-size:10px;">0</span></button>
+                                        </div>
+                                        <div class="vsc-panel-controls">
+                                            <button type="button" class="vsc-panel-ctrl-btn" id="vsc-term-clear-btn" title="ログをクリア">🚫 Clear</button>
+                                            <button type="button" class="vsc-panel-ctrl-btn" id="vsc-term-toggle-height-btn" title="高さを切り替え">⌃ Toggle</button>
+                                            <button type="button" class="vsc-panel-ctrl-btn" id="vsc-term-close-panel-btn" title="パネルを閉じる">✕</button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Panel Body -->
+                                    <div class="vsc-panel-body">
+                                        <!-- Terminal Tab -->
+                                        <div class="vsc-terminal-view" id="vsc-panel-view-terminal">
+                                            <div class="vsc-terminal-logs" id="vsc-terminal-logs"></div>
+                                            <div class="vsc-terminal-prompt-box">
+                                                <div class="vsc-term-tools-row">
+                                                    <button type="button" class="vsc-term-tool-btn" id="vsc-term-attach-photo-btn">📷 Attach Photo</button>
+                                                    <input type="file" id="vsc-term-file-input" accept="image/*" multiple style="display:none;">
+                                                    <button type="button" class="vsc-term-tool-btn" id="vsc-term-diagram-req-btn">🖼️ Request Diagram</button>
+                                                    <button type="button" class="vsc-term-tool-btn" id="vsc-term-drill-req-btn">⚡ Run Drill</button>
+                                                    <button type="button" class="vsc-term-tool-btn" id="vsc-term-next-step-btn">▶ Next Part</button>
+                                                </div>
+                                                <div class="chat-image-thumb-row" id="vsc-term-image-thumb-row" style="margin-top:2px;"></div>
+                                                <div class="vsc-term-input-row">
+                                                    <span class="vsc-term-ps1">student@flora:~$</span>
+                                                    <input type="text" class="vsc-term-input" id="vsc-terminal-input" placeholder="質問・回答を入力してEnter (例: 展開の公式を詳しく / help でコマンド一覧)">
+                                                    <button type="button" class="vsc-term-send-btn" id="vsc-terminal-send-btn">Execute ↵</button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Copilot Tab -->
+                                        <div class="vsc-terminal-view hidden" id="vsc-panel-view-copilot">
+                                            <div class="vsc-terminal-logs" id="vsc-copilot-logs"></div>
+                                        </div>
+
+                                        <!-- Drill Runner Tab -->
+                                        <div class="vsc-terminal-view hidden" id="vsc-panel-view-drill">
+                                            <div id="vsc-drill-render-area" style="overflow-y:auto; flex:1;"></div>
+                                        </div>
+
+                                        <!-- Quick Notes Tab -->
+                                        <div class="vsc-terminal-view hidden" id="vsc-panel-view-notes">
+                                            <div style="display:flex; gap:6px; margin-bottom:8px;">
+                                                <input type="text" class="vsc-term-input" id="vsc-quick-note-input" placeholder="授業中の気づきをメモ...">
+                                                <button type="button" class="vsc-term-tool-btn" id="vsc-quick-note-add-btn">＋ Add Note</button>
+                                            </div>
+                                            <div class="vsc-terminal-logs" id="vsc-quick-notes-list"></div>
+                                        </div>
+
+                                        <!-- Problems Tab -->
+                                        <div class="vsc-terminal-view hidden" id="vsc-panel-view-problems">
+                                            <div style="color:#858585; font-size:12px; padding:12px; font-family:monospace;">
+                                                ✓ No formula syntax errors or unresolved symbol warnings in active workspace.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                        </aside>
+                        </div>
+
+                        <!-- 4. Status Bar -->
+                        <div class="vsc-statusbar">
+                            <div class="vsc-statusbar-left">
+                                <span class="vsc-status-item vsc-status-item-click" title="Git Branch">🌿 main*</span>
+                                <span class="vsc-status-item" id="vsc-status-model-indicator">🟢 Gemini 2.5 Flash: Online</span>
+                                <span class="vsc-status-item" id="vsc-status-part-counter">Part 1/4 (In Progress)</span>
+                            </div>
+                            <div class="vsc-statusbar-right">
+                                <span class="vsc-status-item" id="vsc-status-cursor-pos">Ln 1, Col 1</span>
+                                <span class="vsc-status-item">Spaces: 2</span>
+                                <span class="vsc-status-item">UTF-8</span>
+                                <span class="vsc-status-item" id="vsc-status-lang-badge">LaTeX / TeX</span>
+                                <span class="vsc-status-item vsc-status-item-click" id="vsc-status-view-mode-badge" style="background:rgba(0,0,0,0.2); padding:1px 6px; border-radius:3px;">💻 VS Code Mode</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -1189,7 +2339,13 @@
         let loginUid = null;
         let selectedImages = [];
         let creationMode = "photo";
-        let selectedTeachingStyle = "standard";
+        let selectedTeachingStyle = (function() {
+            try {
+                return localStorage.getItem("flora_preferred_teaching_style") || "standard";
+            } catch(e) {
+                return "standard";
+            }
+        })();
         let selectedSubject = "数学";
         let currentWizardStep = 1;
 
@@ -1259,16 +2415,22 @@
 
         function setTeachingStyle(style) {
             selectedTeachingStyle = style;
+            try {
+                localStorage.setItem("flora_preferred_teaching_style", style);
+            } catch(e) {}
             const stdBtn = el("style-btn-standard");
             const socBtn = el("style-btn-socratic");
-            if (style === "socratic") {
-                stdBtn.classList.remove("active");
-                socBtn.classList.add("active");
-            } else {
-                socBtn.classList.remove("active");
-                stdBtn.classList.add("active");
+            if (stdBtn && socBtn) {
+                if (style === "socratic") {
+                    stdBtn.classList.remove("active");
+                    socBtn.classList.add("active");
+                } else {
+                    socBtn.classList.remove("active");
+                    stdBtn.classList.add("active");
+                }
             }
         }
+        setTeachingStyle(selectedTeachingStyle);
         el("style-btn-standard").addEventListener("click", () => setTeachingStyle("standard"));
         el("style-btn-socratic").addEventListener("click", () => setTeachingStyle("socratic"));
 
@@ -1426,20 +2588,29 @@
         });
 
         function renderChatImageThumbs() {
-            const row = el("chat-image-thumb-row");
-            row.innerHTML = chatSelectedImages.map((img, i) => `
+            const rows = [el("chat-image-thumb-row"), el("vsc-term-image-thumb-row")].filter(Boolean);
+            const html = chatSelectedImages.map((img, i) => `
                 <div class="chat-image-thumb-wrap">
                     <img src="${img.previewUrl}">
                     <button type="button" class="chat-image-thumb-remove" data-remove-chat-img="${i}">×</button>
                 </div>
             `).join("");
-            row.querySelectorAll("[data-remove-chat-img]").forEach(btn => {
-                btn.addEventListener("click", () => {
-                    chatSelectedImages.splice(parseInt(btn.getAttribute("data-remove-chat-img"), 10), 1);
-                    renderChatImageThumbs();
+
+            rows.forEach(row => {
+                row.innerHTML = html;
+                row.querySelectorAll("[data-remove-chat-img]").forEach(btn => {
+                    btn.addEventListener("click", () => {
+                        chatSelectedImages.splice(parseInt(btn.getAttribute("data-remove-chat-img"), 10), 1);
+                        renderChatImageThumbs();
+                    });
                 });
             });
-            el("chat-attach-btn").classList.toggle("has-images", chatSelectedImages.length > 0);
+
+            if (el("chat-attach-btn")) el("chat-attach-btn").classList.toggle("has-images", chatSelectedImages.length > 0);
+            if (el("vsc-term-attach-photo-btn")) {
+                el("vsc-term-attach-photo-btn").style.borderColor = chatSelectedImages.length > 0 ? "var(--accent-cyan)" : "";
+                el("vsc-term-attach-photo-btn").textContent = chatSelectedImages.length > 0 ? `📷 Photos (${chatSelectedImages.length})` : "📷 Attach Photo";
+            }
         }
 
         // --------------------------------------------------------------
@@ -2986,6 +4157,7 @@ ${EXPERT_TEACHER_PROMPT}
 
                 await saveLesson();
                 renderChatTranscript();
+                renderVscodeMode();
                 updateProgressStrip();
                 updateCompletionUI();
                 await forceTriggerMathJax();
@@ -3065,6 +4237,8 @@ ${EXPERT_TEACHER_PROMPT}
             input.value = "";
             autoGrowTextarea(input);
             renderLessonMemos();
+            if (typeof renderVscodeQuickNotes === "function") renderVscodeQuickNotes();
+            if (typeof renderVscodeEditorContent === "function" && vscodeActiveFile === "notes") renderVscodeEditorContent();
             await forceTriggerMathJax();
             await saveLesson();
         }
@@ -3073,6 +4247,8 @@ ${EXPERT_TEACHER_PROMPT}
             if (!currentLesson || !Array.isArray(currentLesson.lessonMemos)) return;
             currentLesson.lessonMemos = currentLesson.lessonMemos.filter(m => m.id !== memoId);
             renderLessonMemos();
+            if (typeof renderVscodeQuickNotes === "function") renderVscodeQuickNotes();
+            if (typeof renderVscodeEditorContent === "function" && vscodeActiveFile === "notes") renderVscodeEditorContent();
             await saveLesson();
         };
 
@@ -3099,6 +4275,8 @@ ${EXPERT_TEACHER_PROMPT}
             );
             editingMemoId = null;
             renderLessonMemos();
+            if (typeof renderVscodeQuickNotes === "function") renderVscodeQuickNotes();
+            if (typeof renderVscodeEditorContent === "function" && vscodeActiveFile === "notes") renderVscodeEditorContent();
             await forceTriggerMathJax();
             await saveLesson();
         };
@@ -3267,6 +4445,7 @@ ${EXPERT_TEACHER_PROMPT}
 
             await saveLesson();
             renderChatTranscript();
+            renderVscodeMode();
             await forceTriggerMathJax();
         }
 
@@ -3360,6 +4539,7 @@ ${EXPERT_TEACHER_PROMPT}
             const part = currentLesson.parts[currentLesson.currentPartIndex];
             currentLesson.chatHistory.push({ role: "divider", content: `第${currentLesson.currentPartIndex + 1}回: ${part.title}` });
             renderChatTranscript();
+            renderVscodeMode();
             updateProgressStrip();
 
             const drillContainer = el("drill-container-area");
@@ -3380,6 +4560,859 @@ ${EXPERT_TEACHER_PROMPT}
                 updateCompletionUI();
             }
         });
+
+        // --------------------------------------------------------------
+        // 💻 VS Code IDE Mode Subsystem (Monaco Editor & Terminal Integration)
+        // --------------------------------------------------------------
+        let currentLessonViewMode = localStorage.getItem("flora_lesson_view_mode") || "standard";
+        let vscodeActiveFile = "part_0";
+        let vscodeOpenFiles = ["part_0", "memorize", "notes", "drill"];
+        let vscodeActiveActivity = "explorer";
+        let vscodeActiveBottomPanel = "terminal";
+        let isVscodeBottomPanelOpen = true;
+        let isVscodeBottomPanelExpanded = false;
+        let isVscodeMaximized = false;
+        let vscodeTerminalCustomLogs = []; // 追加のシステム/ユーザーログ
+
+        function switchLessonViewMode(mode) {
+            currentLessonViewMode = mode;
+            try { localStorage.setItem("flora_lesson_view_mode", mode); } catch(e) {}
+
+            const stdBtn = el("mode-btn-standard");
+            const vscBtn = el("mode-btn-vscode");
+            const stdContainer = el("lesson-standard-container");
+            const vscContainer = el("lesson-vscode-container");
+
+            if (mode === "vscode") {
+                if (stdBtn) stdBtn.classList.remove("active");
+                if (vscBtn) vscBtn.classList.add("active");
+                if (stdContainer) stdContainer.classList.add("hidden");
+                if (vscContainer) vscContainer.classList.remove("hidden");
+                renderVscodeMode();
+            } else {
+                if (stdBtn) stdBtn.classList.add("active");
+                if (vscBtn) vscBtn.classList.remove("active");
+                if (stdContainer) stdContainer.classList.remove("hidden");
+                if (vscContainer) vscContainer.classList.add("hidden");
+                renderChatTranscript();
+            }
+            forceTriggerMathJax();
+        }
+
+        function getFileDisplayName(fileId) {
+            if (!currentLesson) return fileId;
+            if (fileId.startsWith("part_")) {
+                const idx = parseInt(fileId.replace("part_", ""), 10);
+                const part = (currentLesson.parts && currentLesson.parts[idx]) || { title: `Part${idx + 1}` };
+                const num = String(idx + 1).padStart(2, "0");
+                const safeTitle = part.title.replace(/[\/\\:*?"<>|]/g, "_").slice(0, 16);
+                return `${num}_${safeTitle}.tex`;
+            }
+            switch (fileId) {
+                case "memorize": return "02_Memorization.md";
+                case "notes": return "03_StudyNotes.md";
+                case "drill": return "04_InstantDrill.tex";
+                case "source": return "05_TextbookSource.txt";
+                default: return `${fileId}.txt`;
+            }
+        }
+
+        function getFileIcon(fileId) {
+            if (fileId.startsWith("part_")) return "📐";
+            switch (fileId) {
+                case "memorize": return "🧠";
+                case "notes": return "📝";
+                case "drill": return "⚡";
+                case "source": return "📖";
+                default: return "📄";
+            }
+        }
+
+        function renderVscodeMode() {
+            if (!currentLesson) return;
+            // デフォルトアクティブファイルが未設定なら現在のパート
+            if (!vscodeActiveFile) {
+                vscodeActiveFile = `part_${currentLesson.currentPartIndex || 0}`;
+            }
+            if (!vscodeOpenFiles.includes(vscodeActiveFile)) {
+                vscodeOpenFiles.push(vscodeActiveFile);
+            }
+
+            renderVscodePartsTree();
+            renderVscodeEditorTabs();
+            renderVscodeEditorContent();
+            renderVscodeTerminalLogs();
+            renderVscodeQuickNotes();
+            renderVscodeDrillRunner();
+            renderVscodeStatusBar();
+
+            // Topbar title & Breadcrumbs
+            const fileName = getFileDisplayName(vscodeActiveFile);
+            const subject = detectLessonSubject(currentLesson);
+            if (el("vsc-titlebar-title-text")) {
+                el("vsc-titlebar-title-text").textContent = `flora-workspace > ${subject} > ${currentLesson.title} > ${fileName}`;
+            }
+            if (el("vsc-crumb-subject")) el("vsc-crumb-subject").textContent = subject;
+            if (el("vsc-crumb-lesson")) el("vsc-crumb-lesson").textContent = (currentLesson.title || "Lesson").slice(0, 18);
+            if (el("vsc-crumb-file")) el("vsc-crumb-file").textContent = fileName;
+        }
+
+        function renderVscodePartsTree() {
+            const listEl = el("vsc-tree-parts-list");
+            if (!listEl || !currentLesson || !Array.isArray(currentLesson.parts)) return;
+            const currentIdx = currentLesson.currentPartIndex || 0;
+            const isCompleted = currentLesson.status === "completed";
+
+            if (el("vsc-parts-badge-count")) {
+                el("vsc-parts-badge-count").textContent = `${currentIdx + 1}/${currentLesson.parts.length}`;
+            }
+
+            listEl.innerHTML = currentLesson.parts.map((p, i) => {
+                const fileId = `part_${i}`;
+                const isActiveFile = vscodeActiveFile === fileId;
+                const isCurrentTaught = i === currentIdx && !isCompleted;
+                const isDone = i < currentIdx || isCompleted;
+
+                let badgeHtml = "";
+                if (isCurrentTaught) {
+                    badgeHtml = `<span class="vsc-tree-item-badge vsc-badge-active">▶ ACTIVE</span>`;
+                } else if (isDone) {
+                    badgeHtml = `<span class="vsc-tree-item-badge vsc-badge-done">✓ DONE</span>`;
+                } else {
+                    badgeHtml = `<span class="vsc-tree-item-badge vsc-badge-locked">🔒 LOCKED</span>`;
+                }
+
+                const num = String(i + 1).padStart(2, "0");
+                const safeTitle = p.title.slice(0, 15);
+
+                return `
+                    <div class="vsc-tree-item ${isActiveFile ? 'active' : ''}" data-vsc-file="${fileId}">
+                        <span class="vsc-tree-item-icon">📐</span>
+                        <span class="vsc-tree-item-name">${num}_${safeTitle}.tex</span>
+                        ${badgeHtml}
+                    </div>
+                `;
+            }).join("");
+
+            listEl.querySelectorAll("[data-vsc-file]").forEach(item => {
+                item.addEventListener("click", () => {
+                    const fId = item.getAttribute("data-vsc-file");
+                    openVscodeFile(fId);
+                });
+            });
+        }
+
+        function openVscodeFile(fileId) {
+            if (!vscodeOpenFiles.includes(fileId)) {
+                vscodeOpenFiles.push(fileId);
+            }
+            vscodeActiveFile = fileId;
+            renderVscodeMode();
+            forceTriggerMathJax();
+        }
+
+        function closeVscodeFile(fileId, e) {
+            if (e) e.stopPropagation();
+            if (vscodeOpenFiles.length <= 1) return; // 最後の1個は閉じない
+            vscodeOpenFiles = vscodeOpenFiles.filter(f => f !== fileId);
+            if (vscodeActiveFile === fileId) {
+                vscodeActiveFile = vscodeOpenFiles[vscodeOpenFiles.length - 1];
+            }
+            renderVscodeMode();
+            forceTriggerMathJax();
+        }
+
+        function renderVscodeEditorTabs() {
+            const listEl = el("vsc-editor-tabs-list");
+            if (!listEl) return;
+
+            listEl.innerHTML = vscodeOpenFiles.map(fId => {
+                const isActive = fId === vscodeActiveFile;
+                const name = getFileDisplayName(fId);
+                const icon = getFileIcon(fId);
+                return `
+                    <div class="vsc-editor-tab ${isActive ? 'active' : ''}" data-vsc-tab="${fId}">
+                        <span class="vsc-tab-icon">${icon}</span>
+                        <span class="vsc-tab-title">${name}</span>
+                        <button type="button" class="vsc-tab-close" data-vsc-close-tab="${fId}" title="Close Tab">✕</button>
+                    </div>
+                `;
+            }).join("");
+
+            listEl.querySelectorAll("[data-vsc-tab]").forEach(tab => {
+                tab.addEventListener("click", (e) => {
+                    if (e.target.closest("[data-vsc-close-tab]")) return;
+                    vscodeActiveFile = tab.getAttribute("data-vsc-tab");
+                    renderVscodeMode();
+                    forceTriggerMathJax();
+                });
+            });
+
+            listEl.querySelectorAll("[data-vsc-close-tab]").forEach(btn => {
+                btn.addEventListener("click", (e) => {
+                    const fId = btn.getAttribute("data-vsc-close-tab");
+                    closeVscodeFile(fId, e);
+                });
+            });
+        }
+
+        function renderVscodeEditorContent() {
+            const contentEl = el("vsc-editor-content");
+            const gutterEl = el("vsc-editor-gutter");
+            if (!contentEl || !currentLesson) return;
+
+            let rawHtml = "";
+
+            if (vscodeActiveFile.startsWith("part_")) {
+                const partIdx = parseInt(vscodeActiveFile.replace("part_", ""), 10);
+                const part = (currentLesson.parts && currentLesson.parts[partIdx]) || { title: currentLesson.title, summary: "" };
+                const range = findPartDividerRange(partIdx);
+
+                let partTurns = [];
+                if (range) {
+                    partTurns = currentLesson.chatHistory.slice(range.startIdx, range.endIdx);
+                } else if (partIdx === 0) {
+                    partTurns = currentLesson.chatHistory;
+                }
+
+                let turnsHtml = "";
+                if (partTurns.length === 0) {
+                    turnsHtml = `
+                        <div class="vsc-comment-block">% [STATUS: READY] 第${partIdx + 1}回の授業はまだ始まっていません。\n% 右上の「▶ Next Part」または下のターミナルから質問を送信して講義を開始してください。</div>
+                    `;
+                } else {
+                    turnsHtml = partTurns.map((turn, tIdx) => {
+                        if (turn.role === "divider") {
+                            return `<div class="vsc-syntax-section">\\section{${turn.content}}</div>`;
+                        }
+                        if (turn.role === "user") {
+                            const imgsHtml = (Array.isArray(turn.images) && turn.images.length > 0)
+                                ? `<div class="bubble-user-images" style="margin-bottom:6px;">${turn.images.map(img => `<img src="data:${img.mimeType};base64,${img.data}">`).join("")}</div>`
+                                : "";
+                            return `
+                                <div class="vsc-user-prompt-box">
+                                    <div class="vsc-user-prompt-header">
+                                        <span>👤 STUDENT QUERY [Turn ${tIdx + 1}]</span>
+                                    </div>
+                                    ${imgsHtml}
+                                    <div class="tex2jax_process">${turn.content.replace(/</g, "&lt;")}</div>
+                                </div>
+                            `;
+                        }
+                        // AI Assistant
+                        const diagramHtml = turn.diagramSvg ? `<div class="ai-diagram-box" style="margin-top:12px; background:#181818; border:1px solid #30363d; border-radius:6px; padding:12px;">${turn.diagramSvg}</div>` : "";
+                        return `
+                            <div class="vsc-ai-output-box">
+                                <div class="vsc-ai-output-header">
+                                    <span style="color:#58a6ff; font-weight:700;">🤖 PRO TUTOR KERNEL [AI RESPONSE]</span>
+                                    <span style="color:#8b949e; font-size:11px; background:#21262d; padding:2px 8px; border-radius:4px; border:1px solid #30363d;">LaTeX Ready</span>
+                                </div>
+                                <div class="tex2jax_process" style="line-height:1.75;">
+                                    ${renderFormattedMarkdown(turn.content)}
+                                </div>
+                                ${diagramHtml}
+                            </div>
+                        `;
+                    }).join("");
+                }
+
+                const num = String(partIdx + 1).padStart(2, "0");
+                rawHtml = `
+                    <div style="margin-bottom:12px;">
+                        <div class="vsc-comment-block">% ==========================================================================\n% FILE: ${num}_${part.title}.tex\n% LESSON: ${currentLesson.title}\n% TOPIC: ${part.summary || 'Part Overview'}\n% ==========================================================================</div>
+                    </div>
+                    ${turnsHtml}
+                `;
+            } else if (vscodeActiveFile === "memorize") {
+                const points = Array.isArray(currentLesson.memorizationPoints) ? currentLesson.memorizationPoints : [];
+                if (points.length === 0) {
+                    rawHtml = `
+                        <div class="vsc-comment-block">% [MEMORIZATION MODULE]\n% 暗記事項リストを読み込み中または未生成です。\n% バックグラウンドAIが自動解析して表示します。</div>
+                    `;
+                } else {
+                    const pointsHtml = points.map((p, idx) => `
+                        <div class="vsc-card-block">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                                <span class="vsc-tag-cyan"># [${idx + 1}] ${p.category}</span>
+                            </div>
+                            <div class="tex2jax_process" style="font-size:13.5px; line-height:1.6; color:#d4d4d4;">
+                                ${renderFormattedMarkdown(p.content || "")}
+                            </div>
+                            ${p.note ? `<div class="tex2jax_process" style="margin-top:6px; font-size:12px; color:#ce9178;">💡 ${renderFormattedMarkdown(p.note)}</div>` : ""}
+                        </div>
+                    `).join("");
+
+                    rawHtml = `
+                        <div class="vsc-comment-block">% ==========================================================================\n% FILE: 02_Memorization.md\n% FLORA FORMULA & KEY TERMS COMPILER (${points.length} items)\n% ==========================================================================</div>
+                        <div style="margin-top:10px;">${pointsHtml}</div>
+                    `;
+                }
+            } else if (vscodeActiveFile === "notes") {
+                const memos = Array.isArray(currentLesson.lessonMemos) ? currentLesson.lessonMemos : [];
+                const notesListHtml = memos.length === 0
+                    ? `<div class="vsc-comment-block">% まだ授業ノートがありません。\n% 下のターミナル「QUICK NOTES」タブからメモを追加できます。</div>`
+                    : memos.map(m => `
+                        <div class="vsc-card-block">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; font-size:11px; color:#858585;">
+                                <span>🗓️ ${formatMemoDate(m.updatedAt || m.createdAt)}</span>
+                                <button type="button" class="vsc-tab-close" onclick="deleteLessonMemo('${m.id}')" title="削除">🗑</button>
+                            </div>
+                            <div class="tex2jax_process" style="font-size:13px; line-height:1.5; color:#d4d4d4;">
+                                ${renderFormattedMarkdown(m.text)}
+                            </div>
+                        </div>
+                    `).join("");
+
+                rawHtml = `
+                    <div class="vsc-comment-block">% ==========================================================================\n% FILE: 03_StudyNotes.md\n% ACTIVE USER SCRATCHPAD & INSIGHTS (${memos.length} notes)\n% ==========================================================================</div>
+                    <div style="margin-top:10px;">${notesListHtml}</div>
+                `;
+            } else if (vscodeActiveFile === "drill") {
+                if (!currentActiveDrill) {
+                    rawHtml = `
+                        <div class="vsc-comment-block">% ==========================================================================\n% FILE: 04_InstantDrill.tex\n% INSTANT OUTPUT DRILL RUNNER\n% ==========================================================================</div>
+                        <div class="vsc-card-block" style="text-align:center; padding:32px 16px;">
+                            <div style="font-size:15px; color:#9cdcfe; margin-bottom:8px; font-weight:700;">⚡ 現在受講中のパートの即時演習を生成</div>
+                            <p style="font-size:12px; color:#858585; margin-bottom:16px;">定石の判断基準と落とし穴をピンポイントで確認する3〜5行の良問を即時出題します。</p>
+                            <button type="button" class="vsc-term-tool-btn" id="vsc-start-drill-editor-btn" style="background:#007acc; color:#fff; font-size:13px; padding:6px 16px;">⚡ Run Instant Drill (演習開始)</button>
+                        </div>
+                    `;
+                } else {
+                    rawHtml = `
+                        <div class="vsc-comment-block">% ==========================================================================\n% FILE: 04_InstantDrill.tex: ${currentActiveDrill.drill_title}\n% ==========================================================================</div>
+                        <div class="vsc-card-block">
+                            <div style="color:#4fc1ff; font-weight:700; font-size:14px; margin-bottom:8px;">⚡ 問題文 (Problem Statement)</div>
+                            <div class="tex2jax_process" style="font-size:13.5px; line-height:1.6; color:#d4d4d4;">
+                                ${renderFormattedMarkdown(currentActiveDrill.problem_statement)}
+                            </div>
+                            <div style="margin-top:12px; display:flex; gap:8px;">
+                                <button type="button" class="vsc-term-tool-btn" id="vsc-reveal-drill-editor-btn" style="background:#dcdcaa; color:#000; font-weight:700;">👀 模範解答を展開</button>
+                                <button type="button" class="vsc-term-tool-btn" id="vsc-stock-drill-editor-btn" style="background:#c586c0; color:#fff;">📥 誤答ノートにストック</button>
+                            </div>
+                            <div id="vsc-drill-editor-answer-box" style="display:none; margin-top:14px; padding-top:12px; border-top:1px dashed #3c3c3c;">
+                                ${currentActiveDrill.first_step_focus ? `<div class="tex2jax_process" style="background:rgba(0,243,255,0.08); border-left:3px solid #4fc1ff; padding:8px 12px; margin-bottom:10px; font-size:12.5px; color:#4fc1ff;">🎯 <b>判断のポイント:</b> ${renderFormattedMarkdown(currentActiveDrill.first_step_focus)}</div>` : ""}
+                                <div style="font-weight:700; color:#dcdcaa; margin-bottom:6px;">💡 模範解答＆詳細解説</div>
+                                <div class="tex2jax_process" style="font-size:13px; line-height:1.6; color:#cccccc;">
+                                    ${renderFormattedMarkdown(currentActiveDrill.model_answer)}
+                                </div>
+                                ${currentActiveDrill.trap_description ? `<div class="tex2jax_process" style="margin-top:10px; font-size:12px; color:#f14c4c;">⚠️ <b>罠のポイント:</b> ${renderFormattedMarkdown(currentActiveDrill.trap_description)}</div>` : ""}
+                            </div>
+                        </div>
+                    `;
+                }
+            } else if (vscodeActiveFile === "source") {
+                const src = currentLesson.extractedText || "（原本テキストなし）";
+                rawHtml = `
+                    <div class="vsc-comment-block">% ==========================================================================\n% FILE: 05_TextbookSource.txt\n% RAW REFERENCE TEXT & AI EXTRACTION\n% ==========================================================================</div>
+                    <pre style="color:#d4d4d4; font-size:12.5px; line-height:1.6; white-space:pre-wrap; font-family:monospace; margin-top:10px;">${src.replace(/</g, "&lt;")}</pre>
+                `;
+            }
+
+            contentEl.innerHTML = rawHtml;
+
+            // Gutter Line Numbers
+            if (gutterEl) {
+                const linesCount = Math.max(30, (rawHtml.split(/\n|<div|<p|<h4|<pre/gi).length) * 2 + 15);
+                let lines = "";
+                for (let i = 1; i <= linesCount; i++) {
+                    lines += `<div class="vsc-gutter-line">${i}</div>`;
+                }
+                gutterEl.innerHTML = lines;
+            }
+
+            // Bind editor inline buttons
+            if (el("vsc-start-drill-editor-btn")) {
+                el("vsc-start-drill-editor-btn").addEventListener("click", () => triggerInstantDrill());
+            }
+            if (el("vsc-reveal-drill-editor-btn")) {
+                el("vsc-reveal-drill-editor-btn").addEventListener("click", () => {
+                    const ansBox = el("vsc-drill-editor-answer-box");
+                    if (ansBox) {
+                        ansBox.style.display = "block";
+                        forceTriggerMathJax();
+                    }
+                });
+            }
+            if (el("vsc-stock-drill-editor-btn")) {
+                el("vsc-stock-drill-editor-btn").addEventListener("click", async () => {
+                    await saveDrillToMistakeBook();
+                });
+            }
+        }
+
+        function renderVscodeTerminalLogs() {
+            const logsEl = el("vsc-terminal-logs");
+            const copilotEl = el("vsc-copilot-logs");
+            if (!logsEl || !currentLesson) return;
+
+            const lessonSubject = detectLessonSubject(currentLesson);
+            const history = currentLesson.chatHistory || [];
+
+            let terminalHtml = `
+                <div class="vsc-log-line vsc-log-system">
+                    [Flora IDE] Initialized Kernel v2.5 (Subject: ${lessonSubject}, Lesson: ${currentLesson.title})
+                </div>
+                <div class="vsc-log-line vsc-log-system">
+                    [Flora IDE] Interactive Terminal Ready. Type 'help' for commands, or type your question and press Enter.
+                </div>
+            `;
+
+            history.forEach(turn => {
+                if (turn.role === "divider") {
+                    terminalHtml += `
+                        <div class="vsc-log-line vsc-log-info">
+                            ── [SECTION]: ${turn.content} ──
+                        </div>
+                    `;
+                } else if (turn.role === "user") {
+                    terminalHtml += `
+                        <div class="vsc-log-line vsc-log-user">
+                            <span style="color:#007acc; font-weight:700;">student@flora:~$</span> ask "${turn.content.slice(0, 80)}${turn.content.length > 80 ? '...' : ''}"
+                        </div>
+                    `;
+                } else if (turn.role === "assistant") {
+                    const snippet = turn.content.split("\n").filter(l => l.trim()).slice(0, 3).join(" ");
+                    terminalHtml += `
+                        <div class="vsc-log-line vsc-log-ai">
+                            <span style="color:#4ec9b0; font-weight:700;">[AI KERNEL]</span> ❯ ${snippet.slice(0, 110)}... <span style="color:#858585;">(See Editor for full derivation)</span>
+                        </div>
+                    `;
+                }
+            });
+
+            vscodeTerminalCustomLogs.forEach(log => {
+                terminalHtml += `
+                    <div class="vsc-log-line vsc-log-${log.type}">
+                        ${log.text}
+                    </div>
+                `;
+            });
+
+            logsEl.innerHTML = terminalHtml;
+            logsEl.scrollTop = logsEl.scrollHeight;
+
+            if (copilotEl) {
+                copilotEl.innerHTML = `
+                    <div style="padding:10px; font-size:12px; color:#cccccc;">
+                        <div style="font-weight:700; color:#4fc1ff; margin-bottom:6px;">✨ AI Copilot Context Summary</div>
+                        <div><b>Active Lesson:</b> ${currentLesson.title}</div>
+                        <div><b>Subject:</b> ${lessonSubject}</div>
+                        <div><b>Current Step:</b> Part ${(currentLesson.currentPartIndex || 0) + 1} / ${currentLesson.parts.length}</div>
+                        <div style="margin-top:8px; border-top:1px dashed #333; padding-top:8px;">
+                            ${history.length} conversational turns recorded in this session.
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function renderVscodeQuickNotes() {
+            const listEl = el("vsc-quick-notes-list");
+            if (!listEl || !currentLesson) return;
+            const memos = Array.isArray(currentLesson.lessonMemos) ? currentLesson.lessonMemos : [];
+
+            if (memos.length === 0) {
+                listEl.innerHTML = `<div style="color:#858585; font-size:12px; padding:8px;">まだメモがありません。上の入力欄から追加できます。</div>`;
+                return;
+            }
+
+            listEl.innerHTML = memos.map(m => `
+                <div class="vsc-log-line" style="display:flex; justify-content:space-between; align-items:center; background:#252526; padding:6px 10px; border-radius:4px; margin-bottom:4px;">
+                    <div>
+                        <span style="color:#ce9178; font-weight:700; margin-right:6px;">[NOTE]</span>
+                        <span style="color:#d4d4d4;">${m.text.replace(/</g, "&lt;")}</span>
+                        <span style="color:#858585; font-size:11px; margin-left:8px;">(${formatMemoDate(m.createdAt)})</span>
+                    </div>
+                    <button type="button" class="vsc-tab-close" onclick="deleteLessonMemo('${m.id}')" title="削除">✕</button>
+                </div>
+            `).join("");
+        }
+
+        function renderVscodeDrillRunner() {
+            const area = el("vsc-drill-render-area");
+            if (!area || !currentLesson) return;
+
+            if (!currentActiveDrill) {
+                area.innerHTML = `
+                    <div style="padding:16px; color:#858585; font-size:12px;">
+                        ⚡ 演習は現在アクティブではありません。<br>
+                        <button type="button" class="vsc-term-tool-btn" id="vsc-panel-start-drill-btn" style="margin-top:8px; background:#007acc; color:#fff;">⚡ Run Instant Drill (演習開始)</button>
+                    </div>
+                `;
+                const btn = el("vsc-panel-start-drill-btn");
+                if (btn) btn.addEventListener("click", () => triggerInstantDrill());
+            } else {
+                area.innerHTML = `
+                    <div style="padding:10px 14px;">
+                        <div style="color:#4fc1ff; font-weight:700; font-size:13px; margin-bottom:6px;">⚡ ${currentActiveDrill.drill_title}</div>
+                        <div class="tex2jax_process" style="font-size:12.5px; line-height:1.5; color:#d4d4d4; margin-bottom:10px;">
+                            ${renderFormattedMarkdown(currentActiveDrill.problem_statement)}
+                        </div>
+                        <div style="display:flex; gap:6px;">
+                            <button type="button" class="vsc-term-tool-btn" id="vsc-panel-reveal-drill-btn" style="background:#dcdcaa; color:#000;">👀 答え合わせ</button>
+                            <button type="button" class="vsc-term-tool-btn" id="vsc-panel-stock-drill-btn" style="background:#c586c0; color:#fff;">📥 誤答ノートへ</button>
+                        </div>
+                    </div>
+                `;
+                if (el("vsc-panel-reveal-drill-btn")) {
+                    el("vsc-panel-reveal-drill-btn").addEventListener("click", () => {
+                        openVscodeFile("drill");
+                    });
+                }
+                if (el("vsc-panel-stock-drill-btn")) {
+                    el("vsc-panel-stock-drill-btn").addEventListener("click", () => saveDrillToMistakeBook());
+                }
+            }
+        }
+
+        function renderVscodeStatusBar() {
+            if (!currentLesson) return;
+            const currentIdx = currentLesson.currentPartIndex || 0;
+            const total = currentLesson.parts ? currentLesson.parts.length : 0;
+            const isCompleted = currentLesson.status === "completed";
+
+            if (el("vsc-status-part-counter")) {
+                el("vsc-status-part-counter").textContent = isCompleted
+                    ? `Part ${total}/${total} (Completed ✓)`
+                    : `Part ${currentIdx + 1}/${total} (In Progress)`;
+            }
+
+            if (el("vsc-status-lang-badge")) {
+                if (vscodeActiveFile.endsWith(".tex") || vscodeActiveFile.startsWith("part_")) {
+                    el("vsc-status-lang-badge").textContent = "LaTeX / TeX";
+                } else if (vscodeActiveFile === "memorize" || vscodeActiveFile === "notes") {
+                    el("vsc-status-lang-badge").textContent = "Markdown";
+                } else {
+                    el("vsc-status-lang-badge").textContent = "Plain Text";
+                }
+            }
+        }
+
+        async function executeVscodeTerminalCommand(rawInput) {
+            const cmd = (rawInput || "").trim();
+            if (!cmd || !currentLesson) return;
+
+            // 1. 特殊コマンド処理
+            if (cmd.toLowerCase() === "help") {
+                vscodeTerminalCustomLogs.push({
+                    type: "info",
+                    text: `Available Terminal Commands:\n  :next      - Advance to the next lesson part\n  :drill     - Run instant output drill\n  :diagram   - Request diagram with prompt (:diagram <prompt>)\n  :notes     - Switch editor to Study Notes\n  :memo      - Switch editor to Memorization Formulas\n  :clear     - Clear terminal logs\n  :std       - Switch back to Standard Textbook view\n  <question> - Ask AI Tutor any question directly`
+                });
+                renderVscodeTerminalLogs();
+                return;
+            }
+
+            if (cmd === ":clear" || cmd === "clear" || cmd === "cls") {
+                vscodeTerminalCustomLogs = [];
+                renderVscodeTerminalLogs();
+                return;
+            }
+
+            if (cmd === ":next" || cmd === "next") {
+                el("next-part-btn").click();
+                return;
+            }
+
+            if (cmd === ":drill" || cmd === "drill") {
+                await triggerInstantDrill();
+                return;
+            }
+
+            if (cmd.startsWith(":diagram ") || cmd.startsWith("diagram ")) {
+                const prompt = cmd.replace(/^:?diagram\s+/, "").trim();
+                if (prompt) {
+                    await sendTurn(
+                        `【図解リクエスト】${prompt}`,
+                        `生徒が「${prompt}」という内容を図（SVG）で見たいと要求しています。diagram_svgに必ず該当する図を入れて、ai_responseでは図の補足説明を簡潔に添えてください。`
+                    );
+                }
+                return;
+            }
+
+            if (cmd === ":std" || cmd === ":standard") {
+                switchLessonViewMode("standard");
+                return;
+            }
+
+            if (cmd === ":notes") {
+                openVscodeFile("notes");
+                return;
+            }
+
+            if (cmd === ":memo") {
+                openVscodeFile("memorize");
+                return;
+            }
+
+            // 2. 通常の質問として Gemini API に送信
+            const imagesToSend = chatSelectedImages.slice();
+            chatSelectedImages = [];
+            renderChatImageThumbs();
+
+            const sendBtn = el("vsc-terminal-send-btn");
+            if (sendBtn) { sendBtn.disabled = true; sendBtn.textContent = "Executing..."; }
+
+            try {
+                await sendTurn(cmd, null, imagesToSend);
+            } catch (err) {
+                console.error(err);
+                showToast("コマンド実行に失敗しました: " + err.message, "error", 8000);
+            } finally {
+                if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = "Execute ↵"; }
+            }
+        }
+
+        // VS Code イベントリスナー初期化
+        (function setupVscodeEventListeners() {
+            // Mode Switch Buttons
+            if (el("mode-btn-standard")) {
+                el("mode-btn-standard").addEventListener("click", () => switchLessonViewMode("standard"));
+            }
+            if (el("mode-btn-vscode")) {
+                el("mode-btn-vscode").addEventListener("click", () => switchLessonViewMode("vscode"));
+            }
+            if (el("vsc-switch-to-standard-btn")) {
+                el("vsc-switch-to-standard-btn").addEventListener("click", () => switchLessonViewMode("standard"));
+            }
+            if (el("vsc-btn-close-ide")) {
+                el("vsc-btn-close-ide").addEventListener("click", () => switchLessonViewMode("standard"));
+            }
+            if (el("vsc-status-view-mode-badge")) {
+                el("vsc-status-view-mode-badge").addEventListener("click", () => {
+                    switchLessonViewMode(currentLessonViewMode === "vscode" ? "standard" : "vscode");
+                });
+            }
+
+            // Maximize / Restore IDE
+            if (el("vsc-btn-expand-ide")) {
+                el("vsc-btn-expand-ide").addEventListener("click", () => {
+                    const ide = el("lesson-vscode-container");
+                    if (!ide) return;
+                    isVscodeMaximized = !isVscodeMaximized;
+                    ide.classList.toggle("vsc-fullscreen", isVscodeMaximized);
+                    el("vsc-btn-expand-ide").textContent = isVscodeMaximized ? "🗗" : "🗖";
+                });
+            }
+
+            // Activity Bar Icons
+            document.querySelectorAll(".vsc-activity-btn").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    const act = btn.getAttribute("data-vsc-act");
+                    if (!act) {
+                        if (btn.id === "vsc-act-settings") {
+                            el("open-settings-btn").click();
+                        }
+                        return;
+                    }
+                    document.querySelectorAll(".vsc-activity-btn").forEach(b => b.classList.remove("active"));
+                    btn.classList.add("active");
+                    vscodeActiveActivity = act;
+
+                    if (act === "explorer" || act === "outline") {
+                        openVscodeFile(`part_${currentLesson?.currentPartIndex || 0}`);
+                    } else if (act === "memorize") {
+                        openVscodeFile("memorize");
+                    } else if (act === "notes") {
+                        openVscodeFile("notes");
+                    } else if (act === "drill") {
+                        openVscodeFile("drill");
+                    } else if (act === "source") {
+                        openVscodeFile("source");
+                    }
+                });
+            });
+
+            // Tree Section Toggle
+            document.querySelectorAll(".vsc-tree-header").forEach(header => {
+                header.addEventListener("click", () => {
+                    const targetId = header.getAttribute("data-toggle");
+                    const target = el(targetId);
+                    if (target) {
+                        const isHidden = target.style.display === "none";
+                        target.style.display = isHidden ? "block" : "none";
+                        const arrow = header.querySelector(".vsc-tree-arrow");
+                        if (arrow) arrow.textContent = isHidden ? "▼" : "▶";
+                    }
+                });
+            });
+
+            // Static Asset Tree Items Click
+            document.querySelectorAll("#vsc-tree-assets-list .vsc-tree-item").forEach(item => {
+                item.addEventListener("click", () => {
+                    const fId = item.getAttribute("data-vsc-file");
+                    if (fId) openVscodeFile(fId);
+                });
+            });
+
+            // Editor Action Buttons
+            if (el("vsc-copy-code-btn")) {
+                el("vsc-copy-code-btn").addEventListener("click", async () => {
+                    const content = el("vsc-editor-content");
+                    if (!content) return;
+                    try {
+                        const text = content.innerText || content.textContent;
+                        await navigator.clipboard.writeText(text);
+                        showToast("エディタの内容をコピーしました！", "info", 1500);
+                    } catch(e) {
+                        showToast("コピーに失敗しました", "error", 2000);
+                    }
+                });
+            }
+            if (el("vsc-regen-part-btn")) {
+                el("vsc-regen-part-btn").addEventListener("click", () => {
+                    const partIdx = currentLesson ? (currentLesson.currentPartIndex || 0) : 0;
+                    regeneratePart(partIdx);
+                });
+            }
+            if (el("vsc-next-part-btn")) {
+                el("vsc-next-part-btn").addEventListener("click", () => {
+                    el("next-part-btn").click();
+                });
+            }
+
+            // Bottom Panel Tab Switches
+            document.querySelectorAll(".vsc-panel-tab").forEach(tab => {
+                tab.addEventListener("click", () => {
+                    document.querySelectorAll(".vsc-panel-tab").forEach(t => t.classList.remove("active"));
+                    tab.classList.add("active");
+                    const panelKey = tab.getAttribute("data-vsc-panel");
+                    vscodeActiveBottomPanel = panelKey;
+
+                    document.querySelectorAll(".vsc-panel-body > .vsc-terminal-view").forEach(v => v.classList.add("hidden"));
+                    const targetView = el(`vsc-panel-view-${panelKey}`);
+                    if (targetView) targetView.classList.remove("hidden");
+
+                    const bottomPanel = el("vsc-bottom-panel");
+                    if (bottomPanel) bottomPanel.style.display = "flex";
+                    isVscodeBottomPanelOpen = true;
+
+                    if (panelKey === "drill") renderVscodeDrillRunner();
+                    if (panelKey === "notes") renderVscodeQuickNotes();
+                    if (panelKey === "terminal") renderVscodeTerminalLogs();
+                });
+            });
+
+            // Bottom Panel Controls
+            if (el("vsc-term-clear-btn")) {
+                el("vsc-term-clear-btn").addEventListener("click", () => {
+                    vscodeTerminalCustomLogs = [];
+                    renderVscodeTerminalLogs();
+                });
+            }
+            if (el("vsc-term-toggle-height-btn")) {
+                el("vsc-term-toggle-height-btn").addEventListener("click", () => {
+                    const panel = el("vsc-bottom-panel");
+                    if (!panel) return;
+                    isVscodeBottomPanelExpanded = !isVscodeBottomPanelExpanded;
+                    panel.style.height = isVscodeBottomPanelExpanded ? "380px" : "220px";
+                });
+            }
+            if (el("vsc-term-close-panel-btn")) {
+                el("vsc-term-close-panel-btn").addEventListener("click", () => {
+                    const panel = el("vsc-bottom-panel");
+                    if (!panel) return;
+                    panel.style.display = "none";
+                    isVscodeBottomPanelOpen = false;
+                });
+            }
+
+            // Terminal Input & Execution
+            const termInput = el("vsc-terminal-input");
+            const termSendBtn = el("vsc-terminal-send-btn");
+            if (termSendBtn && termInput) {
+                termSendBtn.addEventListener("click", () => {
+                    const val = termInput.value;
+                    termInput.value = "";
+                    executeVscodeTerminalCommand(val);
+                });
+                termInput.addEventListener("keydown", (e) => {
+                    if (e.key === "Enter") {
+                        const val = termInput.value;
+                        termInput.value = "";
+                        executeVscodeTerminalCommand(val);
+                    }
+                });
+            }
+
+            // Terminal Sub-tools
+            if (el("vsc-term-attach-photo-btn")) {
+                el("vsc-term-attach-photo-btn").addEventListener("click", () => {
+                    el("vsc-term-file-input").click();
+                });
+            }
+            if (el("vsc-term-file-input")) {
+                el("vsc-term-file-input").addEventListener("change", async (e) => {
+                    const files = Array.from(e.target.files || []);
+                    for (const file of files) {
+                        try {
+                            chatSelectedImages.push(await normalizeImageFile(file));
+                        } catch (err) {
+                            showToast(err.message, "error");
+                        }
+                    }
+                    e.target.value = "";
+                    renderChatImageThumbs();
+                });
+            }
+            if (el("vsc-term-diagram-req-btn")) {
+                el("vsc-term-diagram-req-btn").addEventListener("click", () => {
+                    if (termInput) {
+                        termInput.value = ":diagram ";
+                        termInput.focus();
+                    }
+                });
+            }
+            if (el("vsc-term-drill-req-btn")) {
+                el("vsc-term-drill-req-btn").addEventListener("click", () => triggerInstantDrill());
+            }
+            if (el("vsc-term-next-step-btn")) {
+                el("vsc-term-next-step-btn").addEventListener("click", () => {
+                    el("next-part-btn").click();
+                });
+            }
+
+            // Quick Note Add in VS Code
+            if (el("vsc-quick-note-add-btn")) {
+                el("vsc-quick-note-add-btn").addEventListener("click", async () => {
+                    const input = el("vsc-quick-note-input");
+                    if (!input) return;
+                    const text = input.value.trim();
+                    if (!text || !currentLesson) return;
+
+                    if (!Array.isArray(currentLesson.lessonMemos)) currentLesson.lessonMemos = [];
+                    currentLesson.lessonMemos.unshift({
+                        id: "memo_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7),
+                        text,
+                        createdAt: new Date().toISOString(),
+                        partIndex: currentLesson.currentPartIndex
+                    });
+                    input.value = "";
+                    renderLessonMemos();
+                    renderVscodeQuickNotes();
+                    renderVscodeEditorContent();
+                    await saveLesson();
+                    showToast("ノートを追加しました！", "success", 1500);
+                });
+            }
+            if (el("vsc-quick-note-input")) {
+                el("vsc-quick-note-input").addEventListener("keydown", (e) => {
+                    if (e.key === "Enter") el("vsc-quick-note-add-btn").click();
+                });
+            }
+            if (el("vsc-new-memo-icon-btn")) {
+                el("vsc-new-memo-icon-btn").addEventListener("click", () => {
+                    openVscodeFile("notes");
+                    const qInput = el("vsc-quick-note-input");
+                    if (qInput) qInput.focus();
+                });
+            }
+            if (el("vsc-refresh-tree-btn")) {
+                el("vsc-refresh-tree-btn").addEventListener("click", () => {
+                    renderVscodeMode();
+                    showToast("ワークスペースをリフレッシュしました", "info", 1200);
+                });
+            }
+        })();
 
         // --------------------------------------------------------------
         // 起動
@@ -3408,9 +5441,12 @@ ${EXPERT_TEACHER_PROMPT}
             renderSourceText();
             ensureMemorizationPoints(); // 🧠 授業プランとは別のAIリクエストとしてバックグラウンドで自動生成（ブロックしない）
 
+            switchLessonViewMode(currentLessonViewMode);
+
             if (currentLesson.chatHistory.length === 0) {
                 currentLesson.chatHistory.push({ role: "divider", content: `第1回: ${currentLesson.parts[0].title}` });
                 renderChatTranscript();
+                renderVscodeMode();
                 try {
                     await sendTurn(null, "このパートの授業を始めてください。");
                 } catch (err) {
@@ -3419,6 +5455,7 @@ ${EXPERT_TEACHER_PROMPT}
                 }
             } else {
                 renderChatTranscript();
+                renderVscodeMode();
                 await forceTriggerMathJax();
             }
         }
@@ -3509,13 +5546,26 @@ ${EXPERT_TEACHER_PROMPT}
                   }
                 : null;
 
+            if (handoff.teachingStyle) {
+                setTeachingStyle(handoff.teachingStyle);
+            }
+            if (handoff.subject) {
+                selectedSubject = handoff.subject;
+                document.querySelectorAll(".subject-select-card").forEach(card => {
+                    card.classList.toggle("active", card.getAttribute("data-subject") === selectedSubject);
+                });
+                const badge = el("selected-subject-badge-hint");
+                if (badge) badge.textContent = `選択中: ${selectedSubject}`;
+            }
+
             setCreationMode("topic");
             el("topic-input").value = handoff.topic;
             if (handoff.level) el("topic-level-select").value = handoff.level;
             el("topic-note-input").value = handoff.note || "";
 
             if (pendingLevelUp) {
-                showToast(`🎓 「${pendingLevelUp.fromLevel}」お疲れさまでした！続けて単元「${handoff.topic}」を「${handoff.level}」で学び直します`, "info", 4500);
+                const styleLabel = (handoff.teachingStyle === "socratic" || selectedTeachingStyle === "socratic") ? "（🧠 ソクラテス式）" : "";
+                showToast(`🎓 「${pendingLevelUp.fromLevel}」完了！続けて単元「${handoff.topic}」を「${handoff.level}」${styleLabel}で始めます`, "info", 4500);
             } else {
                 showToast(`🎓 「${handoff.sourceProblemTitle || "元の問題"}」からの引き継ぎで、単元「${handoff.topic}」の授業プランを作成します`, "info", 4000);
             }
@@ -3525,9 +5575,13 @@ ${EXPERT_TEACHER_PROMPT}
         function startLevelUp(lesson) {
             const nxt = nextLevelOf(lesson.level);
             if (!nxt) return;
+            const styleToInherit = lesson.teachingStyle || selectedTeachingStyle || "socratic";
+            const subjectToInherit = lesson.subject || detectLessonSubject(lesson) || selectedSubject;
             sessionStorage.setItem("LOLZ_LESSON_HANDOFF", JSON.stringify({
                 topic: lesson.topicKey || lesson.title,
                 level: nxt,
+                teachingStyle: styleToInherit,
+                subject: subjectToInherit,
                 note: "",
                 levelUp: true,
                 levelUpFromLessonId: lesson.id,

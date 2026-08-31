@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MacroPlan, DayTemplateConfig, SubjectKey } from '../types';
 import { SUBJECT_METAS, STUDY_SUBJECT_KEYS } from '../constants/subjects';
-import { exportDataToJSON, importDataFromJSON } from '../services/storage';
+import { exportDataToJSON, importDataFromJSON, DEFAULT_PHASE1_TEMPLATE, DEFAULT_PHASE2_TEMPLATE } from '../services/storage';
 import { audioSynth } from '../services/audio';
 import confetti from 'canvas-confetti';
 import {
@@ -32,6 +32,10 @@ export const GarageView: React.FC<GarageViewProps> = ({
   const [selectedPhase, setSelectedPhase] = useState<'phase1' | 'phase2'>('phase1');
   const [tempPlan, setTempPlan] = useState<MacroPlan>({ ...macroPlan });
 
+  useEffect(() => {
+    setTempPlan({ ...macroPlan });
+  }, [macroPlan]);
+
   // Bulk Chapter Generator State
   const [genSubject, setGenSubject] = useState<SubjectKey>('physics');
   const [genCategory, setGenCategory] = useState<string>('良問の風 物理');
@@ -39,7 +43,11 @@ export const GarageView: React.FC<GarageViewProps> = ({
   const [genChapterPrefix, setGenChapterPrefix] = useState<string>('第');
 
   // Compute total allocation minutes
-  const activeTemplate = tempPlan.templates[selectedPhase];
+  const defaultTemplate = selectedPhase === 'phase1' ? DEFAULT_PHASE1_TEMPLATE : DEFAULT_PHASE2_TEMPLATE;
+  const activeTemplate = {
+    ...defaultTemplate,
+    ...(tempPlan.templates?.[selectedPhase] || {}),
+  };
   const templateKeys: (keyof DayTemplateConfig)[] = [
     'sleep',
     'life',

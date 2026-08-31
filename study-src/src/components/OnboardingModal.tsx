@@ -111,7 +111,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
       ...initialMacroPlan,
       title: planTitle.trim() || `${finalProfile.name}の合格計画`,
       totalTargetHours: Number(totalTargetHours) || 300,
-      completedHours: 0,
+      completedHours: initialMacroPlan.completedHours || 0,
       examDate: examDate || '',
       macroTasks,
       milestones: examDate
@@ -124,7 +124,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
               done: false,
             },
           ]
-        : [],
+        : (initialMacroPlan.milestones || []),
     };
 
     audioSynth.playChime();

@@ -52,7 +52,10 @@ export const FocusDeskOverlay: React.FC<FocusDeskOverlayProps> = ({
   // Keydown listener to close on ESC or F
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' || (e.key === 'f' && !e.target && !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName))) {
+      const target = e.target as HTMLElement;
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(target?.tagName)) return;
+
+      if (e.key === 'Escape' || e.key === 'f' || e.key === 'F') {
         onClose();
       }
     };
