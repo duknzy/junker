@@ -620,6 +620,7 @@ export const GEMINI_FEATURES = [
     { id: "quick_answer",     label: "解答の即時チェック",           page: "answer-check.html" },
     { id: "custom_sprint",    label: "カスタム演習の問題生成",       page: "custom-sprint.html" },
     { id: "daily",            label: "デイリー演習の問題生成",       page: "daily.html" },
+    { id: "lesson_counseling", label: "授業作成：AI事前ヒアリング・要件定義", page: "lesson.html" },
     { id: "lesson_plan",      label: "授業プランの生成",             page: "lesson.html" },
     { id: "lesson_drill",     label: "授業の類題作成",               page: "lesson.html" },
     { id: "lesson_teach",     label: "授業内AIチャット",             page: "lesson.html" },

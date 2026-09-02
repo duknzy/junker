@@ -4,7 +4,7 @@
 (function() {
     function getRootPath() {
         const path = window.location.pathname;
-        if (path.includes('/tokei/') || path.includes('/study/')) {
+        if (path.includes('/study/')) {
             return '../';
         }
         return './';
@@ -59,19 +59,19 @@
     setInterval(updateGlobalTimerHUD, 1000);
     document.addEventListener('DOMContentLoaded', updateGlobalTimerHUD);
 
-    // 🗔 小窓（ポップアウト）起動関数
+    // 🗔 StudyClock / タイマー小窓（ポップアウト）起動関数
     window.openTimerPopout = function(e) {
         if (e) e.preventDefault();
         const root = getRootPath();
-        const targetUrl = root + 'tokei/index.html';
-        const width = 460;
-        const height = 740;
-        const left = Math.max(0, window.screen.width - width - 40);
-        const top = 40;
+        const targetUrl = root + 'study/index.html';
+        const width = 1180;
+        const height = 800;
+        const left = Math.max(0, Math.floor((window.screen.width - width) / 2));
+        const top = Math.max(0, Math.floor((window.screen.height - height) / 2));
 
         const popout = window.open(
             targetUrl,
-            'CyberTimerPopout',
+            'StudyClockPopoutWindow',
             `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes,status=no`
         );
         if (popout) popout.focus();
