@@ -13,13 +13,28 @@
     <script>
         window.MathJax = {
             tex: {
-                inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true,
                 macros: { fbox: ["\\bbox[2px,border:1px solid]{#1}", 1] }
             },
-            chtml: { displayAlign: 'left' }
+            options: {
+                skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+            },
+            chtml: {
+                displayAlign: 'left'
+            },
+            startup: {
+                ready: () => {
+                    MathJax.startup.defaultReady();
+                    if (typeof window.forceTriggerMathJax === "function") {
+                        window.forceTriggerMathJax();
+                    }
+                }
+            }
         };
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" async></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
 
     <style>
         /* ── リスト＆新規作成 ── */
@@ -3146,11 +3161,43 @@
 
         function el(id) { return document.getElementById(id); }
 
-        async function forceTriggerMathJax() {
-            if (window.MathJax && MathJax.typesetPromise) {
-                try { await MathJax.typesetPromise(); } catch (e) { console.log(e.message); }
+        let mathJaxRenderTimer = null;
+        async function forceTriggerMathJax(targetElements) {
+            if (!window.MathJax || !MathJax.typesetPromise) {
+                if (mathJaxRenderTimer) clearTimeout(mathJaxRenderTimer);
+                mathJaxRenderTimer = setTimeout(() => forceTriggerMathJax(targetElements), 200);
+                return;
+            }
+
+            try {
+                if (typeof MathJax.typesetClear === "function") {
+                    if (targetElements && Array.isArray(targetElements)) {
+                        MathJax.typesetClear(targetElements.filter(Boolean));
+                    } else if (targetElements instanceof HTMLElement) {
+                        MathJax.typesetClear([targetElements]);
+                    } else {
+                        MathJax.typesetClear();
+                    }
+                }
+
+                if (targetElements && Array.isArray(targetElements)) {
+                    await MathJax.typesetPromise(targetElements.filter(Boolean));
+                } else if (targetElements instanceof HTMLElement) {
+                    await MathJax.typesetPromise([targetElements]);
+                } else {
+                    await MathJax.typesetPromise();
+                }
+            } catch (e) {
+                console.warn("MathJax typeset notice:", e);
+                try {
+                    if (typeof MathJax.typesetClear === "function") MathJax.typesetClear();
+                    if (typeof MathJax.typesetPromise === "function") await MathJax.typesetPromise();
+                } catch (retryErr) {
+                    console.log(retryErr.message);
+                }
             }
         }
+        window.forceTriggerMathJax = forceTriggerMathJax;
 
         // --------------------------------------------------------------
         // 設定（授業の方針）
@@ -4376,6 +4423,7 @@ ${socraticInstructionBlock}
                 `;
             }).join("");
             wrap.scrollTop = wrap.scrollHeight;
+            forceTriggerMathJax(wrap);
         }
 
         async function copyMessageText(msgIndex) {
@@ -4717,10 +4765,10 @@ ${EXPERT_TEACHER_PROMPT}
                 return `
                     <div class="toc-item ${isActive ? 'current-active' : ''}" data-toc-part="${i}" style="cursor:pointer;">
                         <div class="toc-item-header">
-                            <span class="toc-item-title">第${i + 1}回: ${p.title}</span>
+                            <span class="toc-item-title tex2jax_process">第${i + 1}回: ${p.title}</span>
                             <span class="toc-status-badge ${badgeClass}">${badgeText}</span>
                         </div>
-                        <div class="toc-item-summary">${p.summary || ''}</div>
+                        <div class="toc-item-summary tex2jax_process">${p.summary || ''}</div>
                         <div style="margin-top:0.6rem; display:flex; justify-content:space-between; align-items:center;">
                             <span style="font-size:0.75rem; color:var(--text-secondary);">クリックで該当位置へ移動</span>
                             ${regenBtn}
@@ -4728,6 +4776,7 @@ ${EXPERT_TEACHER_PROMPT}
                     </div>
                 `;
             }).join("");
+            forceTriggerMathJax(container);
         }
 
         // パートのチャット内位置（divider）へジャンプする関数
