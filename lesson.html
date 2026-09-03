@@ -520,6 +520,191 @@
         .bubble-action-btn:active {
             transform: scale(0.97);
         }
+
+        /* 📊 AI図解・概念マップの視認性特化コンテナ（文字・矢印・ネオン枠を美しく表示） */
+        .ai-diagram-box {
+            margin: 0.85rem 0 0.4rem 0;
+            padding: 0.85rem 1rem 1rem 1rem;
+            background: #0f172a; /* 深みのあるスレートダーク（ネイビー黒板調） */
+            color: #f8fafc;
+            border: 1.5px solid #334155;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(15, 23, 42, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+            position: relative;
+            transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+        }
+
+        /* ☀️ 白板（ライトモード） */
+        .ai-diagram-box.theme-light {
+            background: #f8fafc;
+            color: #0f172a;
+            border: 1.5px solid #cbd5e1;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        }
+
+        .ai-diagram-box-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            margin-bottom: 0.65rem;
+            padding-bottom: 0.45rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+        }
+        .ai-diagram-box.theme-light .ai-diagram-box-header {
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .ai-diagram-box-header .diagram-tag {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: #38bdf8;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            letter-spacing: 0.03em;
+        }
+        .ai-diagram-box.theme-light .ai-diagram-box-header .diagram-tag {
+            color: #0284c7;
+        }
+
+        .ai-diagram-btn-group {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .diagram-tool-btn {
+            background: rgba(255, 255, 255, 0.12);
+            color: #f1f5f9;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 6px;
+            padding: 0.2rem 0.55rem;
+            font-size: 0.68rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            user-select: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        .diagram-tool-btn:hover {
+            background: rgba(255, 255, 255, 0.22);
+            color: #ffffff;
+            transform: translateY(-1px);
+        }
+        .ai-diagram-box.theme-light .diagram-tool-btn {
+            background: #e2e8f0;
+            color: #334155;
+            border-color: #cbd5e1;
+        }
+        .ai-diagram-box.theme-light .diagram-tool-btn:hover {
+            background: #cbd5e1;
+            color: #0f172a;
+        }
+
+        .ai-diagram-svg-wrap {
+            width: 100%;
+            overflow-x: auto;
+            overflow-y: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 140px;
+            padding: 0.4rem 0;
+        }
+
+        .ai-diagram-svg-wrap svg {
+            max-width: 100%;
+            height: auto;
+            max-height: 480px;
+            display: block;
+            margin: 0 auto;
+        }
+
+        /* 🌙 黒板モード時の文字・線の視認性強制補正 */
+        .ai-diagram-box.theme-dark svg text {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+        /* もしAIがテキストのfillを省略または透明にしていた場合、強制的に高視認性の白文字を適用 */
+        .ai-diagram-box.theme-dark svg text:not([fill]),
+        .ai-diagram-box.theme-dark svg text[fill="none"],
+        .ai-diagram-box.theme-dark svg text[fill="transparent"] {
+            fill: #f8fafc !important;
+        }
+
+        /* ☀️ 白板モード時の文字・線の自動適応 */
+        .ai-diagram-box.theme-light svg text {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+            font-weight: 600;
+        }
+        .ai-diagram-box.theme-light svg text[fill="#ffffff"],
+        .ai-diagram-box.theme-light svg text[fill="#fff"],
+        .ai-diagram-box.theme-light svg text[fill="white"],
+        .ai-diagram-box.theme-light svg text:not([fill]) {
+            fill: #0f172a !important;
+        }
+        .ai-diagram-box.theme-light svg [stroke="#ffffff"],
+        .ai-diagram-box.theme-light svg [stroke="#fff"],
+        .ai-diagram-box.theme-light svg [stroke="white"] {
+            stroke: #334155 !important;
+        }
+
+        /* 🔍 図解モーダル拡大表示 */
+        .diagram-modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(4px);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+        .diagram-modal-backdrop.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .diagram-modal-card {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 920px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+        }
+        .diagram-modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.9rem 1.25rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            color: #f8fafc;
+        }
+        .diagram-modal-body {
+            padding: 1.5rem;
+            overflow: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 300px;
+        }
+        .diagram-modal-body svg {
+            max-width: 100%;
+            height: auto;
+            max-height: 70vh;
+        }
         .bubble-regenerating-overlay {
             display: flex;
             align-items: center;
@@ -4314,9 +4499,12 @@ ${parts.map((p, i) => `${i + 1}. ${p.title} - ${p.summary}`).join("\n")}
 ${socraticInstructionBlock}
 
 【図解ルール（diagram_svg）】：
-生徒のメッセージが「【図解リクエスト】」で始まっている場合、または生徒が図・イメージでの説明を明確に求めている場合は、diagram_svgに図解を必ず入れること。
-・viewBox="0 0 400 300" 程度のシンプルなSVGコードのみを文字列として入れること（<svg>タグから始め、説明文やMarkdownのコードブロック記法は含めないこと）。
-・背景は透明、線や図形の色は #ffffff, #00f3ff, #ff007f, #fff500 のいずれかを使い、視認性を優先すること。
+生徒のメッセージが「【図解リクエスト】」で始まっている場合、または図・イメージ・関係図・概念マップ・グラフでの説明を明確に求めている場合は、diagram_svgに視覚的な図解SVGコード（<svg>〜</svg>）を必ず入れること。
+・viewBox="0 0 500 350"（または図に応じた適切なviewBox）を設定したシンプルなSVGコードのみを出力すること（Markdownのコードブロック記法は含めず、<svg>から</svg>まで）。
+・【⚠️ 文字と図形の視認性ルール（ダーク黒板調キャンバス上に描画されます）】：
+  1. 文字（<text>タグ）：文字が背景と同化して見えなくなることを防ぐため、必ず fill="#ffffff" または fill="#f8fafc" を指定し、font-size="14"（見出しは16〜18）、font-weight="bold"、text-anchor="middle" を設定して明確に読めるようにすること。文字のfill省略やfill="none"は厳格に禁止。
+  2. 枠線・図形（<rect>, <circle>, <polygon>）：中身の背景は fill="rgba(255,255,255,0.06)" や透明、枠線は高視認性の鮮やかな色（シアン: #38bdf8、ローズ/ピンク: #f43f5e、アンバー/イエロー: #facc15、エメラルド: #4ade80、ホワイト: #ffffff）で stroke-width="2" にすること。
+  3. 矢印・関係線（三権分立、因果関係、物理の力、数学のグラフ等）：矢印には <marker> で矢印先端を付け、関係線や矢印の横・中央に必ず fill="#ffffff" で説明ラベル文字（例:「拒否権」「違憲審査」「弾劾・予算」など）を配置すること。
 ・生徒のリクエストが漠然としている場合は、直前の授業内容の中で最も視覚化しやすい部分を判断して図解すること。
 ・図解が不要な通常のやり取りでは、diagram_svgは空文字列（""）にすること。
 
@@ -4328,18 +4516,32 @@ ${socraticInstructionBlock}
 }`;
         }
 
-        // 🩹 AIが生成したSVGから危険なタグ・属性を除去する簡易サニタイザー
+        // 🩹 AIが生成したSVGから危険なタグ・属性を除去し、視認性・viewBoxを整えるサニタイザー
         function sanitizeDiagramSvg(svg) {
             if (!svg || typeof svg !== "string") return "";
             let cleaned = svg.trim();
             const startIdx = cleaned.indexOf("<svg");
             if (startIdx === -1) return "";
             cleaned = cleaned.slice(startIdx);
+            const endIdx = cleaned.lastIndexOf("</svg>");
+            if (endIdx !== -1) {
+                cleaned = cleaned.slice(0, endIdx + 6);
+            }
             cleaned = cleaned
                 .replace(/<script[\s\S]*?<\/script>/gi, "")
                 .replace(/\son\w+\s*=\s*"[^"]*"/gi, "")
                 .replace(/\son\w+\s*=\s*'[^']*'/gi, "")
                 .replace(/<foreignObject[\s\S]*?<\/foreignObject>/gi, "");
+
+            // viewBoxが省略されていてwidth/heightのみの場合はviewBoxを補正
+            if (!cleaned.includes("viewBox")) {
+                const widthMatch = cleaned.match(/width=["']?(\d+)["']?/i);
+                const heightMatch = cleaned.match(/height=["']?(\d+)["']?/i);
+                const w = widthMatch ? widthMatch[1] : "500";
+                const h = heightMatch ? heightMatch[1] : "350";
+                cleaned = cleaned.replace(/<svg\b([^>]*)>/i, `<svg viewBox="0 0 ${w} ${h}" $1>`);
+            }
+
             return cleaned;
         }
 
@@ -4444,7 +4646,24 @@ ${socraticInstructionBlock}
                 // AIメッセージ
                 const isRegenerating = regeneratingMsgIndex === idx;
                 const diagramHtml = m.diagramSvg
-                    ? `<div class="ai-diagram-box">${m.diagramSvg}</div>`
+                    ? `
+                        <div class="ai-diagram-box theme-dark" id="ai-diagram-box-${idx}">
+                            <div class="ai-diagram-box-header">
+                                <span class="diagram-tag">📊 AI図解・概念マップ</span>
+                                <div class="ai-diagram-btn-group">
+                                    <button type="button" class="diagram-tool-btn" onclick="toggleDiagramTheme(${idx})" title="背景（黒板 ⇄ 白板）を切り替え">
+                                        🌓 テーマ切替
+                                    </button>
+                                    <button type="button" class="diagram-tool-btn" onclick="openDiagramModal(${idx})" title="図を大きく全画面で表示">
+                                        🔍 拡大
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="ai-diagram-svg-wrap" id="ai-diagram-wrap-${idx}">
+                                ${m.diagramSvg}
+                            </div>
+                        </div>
+                    `
                     : "";
 
                 const contentBody = isRegenerating
@@ -4473,6 +4692,83 @@ ${socraticInstructionBlock}
             }).join("");
             wrap.scrollTop = wrap.scrollHeight;
             forceTriggerMathJax(wrap);
+        }
+
+        // 📊 AI図解のテーマ切替（ダーク黒板 ⇄ ライト白板）
+        function toggleDiagramTheme(idx) {
+            const box = document.getElementById(`ai-diagram-box-${idx}`);
+            if (!box) return;
+            const isDark = box.classList.contains("theme-dark");
+            if (isDark) {
+                box.classList.remove("theme-dark");
+                box.classList.add("theme-light");
+            } else {
+                box.classList.remove("theme-light");
+                box.classList.add("theme-dark");
+            }
+        }
+
+        // 🔍 AI図解のモーダル拡大表示
+        function openDiagramModal(idx) {
+            const wrap = document.getElementById(`ai-diagram-wrap-${idx}`);
+            if (!wrap) return;
+            const svgContent = wrap.innerHTML;
+            if (!svgContent) return;
+
+            let modal = document.getElementById("diagram-expand-modal");
+            if (!modal) {
+                modal = document.createElement("div");
+                modal.id = "diagram-expand-modal";
+                modal.className = "diagram-modal-backdrop";
+                modal.innerHTML = `
+                    <div class="diagram-modal-card">
+                        <div class="diagram-modal-header">
+                            <span style="font-weight: 700; font-size: 0.92rem; display: flex; align-items: center; gap: 0.4rem;">
+                                📊 AI図解・概念マップ詳細
+                            </span>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <button type="button" class="diagram-tool-btn" id="diagram-modal-theme-btn" style="padding: 0.3rem 0.65rem; font-size: 0.78rem;">
+                                    🌓 テーマ切替
+                                </button>
+                                <button type="button" class="diagram-tool-btn" onclick="closeDiagramModal()" style="padding: 0.3rem 0.65rem; font-size: 0.78rem;">
+                                    ✕ 閉じる
+                                </button>
+                            </div>
+                        </div>
+                        <div class="diagram-modal-body" id="diagram-modal-body"></div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+
+                modal.addEventListener("click", (e) => {
+                    if (e.target === modal) closeDiagramModal();
+                });
+
+                document.getElementById("diagram-modal-theme-btn")?.addEventListener("click", () => {
+                    const card = modal.querySelector(".diagram-modal-card");
+                    if (card) {
+                        const isLight = card.style.background === "rgb(248, 250, 252)";
+                        if (isLight) {
+                            card.style.background = "#0f172a";
+                            card.style.color = "#f8fafc";
+                        } else {
+                            card.style.background = "#f8fafc";
+                            card.style.color = "#0f172a";
+                        }
+                    }
+                });
+            }
+
+            const modalBody = document.getElementById("diagram-modal-body");
+            if (modalBody) {
+                modalBody.innerHTML = svgContent;
+            }
+            modal.classList.add("open");
+        }
+
+        function closeDiagramModal() {
+            const modal = document.getElementById("diagram-expand-modal");
+            if (modal) modal.classList.remove("open");
         }
 
         async function copyMessageText(msgIndex) {

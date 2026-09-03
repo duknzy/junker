@@ -1264,3 +1264,137 @@ body.has-custom-wallpaper .problem-section-count {
     border-color: var(--brand-border);
     color: var(--brand-primary);
 }
+
+/* ==========================================================================
+   📊 AI図解・概念マップの視認性特化コンテナ
+   ========================================================================== */
+.ai-diagram-box {
+    margin: 0.85rem 0 0.4rem 0;
+    padding: 0.85rem 1rem 1rem 1rem;
+    background: #0f172a; /* 深みのあるスレートダーク（黒板調キャンバス） */
+    color: #f8fafc;
+    border: 1.5px solid #334155;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    position: relative;
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+/* ☀️ 白板（ライトモード） */
+.ai-diagram-box.theme-light {
+    background: #f8fafc;
+    color: #0f172a;
+    border: 1.5px solid #cbd5e1;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+.ai-diagram-box-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.65rem;
+    padding-bottom: 0.45rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+.ai-diagram-box.theme-light .ai-diagram-box-header {
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.ai-diagram-box-header .diagram-tag {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #38bdf8;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    letter-spacing: 0.03em;
+}
+.ai-diagram-box.theme-light .ai-diagram-box-header .diagram-tag {
+    color: #0284c7;
+}
+
+.ai-diagram-btn-group {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.diagram-tool-btn {
+    background: rgba(255, 255, 255, 0.12);
+    color: #f1f5f9;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 6px;
+    padding: 0.2rem 0.55rem;
+    font-size: 0.68rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+.diagram-tool-btn:hover {
+    background: rgba(255, 255, 255, 0.22);
+    color: #ffffff;
+    transform: translateY(-1px);
+}
+.ai-diagram-box.theme-light .diagram-tool-btn {
+    background: #e2e8f0;
+    color: #334155;
+    border-color: #cbd5e1;
+}
+.ai-diagram-box.theme-light .diagram-tool-btn:hover {
+    background: #cbd5e1;
+    color: #0f172a;
+}
+
+.ai-diagram-svg-wrap {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 140px;
+    padding: 0.4rem 0;
+}
+
+.ai-diagram-svg-wrap svg {
+    max-width: 100%;
+    height: auto;
+    max-height: 480px;
+    display: block;
+    margin: 0 auto;
+}
+
+/* 🌙 黒板モード時の文字・線の視認性強制補正 */
+.ai-diagram-box.theme-dark svg text {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+.ai-diagram-box.theme-dark svg text:not([fill]),
+.ai-diagram-box.theme-dark svg text[fill="none"],
+.ai-diagram-box.theme-dark svg text[fill="transparent"] {
+    fill: #f8fafc !important;
+}
+
+/* ☀️ 白板モード時の文字・線の自動適応 */
+.ai-diagram-box.theme-light svg text {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+    font-weight: 600;
+}
+.ai-diagram-box.theme-light svg text[fill="#ffffff"],
+.ai-diagram-box.theme-light svg text[fill="#fff"],
+.ai-diagram-box.theme-light svg text[fill="white"],
+.ai-diagram-box.theme-light svg text:not([fill]) {
+    fill: #0f172a !important;
+}
+.ai-diagram-box.theme-light svg [stroke="#ffffff"],
+.ai-diagram-box.theme-light svg [stroke="#fff"],
+.ai-diagram-box.theme-light svg [stroke="white"] {
+    stroke: #334155 !important;
+}
+

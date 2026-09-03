@@ -1023,18 +1023,32 @@ extracted_textには、写真やテキストに含まれる問題文を一字一
 `.trim()
         };
 
-        // 🩹【移植】lesson.htmlと共通。AIが生成したSVGから危険なタグ・属性を除去する簡易サニタイザー
+        // 🩹【移植】lesson.htmlと共通。AIが生成したSVGから危険なタグ・属性を除去し、視認性・viewBoxを整えるサニタイザー
         function sanitizeDiagramSvg(svg) {
             if (!svg || typeof svg !== "string") return "";
             let cleaned = svg.trim();
             const startIdx = cleaned.indexOf("<svg");
             if (startIdx === -1) return "";
             cleaned = cleaned.slice(startIdx);
+            const endIdx = cleaned.lastIndexOf("</svg>");
+            if (endIdx !== -1) {
+                cleaned = cleaned.slice(0, endIdx + 6);
+            }
             cleaned = cleaned
                 .replace(/<script[\s\S]*?<\/script>/gi, "")
                 .replace(/\son\w+\s*=\s*"[^"]*"/gi, "")
                 .replace(/\son\w+\s*=\s*'[^']*'/gi, "")
                 .replace(/<foreignObject[\s\S]*?<\/foreignObject>/gi, "");
+
+            // viewBoxが省略されていてwidth/heightのみの場合はviewBoxを補正
+            if (!cleaned.includes("viewBox")) {
+                const widthMatch = cleaned.match(/width=["']?(\d+)["']?/i);
+                const heightMatch = cleaned.match(/height=["']?(\d+)["']?/i);
+                const w = widthMatch ? widthMatch[1] : "500";
+                const h = heightMatch ? heightMatch[1] : "350";
+                cleaned = cleaned.replace(/<svg\b([^>]*)>/i, `<svg viewBox="0 0 ${w} ${h}" $1>`);
+            }
+
             return cleaned;
         }
 
@@ -1332,9 +1346,12 @@ ${glossaryBlock}`;
         const CHAT_DIAGRAM_RULE_BLOCK = `
 
 【図解ルール（diagram_svg）】：
-生徒のメッセージが「【図解リクエスト】」で始まっている場合、または生徒が図・イメージでの説明を明確に求めている場合は、diagram_svgに図解を必ず入れること。
-・viewBox="0 0 400 300" 程度のシンプルなSVGコードのみを文字列として入れること（<svg>タグから始め、説明文やMarkdownのコードブロック記法は含めないこと）。
-・背景は透明、線や図形の色は #ffffff, #00f3ff, #ff007f, #fff500 のいずれかを使い、視認性を優先すること。
+生徒のメッセージが「【図解リクエスト】」で始まっている場合、または図・イメージ・関係図・概念マップ・グラフでの説明を明確に求めている場合は、diagram_svgに視覚的な図解SVGコード（<svg>〜</svg>）を必ず入れること。
+・viewBox="0 0 500 350"（または内容に応じた比率）を設定したシンプルなSVGコードのみを出力すること（Markdownのコードブロック記法は含めず、<svg>から</svg>まで）。
+・【⚠️ 文字と図形の視認性ルール（ダーク黒板調キャンバス上に描画されます）】：
+  1. 文字（<text>タグ）：文字が背景と同化して見えなくなることを防ぐため、必ず fill="#ffffff" または fill="#f8fafc" を指定し、font-size="14"（見出しは16〜18）、font-weight="bold"、text-anchor="middle" を設定して明確に読めるようにすること。文字のfill省略やfill="none"は厳格に禁止。
+  2. 枠線・図形（<rect>, <circle>, <polygon>）：中身の背景は fill="rgba(255,255,255,0.06)" や透明、枠線は高視認性の鮮やかな色（シアン: #38bdf8、ローズ/ピンク: #f43f5e、アンバー/イエロー: #facc15、エメラルド: #4ade80、ホワイト: #ffffff）で stroke-width="2" にすること。
+  3. 矢印・関係線（三権分立、因果関係、物理の力、数学のグラフ等）：矢印には <marker> で矢印先端を付け、関係線や矢印の横・中央に必ず fill="#ffffff" で説明ラベル文字（例:「拒否権」「違憲審査」「弾劾・予算」など）を配置すること。
 ・生徒のリクエストが漠然としている場合は、直前のやり取りの中で最も視覚化しやすい部分を判断して図解すること。
 ・図解が不要な通常のやり取りでは、diagram_svgは空文字列（""）にすること。
 
@@ -2133,7 +2150,28 @@ ${EXPERT_TEACHER_PROMPT}
             const aBubble = document.createElement("div"); 
             aBubble.className = "chat-bubble bubble-ai"; 
             const cleanedSvg = sanitizeDiagramSvg(aiJson.diagram_svg);
-            aBubble.innerHTML = renderFormattedMarkdown(aiJson.ai_response) + (cleanedSvg ? `<div class="ai-diagram-box">${cleanedSvg}</div>` : "");
+            const diagramId = `prob-diagram-${Date.now()}`;
+            const diagramHtml = cleanedSvg
+                ? `
+                    <div class="ai-diagram-box theme-dark" id="${diagramId}">
+                        <div class="ai-diagram-box-header">
+                            <span class="diagram-tag">📊 AI図解・概念マップ</span>
+                            <div class="ai-diagram-btn-group">
+                                <button type="button" class="diagram-tool-btn" onclick="toggleProblemDiagramTheme('${diagramId}')" title="背景（黒板 ⇄ 白板）を切り替え">
+                                    🌓 テーマ切替
+                                </button>
+                                <button type="button" class="diagram-tool-btn" onclick="openProblemDiagramModal('${diagramId}')" title="図を大きく全画面で表示">
+                                    🔍 拡大
+                                </button>
+                            </div>
+                        </div>
+                        <div class="ai-diagram-svg-wrap">
+                            ${cleanedSvg}
+                        </div>
+                    </div>
+                  `
+                : "";
+            aBubble.innerHTML = renderFormattedMarkdown(aiJson.ai_response) + diagramHtml;
 
             chatHistoryArea.appendChild(aBubble);
 
@@ -2155,6 +2193,81 @@ ${EXPERT_TEACHER_PROMPT}
             qnaTurns.push(cleanedSvg ? { role: "assistant", content: aiJson.ai_response || "", diagramSvg: cleanedSvg } : { role: "assistant", content: aiJson.ai_response || "" });
             const saveRowEl = document.getElementById("qna-save-row");
             if (saveRowEl) saveRowEl.style.display = "flex";
+        }
+
+        // 📊 AI図解のテーマ切替（ダーク黒板 ⇄ ライト白板）
+        function toggleProblemDiagramTheme(elementId) {
+            const box = document.getElementById(elementId);
+            if (!box) return;
+            const isDark = box.classList.contains("theme-dark");
+            if (isDark) {
+                box.classList.remove("theme-dark");
+                box.classList.add("theme-light");
+            } else {
+                box.classList.remove("theme-light");
+                box.classList.add("theme-dark");
+            }
+        }
+
+        // 🔍 AI図解のモーダル拡大表示
+        function openProblemDiagramModal(elementId) {
+            const box = document.getElementById(elementId);
+            if (!box) return;
+            const wrap = box.querySelector(".ai-diagram-svg-wrap");
+            if (!wrap) return;
+            const svgContent = wrap.innerHTML;
+            if (!svgContent) return;
+
+            let modal = document.getElementById("problem-diagram-modal");
+            if (!modal) {
+                modal = document.createElement("div");
+                modal.id = "problem-diagram-modal";
+                modal.className = "diagram-modal-backdrop";
+                modal.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.78);backdrop-filter:blur(4px);z-index:10000;display:flex;align-items:center;justify-content:center;padding:1.5rem;";
+                modal.innerHTML = `
+                    <div style="background:#0f172a;border:1px solid #334155;border-radius:16px;width:100%;max-width:920px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 20px 40px rgba(0,0,0,0.5);overflow:hidden;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;padding:0.9rem 1.25rem;border-bottom:1px solid rgba(255,255,255,0.1);color:#f8fafc;">
+                            <span style="font-weight:700;font-size:0.92rem;display:flex;align-items:center;gap:0.4rem;">
+                                📊 AI図解・概念マップ詳細
+                            </span>
+                            <div style="display:flex;align-items:center;gap:0.5rem;">
+                                <button type="button" class="diagram-tool-btn" id="problem-diagram-modal-theme-btn" style="padding:0.3rem 0.65rem;font-size:0.78rem;">
+                                    🌓 テーマ切替
+                                </button>
+                                <button type="button" class="diagram-tool-btn" onclick="document.getElementById('problem-diagram-modal').style.display='none'" style="padding:0.3rem 0.65rem;font-size:0.78rem;">
+                                    ✕ 閉じる
+                                </button>
+                            </div>
+                        </div>
+                        <div id="problem-diagram-modal-body" style="padding:1.5rem;overflow:auto;display:flex;align-items:center;justify-content:center;min-height:300px;"></div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+
+                modal.addEventListener("click", (e) => {
+                    if (e.target === modal) modal.style.display = "none";
+                });
+
+                document.getElementById("problem-diagram-modal-theme-btn")?.addEventListener("click", () => {
+                    const card = modal.querySelector("div");
+                    if (card) {
+                        const isLight = card.style.background === "rgb(248, 250, 252)";
+                        if (isLight) {
+                            card.style.background = "#0f172a";
+                            card.style.color = "#f8fafc";
+                        } else {
+                            card.style.background = "#f8fafc";
+                            card.style.color = "#0f172a";
+                        }
+                    }
+                });
+            }
+
+            const modalBody = document.getElementById("problem-diagram-modal-body");
+            if (modalBody) {
+                modalBody.innerHTML = svgContent;
+            }
+            modal.style.display = "flex";
         }
 
         function triggerNeonExplosion() {
