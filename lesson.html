@@ -614,6 +614,7 @@
             gap: 0.65rem;
             padding: 0.4rem 0.2rem;
             margin-bottom: 0.65rem;
+            contain: content;
         }
         .counseling-bubble {
             display: flex;
@@ -2895,29 +2896,67 @@
             const flow = el("counseling-chat-flow");
             if (!flow) return;
 
-            flow.innerHTML = counselingHistory.map(msg => {
+            if (counselingHistory.length === 0) {
+                flow.innerHTML = "";
+                return;
+            }
+
+            const existingBubbles = flow.querySelectorAll(".counseling-bubble:not(#counseling-loading-bubble)");
+            const startIndex = existingBubbles.length;
+
+            if (startIndex > counselingHistory.length) {
+                flow.innerHTML = "";
+                return renderCounselingChat();
+            }
+
+            let loadingBubble = el("counseling-loading-bubble");
+            const newElements = [];
+
+            for (let i = startIndex; i < counselingHistory.length; i++) {
+                const msg = counselingHistory[i];
                 const isAi = msg.role === "model";
-                return `
-                    <div class="counseling-bubble ${isAi ? 'ai' : 'user'}">
-                        <div class="counseling-avatar">${isAi ? '🤖' : '👤'}</div>
-                        <div class="counseling-text tex2jax_process">${escapeHtml(msg.text)}</div>
-                    </div>
+                const bubble = document.createElement("div");
+                bubble.className = `counseling-bubble ${isAi ? 'ai' : 'user'}`;
+                bubble.innerHTML = `
+                    <div class="counseling-avatar">${isAi ? '🤖' : '👤'}</div>
+                    <div class="counseling-text tex2jax_process">${escapeHtml(msg.text)}</div>
                 `;
-            }).join("");
+                if (loadingBubble && loadingBubble.parentNode === flow) {
+                    flow.insertBefore(bubble, loadingBubble);
+                } else {
+                    flow.appendChild(bubble);
+                }
+                newElements.push({ el: bubble, text: msg.text });
+            }
 
             if (isCounselingLoading) {
-                flow.innerHTML += `
-                    <div class="counseling-bubble ai" id="counseling-loading-bubble">
+                if (!loadingBubble) {
+                    loadingBubble = document.createElement("div");
+                    loadingBubble.className = "counseling-bubble ai";
+                    loadingBubble.id = "counseling-loading-bubble";
+                    loadingBubble.innerHTML = `
                         <div class="counseling-avatar">🤖</div>
                         <div class="counseling-text" style="color:var(--text-secondary); font-style:italic;">
                             💡 AIカウンセラーが最適な選択肢と単元要件を分析中...
                         </div>
-                    </div>
-                `;
+                    `;
+                    flow.appendChild(loadingBubble);
+                }
+                loadingBubble.style.display = "flex";
+            } else if (loadingBubble) {
+                loadingBubble.style.display = "none";
             }
 
-            scrollToBottomCounseling();
-            forceTriggerMathJax();
+            requestAnimationFrame(() => scrollToBottomCounseling());
+
+            // 数式記号を含む新規メッセージのみ、非同期でピンポイントにMathJaxを実行（INP遅延を完全に防止）
+            newElements.forEach(item => {
+                if (item.text && (item.text.includes("$") || item.text.includes("\\"))) {
+                    requestAnimationFrame(() => {
+                        forceTriggerMathJax(item.el);
+                    });
+                }
+            });
         }
 
         function renderCounselingQuickReplies(replies) {
@@ -2943,7 +2982,7 @@
                     const idx = parseInt(btn.getAttribute("data-chip-idx"), 10);
                     const text = replies[idx];
                     if (text && !isCounselingLoading) {
-                        sendCounselingMessage(text);
+                        setTimeout(() => sendCounselingMessage(text), 0);
                     }
                 };
             });
@@ -3087,6 +3126,19 @@
             showToast("✨ 授業作成フォームに反映しました！内容を自由にご確認・編集してプラン生成へ進んでください。", "success", 4500);
         }
 
+        function triggerCounselingSubmit() {
+            const inputEl = el("counseling-user-input");
+            if (!inputEl) return;
+            const text = inputEl.value;
+            if (!text.trim() || isCounselingLoading) return;
+            inputEl.value = ""; // 入力欄を同期的に即時クリア（INPでNext Paintが最速完了する）
+
+            // 重いAI通信準備はメインスレッド譲渡後に非同期実行
+            setTimeout(() => {
+                sendCounselingMessage(text);
+            }, 0);
+        }
+
         // イベントリスナーの登録
         el("counseling-trigger-banner")?.addEventListener("click", () => toggleCounselingPanel(true));
         el("close-counseling-btn")?.addEventListener("click", () => toggleCounselingPanel(false));
@@ -3095,13 +3147,11 @@
         });
         el("counseling-apply-btn")?.addEventListener("click", applyCounselingSpecToForm);
 
-        el("counseling-send-btn")?.addEventListener("click", () => {
-            sendCounselingMessage(el("counseling-user-input")?.value);
-        });
+        el("counseling-send-btn")?.addEventListener("click", triggerCounselingSubmit);
         el("counseling-user-input")?.addEventListener("keydown", (e) => {
             if (e.key === "Enter" && !e.isComposing) {
                 e.preventDefault();
-                sendCounselingMessage(el("counseling-user-input")?.value);
+                triggerCounselingSubmit();
             }
         });
 

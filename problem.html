@@ -113,6 +113,7 @@
             display: flex;
             flex-direction: column;
             gap: 0.75rem;
+            contain: content;
         }
 
         .chat-input-wrapper {
@@ -2137,9 +2138,16 @@ ${EXPERT_TEACHER_PROMPT}
             chatHistoryArea.appendChild(aBubble);
 
             if (aiJson.current_step_label) stepLabel.textContent = aiJson.current_step_label;
-            chatHistoryArea.scrollTop = chatHistoryArea.scrollHeight;
-            if (window.MathJax && MathJax.typesetPromise) {
-                MathJax.typesetPromise([aBubble, uBubble]);
+            requestAnimationFrame(() => {
+                chatHistoryArea.scrollTop = chatHistoryArea.scrollHeight;
+            });
+
+            // 数式記号を含む要素のみをピンポイントで描画
+            const targetsToTypeset = [uBubble, aBubble].filter(el => el.textContent && (el.textContent.includes("$") || el.textContent.includes("\\")));
+            if (targetsToTypeset.length > 0 && window.MathJax && MathJax.typesetPromise) {
+                requestAnimationFrame(() => {
+                    MathJax.typesetPromise(targetsToTypeset).catch(err => console.log(err));
+                });
             }
 
             // 💬【新設】保存対象の会話に今回のやり取りを追加し、保存ボタンを出す
@@ -2174,7 +2182,9 @@ ${EXPERT_TEACHER_PROMPT}
                 if (t) {
                     inputField.value = "";
                     autoGrowChatInput();
-                    sendMessageToTutor(t);
+                    setTimeout(() => {
+                        sendMessageToTutor(t);
+                    }, 0);
                 }
             };
             sendBtn.addEventListener("click", sendChatInput);
@@ -2206,7 +2216,9 @@ ${EXPERT_TEACHER_PROMPT}
             if (!req) return;
             diagramRequestInput.value = "";
             diagramRequestRow.classList.add("hidden");
-            sendMessageToTutor(`【図解リクエスト】${req}`);
+            setTimeout(() => {
+                sendMessageToTutor(`【図解リクエスト】${req}`);
+            }, 0);
         }
 
         if (diagramRequestSendBtn) diagramRequestSendBtn.addEventListener("click", submitDiagramRequest);
@@ -2217,7 +2229,15 @@ ${EXPERT_TEACHER_PROMPT}
         }
 
         if (showAnswerBtn && revealWrap && revealZone) {
-            showAnswerBtn.addEventListener("click", () => { revealWrap.style.display = "none"; revealZone.style.display = "flex"; if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise(); });
+            showAnswerBtn.addEventListener("click", () => {
+                revealWrap.style.display = "none";
+                revealZone.style.display = "flex";
+                if (window.MathJax && MathJax.typesetPromise) {
+                    requestAnimationFrame(() => {
+                        MathJax.typesetPromise([revealZone]).catch(err => console.log(err));
+                    });
+                }
+            });
         }
         
         document.getElementById("btn-judge-right").addEventListener("click", () => processSelfJudgment(true));

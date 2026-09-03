@@ -437,9 +437,15 @@ startSprintTimer();
             document.getElementById("sprint-timer").textContent = `${min}:${sec}.${ms}`;
         }
 
-        async function forceTriggerMathJax() {
+        async function forceTriggerMathJax(targetElement = null) {
             if (window.MathJax && MathJax.typesetPromise) {
-                try { await MathJax.typesetPromise(); } catch (err) { console.log(err.message); }
+                try {
+                    if (targetElement) {
+                        await MathJax.typesetPromise([targetElement]);
+                    } else {
+                        await MathJax.typesetPromise();
+                    }
+                } catch (err) { console.log(err.message); }
             }
         }
 
@@ -508,7 +514,10 @@ startSprintTimer();
             cleanSteps = cleanSteps.replace(/\\n/g, '<br>').replace(/\n/g, '<br>');
             document.getElementById("sprint-steps-display").innerHTML = cleanSteps;
 
-            forceTriggerMathJax();
+            requestAnimationFrame(() => {
+                const titleEl = document.getElementById("problem-title-display");
+                forceTriggerMathJax(titleEl);
+            });
         }
 
         async function sendToMainRemindList() {
@@ -567,8 +576,11 @@ startSprintTimer();
         // ==========================================================================
         document.getElementById("btn-reveal-ans").addEventListener("click", () => {
             document.getElementById("btn-reveal-ans").style.display = "none";
-            document.getElementById("sprint-reveal-zone").style.display = "flex";
-            forceTriggerMathJax();
+            const revealZone = document.getElementById("sprint-reveal-zone");
+            revealZone.style.display = "flex";
+            requestAnimationFrame(() => {
+                forceTriggerMathJax(revealZone);
+            });
         });
 
         document.getElementById("btn-sprint-correct").addEventListener("click", nextQuestion);
