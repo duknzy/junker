@@ -887,6 +887,7 @@
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
                         <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
                             <span class="flora-badge badge-primary" id="sprint-theme-badge" style="display:none; font-weight:800;">🎯 特訓テーマ</span>
+                            <span class="flora-badge badge-secondary" id="problem-subtopic-badge" style="display:none; font-weight:700; background: var(--bg-hover); color: var(--text-primary); border: 1px solid var(--border-color);">📌 パターン</span>
                             <span class="flora-badge badge-math" id="problem-meta">AI // SYNAPSES</span>
                         </div>
                         <span class="flora-badge badge-warning" id="sprint-figure-badge" style="display:none;">🖼️ 図・写真あり</span>
@@ -1733,11 +1734,13 @@
                 id: { type: "STRING" },
                 subject: { type: "STRING" },
                 field: { type: "STRING" },
-                title: { type: "STRING" },
-                answer: { type: "STRING" },
-                steps: { type: "STRING" }
+                theme: { type: "STRING", description: "出題テーマ・解法パターン名（例: 同じものを含む順列と順序指定順列の融合問題）" },
+                questionText: { type: "STRING", description: "生徒が解くための具体的で完全な問題文全文（前提条件・数式・「〜を求めよ」「〜の値を答えよ」等の問いを必ず含む。数式は$で囲む）" },
+                title: { type: "STRING", description: "問題文全文（questionTextと同じ完全な問題文）" },
+                answer: { type: "STRING", description: "最終的な正しい答え（数式は$で囲む）" },
+                steps: { type: "STRING", description: "ステップごとの詳細な解説（\\nで改行）" }
             },
-            required: ["id", "subject", "field", "title", "answer", "steps"]
+            required: ["id", "subject", "field", "questionText", "answer", "steps"]
         };
 
         // フェーズ1：重複のない出題構成案（目次）スキーマ
@@ -1831,7 +1834,7 @@
                 let completedCount = 0;
 
                 const generateSingleQuestion = async (item, index) => {
-                    const prompt = `あなたは高校数学の作問のプロです。
+                    const prompt = `あなたは高校数学の作問のプロフェッショナルです。
 以下の構成案に従って、【第${item.number}問】のタイムアタック計算問題を1問だけ作成してください。
 
 【スプリントテーマ】${sprintTitle || fieldText || "数学特訓"}
@@ -1839,6 +1842,12 @@
 【狙い・着眼点】${item.focus_target}
 【難易度】${levelText}
 【重点要望】${focusNotes || "なし"}
+
+【⚠️ 最重要：問題文の完全な記述ルール】
+- 「questionText」および「title」には、生徒が問題を読んでその場で解くための【具体的かつ完全な問題文全文（条件設定・数値や変数・数式・そして「〜を求めよ」「〜の値を答えよ」などの明確な問い）】を必ず完全に記述してください。
+- テーマ名や見出し（例:「${item.subtopic}」）だけで終わらせることは【厳格に禁止】です。必ず生徒が解くべき具体的な設問本文を書いてください。
+- 「theme」には、この問題の解法パターン名や出題テーマ（例: ${item.subtopic}）を入れてください。
+- 図やグラフを参照しなくても、問題文の文章と数式だけで100%状況が確定し、自己完結して解ける問題にしてください（「右の図において」などは禁止）。
 
 【数式ルール】
 - 数式や変数は必ず $ または $$ で囲むこと。
@@ -1867,9 +1876,25 @@
                             if (ind) ind.textContent = "✅ 完了";
                         }
 
+                        // 問題文の確実な取得とフォールバック
+                        let finalQuestionText = (qData.questionText || qData.title || "").trim();
+                        const finalTheme = (qData.theme || item.subtopic || "").trim();
+
+                        // 万一 questionText が短くテーマ名と同一の場合は補完
+                        if (!finalQuestionText || finalQuestionText === finalTheme) {
+                            if (qData.title && qData.title.trim() !== finalTheme) {
+                                finalQuestionText = qData.title.trim();
+                            } else {
+                                finalQuestionText = `${finalTheme}：次の条件を満たす値を求めよ。`;
+                            }
+                        }
+
                         return {
                             ...qData,
-                            id: `AI_CUSTOM_${Date.now()}_${index + 1}`
+                            id: `AI_CUSTOM_${Date.now()}_${index + 1}`,
+                            theme: finalTheme,
+                            title: finalQuestionText, // 互換性のため title に問題文全文を格納
+                            questionText: finalQuestionText
                         };
                     } catch (err) {
                         console.warn(`第${item.number}問の並列生成失敗、フォールバックを適用:`, err);
@@ -2003,11 +2028,13 @@
                     id: { type: "STRING" },
                     subject: { type: "STRING" },
                     field: { type: "STRING" },
-                    title: { type: "STRING" },
+                    theme: { type: "STRING", description: "出題テーマ・解法パターン名（例: 同じものを含む順列と順序指定順列の融合問題）" },
+                    questionText: { type: "STRING", description: "具体的で完全な問題文全文（問いを含む）" },
+                    title: { type: "STRING", description: "問題文全文" },
                     answer: { type: "STRING" },
                     steps: { type: "STRING" }
                 },
-                required: ["id", "subject", "field", "title", "answer", "steps"]
+                required: ["id", "subject", "field", "questionText", "answer", "steps"]
             }
         };
 
@@ -2046,13 +2073,21 @@ ${focusInstruction}
 1. 数式フォーマット：問題文(title)、答え(answer)、解説(steps)に含まれる数式や変数は、必ず前後に $ または $$ をつけて美しいLaTeX数式形式にしてください。
 2. 解説の構造化：steps（解説）は1行に詰め込まず、計算過程や使用した公式、思考のステップごとに必ず改行コード（\\\\n）を挟んで、論理の飛躍がない見やすい箇条書き形式にしてください。
 
+【⚠️ 最重要：問題文の完全な記述ルール】
+- 「questionText」および「title」には、生徒が問題を読んでその場で解くための【具体的かつ完全な問題文全文（条件設定・数値や変数・数式・そして「〜を求めよ」「〜の値を答えよ」などの明確な問い）】を必ず完全に記述してください。
+- テーマ名や見出しだけで終わらせることは厳格に禁止です。必ず具体的な問題文本文を書いてください。
+- 「theme」には、その問題の出題テーマや解法パターン名を入れてください。
+- 図やグラフを参照しなくても、問題文の文章と数式だけで100%状況が確定し、自己完結して解ける問題にしてください。
+
 【JSONフォーマット】
 [
   {
     "id": "AI_CUSTOM_${Date.now()}_1",
     "subject": "数学II",
     "field": "分野名（例: 三角関数）",
-    "title": "問題文（数式は$ $で挟む）",
+    "theme": "解法パターン名・小見出し",
+    "questionText": "具体的で完全な問題文全文（〜を求めよ、など。数式は$ $で挟む）",
+    "title": "questionTextと同じ完全な問題文",
     "answer": "最終的な正しい答え（数式は$ $で挟む）",
     "steps": "ステップごとの解説（\\\\nで改行を挟む）"
   }
@@ -2075,11 +2110,25 @@ ${focusInstruction}
                     throw new Error("AIの応答が期待した配列形式ではありませんでした。");
                 }
 
-                selectedQuestions = aiQuestions.map((q, idx) => ({
-    ...q,
-    id: `AI_CUSTOM_${Date.now()}_${idx + 1}`
-}));
-startSprintTimer();
+                selectedQuestions = aiQuestions.map((q, idx) => {
+                    const finalTheme = (q.theme || q.field || "").trim();
+                    let finalQuestionText = (q.questionText || q.title || "").trim();
+                    if (!finalQuestionText || finalQuestionText === finalTheme) {
+                        if (q.title && q.title.trim() !== finalTheme) {
+                            finalQuestionText = q.title.trim();
+                        } else {
+                            finalQuestionText = `${finalTheme}：次の条件を満たす値を求めよ。`;
+                        }
+                    }
+                    return {
+                        ...q,
+                        id: `AI_CUSTOM_${Date.now()}_${idx + 1}`,
+                        theme: finalTheme,
+                        title: finalQuestionText,
+                        questionText: finalQuestionText
+                    };
+                });
+                startSprintTimer();
 
             } catch (error) {
                 console.error("AI問題生成エラー:", error);
@@ -2229,7 +2278,28 @@ selectedQuestions = shuffled.slice(0, count).map((q, idx) => ({
                 }
             }
 
-            document.getElementById("problem-title-display").innerHTML = formatQuestionText(q.title);
+            // 個別問題のテーマ・解法パターン名バッジ
+            const subtopicBadge = document.getElementById("problem-subtopic-badge");
+            if (subtopicBadge) {
+                const subtopicText = (q.theme || q.subtopic || "").trim();
+                if (subtopicText) {
+                    subtopicBadge.style.display = "inline-flex";
+                    subtopicBadge.textContent = `📌 ${subtopicText}`;
+                } else {
+                    subtopicBadge.style.display = "none";
+                }
+            }
+
+            // 問題文本文の表示（questionTextを最優先、なければtitle）
+            let problemBody = (q.questionText || q.title || "").trim();
+
+            // 万一、古い保存データ等で questionText がなく、title がテーマ名のみで問いがない場合のフォールバック
+            const isShortTitleOnly = problemBody.length < 35 && !/[？?]|求めよ|計算せよ|解け|示せ|何通り|いくらか|値を答えよ|選べ/.test(problemBody);
+            if (isShortTitleOnly && (q.theme || q.subtopic) && problemBody === (q.theme || q.subtopic)) {
+                problemBody = `${problemBody}：問題文の設定に基づき解答を導け。（※AI生成時の要約見出しです。詳細は「答えを確認する」から解説を参照できます）`;
+            }
+
+            document.getElementById("problem-title-display").innerHTML = formatQuestionText(problemBody);
 
             // 🖼️ 図・写真の読み込みと表示
             loadQuestionFigures(q);
