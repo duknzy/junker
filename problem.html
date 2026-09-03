@@ -325,6 +325,34 @@
             color: #fff; font-size: 0.85rem; font-weight: 700; background: rgba(15,23,42,0.7);
             padding: 0.3rem 0.9rem; border-radius: 20px;
         }
+
+        /* 📚 問題選択モーダル */
+        .picker-modal-overlay {
+            position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px);
+            z-index: 10000; display: none; align-items: center; justify-content: center; padding: 1.5rem;
+        }
+        .picker-modal-overlay.open { display: flex; }
+        .picker-modal-card {
+            background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-xl); width: 100%; max-width: 780px; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden;
+        }
+        .picker-modal-header {
+            padding: 1.2rem 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between;
+        }
+        .picker-modal-body {
+            padding: 1.2rem 1.5rem; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 0.8rem;
+        }
+        .picker-item-row {
+            padding: 0.85rem 1.1rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);
+            background: var(--bg-subtle); display: flex; align-items: center; justify-content: space-between;
+            gap: 1rem; cursor: pointer; transition: all 120ms ease;
+        }
+        .picker-item-row:hover {
+            border-color: var(--brand-primary); background: rgba(5, 150, 105, 0.05); transform: translateY(-1px);
+        }
+        .picker-item-row.active {
+            border-color: var(--brand-primary); background: rgba(5, 150, 105, 0.1); border-left-width: 4px;
+        }
     </style>
 </head>
 <body>
@@ -353,9 +381,18 @@
                             </a>
                         </div>
                     </div>
-                    <div class="page-actions">
-                        <button type="button" class="flora-btn flora-btn-secondary" onclick="location.href='index.html'">
-                            ← ダッシュボードに戻る
+                    <div class="page-actions" style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+                        <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="btn-open-problem-picker">
+                            📚 他の問題を選ぶ
+                        </button>
+                        <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="btn-random-problem" title="登録問題からランダムで出題">
+                            🎲 ランダム
+                        </button>
+                        <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="btn-next-problem" title="次の問題へ進む">
+                            ▶ 次の問題
+                        </button>
+                        <button type="button" class="flora-btn flora-btn-ghost btn-sm" onclick="location.href='index.html'">
+                            ← ダッシュボード
                         </button>
                     </div>
                 </div>
@@ -582,8 +619,38 @@
         </div>
     </div>
 
-    <!-- 共通タイマー ＆ サイドバースクリプト -->
-    <script src="global-timer-sync.js"></script>
+    <!-- 📚 問題選択モーダル -->
+    <div class="picker-modal-overlay" id="problem-picker-modal">
+        <div class="picker-modal-card">
+            <div class="picker-modal-header">
+                <div>
+                    <h3 style="font-family: var(--font-heading); font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.2rem;">📚 演習する問題を選択</h3>
+                    <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 0;">登録されている誤答問題・特訓問題から解きたい問題を選んでください</p>
+                </div>
+                <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="close-problem-picker-btn" style="font-size: 1.2rem; padding: 0.2rem 0.6rem;">✕</button>
+            </div>
+            <div style="padding: 0.8rem 1.5rem; background: var(--bg-subtle); border-bottom: 1px solid var(--border-color); display: flex; gap: 0.8rem; flex-wrap: wrap; align-items: center;">
+                <input type="text" id="picker-search-input" class="flora-input" placeholder="🔍 タイトルや単元で検索..." style="flex: 1; min-width: 200px; font-size: 0.85rem;">
+                <select id="picker-subject-filter" class="flora-select" style="width: auto; font-size: 0.85rem;">
+                    <option value="ALL">すべての教科</option>
+                    <option value="数学">数学</option>
+                    <option value="物理">物理</option>
+                    <option value="化学">化学</option>
+                    <option value="生物">生物</option>
+                    <option value="英語">英語</option>
+                    <option value="国語">国語</option>
+                    <option value="情報">情報</option>
+                    <option value="地理">地理</option>
+                    <option value="日本史">日本史</option>
+                    <option value="世界史">世界史</option>
+                </select>
+            </div>
+            <div class="picker-modal-body" id="problem-picker-list">
+                <div style="text-align: center; color: var(--text-muted); padding: 2rem;">問題を読み込み中...</div>
+            </div>
+        </div>
+    </div>
+
     <script src="sidebar.js"></script>
 
    <script type="module">
@@ -1286,6 +1353,7 @@ ${glossaryBlock}`;
         let qnaLogsForThisProblem = {}; // 💬【新設】この問題に紐づく保存済みログのキャッシュ
         let currentProblemData = {};
         let loginUid = null;
+        let cachedAllUserProblems = []; // 📚 ユーザーの全登録問題キャッシュ
 
         window.floraTestLogin = async function() {
             try {
@@ -1309,22 +1377,35 @@ ${glossaryBlock}`;
                 loginUid = user.uid;
                 let activeProblemId = PROBLEM_ID;
 
+                // 📚 全問題リストをプリフェッチしてキャッシュ
+                try {
+                    const problemsSnap = await get(ref(database, 'users/' + user.uid + '/problems'));
+                    const problemsData = problemsSnap.val() || {};
+                    cachedAllUserProblems = Object.values(problemsData).filter(p => p && p.id);
+                } catch(e) {
+                    console.warn("全問題フェッチ失敗:", e);
+                }
+
                 // 🎯 問題IDが指定されていない場合（サイドバーから直接開いた場合など）：
-                //    登録されている問題の中から今日復習すべき優先度の高い問題を自動選択する
                 if (!activeProblemId) {
                     try {
-                        const problemsSnap = await get(ref(database, 'users/' + user.uid + '/problems'));
-                        const problemsData = problemsSnap.val() || {};
-                        const problemList = Object.values(problemsData).filter(p => p && p.id);
-
-                        if (problemList.length === 0) {
+                        if (cachedAllUserProblems.length === 0) {
                             showToast("登録された問題がまだありません。ダッシュボードから問題を登録してください。", "info", 3000);
                             setTimeout(() => { location.href = "index.html"; }, 1500);
                             return;
                         }
 
-                        // 復習優先度順でソート（誤答数が多い ＞ 最終挑戦日が古い ＞ 新規）
-                        problemList.sort((a, b) => {
+                        // 直近で開いた問題IDを取得
+                        const lastId = sessionStorage.getItem("last_active_problem_id");
+                        let candidates = cachedAllUserProblems;
+                        if (cachedAllUserProblems.length > 1 && lastId) {
+                            // 直近と同じ問題ばかりにならないよう、他の問題を優先候補にする
+                            const others = cachedAllUserProblems.filter(p => p.id !== lastId);
+                            if (others.length > 0) candidates = others;
+                        }
+
+                        // 復習優先度＋適度な多様性でソート
+                        candidates.sort((a, b) => {
                             const errA = Number(a.errorCount || 0);
                             const errB = Number(b.errorCount || 0);
                             if (errB !== errA) return errB - errA;
@@ -1333,7 +1414,8 @@ ${glossaryBlock}`;
                             return timeA - timeB;
                         });
 
-                        const selectedProblem = problemList[0];
+                        const selectedProblem = candidates[0];
+                        sessionStorage.setItem("last_active_problem_id", selectedProblem.id);
                         window.location.replace("problem.html?id=" + encodeURIComponent(selectedProblem.id));
                         return;
                     } catch (err) {
@@ -1342,6 +1424,12 @@ ${glossaryBlock}`;
                         return;
                     }
                 }
+
+                // 現在の問題IDをセッションに記憶
+                sessionStorage.setItem("last_active_problem_id", activeProblemId);
+
+                // ピッカーとナビゲーションの初期化
+                setupProblemPicker();
 
                 // 🖼️【新設】フル画像を先に取得してから問題本体を描画する
                 await loadProblemFullImages(user.uid, activeProblemId);
@@ -1352,6 +1440,113 @@ ${glossaryBlock}`;
                 location.href = "index.html";
             }
         });
+
+        // 📚 問題ピッカー＆ナビゲーション制御
+        function setupProblemPicker() {
+            const pickerModal = document.getElementById("problem-picker-modal");
+            const openBtn = document.getElementById("btn-open-problem-picker");
+            const closeBtn = document.getElementById("close-problem-picker-btn");
+            const randomBtn = document.getElementById("btn-random-problem");
+            const nextBtn = document.getElementById("btn-next-problem");
+            const searchInput = document.getElementById("picker-search-input");
+            const subjectFilter = document.getElementById("picker-subject-filter");
+
+            if (openBtn) {
+                openBtn.onclick = () => {
+                    renderProblemPickerList();
+                    if (pickerModal) pickerModal.classList.add("open");
+                };
+            }
+            if (closeBtn && pickerModal) {
+                closeBtn.onclick = () => pickerModal.classList.remove("open");
+            }
+            if (pickerModal) {
+                pickerModal.onclick = (e) => {
+                    if (e.target === pickerModal) pickerModal.classList.remove("open");
+                };
+            }
+
+            // 🎲 ランダム出題ボタン
+            if (randomBtn) {
+                randomBtn.onclick = () => {
+                    if (cachedAllUserProblems.length === 0) {
+                        showToast("登録問題がありません", "info");
+                        return;
+                    }
+                    const pool = cachedAllUserProblems.filter(p => p.id !== PROBLEM_ID);
+                    const pick = pool.length > 0 
+                        ? pool[Math.floor(Math.random() * pool.length)]
+                        : cachedAllUserProblems[0];
+                    if (pick) {
+                        location.href = "problem.html?id=" + encodeURIComponent(pick.id);
+                    }
+                };
+            }
+
+            // ▶ 次の問題へボタン
+            if (nextBtn) {
+                nextBtn.onclick = () => {
+                    if (cachedAllUserProblems.length === 0) return;
+                    const curIdx = cachedAllUserProblems.findIndex(p => p.id === PROBLEM_ID);
+                    const nextIdx = (curIdx + 1) % cachedAllUserProblems.length;
+                    const nextProb = cachedAllUserProblems[nextIdx];
+                    if (nextProb) {
+                        location.href = "problem.html?id=" + encodeURIComponent(nextProb.id);
+                    }
+                };
+            }
+
+            if (searchInput) searchInput.oninput = () => renderProblemPickerList();
+            if (subjectFilter) subjectFilter.onchange = () => renderProblemPickerList();
+        }
+
+        function renderProblemPickerList() {
+            const listEl = document.getElementById("problem-picker-list");
+            if (!listEl) return;
+
+            const searchInput = document.getElementById("picker-search-input");
+            const subjectFilter = document.getElementById("picker-subject-filter");
+            const query = (searchInput ? searchInput.value : "").trim().toLowerCase();
+            const subject = subjectFilter ? subjectFilter.value : "ALL";
+
+            let filtered = cachedAllUserProblems.filter(p => {
+                if (subject !== "ALL" && (p.subject || "") !== subject) return false;
+                if (query) {
+                    const text = `${p.short_title || ""} ${p.subject || ""} ${p.field || ""} ${p.tags || ""}`.toLowerCase();
+                    if (!text.includes(query)) return false;
+                }
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                listEl.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 2rem;">条件に一致する問題がありません</div>`;
+                return;
+            }
+
+            listEl.innerHTML = filtered.map(p => {
+                const isCurrent = p.id === PROBLEM_ID;
+                const errCount = p.errorCount || 0;
+                const lastAttempt = p.lastAttemptAt ? new Date(p.lastAttemptAt).toLocaleDateString("ja-JP") : "未挑戦";
+                return `
+                    <div class="picker-item-row ${isCurrent ? 'active' : ''}" onclick="location.href='problem.html?id=${encodeURIComponent(p.id)}'">
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                                <span class="flora-badge" style="background: var(--bg-surface); border: 1px solid var(--border-color); font-size: 0.72rem;">${escapeHtml(p.subject || "未分類")}</span>
+                                ${p.field ? `<span style="font-size: 0.76rem; color: var(--text-muted);">${escapeHtml(p.field)}</span>` : ''}
+                                ${isCurrent ? '<span style="font-size: 0.72rem; color: var(--brand-primary); font-weight: 700;">● 現在演習中</span>' : ''}
+                            </div>
+                            <div style="font-weight: 600; font-size: 0.92rem; color: var(--text-primary); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
+                                ${escapeHtml(p.short_title || "無題の問題")}
+                            </div>
+                        </div>
+                        <div style="text-align: right; font-size: 0.78rem; color: var(--text-secondary); white-space: nowrap;">
+                            <div>誤答: <strong style="color: ${errCount > 0 ? 'var(--error)' : 'var(--text-secondary)'}">${errCount}回</strong></div>
+                            <div style="color: var(--text-muted); font-size: 0.72rem;">最終: ${lastAttempt}</div>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+        }
 
        function loadCloudProblemSession(uid) {
             const probRef = ref(database, 'users/' + uid + '/problems/' + PROBLEM_ID);
@@ -1596,17 +1791,24 @@ ${glossaryBlock}`;
                 let deepseekLastError = null;
 
                 for (let attempt = 1; attempt <= MAX_DEEPSEEK_ATTEMPTS; attempt++) {
-                    const response = await fetchWithKeyRotation(getDeepseekKeys(), (key) => ({
-                        url: DEEPSEEK_API_URL,
-                        options: {
+                    const dsKeys = getDeepseekKeys();
+                    const response = (dsKeys && dsKeys.length > 0)
+                        ? await fetchWithKeyRotation(dsKeys, (key) => ({
+                            url: DEEPSEEK_API_URL,
+                            options: {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json",
+                                    "Authorization": "Bearer " + key
+                                },
+                                body: deepseekBody
+                            }
+                        }))
+                        : await fetch('/api/deepseek/chat', {
                             method: "POST",
-                            headers: {
-                                "Content-Type": "application/json",
-                                "Authorization": "Bearer " + key
-                            },
+                            headers: { "Content-Type": "application/json" },
                             body: deepseekBody
-                        }
-                    }));
+                        });
 
                     const data = await response.json();
                     const message = data?.choices?.[0]?.message || {};
@@ -1825,17 +2027,24 @@ ${EXPERT_TEACHER_PROMPT}
                     let deepseekLastError = null;
 
                     for (let attempt = 1; attempt <= MAX_DEEPSEEK_ATTEMPTS; attempt++) {
-                        const response = await fetchWithKeyRotation(getDeepseekKeys(), (key) => ({
-                            url: DEEPSEEK_API_URL,
-                            options: {
+                        const dsKeys = getDeepseekKeys();
+                        const response = (dsKeys && dsKeys.length > 0)
+                            ? await fetchWithKeyRotation(dsKeys, (key) => ({
+                                url: DEEPSEEK_API_URL,
+                                options: {
+                                    method: "POST",
+                                    headers: {
+                                        "Content-Type": "application/json",
+                                        "Authorization": "Bearer " + key
+                                    },
+                                    body: tutorDeepseekBody
+                                }
+                            }))
+                            : await fetch('/api/deepseek/chat', {
                                 method: "POST",
-                                headers: {
-                                    "Content-Type": "application/json",
-                                    "Authorization": "Bearer " + key
-                                },
+                                headers: { "Content-Type": "application/json" },
                                 body: tutorDeepseekBody
-                            }
-                        }));
+                            });
 
                         const data = await response.json();
                         const message = data?.choices?.[0]?.message || {};

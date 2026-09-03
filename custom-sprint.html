@@ -408,6 +408,174 @@
             50% { box-shadow: 0 0 0 8px rgba(79, 70, 229, 0.15); }
             100% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); }
         }
+
+        /* 🧙 ウィザードステップナビゲーション */
+        .wizard-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.8rem;
+            position: relative;
+            padding: 0 0.5rem;
+        }
+        .wizard-nav::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 10%;
+            right: 10%;
+            height: 2px;
+            background: var(--border-color);
+            z-index: 1;
+        }
+        .wizard-nav-step {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.35rem;
+            cursor: pointer;
+            background: var(--bg-surface);
+            padding: 0 0.5rem;
+        }
+        .wizard-step-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--bg-surface);
+            border: 2px solid var(--border-color);
+            color: var(--text-muted);
+            font-weight: 800;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        .wizard-nav-step.active .wizard-step-circle {
+            background: var(--brand-primary);
+            border-color: var(--brand-primary);
+            color: #ffffff;
+            box-shadow: 0 0 0 4px var(--brand-light);
+        }
+        .wizard-nav-step.completed .wizard-step-circle {
+            background: var(--brand-light);
+            border-color: var(--brand-primary);
+            color: var(--brand-primary);
+        }
+        .wizard-step-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+        .wizard-nav-step.active .wizard-step-title {
+            color: var(--brand-primary);
+        }
+        .wizard-nav-step.completed .wizard-step-title {
+            color: var(--text-primary);
+        }
+
+        .wizard-pane {
+            display: none;
+            animation: fadeIn 0.2s ease;
+        }
+        .wizard-pane.active {
+            display: block;
+        }
+
+        /* 事前かんたんフォーム */
+        .preform-card {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+        }
+        .preform-title {
+            font-size: 0.9rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 0.3rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .preform-desc {
+            font-size: 0.76rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.85rem;
+            line-height: 1.45;
+        }
+
+        /* テーマ決定サマリーカード（Step 2用） */
+        .step-summary-banner {
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.07) 0%, rgba(6, 182, 212, 0.07) 100%);
+            border: 1.5px solid var(--brand-border);
+            border-radius: var(--radius-lg);
+            padding: 1.2rem;
+            margin-bottom: 1.4rem;
+        }
+        .step-summary-banner h4 {
+            font-size: 0.92rem;
+            font-weight: 800;
+            color: var(--brand-primary);
+            margin-bottom: 0.4rem;
+        }
+
+        /* 🚀 並列生成プログレス表示（Step 3用） */
+        .generation-progress-box {
+            background: var(--bg-surface);
+            border: 1.5px solid var(--brand-border);
+            border-radius: var(--radius-xl);
+            padding: 2rem;
+            text-align: center;
+            box-shadow: var(--shadow-sm);
+        }
+        .progress-track {
+            height: 10px;
+            background: var(--bg-subtle);
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 1.4rem 0;
+            position: relative;
+        }
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #4f46e5, #06b6d4);
+            border-radius: 6px;
+            transition: width 0.3s ease;
+        }
+        .question-status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 0.6rem;
+            text-align: left;
+            margin-top: 1.5rem;
+        }
+        .question-status-item {
+            padding: 0.6rem 0.8rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            background: var(--bg-subtle);
+            font-size: 0.78rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.2s ease;
+        }
+        .question-status-item.done {
+            border-color: #10B981;
+            background: rgba(16, 185, 129, 0.08);
+            color: #065F46;
+        }
+        .question-status-item.pending {
+            border-color: #F59E0B;
+            background: rgba(245, 158, 11, 0.08);
+            color: #92400E;
+        }
     </style>
 </head>
 <body>
@@ -428,167 +596,281 @@
                     </div>
                 </div>
 
-                <!-- ============ セットアップ画面 ============ -->
+                <!-- ============ セットアップ画面（3ステップ ウィザード） ============ -->
                 <div id="sprint-setup-zone" class="setup-card">
-                    <div>
-                        <div class="setup-label">⚡ 出題モード</div>
-                        <div class="mode-toggle-group" id="mode-toggle-group">
-                            <button type="button" class="mode-toggle-btn active" data-mode="ai" id="btn-mode-ai">🤖 AIに新規生成させる</button>
-                            <button type="button" class="mode-toggle-btn" data-mode="registered" id="btn-mode-registered">📚 登録済みの誤答から出題</button>
+                    
+                    <!-- ウィザードナビゲーション -->
+                    <div class="wizard-nav" id="wizard-nav">
+                        <div class="wizard-nav-step active" data-step="1" id="nav-step-1">
+                            <div class="wizard-step-circle">1</div>
+                            <div class="wizard-step-title">テーマ決定</div>
                         </div>
-                        <div id="setup-desc" style="font-size: 0.74rem; color: var(--text-secondary); margin-top: 0.35rem;">AIが分野と難易度に合わせた良問をその場で新規作成します。</div>
+                        <div class="wizard-nav-step" data-step="2" id="nav-step-2">
+                            <div class="wizard-step-circle">2</div>
+                            <div class="wizard-step-title">条件設定</div>
+                        </div>
+                        <div class="wizard-nav-step" data-step="3" id="nav-step-3">
+                            <div class="wizard-step-circle">3</div>
+                            <div class="wizard-step-title">生成・開始</div>
+                        </div>
                     </div>
 
-                    <!-- ② AIモード専用フォーム -->
-                    <div id="ai-mode-section">
-                        <div style="display: flex; flex-direction: column; gap: 1.2rem;">
-                            <!-- 💬 AI要件ヒアリング・特訓テーマ相談バナー -->
-                            <div class="counseling-trigger-banner" id="counseling-trigger-banner" title="AIと相談してスプリントの題名・特訓テーマを決める">
-                                <div class="counseling-trigger-left">
-                                    <div class="counseling-trigger-icon">💬</div>
-                                    <div>
-                                        <div class="counseling-trigger-title">✨ AIと相談して題名・特訓テーマを決める（ヒアリング）</div>
-                                        <div class="counseling-trigger-sub">「どの計算を鍛えるべきかわからない」「共通テストで時間が足りない」時も、AIが対話と選択肢でぴったりのスプリント題名・出題要件を導き出します</div>
-                                    </div>
-                                </div>
-                                <span class="counseling-trigger-badge">相談を始める</span>
+                    <!-- =============== STEP 1: テーマ決定 =============== -->
+                    <div class="wizard-pane active" id="wizard-pane-1">
+                        <!-- 出題モード選択 -->
+                        <div style="margin-bottom: 1.2rem;">
+                            <div class="setup-label">⚡ 出題モード</div>
+                            <div class="mode-toggle-group" id="mode-toggle-group">
+                                <button type="button" class="mode-toggle-btn active" data-mode="ai" id="btn-mode-ai">🤖 AIに新規生成させる</button>
+                                <button type="button" class="mode-toggle-btn" data-mode="registered" id="btn-mode-registered">📚 登録済みの誤答から出題</button>
+                            </div>
+                            <div id="setup-desc" style="font-size: 0.74rem; color: var(--text-secondary); margin-top: 0.35rem;">AIが分野と難易度に合わせた良問をその場で新規作成します。</div>
+                        </div>
+
+                        <!-- 🤖 AIモードのテーマ決定 -->
+                        <div id="ai-mode-section">
+                            <!-- AI相談 vs 直接入力 切り替えタブ -->
+                            <div style="display: flex; gap: 0.5rem; margin-bottom: 1.2rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.6rem;">
+                                <button type="button" class="flora-btn flora-btn-secondary btn-sm active" id="tab-btn-counseling" style="font-weight: 700;">
+                                    💬 AIと相談して決める（推奨）
+                                </button>
+                                <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="tab-btn-direct" style="font-weight: 700;">
+                                    ✍️ 自分で直接入力する
+                                </button>
                             </div>
 
-                            <!-- 🤖 AI要件ヒアリング パネル -->
-                            <div class="counseling-panel hidden" id="counseling-panel">
-                                <div class="counseling-panel-header">
-                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                        <span style="font-size: 1.25rem;">🤖</span>
+                            <!-- ① AI相談サブ画面 -->
+                            <div id="subview-counseling">
+                                <!-- 事前かんたんフォーム -->
+                                <div class="preform-card" id="counseling-preform-box">
+                                    <div class="preform-title">
+                                        <span>📋</span> 事前かんたんアンケート
+                                    </div>
+                                    <div class="preform-desc">
+                                        あらかじめ状況や苦手分野を教えておくと、AIが最初から精度の高いスプリント提案を行います。
+                                    </div>
+                                    <div style="display: flex; flex-direction: column; gap: 0.8rem;">
                                         <div>
-                                            <div style="font-weight: 750; font-size: 0.88rem; color: var(--text-primary);" id="counseling-panel-title">AIスプリント相談室（題名・出題ヒアリング）</div>
-                                            <div style="font-size: 0.72rem; color: var(--text-secondary);">選択肢をタップするか、苦手な点や鍛えたい計算を入力して相談してください</div>
+                                            <label style="font-size: 0.74rem; font-weight: 700; color: var(--text-secondary);">科目</label>
+                                            <div style="display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.25rem;">
+                                                <button type="button" class="flora-btn flora-btn-secondary btn-sm preform-subject-btn active" data-subject="数学全般">数学全般</button>
+                                                <button type="button" class="flora-btn flora-btn-ghost btn-sm preform-subject-btn" data-subject="数学I・A">数学I・A</button>
+                                                <button type="button" class="flora-btn flora-btn-ghost btn-sm preform-subject-btn" data-subject="数学II・B">数学II・B</button>
+                                                <button type="button" class="flora-btn flora-btn-ghost btn-sm preform-subject-btn" data-subject="数学C">数学C</button>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="close-counseling-btn" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;">✕ 閉じる</button>
-                                </div>
-
-                                <!-- チャット履歴 -->
-                                <div class="counseling-chat-flow" id="counseling-chat-flow"></div>
-
-                                <!-- クイック選択肢 -->
-                                <div class="counseling-chips-wrapper" id="counseling-chips-wrapper" style="display: none;">
-                                    <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 0.35rem;">💡 タップして返答（クイック選択）：</div>
-                                    <div class="counseling-chips-list" id="counseling-chips-list"></div>
-                                </div>
-
-                                <!-- 自由入力バー -->
-                                <div class="counseling-input-bar">
-                                    <input type="text" class="flora-input counseling-text-input" id="counseling-user-input" placeholder="鍛えたい計算や苦手なポイントを自由に入力（Enterで送信）...">
-                                    <button type="button" class="flora-btn flora-btn-primary btn-sm" id="counseling-send-btn" style="flex-shrink: 0; min-width: 68px;">送信</button>
-                                </div>
-
-                                <!-- 要件まとめ・オーダーシート（編集可能） -->
-                                <div class="counseling-summary-card hidden" id="counseling-summary-card">
-                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.3rem;">
-                                        <span style="font-weight: 750; font-size: 0.82rem; color: var(--brand-primary);">📋 AIがまとめた特訓スプリント要件（編集可能）</span>
-                                        <span style="font-size: 0.7rem; color: var(--text-muted);">※ 内容を確認・編集してフォームへ反映できます</span>
-                                    </div>
-                                    <div class="counseling-summary-grid">
-                                        <div class="summary-item" style="grid-column: 1 / -1;">
-                                            <label for="counseling-summary-title">🎯 スプリント題名・特訓テーマ</label>
-                                            <input type="text" class="flora-input" id="counseling-summary-title" style="font-size: 0.85rem; font-weight: 700;" placeholder="例: 三角関数の合成と最大最小 速解スプリント">
+                                        <div>
+                                            <label style="font-size: 0.74rem; font-weight: 700; color: var(--text-secondary);">今苦手な分野・やりたい内容</label>
+                                            <input type="text" id="preform-topic-input" class="flora-input" placeholder="例：三角関数の加法定理・合成、漸化式、ベクトルの内積 など" style="font-size: 0.82rem; margin-top: 0.25rem;">
+                                            <div style="display: flex; gap: 0.35rem; flex-wrap: wrap; margin-top: 0.4rem;">
+                                                <button type="button" class="counseling-chip preform-chip" data-val="三角関数の合成と最大最小">三角関数の合成</button>
+                                                <button type="button" class="counseling-chip preform-chip" data-val="等差×等比型や2項間漸化式">漸化式・数列</button>
+                                                <button type="button" class="counseling-chip preform-chip" data-val="空間ベクトルと内積の垂直条件">空間ベクトル</button>
+                                                <button type="button" class="counseling-chip preform-chip" data-val="因数分解・対称式の展開の工夫">対称式・因数分解</button>
+                                                <button type="button" class="counseling-chip preform-chip" data-val="微分法の接線と最大最小">微分の最大最小</button>
+                                            </div>
                                         </div>
-                                        <div class="summary-item">
-                                            <label for="counseling-summary-field">📝 出題分野・単元</label>
-                                            <input type="text" class="flora-input" id="counseling-summary-field" style="font-size: 0.82rem;" placeholder="例: 三角関数">
+                                        <div>
+                                            <label style="font-size: 0.74rem; font-weight: 700; color: var(--text-secondary);">つまずきや目標（任意）</label>
+                                            <input type="text" id="preform-goal-input" class="flora-input" placeholder="例：共通テストで時間が足りない、符号ミスをなくしたい、公式の使い所がわからない" style="font-size: 0.82rem; margin-top: 0.25rem;">
                                         </div>
-                                        <div class="summary-item">
-                                            <label for="counseling-summary-level">🎚️ 推奨難易度</label>
-                                            <select class="flora-select" id="counseling-summary-level" style="font-size: 0.82rem;">
-                                                <option value="教科書レベル（基礎の基礎から）">教科書レベル（基礎の基礎から）</option>
-                                                <option value="定期テストレベル">定期テストレベル</option>
-                                                <option value="入試基礎レベル">入試基礎レベル</option>
-                                                <option value="入試標準〜応用レベル" selected>入試標準〜応用レベル</option>
-                                                <option value="最難関大学レベル（超ハイレベル・かなり難しめ）">最難関大学レベル（超ハイレベル・かなり難しめ）</option>
-                                            </select>
-                                        </div>
-                                        <div class="summary-item" style="grid-column: 1 / -1;">
-                                            <label for="counseling-summary-notes">💡 重点対策・特訓のこだわり要望（AIプロンプト補足）</label>
-                                            <textarea class="flora-textarea" id="counseling-summary-notes" rows="2" style="font-size: 0.8rem;" placeholder="例: 展開の工夫や符号ミスの罠を重点的に出題してほしい"></textarea>
-                                        </div>
-                                    </div>
-                                    <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.7rem; flex-wrap: wrap;">
-                                        <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="counseling-continue-btn" style="font-size: 0.76rem;">💬 まだ相談を続ける</button>
-                                        <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="counseling-apply-btn" style="font-size: 0.8rem; font-weight: 700;">
-                                            📝 この内容をフォームに反映
-                                        </button>
-                                        <button type="button" class="flora-btn flora-btn-primary btn-sm" id="counseling-start-direct-btn" style="font-size: 0.8rem; font-weight: 700;">
-                                            🚀 この条件でスプリント開始！
+                                        <button type="button" class="flora-btn flora-btn-primary btn-sm" id="btn-start-counseling-flow" style="font-weight: 700; align-self: flex-start; margin-top: 0.2rem;">
+                                            ✨ AI相談をスタート
                                         </button>
                                     </div>
                                 </div>
+
+                                <!-- AIチャット相談パネル（事前フォーム送信後に展開） -->
+                                <div class="counseling-panel hidden" id="counseling-panel">
+                                    <div class="counseling-panel-header">
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                            <span style="font-size: 1.25rem;">🤖</span>
+                                            <div>
+                                                <div style="font-weight: 750; font-size: 0.88rem; color: var(--text-primary);">AIスプリント相談室（要件ヒアリング）</div>
+                                                <div style="font-size: 0.72rem; color: var(--text-secondary);">選択肢をタップするか、苦手な点や鍛えたい計算を入力して相談してください</div>
+                                            </div>
+                                        </div>
+                                        <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="close-counseling-btn" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;">✕ アンケートに戻る</button>
+                                    </div>
+
+                                    <!-- チャット履歴 -->
+                                    <div class="counseling-chat-flow" id="counseling-chat-flow"></div>
+
+                                    <!-- クイック選択肢 -->
+                                    <div class="counseling-chips-wrapper" id="counseling-chips-wrapper" style="display: none;">
+                                        <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 0.35rem;">💡 タップして返答（クイック選択）：</div>
+                                        <div class="counseling-chips-list" id="counseling-chips-list"></div>
+                                    </div>
+
+                                    <!-- 自由入力バー -->
+                                    <div class="counseling-input-bar">
+                                        <input type="text" class="flora-input counseling-text-input" id="counseling-user-input" placeholder="鍛えたい計算や苦手なポイントを自由に入力（Enterで送信）...">
+                                        <button type="button" class="flora-btn flora-btn-primary btn-sm" id="counseling-send-btn" style="flex-shrink: 0; min-width: 68px;">送信</button>
+                                    </div>
+
+                                    <!-- 要件まとめ・オーダーシート -->
+                                    <div class="counseling-summary-card hidden" id="counseling-summary-card">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.3rem;">
+                                            <span style="font-weight: 750; font-size: 0.82rem; color: var(--brand-primary);">📋 AIとまとめたスプリント要件（編集可能）</span>
+                                        </div>
+                                        <div class="counseling-summary-grid">
+                                            <div class="summary-item" style="grid-column: 1 / -1;">
+                                                <label for="counseling-summary-title">🎯 スプリント題名・特訓テーマ</label>
+                                                <input type="text" class="flora-input" id="counseling-summary-title" style="font-size: 0.85rem; font-weight: 700;" placeholder="例: 三角関数の合成と最大最小 速解スプリント">
+                                            </div>
+                                            <div class="summary-item">
+                                                <label for="counseling-summary-field">📝 出題分野・単元</label>
+                                                <input type="text" class="flora-input" id="counseling-summary-field" style="font-size: 0.82rem;" placeholder="例: 三角関数">
+                                            </div>
+                                            <div class="summary-item">
+                                                <label for="counseling-summary-level">🎚️ 推奨難易度</label>
+                                                <select class="flora-select" id="counseling-summary-level" style="font-size: 0.82rem;">
+                                                    <option value="教科書レベル（基礎の基礎から）">教科書レベル（基礎の基礎から）</option>
+                                                    <option value="定期テストレベル">定期テストレベル</option>
+                                                    <option value="入試基礎レベル">入試基礎レベル</option>
+                                                    <option value="入試標準〜応用レベル" selected>入試標準〜応用レベル</option>
+                                                    <option value="最難関大学レベル（超ハイレベル・かなり難しめ）">最難関大学レベル（超ハイレベル・かなり難しめ）</option>
+                                                </select>
+                                            </div>
+                                            <div class="summary-item" style="grid-column: 1 / -1;">
+                                                <label for="counseling-summary-notes">💡 重点対策・特訓のこだわり要望</label>
+                                                <textarea class="flora-textarea" id="counseling-summary-notes" rows="2" style="font-size: 0.8rem;" placeholder="例: 展開の工夫や符号ミスの罠を重点的に出題してほしい"></textarea>
+                                            </div>
+                                        </div>
+                                        <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.8rem;">
+                                            <button type="button" class="flora-btn flora-btn-primary btn-lg" id="btn-counseling-proceed-step2" style="font-weight: 700;">
+                                                👉 このテーマで決定して条件設定（Step 2）へ進む
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
-                            <div id="form-sprint-title-wrap">
-                                <div class="setup-label">🎯 スプリント題名・特訓テーマ（任意：未入力時は自動設定）</div>
-                                <input type="text" id="sprint-title-input" class="flora-input" placeholder="例：三角関数の合成と最大最小 速解特訓、共通テスト型 群数列スプリント など">
-                                <div style="font-size: 0.74rem; color: var(--text-secondary); margin-top: 0.3rem;">モチベーションを高める特訓タイトル。AI相談でも自動生成できます</div>
+                            <!-- ② 直接入力サブ画面 -->
+                            <div id="subview-direct" style="display: none; flex-direction: column; gap: 1rem;">
+                                <div>
+                                    <div class="setup-label">🎯 スプリント題名・特訓テーマ（任意）</div>
+                                    <input type="text" id="sprint-title-input" class="flora-input" placeholder="例：三角関数の合成と最大最小 速解特訓、群数列スプリント など">
+                                </div>
+                                <div>
+                                    <div class="setup-label">📝 分野・単元（空欄なら数学全範囲）</div>
+                                    <input type="text" id="field-input" class="flora-input" placeholder="例：三角関数、ベクトル、数列、微分 など（カンマ区切り可）">
+                                </div>
+                                <div>
+                                    <div class="setup-label">💡 重点対策・特訓のこだわり要望（任意）</div>
+                                    <textarea id="focus-note-input" class="flora-textarea" rows="2" placeholder="例：計算速度を重視、符号ミスしやすい典型パターン、公式変形の手間を省く工夫 など"></textarea>
+                                </div>
+                                <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem;">
+                                    <button type="button" class="flora-btn flora-btn-primary btn-lg" id="btn-direct-proceed-step2" style="font-weight: 700;">
+                                        👉 条件設定（Step 2）へ進む
+                                    </button>
+                                </div>
                             </div>
+                        </div>
 
-                            <div id="form-field-wrap">
-                                <div class="setup-label">📝 分野・単元（空欄なら数学全範囲からランダム）</div>
-                                <input type="text" id="field-input" class="flora-input" placeholder="例：三角関数、ベクトル、数列、確率 など">
-                                <div style="font-size: 0.74rem; color: var(--text-secondary); margin-top: 0.3rem;">カンマ区切りで複数指定も可能（例：三角関数, 図形と方程式）</div>
+                        <!-- 📚 登録済み問題モードのテーマ決定 -->
+                        <div id="registered-mode-section" class="registered-mode-section" style="display: none;">
+                            <div>
+                                <div class="setup-label">📚 教科</div>
+                                <div class="subject-tab-group" id="reg-subject-tab-group">
+                                    <button type="button" class="reg-subject-btn active" data-subject="ALL">✨ すべて</button>
+                                </div>
                             </div>
-
-                            <div id="form-level-wrap">
-                                <div class="setup-label">🎚️ 難易度</div>
-                                <select id="level-select" class="flora-select">
-                                    <option value="教科書レベル（基礎の基礎から）">教科書レベル（基礎の基礎から）</option>
-                                    <option value="定期テストレベル">定期テストレベル</option>
-                                    <option value="入試基礎レベル">入試基礎レベル</option>
-                                    <option value="入試標準〜応用レベル" selected>入試標準〜応用レベル</option>
-                                    <option value="最難関大学レベル（超ハイレベル・かなり難しめ）">最難関大学レベル（超ハイレベル・かなり難しめ）</option>
+                            <div id="reg-field-row" style="display: none;">
+                                <div class="setup-label">🎯 分類（単元）</div>
+                                <select class="flora-select" id="reg-field-select">
+                                    <option value="ALL">✨ すべての分類</option>
                                 </select>
                             </div>
-
-                            <div id="form-notes-wrap">
-                                <div class="setup-label">💡 重点対策・特訓のこだわり要望（任意）</div>
-                                <textarea id="focus-note-input" class="flora-textarea" rows="2" placeholder="例：計算速度を意識した問題、符号ミスしやすい典型の罠、因数分解の工夫が必要なパターンの集中特訓 など"></textarea>
+                            <div class="reg-stats-badge" id="reg-stats-badge">
+                                📋 問題を読み込み中...
+                            </div>
+                            <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
+                                <button type="button" class="flora-btn flora-btn-primary btn-lg" id="btn-reg-proceed-step2" style="font-weight: 700;">
+                                    👉 条件設定（Step 2）へ進む
+                                </button>
                             </div>
                         </div>
                     </div>
 
-                    <!-- ③ 登録済みモード専用フォーム -->
-                    <div id="registered-mode-section" class="registered-mode-section">
-                        <div>
-                            <div class="setup-label">📚 教科</div>
-                            <div class="subject-tab-group" id="reg-subject-tab-group">
-                                <button type="button" class="reg-subject-btn active" data-subject="ALL">✨ すべて</button>
+                    <!-- =============== STEP 2: 詳細条件設定 =============== -->
+                    <div class="wizard-pane" id="wizard-pane-2">
+                        <!-- Step 1決定内容サマリー -->
+                        <div class="step-summary-banner" id="step2-summary-banner">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.8rem; flex-wrap: wrap;">
+                                <div>
+                                    <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">STEP 1 で決定したテーマ</div>
+                                    <h4 id="step2-summary-title" style="margin: 0.2rem 0; font-size: 1.05rem;">テーマ名</h4>
+                                    <div style="font-size: 0.8rem; color: var(--text-secondary);" id="step2-summary-field">分野: --</div>
+                                    <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 0.2rem;" id="step2-summary-notes"></div>
+                                </div>
+                                <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="btn-step2-back-to-step1" style="font-size: 0.75rem;">
+                                    ✏️ テーマを変更する
+                                </button>
                             </div>
                         </div>
 
-                        <div id="reg-field-row" style="display: none;">
-                            <div class="setup-label">🎯 分類（単元）</div>
-                            <select class="flora-select" id="reg-field-select">
-                                <option value="ALL">✨ すべての分類</option>
+                        <!-- 難易度設定 -->
+                        <div style="margin-bottom: 1.2rem;" id="step2-level-container">
+                            <div class="setup-label">🎚️ 難易度</div>
+                            <select id="level-select" class="flora-select">
+                                <option value="教科書レベル（基礎の基礎から）">教科書レベル（基礎の基礎から）</option>
+                                <option value="定期テストレベル">定期テストレベル</option>
+                                <option value="入試基礎レベル">入試基礎レベル</option>
+                                <option value="入試標準〜応用レベル" selected>入試標準〜応用レベル</option>
+                                <option value="最難関大学レベル（超ハイレベル・かなり難しめ）">最難関大学レベル（超ハイレベル・かなり難しめ）</option>
                             </select>
                         </div>
 
-                        <div class="reg-stats-badge" id="reg-stats-badge">
-                            📋 問題を読み込み中...
+                        <!-- 問題数設定 -->
+                        <div style="margin-bottom: 1.5rem;">
+                            <div class="setup-label">🔢 問題数</div>
+                            <div class="count-btn-group" id="count-btn-group">
+                                <div class="count-btn" data-count="3">3問</div>
+                                <div class="count-btn active" data-count="5">5問</div>
+                                <div class="count-btn" data-count="10">10問</div>
+                                <div class="count-btn" data-count="15">15問</div>
+                            </div>
+                        </div>
+
+                        <!-- ナビゲーションボタン -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.8rem; flex-wrap: wrap;">
+                            <button type="button" class="flora-btn flora-btn-secondary" id="btn-step2-back">
+                                ← テーマ設定に戻る
+                            </button>
+                            <button type="button" class="flora-btn flora-btn-primary btn-lg" id="btn-step2-start-generate" style="font-weight: 700;">
+                                🚀 問題を生成してスタート（Step 3へ）
+                            </button>
                         </div>
                     </div>
 
-                    <!-- ④ 問題数（共通） -->
-                    <div>
-                        <div class="setup-label">🔢 問題数</div>
-                        <div class="count-btn-group" id="count-btn-group">
-                            <div class="count-btn" data-count="5">5問</div>
-                            <div class="count-btn active" data-count="10">10問</div>
-                            <div class="count-btn" data-count="15">15問</div>
-                            <div class="count-btn" data-count="20">20問</div>
+                    <!-- =============== STEP 3: 生成プレビュー・演習開始 =============== -->
+                    <div class="wizard-pane" id="wizard-pane-3">
+                        <div class="generation-progress-box">
+                            <div style="font-size: 2.2rem; margin-bottom: 0.5rem;" id="progress-icon">⚡</div>
+                            <h3 style="font-family: var(--font-heading); font-size: 1.2rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.3rem;" id="progress-phase-title">
+                                出題構成・目次を設計中...
+                            </h3>
+                            <p style="font-size: 0.84rem; color: var(--text-secondary); max-width: 500px; margin: 0 auto;" id="progress-phase-desc">
+                                重複のない出題テーマ（各問の狙い）をAIが瞬時に設計しています
+                            </p>
+
+                            <div class="progress-track">
+                                <div class="progress-fill" id="progress-fill-bar"></div>
+                            </div>
+                            <div style="font-size: 0.8rem; font-weight: 700; color: var(--brand-primary);" id="progress-percent-text">0%</div>
+
+                            <!-- 各問のリアルタイム生成ステータス -->
+                            <div class="question-status-grid" id="question-status-grid"></div>
+
+                            <div style="margin-top: 1.8rem; display: flex; justify-content: center; gap: 0.8rem;">
+                                <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="btn-cancel-generation">
+                                    ✕ キャンセルして条件設定に戻る
+                                </button>
+                            </div>
                         </div>
                     </div>
 
-                    <button type="button" class="flora-btn flora-btn-primary btn-lg" id="btn-start-custom-sprint" style="margin-top: 0.5rem;">
-                        🚀 この条件でスプリント開始
-                    </button>
                 </div>
 
                 <!-- ============ プレイ画面 ============ -->
@@ -650,7 +932,6 @@
         <img id="sprint-lightbox-img" src="" alt="拡大画像">
     </div>
 
-    <script src="global-timer-sync.js"></script>
     <script src="sidebar.js"></script>
 
 
@@ -939,6 +1220,10 @@
         let counselingHistory = [];
         let latestRefinedSpec = null;
         let isCounselingLoading = false;
+        let currentWizardStep = 1;
+        let preformSubject = "数学全般";
+        let isGeneratingSprint = false;
+        let generationAbortController = null;
 
         function escapeHtml(str) {
             if (!str) return "";
@@ -949,6 +1234,185 @@
                 .replace(/"/g, "&quot;")
                 .replace(/'/g, "&#39;");
         }
+
+        // 🧙 ウィザードステップナビゲーション
+        function goToWizardStep(step) {
+            currentWizardStep = step;
+            for (let i = 1; i <= 3; i++) {
+                const navItem = document.getElementById(`nav-step-${i}`);
+                const pane = document.getElementById(`wizard-pane-${i}`);
+                if (navItem) {
+                    navItem.classList.toggle("active", i === step);
+                    navItem.classList.toggle("completed", i < step);
+                }
+                if (pane) {
+                    pane.classList.toggle("active", i === step);
+                }
+            }
+
+            if (step === 2) {
+                // Step 2 のサマリーを更新
+                updateStep2Summary();
+            }
+        }
+
+        function updateStep2Summary() {
+            const titleEl = document.getElementById("step2-summary-title");
+            const fieldEl = document.getElementById("step2-summary-field");
+            const notesEl = document.getElementById("step2-summary-notes");
+            const levelContainer = document.getElementById("step2-level-container");
+
+            if (currentMode === "registered") {
+                if (titleEl) titleEl.textContent = "📚 登録済み誤答スプリント";
+                if (fieldEl) fieldEl.textContent = `教科: ${regSelectedSubject === "ALL" ? "全教科" : regSelectedSubject} ／ 分類: ${regSelectedField === "ALL" ? "全分類" : regSelectedField}`;
+                const count = getFilteredRegisteredProblems().length;
+                if (notesEl) notesEl.textContent = `※ 対象問題数: 計 ${count} 件`;
+                if (levelContainer) levelContainer.style.display = "none";
+            } else {
+                if (levelContainer) levelContainer.style.display = "block";
+                const isCounselingTab = document.getElementById("subview-counseling") && document.getElementById("subview-counseling").style.display !== "none";
+                
+                let title = "";
+                let field = "";
+                let notes = "";
+
+                if (isCounselingTab && latestRefinedSpec) {
+                    title = document.getElementById("counseling-summary-title")?.value.trim() || latestRefinedSpec.sprint_title || "";
+                    field = document.getElementById("counseling-summary-field")?.value.trim() || latestRefinedSpec.target_field || "";
+                    notes = document.getElementById("counseling-summary-notes")?.value.trim() || latestRefinedSpec.focus_notes || "";
+                } else {
+                    title = document.getElementById("sprint-title-input")?.value.trim() || "";
+                    field = document.getElementById("field-input")?.value.trim() || "";
+                    notes = document.getElementById("focus-note-input")?.value.trim() || "";
+                }
+
+                if (titleEl) titleEl.textContent = title || (field ? `🎯 ${field} 集中特訓スプリント` : "🎯 数学総合 スピード特訓スプリント");
+                if (fieldEl) fieldEl.textContent = `出題分野: ${field || "数学全般（指定なし・バランス出題）"}`;
+                if (notesEl) notesEl.textContent = notes ? `重点要望: ${notes}` : "重点要望: 指定なし（標準的な典型解法スピード特訓）";
+            }
+        }
+
+        // ウィザードナビゲーションのクリックイベント
+        document.getElementById("nav-step-1")?.addEventListener("click", () => {
+            if (!isGeneratingSprint) goToWizardStep(1);
+        });
+        document.getElementById("nav-step-2")?.addEventListener("click", () => {
+            if (!isGeneratingSprint) goToWizardStep(2);
+        });
+        document.getElementById("btn-step2-back")?.addEventListener("click", () => goToWizardStep(1));
+        document.getElementById("btn-step2-back-to-step1")?.addEventListener("click", () => goToWizardStep(1));
+
+        // AI相談 vs 直接入力の切り替えタブ
+        document.getElementById("tab-btn-counseling")?.addEventListener("click", () => {
+            document.getElementById("tab-btn-counseling").classList.add("active", "flora-btn-secondary");
+            document.getElementById("tab-btn-counseling").classList.remove("flora-btn-ghost");
+            document.getElementById("tab-btn-direct").classList.remove("active", "flora-btn-secondary");
+            document.getElementById("tab-btn-direct").classList.add("flora-btn-ghost");
+            document.getElementById("subview-counseling").style.display = "block";
+            document.getElementById("subview-direct").style.display = "none";
+        });
+
+        document.getElementById("tab-btn-direct")?.addEventListener("click", () => {
+            document.getElementById("tab-btn-direct").classList.add("active", "flora-btn-secondary");
+            document.getElementById("tab-btn-direct").classList.remove("flora-btn-ghost");
+            document.getElementById("tab-btn-counseling").classList.remove("active", "flora-btn-secondary");
+            document.getElementById("tab-btn-counseling").classList.add("flora-btn-ghost");
+            document.getElementById("subview-direct").style.display = "flex";
+            document.getElementById("subview-counseling").style.display = "none";
+        });
+
+        // 事前アンケートの科目選択ボタン
+        document.querySelectorAll(".preform-subject-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                document.querySelectorAll(".preform-subject-btn").forEach(b => {
+                    b.classList.remove("active", "flora-btn-secondary");
+                    b.classList.add("flora-btn-ghost");
+                });
+                btn.classList.add("active", "flora-btn-secondary");
+                btn.classList.remove("flora-btn-ghost");
+                preformSubject = btn.getAttribute("data-subject") || "数学全般";
+            });
+        });
+
+        // 事前アンケートのクイックチップ
+        document.querySelectorAll(".preform-chip").forEach(chip => {
+            chip.addEventListener("click", () => {
+                const val = chip.getAttribute("data-val");
+                const input = document.getElementById("preform-topic-input");
+                if (input && val) {
+                    input.value = val;
+                }
+            });
+        });
+
+        // 事前アンケートからAI相談スタート
+        document.getElementById("btn-start-counseling-flow")?.addEventListener("click", () => {
+            const topic = document.getElementById("preform-topic-input")?.value.trim() || "";
+            const goal = document.getElementById("preform-goal-input")?.value.trim() || "";
+            
+            document.getElementById("counseling-preform-box").style.display = "none";
+            document.getElementById("counseling-panel").classList.remove("hidden");
+            
+            startCounselingSessionWithPreform(preformSubject, topic, goal);
+        });
+
+        // アンケートに戻るボタン
+        document.getElementById("close-counseling-btn")?.addEventListener("click", () => {
+            document.getElementById("counseling-panel").classList.add("hidden");
+            document.getElementById("counseling-preform-box").style.display = "block";
+        });
+
+        // Step 1からStep 2への遷移ボタン群
+        document.getElementById("btn-direct-proceed-step2")?.addEventListener("click", () => {
+            goToWizardStep(2);
+        });
+
+        document.getElementById("btn-counseling-proceed-step2")?.addEventListener("click", () => {
+            goToWizardStep(2);
+        });
+
+        document.getElementById("btn-reg-proceed-step2")?.addEventListener("click", () => {
+            const count = getFilteredRegisteredProblems().length;
+            if (count === 0) {
+                showToast("該当する問題が0件です。教科・分類を変更してください。", "error");
+                return;
+            }
+            goToWizardStep(2);
+        });
+
+        // Step 2からStep 3（生成・開始）への遷移ボタン
+        document.getElementById("btn-step2-start-generate")?.addEventListener("click", () => {
+            if (currentMode === "registered") {
+                startRegisteredSprint(selectedCount);
+            } else {
+                goToWizardStep(3);
+                
+                const isCounselingTab = document.getElementById("subview-counseling") && document.getElementById("subview-counseling").style.display !== "none";
+                let sprintTitle = "";
+                let fieldText = "";
+                let focusNotes = "";
+
+                if (isCounselingTab && latestRefinedSpec) {
+                    sprintTitle = document.getElementById("counseling-summary-title")?.value.trim() || latestRefinedSpec.sprint_title || "";
+                    fieldText = document.getElementById("counseling-summary-field")?.value.trim() || latestRefinedSpec.target_field || "";
+                    focusNotes = document.getElementById("counseling-summary-notes")?.value.trim() || latestRefinedSpec.focus_notes || "";
+                } else {
+                    sprintTitle = document.getElementById("sprint-title-input")?.value.trim() || "";
+                    fieldText = document.getElementById("field-input")?.value.trim() || "";
+                    focusNotes = document.getElementById("focus-note-input")?.value.trim() || "";
+                }
+
+                const levelText = document.getElementById("level-select").value;
+                startAiSprintParallel(fieldText, levelText, selectedCount, sprintTitle, focusNotes);
+            }
+        });
+
+        // 生成キャンセル
+        document.getElementById("btn-cancel-generation")?.addEventListener("click", () => {
+            isGeneratingSprint = false;
+            goToWizardStep(2);
+            showToast("問題生成をキャンセルしました。", "info");
+        });
 
         const COUNSELING_SYSTEM_PROMPT = `あなたは大学受験・高校数学の最高峰プロ講師兼学習カウンセラーAIです。
 生徒が計算特訓・タイムアタック（カスタムスプリント）を始める前に、「スプリントの題名・特訓テーマ」「出題分野・単元」「重点的に鍛えたいポイントやつまずき」「推奨難易度」を親身かつ的確にヒアリングし、最高の特訓スプリントが作れるように要件定義をサポートしてください。
@@ -995,20 +1459,6 @@
             },
             required: ["assistant_message", "quick_replies", "refined_spec"]
         };
-
-        function toggleCounselingPanel(show) {
-            const panel = document.getElementById("counseling-panel");
-            if (!panel) return;
-            const shouldShow = show !== undefined ? show : panel.classList.contains("hidden");
-            panel.classList.toggle("hidden", !shouldShow);
-            if (shouldShow) {
-                if (counselingHistory.length === 0) {
-                    startCounselingSession();
-                } else {
-                    scrollToBottomCounseling();
-                }
-            }
-        }
 
         function scrollToBottomCounseling() {
             const flow = document.getElementById("counseling-chat-flow");
@@ -1092,13 +1542,9 @@
             if (notesTextarea) notesTextarea.value = spec.focus_notes || "";
         }
 
-        async function startCounselingSession() {
-            const currentTitle = document.getElementById("sprint-title-input") ? document.getElementById("sprint-title-input").value.trim() : "";
-            const currentField = document.getElementById("field-input") ? document.getElementById("field-input").value.trim() : "";
-            const currentLevel = document.getElementById("level-select") ? document.getElementById("level-select").value : "入試標準〜応用レベル";
-            const currentNotes = document.getElementById("focus-note-input") ? document.getElementById("focus-note-input").value.trim() : "";
-
-            let initialPrompt = `【生徒の選択・入力状況】\n・現在の題名希望: ${currentTitle || "（未定・AIからの提案を希望）"}\n・分野・単元: ${currentField || "（未指定・数学全範囲）"}\n・希望難易度: ${currentLevel}\n・こだわり要望: ${currentNotes || "（特になし）"}\n\n生徒が最高の計算特訓タイムアタック（カスタムスプリント）をスタートできるよう、最初の挨拶と、生徒が答えやすい具体的なヒアリング質問（鍛えたい計算や苦手な論点のクイック選択肢を含む）を提示してください。また、現状の状況に合わせた魅力的なスプリント題名（sprint_title）と特訓要件（refined_spec）も初手から提示してください。`;
+        async function startCounselingSessionWithPreform(subject, topic, goal) {
+            counselingHistory = [];
+            let initialPrompt = `【生徒の事前アンケート情報】\n・対象科目: ${subject}\n・苦手な分野・やりたい内容: ${topic || "（特に指定なし・科目全般）"}\n・悩み・目標: ${goal || "（計算スピードの向上、ミスの撲滅）"}\n\n生徒が最高の計算特訓タイムアタック（カスタムスプリント）をスタートできるよう、最初の親身な挨拶と、生徒が答えやすい具体的なヒアリング質問（鍛えたい論点のクイック選択肢を含む）を提示してください。また、現状の状況に合わせた魅力的なスプリント題名（sprint_title）と特訓要件（refined_spec）も初手から提示してください。`;
 
             isCounselingLoading = true;
             renderCounselingChat();
@@ -1123,22 +1569,23 @@
             } catch (err) {
                 console.error("AIカウンセリング初期化エラー:", err);
                 isCounselingLoading = false;
+                const defaultTitle = `${subject}：${topic || "重要公式・計算力"} スピード特訓スプリント`;
                 counselingHistory.push({
                     role: "model",
-                    text: `こんにちは！カスタムスプリント相談室へようこそ。\nどんな計算を鍛えたいですか？あるいは、どの単元で時間が足りなくなったりミスが出やすいですか？下の選択肢をタップするか、自由に入力してください！`
+                    text: `こんにちは！${subject}の特訓ですね。\n${topic ? `「${topic}」を中心に、` : ""}どのような計算や問題パターンを重点的に鍛えたいですか？下の選択肢をタップするか、自由に入力してください！`
                 });
                 renderCounselingChat();
                 renderCounselingQuickReplies([
-                    "三角関数の加法定理・合成のスピード強化",
-                    "共通テスト型の数列（漸化式・群数列）対策",
-                    "ベクトル内積・空間ベクトルの計算ミス撲滅",
-                    "因数分解・展開・対称式の瞬発力特訓"
+                    "基本公式の変形・典型パターンの高速処理",
+                    "符号ミス・添字ミスの罠の撲滅",
+                    "共通テスト本番を意識したスピード特訓",
+                    "複数の解法を思いつく瞬発力強化"
                 ]);
                 updateCounselingSummaryCard({
-                    sprint_title: "数学II・B：計算瞬発力＆符号ミス撲滅スプリント",
-                    target_field: currentField || "三角関数, 数列, ベクトル",
-                    recommended_level: currentLevel,
-                    focus_notes: "展開の工夫や符号ミスを防ぎ、素早く正解に辿り着くための典型計算特訓",
+                    sprint_title: defaultTitle,
+                    target_field: topic || subject,
+                    recommended_level: "入試標準〜応用レベル",
+                    focus_notes: goal || "計算スピードの向上と符号ミス撲滅",
                     ready_to_apply: true
                 });
             }
@@ -1186,99 +1633,7 @@
             }
         }
 
-        function applyCounselingSpecToForm(andStartDirectly = false) {
-            const titleInput = document.getElementById("counseling-summary-title");
-            const fieldInput = document.getElementById("counseling-summary-field");
-            const levelSelect = document.getElementById("counseling-summary-level");
-            const notesTextarea = document.getElementById("counseling-summary-notes");
-
-            const finalTitle = titleInput ? titleInput.value.trim() : (latestRefinedSpec?.sprint_title || "");
-            const finalField = fieldInput ? fieldInput.value.trim() : (latestRefinedSpec?.target_field || "");
-            const finalLevel = levelSelect ? levelSelect.value : (latestRefinedSpec?.recommended_level || "入試標準〜応用レベル");
-            const finalNotes = notesTextarea ? notesTextarea.value.trim() : (latestRefinedSpec?.focus_notes || "");
-
-            if (!finalTitle && !finalField && !finalNotes) {
-                showToast("反映する要件が空です。まずは相談を進めてください。", "error");
-                return;
-            }
-
-            if (document.getElementById("sprint-title-input")) document.getElementById("sprint-title-input").value = finalTitle;
-            if (document.getElementById("field-input")) document.getElementById("field-input").value = finalField;
-            if (document.getElementById("level-select")) document.getElementById("level-select").value = finalLevel;
-            if (document.getElementById("focus-note-input")) document.getElementById("focus-note-input").value = finalNotes;
-
-            // パルス強調アニメーション
-            ["form-sprint-title-wrap", "form-field-wrap", "form-level-wrap", "form-notes-wrap"].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) {
-                    el.classList.remove("form-highlight-pulse");
-                    void el.offsetWidth; // reflow
-                    el.classList.add("form-highlight-pulse");
-                }
-            });
-
-            // パネルを閉じる
-            toggleCounselingPanel(false);
-
-            if (andStartDirectly) {
-                showToast(`🚀 スプリント『${finalTitle || finalField}』を開始します！`, "success", 3000);
-                startAiSprint(finalField, finalLevel, selectedCount, finalTitle, finalNotes);
-            } else {
-                showToast("✅ スプリント題名と特訓要件をフォームに反映しました！", "success", 3000);
-            }
-        }
-
-        // ==========================================================================
-        // 🎛【セットアップ画面の操作】
-        // ==========================================================================
-        const countBtnGroup = document.getElementById("count-btn-group");
-        let selectedCount = 10;
-        countBtnGroup.querySelectorAll(".count-btn").forEach(btn => {
-            btn.addEventListener("click", () => {
-                countBtnGroup.querySelectorAll(".count-btn").forEach(b => b.classList.remove("active"));
-                btn.classList.add("active");
-                selectedCount = parseInt(btn.dataset.count, 10);
-            });
-        });
-
-        document.getElementById("btn-start-custom-sprint").addEventListener("click", () => {
-            if (currentMode === "ai") {
-                const sprintTitle = document.getElementById("sprint-title-input") ? document.getElementById("sprint-title-input").value.trim() : "";
-                const fieldText = document.getElementById("field-input").value.trim();
-                const levelText = document.getElementById("level-select").value;
-                const focusNotes = document.getElementById("focus-note-input") ? document.getElementById("focus-note-input").value.trim() : "";
-                startAiSprint(fieldText, levelText, selectedCount, sprintTitle, focusNotes);
-            } else {
-                startRegisteredSprint(selectedCount);
-            }
-        });
-
-        document.getElementById("btn-retry-same-condition").addEventListener("click", () => {
-            if (lastCondition.mode === "registered") {
-                // 登録済みモードは DB を再読みしてシャッフルし直す
-                regSelectedSubject = lastCondition.subject;
-                regSelectedField = lastCondition.field;
-                startRegisteredSprint(lastCondition.count);
-            } else {
-                startAiSprint(lastCondition.fieldText, lastCondition.levelText, lastCondition.count, lastCondition.sprintTitle, lastCondition.focusNotes);
-            }
-        });
-
-        document.getElementById("btn-new-condition").addEventListener("click", () => {
-            document.getElementById("sprint-result-zone").style.display = "none";
-            document.getElementById("sprint-setup-zone").style.display = "flex";
-            // 直前のモードに合わせて表示を戻す
-            switchMode(lastCondition.mode || "ai");
-        });
-
-        // 💬 カウンセリング関連のイベントリスナー
-        document.getElementById("counseling-trigger-banner")?.addEventListener("click", () => toggleCounselingPanel(true));
-        document.getElementById("close-counseling-btn")?.addEventListener("click", () => toggleCounselingPanel(false));
-        document.getElementById("counseling-continue-btn")?.addEventListener("click", () => {
-            document.getElementById("counseling-user-input")?.focus();
-        });
-        document.getElementById("counseling-apply-btn")?.addEventListener("click", () => applyCounselingSpecToForm(false));
-        document.getElementById("counseling-start-direct-btn")?.addEventListener("click", () => applyCounselingSpecToForm(true));
+        // 送信ボタン・Enterキーバインド
         document.getElementById("counseling-send-btn")?.addEventListener("click", () => {
             sendCounselingMessage(document.getElementById("counseling-user-input")?.value);
         });
@@ -1290,13 +1645,243 @@
         });
 
         // ==========================================================================
-        // 🛠 AIモード：スプリント開始
+        // 🎛【問題数設定】
         // ==========================================================================
-        function startAiSprint(fieldText, levelText, count, sprintTitle = "", focusNotes = "") {
+        const countBtnGroup = document.getElementById("count-btn-group");
+        let selectedCount = 5;
+        countBtnGroup?.querySelectorAll(".count-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                countBtnGroup.querySelectorAll(".count-btn").forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+                selectedCount = parseInt(btn.dataset.count, 10);
+            });
+        });
+
+        document.getElementById("btn-retry-same-condition")?.addEventListener("click", () => {
+            if (lastCondition.mode === "registered") {
+                regSelectedSubject = lastCondition.subject;
+                regSelectedField = lastCondition.field;
+                startRegisteredSprint(lastCondition.count);
+            } else {
+                goToWizardStep(3);
+                startAiSprintParallel(lastCondition.fieldText, lastCondition.levelText, lastCondition.count, lastCondition.sprintTitle, lastCondition.focusNotes);
+            }
+        });
+
+        document.getElementById("btn-new-condition")?.addEventListener("click", () => {
+            document.getElementById("sprint-result-zone").style.display = "none";
+            document.getElementById("sprint-setup-zone").style.display = "flex";
+            goToWizardStep(1);
+            switchMode(lastCondition.mode || "ai");
+        });
+
+        // ==========================================================================
+        // ⚡【並列生成＆重複防止】2段階スプリント生成アーキテクチャ
+        // ==========================================================================
+        
+        // 1問ごとの個別生成用スキーマ
+        const SINGLE_QUESTION_SCHEMA = {
+            type: "OBJECT",
+            properties: {
+                id: { type: "STRING" },
+                subject: { type: "STRING" },
+                field: { type: "STRING" },
+                title: { type: "STRING" },
+                answer: { type: "STRING" },
+                steps: { type: "STRING" }
+            },
+            required: ["id", "subject", "field", "title", "answer", "steps"]
+        };
+
+        // フェーズ1：重複のない出題構成案（目次）スキーマ
+        const SPRINT_OUTLINE_SCHEMA = {
+            type: "ARRAY",
+            items: {
+                type: "OBJECT",
+                properties: {
+                    number: { type: "INTEGER" },
+                    subtopic: { type: "STRING" },
+                    focus_target: { type: "STRING" }
+                },
+                required: ["number", "subtopic", "focus_target"]
+            }
+        };
+
+        async function startAiSprintParallel(fieldText, levelText, count, sprintTitle = "", focusNotes = "") {
             lastCondition = { mode: "ai", fieldText, levelText, count, sprintTitle, focusNotes };
             clearSession();
             currentMode = "ai";
+            isGeneratingSprint = true;
 
+            const iconEl = document.getElementById("progress-icon");
+            const phaseTitleEl = document.getElementById("progress-phase-title");
+            const phaseDescEl = document.getElementById("progress-phase-desc");
+            const fillBarEl = document.getElementById("progress-fill-bar");
+            const percentTextEl = document.getElementById("progress-percent-text");
+            const statusGridEl = document.getElementById("question-status-grid");
+
+            if (iconEl) iconEl.textContent = "⚡";
+            if (phaseTitleEl) phaseTitleEl.textContent = "フェーズ 1：出題構成・目次を設計中...";
+            if (phaseDescEl) phaseDescEl.textContent = "重複のない出題テーマと各問の狙いをAIが瞬時に設計しています";
+            if (fillBarEl) fillBarEl.style.width = "10%";
+            if (percentTextEl) percentTextEl.textContent = "10%";
+            if (statusGridEl) statusGridEl.innerHTML = "";
+
+            try {
+                if (getGeminiKeys().length === 0) {
+                    throw new Error("GeminiのAPIキーがブラウザに設定されていません。右下の🔑ボタンから登録してください。");
+                }
+
+                // ----------------------------------------------------
+                // フェーズ1：重複のない出題構成案（目次）を高速生成
+                // ----------------------------------------------------
+                const outlinePrompt = `あなたは高校数学の出題責任者です。
+生徒がリクエストした以下の条件に合わせて、全【${count}問】のタイムアタック出題構成案（各問の出題テーマと狙い）を設計してください。
+各問題の間で解法や論点が被らないよう、段階的・多角的な構成にしてください。
+
+【スプリント題名・テーマ】${sprintTitle || "指定なし"}
+【出題分野】${fieldText || "数学I,A,II,B,C全般"}
+【難易度】${levelText}
+【重点要望】${focusNotes || "典型解法のスピードと計算正確性"}
+
+厳密に${count}問分の要素を持つJSON配列のみを返してください。`;
+
+                const outlineResult = await callGeminiJSON(
+                    [{ text: outlinePrompt }],
+                    "あなたは優秀な数学教育設計者です。JSON配列のみを出力してください。",
+                    { temperature: 0.3, arrayMode: true, responseSchema: SPRINT_OUTLINE_SCHEMA, featureId: "custom_sprint_outline" }
+                );
+
+                if (!isGeneratingSprint) return; // キャンセルされた場合
+
+                let outline = Array.isArray(outlineResult) && outlineResult.length > 0
+                    ? outlineResult.slice(0, count)
+                    : Array.from({ length: count }, (_, i) => ({
+                        number: i + 1,
+                        subtopic: fieldText || "数学重要典型題",
+                        focus_target: `第${i + 1}問の典型計算と解法チェック`
+                    }));
+
+                // 目次をステータスグリッドに初期描画
+                if (statusGridEl) {
+                    statusGridEl.innerHTML = outline.map(item => `
+                        <div class="question-status-item pending" id="status-card-q${item.number}">
+                            <span><strong>第${item.number}問:</strong> ${escapeHtml(item.subtopic)}</span>
+                            <span class="status-indicator">⏳ 生成中</span>
+                        </div>
+                    `).join("");
+                }
+
+                // ----------------------------------------------------
+                // フェーズ2：全問を並列生成（Promise.all）
+                // ----------------------------------------------------
+                if (iconEl) iconEl.textContent = "🚀";
+                if (phaseTitleEl) phaseTitleEl.textContent = `フェーズ 2：全${count}問を並列生成中...`;
+                if (phaseDescEl) phaseDescEl.textContent = "各問の具体的な問題文・正解・解説を同時に作成しています";
+                if (fillBarEl) fillBarEl.style.width = "25%";
+                if (percentTextEl) percentTextEl.textContent = "25%";
+
+                let completedCount = 0;
+
+                const generateSingleQuestion = async (item, index) => {
+                    const prompt = `あなたは高校数学の作問のプロです。
+以下の構成案に従って、【第${item.number}問】のタイムアタック計算問題を1問だけ作成してください。
+
+【スプリントテーマ】${sprintTitle || fieldText || "数学特訓"}
+【この問題の出題テーマ】${item.subtopic}
+【狙い・着眼点】${item.focus_target}
+【難易度】${levelText}
+【重点要望】${focusNotes || "なし"}
+
+【数式ルール】
+- 数式や変数は必ず $ または $$ で囲むこと。
+- steps（解説）は計算過程や公式ごとに \\n を挟んだ構造的な箇条書きにすること。
+- 紙とペンで数分以内で解ける良問にすること。数学IIIの範囲は禁止。
+
+出力は指定されたスキーマに準拠した単一のJSONオブジェクトのみを返してください。`;
+
+                    try {
+                        const qData = await callGeminiJSON(
+                            [{ text: prompt }],
+                            "あなたは優秀な数学教師です。単一のJSONオブジェクトのみを返してください。",
+                            { temperature: 0.4, responseSchema: SINGLE_QUESTION_SCHEMA, featureId: "custom_sprint_parallel" }
+                        );
+
+                        completedCount++;
+                        const currentPercent = Math.round(25 + (75 * (completedCount / count)));
+                        if (fillBarEl) fillBarEl.style.width = `${currentPercent}%`;
+                        if (percentTextEl) percentTextEl.textContent = `${currentPercent}%`;
+
+                        const card = document.getElementById(`status-card-q${item.number}`);
+                        if (card) {
+                            card.classList.remove("pending");
+                            card.classList.add("done");
+                            const ind = card.querySelector(".status-indicator");
+                            if (ind) ind.textContent = "✅ 完了";
+                        }
+
+                        return {
+                            ...qData,
+                            id: `AI_CUSTOM_${Date.now()}_${index + 1}`
+                        };
+                    } catch (err) {
+                        console.warn(`第${item.number}問の並列生成失敗、フォールバックを適用:`, err);
+                        completedCount++;
+                        const card = document.getElementById(`status-card-q${item.number}`);
+                        if (card) {
+                            card.classList.remove("pending");
+                            card.classList.add("done");
+                            const ind = card.querySelector(".status-indicator");
+                            if (ind) ind.textContent = "✅ 完了(代替)";
+                        }
+                        const fb = dailyProblemBank[index % dailyProblemBank.length] || dailyProblemBank[0];
+                        return {
+                            ...fb,
+                            id: `FALLBACK_CUSTOM_${Date.now()}_${index + 1}`
+                        };
+                    }
+                };
+
+                const questions = await Promise.all(outline.map((item, idx) => generateSingleQuestion(item, idx)));
+
+                if (!isGeneratingSprint) return; // キャンセル確認
+
+                selectedQuestions = questions;
+                isGeneratingSprint = false;
+
+                // 完了演出後、プレイ画面へ突入
+                if (iconEl) iconEl.textContent = "🎉";
+                if (phaseTitleEl) phaseTitleEl.textContent = "全問の準備が完了しました！";
+                if (phaseDescEl) phaseDescEl.textContent = "スプリントを即座に開始します...";
+                if (fillBarEl) fillBarEl.style.width = "100%";
+                if (percentTextEl) percentTextEl.textContent = "100%";
+
+                setTimeout(() => {
+                    launchSprintPlayZone();
+                }, 600);
+
+            } catch (err) {
+                console.error("並列問題生成全体エラー:", err);
+                isGeneratingSprint = false;
+                showToast("AI問題生成に失敗しました: " + err.message + "\n※予備問題データベースから出題を開始します。", "error", 6000);
+
+                let pool = dailyProblemBank;
+                if (fieldText) {
+                    const keywords = fieldText.split(/[,、]/).map(s => s.trim()).filter(Boolean);
+                    const matched = dailyProblemBank.filter(q => keywords.some(kw => (q.field || "").includes(kw) || (q.title || "").includes(kw)));
+                    if (matched.length > 0) pool = matched;
+                }
+                const shuffled = [...pool].sort(() => 0.5 - Math.random());
+                selectedQuestions = shuffled.slice(0, count).map((q, idx) => ({
+                    ...q,
+                    id: `FALLBACK_CUSTOM_${Date.now()}_${idx + 1}`
+                }));
+
+                launchSprintPlayZone();
+            }
+        }
+
+        function launchSprintPlayZone() {
             document.getElementById("sprint-setup-zone").style.display = "none";
             document.getElementById("sprint-result-zone").style.display = "none";
             document.getElementById("sprint-header").style.display = "flex";
@@ -1305,14 +1890,10 @@
             currentQuestionIndex = 0;
             clearInterval(timerInterval);
             document.getElementById("sprint-timer").textContent = "00:00.00";
-            document.getElementById("sprint-progress").textContent = "ANALYZING...";
+            document.getElementById("sprint-progress").textContent = "START!";
             document.getElementById("sprint-reveal-zone").style.display = "none";
-            document.getElementById("btn-reveal-ans").style.display = "none";
 
-            const titleLabel = sprintTitle ? `「${sprintTitle}」` : `「${fieldText || "数学全範囲（指定なし）"}」`;
-            document.getElementById("problem-title-display").innerHTML = `🤖 ${titleLabel}の問題を、${count}問生成しています。少々お待ちください（約5〜10秒）...`;
-
-            generateCustomSprintWithAI(fieldText, levelText, count, sprintTitle, focusNotes);
+            startSprintTimer();
         }
 
         // ==========================================================================

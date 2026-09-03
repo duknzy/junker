@@ -844,10 +844,21 @@ async function runGeminiFallbackLoop(contents, systemInstruction, options = {}) 
 
         let response;
         try {
-            response = await fetchWithKeyRotation(keys, (key) => ({
-                url: buildGeminiUrl(modelName, key),
-                options: { method: "POST", headers: { "Content-Type": "application/json" }, body: requestBody }
-            }), { requestTimeoutMs, startIndex: keyOffset, modelName, featureId });
+            if (keys && keys.length > 0) {
+                response = await fetchWithKeyRotation(keys, (key) => ({
+                    url: buildGeminiUrl(modelName, key),
+                    options: { method: "POST", headers: { "Content-Type": "application/json" }, body: requestBody }
+                }), { requestTimeoutMs, startIndex: keyOffset, modelName, featureId });
+            } else {
+                response = await fetch("/api/gemini/generate", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ model: modelName, ...JSON.parse(requestBody) })
+                });
+                if (!response.ok && response.status === 401) {
+                    throw new Error("APIキーが未登録です。右下の🔑ボタンから登録するか、環境変数GEMINI_API_KEYを設定してください。");
+                }
+            }
         } catch (err) {
             return { ok: false, isFormatError: false, reason: err?.message || "不明な通信エラー", error: err };
         }

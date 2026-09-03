@@ -22,14 +22,6 @@
             {
                 title: '演習・ツール',
                 items: [
-                    { 
-                        href: 'javascript:void(0)', 
-                        onclick: 'if(window.openStudyClockPopout)window.openStudyClockPopout(event)', 
-                        icon: '⏱️', 
-                        label: 'StudyClock', 
-                        badge: '小窓で開く',
-                        match: [] 
-                    },
                     { href: 'daily.html', icon: '📅', label: 'デイリースプリント10', match: ['daily.html'] },
                     { href: 'custom-sprint.html', icon: '⚡', label: 'カスタムスプリント', match: ['custom-sprint.html'] },
                     { href: 'answer-check.html', icon: '✅', label: 'クイック答え合わせ', match: ['answer-check.html'] },
@@ -77,15 +69,6 @@
             </div>
 
             <div class="sidebar-nav-container">
-                <!-- ⏱️ 集中タイマー クイックウィジェット -->
-                <div class="sidebar-section" style="margin-bottom: 0.2rem;">
-                    <a href="javascript:void(0)" onclick="if(window.openTimerPopout)window.openTimerPopout(event)" class="sidebar-item global-timer-link" id="sidebar-timer-btn" style="background: var(--bg-subtle); border: 1px solid var(--border-color);">
-                        <span class="sidebar-item-icon">⏱️</span>
-                        <span>集中タイマー</span>
-                        <span class="sidebar-item-badge" id="sidebar-timer-badge" style="background: var(--brand-light); color: var(--brand-primary);">小窓で開く</span>
-                    </a>
-                </div>
-
                 ${navHtml}
             </div>
 
@@ -116,20 +99,6 @@
         updateSidebarUser();
         setupWallpaperControls();
     }
-
-    // ⏱️ StudyClock 小窓ポップアップ関数
-    window.openStudyClockPopout = function(e) {
-        if (e) e.preventDefault();
-        const w = 1180;
-        const h = 800;
-        const left = Math.max(0, Math.floor((window.screen.width - w) / 2));
-        const top = Math.max(0, Math.floor((window.screen.height - h) / 2));
-        window.open(
-            'study/index.html',
-            'StudyClockPopoutWindow',
-            `width=${w},height=${h},top=${top},left=${left},menubar=no,toolbar=no,location=no,status=no,resizable=yes,scrollbars=yes`
-        );
-    };
 
     // 🖼️ 壁紙 & 透過カスタマイザー モーダル
     function setupWallpaperControls() {
