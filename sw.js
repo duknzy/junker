@@ -1,5 +1,5 @@
-// ⚡ 軽量 Service Worker（Flora v3.4 壁紙フル透過 & StudyClock小窓化）
-const CACHE_NAME = 'flora-pwa-v3.4'; // ← バージョンを上げて古いキャッシュを完全破棄
+// ⚡ 軽量 Service Worker（Flora v3.5 キャッシュ完全更新）
+const CACHE_NAME = 'flora-pwa-v3.5'; // ← バージョンを上げて古いキャッシュを完全破棄
 
 // 最低限、オフライン時に救いたい主要ページだけ事前キャッシュ
 const PRECACHE_URLS = [
@@ -14,8 +14,9 @@ const PRECACHE_URLS = [
     './insights.html',
     './timeline.html',
     './ai-settings.html',
-    './style.css?v=3.4',
-    './sidebar.js?v=3.4',
+    './style.css?v=3.5',
+    './sidebar.js?v=3.5',
+    './api-key-manager.js?v=3.5',
     './manifest.json'
 ];
 
