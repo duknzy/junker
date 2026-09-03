@@ -619,6 +619,7 @@ export const GEMINI_FEATURES = [
     { id: "stuck_topic",      label: "前提単元の分析→授業引き継ぎ",   page: "problem.html" },
     { id: "quick_answer",     label: "解答の即時チェック",           page: "answer-check.html" },
     { id: "custom_sprint",    label: "カスタム演習の問題生成",       page: "custom-sprint.html" },
+    { id: "sprint_counseling", label: "カスタムスプリント：AI題名・要件ヒアリング", page: "custom-sprint.html" },
     { id: "daily",            label: "デイリー演習の問題生成",       page: "daily.html" },
     { id: "lesson_counseling", label: "授業作成：AI事前ヒアリング・要件定義", page: "lesson.html" },
     { id: "lesson_plan",      label: "授業プランの生成",             page: "lesson.html" },
