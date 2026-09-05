@@ -1,7 +1,7 @@
 import { chromium } from 'playwright';
 import path from 'path';
 
-const GEMINI_API_KEY = "AIzaSyAQ.Ab8RN6K6YOIylSci9RtSJogqe2o3PgyLMWF67sXD67jyoIldtQ";
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 
 (async () => {
     const artifactDir = 'C:\\Users\\kokih\\.gemini\\antigravity-ide\\brain\\4020f001-9413-483b-80a3-7ad0f27f0c81';

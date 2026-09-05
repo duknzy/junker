@@ -7,7 +7,7 @@ import path from 'path';
 import http from 'http';
 import fs from 'fs';
 
-const GEMINI_API_KEY = "AIzaSyAQ.Ab8RN6K6YOIylSci9RtSJogqe2o3PgyLMWF67sXD67jyoIldtQ";
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 const PORT = 8086;
 const BASE_DIR = 'c:\\Users\\kokih\\OneDrive\\デスクトップ\\大改造計画';
 

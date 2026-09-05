@@ -254,6 +254,56 @@
         }
         .mnemonic-card:hover { border-color: var(--brand-border); transform: translateY(-2px); }
         .mnemonic-body { font-size: 1rem; font-weight: 700; color: var(--text-primary); line-height: 1.6; }
+
+        /* ⌨️ 写経タイピング用スタイル */
+        .typing-display-area {
+            user-select: none;
+            letter-spacing: 0.02em;
+            word-break: break-word;
+        }
+        .char-matched {
+            color: #059669;
+            background: rgba(16, 185, 129, 0.12);
+            border-radius: 2px;
+        }
+        .char-current {
+            color: #0f172a;
+            background: rgba(245, 158, 11, 0.22);
+            border-bottom: 3px solid #f59e0b;
+            animation: blink-typing-cursor 1s infinite;
+        }
+        .char-remaining {
+            color: #64748b;
+        }
+        .char-error {
+            color: #dc2626;
+            background: rgba(239, 68, 68, 0.18);
+            border-bottom: 3px solid #dc2626;
+        }
+        @keyframes blink-typing-cursor {
+            0%, 100% { border-bottom-color: #f59e0b; }
+            50% { border-bottom-color: transparent; }
+        }
+        .typing-card-btn {
+            background: var(--brand-light);
+            border: 1px solid var(--brand-border);
+            color: var(--brand-primary);
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 0.32rem 0.75rem;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            transition: all 0.15s ease;
+        }
+        .typing-card-btn:hover {
+            background: var(--brand-primary);
+            color: #fff;
+            border-color: var(--brand-primary);
+            transform: translateY(-1px);
+        }
     </style>
 </head>
 <body>
@@ -310,6 +360,10 @@
                             <option value="oldest">更新が古い順</option>
                             <option value="subject">教科・単元順</option>
                         </select>
+
+                        <button type="button" id="btn-start-typing-session" style="margin-left:auto; background:var(--brand-primary); color:#fff; border:none; font-size:0.8rem; font-weight:800; padding:0.42rem 1.1rem; border-radius:var(--radius-md); cursor:pointer; display:inline-flex; align-items:center; gap:0.45rem; box-shadow:var(--shadow-xs); transition:all 0.15s ease;" title="現在表示中のカードを1枚ずつ連続で写経タイピング練習します">
+                            ⌨️ 写経タイピング演習
+                        </button>
                     </div>
 
                     <!-- 気づきメモタブ専用のサブツールバー -->
@@ -361,22 +415,103 @@
                     </div>
 
                     <!-- 3. 世界史 語呂合わせビュー -->
-                    <div id="view-mnemonics" style="display: none;"></div>
+                    <div id="view-mnemonics" class="mnemonic-grid" style="display: none;"></div>
                 </div>
+
+                <!-- 空データ時の通知 -->
+                <div id="empty-notice" style="display:none; text-align:center; padding:5rem 1rem; color:var(--text-muted); font-size:0.95rem;"></div>
 
             </div>
         </main>
     </div>
 
-    <script src="sidebar.js"></script>
+    <!-- ⌨️ 写経タイピング演習モーダル -->
+    <div id="typing-drill-modal" class="modal-overlay" style="display:none; z-index:100050;">
+        <div class="modal-content" style="max-width: 840px; width: 95%; padding: 1.8rem; border-radius: var(--radius-xl); background: var(--bg-surface); position: relative;">
+            <!-- モーダルヘッダー -->
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-color); padding-bottom:0.8rem; margin-bottom:1.2rem; flex-wrap:wrap; gap:0.6rem;">
+                <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;">
+                    <span class="badge badge-physics" id="typing-badge-type" style="background:var(--brand-light); color:var(--brand-primary); border-color:var(--brand-border); font-size:0.75rem; font-weight:800;">⌨️ 写経タイピング</span>
+                    <span id="typing-meta-subject" style="font-size:0.85rem; font-weight:800; color:var(--text-primary);">--</span>
+                    <span id="typing-meta-title" style="font-size:0.82rem; color:var(--text-secondary); max-width:340px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">--</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:0.6rem;">
+                    <div id="typing-progress-pill" style="font-size:0.78rem; font-weight:700; color:var(--text-muted); background:var(--bg-subtle); padding:0.25rem 0.65rem; border-radius:var(--radius-full); border:1px solid var(--border-color);">
+                        第 <span id="typing-current-idx">1</span> / <span id="typing-total-count">1</span> 問
+                    </div>
+                    <button type="button" id="typing-sound-toggle" class="toggle-btn" style="padding:0.25rem 0.55rem; font-size:0.72rem; cursor:pointer;" title="打鍵音・クリア効果音のON/OFF">🔊 効果音ON</button>
+                    <button type="button" class="star-btn" id="typing-modal-close" style="font-size:1.5rem; line-height:1; color:var(--text-muted); padding:0 0.4rem; cursor:pointer;" title="閉じる [Esc]">×</button>
+                </div>
+            </div>
 
-            <!-- 3. 語呂合わせビュー -->
-            <div id="view-mnemonics" class="mnemonic-grid" style="display: none;"></div>
+            <!-- 見本テキスト表示ボックス -->
+            <div style="background:var(--bg-subtle); border:1px solid var(--border-color); border-radius:var(--radius-lg); padding:1.4rem; margin-bottom:1.2rem; position:relative;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.8rem;">
+                    <span style="font-size:0.75rem; font-weight:800; color:var(--brand-primary); letter-spacing:0.04em;">📖 見本テキスト（手で打って記憶に刻み込む）</span>
+                    <span id="typing-char-counter" style="font-size:0.78rem; font-weight:700; color:var(--text-muted);">0 / 0 文字</span>
+                </div>
 
-            <!-- 空データ時の通知 -->
-            <div id="empty-notice" style="display:none; text-align:center; padding:5rem 1rem; color:var(--text-muted); font-size:0.95rem;"></div>
-        </main>
+                <!-- リアルタイム文字判定プレビュー -->
+                <div id="typing-display-box" class="typing-display-area" style="font-size:1.22rem; font-weight:700; line-height:1.8; word-break:break-word; min-height:64px; font-family:var(--font-heading), 'Hiragino Sans', 'Meiryo', sans-serif;">
+                </div>
+
+                <!-- 補足・ヒント（あれば表示） -->
+                <div id="typing-hint-box" style="display:none; margin-top:0.9rem; padding-top:0.8rem; border-top:1px dashed var(--border-color); font-size:0.86rem; color:var(--accent-yellow); font-weight:600;">
+                    💡 <span id="typing-hint-text"></span>
+                </div>
+            </div>
+
+            <!-- 入力エリア -->
+            <div style="margin-bottom:1.2rem; position:relative;">
+                <textarea id="typing-input" class="search-input" rows="3" placeholder="ここに入力してください（日本語IME変換対応・括弧や記号の全角半角は自動許容）..." style="width:100%; box-sizing:border-box; font-size:1.15rem; font-weight:600; line-height:1.7; padding:0.9rem 1.1rem; border-radius:var(--radius-md); background:var(--bg-surface); border:2px solid var(--border-color); transition:border-color 0.15s, box-shadow 0.15s; resize:none;"></textarea>
+                <div id="typing-input-alert" style="display:none; margin-top:0.4rem; font-size:0.8rem; font-weight:700; color:var(--error); align-items:center; gap:0.35rem;">
+                    <span>⚠️ 入力が見本と一致していません（Backspaceキーで戻って修正してください）</span>
+                </div>
+            </div>
+
+            <!-- リアルタイム計測バー -->
+            <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-subtle); border-radius:var(--radius-md); padding:0.65rem 1rem; margin-bottom:1.2rem; flex-wrap:wrap; gap:0.6rem;">
+                <div style="display:flex; gap:1.2rem; align-items:center;">
+                    <div>
+                        <span style="font-size:0.68rem; color:var(--text-muted); display:block; font-weight:700;">打鍵速度</span>
+                        <span id="typing-stat-cpm" style="font-size:1.05rem; font-weight:800; color:var(--text-primary); font-family:monospace;">0 <span style="font-size:0.72rem; font-weight:600;">打/分</span></span>
+                    </div>
+                    <div>
+                        <span style="font-size:0.68rem; color:var(--text-muted); display:block; font-weight:700;">正解率</span>
+                        <span id="typing-stat-accuracy" style="font-size:1.05rem; font-weight:800; color:var(--brand-primary); font-family:monospace;">100%</span>
+                    </div>
+                    <div>
+                        <span style="font-size:0.68rem; color:var(--text-muted); display:block; font-weight:700;">タイム</span>
+                        <span id="typing-stat-timer" style="font-size:1.05rem; font-weight:800; color:var(--text-secondary); font-family:monospace;">00:00</span>
+                    </div>
+                </div>
+
+                <!-- アクションボタン群 -->
+                <div style="display:flex; gap:0.5rem; align-items:center;">
+                    <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="typing-btn-reset" style="font-size:0.75rem; padding:0.35rem 0.75rem; font-weight:700; cursor:pointer;">🔄 最初から [Tab]</button>
+                    <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="typing-btn-prev" style="font-size:0.75rem; padding:0.35rem 0.75rem; font-weight:700; cursor:pointer;">◀ 前へ</button>
+                    <button type="button" class="flora-btn flora-btn-primary btn-sm" id="typing-btn-next" style="font-size:0.75rem; padding:0.35rem 0.9rem; font-weight:700; background:var(--brand-primary); color:#fff; border:none; cursor:pointer;">次へ [Enter] ▶</button>
+                </div>
+            </div>
+
+            <!-- 写経完了バナー -->
+            <div id="typing-success-banner" style="display:none; background:var(--brand-light); border:1.5px solid var(--brand-border); border-radius:var(--radius-lg); padding:1rem 1.4rem; align-items:center; justify-content:space-between; animation:modal-pop 0.25s ease;">
+                <div>
+                    <div style="font-weight:800; color:var(--brand-primary); font-size:1.05rem; display:flex; align-items:center; gap:0.4rem;">
+                        <span>🎉 写経コンプリート！</span>
+                    </div>
+                    <div style="font-size:0.8rem; color:var(--text-secondary); margin-top:0.25rem;">
+                        能動的にアウトプットしました！Enterキーを押すと次のカードに進みます。
+                    </div>
+                </div>
+                <button type="button" class="flora-btn flora-btn-primary" id="typing-banner-next-btn" style="background:var(--brand-primary); color:#fff; font-weight:800; padding:0.55rem 1.25rem; border-radius:var(--radius-md); border:none; cursor:pointer; box-shadow:var(--shadow-xs);">
+                    次のカードへ [Enter] ➔
+                </button>
+            </div>
+        </div>
     </div>
+
+    <script src="sidebar.js"></script>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -1051,7 +1186,10 @@
                         ${bodyContent}
                     </div>
 
-                    <div style="display:flex; justify-content:flex-end; border-top:1px dashed rgba(255,255,255,0.08); padding-top:0.6rem;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed var(--border-color); padding-top:0.6rem; margin-top:auto;">
+                        <button type="button" class="typing-card-btn" onclick="startTypingForCard('problem', '${p.id}', '', event)">
+                            ⌨️ 写経タイピング
+                        </button>
                         <a href="problem.html?id=${encodeURIComponent(p.id)}" class="goto-btn">問題ページを開く ➔</a>
                     </div>
                 </div>
@@ -1102,7 +1240,10 @@
                         ${bodyHtml}
                     </div>
 
-                    <div style="display:flex; justify-content:flex-end; border-top:1px dashed rgba(255,255,255,0.08); padding-top:0.6rem;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed var(--border-color); padding-top:0.6rem; margin-top:auto;">
+                        <button type="button" class="typing-card-btn" onclick="startTypingForCard('lesson_memo', '${p.lessonId}', '${p.memoId}', event)">
+                            ⌨️ 写経タイピング
+                        </button>
                         <a href="lesson.html?id=${encodeURIComponent(p.lessonId)}" class="goto-btn">授業を開く ➔</a>
                     </div>
                 </div>
@@ -1163,7 +1304,10 @@
                         ${editBody}
                     </div>
 
-                    <div style="display:flex; justify-content:flex-end; border-top:1px dashed rgba(255,255,255,0.08); padding-top:0.6rem;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed var(--border-color); padding-top:0.6rem; margin-top:auto;">
+                        <button type="button" class="typing-card-btn" onclick="startTypingForCard('memorize', '${p.lessonId}', '${p.memoId}', event)">
+                            ⌨️ 写経タイピング
+                        </button>
                         <a href="lesson.html?id=${encodeURIComponent(p.lessonId)}" class="goto-btn">授業を開く ➔</a>
                     </div>
                 </div>
@@ -1186,6 +1330,7 @@
                         <div class="compact-text tex2jax_process">${normalizeMathSyntax(p.insight)}</div>
                         <div class="compact-sub">📌 ${p.short_title || "問題"} ｜ ${formatDate(p.insightUpdatedAt || p.createdAt)}</div>
                     </div>
+                    <button type="button" onclick="startTypingForCard('problem', '${p.id}', '', event)" style="flex-shrink:0; background:var(--brand-light); border:1px solid var(--brand-border); color:var(--brand-primary); cursor:pointer; font-size:0.74rem; font-weight:700; padding:0.22rem 0.5rem; border-radius:var(--radius-sm);" title="写経タイピング">⌨️ タイプ</button>
                     <button type="button" onclick="startEditInsight('${p.id}', event)" style="flex-shrink:0; background:none; border:none; color:var(--accent-cyan); cursor:pointer; font-size:0.85rem;" title="編集">✏️</button>
                     <button type="button" onclick="deleteInsight('${p.id}', event)" style="flex-shrink:0; background:none; border:none; color:var(--error); cursor:pointer; font-size:0.85rem;" title="削除">🗑</button>
                     <a href="problem.html?id=${encodeURIComponent(p.id)}" class="goto-btn" style="flex-shrink:0;">➔</a>
@@ -1205,6 +1350,7 @@
                         <div class="compact-text tex2jax_process">${normalizeMathSyntax(p.insight)}</div>
                         <div class="compact-sub">📘 ${p.short_title} ｜ ${formatDate(p.insightUpdatedAt || p.createdAt)}</div>
                     </div>
+                    <button type="button" onclick="startTypingForCard('lesson_memo', '${p.lessonId}', '${p.memoId}', event)" style="flex-shrink:0; background:var(--brand-light); border:1px solid var(--brand-border); color:var(--brand-primary); cursor:pointer; font-size:0.74rem; font-weight:700; padding:0.22rem 0.5rem; border-radius:var(--radius-sm);" title="写経タイピング">⌨️ タイプ</button>
                     <button type="button" onclick="startEditLessonMemoFromInsights('${p.lessonId}', '${p.memoId}', event)" style="flex-shrink:0; background:none; border:none; color:var(--accent-cyan); cursor:pointer; font-size:0.85rem;" title="編集">✏️</button>
                     <button type="button" onclick="deleteLessonMemoFromInsights('${p.lessonId}', '${p.memoId}', event)" style="flex-shrink:0; background:none; border:none; color:var(--error); cursor:pointer; font-size:0.85rem;" title="削除">🗑</button>
                     <a href="lesson.html?id=${encodeURIComponent(p.lessonId)}" class="goto-btn" style="flex-shrink:0;">➔</a>
@@ -1220,6 +1366,7 @@
                         <div class="compact-text tex2jax_process">${normalizeMathSyntax(p.rawContent || p.insight)}</div>
                         <div class="compact-sub">📘 ${p.short_title} ${p.rawCategory ? `[${p.rawCategory}]` : ""} ｜ ${formatDate(p.insightUpdatedAt || p.createdAt)}</div>
                     </div>
+                    <button type="button" onclick="startTypingForCard('memorize', '${p.lessonId}', '${p.memoId}', event)" style="flex-shrink:0; background:var(--brand-light); border:1px solid var(--brand-border); color:var(--brand-primary); cursor:pointer; font-size:0.74rem; font-weight:700; padding:0.22rem 0.5rem; border-radius:var(--radius-sm);" title="写経タイピング">⌨️ タイプ</button>
                     <button type="button" onclick="startEditMemorizeFromInsights('${p.lessonId}', '${p.memoId}', event)" style="flex-shrink:0; background:none; border:none; color:var(--accent-cyan); cursor:pointer; font-size:0.85rem;" title="編集">✏️</button>
                     <button type="button" onclick="deleteMemorizeFromInsights('${p.lessonId}', '${p.memoId}', event)" style="flex-shrink:0; background:none; border:none; color:var(--error); cursor:pointer; font-size:0.85rem;" title="削除">🗑</button>
                     <a href="lesson.html?id=${encodeURIComponent(p.lessonId)}" class="goto-btn" style="flex-shrink:0;">➔</a>
@@ -1370,7 +1517,10 @@
                         <span style="font-size:0.82rem; font-weight:800; color:var(--accent-yellow);">📌 ${p.short_title || "問題"}</span>
                     </div>
                     <div class="mnemonic-body">🎴 ${p.mnemonic}</div>
-                    <div style="display:flex; justify-content:flex-end; margin-top:0.4rem; padding-top:0.4rem; border-top:1px dashed rgba(255,255,255,0.08);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:0.4rem; padding-top:0.4rem; border-top:1px dashed var(--border-color);">
+                        <button type="button" class="typing-card-btn" onclick="startTypingForCard('mnemonic', '${p.id}', '', event)">
+                            ⌨️ 写経タイピング
+                        </button>
                         <a href="problem.html?id=${encodeURIComponent(p.id)}" class="goto-btn">問題を開く ➔</a>
                     </div>
                 </div>
@@ -1406,6 +1556,460 @@
             document.getElementById("count-mnemonics").textContent = mnemonicCount;
             document.getElementById("stat-summary-text").textContent = `総蓄積ナレッジ: ${insightCount + memorizeCount + qnaCount + mnemonicCount} 件`;
         }
+
+        /* ==========================================================
+           ⌨️ 写経タイピング演習エンジン (Typing Practice Engine)
+           ========================================================== */
+        let audioCtx = null;
+        let soundEnabled = localStorage.getItem("flora_typing_sound") !== "false";
+
+        function getAudioContext() {
+            if (!audioCtx) {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioContextClass) {
+                    audioCtx = new AudioContextClass();
+                }
+            }
+            if (audioCtx && audioCtx.state === "suspended") {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        }
+
+        function playTypingSound(type) {
+            if (!soundEnabled) return;
+            try {
+                const ctx = getAudioContext();
+                if (!ctx) return;
+                const now = ctx.currentTime;
+
+                if (type === "type") {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = "sine";
+                    osc.frequency.setValueAtTime(580 + Math.random() * 80, now);
+                    osc.frequency.exponentialRampToValueAtTime(220, now + 0.035);
+                    gain.gain.setValueAtTime(0.05, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.035);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.035);
+                } else if (type === "complete") {
+                    const notes = [523.25, 659.25, 783.99, 1046.5];
+                    notes.forEach((freq, idx) => {
+                        const noteTime = now + idx * 0.07;
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = "triangle";
+                        osc.frequency.setValueAtTime(freq, noteTime);
+                        gain.gain.setValueAtTime(0.12, noteTime);
+                        gain.gain.exponentialRampToValueAtTime(0.001, noteTime + 0.32);
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(noteTime);
+                        osc.stop(noteTime + 0.32);
+                    });
+                }
+            } catch (e) {
+                // Ignore audio playback exceptions
+            }
+        }
+
+        function escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        function getCleanTypingText(text) {
+            if (!text) return "";
+            let t = String(text);
+            t = t.replace(/\$\$(.*?)\$\$/gs, "$1");
+            t = t.replace(/\$(.*?)\$/g, "$1");
+            t = t.replace(/\\\[(.*?)\\\]/gs, "$1");
+            t = t.replace(/\\\((.*?)\\\)/g, "$1");
+            t = t.replace(/\\(rm|bf|cal|it)\b/g, "");
+            t = t.replace(/\\(text|mathrm|mathbf|mathit)\{([^}]*)\}/g, "$2");
+            t = t.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+            t = t.replace(/\n\s*\n/g, "\n");
+            t = t.trim();
+            return t;
+        }
+
+        function normalizeTypingChar(ch) {
+            if (!ch) return "";
+            if (ch === "　") return " ";
+            return ch.normalize("NFKC").toLowerCase();
+        }
+
+        let typingQueue = [];
+        let typingQueueIndex = 0;
+        let currentTargetText = "";
+        let targetChars = [];
+        let cardStartTime = null;
+        let typingTimerInterval = null;
+        let typingIsCompleted = false;
+        let totalKeystrokes = 0;
+        let errorKeystrokes = 0;
+
+        const typingModal = document.getElementById("typing-drill-modal");
+        const typingBadgeType = document.getElementById("typing-badge-type");
+        const typingMetaSubject = document.getElementById("typing-meta-subject");
+        const typingMetaTitle = document.getElementById("typing-meta-title");
+        const typingCurrentIdx = document.getElementById("typing-current-idx");
+        const typingTotalCount = document.getElementById("typing-total-count");
+        const typingCharCounter = document.getElementById("typing-char-counter");
+        const typingDisplayBox = document.getElementById("typing-display-box");
+        const typingHintBox = document.getElementById("typing-hint-box");
+        const typingHintText = document.getElementById("typing-hint-text");
+        const typingInput = document.getElementById("typing-input");
+        const typingInputAlert = document.getElementById("typing-input-alert");
+        const typingStatCpm = document.getElementById("typing-stat-cpm");
+        const typingStatAccuracy = document.getElementById("typing-stat-accuracy");
+        const typingStatTimer = document.getElementById("typing-stat-timer");
+        const typingSuccessBanner = document.getElementById("typing-success-banner");
+        const typingSoundToggle = document.getElementById("typing-sound-toggle");
+        const typingModalClose = document.getElementById("typing-modal-close");
+        const typingBtnReset = document.getElementById("typing-btn-reset");
+        const typingBtnPrev = document.getElementById("typing-btn-prev");
+        const typingBtnNext = document.getElementById("typing-btn-next");
+        const typingBannerNextBtn = document.getElementById("typing-banner-next-btn");
+        const btnStartTypingSession = document.getElementById("btn-start-typing-session");
+
+        if (typingSoundToggle) {
+            typingSoundToggle.textContent = soundEnabled ? "🔊 効果音ON" : "🔇 効果音OFF";
+            typingSoundToggle.onclick = () => {
+                soundEnabled = !soundEnabled;
+                localStorage.setItem("flora_typing_sound", soundEnabled ? "true" : "false");
+                typingSoundToggle.textContent = soundEnabled ? "🔊 効果音ON" : "🔇 効果音OFF";
+                if (soundEnabled) playTypingSound("type");
+            };
+        }
+
+        function getActiveTypingItems() {
+            const query = searchInput.value.trim().toLowerCase();
+            const subject = subjectSelect.value;
+
+            if (activeTab === "memorize") {
+                let items = buildMemorizationItems();
+                if (subject !== "ALL") items = items.filter(p => (p.subject || "未分類") === subject);
+                if (query) {
+                    items = items.filter(p =>
+                        (p.insight || "").toLowerCase().includes(query) ||
+                        (p.short_title || "").toLowerCase().includes(query) ||
+                        (p.field || "").toLowerCase().includes(query) ||
+                        (p.rawCategory || "").toLowerCase().includes(query)
+                    );
+                }
+                return items.map(p => ({
+                    id: p.id,
+                    type: 'memorize',
+                    subject: p.subject || '未分類',
+                    field: p.field || '暗記事項',
+                    title: p.short_title || '暗記事項',
+                    category: p.rawCategory || '',
+                    targetText: getCleanTypingText(p.rawContent || p.insight),
+                    hint: p.rawNote || '',
+                    lessonId: p.lessonId,
+                    memoId: p.memoId
+                })).filter(item => item.targetText.length > 0);
+            } else if (activeTab === "mnemonics") {
+                let items = Object.values(rawProblems).filter(p => p && p.subject === "世界史" && p.mnemonic && p.mnemonic.trim() !== "");
+                if (query) {
+                    items = items.filter(p =>
+                        (p.mnemonic || "").toLowerCase().includes(query) ||
+                        (p.short_title || "").toLowerCase().includes(query) ||
+                        (p.field || "").toLowerCase().includes(query)
+                    );
+                }
+                return items.map(p => ({
+                    id: p.id,
+                    type: 'mnemonic',
+                    subject: '世界史',
+                    field: p.field || '世界史',
+                    title: p.short_title || '語呂合わせ',
+                    category: '語呂合わせ',
+                    targetText: getCleanTypingText(p.mnemonic),
+                    hint: p.title ? p.title.slice(0, 100) : '',
+                    problemId: p.id
+                })).filter(item => item.targetText.length > 0);
+            } else {
+                let items = [
+                    ...Object.values(rawProblems).filter(p => p && p.insight && p.insight.trim() !== "").map(p => ({ ...p, sourceType: "problem" })),
+                    ...buildLessonMemoItems()
+                ];
+                if (subject !== "ALL") items = items.filter(p => (p.subject || "未分類") === subject);
+                if (filterPinnedOnly) items = items.filter(p => !!p.isPinned);
+                if (query) {
+                    items = items.filter(p =>
+                        (p.insight || "").toLowerCase().includes(query) ||
+                        (p.short_title || "").toLowerCase().includes(query) ||
+                        (p.field || "").toLowerCase().includes(query) ||
+                        (p.title || "").toLowerCase().includes(query)
+                    );
+                }
+                return items.map(p => ({
+                    id: p.id,
+                    type: p.sourceType,
+                    subject: p.subject || '未分類',
+                    field: p.field || (p.sourceType === 'lesson' ? '授業メモ' : '極意メモ'),
+                    title: p.short_title || 'メモ',
+                    category: p.sourceType === 'lesson' ? '授業メモ' : '掴んだ極意',
+                    targetText: getCleanTypingText(p.insight),
+                    hint: p.title ? p.title.slice(0, 100) : '',
+                    problemId: p.id,
+                    lessonId: p.lessonId,
+                    memoId: p.memoId
+                })).filter(item => item.targetText.length > 0);
+            }
+        }
+
+        function openTypingDrillModal(items, startIndex = 0) {
+            if (!items || items.length === 0) {
+                showToast("タイピング対象のカードが見つかりません。", "warning");
+                return;
+            }
+            typingQueue = items;
+            typingQueueIndex = Math.max(0, Math.min(startIndex, items.length - 1));
+            typingModal.style.display = "flex";
+            document.body.style.overflow = "hidden";
+            loadTypingCard(typingQueueIndex);
+        }
+
+        function closeTypingModal() {
+            if (typingTimerInterval) clearInterval(typingTimerInterval);
+            typingModal.style.display = "none";
+            document.body.style.overflow = "";
+        }
+
+        function updateTypingStatsDisplay() {
+            if (!cardStartTime) {
+                typingStatTimer.textContent = "00:00";
+                typingStatCpm.innerHTML = `0 <span style="font-size:0.72rem; font-weight:600;">打/分</span>`;
+                typingStatAccuracy.textContent = "100%";
+                return;
+            }
+            const elapsedMs = Date.now() - cardStartTime;
+            const elapsedSec = Math.floor(elapsedMs / 1000);
+            const mm = String(Math.floor(elapsedSec / 60)).padStart(2, "0");
+            const ss = String(elapsedSec % 60).padStart(2, "0");
+            typingStatTimer.textContent = `${mm}:${ss}`;
+
+            const typedLength = typingInput.value.length;
+            const minutes = elapsedMs / 60000;
+            const cpm = minutes > 0 ? Math.round(typedLength / minutes) : 0;
+            typingStatCpm.innerHTML = `${cpm} <span style="font-size:0.72rem; font-weight:600;">打/分</span>`;
+
+            const total = totalKeystrokes;
+            const accuracy = total > 0 ? Math.max(0, Math.round(((total - errorKeystrokes) / total) * 100)) : 100;
+            typingStatAccuracy.textContent = `${accuracy}%`;
+        }
+
+        function loadTypingCard(index) {
+            if (index < 0 || index >= typingQueue.length) return;
+            typingQueueIndex = index;
+            const item = typingQueue[index];
+
+            let typeLabel = "🧠 暗記写経";
+            if (item.type === "mnemonic") typeLabel = "🎴 語呂写経";
+            else if (item.type === "lesson" || item.type === "lesson_memo") typeLabel = "📖 授業メモ写経";
+            else if (item.type === "problem") typeLabel = "💡 極意写経";
+
+            typingBadgeType.textContent = typeLabel;
+            typingMetaSubject.textContent = `${item.subject} // ${item.field}`;
+            typingMetaTitle.textContent = `📘 ${item.title}${item.category ? ` [${item.category}]` : ''}`;
+            typingCurrentIdx.textContent = index + 1;
+            typingTotalCount.textContent = typingQueue.length;
+
+            if (item.hint && item.hint.trim() !== "") {
+                typingHintText.textContent = item.hint;
+                typingHintBox.style.display = "block";
+            } else {
+                typingHintBox.style.display = "none";
+            }
+
+            currentTargetText = item.targetText;
+            targetChars = Array.from(currentTargetText);
+
+            typingInput.value = "";
+            typingInput.disabled = false;
+            typingInput.style.borderColor = "var(--border-color)";
+            typingInputAlert.style.display = "none";
+            typingSuccessBanner.style.display = "none";
+            typingIsCompleted = false;
+            cardStartTime = null;
+            totalKeystrokes = 0;
+            errorKeystrokes = 0;
+
+            if (typingTimerInterval) clearInterval(typingTimerInterval);
+            updateTypingStatsDisplay();
+            renderTypingPreview("");
+
+            typingBtnPrev.disabled = index === 0;
+            typingBtnPrev.style.opacity = index === 0 ? "0.4" : "1";
+            typingBtnNext.textContent = index === typingQueue.length - 1 ? "完了 ▶" : "次へ [Enter] ▶";
+
+            setTimeout(() => {
+                typingInput.focus();
+            }, 80);
+        }
+
+        function renderTypingPreview(inputVal) {
+            const inputChars = Array.from(inputVal);
+            let matchedLen = 0;
+            let hasMismatch = false;
+
+            for (let i = 0; i < inputChars.length; i++) {
+                if (i >= targetChars.length) {
+                    hasMismatch = true;
+                    break;
+                }
+                const inChar = normalizeTypingChar(inputChars[i]);
+                const tarChar = normalizeTypingChar(targetChars[i]);
+                if (!hasMismatch && inChar === tarChar) {
+                    matchedLen++;
+                } else {
+                    hasMismatch = true;
+                }
+            }
+
+            typingCharCounter.textContent = `${matchedLen} / ${targetChars.length} 文字`;
+
+            let html = "";
+            for (let i = 0; i < targetChars.length; i++) {
+                const ch = targetChars[i];
+                const displayChar = ch === "\n" ? "↵<br>" : (ch === " " ? "&nbsp;" : escapeHtml(ch));
+
+                if (i < matchedLen) {
+                    html += `<span class="char-matched">${displayChar}</span>`;
+                } else if (i === matchedLen && hasMismatch) {
+                    html += `<span class="char-error">${displayChar}</span>`;
+                } else if (i === matchedLen && !hasMismatch) {
+                    html += `<span class="char-current">${displayChar}</span>`;
+                } else {
+                    html += `<span class="char-remaining">${displayChar}</span>`;
+                }
+            }
+
+            typingDisplayBox.innerHTML = html;
+
+            if (hasMismatch) {
+                typingInput.style.borderColor = "var(--error)";
+                typingInputAlert.style.display = "flex";
+            } else {
+                typingInputAlert.style.display = "none";
+                typingInput.style.borderColor = typingIsCompleted ? "var(--brand-primary)" : "var(--border-color)";
+            }
+
+            if (matchedLen === targetChars.length && !hasMismatch && !typingIsCompleted) {
+                typingIsCompleted = true;
+                if (typingTimerInterval) clearInterval(typingTimerInterval);
+                updateTypingStatsDisplay();
+                playTypingSound("complete");
+                typingSuccessBanner.style.display = "flex";
+                typingInput.style.borderColor = "var(--brand-primary)";
+                typingBannerNextBtn.focus();
+            }
+        }
+
+        function resetCurrentTypingCard() {
+            if (typingTimerInterval) clearInterval(typingTimerInterval);
+            loadTypingCard(typingQueueIndex);
+        }
+
+        function goToPrevTypingCard() {
+            if (typingQueueIndex > 0) {
+                loadTypingCard(typingQueueIndex - 1);
+            }
+        }
+
+        function goToNextTypingCard() {
+            if (typingQueueIndex < typingQueue.length - 1) {
+                loadTypingCard(typingQueueIndex + 1);
+            } else {
+                showToast("🎉 全カードの写経タイピング演習が完了しました！アウトプットお疲れ様でした！", "success", 4500);
+                closeTypingModal();
+            }
+        }
+
+        typingInput.addEventListener("input", (e) => {
+            if (!cardStartTime) {
+                cardStartTime = Date.now();
+                typingTimerInterval = setInterval(updateTypingStatsDisplay, 250);
+            }
+            totalKeystrokes++;
+            const inVal = typingInput.value;
+            const inLen = inVal.length;
+            if (inLen > 0) {
+                const lastIn = normalizeTypingChar(inVal[inLen - 1]);
+                const tar = normalizeTypingChar(targetChars[inLen - 1]);
+                if (lastIn !== tar) {
+                    errorKeystrokes++;
+                } else {
+                    playTypingSound("type");
+                }
+            }
+            renderTypingPreview(inVal);
+        });
+
+        typingInput.addEventListener("keydown", (e) => {
+            if (e.key === "Tab") {
+                e.preventDefault();
+                resetCurrentTypingCard();
+            } else if (e.key === "Enter" && typingIsCompleted) {
+                e.preventDefault();
+                goToNextTypingCard();
+            }
+        });
+
+        document.addEventListener("keydown", (e) => {
+            if (typingModal.style.display === "flex" && e.key === "Escape") {
+                closeTypingModal();
+            }
+        });
+
+        typingModalClose.onclick = closeTypingModal;
+        typingBtnReset.onclick = resetCurrentTypingCard;
+        typingBtnPrev.onclick = goToPrevTypingCard;
+        typingBtnNext.onclick = goToNextTypingCard;
+        typingBannerNextBtn.onclick = goToNextTypingCard;
+
+        if (btnStartTypingSession) {
+            btnStartTypingSession.onclick = () => {
+                const items = getActiveTypingItems();
+                if (items.length === 0) {
+                    showToast("タイピング対象のカードが0件です。絞り込みを解除してください。", "warning");
+                    return;
+                }
+                openTypingDrillModal(items, 0);
+            };
+        }
+
+        window.startTypingForCard = function(type, id1, id2, e) {
+            if (e) e.stopPropagation();
+            const allItems = getActiveTypingItems();
+            if (allItems.length === 0) {
+                showToast("タイピング対象のカードが見つかりません。", "error");
+                return;
+            }
+            let targetIndex = 0;
+            if (type === 'memorize' || type === 'lesson_memo') {
+                const found = allItems.findIndex(item => item.lessonId === id1 && item.memoId === id2);
+                if (found !== -1) targetIndex = found;
+            } else if (type === 'problem' || type === 'mnemonic') {
+                const found = allItems.findIndex(item => item.id === id1 || item.problemId === id1);
+                if (found !== -1) targetIndex = found;
+            }
+            openTypingDrillModal(allItems, targetIndex);
+        };
+
+        window.startTypingSession = function() {
+            if (btnStartTypingSession) btnStartTypingSession.click();
+        };
 
         onAuthStateChanged(auth, (user) => {
             if (!user) {

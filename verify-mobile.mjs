@@ -9,7 +9,7 @@ import fs from 'fs';
 
 const PORT = 8091;
 const BASE_DIR = 'c:\\Users\\kokih\\OneDrive\\デスクトップ\\大改造計画';
-const GEMINI_API_KEY = "AIzaSyAQ.Ab8RN6K6YOIylSci9RtSJogqe2o3PgyLMWF67sXD67jyoIldtQ";
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 
 const MIME_TYPES = {
     '.html': 'text/html; charset=utf-8',
