@@ -1,6 +1,27 @@
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import kuroshiroPkg from 'kuroshiro';
+import analyzerPkg from 'kuroshiro-analyzer-kuromoji';
+
+const Kuroshiro = kuroshiroPkg.default;
+const Analyzer = analyzerPkg;
+
+let kuroshiroInstance = null;
+let kuroshiroInitPromise = null;
+
+async function getKuroshiro() {
+  if (kuroshiroInstance) return kuroshiroInstance;
+  if (!kuroshiroInitPromise) {
+    kuroshiroInitPromise = (async () => {
+      const k = new Kuroshiro();
+      await k.init(new Analyzer());
+      kuroshiroInstance = k;
+      return k;
+    })();
+  }
+  return kuroshiroInitPromise;
+}
 
 try {
   process.loadEnvFile();
@@ -27,6 +48,33 @@ app.get('/api/ai/status', (req, res) => {
     hasGeminiKey: !!process.env.GEMINI_API_KEY,
     hasDeepseekKey: !!process.env.DEEPSEEK_API_KEY,
   });
+});
+
+// Typing Furigana & Reading endpoint (converts Kanji to Hiragana for Sushida-style typing)
+const furiganaCache = new Map();
+app.post('/api/typing/furigana', async (req, res) => {
+  try {
+    const { text } = req.body || {};
+    if (!text || typeof text !== 'string') {
+      return res.status(400).json({ error: 'Text is required', ok: false });
+    }
+    const cleanText = text.trim();
+    if (furiganaCache.has(cleanText)) {
+      return res.json({ hiragana: furiganaCache.get(cleanText), cached: true, ok: true });
+    }
+
+    const k = await getKuroshiro();
+    const hiragana = await k.convert(cleanText, { to: 'hiragana' });
+    furiganaCache.set(cleanText, hiragana);
+    if (furiganaCache.size > 2000) {
+      const oldestKey = furiganaCache.keys().next().value;
+      furiganaCache.delete(oldestKey);
+    }
+    return res.json({ hiragana, ok: true });
+  } catch (err) {
+    console.error('Typing furigana error:', err);
+    return res.status(500).json({ error: err.message, ok: false });
+  }
 });
 
 // Server-side Gemini API Proxy

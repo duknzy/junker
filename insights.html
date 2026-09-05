@@ -255,12 +255,123 @@
         .mnemonic-card:hover { border-color: var(--brand-border); transform: translateY(-2px); }
         .mnemonic-body { font-size: 1rem; font-weight: 700; color: var(--text-primary); line-height: 1.6; }
 
-        /* ⌨️ 写経タイピング用スタイル */
+        /* ⌨️ 寿司打風タイピング演習スタイル */
         .typing-display-area {
             user-select: none;
             letter-spacing: 0.02em;
             word-break: break-word;
         }
+        .sushida-board {
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+            padding: 0.2rem 0;
+        }
+        /* 1行目: 漢字・原文表示 */
+        .sushida-kanji-row {
+            font-size: 1.32rem;
+            font-weight: 800;
+            line-height: 1.8;
+            color: var(--text-primary);
+            letter-spacing: 0.03em;
+            word-break: break-word;
+        }
+        .kanji-matched {
+            color: #059669;
+            text-decoration: underline;
+            text-decoration-color: rgba(16, 185, 129, 0.45);
+            text-underline-offset: 4px;
+        }
+        .kanji-current {
+            color: #b45309;
+            background: rgba(245, 158, 11, 0.18);
+            border-radius: 4px;
+            padding: 0.1rem 0.25rem;
+        }
+        .kanji-remaining {
+            color: #64748b;
+        }
+
+        /* 2行目: ふりがな (Hiragana) */
+        .sushida-kana-row {
+            font-size: 1.05rem;
+            font-weight: 700;
+            line-height: 1.6;
+            letter-spacing: 0.05em;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px dashed var(--border-color);
+            word-break: break-word;
+        }
+        .kana-matched {
+            color: #059669;
+            background: rgba(16, 185, 129, 0.12);
+            border-radius: 3px;
+            padding: 0 0.15rem;
+        }
+        .kana-current {
+            color: #d97706;
+            background: rgba(245, 158, 11, 0.25);
+            border-radius: 3px;
+            padding: 0 0.2rem;
+            font-weight: 800;
+        }
+        .kana-remaining {
+            color: #94a3b8;
+        }
+
+        /* 3行目: ローマ字 (Romaji Guide - 寿司打打鍵部) */
+        .sushida-romaji-row {
+            font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 1.35rem;
+            font-weight: 800;
+            line-height: 1.6;
+            letter-spacing: 0.05em;
+            word-break: break-all;
+            padding: 0.8rem 1rem;
+            background: var(--bg-surface);
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-md);
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.03);
+            transition: border-color 0.15s ease, background-color 0.15s ease;
+        }
+        .sushida-romaji-row.active-focus {
+            border-color: var(--brand-primary);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+        }
+        .sushida-romaji-row.flash-error {
+            border-color: var(--error) !important;
+            background: rgba(239, 68, 68, 0.08) !important;
+            animation: sushida-shake 0.2s ease;
+        }
+        @keyframes sushida-shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-4px); }
+            75% { transform: translateX(4px); }
+        }
+
+        .romaji-char-matched {
+            color: #059669;
+            background: rgba(16, 185, 129, 0.16);
+            border-radius: 3px;
+            padding: 0 1px;
+        }
+        .romaji-char-current {
+            color: #0f172a;
+            background: rgba(245, 158, 11, 0.35);
+            border-bottom: 3px solid #f59e0b;
+            border-radius: 3px 3px 0 0;
+            padding: 0 2px;
+            animation: blink-typing-cursor 0.9s infinite;
+        }
+        .romaji-char-remaining {
+            color: #64748b;
+        }
+        .romaji-char-error {
+            color: #dc2626;
+            background: rgba(239, 68, 68, 0.25);
+            border-bottom: 3px solid #dc2626;
+        }
+
         .char-matched {
             color: #059669;
             background: rgba(16, 185, 129, 0.12);
@@ -425,13 +536,13 @@
         </main>
     </div>
 
-    <!-- ⌨️ 写経タイピング演習モーダル -->
+    <!-- ⌨️ 写経タイピング演習モーダル（寿司打スタイル） -->
     <div id="typing-drill-modal" class="modal-overlay" style="display:none; z-index:100050;">
-        <div class="modal-content" style="max-width: 840px; width: 95%; padding: 1.8rem; border-radius: var(--radius-xl); background: var(--bg-surface); position: relative;">
+        <div class="modal-content" style="max-width: 860px; width: 95%; padding: 1.8rem; border-radius: var(--radius-xl); background: var(--bg-surface); position: relative;">
             <!-- モーダルヘッダー -->
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-color); padding-bottom:0.8rem; margin-bottom:1.2rem; flex-wrap:wrap; gap:0.6rem;">
                 <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;">
-                    <span class="badge badge-physics" id="typing-badge-type" style="background:var(--brand-light); color:var(--brand-primary); border-color:var(--brand-border); font-size:0.75rem; font-weight:800;">⌨️ 写経タイピング</span>
+                    <span class="badge badge-physics" id="typing-badge-type" style="background:rgba(16, 185, 129, 0.12); color:#059669; border-color:rgba(16, 185, 129, 0.3); font-size:0.75rem; font-weight:800;">🍣 寿司打風タイピング</span>
                     <span id="typing-meta-subject" style="font-size:0.85rem; font-weight:800; color:var(--text-primary);">--</span>
                     <span id="typing-meta-title" style="font-size:0.82rem; color:var(--text-secondary); max-width:340px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">--</span>
                 </div>
@@ -444,15 +555,19 @@
                 </div>
             </div>
 
-            <!-- 見本テキスト表示ボックス -->
-            <div style="background:var(--bg-subtle); border:1px solid var(--border-color); border-radius:var(--radius-lg); padding:1.4rem; margin-bottom:1.2rem; position:relative;">
+            <!-- 見本テキスト＆タイピング表示ボックス -->
+            <div id="typing-board-container" style="background:var(--bg-subtle); border:1px solid var(--border-color); border-radius:var(--radius-lg); padding:1.4rem; margin-bottom:1rem; position:relative; cursor:text;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.8rem;">
-                    <span style="font-size:0.75rem; font-weight:800; color:var(--brand-primary); letter-spacing:0.04em;">📖 見本テキスト（手で打って記憶に刻み込む）</span>
-                    <span id="typing-char-counter" style="font-size:0.78rem; font-weight:700; color:var(--text-muted);">0 / 0 文字</span>
+                    <div style="display:flex; align-items:center; gap:0.5rem;">
+                        <span style="font-size:0.75rem; font-weight:800; color:var(--brand-primary); letter-spacing:0.04em;">🍣 寿司打式リアルタイムタイピング</span>
+                        <span id="typing-status-pill" style="font-size:0.7rem; font-weight:700; color:#059669; background:rgba(16, 185, 129, 0.1); padding:0.1rem 0.45rem; border-radius:var(--radius-full);">⌨️ 打鍵即着色（確定不要）</span>
+                    </div>
+                    <span id="typing-char-counter" style="font-size:0.78rem; font-weight:700; color:var(--text-muted);">0 / 0 モーラ</span>
                 </div>
 
-                <!-- リアルタイム文字判定プレビュー -->
-                <div id="typing-display-box" class="typing-display-area" style="font-size:1.22rem; font-weight:700; line-height:1.8; word-break:break-word; min-height:64px; font-family:var(--font-heading), 'Hiragino Sans', 'Meiryo', sans-serif;">
+                <!-- リアルタイム文字判定プレビュー（漢字・ひらがな・ローマ字の3層表示） -->
+                <div id="typing-display-box" class="typing-display-area" style="min-height:90px;">
+                    <!-- JSで動的生成 -->
                 </div>
 
                 <!-- 補足・ヒント（あれば表示） -->
@@ -461,11 +576,12 @@
                 </div>
             </div>
 
-            <!-- 入力エリア -->
-            <div style="margin-bottom:1.2rem; position:relative;">
-                <textarea id="typing-input" class="search-input" rows="3" placeholder="ここに入力してください（日本語IME変換対応・括弧や記号の全角半角は自動許容）..." style="width:100%; box-sizing:border-box; font-size:1.15rem; font-weight:600; line-height:1.7; padding:0.9rem 1.1rem; border-radius:var(--radius-md); background:var(--bg-surface); border:2px solid var(--border-color); transition:border-color 0.15s, box-shadow 0.15s; resize:none;"></textarea>
-                <div id="typing-input-alert" style="display:none; margin-top:0.4rem; font-size:0.8rem; font-weight:700; color:var(--error); align-items:center; gap:0.35rem;">
-                    <span>⚠️ 入力が見本と一致していません（Backspaceキーで戻って修正してください）</span>
+            <!-- キーボード入力キャプチャ部（クリックまたは直接キー押下で常時反応） -->
+            <div style="margin-bottom:1rem; position:relative;">
+                <input id="typing-input" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="キーボードをそのまま打ってください（ローマ字・直接入力対応 / 漢字変換は不要です）" style="width:100%; box-sizing:border-box; font-size:0.95rem; font-weight:600; padding:0.65rem 1rem; border-radius:var(--radius-md); background:var(--bg-surface); border:1.5px solid var(--border-color); transition:border-color 0.15s, box-shadow 0.15s;" />
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:0.35rem; font-size:0.75rem; color:var(--text-muted);">
+                    <span>💡 <strong>寿司打スタイル:</strong> キーを押した瞬間に文字の色が変わります。変換キーや確定Enterを押す必要はありません。</span>
+                    <span id="typing-miss-alert" style="display:none; color:var(--error); font-weight:700;">⚠️ キーが違います</span>
                 </div>
             </div>
 
@@ -495,17 +611,17 @@
             </div>
 
             <!-- 写経完了バナー -->
-            <div id="typing-success-banner" style="display:none; background:var(--brand-light); border:1.5px solid var(--brand-border); border-radius:var(--radius-lg); padding:1rem 1.4rem; align-items:center; justify-content:space-between; animation:modal-pop 0.25s ease;">
+            <div id="typing-success-banner" style="display:none; background:rgba(16, 185, 129, 0.1); border:1.5px solid #059669; border-radius:var(--radius-lg); padding:1rem 1.4rem; align-items:center; justify-content:space-between; animation:modal-pop 0.25s ease;">
                 <div>
-                    <div style="font-weight:800; color:var(--brand-primary); font-size:1.05rem; display:flex; align-items:center; gap:0.4rem;">
-                        <span>🎉 写経コンプリート！</span>
+                    <div style="font-weight:800; color:#059669; font-size:1.05rem; display:flex; align-items:center; gap:0.4rem;">
+                        <span>🎉 寿司打クリア！</span>
                     </div>
                     <div style="font-size:0.8rem; color:var(--text-secondary); margin-top:0.25rem;">
-                        能動的にアウトプットしました！Enterキーを押すと次のカードに進みます。
+                        全文字の打鍵が完了しました！Enterキーを押すと次の問題に進みます。
                     </div>
                 </div>
-                <button type="button" class="flora-btn flora-btn-primary" id="typing-banner-next-btn" style="background:var(--brand-primary); color:#fff; font-weight:800; padding:0.55rem 1.25rem; border-radius:var(--radius-md); border:none; cursor:pointer; box-shadow:var(--shadow-xs);">
-                    次のカードへ [Enter] ➔
+                <button type="button" class="flora-btn flora-btn-primary" id="typing-banner-next-btn" style="background:#059669; color:#fff; font-weight:800; padding:0.55rem 1.25rem; border-radius:var(--radius-md); border:none; cursor:pointer; box-shadow:var(--shadow-xs);">
+                    次の問題へ [Enter] ➔
                 </button>
             </div>
         </div>
@@ -518,6 +634,7 @@
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
         import { getDatabase, ref, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
         import { showToast } from "./api-key-manager.js?v=3.5";
+        import { SushidaGame } from "./sushida-engine.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB55MdhpjJizQaLEdRu-XhBVJ4PqrHsAyY",
@@ -1649,12 +1766,36 @@
         let typingQueue = [];
         let typingQueueIndex = 0;
         let currentTargetText = "";
-        let targetChars = [];
+        let currentSushidaGame = null;
         let cardStartTime = null;
         let typingTimerInterval = null;
         let typingIsCompleted = false;
         let totalKeystrokes = 0;
         let errorKeystrokes = 0;
+
+        const furiganaCache = new Map();
+
+        async function fetchFurigana(text) {
+            if (!text) return "";
+            if (furiganaCache.has(text)) return furiganaCache.get(text);
+            try {
+                const res = await fetch("/api/typing/furigana", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ text })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.furigana) {
+                        furiganaCache.set(text, data.furigana);
+                        return data.furigana;
+                    }
+                }
+            } catch (e) {
+                console.warn("Furigana fetch warning:", e);
+            }
+            return text;
+        }
 
         const typingModal = document.getElementById("typing-drill-modal");
         const typingBadgeType = document.getElementById("typing-badge-type");
@@ -1667,7 +1808,7 @@
         const typingHintBox = document.getElementById("typing-hint-box");
         const typingHintText = document.getElementById("typing-hint-text");
         const typingInput = document.getElementById("typing-input");
-        const typingInputAlert = document.getElementById("typing-input-alert");
+        const typingMissAlert = document.getElementById("typing-miss-alert");
         const typingStatCpm = document.getElementById("typing-stat-cpm");
         const typingStatAccuracy = document.getElementById("typing-stat-accuracy");
         const typingStatTimer = document.getElementById("typing-stat-timer");
@@ -1679,6 +1820,13 @@
         const typingBtnNext = document.getElementById("typing-btn-next");
         const typingBannerNextBtn = document.getElementById("typing-banner-next-btn");
         const btnStartTypingSession = document.getElementById("btn-start-typing-session");
+        const typingBoardContainer = document.getElementById("typing-board-container");
+
+        if (typingBoardContainer) {
+            typingBoardContainer.onclick = () => {
+                if (typingInput) typingInput.focus();
+            };
+        }
 
         if (typingSoundToggle) {
             typingSoundToggle.textContent = soundEnabled ? "🔊 効果音ON" : "🔇 効果音OFF";
@@ -1799,17 +1947,17 @@
             const ss = String(elapsedSec % 60).padStart(2, "0");
             typingStatTimer.textContent = `${mm}:${ss}`;
 
-            const typedLength = typingInput.value.length;
+            const typedKeys = currentSushidaGame ? currentSushidaGame.totalKeys : totalKeystrokes;
             const minutes = elapsedMs / 60000;
-            const cpm = minutes > 0 ? Math.round(typedLength / minutes) : 0;
+            const cpm = minutes > 0 ? Math.round(typedKeys / minutes) : 0;
             typingStatCpm.innerHTML = `${cpm} <span style="font-size:0.72rem; font-weight:600;">打/分</span>`;
 
-            const total = totalKeystrokes;
-            const accuracy = total > 0 ? Math.max(0, Math.round(((total - errorKeystrokes) / total) * 100)) : 100;
+            const errs = currentSushidaGame ? currentSushidaGame.errorKeys : errorKeystrokes;
+            const accuracy = typedKeys > 0 ? Math.max(0, Math.round(((typedKeys - errs) / typedKeys) * 100)) : 100;
             typingStatAccuracy.textContent = `${accuracy}%`;
         }
 
-        function loadTypingCard(index) {
+        async function loadTypingCard(index) {
             if (index < 0 || index >= typingQueue.length) return;
             typingQueueIndex = index;
             const item = typingQueue[index];
@@ -1833,12 +1981,10 @@
             }
 
             currentTargetText = item.targetText;
-            targetChars = Array.from(currentTargetText);
-
             typingInput.value = "";
             typingInput.disabled = false;
             typingInput.style.borderColor = "var(--border-color)";
-            typingInputAlert.style.display = "none";
+            if (typingMissAlert) typingMissAlert.style.display = "none";
             typingSuccessBanner.style.display = "none";
             typingIsCompleted = false;
             cardStartTime = null;
@@ -1847,72 +1993,132 @@
 
             if (typingTimerInterval) clearInterval(typingTimerInterval);
             updateTypingStatsDisplay();
-            renderTypingPreview("");
+
+            typingDisplayBox.innerHTML = `
+                <div style="text-align:center; padding:1.5rem 0; color:var(--text-muted); font-size:1.05rem;">
+                    🍣 寿司打データを準備中...
+                </div>
+            `;
+
+            const furigana = await fetchFurigana(currentTargetText);
+            if (typingQueueIndex !== index) return;
+
+            currentSushidaGame = new SushidaGame(currentTargetText, furigana);
+            renderSushidaUI();
 
             typingBtnPrev.disabled = index === 0;
             typingBtnPrev.style.opacity = index === 0 ? "0.4" : "1";
             typingBtnNext.textContent = index === typingQueue.length - 1 ? "完了 ▶" : "次へ [Enter] ▶";
 
             setTimeout(() => {
-                typingInput.focus();
+                if (typingInput) typingInput.focus();
             }, 80);
         }
 
-        function renderTypingPreview(inputVal) {
-            const inputChars = Array.from(inputVal);
-            let matchedLen = 0;
-            let hasMismatch = false;
+        function renderSushidaUI() {
+            if (!currentSushidaGame) return;
+            const state = currentSushidaGame.getDisplayState();
 
-            for (let i = 0; i < inputChars.length; i++) {
-                if (i >= targetChars.length) {
-                    hasMismatch = true;
-                    break;
-                }
-                const inChar = normalizeTypingChar(inputChars[i]);
-                const tarChar = normalizeTypingChar(targetChars[i]);
-                if (!hasMismatch && inChar === tarChar) {
-                    matchedLen++;
+            typingCharCounter.textContent = `${state.currentMoraIdx} / ${state.totalMoras} モーラ`;
+
+            // 1. 原文（漢字）行のハイライト
+            const progressRatio = state.totalMoras > 0 ? (state.currentMoraIdx / state.totalMoras) : 0;
+            const originalChars = Array.from(currentTargetText);
+            const matchedOriginalCount = state.isCompleted ? originalChars.length : Math.floor(originalChars.length * progressRatio);
+
+            let kanjiHtml = "";
+            for (let i = 0; i < originalChars.length; i++) {
+                const ch = originalChars[i];
+                const disp = ch === "\n" ? "↵<br>" : (ch === " " ? "&nbsp;" : escapeHtml(ch));
+                if (i < matchedOriginalCount) {
+                    kanjiHtml += `<span class="kanji-matched">${disp}</span>`;
+                } else if (i === matchedOriginalCount && !state.isCompleted) {
+                    kanjiHtml += `<span class="kanji-current">${disp}</span>`;
                 } else {
-                    hasMismatch = true;
+                    kanjiHtml += `<span class="kanji-remaining">${disp}</span>`;
                 }
             }
 
-            typingCharCounter.textContent = `${matchedLen} / ${targetChars.length} 文字`;
-
-            let html = "";
-            for (let i = 0; i < targetChars.length; i++) {
-                const ch = targetChars[i];
-                const displayChar = ch === "\n" ? "↵<br>" : (ch === " " ? "&nbsp;" : escapeHtml(ch));
-
-                if (i < matchedLen) {
-                    html += `<span class="char-matched">${displayChar}</span>`;
-                } else if (i === matchedLen && hasMismatch) {
-                    html += `<span class="char-error">${displayChar}</span>`;
-                } else if (i === matchedLen && !hasMismatch) {
-                    html += `<span class="char-current">${displayChar}</span>`;
+            // 2. ふりがな（ひらがな）行のハイライト
+            let kanaHtml = "";
+            state.kanaParts.forEach((part) => {
+                const disp = part.kana === " " ? "&nbsp;" : escapeHtml(part.kana);
+                if (part.state === 'matched') {
+                    kanaHtml += `<span class="kana-matched">${disp}</span>`;
+                } else if (part.state === 'current' || part.state === 'in_progress') {
+                    kanaHtml += `<span class="kana-current">${disp}</span>`;
                 } else {
-                    html += `<span class="char-remaining">${displayChar}</span>`;
+                    kanaHtml += `<span class="kana-remaining">${disp}</span>`;
                 }
-            }
+            });
 
-            typingDisplayBox.innerHTML = html;
+            // 3. ローマ字（寿司打リアルタイム打鍵部）
+            let romajiHtml = "";
+            state.romajiParts.forEach((part) => {
+                part.chars.forEach((c) => {
+                    const disp = c.char === " " ? "&nbsp;" : escapeHtml(c.char);
+                    if (c.state === 'matched') {
+                        romajiHtml += `<span class="romaji-char-matched">${disp}</span>`;
+                    } else if (c.state === 'current') {
+                        romajiHtml += `<span class="romaji-char-current">${disp}</span>`;
+                    } else {
+                        romajiHtml += `<span class="romaji-char-remaining">${disp}</span>`;
+                    }
+                });
+            });
 
-            if (hasMismatch) {
-                typingInput.style.borderColor = "var(--error)";
-                typingInputAlert.style.display = "flex";
-            } else {
-                typingInputAlert.style.display = "none";
-                typingInput.style.borderColor = typingIsCompleted ? "var(--brand-primary)" : "var(--border-color)";
-            }
+            typingDisplayBox.innerHTML = `
+                <div class="sushida-board">
+                    <div class="sushida-kanji-row">${kanjiHtml}</div>
+                    <div class="sushida-kana-row">${kanaHtml}</div>
+                    <div id="sushida-romaji-box" class="sushida-romaji-row active-focus">${romajiHtml}</div>
+                </div>
+            `;
 
-            if (matchedLen === targetChars.length && !hasMismatch && !typingIsCompleted) {
+            if (state.isCompleted && !typingIsCompleted) {
                 typingIsCompleted = true;
                 if (typingTimerInterval) clearInterval(typingTimerInterval);
                 updateTypingStatsDisplay();
                 playTypingSound("complete");
                 typingSuccessBanner.style.display = "flex";
-                typingInput.style.borderColor = "var(--brand-primary)";
                 typingBannerNextBtn.focus();
+            }
+        }
+
+        function triggerTypingError() {
+            errorKeystrokes++;
+            const romajiBox = document.getElementById("sushida-romaji-box");
+            if (romajiBox) {
+                romajiBox.classList.add("flash-error");
+                setTimeout(() => {
+                    romajiBox.classList.remove("flash-error");
+                }, 220);
+            }
+            if (typingMissAlert) {
+                typingMissAlert.style.display = "inline";
+                clearTimeout(typingMissAlert._timeout);
+                typingMissAlert._timeout = setTimeout(() => {
+                    typingMissAlert.style.display = "none";
+                }, 1200);
+            }
+            if (soundEnabled) {
+                try {
+                    const ctx = getAudioContext();
+                    if (ctx) {
+                        const now = ctx.currentTime;
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = "sawtooth";
+                        osc.frequency.setValueAtTime(260, now);
+                        osc.frequency.linearRampToValueAtTime(140, now + 0.08);
+                        gain.gain.setValueAtTime(0.06, now);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(now);
+                        osc.stop(now + 0.08);
+                    }
+                } catch(e) {}
             }
         }
 
@@ -1936,39 +2142,94 @@
             }
         }
 
-        typingInput.addEventListener("input", (e) => {
+        // キー打鍵ハンドラー（即座に判定・着色）
+        function handleFeedKey(key) {
+            if (!currentSushidaGame || typingIsCompleted) return;
+
             if (!cardStartTime) {
                 cardStartTime = Date.now();
                 typingTimerInterval = setInterval(updateTypingStatsDisplay, 250);
             }
-            totalKeystrokes++;
-            const inVal = typingInput.value;
-            const inLen = inVal.length;
-            if (inLen > 0) {
-                const lastIn = normalizeTypingChar(inVal[inLen - 1]);
-                const tar = normalizeTypingChar(targetChars[inLen - 1]);
-                if (lastIn !== tar) {
-                    errorKeystrokes++;
-                } else {
-                    playTypingSound("type");
-                }
-            }
-            renderTypingPreview(inVal);
-        });
 
+            const res = currentSushidaGame.feedKey(key);
+            if (res.status === "char_matched" || res.status === "mora_completed") {
+                playTypingSound("type");
+                renderSushidaUI();
+                updateTypingStatsDisplay();
+            } else if (res.status === "completed") {
+                renderSushidaUI();
+            } else if (res.status === "error") {
+                triggerTypingError();
+                updateTypingStatsDisplay();
+            }
+        }
+
+        // IME入力または直接キー入力の双方に対応
         typingInput.addEventListener("keydown", (e) => {
             if (e.key === "Tab") {
                 e.preventDefault();
                 resetCurrentTypingCard();
-            } else if (e.key === "Enter" && typingIsCompleted) {
+                return;
+            }
+            if (e.key === "Enter") {
+                if (typingIsCompleted) {
+                    e.preventDefault();
+                    goToNextTypingCard();
+                    return;
+                }
+            }
+            if (e.key === "Backspace") {
+                if (currentSushidaGame && !typingIsCompleted) {
+                    e.preventDefault();
+                    currentSushidaGame.backspace();
+                    renderSushidaUI();
+                    return;
+                }
+            }
+            // 英数字・記号・スペースなど単一キー
+            if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
                 e.preventDefault();
-                goToNextTypingCard();
+                handleFeedKey(e.key);
+            }
+        });
+
+        // IME経由で文字が入ってきた場合でも、確定を待たずに即時マッチ
+        typingInput.addEventListener("input", (e) => {
+            const val = typingInput.value;
+            if (!val) return;
+            typingInput.value = "";
+            if (!currentSushidaGame || typingIsCompleted) return;
+
+            if (!cardStartTime) {
+                cardStartTime = Date.now();
+                typingTimerInterval = setInterval(updateTypingStatsDisplay, 250);
+            }
+
+            const res = currentSushidaGame.feedKana(val);
+            if (res.status === "completed") {
+                renderSushidaUI();
+            } else if (res.status === "char_matched") {
+                playTypingSound("type");
+                renderSushidaUI();
+                updateTypingStatsDisplay();
+            } else if (res.status === "error") {
+                triggerTypingError();
+                updateTypingStatsDisplay();
             }
         });
 
         document.addEventListener("keydown", (e) => {
-            if (typingModal.style.display === "flex" && e.key === "Escape") {
-                closeTypingModal();
+            if (typingModal.style.display === "flex") {
+                if (e.key === "Escape") {
+                    closeTypingModal();
+                } else if (document.activeElement !== typingInput && !e.ctrlKey && !e.metaKey && !e.altKey) {
+                    // モーダル表示中にどこにフォーカスがあっても打鍵をキャプチャ
+                    if (e.key.length === 1) {
+                        e.preventDefault();
+                        if (typingInput) typingInput.focus();
+                        handleFeedKey(e.key);
+                    }
+                }
             }
         });
 
