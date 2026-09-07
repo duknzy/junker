@@ -161,6 +161,64 @@
             from { opacity: 0; transform: translateY(12px); }
             to { opacity: 1; transform: translateY(0); }
         }
+
+        /* モバイル用フラッシュカードモーダル */
+        .m-fc-modal {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.75);
+            z-index: 100050;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 14px;
+            backdrop-filter: blur(6px);
+        }
+        .m-fc-content {
+            background: var(--bg-surface);
+            border-radius: 18px;
+            width: 100%;
+            max-width: 460px;
+            padding: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--border-color);
+        }
+        .m-fc-stage {
+            perspective: 1000px;
+            min-height: 250px;
+            margin: 12px 0;
+            cursor: pointer;
+        }
+        .m-fc-inner {
+            position: relative;
+            width: 100%;
+            min-height: 250px;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-style: preserve-3d;
+        }
+        .m-fc-stage.flipped .m-fc-inner {
+            transform: rotateY(180deg);
+        }
+        .m-fc-face {
+            position: absolute;
+            inset: 0;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            border-radius: 14px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 16px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-subtle);
+        }
+        .m-fc-back {
+            background: rgba(16, 185, 129, 0.06);
+            border-color: rgba(16, 185, 129, 0.35);
+            transform: rotateY(180deg);
+        }
     </style>
 </head>
 <body>
@@ -189,10 +247,108 @@
         <!-- 教科フィルター -->
         <div class="m-filter-chips" id="insight-subject-chips"></div>
 
+        <!-- アクションバー -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin:0.6rem 0 0.4rem 0;">
+            <span id="m-insight-count" style="font-size:0.75rem; color:var(--text-secondary); font-weight:700;">--</span>
+            <button type="button" id="m-start-flashcard-btn" class="tactile-btn" style="background:linear-gradient(135deg, #10B981, #059669); color:#fff; font-size:0.78rem; font-weight:800; padding:0.35rem 0.85rem; border-radius:9999px; border:none; display:flex; align-items:center; gap:0.3rem; box-shadow:0 2px 6px rgba(16,185,129,0.3); cursor:pointer;">
+                🎴 フラッシュカード演習
+            </button>
+        </div>
+
         <!-- 一覧 -->
-        <div id="insight-list" style="margin-top:0.6rem;"></div>
+        <div id="insight-list" style="margin-top:0.4rem;"></div>
 
     </main>
+
+    <!-- 🎴 モバイル用フラッシュカード復習モーダル -->
+    <div id="m-flashcard-modal" class="m-fc-modal" style="display:none;">
+        <div class="m-fc-content">
+            <!-- ヘッダー -->
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-color); padding-bottom:0.5rem; margin-bottom:0.6rem;">
+                <div style="display:flex; align-items:center; gap:0.4rem;">
+                    <span style="background:rgba(16,185,129,0.15); color:#059669; font-size:0.72rem; font-weight:800; padding:0.15rem 0.5rem; border-radius:9999px;">🎴 カード</span>
+                    <span id="m-fc-meta-subject" style="font-size:0.8rem; font-weight:800; color:var(--text-primary);">公共</span>
+                </div>
+                <button type="button" id="m-fc-modal-close" style="background:none; border:none; font-size:1.4rem; color:var(--text-muted); cursor:pointer; line-height:1;">×</button>
+            </div>
+
+            <!-- 出題エリア -->
+            <div id="m-fc-active-area">
+                <!-- プログレス -->
+                <div style="display:flex; justify-content:space-between; font-size:0.72rem; font-weight:700; color:var(--text-secondary); margin-bottom:0.25rem;">
+                    <span id="m-fc-progress-text">1 / 10</span>
+                    <div>
+                        <span style="color:#059669;">✅ <span id="m-fc-count-mastered">0</span></span>
+                        <span style="color:#D97706; margin-left:0.5rem;">🔄 <span id="m-fc-count-retry">0</span></span>
+                    </div>
+                </div>
+                <div style="width:100%; height:4px; background:var(--bg-subtle); border-radius:9999px; overflow:hidden; margin-bottom:0.6rem;">
+                    <div id="m-fc-progress-bar" style="width:0%; height:100%; background:#10B981; transition:width 0.2s;"></div>
+                </div>
+
+                <!-- カードステージ -->
+                <div class="m-fc-stage" id="m-fc-stage">
+                    <div class="m-fc-inner" id="m-fc-inner">
+                        <!-- 表面 -->
+                        <div class="m-fc-face m-fc-front">
+                            <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.72rem;">
+                                <span style="font-weight:700; color:var(--brand-primary);" id="m-fc-front-cat">重要事項</span>
+                                <span style="color:var(--text-muted);" id="m-fc-front-source">単元</span>
+                            </div>
+                            <div style="margin:auto 0; text-align:center;">
+                                <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:0.4rem;">Q. 定義・要点を思い出そう</div>
+                                <div id="m-fc-front-term" style="font-size:1.15rem; font-weight:800; color:var(--text-primary); line-height:1.4;">--</div>
+                            </div>
+                            <div style="text-align:center;">
+                                <button type="button" class="tactile-btn" id="m-fc-btn-flip" style="font-size:0.75rem; padding:0.35rem 1rem; border-radius:9999px; background:var(--brand-primary); color:#fff; border:none; width:100%;">
+                                    答えを見る ▶
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 裏面 -->
+                        <div class="m-fc-face m-fc-back">
+                            <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.72rem;">
+                                <span style="font-weight:800; color:#059669;">💡 解答・ポイント</span>
+                                <span style="color:var(--text-muted);" id="m-fc-back-source">単元</span>
+                            </div>
+                            <div style="margin:auto 0; text-align:left; overflow-y:auto; max-height:130px; font-size:0.88rem; line-height:1.5; color:var(--text-primary);" id="m-fc-back-answer">
+                                --
+                            </div>
+                            <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
+                                <button type="button" id="m-fc-btn-retry" class="tactile-btn" style="flex:1; background:rgba(217,119,6,0.12); color:#D97706; border:1px solid rgba(217,119,6,0.3); font-weight:800; font-size:0.75rem; padding:0.45rem; border-radius:8px;">
+                                    🔄 もう一度
+                                </button>
+                                <button type="button" id="m-fc-btn-mastered" class="tactile-btn" style="flex:1; background:#059669; color:#fff; border:none; font-weight:800; font-size:0.75rem; padding:0.45rem; border-radius:8px;">
+                                    ✅ 覚えた！
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 完了画面 -->
+            <div id="m-fc-finish-area" style="display:none; text-align:center; padding:1rem 0;">
+                <div style="font-size:2.5rem; margin-bottom:0.4rem;">🎉</div>
+                <div style="font-weight:800; font-size:1.1rem; color:var(--text-primary); margin-bottom:0.3rem;">演習完了！</div>
+                <div style="font-size:0.78rem; color:var(--text-secondary); margin-bottom:1rem;">全カードの復習が完了しました。</div>
+                <div style="display:flex; justify-content:center; gap:0.8rem; margin-bottom:1.2rem;">
+                    <div style="background:var(--bg-subtle); padding:0.5rem 1rem; border-radius:10px; border:1px solid var(--border-color);">
+                        <div style="font-size:0.68rem; color:var(--text-muted);">習得カード</div>
+                        <div style="font-size:1.2rem; font-weight:800; color:#059669;" id="m-fc-stat-total">0</div>
+                    </div>
+                    <div style="background:var(--bg-subtle); padding:0.5rem 1rem; border-radius:10px; border:1px solid var(--border-color);">
+                        <div style="font-size:0.68rem; color:var(--text-muted);">復習回数</div>
+                        <div style="font-size:1.2rem; font-weight:800; color:#D97706;" id="m-fc-stat-retries">0</div>
+                    </div>
+                </div>
+                <button type="button" id="m-fc-btn-finish-close" class="tactile-btn" style="background:var(--brand-primary); color:#fff; border:none; padding:0.5rem 1.5rem; border-radius:9999px; font-weight:800; font-size:0.8rem;">
+                    完了して閉じる
+                </button>
+            </div>
+        </div>
+    </div>
 
     <div id="m-toast-container"></div>
 
@@ -276,6 +432,14 @@
 
         function renderActiveView() {
             renderSubjectChips();
+            const countEl = document.getElementById("m-insight-count");
+            let items = getActiveItems();
+            if (currentSubject !== "ALL") items = items.filter(p => p.subject === currentSubject);
+            if (searchQuery) {
+                items = items.filter(p => [p.content || p.insight || p.text, p.category, p.note, p.short_title, p.subject].join(" ").toLowerCase().includes(searchQuery));
+            }
+            if (countEl) countEl.textContent = `${items.length}件`;
+
             if (currentTab === "insights") {
                 renderProblemsInsights();
             } else if (currentTab === "memorize") {
@@ -283,6 +447,30 @@
             } else if (currentTab === "lessons") {
                 renderLessonMemosList();
             }
+        }
+
+        function detectSubjectFromLesson(lesson) {
+            if (!lesson) return "未分類";
+            if (lesson.subject && typeof lesson.subject === "string" && lesson.subject.trim() !== "") {
+                const s = lesson.subject.trim();
+                if (s !== "未分類") return s;
+            }
+            const text = ((lesson.title || "") + " " + (lesson.topicKey || "") + " " + (lesson.topic || "")).toLowerCase();
+            if (/公共/i.test(text)) return "公共";
+            if (/公民|政治|経済|憲法|倫理|現代社会/i.test(text)) return "公民";
+            if (/数学|微分|積分|ベクトル|数列|三角関数|確率/i.test(text)) return "数学";
+            if (/物理|力学|電磁気|波動/i.test(text)) return "物理";
+            if (/化学|mol|酸化|還元|酸|塩基/i.test(text)) return "化学";
+            if (/生物|遺伝|細胞|dna|光合成|生態系/i.test(text)) return "生物";
+            if (/情報|プログラミング|python|アルゴリズム/i.test(text)) return "情報";
+            if (/地理|気候|ケッペン/i.test(text)) return "地理";
+            if (/日本史/i.test(text)) return "日本史";
+            if (/世界史|歴史/i.test(text)) return "世界史";
+            if (/英語|文法/i.test(text)) return "英語";
+            if (/現代文|古文|漢文|国語/i.test(text)) return "国語";
+            if (/地学|地層|天体|気象|プレート/i.test(text)) return "地学";
+            if (/理科/i.test(text)) return "理科";
+            return "未分類";
         }
 
         function getActiveItems() {
@@ -294,13 +482,14 @@
                 const list = [];
                 Object.entries(allLessons).forEach(([lessonId, l]) => {
                     if (l && Array.isArray(l.memorizationPoints)) {
+                        const subj = detectSubjectFromLesson(l);
                         l.memorizationPoints.forEach((mp, idx) => {
                             const mpId = mp.id || `mp_${idx}`;
                             list.push({
                                 id: `${lessonId}:${mpId}`,
                                 lessonId,
                                 memoId: mpId,
-                                subject: l.subject || "未分類",
+                                subject: subj,
                                 short_title: l.title || "授業",
                                 category: mp.category || "重要事項",
                                 content: mp.content || "",
@@ -316,13 +505,14 @@
                 const list = [];
                 Object.entries(allLessons).forEach(([lessonId, l]) => {
                     if (l && Array.isArray(l.lessonMemos)) {
+                        const subj = detectSubjectFromLesson(l);
                         l.lessonMemos.forEach((m) => {
                             if (m && m.text && m.text.trim()) {
                                 list.push({
                                     id: `${lessonId}:${m.id}`,
                                     lessonId,
                                     memoId: m.id,
-                                    subject: l.subject || "未分類",
+                                    subject: subj,
                                     short_title: l.title || "授業",
                                     partTitle: m.partTitle || "",
                                     partIndex: m.partIndex,
@@ -716,6 +906,183 @@
                 showMToast("削除に失敗しました");
             }
         };
+
+        /* ==========================================================
+           🎴 モバイル用フラッシュカード復習
+           ========================================================== */
+        const mStartFlashcardBtn = document.getElementById("m-start-flashcard-btn");
+        const mFcModal = document.getElementById("m-flashcard-modal");
+        const mFcModalClose = document.getElementById("m-fc-modal-close");
+        const mFcActiveArea = document.getElementById("m-fc-active-area");
+        const mFcFinishArea = document.getElementById("m-fc-finish-area");
+        const mFcStage = document.getElementById("m-fc-stage");
+        const mFcProgressText = document.getElementById("m-fc-progress-text");
+        const mFcProgressBar = document.getElementById("m-fc-progress-bar");
+        const mFcCountMastered = document.getElementById("m-fc-count-mastered");
+        const mFcCountRetry = document.getElementById("m-fc-count-retry");
+        const mFcMetaSubject = document.getElementById("m-fc-meta-subject");
+        const mFcFrontCat = document.getElementById("m-fc-front-cat");
+        const mFcFrontSource = document.getElementById("m-fc-front-source");
+        const mFcFrontTerm = document.getElementById("m-fc-front-term");
+        const mFcBtnFlip = document.getElementById("m-fc-btn-flip");
+        const mFcBackSource = document.getElementById("m-fc-back-source");
+        const mFcBackAnswer = document.getElementById("m-fc-back-answer");
+        const mFcBtnRetry = document.getElementById("m-fc-btn-retry");
+        const mFcBtnMastered = document.getElementById("m-fc-btn-mastered");
+        const mFcBtnFinishClose = document.getElementById("m-fc-btn-finish-close");
+        const mFcStatTotal = document.getElementById("m-fc-stat-total");
+        const mFcStatRetries = document.getElementById("m-fc-stat-retries");
+
+        let mFcQueue = [];
+        let mFcCurrentCard = null;
+        let mFcMasteredCount = 0;
+        let mFcRetryCount = 0;
+        let mFcTotalInitial = 0;
+        let mFcIsFlipped = false;
+
+        function getMobileFlashcardPool() {
+            let items = getActiveItems();
+            if (currentSubject !== "ALL") items = items.filter(p => p.subject === currentSubject);
+            if (searchQuery) {
+                items = items.filter(p => [p.content || p.insight || p.text, p.category, p.note, p.short_title, p.subject].join(" ").toLowerCase().includes(searchQuery));
+            }
+            return items.map(item => {
+                if (item.type === 'memorize') {
+                    const content = (item.content || "").trim();
+                    let term = "";
+                    let definition = content;
+                    const colonIdx = content.indexOf("：") !== -1 ? content.indexOf("：") : content.indexOf(":");
+                    if (colonIdx > 0 && colonIdx < 40) {
+                        term = content.slice(0, colonIdx).trim();
+                        definition = content.slice(colonIdx + 1).trim();
+                    } else {
+                        term = item.category ? `【${item.category}】` : (item.short_title || "暗記事項");
+                        definition = content;
+                    }
+                    if (item.note) definition += `\n(💡 ${item.note})`;
+                    return {
+                        subject: item.subject || "公共",
+                        category: item.category || "重要用語",
+                        sourceTitle: item.short_title || "授業暗記",
+                        term: term,
+                        answer: definition
+                    };
+                } else if (item.type === 'problem') {
+                    return {
+                        subject: item.subject || "未分類",
+                        category: item.field || "解法の極意",
+                        sourceTitle: item.short_title || "演習問題",
+                        term: item.short_title || item.field || "問題",
+                        answer: item.insight || ""
+                    };
+                } else if (item.type === 'lessonmemo') {
+                    return {
+                        subject: item.subject || "未分類",
+                        category: "授業メモ",
+                        sourceTitle: item.short_title || "授業",
+                        term: [item.short_title, item.partTitle].filter(Boolean).join(" / ") || "授業メモ",
+                        answer: item.text || ""
+                    };
+                }
+                return null;
+            }).filter(Boolean);
+        }
+
+        function openMobileFlashcards() {
+            const pool = getMobileFlashcardPool();
+            if (!pool || pool.length === 0) {
+                showMToast("対象のカードが0件です");
+                return;
+            }
+            mFcTotalInitial = pool.length;
+            mFcMasteredCount = 0;
+            mFcRetryCount = 0;
+            mFcQueue = [...pool].sort(() => Math.random() - 0.5);
+
+            mFcActiveArea.style.display = "block";
+            mFcFinishArea.style.display = "none";
+            mFcModal.style.display = "flex";
+
+            renderNextMobileFc();
+        }
+
+        function renderNextMobileFc() {
+            if (mFcQueue.length === 0) {
+                mFcActiveArea.style.display = "none";
+                mFcFinishArea.style.display = "block";
+                mFcStatTotal.textContent = mFcMasteredCount;
+                mFcStatRetries.textContent = mFcRetryCount;
+                mFcProgressBar.style.width = "100%";
+                return;
+            }
+
+            mFcCurrentCard = mFcQueue[0];
+            mFcIsFlipped = false;
+            mFcStage.classList.remove("flipped");
+
+            mFcMetaSubject.textContent = mFcCurrentCard.subject;
+            mFcFrontCat.textContent = mFcCurrentCard.category;
+            mFcFrontSource.textContent = mFcCurrentCard.sourceTitle;
+            mFcFrontTerm.innerHTML = escapeHtml(mFcCurrentCard.term);
+
+            mFcBackSource.textContent = mFcCurrentCard.sourceTitle;
+            mFcBackAnswer.innerHTML = escapeHtml(mFcCurrentCard.answer).replace(/\n/g, "<br>");
+
+            const remaining = mFcQueue.length;
+            const cur = mFcTotalInitial - remaining + 1;
+            mFcProgressText.textContent = `${Math.min(cur, mFcTotalInitial)} / ${mFcTotalInitial} (残り${remaining}枚)`;
+            mFcCountMastered.textContent = mFcMasteredCount;
+            mFcCountRetry.textContent = mFcRetryCount;
+
+            const pct = Math.min(100, Math.round((mFcMasteredCount / mFcTotalInitial) * 100));
+            mFcProgressBar.style.width = `${pct}%`;
+
+            if (window.MathJax && window.MathJax.typesetPromise) {
+                window.MathJax.typesetPromise([mFcStage]).catch(() => {});
+            }
+        }
+
+        function flipMobileFc() {
+            if (mFcIsFlipped) return;
+            mFcIsFlipped = true;
+            mFcStage.classList.add("flipped");
+            if (window.MathJax && window.MathJax.typesetPromise) {
+                window.MathJax.typesetPromise([mFcBackAnswer]).catch(() => {});
+            }
+        }
+
+        function markMobileFc(mastered) {
+            if (!mFcCurrentCard) return;
+            if (mastered) {
+                mFcMasteredCount++;
+                mFcQueue.shift();
+            } else {
+                mFcRetryCount++;
+                const card = mFcQueue.shift();
+                mFcQueue.push(card);
+            }
+            renderNextMobileFc();
+        }
+
+        function closeMobileFc() {
+            mFcModal.style.display = "none";
+            mFcStage.classList.remove("flipped");
+            mFcIsFlipped = false;
+        }
+
+        if (mStartFlashcardBtn) mStartFlashcardBtn.onclick = openMobileFlashcards;
+        if (mFcModalClose) mFcModalClose.onclick = closeMobileFc;
+        if (mFcBtnFinishClose) mFcBtnFinishClose.onclick = closeMobileFc;
+
+        if (mFcStage) {
+            mFcStage.onclick = (e) => {
+                if (e.target.closest("button")) return;
+                flipMobileFc();
+            };
+        }
+        if (mFcBtnFlip) mFcBtnFlip.onclick = (e) => { e.stopPropagation(); flipMobileFc(); };
+        if (mFcBtnRetry) mFcBtnRetry.onclick = (e) => { e.stopPropagation(); markMobileFc(false); };
+        if (mFcBtnMastered) mFcBtnMastered.onclick = (e) => { e.stopPropagation(); markMobileFc(true); };
     </script>
 
 </body>

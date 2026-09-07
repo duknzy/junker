@@ -2219,8 +2219,13 @@
                                         <div class="subject-card-name">国語</div>
                                         <div class="subject-card-tag">現代文・古文・漢文</div>
                                     </div>
-                                    <div class="subject-select-card" data-subject="公民">
+                                    <div class="subject-select-card" data-subject="公共">
                                         <div class="subject-card-icon">⚖️</div>
+                                        <div class="subject-card-name">公共</div>
+                                        <div class="subject-card-tag">現代の諸課題・政治・経済・倫理</div>
+                                    </div>
+                                    <div class="subject-select-card" data-subject="公民">
+                                        <div class="subject-card-icon">🏛️</div>
                                         <div class="subject-card-name">公民 / 倫政</div>
                                         <div class="subject-card-tag">政治・経済・倫理</div>
                                     </div>
@@ -3373,11 +3378,12 @@
         const LESSON_SUBJECT_ICONS = {
             "数学": "📐", "物理": "⚡", "化学": "🧪", "生物": "🧬",
             "情報": "💻", "地理": "🗺️", "日本史": "⛩️", "世界史": "🏛️",
-            "英語": "🔤", "国語": "📜", "公民": "⚖️", "地歴公民": "🗾", "その他": "📎"
+            "英語": "🔤", "国語": "📜", "公共": "⚖️", "公民": "🏛️", "地歴公民": "🗾", "その他": "📎"
         };
         function detectLessonSubject(lesson) {
             if (lesson.subject && LESSON_SUBJECT_ICONS[lesson.subject]) return lesson.subject;
             const text = ((lesson.title || "") + " " + (lesson.topicKey || "")).toLowerCase();
+            if (/公共/i.test(text)) return "公共";
             if (/情報|プログラミング|アルゴリズム|python|二進数|ネットワーク/i.test(text)) return "情報";
             if (/地理|気候|ケッペン|地誌|貿易/i.test(text)) return "地理";
             if (/日本史|幕府|天皇|江戸|明治|戦国|縄文|弥生|平安/i.test(text)) return "日本史";
@@ -3575,6 +3581,11 @@
 【国語科特化ルール】
 ・現代文：論理の骨格（対比・言い換え・因果関係）を構造化して解説すること。
 ・古文・漢文：文法・助動詞の活用・意味、句法、主語の補完、時代背景を精緻に解説すること。`,
+            "公共": `
+【公共・現代社会特化ルール】
+・現代の社会諸課題（民主主義・立憲主義・基本的人権・国際協調・地球環境・少子高齢化・情報社会・金融リテラシー）の背景と対立軸を論理的に解説すること。
+・青年期の自己形成、倫理思想、法と政治の原理、経済の仕組みを具体的事例や判例と結びつけて説明すること。
+・暗記事項には重要概念、憲法条文、重要判例、経済用語、国際条約を漏れなく抽出すること。`,
             "公民": `
 【公民・倫政特化ルール】
 ・憲法・政治制度・経済理論・思想史の思想的背景と思想家たちの主張の対比を論理的に解説すること。`
@@ -4044,9 +4055,11 @@ ${subjectGuide}
                 const newId = "LESSON_" + Date.now();
                 const now = new Date().toISOString();
                 const levelIndex = draftPlan.level ? LEVEL_ORDER.indexOf(draftPlan.level) : -1;
+                const lessonSubject = draftPlan.subject || selectedSubject || detectLessonSubject(draftPlan) || "その他";
                 const lessonObj = {
                     id: newId,
                     title: draftPlan.lesson_title,
+                    subject: lessonSubject,
                     extractedText: draftPlan.extracted_text,
                     sourceMode: draftPlan.sourceMode || "photo",
                     teachingStyle: draftPlan.teachingStyle || "standard",

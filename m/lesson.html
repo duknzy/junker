@@ -307,7 +307,8 @@
                     <option value="世界史">🏛️ 世界史</option>
                     <option value="英語">🔤 英語</option>
                     <option value="国語">📜 国語</option>
-                    <option value="公民">⚖️ 公民</option>
+                    <option value="公共">⚖️ 公共</option>
+                    <option value="公民">🏛️ 公民</option>
                 </select>
             </div>
 
@@ -424,8 +425,31 @@
             const container = document.getElementById("lesson-list-container");
             const chipsEl = document.getElementById("lesson-subject-chips");
 
+            function getLessonSubject(l) {
+                if (l.subject) return l.subject;
+                const text = ((l.title || "") + " " + (l.topic || "")).toLowerCase();
+                if (/公共/i.test(text)) return "公共";
+                if (/情報|プログラミング|python/i.test(text)) return "情報";
+                if (/地理|気候/i.test(text)) return "地理";
+                if (/日本史/i.test(text)) return "日本史";
+                if (/世界史|歴史/i.test(text)) return "世界史";
+                if (/生物|遺伝|細胞/i.test(text)) return "生物";
+                if (/数学|微分|積分|ベクトル|数列|確率/i.test(text)) return "数学";
+                if (/物理|力学|電磁気|波動/i.test(text)) return "物理";
+                if (/化学|mol|酸化|還元/i.test(text)) return "化学";
+                if (/英語|文法/i.test(text)) return "英語";
+                if (/現代文|古文|漢文|国語/i.test(text)) return "国語";
+                if (/公民|政治|経済|憲法|倫理/i.test(text)) return "公民";
+                return "未分類";
+            }
+
             const subjects = new Set();
-            Object.values(lessonsCache).forEach(l => { if (l && l.subject) subjects.add(l.subject); });
+            Object.values(lessonsCache).forEach(l => {
+                if (l) {
+                    const s = getLessonSubject(l);
+                    if (s && s !== "未分類") subjects.add(s);
+                }
+            });
 
             let chipsHtml = `<button class="m-chip ${currentSubjectFilter === 'ALL' ? 'active' : ''}" data-subj="ALL">✨ すべて</button>`;
             subjects.forEach(s => {
@@ -442,9 +466,10 @@
             const entries = Object.entries(lessonsCache).sort((a, b) => new Date(b[1].createdAt || 0) - new Date(a[1].createdAt || 0));
             const filtered = entries.filter(([, l]) => {
                 if (!l) return false;
-                if (currentSubjectFilter !== "ALL" && l.subject !== currentSubjectFilter) return false;
+                const subj = getLessonSubject(l);
+                if (currentSubjectFilter !== "ALL" && subj !== currentSubjectFilter) return false;
                 if (currentSearchQuery) {
-                    const hay = [l.title, l.topic, l.subject, l.level].filter(Boolean).join(" ").toLowerCase();
+                    const hay = [l.title, l.topic, subj, l.level].filter(Boolean).join(" ").toLowerCase();
                     if (!hay.includes(currentSearchQuery)) return false;
                 }
                 return true;
@@ -459,11 +484,12 @@
                 const isCompleted = l.status === "completed";
                 const statusClass = isCompleted ? "status-completed" : "status-teaching";
                 const statusText = isCompleted ? "✅ 完了" : "📖 進行中";
+                const cardSubj = getLessonSubject(l);
 
                 return `
                     <div class="m-lesson-card" data-lesson-id="${id}">
                         <div class="m-lesson-top">
-                            <span class="m-subject-badge subj-${l.subject || '数学'}">${escapeHtml(l.subject || '未分類')}</span>
+                            <span class="m-subject-badge subj-${cardSubj}">${escapeHtml(cardSubj)}</span>
                             <div style="display:flex; align-items:center; gap:0.4rem;">
                                 <span class="badge-status ${statusClass}">${statusText}</span>
                                 <button type="button" class="m-card-delete-btn" data-delete-m-lesson="${id}" title="削除" style="background:transparent; border:1px solid #FECACA; color:var(--error); border-radius:var(--radius-sm); padding:0.1rem 0.4rem; font-size:0.7rem; cursor:pointer;">🗑️</button>
