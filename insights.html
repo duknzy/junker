@@ -719,6 +719,40 @@
                     </div>
                 </div>
 
+                <!-- ⚠️ 未分類データの一括変更・救済バナー -->
+                <div id="unclassified-banner" style="display:none; background:rgba(245, 158, 11, 0.08); border:1px solid rgba(245, 158, 11, 0.3); border-radius:var(--radius-md); padding:0.65rem 1rem; margin-bottom:1rem; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.6rem;">
+                    <div style="display:flex; align-items:center; gap:0.5rem; font-size:0.84rem; color:var(--text-primary);">
+                        <span style="font-size:1.15rem;">💡</span>
+                        <span>教科が「未分類」のデータが <strong id="unclassified-count-badge" style="color:#D97706; font-size:0.95rem; font-weight:800;">0</strong> 件あります。</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+                        <button type="button" id="btn-auto-fix-subjects" class="tactile-btn" style="background:#059669; color:#fff; border:none; font-size:0.75rem; font-weight:800; padding:0.35rem 0.85rem; border-radius:var(--radius-sm); cursor:pointer; display:flex; align-items:center; gap:0.3rem;" title="単元名や重要用語（CSR・ベンチャー・財政等）から「公共」などに自動判別してFirebaseに保存します">
+                            ⚡ 内容から自動判別して反映
+                        </button>
+                        <div style="display:flex; align-items:center; gap:0.3rem;">
+                            <select id="batch-unclassified-subject" class="flora-select" style="font-size:0.75rem; padding:0.3rem 0.5rem; height:auto; width:auto;">
+                                <option value="公共">公共</option>
+                                <option value="公民">公民</option>
+                                <option value="数学">数学</option>
+                                <option value="英語">英語</option>
+                                <option value="国語">国語</option>
+                                <option value="物理">物理</option>
+                                <option value="化学">化学</option>
+                                <option value="生物">生物</option>
+                                <option value="地学">地学</option>
+                                <option value="日本史">日本史</option>
+                                <option value="世界史">世界史</option>
+                                <option value="地理">地理</option>
+                                <option value="情報">情報</option>
+                                <option value="その他">その他</option>
+                            </select>
+                            <button type="button" id="btn-batch-apply-subject" class="tactile-btn tactile-btn-secondary" style="font-size:0.75rem; font-weight:800; padding:0.35rem 0.75rem; border-radius:var(--radius-sm); cursor:pointer;">
+                                一括変更
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- メイン表示領域 -->
                 <div>
                     <!-- 1. 気づきメモビュー -->
@@ -985,6 +1019,30 @@
         </div>
     </div>
 
+    <!-- 📚 クイック教科変更モーダル -->
+    <div id="quick-subject-modal" class="modal-overlay" style="display:none; z-index:100060;">
+        <div class="modal-content" style="max-width: 440px; width: 92%; padding: 1.5rem; border-radius: var(--radius-lg); background: var(--bg-surface); position:relative; box-shadow:0 20px 40px rgba(0,0,0,0.25);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.8rem; border-bottom:1px solid var(--border-color); padding-bottom:0.6rem;">
+                <div style="display:flex; align-items:center; gap:0.4rem;">
+                    <span style="font-size:1.15rem;">📚</span>
+                    <span style="font-weight:800; font-size:1rem; color:var(--text-primary);">教科（科目）を変更</span>
+                </div>
+                <button type="button" id="quick-subject-close" style="background:none; border:none; font-size:1.4rem; color:var(--text-muted); cursor:pointer; line-height:1;">×</button>
+            </div>
+            <p style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:0.9rem; line-height:1.4;" id="quick-subject-target-title">--</p>
+            
+            <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted); margin-bottom:0.5rem;">登録する教科を選択（クリックで即時保存）：</div>
+            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:0.45rem; margin-bottom:1rem;" id="quick-subject-chips">
+                <!-- JSで各教科ボタンを生成 -->
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed var(--border-color); padding-top:0.8rem;">
+                <span style="font-size:0.72rem; color:var(--text-muted);">Firebase上の登録データが直接更新されます</span>
+                <button type="button" class="tactile-btn tactile-btn-secondary" id="quick-subject-cancel" style="font-size:0.75rem; padding:0.35rem 0.8rem;">キャンセル</button>
+            </div>
+        </div>
+    </div>
+
     <script src="sidebar.js"></script>
 
     <script type="module">
@@ -1090,19 +1148,48 @@
         sortSelect.addEventListener("change", renderActiveView);
         subjectSelect.addEventListener("change", renderActiveView);
 
+        const AVAILABLE_SUBJECTS = ["公共", "公民", "数学", "英語", "国語", "物理", "化学", "生物", "地学", "日本史", "世界史", "地理", "情報", "その他"];
+
         function populateSubjectFilter() {
             const currentVal = subjectSelect.value || "ALL";
             let subjects = new Set();
+            let unclassifiedCount = 0;
 
             if (activeTab === "insights") {
-                Object.values(rawProblems).forEach(p => { if (p.insight) subjects.add(p.subject || "未分類"); });
-                buildLessonMemoItems().forEach(item => subjects.add(item.subject || "未分類"));
+                Object.values(rawProblems).forEach(p => { 
+                    if (p.insight) {
+                        const s = p.subject || "未分類";
+                        subjects.add(s);
+                        if (s === "未分類") unclassifiedCount++;
+                    }
+                });
+                buildLessonMemoItems().forEach(item => {
+                    const s = item.subject || "未分類";
+                    subjects.add(s);
+                    if (s === "未分類") unclassifiedCount++;
+                });
             } else if (activeTab === "memorize") {
-                buildMemorizationItems().forEach(item => subjects.add(item.subject || "未分類"));
+                buildMemorizationItems().forEach(item => {
+                    const s = item.subject || "未分類";
+                    subjects.add(s);
+                    if (s === "未分類") unclassifiedCount++;
+                });
             } else if (activeTab === "qna") {
                 Object.values(rawQnaLogs).forEach(l => { if (l.subject) subjects.add(l.subject); });
             } else {
                 subjects.add("世界史");
+            }
+
+            // 未分類バナーの表示制御
+            const unclassBanner = document.getElementById("unclassified-banner");
+            const unclassBadge = document.getElementById("unclassified-count-badge");
+            if (unclassBanner && unclassBadge) {
+                if (unclassifiedCount > 0) {
+                    unclassBanner.style.display = "flex";
+                    unclassBadge.textContent = `${unclassifiedCount}`;
+                } else {
+                    unclassBanner.style.display = "none";
+                }
             }
 
             const sorted = [...subjects].sort((a, b) => a.localeCompare(b, "ja"));
@@ -1124,20 +1211,31 @@
                 const s = lesson.subject.trim();
                 if (s !== "未分類") return s;
             }
-            const text = ((lesson.title || "") + " " + (lesson.topicKey || "") + " " + (lesson.topic || "")).toLowerCase();
-            if (/公共/i.test(text)) return "公共";
-            if (/公民|政治|経済|憲法|倫理|現代社会/i.test(text)) return "公民";
-            if (/数学|微分|積分|ベクトル|数列|三角関数|確率/i.test(text)) return "数学";
-            if (/物理|力学|電磁気|波動/i.test(text)) return "物理";
-            if (/化学|mol|酸化|還元|酸|塩基/i.test(text)) return "化学";
-            if (/生物|遺伝|細胞|dna|光合成|生態系/i.test(text)) return "生物";
-            if (/情報|プログラミング|python|アルゴリズム/i.test(text)) return "情報";
-            if (/地理|気候|ケッペン/i.test(text)) return "地理";
-            if (/日本史/i.test(text)) return "日本史";
-            if (/世界史|歴史/i.test(text)) return "世界史";
-            if (/英語|文法/i.test(text)) return "英語";
-            if (/現代文|古文|漢文|国語/i.test(text)) return "国語";
-            if (/地学|地層|天体|気象|プレート/i.test(text)) return "地学";
+            // 授業のタイトル・トピック・暗記事項内容・パート見出し・メモ内容を総合的に解析
+            const memText = Array.isArray(lesson.memorizationPoints) 
+                ? lesson.memorizationPoints.map(m => (m.content || '') + ' ' + (m.category || '') + ' ' + (m.note || '')).join(' ') 
+                : '';
+            const partText = Array.isArray(lesson.parts) 
+                ? lesson.parts.map(p => (p.title || '') + ' ' + (p.content || '')).join(' ') 
+                : '';
+            const memoText = Array.isArray(lesson.lessonMemos) 
+                ? lesson.lessonMemos.map(m => m.text || '').join(' ') 
+                : '';
+            const text = [lesson.title, lesson.topicKey, lesson.topic, memText, partText, memoText].filter(Boolean).join(" ").toLowerCase();
+
+            // 公共 / 公民 / 政治経済 / 現代社会
+            if (/公共|公民|政治|経済|憲法|倫理|現代社会|諸課題|中小企業|財政|農業|防災|少子|高齢|社会保障|福祉|労働|雇用|市場経済|金融|資本|ベンチャー|csr|ステークホルダー|規模の経済|流通|株式会社|独占禁止|公正取引|消費者|租税|公債|国債|インフレ|デフレ|円高|円安|gdp|国会|内閣|裁判所|地方自治|司法|行政|立法|選挙|政党|基本的人権|人権|国際連合|安保理|国際法|sdgs|地球温暖化|循環型社会/i.test(text)) return "公共";
+            if (/数学|微分|積分|ベクトル|数列|三角関数|確率|二次関数|図形|整数|複素数|行列|極限|導関数/i.test(text)) return "数学";
+            if (/物理|力学|電磁気|波動|熱力学|原子|運動方程式|オームの法則|クーロン/i.test(text)) return "物理";
+            if (/化学|mol|モル|酸化|還元|酸|塩基|無機|有機|結合|沈殿|元素|周期表/i.test(text)) return "化学";
+            if (/生物|遺伝|細胞|dna|光合成|生態系|呼吸|酵素|免疫|生殖|ホルモン/i.test(text)) return "生物";
+            if (/地学|地層|天体|気象|プレート|火山|地震|恒星|銀河|堆積/i.test(text)) return "地学";
+            if (/情報|プログラミング|python|アルゴリズム|ネットワーク|二進数|暗号|セキュリティ/i.test(text)) return "情報";
+            if (/地理|気候|ケッペン|地形|農業区分|資源|貿易|人口ピラミッド/i.test(text)) return "地理";
+            if (/日本史|幕府|天皇|大名|武士|明治維新|江戸|平安|鎌倉|室町|戦国|縄文|弥生|古墳|大化/i.test(text)) return "日本史";
+            if (/世界史|歴史|王朝|帝国|革命|ルネサンス|ローマ|ギリシャ|冷戦|十字軍|封建|植民地/i.test(text)) return "世界史";
+            if (/英語|文法|単語|英文|tense|clause|syntax|pronoun|passive/i.test(text)) return "英語";
+            if (/現代文|古文|漢文|国語|評論文|小説|助動詞|係り結び|返り点|訓読/i.test(text)) return "国語";
             if (/理科/i.test(text)) return "理科";
             return "未分類";
         }
@@ -1221,10 +1319,12 @@
             const catInput = document.getElementById(`memorize-edit-cat-${lessonId}_${mpId}`);
             const contentInput = document.getElementById(`memorize-edit-content-${lessonId}_${mpId}`);
             const noteInput = document.getElementById(`memorize-edit-note-${lessonId}_${mpId}`);
+            const subjSelect = document.getElementById(`memorize-edit-subject-${lessonId}_${mpId}`);
 
             const newCat = catInput ? catInput.value.trim() : "";
             const newContent = contentInput ? contentInput.value.trim() : "";
             const newNote = noteInput ? noteInput.value.trim() : "";
+            const newSubj = subjSelect ? subjSelect.value : null;
 
             if (!newContent) {
                 showToast("暗記すべき内容を入力してください。", "error");
@@ -1246,17 +1346,219 @@
                 return mp;
             });
 
+            const updatePayload = {
+                memorizationPoints: newPoints,
+                updatedAt: new Date().toISOString()
+            };
+            if (newSubj) {
+                updatePayload.subject = newSubj;
+                if (lesson) lesson.subject = newSubj;
+            }
+
             try {
-                await update(ref(database, 'users/' + currentUser.uid + '/lessons/' + lessonId), {
-                    memorizationPoints: newPoints,
-                    updatedAt: new Date().toISOString()
-                });
+                await update(ref(database, 'users/' + currentUser.uid + '/lessons/' + lessonId), updatePayload);
                 editingMemorizeKey = null;
                 showToast("暗記事項を更新しました！", "success", 2000);
+                populateSubjectFilter();
+                renderActiveView();
             } catch (err) {
                 showToast("保存に失敗しました。", "error");
             }
         };
+
+        // 📚 クイック教科変更モーダル制御
+        let quickSubjectTarget = null;
+
+        window.openQuickSubjectModal = function(type, id, title, e) {
+            if (e) e.stopPropagation();
+            const currentSubj = type === 'lesson' 
+                ? (rawLessons[id]?.subject || detectSubjectFromLesson(rawLessons[id]))
+                : (rawProblems[id]?.subject || "未分類");
+            
+            quickSubjectTarget = { type, id, currentSubject: currentSubj };
+            
+            const modal = document.getElementById("quick-subject-modal");
+            const titleEl = document.getElementById("quick-subject-target-title");
+            const chipsEl = document.getElementById("quick-subject-chips");
+            if (!modal || !chipsEl) return;
+
+            if (titleEl) {
+                titleEl.innerHTML = `対象: <strong>${title || 'データ'}</strong><br><span style="color:var(--text-muted); font-size:0.75rem;">現在: <span style="color:var(--brand-primary); font-weight:700;">${currentSubj}</span></span>`;
+            }
+
+            chipsEl.innerHTML = AVAILABLE_SUBJECTS.map(subj => {
+                const isCurrent = subj === currentSubj;
+                const activeStyle = isCurrent 
+                    ? "background:var(--brand-primary); color:#fff; border-color:var(--brand-primary); font-weight:800;" 
+                    : "background:var(--bg-subtle); color:var(--text-primary); border-color:var(--border-color);";
+                return `
+                    <button type="button" class="tactile-btn" style="padding:0.5rem 0.4rem; font-size:0.8rem; ${activeStyle}" onclick="applyQuickSubject('${subj}', event)">
+                        ${subj}
+                    </button>
+                `;
+            }).join("");
+
+            modal.style.display = "flex";
+        };
+
+        window.closeQuickSubjectModal = function() {
+            const modal = document.getElementById("quick-subject-modal");
+            if (modal) modal.style.display = "none";
+            quickSubjectTarget = null;
+        };
+
+        window.applyQuickSubject = async function(newSubj, e) {
+            if (e) e.stopPropagation();
+            if (!currentUser || !quickSubjectTarget) return;
+            const { type, id } = quickSubjectTarget;
+
+            try {
+                if (type === 'lesson') {
+                    await update(ref(database, 'users/' + currentUser.uid + '/lessons/' + id), {
+                        subject: newSubj,
+                        updatedAt: new Date().toISOString()
+                    });
+                    if (rawLessons[id]) rawLessons[id].subject = newSubj;
+                } else if (type === 'problem') {
+                    await update(ref(database, 'users/' + currentUser.uid + '/problems/' + id), {
+                        subject: newSubj,
+                        insightUpdatedAt: new Date().toISOString()
+                    });
+                    if (rawProblems[id]) rawProblems[id].subject = newSubj;
+                }
+
+                closeQuickSubjectModal();
+                showToast(`教科を「${newSubj}」に変更しました！`, "success", 2000);
+                populateSubjectFilter();
+                renderActiveView();
+            } catch (err) {
+                console.error("Subject update failed:", err);
+                showToast("教科の変更に失敗しました。", "error");
+            }
+        };
+
+        // ⚡ 内容から自動判別してFirebaseに保存
+        async function autoFixUnclassifiedSubjects() {
+            if (!currentUser) return;
+            let updatedCount = 0;
+            const updates = {};
+            const now = new Date().toISOString();
+
+            // 1. レッスンの未分類を自動判別
+            Object.entries(rawLessons).forEach(([id, lesson]) => {
+                if (!lesson) return;
+                const currentSubj = lesson.subject;
+                if (!currentSubj || currentSubj === "未分類") {
+                    const detected = detectSubjectFromLesson(lesson);
+                    if (detected && detected !== "未分類") {
+                        updates[`lessons/${id}/subject`] = detected;
+                        updates[`lessons/${id}/updatedAt`] = now;
+                        lesson.subject = detected;
+                        updatedCount++;
+                    }
+                }
+            });
+
+            // 2. 問題の未分類を自動判別
+            Object.entries(rawProblems).forEach(([id, prob]) => {
+                if (!prob || !prob.insight) return;
+                const currentSubj = prob.subject;
+                if (!currentSubj || currentSubj === "未分類") {
+                    const text = [prob.title, prob.short_title, prob.field, prob.insight].join(" ").toLowerCase();
+                    let detected = null;
+                    if (/公共|公民|政治|経済|憲法|倫理|現代社会|諸課題|中小企業|財政|農業|防災|少子|高齢|福祉|労働|金融|資本|ベンチャー|csr|ステークホルダー/i.test(text)) detected = "公共";
+                    else if (/数学|微分|積分|ベクトル|数列|三角関数|確率/i.test(text)) detected = "数学";
+                    else if (/物理|力学|電磁気|波動/i.test(text)) detected = "物理";
+                    else if (/化学|mol|酸化|還元|酸|塩基/i.test(text)) detected = "化学";
+                    else if (/生物|遺伝|細胞|dna/i.test(text)) detected = "生物";
+                    else if (/情報|プログラミング|python/i.test(text)) detected = "情報";
+                    else if (/地理/i.test(text)) detected = "地理";
+                    else if (/日本史/i.test(text)) detected = "日本史";
+                    else if (/世界史/i.test(text)) detected = "世界史";
+                    else if (/英語|文法/i.test(text)) detected = "英語";
+                    else if (/国語|現代文|古文/i.test(text)) detected = "国語";
+
+                    if (detected) {
+                        updates[`problems/${id}/subject`] = detected;
+                        prob.subject = detected;
+                        updatedCount++;
+                    }
+                }
+            });
+
+            if (updatedCount === 0) {
+                showToast("未分類データの自動判別候補が見つかりませんでした。右側の「一括変更」から任意の教科を指定してください。", "info", 4000);
+                return;
+            }
+
+            try {
+                await update(ref(database, 'users/' + currentUser.uid), updates);
+                showToast(`⚡ ${updatedCount} 件のデータを自動判別（公共等）して保存しました！`, "success", 3000);
+                populateSubjectFilter();
+                renderActiveView();
+            } catch (err) {
+                console.error("Auto fix failed:", err);
+                showToast("一括更新に失敗しました。", "error");
+            }
+        }
+
+        // 📦 指定教科に一括変更
+        async function batchApplyUnclassifiedSubject() {
+            if (!currentUser) return;
+            const targetSubject = document.getElementById("batch-unclassified-subject")?.value || "公共";
+            if (!confirm(`現在「未分類」になっているすべての授業・暗記事項・気づきデータを「${targetSubject}」に変更してFirebaseに保存しますか？`)) {
+                return;
+            }
+
+            let updatedCount = 0;
+            const updates = {};
+            const now = new Date().toISOString();
+
+            Object.entries(rawLessons).forEach(([id, lesson]) => {
+                if (!lesson) return;
+                const currentSubj = lesson.subject;
+                if (!currentSubj || currentSubj === "未分類" || detectSubjectFromLesson(lesson) === "未分類") {
+                    updates[`lessons/${id}/subject`] = targetSubject;
+                    updates[`lessons/${id}/updatedAt`] = now;
+                    lesson.subject = targetSubject;
+                    updatedCount++;
+                }
+            });
+
+            Object.entries(rawProblems).forEach(([id, prob]) => {
+                if (!prob || !prob.insight) return;
+                const currentSubj = prob.subject;
+                if (!currentSubj || currentSubj === "未分類") {
+                    updates[`problems/${id}/subject`] = targetSubject;
+                    prob.subject = targetSubject;
+                    updatedCount++;
+                }
+            });
+
+            if (updatedCount === 0) {
+                showToast("変更対象の未分類データがありませんでした。", "info", 2000);
+                return;
+            }
+
+            try {
+                await update(ref(database, 'users/' + currentUser.uid), updates);
+                showToast(`✅ ${updatedCount} 件のデータを【${targetSubject}】に変更しました！`, "success", 3000);
+                populateSubjectFilter();
+                renderActiveView();
+            } catch (err) {
+                console.error("Batch apply failed:", err);
+                showToast("一括変更に失敗しました。", "error");
+            }
+        }
+
+        // モーダル・一括変更ボタンのイベント登録
+        document.getElementById("btn-auto-fix-subjects")?.addEventListener("click", autoFixUnclassifiedSubjects);
+        document.getElementById("btn-batch-apply-subject")?.addEventListener("click", batchApplyUnclassifiedSubject);
+        document.getElementById("quick-subject-close")?.addEventListener("click", closeQuickSubjectModal);
+        document.getElementById("quick-subject-cancel")?.addEventListener("click", closeQuickSubjectModal);
+        document.getElementById("quick-subject-modal")?.addEventListener("click", (e) => {
+            if (e.target.id === "quick-subject-modal") closeQuickSubjectModal();
+        });
 
         window.deleteMemorizeFromInsights = async function(lessonId, mpId, e) {
             if (e) e.stopPropagation();
@@ -1326,16 +1628,30 @@
             if (e) e.stopPropagation();
             if (!currentUser) return;
             const textarea = document.getElementById(`lessonmemo-edit-${lessonId}_${memoId}`);
+            const subjSelect = document.getElementById(`lessonmemo-edit-subject-${lessonId}_${memoId}`);
             if (!textarea) return;
             const newText = textarea.value.trim();
+            const newSubj = subjSelect ? subjSelect.value : null;
             if (!newText) { showToast("メモの内容を入力してください。", "error"); return; }
             const lesson = rawLessons[lessonId];
             if (!lesson || !Array.isArray(lesson.lessonMemos)) return;
             const newMemos = lesson.lessonMemos.map(m => m.id === memoId ? { ...m, text: newText, updatedAt: new Date().toISOString() } : m);
+            
+            const updatePayload = {
+                lessonMemos: newMemos,
+                updatedAt: new Date().toISOString()
+            };
+            if (newSubj) {
+                updatePayload.subject = newSubj;
+                lesson.subject = newSubj;
+            }
+
             try {
-                await update(ref(database, 'users/' + currentUser.uid + '/lessons/' + lessonId), { lessonMemos: newMemos });
+                await update(ref(database, 'users/' + currentUser.uid + '/lessons/' + lessonId), updatePayload);
                 editingLessonMemoKey = null;
                 showToast("授業メモを更新しました。", "success", 2000);
+                populateSubjectFilter();
+                renderActiveView();
             } catch (err) {
                 showToast("保存に失敗しました。", "error");
             }
@@ -1373,16 +1689,26 @@
         window.saveInlineInsight = async function(problemId, e) {
             if (e) e.stopPropagation();
             const textarea = document.getElementById(`inline-textarea-${problemId}`);
+            const subjSelect = document.getElementById(`inline-subject-${problemId}`);
             if (!textarea || !currentUser) return;
             const newText = textarea.value.trim();
+            const newSubj = subjSelect ? subjSelect.value : null;
+
             try {
                 const nowIso = new Date().toISOString();
-                await update(ref(database, 'users/' + currentUser.uid + '/problems/' + problemId), {
+                const updatePayload = {
                     insight: newText,
                     insightUpdatedAt: nowIso
-                });
+                };
+                if (newSubj) {
+                    updatePayload.subject = newSubj;
+                    if (rawProblems[problemId]) rawProblems[problemId].subject = newSubj;
+                }
+                await update(ref(database, 'users/' + currentUser.uid + '/problems/' + problemId), updatePayload);
                 editingProblemId = null;
                 showToast("極意メモを更新しました！", "success", 2000);
+                populateSubjectFilter();
+                renderActiveView();
             } catch (err) {
                 showToast("保存に失敗しました。", "error");
             }
@@ -1629,10 +1955,17 @@
             const isEditing = editingProblemId === p.id;
             const starClass = p.isPinned ? "active" : "";
             const pinnedClass = p.isPinned ? "pinned" : "";
+            const safeTitle = (p.short_title || p.field || "問題").replace(/'/g, "\\'");
 
             const bodyContent = isEditing
                 ? `
                     <div style="display:flex; flex-direction:column; gap:0.4rem;">
+                        <div>
+                            <label style="font-size:0.72rem; color:var(--text-muted); display:block; margin-bottom:0.15rem;">教科（科目）:</label>
+                            <select id="inline-subject-${p.id}" style="width:100%; box-sizing:border-box; padding:0.3rem 0.5rem; font-size:0.78rem; background:var(--bg-subtle); border:1px solid var(--border-color); border-radius:var(--radius-sm); color:var(--text-primary);">
+                                ${AVAILABLE_SUBJECTS.map(s => `<option value="${s}" ${s === (p.subject || "公共") ? "selected" : ""}>${s}</option>`).join("")}
+                            </select>
+                        </div>
                         <textarea class="inline-edit-textarea" id="inline-textarea-${p.id}">${p.insight || ""}</textarea>
                         <div style="display:flex; justify-content:flex-end; gap:0.4rem;">
                             <button type="button" class="tactile-btn tactile-btn-secondary" style="font-size:0.75rem; padding:0.25rem 0.6rem;" onclick="cancelEditInsight(event)">キャンセル</button>
@@ -1646,7 +1979,10 @@
                 <div class="insight-card ${pinnedClass}">
                     <div>
                         <div style="display:flex; justify-content:space-between; align-items:center; gap:0.4rem; margin-bottom:0.6rem;">
-                            <span class="badge badge-physics">${p.subject || "未分類"} // ${p.field || "未分類"}</span>
+                            <span class="badge badge-physics" style="cursor:pointer; display:inline-flex; align-items:center; gap:0.25rem;" onclick="openQuickSubjectModal('problem', '${p.id}', '${safeTitle}', event)" title="クリックして教科を変更">
+                                <span>${p.subject || "未分類"} // ${p.field || "未分類"}</span>
+                                <span style="font-size:0.68rem; opacity:0.75;">▾</span>
+                            </span>
                             <div style="display:flex; align-items:center; gap:0.5rem;">
                                 <span style="font-size:0.72rem; color:var(--text-muted);">🗓️ ${formatDate(p.insightUpdatedAt || p.createdAt)}</span>
                                 <button type="button" class="star-btn ${starClass}" onclick="togglePin('${p.id}', event)" title="スター（最上部に固定）">★</button>
@@ -1694,20 +2030,34 @@
             const partLabel = p.partTitle ? `第${p.partIndex + 1}回: ${p.partTitle}` : "";
             const memoKey = `${p.lessonId}:${p.memoId}`;
             const isEditing = editingLessonMemoKey === memoKey;
+            const safeLessonTitle = (p.short_title || "授業メモ").replace(/'/g, "\\'");
 
             const bodyHtml = isEditing
-                ? `<textarea class="inline-edit-textarea" id="lessonmemo-edit-${p.lessonId}_${p.memoId}">${p.insight || ""}</textarea>
-                   <div style="display:flex; justify-content:flex-end; gap:0.5rem; margin-top:0.5rem;">
-                       <button type="button" class="tactile-btn tactile-btn-secondary" style="font-size:0.72rem; padding:0.4rem 0.8rem;" onclick="cancelEditLessonMemoFromInsights(event)">キャンセル</button>
-                       <button type="button" class="tactile-btn" style="font-size:0.72rem; padding:0.4rem 0.8rem;" onclick="saveEditLessonMemoFromInsights('${p.lessonId}', '${p.memoId}', event)">💾 保存</button>
-                   </div>`
+                ? `
+                    <div style="display:flex; flex-direction:column; gap:0.35rem;">
+                        <div>
+                            <label style="font-size:0.72rem; color:var(--text-muted); display:block; margin-bottom:0.15rem;">教科（科目）:</label>
+                            <select id="lessonmemo-edit-subject-${p.lessonId}_${p.memoId}" style="width:100%; box-sizing:border-box; padding:0.3rem 0.5rem; font-size:0.78rem; background:var(--bg-subtle); border:1px solid var(--border-color); border-radius:var(--radius-sm); color:var(--text-primary);">
+                                ${AVAILABLE_SUBJECTS.map(s => `<option value="${s}" ${s === (p.subject || "公共") ? "selected" : ""}>${s}</option>`).join("")}
+                            </select>
+                        </div>
+                        <textarea class="inline-edit-textarea" id="lessonmemo-edit-${p.lessonId}_${p.memoId}">${p.insight || ""}</textarea>
+                        <div style="display:flex; justify-content:flex-end; gap:0.5rem; margin-top:0.2rem;">
+                            <button type="button" class="tactile-btn tactile-btn-secondary" style="font-size:0.72rem; padding:0.4rem 0.8rem;" onclick="cancelEditLessonMemoFromInsights(event)">キャンセル</button>
+                            <button type="button" class="tactile-btn" style="font-size:0.72rem; padding:0.4rem 0.8rem;" onclick="saveEditLessonMemoFromInsights('${p.lessonId}', '${p.memoId}', event)">💾 保存</button>
+                        </div>
+                    </div>
+                `
                 : `<div class="insight-text tex2jax_process" onclick="startEditLessonMemoFromInsights('${p.lessonId}', '${p.memoId}', event)" title="クリックしてその場で編集">${normalizeMathSyntax(p.insight)}</div>`;
 
             return `
                 <div class="insight-card ${pinnedClass}" style="border-left-color: var(--accent-yellow);">
                     <div>
                         <div style="display:flex; justify-content:space-between; align-items:center; gap:0.4rem; margin-bottom:0.6rem;">
-                            <span class="badge badge-physics" style="background: rgba(255,245,0,0.1); border-color: var(--accent-yellow); color: var(--accent-yellow);">📖 授業メモ // ${p.subject || "未分類"}</span>
+                            <span class="badge badge-physics" style="background: rgba(255,245,0,0.1); border-color: var(--accent-yellow); color: var(--accent-yellow); cursor:pointer; display:inline-flex; align-items:center; gap:0.25rem;" onclick="openQuickSubjectModal('lesson', '${p.lessonId}', '${safeLessonTitle}', event)" title="クリックして教科を変更">
+                                <span>📖 授業メモ // <u>${p.subject || "未分類"}</u></span>
+                                <span style="font-size:0.68rem; opacity:0.75;">▾</span>
+                            </span>
                             <div style="display:flex; align-items:center; gap:0.5rem;">
                                 <span style="font-size:0.72rem; color:var(--text-muted);">🗓️ ${formatDate(p.insightUpdatedAt || p.createdAt)}</span>
                                 <button type="button" class="star-btn ${starClass}" onclick="toggleLessonMemoPin('${p.lessonId}', '${p.memoId}', event)" title="スター（最上部に固定）">★</button>
@@ -1750,12 +2100,21 @@
         function renderMemorizeCardHtml(p) {
             const memoKey = `${p.lessonId}:${p.memoId}`;
             const isEditing = editingMemorizeKey === memoKey;
+            const safeLessonTitle = (p.short_title || "暗記事項").replace(/'/g, "\\'");
 
             const editBody = isEditing ? `
                 <div style="display:flex; flex-direction:column; gap:0.45rem; margin-top:0.3rem;">
-                    <div>
-                        <label style="font-size:0.72rem; color:var(--text-muted); display:block; margin-bottom:0.2rem;">カテゴリ / 分類:</label>
-                        <input type="text" id="memorize-edit-cat-${p.lessonId}_${p.memoId}" value="${(p.rawCategory || '').replace(/"/g, '&quot;')}" placeholder="例: 公式・法則、用語、反応式" style="width:100%; box-sizing:border-box; padding:0.35rem 0.6rem; font-size:0.8rem; background:var(--bg-subtle); border:1px solid var(--border-color); border-radius:var(--radius-sm); color:var(--text-primary);">
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.4rem;">
+                        <div>
+                            <label style="font-size:0.72rem; color:var(--text-muted); display:block; margin-bottom:0.2rem;">教科（科目）:</label>
+                            <select id="memorize-edit-subject-${p.lessonId}_${p.memoId}" style="width:100%; box-sizing:border-box; padding:0.35rem 0.6rem; font-size:0.8rem; background:var(--bg-subtle); border:1px solid var(--border-color); border-radius:var(--radius-sm); color:var(--text-primary);">
+                                ${AVAILABLE_SUBJECTS.map(s => `<option value="${s}" ${s === (p.subject || "公共") ? "selected" : ""}>${s}</option>`).join("")}
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size:0.72rem; color:var(--text-muted); display:block; margin-bottom:0.2rem;">分類タグ:</label>
+                            <input type="text" id="memorize-edit-cat-${p.lessonId}_${p.memoId}" value="${(p.rawCategory || '').replace(/"/g, '&quot;')}" placeholder="例: 重要用語、概念" style="width:100%; box-sizing:border-box; padding:0.35rem 0.6rem; font-size:0.8rem; background:var(--bg-subtle); border:1px solid var(--border-color); border-radius:var(--radius-sm); color:var(--text-primary);">
+                        </div>
                     </div>
                     <div>
                         <label style="font-size:0.72rem; color:var(--text-muted); display:block; margin-bottom:0.2rem;">暗記事項（数式は $...$ で記述可）:</label>
@@ -1779,7 +2138,10 @@
                 <div class="insight-card" style="border-left-color: var(--accent-cyan);">
                     <div>
                         <div style="display:flex; justify-content:space-between; align-items:center; gap:0.4rem; margin-bottom:0.6rem;">
-                            <span class="badge badge-physics" style="background: rgba(0,243,255,0.1); border-color: var(--accent-cyan); color: var(--accent-cyan);">🧠 暗記事項 // ${p.subject || "未分類"}</span>
+                            <span class="badge badge-physics" style="background: rgba(0,243,255,0.1); border-color: var(--accent-cyan); color: var(--accent-cyan); cursor:pointer; display:inline-flex; align-items:center; gap:0.25rem;" onclick="openQuickSubjectModal('lesson', '${p.lessonId}', '${safeLessonTitle}', event)" title="クリックして教科を変更">
+                                <span>🧠 暗記事項 // <u>${p.subject || "未分類"}</u></span>
+                                <span style="font-size:0.68rem; opacity:0.75;">▾</span>
+                            </span>
                             <span style="font-size:0.72rem; color:var(--text-muted);">🗓️ ${formatDate(p.insightUpdatedAt || p.createdAt)}</span>
                         </div>
 
@@ -1826,7 +2188,7 @@
             return `
                 <div class="insight-compact-row ${pinnedClass}">
                     <button type="button" class="star-btn ${starClass}" onclick="togglePin('${p.id}', event)" title="スター">★</button>
-                    <span class="badge badge-physics" style="font-size:0.68rem; flex-shrink:0;">${p.subject || "未分類"} // ${p.field || "未分類"}</span>
+                    <span class="badge badge-physics" style="font-size:0.68rem; flex-shrink:0; cursor:pointer;" onclick="openQuickSubjectModal('problem', '${p.id}', '${(p.short_title || p.field || '問題').replace(/'/g, "\\'")}', event)" title="クリックして教科を変更">${p.subject || "未分類"} // ${p.field || "未分類"} ▾</span>
                     <div class="compact-main">
                         <div class="compact-text tex2jax_process">${normalizeMathSyntax(p.insight)}</div>
                         <div class="compact-sub">📌 ${p.short_title || "問題"} ｜ ${formatDate(p.insightUpdatedAt || p.createdAt)}</div>
@@ -1846,7 +2208,7 @@
             return `
                 <div class="insight-compact-row ${pinnedClass}">
                     <button type="button" class="star-btn ${starClass}" onclick="toggleLessonMemoPin('${p.lessonId}', '${p.memoId}', event)" title="スター">★</button>
-                    <span class="badge badge-physics" style="font-size:0.68rem; flex-shrink:0; background: rgba(255,245,0,0.1); border-color: var(--accent-yellow); color: var(--accent-yellow);">📖 ${p.subject || "未分類"}</span>
+                    <span class="badge badge-physics" style="font-size:0.68rem; flex-shrink:0; background: rgba(255,245,0,0.1); border-color: var(--accent-yellow); color: var(--accent-yellow); cursor:pointer;" onclick="openQuickSubjectModal('lesson', '${p.lessonId}', '${(p.short_title || '授業メモ').replace(/'/g, "\\'")}', event)" title="クリックして教科を変更">📖 ${p.subject || "未分類"} ▾</span>
                     <div class="compact-main">
                         <div class="compact-text tex2jax_process">${normalizeMathSyntax(p.insight)}</div>
                         <div class="compact-sub">📘 ${p.short_title} ｜ ${formatDate(p.insightUpdatedAt || p.createdAt)}</div>
@@ -1862,7 +2224,7 @@
         function renderMemorizeCompactRowHtml(p) {
             return `
                 <div class="insight-compact-row">
-                    <span class="badge badge-physics" style="font-size:0.68rem; flex-shrink:0; background: rgba(0,243,255,0.1); border-color: var(--accent-cyan); color: var(--accent-cyan);">🧠 ${p.subject || "未分類"}</span>
+                    <span class="badge badge-physics" style="font-size:0.68rem; flex-shrink:0; background: rgba(0,243,255,0.1); border-color: var(--accent-cyan); color: var(--accent-cyan); cursor:pointer;" onclick="openQuickSubjectModal('lesson', '${p.lessonId}', '${(p.short_title || '暗記事項').replace(/'/g, "\\'")}', event)" title="クリックして教科を変更">🧠 ${p.subject || "未分類"} ▾</span>
                     <div class="compact-main">
                         <div class="compact-text tex2jax_process">${normalizeMathSyntax(p.rawContent || p.insight)}</div>
                         <div class="compact-sub">📘 ${p.short_title} ${p.rawCategory ? `[${p.rawCategory}]` : ""} ｜ ${formatDate(p.insightUpdatedAt || p.createdAt)}</div>

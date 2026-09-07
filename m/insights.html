@@ -455,20 +455,39 @@
                 const s = lesson.subject.trim();
                 if (s !== "未分類") return s;
             }
-            const text = ((lesson.title || "") + " " + (lesson.topicKey || "") + " " + (lesson.topic || "")).toLowerCase();
-            if (/公共/i.test(text)) return "公共";
-            if (/公民|政治|経済|憲法|倫理|現代社会/i.test(text)) return "公民";
-            if (/数学|微分|積分|ベクトル|数列|三角関数|確率/i.test(text)) return "数学";
-            if (/物理|力学|電磁気|波動/i.test(text)) return "物理";
-            if (/化学|mol|酸化|還元|酸|塩基/i.test(text)) return "化学";
-            if (/生物|遺伝|細胞|dna|光合成|生態系/i.test(text)) return "生物";
-            if (/情報|プログラミング|python|アルゴリズム/i.test(text)) return "情報";
-            if (/地理|気候|ケッペン/i.test(text)) return "地理";
-            if (/日本史/i.test(text)) return "日本史";
-            if (/世界史|歴史/i.test(text)) return "世界史";
-            if (/英語|文法/i.test(text)) return "英語";
-            if (/現代文|古文|漢文|国語/i.test(text)) return "国語";
-            if (/地学|地層|天体|気象|プレート/i.test(text)) return "地学";
+            
+            // タイトル、トピック、暗記事項、パート、授業メモの内容を横断してテキスト判定
+            const partsText = Array.isArray(lesson.parts) 
+                ? lesson.parts.map(p => (p.title || "") + " " + (p.topic || "")).join(" ") 
+                : "";
+            const memoPointsText = Array.isArray(lesson.memorizationPoints)
+                ? lesson.memorizationPoints.map(m => (m.category || "") + " " + (m.content || "") + " " + (m.note || "")).join(" ")
+                : "";
+            const memosText = Array.isArray(lesson.lessonMemos)
+                ? lesson.lessonMemos.map(m => m.text || "").join(" ")
+                : "";
+
+            const text = [
+                lesson.title || "",
+                lesson.topicKey || "",
+                lesson.topic || "",
+                partsText,
+                memoPointsText,
+                memosText
+            ].join(" ").toLowerCase();
+
+            if (/公共|公民|政治|経済|憲法|倫理|現代社会|諸課題|中小企業|財政|農業|防災|少子|高齢|福祉|労働|金融|資本|ベンチャー|csr|ステークホルダー/i.test(text)) return "公共";
+            if (/数学|微分|積分|ベクトル|数列|三角関数|確率|二次関数|図形/i.test(text)) return "数学";
+            if (/物理|力学|電磁気|波動|熱力学|運動方程式|単振動/i.test(text)) return "物理";
+            if (/化学|mol|モル|酸化|還元|酸|塩基|有機化学|無機化学|高分子/i.test(text)) return "化学";
+            if (/生物|遺伝|細胞|dna|光合成|生態系|神経|免疫|ホルモン/i.test(text)) return "生物";
+            if (/情報|プログラミング|python|アルゴリズム|ネットワーク|セキュリティ|データベース/i.test(text)) return "情報";
+            if (/地理|気候|ケッペン|地形|貿易|資源|農業地域/i.test(text)) return "地理";
+            if (/日本史|幕府|天皇|維新|江戸|平安|戦国|縄文|弥生/i.test(text)) return "日本史";
+            if (/世界史|帝国|革命|王朝|大戦|条約|冷戦|ルネサンス/i.test(text)) return "世界史";
+            if (/英語|文法|単語|長文|英作文|リスニング/i.test(text)) return "英語";
+            if (/現代文|古文|漢文|国語|敬語|助詞|助動詞/i.test(text)) return "国語";
+            if (/地学|地層|天体|気象|プレート|地震|火山|恒星|銀河/i.test(text)) return "地学";
             if (/理科/i.test(text)) return "理科";
             return "未分類";
         }
