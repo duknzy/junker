@@ -383,16 +383,24 @@
                         </div>
                     </div>
                     <div class="page-actions" style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+                        <!-- 🔍 絞り込みコンテキスト表示チップ（三角関数など検索時に自動表示） -->
+                        <div id="search-context-chip" style="display: none; align-items: center; gap: 0.4rem; background: rgba(5, 150, 105, 0.12); border: 1px solid rgba(5, 150, 105, 0.35); color: var(--brand-primary); font-size: var(--fs-xs); font-weight: 700; padding: 0.35rem 0.75rem; border-radius: var(--radius-full);">
+                            <span id="search-context-label">🔍 "三角関数" (2 / 5問)</span>
+                            <button type="button" id="search-context-clear-btn" title="絞り込みを解除して全問題へ" style="background: none; border: none; color: var(--brand-primary); cursor: pointer; font-weight: 800; font-size: 0.9rem; padding: 0 0.2rem; line-height: 1;">✕</button>
+                        </div>
+                        <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="btn-prev-problem" title="前の問題へ戻る (Alt + ←)">
+                            ◀ 前の問題
+                        </button>
+                        <button type="button" class="flora-btn flora-btn-primary btn-sm" id="btn-next-problem" title="次の問題へ進む (Alt + →)">
+                            ▶ 次の問題
+                        </button>
                         <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="btn-open-problem-picker">
                             📚 他の問題を選ぶ
                         </button>
                         <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="btn-random-problem" title="登録問題からランダムで出題">
                             🎲 ランダム
                         </button>
-                        <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="btn-next-problem" title="次の問題へ進む">
-                            ▶ 次の問題
-                        </button>
-                        <button type="button" class="flora-btn flora-btn-ghost btn-sm" onclick="location.href='index.html'">
+                        <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="btn-back-to-dashboard">
                             ← ダッシュボード
                         </button>
                     </div>
@@ -439,9 +447,12 @@
                             </div>
 
                             <div class="self-check-container">
-                                <div class="reveal-btn-area" id="reveal-btn-wrap">
+                                <div class="reveal-btn-area" id="reveal-btn-wrap" style="display: flex; gap: 0.6rem; flex-direction: column;">
                                     <button type="button" class="flora-btn flora-btn-primary btn-lg" id="show-answer-btn" style="width:100%;" disabled>
                                         🔒 解答と解説を表示する
+                                    </button>
+                                    <button type="button" class="flora-btn flora-btn-secondary btn-lg" id="btn-quick-next-problem" style="width:100%; display:none; background: rgba(5,150,105,0.08); border-color: var(--brand-primary); color: var(--brand-primary); font-weight:700;">
+                                        ▶ 次の問題へ進む (Alt + →)
                                     </button>
                                 </div>
 
@@ -1459,18 +1470,136 @@ ${glossaryBlock}`;
             }
         });
 
+        // 🔍 URLパラメータおよびsessionStorageから演習・絞り込みコンテキストを復元
+        const probUrlParams = new URLSearchParams(window.location.search);
+        let activeSearchQuery = probUrlParams.get("search") || sessionStorage.getItem("flora_active_search_query") || "";
+        let activeSubjFilter = probUrlParams.get("subj") || sessionStorage.getItem("flora_active_subj_filter") || "";
+        let activeFieldFilter = probUrlParams.get("field") || sessionStorage.getItem("flora_active_field_filter") || "";
+
+        // 🎯 絞り込み条件に合致する問題リスト（現在のアクティブ演習シーケンス）を取得する
+        function getActiveFilteredProblems() {
+            if (!Array.isArray(cachedAllUserProblems) || cachedAllUserProblems.length === 0) return [];
+
+            // 1. ダッシュボードから引き継いだ問題IDの並び順があれば優先
+            try {
+                const savedIds = JSON.parse(sessionStorage.getItem("flora_active_filtered_ids") || "[]");
+                if (Array.isArray(savedIds) && savedIds.length > 0) {
+                    const probMap = new Map(cachedAllUserProblems.map(p => [p.id, p]));
+                    const resolved = savedIds.map(id => probMap.get(id)).filter(Boolean);
+                    if (resolved.length > 0) return resolved;
+                }
+            } catch(e) {}
+
+            // 2. なければ、検索キーワード・教科・単元で動的にフィルタリング
+            let list = cachedAllUserProblems;
+            if (activeSubjFilter && activeSubjFilter !== "ALL") {
+                list = list.filter(p => (p.subject || "") === activeSubjFilter);
+            }
+            if (activeFieldFilter && activeFieldFilter !== "ALL") {
+                list = list.filter(p => (p.field || "") === activeFieldFilter);
+            }
+            if (activeSearchQuery) {
+                const q = activeSearchQuery.toLowerCase();
+                list = list.filter(p => {
+                    const text = [p.short_title, p.title, p.field, p.subject, p.insight, p.trap_description].filter(Boolean).join(" ").toLowerCase();
+                    return text.includes(q);
+                });
+            }
+
+            return list.length > 0 ? list : cachedAllUserProblems;
+        }
+
+        // 🔗 絞り込みコンテキストを保持したまま指定問題へ遷移
+        function navigateToProblem(probId) {
+            const params = new URLSearchParams();
+            params.set("id", probId);
+            if (activeSearchQuery) params.set("search", activeSearchQuery);
+            if (activeSubjFilter && activeSubjFilter !== "ALL") params.set("subj", activeSubjFilter);
+            if (activeFieldFilter && activeFieldFilter !== "ALL") params.set("field", activeFieldFilter);
+            location.href = `problem.html?${params.toString()}`;
+        }
+
+        // 🔍 ヘッダーの絞り込みコンテキストチップの表示更新
+        function updateSearchContextChip() {
+            const chipEl = document.getElementById("search-context-chip");
+            const labelEl = document.getElementById("search-context-label");
+            const clearBtn = document.getElementById("search-context-clear-btn");
+            if (!chipEl || !labelEl) return;
+
+            const hasActiveFilter = Boolean(
+                activeSearchQuery ||
+                (activeSubjFilter && activeSubjFilter !== "ALL") ||
+                (activeFieldFilter && activeFieldFilter !== "ALL")
+            );
+
+            if (!hasActiveFilter) {
+                chipEl.style.display = "none";
+                return;
+            }
+
+            const sequence = getActiveFilteredProblems();
+            const curIdx = sequence.findIndex(p => p.id === PROBLEM_ID);
+            const posText = curIdx !== -1 ? `${curIdx + 1} / ${sequence.length}問` : `${sequence.length}問中`;
+
+            let label = "";
+            if (activeSearchQuery) {
+                label = `🔍 "${activeSearchQuery}" (${posText})`;
+            } else if (activeFieldFilter && activeFieldFilter !== "ALL") {
+                label = `📚 ${activeFieldFilter} (${posText})`;
+            } else {
+                label = `📚 ${activeSubjFilter} (${posText})`;
+            }
+
+            labelEl.textContent = label;
+            chipEl.style.display = "inline-flex";
+
+            if (clearBtn) {
+                clearBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    activeSearchQuery = "";
+                    activeSubjFilter = "";
+                    activeFieldFilter = "";
+                    try {
+                        sessionStorage.removeItem("flora_active_filtered_ids");
+                        sessionStorage.removeItem("flora_active_search_query");
+                        sessionStorage.removeItem("flora_active_subj_filter");
+                        sessionStorage.removeItem("flora_active_field_filter");
+                    } catch(e) {}
+                    const url = new URL(window.location.href);
+                    url.searchParams.delete("search");
+                    url.searchParams.delete("subj");
+                    url.searchParams.delete("field");
+                    window.history.replaceState(null, "", url.toString());
+                    updateSearchContextChip();
+                    showToast("絞り込みを解除しました（全問題モード）", "info", 2000);
+                };
+            }
+        }
+
         // 📚 問題ピッカー＆ナビゲーション制御
         function setupProblemPicker() {
             const pickerModal = document.getElementById("problem-picker-modal");
             const openBtn = document.getElementById("btn-open-problem-picker");
             const closeBtn = document.getElementById("close-problem-picker-btn");
             const randomBtn = document.getElementById("btn-random-problem");
+            const prevBtn = document.getElementById("btn-prev-problem");
             const nextBtn = document.getElementById("btn-next-problem");
+            const backBtn = document.getElementById("btn-back-to-dashboard");
             const searchInput = document.getElementById("picker-search-input");
             const subjectFilter = document.getElementById("picker-subject-filter");
 
+            // 🔍 絞り込み表示チップの更新
+            updateSearchContextChip();
+
             if (openBtn) {
                 openBtn.onclick = () => {
+                    // もし検索中ならピッカーの検索入力欄にも初期値をセット
+                    if (searchInput && activeSearchQuery && !searchInput.value) {
+                        searchInput.value = activeSearchQuery;
+                    }
+                    if (subjectFilter && activeSubjFilter && activeSubjFilter !== "ALL") {
+                        subjectFilter.value = activeSubjFilter;
+                    }
                     renderProblemPickerList();
                     if (pickerModal) pickerModal.classList.add("open");
                 };
@@ -1484,35 +1613,85 @@ ${glossaryBlock}`;
                 };
             }
 
-            // 🎲 ランダム出題ボタン
+            // 🎲 ランダム出題ボタン（絞り込み中ならその範囲から選ぶ）
             if (randomBtn) {
                 randomBtn.onclick = () => {
-                    if (cachedAllUserProblems.length === 0) {
-                        showToast("登録問題がありません", "info");
+                    const pool = getActiveFilteredProblems().filter(p => p.id !== PROBLEM_ID);
+                    if (pool.length === 0) {
+                        showToast(cachedAllUserProblems.length === 0 ? "登録問題がありません" : "他の問題がありません", "info");
                         return;
                     }
-                    const pool = cachedAllUserProblems.filter(p => p.id !== PROBLEM_ID);
-                    const pick = pool.length > 0 
-                        ? pool[Math.floor(Math.random() * pool.length)]
-                        : cachedAllUserProblems[0];
+                    const pick = pool[Math.floor(Math.random() * pool.length)];
                     if (pick) {
-                        location.href = "problem.html?id=" + encodeURIComponent(pick.id);
+                        navigateToProblem(pick.id);
                     }
                 };
             }
 
-            // ▶ 次の問題へボタン
-            if (nextBtn) {
-                nextBtn.onclick = () => {
-                    if (cachedAllUserProblems.length === 0) return;
-                    const curIdx = cachedAllUserProblems.findIndex(p => p.id === PROBLEM_ID);
-                    const nextIdx = (curIdx + 1) % cachedAllUserProblems.length;
-                    const nextProb = cachedAllUserProblems[nextIdx];
-                    if (nextProb) {
-                        location.href = "problem.html?id=" + encodeURIComponent(nextProb.id);
+            // ◀ 前の問題へボタン
+            if (prevBtn) {
+                prevBtn.onclick = () => {
+                    const sequence = getActiveFilteredProblems();
+                    if (sequence.length === 0) {
+                        showToast("対象の問題がありません", "info");
+                        return;
                     }
+                    if (sequence.length === 1) {
+                        showToast("この条件の問題は現在表示中の1件のみです", "info", 2000);
+                        return;
+                    }
+                    const curIdx = sequence.findIndex(p => p.id === PROBLEM_ID);
+                    const prevIdx = curIdx === -1 ? 0 : (curIdx - 1 + sequence.length) % sequence.length;
+                    navigateToProblem(sequence[prevIdx].id);
                 };
             }
+
+            // ▶ 次の問題へボタン（絞り込み条件の順序を尊重して進む）
+            if (nextBtn) {
+                nextBtn.onclick = () => {
+                    const sequence = getActiveFilteredProblems();
+                    if (sequence.length === 0) {
+                        showToast("対象の問題がありません", "info");
+                        return;
+                    }
+                    if (sequence.length === 1) {
+                        showToast("この条件の問題は現在表示中の1件のみです", "info", 2000);
+                        return;
+                    }
+                    const curIdx = sequence.findIndex(p => p.id === PROBLEM_ID);
+                    const nextIdx = curIdx === -1 ? 0 : (curIdx + 1) % sequence.length;
+                    if (curIdx !== -1 && nextIdx === 0) {
+                        showToast("最後の問題です。先頭の問題へ戻ります", "info", 1500);
+                    }
+                    navigateToProblem(sequence[nextIdx].id);
+                };
+            }
+
+            // ← ダッシュボードへ戻るボタン（検索状態を引き継ぐ）
+            if (backBtn) {
+                backBtn.onclick = () => {
+                    const params = new URLSearchParams();
+                    if (activeSearchQuery) params.set("search", activeSearchQuery);
+                    if (activeSubjFilter && activeSubjFilter !== "ALL") params.set("subj", activeSubjFilter);
+                    if (activeFieldFilter && activeFieldFilter !== "ALL") params.set("field", activeFieldFilter);
+                    const qs = params.toString();
+                    location.href = qs ? `index.html?${qs}` : "index.html";
+                };
+            }
+
+            // ⌨️ キーボードショートカット (Alt + ← で前へ, Alt + → で次へ)
+            window.addEventListener("keydown", (e) => {
+                const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : "";
+                if (activeTag === "input" || activeTag === "textarea") return;
+
+                if (e.altKey && e.key === "ArrowRight") {
+                    e.preventDefault();
+                    if (nextBtn) nextBtn.click();
+                } else if (e.altKey && e.key === "ArrowLeft") {
+                    e.preventDefault();
+                    if (prevBtn) prevBtn.click();
+                }
+            });
 
             if (searchInput) searchInput.oninput = () => renderProblemPickerList();
             if (subjectFilter) subjectFilter.onchange = () => renderProblemPickerList();
@@ -1546,7 +1725,7 @@ ${glossaryBlock}`;
                 const errCount = p.errorCount || 0;
                 const lastAttempt = p.lastAttemptAt ? new Date(p.lastAttemptAt).toLocaleDateString("ja-JP") : "未挑戦";
                 return `
-                    <div class="picker-item-row ${isCurrent ? 'active' : ''}" onclick="location.href='problem.html?id=${encodeURIComponent(p.id)}'">
+                    <div class="picker-item-row ${isCurrent ? 'active' : ''}" onclick="navigateToProblem('${encodeURIComponent(p.id)}')">
                         <div style="flex: 1; min-width: 0;">
                             <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
                                 <span class="flora-badge" style="background: var(--bg-surface); border: 1px solid var(--border-color); font-size: 0.72rem;">${escapeHtml(p.subject || "未分類")}</span>
@@ -1977,13 +2156,19 @@ ${EXPERT_TEACHER_PROMPT}
             if (!loginUid) return;
             const probRef = ref(database, 'users/' + loginUid + '/problems/' + PROBLEM_ID);
 
+            const sequence = getActiveFilteredProblems();
+            const curIdx = sequence.findIndex(p => p.id === PROBLEM_ID);
+            const hasNext = sequence.length > 1;
+
             if (isCorrect) {
                 triggerNeonExplosion(); 
-                showToast("克服おめでとうございます！！素晴らしい！", "success", 3000);
+                const guidance = hasNext ? " ▶ 右上の『次の問題』で続けて演習できます" : "";
+                showToast(`克服おめでとうございます！！素晴らしい！${guidance}`, "success", 3500);
                 currentProblemData.lastResult = true;
                 currentProblemData.errorCount = 0; 
             } else {
-                showToast("クラウドに記録しました。AIと一緒に考え直そう！", "info", 3000);
+                const guidance = hasNext ? " （解き直すか、右上の『次の問題』へ）" : "";
+                showToast(`クラウドに記録しました。AIと一緒に考え直そう！${guidance}`, "info", 3500);
                 currentProblemData.lastResult = false;
                 currentProblemData.errorCount = Number(currentProblemData.errorCount || 1) + 1;
             }
@@ -1992,7 +2177,21 @@ ${EXPERT_TEACHER_PROMPT}
             await set(probRef, currentProblemData);
 
             document.getElementById("answer-reveal-zone").style.display = "none";
-            document.getElementById("reveal-btn-wrap").style.display = "flex";
+            const revealWrapEl = document.getElementById("reveal-btn-wrap");
+            if (revealWrapEl) revealWrapEl.style.display = "flex";
+
+            const quickNextBtn = document.getElementById("btn-quick-next-problem");
+            if (quickNextBtn) {
+                if (hasNext) {
+                    const nextNum = curIdx !== -1 ? (curIdx + 1) % sequence.length + 1 : 1;
+                    const queryLabel = activeSearchQuery ? `「${activeSearchQuery}」の` : "";
+                    quickNextBtn.textContent = `▶ 次の${queryLabel}問題へ進む (${nextNum}/${sequence.length}問目)`;
+                    quickNextBtn.style.display = "block";
+                } else {
+                    quickNextBtn.style.display = "none";
+                }
+            }
+
             loadCloudProblemSession(loginUid);
         }
 
@@ -2338,6 +2537,14 @@ ${EXPERT_TEACHER_PROMPT}
         if (diagramRequestInput) {
             diagramRequestInput.addEventListener("keydown", (e) => {
                 if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); submitDiagramRequest(); }
+            });
+        }
+
+        const quickNextBtn = document.getElementById("btn-quick-next-problem");
+        if (quickNextBtn) {
+            quickNextBtn.addEventListener("click", () => {
+                const nextBtn = document.getElementById("btn-next-problem");
+                if (nextBtn) nextBtn.click();
             });
         }
 

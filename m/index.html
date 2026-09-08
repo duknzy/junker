@@ -13,21 +13,6 @@
     <link rel="icon" type="image/svg+xml" href="../favicon.svg">
     <link rel="stylesheet" href="style-m.css">
 
-    <!-- 数式レンダリング（LaTeX / MathJax） -->
-    <script>
-        window.MathJax = {
-            tex: {
-                inlineMath: [['$', '$'], ['\\(', '\\)']],
-                displayMath: [['$$', '$$'], ['\\[', '\\]']],
-                macros: { fbox: ["\\bbox[2px,border:1px solid]{#1}", 1] }
-            },
-            options: {
-                skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
-            }
-        };
-    </script>
-    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
-
     <style>
         /* 統計サマリー */
         .stat-row {
@@ -86,42 +71,55 @@
             transition: width 0.5s ease;
         }
 
-        /* 問題行カード */
+        /* 高速・軽量な問題行カード */
         .p-row {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
-            padding: 0.75rem 0.9rem;
+            gap: 0.7rem;
+            padding: 0.65rem 0.85rem;
             background: var(--bg-surface);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-lg);
-            margin-bottom: 0.6rem;
+            margin-bottom: 0.5rem;
             cursor: pointer;
-            transition: box-shadow 0.15s, transform 0.1s;
             border-left: 4px solid var(--brand-primary);
+            content-visibility: auto;
+            contain-intrinsic-size: auto 64px;
+            -webkit-tap-highlight-color: transparent;
         }
         .p-row:active {
-            transform: scale(0.985);
-            box-shadow: var(--shadow-sm);
+            background: var(--bg-subtle);
+            transform: scale(0.99);
         }
 
+        /* サムネイル画像の代わりに軽量な教科アイコンバッジ */
         .p-thumb {
-            width: 48px;
-            height: 48px;
-            border-radius: var(--radius-md);
+            width: 40px;
+            height: 40px;
+            min-width: 40px;
+            border-radius: 10px;
             flex-shrink: 0;
-            overflow: hidden;
             background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.35rem;
+            font-size: 1.25rem;
+            user-select: none;
         }
-        .p-thumb img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
+
+        /* 教科別の背景・枠線カラー */
+        .p-thumb.subj-math      { background: var(--subj-math-bg);      border-color: var(--subj-math-border); }
+        .p-thumb.subj-physics   { background: var(--subj-physics-bg);   border-color: var(--subj-physics-border); }
+        .p-thumb.subj-chemistry { background: var(--subj-chemistry-bg); border-color: var(--subj-chemistry-border); }
+        .p-thumb.subj-biology   { background: var(--subj-biology-bg);   border-color: var(--subj-biology-border); }
+        .p-thumb.subj-english   { background: var(--subj-english-bg);   border-color: var(--subj-english-border); }
+        .p-thumb.subj-japanese  { background: var(--subj-japanese-bg);  border-color: var(--subj-japanese-border); }
+        .p-thumb.subj-history   { background: var(--subj-history-bg);   border-color: var(--subj-history-border); }
+        .p-thumb.subj-nihonshi  { background: var(--subj-nihonshi-bg);  border-color: var(--subj-nihonshi-border); }
+        .p-thumb.subj-geography { background: var(--subj-geography-bg); border-color: var(--subj-geography-border); }
+        .p-thumb.subj-civics    { background: var(--subj-civics-bg);    border-color: var(--subj-civics-border); }
+        .p-thumb.subj-info      { background: var(--subj-info-bg);      border-color: var(--subj-info-border); }
 
         .p-main {
             flex: 1;
@@ -136,6 +134,8 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
+        .p-title sup { font-size: 0.75em; vertical-align: super; line-height: 0; }
+        .p-title sub { font-size: 0.75em; vertical-align: sub; line-height: 0; }
         .p-badges {
             display: flex;
             gap: 0.3rem;
@@ -445,10 +445,14 @@
             });
         }
 
-        // ==================== 検索 ====================
+        // ==================== 検索（デバウンスで入力高速化） ====================
+        let searchDebounceTimer = null;
         document.getElementById("search-input").addEventListener("input", (e) => {
-            currentSearchQuery = e.target.value.trim().toLowerCase();
-            renderDashboard();
+            clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(() => {
+                currentSearchQuery = e.target.value.trim().toLowerCase();
+                renderDashboard();
+            }, 180);
         });
 
         // ==================== 復習優先度 ====================
@@ -481,39 +485,35 @@
         };
         const sectionOrder = ["overdue", "critical", "new", "pending", "safe"];
 
-        // 1枚の問題カードHTML生成
+        // 1枚の問題カードHTML生成（画像読み込みを完全廃止し教科別アイコンで軽量化）
         function renderSingleProblemCard(p) {
             const urgency = getUrgency(p);
             const cfg = urgencyConfig[urgency] || urgencyConfig.new;
 
-            let thumbContent = "";
-            if (p.thumb) {
-                thumbContent = `<img src="${p.thumb}">`;
-            } else {
-                const subj = p.subject || "";
-                let icon = "📝";
-                if (subj.includes("数学")) icon = "📐";
-                else if (subj.includes("物理")) icon = "⚡";
-                else if (subj.includes("化学")) icon = "🧪";
-                else if (subj.includes("世界史")) icon = "🌍";
-                else if (subj.includes("日本史")) icon = "⛩️";
-                else if (subj.includes("英語")) icon = "🔤";
-                else if (subj.includes("国語")) icon = "📖";
-                else if (subj.includes("地理")) icon = "🗺️";
-                else if (subj.includes("情報")) icon = "💻";
-                else if (subj.includes("生物")) icon = "🧬";
-                thumbContent = icon;
-            }
+            const subj = p.subject || "";
+            let icon = "📝";
+            let subjClass = "subj-other";
+            if (subj.includes("数学")) { icon = "📐"; subjClass = "subj-math"; }
+            else if (subj.includes("物理")) { icon = "⚡"; subjClass = "subj-physics"; }
+            else if (subj.includes("化学")) { icon = "🧪"; subjClass = "subj-chemistry"; }
+            else if (subj.includes("生物")) { icon = "🧬"; subjClass = "subj-biology"; }
+            else if (subj.includes("英語")) { icon = "🔤"; subjClass = "subj-english"; }
+            else if (subj.includes("国語") || subj.includes("現代文") || subj.includes("古文") || subj.includes("漢文")) { icon = "📖"; subjClass = "subj-japanese"; }
+            else if (subj.includes("世界史")) { icon = "🌍"; subjClass = "subj-history"; }
+            else if (subj.includes("日本史")) { icon = "⛩️"; subjClass = "subj-nihonshi"; }
+            else if (subj.includes("地理")) { icon = "🗺️"; subjClass = "subj-geography"; }
+            else if (subj.includes("公民") || subj.includes("倫理") || subj.includes("政経") || subj.includes("政治")) { icon = "🏛️"; subjClass = "subj-civics"; }
+            else if (subj.includes("情報")) { icon = "💻"; subjClass = "subj-info"; }
 
-            const subjClass = getSubjectClass(p.subject || "");
+            const badgeClass = getSubjectClass(p.subject || "");
 
             return `
                 <div class="p-row" style="border-left-color:${cfg.color};" onclick="location.href='problem.html?id=${p.id}'">
-                    <div class="p-thumb">${thumbContent}</div>
+                    <div class="p-thumb ${subjClass}">${icon}</div>
                     <div class="p-main">
-                        <div class="p-title tex2jax_process">${formatMathTitle(p.short_title || p.title || "無題")}</div>
+                        <div class="p-title">${formatMathTitle(p.short_title || p.title || "無題")}</div>
                         <div class="p-badges">
-                            <span class="m-subject-badge ${subjClass}">${escHtml(p.subject || "未分類")}</span>
+                            <span class="m-subject-badge ${badgeClass}">${escHtml(p.subject || "未分類")}</span>
                             ${p.field ? `<span class="m-subject-badge" style="background:var(--bg-subtle);color:var(--text-secondary);border:1px solid var(--border-color);">${escHtml(truncate(p.field, 15))}</span>` : ""}
                         </div>
                     </div>
@@ -585,21 +585,22 @@
             let html = "";
 
             if (currentSortMode === "urgency") {
-                // 🧠 忘却曲線セクション別表示
+                // 🧠 忘却曲線セクション別表示（克服済みはデフォルトで折りたたんでDOMと描画負荷を低減）
                 sectionOrder.forEach(key => {
                     const items = buckets[key];
                     if (!items || items.length === 0) return;
                     const cfg = urgencyConfig[key];
+                    const isCollapsed = (key === "safe");
 
                     html += `
-                        <div class="section-header" data-section="${key}" onclick="this.classList.toggle('collapsed');this.nextElementSibling.classList.toggle('collapsed');">
+                        <div class="section-header ${isCollapsed ? 'collapsed' : ''}" data-section="${key}" onclick="this.classList.toggle('collapsed');this.nextElementSibling.classList.toggle('collapsed');">
                             <div class="section-header-left">
                                 <span class="section-chevron">▼</span>
                                 <span>${cfg.label}</span>
                             </div>
                             <span class="section-count">${items.length}</span>
                         </div>
-                        <div class="section-rows" data-section-rows="${key}">
+                        <div class="section-rows ${isCollapsed ? 'collapsed' : ''}" data-section-rows="${key}">
                     `;
                     items.forEach(p => { html += renderSingleProblemCard(p); });
                     html += `</div>`;
@@ -644,11 +645,6 @@
             }
 
             listEl.innerHTML = html;
-
-            // 📐 数式レンダリング（LaTeX / MathJax）
-            if (window.MathJax && window.MathJax.typesetPromise) {
-                window.MathJax.typesetPromise([listEl]).catch(err => console.log("MathJax error:", err));
-            }
         }
 
         // ==================== 📸 問題登録モーダル（スマホ完結） ====================
@@ -789,17 +785,64 @@
 
         function formatMathTitle(text) {
             if (!text) return "無題";
-            const mathBlocks = [];
-            let placeholderText = String(text).replace(/(\$\$[\s\S]*?\$\$|\$[^\$\n]+?\$)/g, (match) => {
-                mathBlocks.push(match);
-                return `%%%MATH_${mathBlocks.length - 1}%%%`;
+            let s = String(text);
+            s = s.replace(/\$\$?([\s\S]*?)\$\$?/g, (_, math) => {
+                let clean = math
+                    .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, "$1/$2")
+                    .replace(/\\sqrt\{([^}]+)\}/g, "√$1")
+                    .replace(/\\sqrt\s*([a-zA-Z0-9])/g, "√$1")
+                    .replace(/\\times/g, "×")
+                    .replace(/\\div/g, "÷")
+                    .replace(/\\pm/g, "±")
+                    .replace(/\\mp/g, "∓")
+                    .replace(/\\le(q)?/g, "≤")
+                    .replace(/\\ge(q)?/g, "≥")
+                    .replace(/\\neq/g, "≠")
+                    .replace(/\\approx/g, "≈")
+                    .replace(/\\cdot/g, "・")
+                    .replace(/\\infty/g, "∞")
+                    .replace(/\\alpha/g, "α")
+                    .replace(/\\beta/g, "β")
+                    .replace(/\\gamma/g, "γ")
+                    .replace(/\\theta/g, "θ")
+                    .replace(/\\lambda/g, "λ")
+                    .replace(/\\mu/g, "μ")
+                    .replace(/\\pi/g, "π")
+                    .replace(/\\sigma/g, "σ")
+                    .replace(/\\omega/g, "ω")
+                    .replace(/\\Delta/g, "Δ")
+                    .replace(/\\Omega/g, "Ω")
+                    .replace(/\\circ/g, "°")
+                    .replace(/\\in/g, "∈")
+                    .replace(/\\subset/g, "⊂")
+                    .replace(/\\cap/g, "∩")
+                    .replace(/\\cup/g, "∪")
+                    .replace(/\\vec\{([^}]+)\}/g, "$1→")
+                    .replace(/\\bar\{([^}]+)\}/g, "$1̄")
+                    .replace(/\\text\{([^}]+)\}/g, "$1")
+                    .replace(/\\mathrm\{([^}]+)\}/g, "$1")
+                    .replace(/\\mathbf\{([^}]+)\}/g, "$1")
+                    .replace(/\\bm\{([^}]+)\}/g, "$1")
+                    .replace(/\\left|\\right/g, "")
+                    .replace(/\\,/g, " ")
+                    .replace(/\^2/g, "²")
+                    .replace(/\^3/g, "³")
+                    .replace(/\^n/g, "ⁿ")
+                    .replace(/\^\{([^}]+)\}/g, "<sup>$1</sup>")
+                    .replace(/_\{([^}]+)\}/g, "<sub>$1</sub>")
+                    .replace(/_([0-9a-zA-Z])/g, "<sub>$1</sub>")
+                    .replace(/\\[a-zA-Z]+/g, "");
+                return clean.trim();
             });
-            let formatted = placeholderText
+            return escHtmlExceptTags(s);
+        }
+
+        function escHtmlExceptTags(s) {
+            if (!s) return "";
+            return s
                 .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;");
-            formatted = formatted.replace(/%%%MATH_(\d+)%%%/g, (_, idx) => mathBlocks[idx]);
-            return formatted;
+                .replace(/<(?!\/?(sup|sub)>)/g, "&lt;")
+                .replace(/(?<!<\/?(sup|sub))>/g, "&gt;");
         }
 
         function escHtml(s) {

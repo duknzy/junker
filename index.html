@@ -1284,16 +1284,75 @@ async function checkAndLoadLinkedLesson(uid) {
             });
         }
 
-        let currentSubjectFilter = "ALL";
-        let currentFieldFilter = "ALL";
-        let currentSearchQuery = "";
+        // 🔎 検索・教科・単元フィルターの状態復元（URLクエリパラメータ最優先、次点でsessionStorage）
+        const dashUrlParams = new URLSearchParams(window.location.search);
+        const savedSearch = dashUrlParams.get("search") || sessionStorage.getItem("flora_dashboard_search") || "";
+        const savedSubj = dashUrlParams.get("subj") || sessionStorage.getItem("flora_dashboard_subj") || "ALL";
+        const savedField = dashUrlParams.get("field") || sessionStorage.getItem("flora_dashboard_field") || "ALL";
+
+        let currentSubjectFilter = savedSubj;
+        let currentFieldFilter = savedField;
+        let currentSearchQuery = savedSearch;
+        let currentVisibleProblemIds = []; // 🎯 現在の検索・フィルターで画面に並んでいる問題IDの配列
+
         let currentProblemSortMode = (function() {
             try {
-                return localStorage.getItem("flora_dashboard_sort_mode") || "priority";
+                return dashUrlParams.get("sort") || localStorage.getItem("flora_dashboard_sort_mode") || "priority";
             } catch(e) {
                 return "priority";
             }
         })();
+
+        // 🔄 検索・フィルター状態をURLパラメータおよびsessionStorageに同期保存する
+        function syncFilterStateToStorageAndUrl() {
+            try {
+                if (currentSearchQuery) {
+                    sessionStorage.setItem("flora_dashboard_search", currentSearchQuery);
+                } else {
+                    sessionStorage.removeItem("flora_dashboard_search");
+                }
+                if (currentSubjectFilter && currentSubjectFilter !== "ALL") {
+                    sessionStorage.setItem("flora_dashboard_subj", currentSubjectFilter);
+                } else {
+                    sessionStorage.removeItem("flora_dashboard_subj");
+                }
+                if (currentFieldFilter && currentFieldFilter !== "ALL") {
+                    sessionStorage.setItem("flora_dashboard_field", currentFieldFilter);
+                } else {
+                    sessionStorage.removeItem("flora_dashboard_field");
+                }
+
+                const url = new URL(window.location.href);
+                if (currentSearchQuery) url.searchParams.set("search", currentSearchQuery);
+                else url.searchParams.delete("search");
+                if (currentSubjectFilter && currentSubjectFilter !== "ALL") url.searchParams.set("subj", currentSubjectFilter);
+                else url.searchParams.delete("subj");
+                if (currentFieldFilter && currentFieldFilter !== "ALL") url.searchParams.set("field", currentFieldFilter);
+                else url.searchParams.delete("field");
+                if (currentProblemSortMode && currentProblemSortMode !== "priority") url.searchParams.set("sort", currentProblemSortMode);
+                else url.searchParams.delete("sort");
+                window.history.replaceState(null, "", url.toString());
+            } catch(e) {}
+        }
+
+        // 🎯 問題クリック時に検索条件・絞り込みリストを引き継いで遷移する
+        window.openProblemFromDashboard = function(probId) {
+            const params = new URLSearchParams();
+            params.set("id", probId);
+            if (currentSearchQuery) params.set("search", currentSearchQuery);
+            if (currentSubjectFilter && currentSubjectFilter !== "ALL") params.set("subj", currentSubjectFilter);
+            if (currentFieldFilter && currentFieldFilter !== "ALL") params.set("field", currentFieldFilter);
+            if (currentProblemSortMode && currentProblemSortMode !== "priority") params.set("sort", currentProblemSortMode);
+
+            try {
+                sessionStorage.setItem("flora_active_filtered_ids", JSON.stringify(currentVisibleProblemIds));
+                sessionStorage.setItem("flora_active_search_query", currentSearchQuery || "");
+                sessionStorage.setItem("flora_active_subj_filter", currentSubjectFilter || "ALL");
+                sessionStorage.setItem("flora_active_field_filter", currentFieldFilter || "ALL");
+            } catch(e) {}
+
+            location.href = `problem.html?${params.toString()}`;
+        };
 
         // 🗂️ 折りたたみ状態（端末ローカルに保存し、次回訪問時も維持）
         let collapsedSections = new Set();
@@ -1305,13 +1364,18 @@ async function checkAndLoadLinkedLesson(uid) {
             try { localStorage.setItem("collapsedProblemSections", JSON.stringify([...collapsedSections])); } catch (e) {}
         }
 
-        // 🔎 検索ボックスのイベントバインド
+        // 🔎 検索ボックスのイベントバインド（初期値復元対応）
         const searchInputEl = document.getElementById("problem-search-input");
         const searchClearBtnEl = document.getElementById("problem-search-clear-btn");
         if (searchInputEl) {
+            if (currentSearchQuery) {
+                searchInputEl.value = currentSearchQuery;
+                if (searchClearBtnEl) searchClearBtnEl.style.display = "inline-block";
+            }
             searchInputEl.addEventListener("input", (e) => {
                 currentSearchQuery = e.target.value.trim();
                 searchClearBtnEl.style.display = currentSearchQuery ? "inline-block" : "none";
+                syncFilterStateToStorageAndUrl();
                 rebuildFilterBarAndCards();
             });
         }
@@ -1320,6 +1384,7 @@ async function checkAndLoadLinkedLesson(uid) {
                 currentSearchQuery = "";
                 if (searchInputEl) searchInputEl.value = "";
                 searchClearBtnEl.style.display = "none";
+                syncFilterStateToStorageAndUrl();
                 rebuildFilterBarAndCards();
             });
         }
@@ -1340,6 +1405,7 @@ async function checkAndLoadLinkedLesson(uid) {
                 btn.classList.toggle("active", btn.getAttribute("data-sort") === mode);
             });
 
+            syncFilterStateToStorageAndUrl();
             rebuildFilterBarAndCards();
         }
 
@@ -1453,6 +1519,7 @@ function resolveCreatedAt(p) {
                 btn.addEventListener("click", (e) => {
                     currentSubjectFilter = e.target.getAttribute("data-subject");
                     currentFieldFilter = "ALL"; // 教科を変えたら単元はリセット
+                    syncFilterStateToStorageAndUrl();
                     rebuildFilterBarAndCards();
                 });
             });
@@ -1471,6 +1538,7 @@ function resolveCreatedAt(p) {
                 // 単元セレクトの変更イベント
                 fieldSelect.onchange = (e) => {
                     currentFieldFilter = e.target.value;
+                    syncFilterStateToStorageAndUrl();
                     rebuildFilterBarAndCards();
                 };
             } else {
@@ -1479,6 +1547,7 @@ function resolveCreatedAt(p) {
 
             // 4. 問題一覧の描画処理（フィルタリング適用＋緊急度別セクション分け＋リスト行表示）
             dynamicArea.innerHTML = "";
+            currentVisibleProblemIds = []; // 🎯 画面に描画される問題IDを順序どおりに格納
             let dynamicTotalCount = 0;
             let solvedTodayCount = 0;
             let criticalDueCount = 0;
@@ -1651,7 +1720,7 @@ thumbHtml = `<div class="row-thumb row-thumb-icon ${glowClass} tex2jax_process">
                 const rowColor = urgencyColorMap[timeBadgeClass] || "var(--accent-cyan)";
 
                 const rowHtml = `
-                    <div class="problem-row" onclick="location.href='problem.html?id=${p.id}'" style="border-left: 4px solid ${rowColor};">
+                    <div class="problem-row" onclick="openProblemFromDashboard('${p.id}')" style="border-left: 4px solid ${rowColor};">
                         ${thumbHtml}
                         <div class="row-main">
                             <div class="row-badges">
@@ -1697,6 +1766,7 @@ thumbHtml = `<div class="row-thumb row-thumb-icon ${glowClass} tex2jax_process">
                 sectionOrder.forEach(section => {
                     const rows = buckets[section.key];
                     if (!rows || rows.length === 0) return;
+                    rows.forEach(r => { if (r.p && r.p.id) currentVisibleProblemIds.push(r.p.id); });
                     const isCollapsed = collapsedSections.has(section.key);
                     dynamicArea.insertAdjacentHTML("beforeend", `
                         <div class="problem-section-header ${isCollapsed ? 'collapsed' : ''}" data-section-key="${section.key}">
@@ -1714,6 +1784,7 @@ thumbHtml = `<div class="row-thumb row-thumb-icon ${glowClass} tex2jax_process">
             } else {
                 // 🔀 カスタム並べ替え：緊急度別セクションをフラット化し、選択条件に基づいてソート
                 const allRows = sectionOrder.flatMap(section => buckets[section.key] || []);
+                allRows.forEach(r => { if (r.p && r.p.id) currentVisibleProblemIds.push(r.p.id); });
                 
                 let headerTitle = "並べ替え結果";
                 switch (currentProblemSortMode) {
@@ -2111,7 +2182,7 @@ ${glossaryBlock}`;
                 }
 
                 const itemHtml = `
-                    <div class="insight-card-item" onclick="location.href='problem.html?id=${p.id}'">
+                    <div class="insight-card-item" onclick="openProblemFromDashboard('${p.id}')">
                         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.4rem;">
                             <span class="badge badge-physics" style="font-size: 0.7rem;">${subject} // ${field}</span>
                             <span style="font-size: 0.8rem; font-weight: 800; color: var(--accent-cyan);">📌 ${shortTitle} ➔</span>
@@ -2192,7 +2263,7 @@ ${glossaryBlock}`;
 
             container.querySelectorAll("[data-problem-id]").forEach(itemEl => {
                 itemEl.addEventListener("click", () => {
-                    location.href = `problem.html?id=${itemEl.getAttribute("data-problem-id")}`;
+                    openProblemFromDashboard(itemEl.getAttribute("data-problem-id"));
                 });
             });
         }
@@ -2425,7 +2496,7 @@ ${glossaryBlock}`;
         if (qnaArchiveDetailGotoBtn) {
             qnaArchiveDetailGotoBtn.addEventListener("click", () => {
                 const log = qnaLogsCache[currentOpenQnaArchiveLogId];
-                if (log && log.problemId) location.href = `problem.html?id=${log.problemId}`;
+                if (log && log.problemId) openProblemFromDashboard(log.problemId);
             });
         }
         if (qnaArchiveDetailDeleteBtn) {
