@@ -142,13 +142,73 @@
             display: flex; flex-direction: column; gap: 0.5rem; padding: 1.15rem;
             background: var(--bg-surface); border: 1px solid var(--border-color);
             border-radius: var(--radius-lg); cursor: pointer; position: relative;
-            box-shadow: var(--shadow-xs); transition: all 0.15s ease;
+            box-shadow: var(--shadow-xs); transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+            user-select: none;
         }
         .lesson-grid-card:hover { border-color: var(--brand-border); box-shadow: var(--shadow-md); transform: translateY(-1px); }
+        .lesson-grid-card.dragging {
+            opacity: 0.4;
+            border: 2px dashed var(--brand-primary) !important;
+            transform: scale(0.97);
+            box-shadow: none !important;
+        }
+        .lesson-grid-card.drag-over {
+            border-color: var(--brand-primary) !important;
+            box-shadow: 0 0 0 2px var(--brand-light), var(--shadow-md) !important;
+            transform: translateY(-2px);
+        }
+        .lesson-drag-handle {
+            cursor: grab;
+            color: var(--text-muted);
+            font-size: 0.82rem;
+            letter-spacing: -1px;
+            padding: 0.15rem 0.35rem;
+            border-radius: var(--radius-sm);
+            display: inline-flex;
+            align-items: center;
+            line-height: 1;
+            transition: all 0.15s ease;
+            opacity: 0.7;
+        }
+        .lesson-drag-handle:hover {
+            background: var(--bg-subtle);
+            color: var(--brand-primary);
+            opacity: 1;
+        }
+        .lesson-drag-handle:active {
+            cursor: grabbing;
+        }
+        .lesson-order-btn {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-size: 0.68rem;
+            font-weight: 700;
+            padding: 0.15rem 0.4rem;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
+            min-width: 24px;
+            height: 24px;
+            line-height: 1;
+        }
+        .lesson-order-btn:hover:not(:disabled) {
+            background: var(--brand-light);
+            color: var(--brand-primary);
+            border-color: var(--brand-border);
+        }
+        .lesson-order-btn:disabled {
+            opacity: 0.25;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
         .lesson-grid-card-top { display: flex; justify-content: space-between; align-items: center; gap: 0.4rem; }
         .lesson-grid-card-title { font-weight: 700; font-size: 0.95rem; line-height: 1.35; color: var(--text-primary); }
         .lesson-grid-card-meta { font-size: 0.74rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; }
-        .lesson-grid-card-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 0.3rem; border-top: 1px solid var(--border-subtle); padding-top: 0.5rem; }
+        .lesson-grid-card-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 0.3rem; border-top: 1px solid var(--border-subtle); padding-top: 0.5rem; gap: 0.5rem; }
         .lesson-grid-card-delete {
             background: transparent; color: var(--error); border: 1px solid #FECACA;
             padding: 0.25rem 0.55rem; font-size: var(--fs-xs); border-radius: var(--radius-sm); cursor: pointer;
@@ -2445,6 +2505,16 @@
                         <div style="font-family: var(--font-heading); font-weight:700; font-size:1.05rem; margin-bottom: 0.8rem;">📚 過去の授業一覧</div>
                         <div class="lesson-list-toolbar">
                             <input type="text" class="lesson-search-input" id="lesson-search-input" placeholder="🔍 授業名で検索...">
+                            <div class="lesson-sort-control" style="display:inline-flex; align-items:center; gap:0.4rem;">
+                                <label for="lesson-sort-select" style="font-size:0.75rem; color:var(--text-secondary); white-space:nowrap; font-weight:600;">並び順:</label>
+                                <select id="lesson-sort-select" class="flora-select" style="font-size:0.75rem; padding:0.4rem 0.65rem; height:auto; width:auto; border-radius:var(--radius-md); background:var(--bg-surface); border:1px solid var(--border-color); color:var(--text-primary); cursor:pointer;">
+                                    <option value="custom">📌 自由並べ替え（ドラッグ＆ボタン）</option>
+                                    <option value="created_asc">📅 受講日（古い順・カリキュラム順）</option>
+                                    <option value="created_desc">📅 受講日（新しい順）</option>
+                                    <option value="updated_desc">⚡ 最終更新日順</option>
+                                    <option value="title_asc">🔤 授業タイトル順</option>
+                                </select>
+                            </div>
                             <div class="lesson-subject-chips" id="lesson-subject-chips"></div>
                             <button type="button" class="tactile-btn" id="btn-autofix-lesson-subjects" style="font-size:0.75rem; font-weight:700; padding:0.4rem 0.85rem; background:var(--brand-light); color:var(--brand-primary); border:1px solid var(--brand-border); border-radius:var(--radius-full); white-space:nowrap; display:inline-flex; align-items:center; gap:0.35rem; cursor:pointer;" title="「その他」や「未分類」の授業のタイトル・内容を自動判定し、政経・化学などの適切な教科へ一括で分類し直します（暗記カードも同期）">
                                 ⚡ 過去の授業の教科を一括自動判別
@@ -4432,12 +4502,50 @@ ${subjectGuide}
             });
         }
 
-        function renderLessonCardHtml(l) {
+        let lessonSortMode = localStorage.getItem("flora_lesson_sort_mode") || "custom";
+        let isDraggingLessonCard = false;
+        let draggedLessonCardId = null;
+
+        function sortLessonsByRule(lessons, sortMode) {
+            const list = [...lessons];
+            if (sortMode === "created_asc") {
+                return list.sort((a, b) => new Date(a.createdAt || a.updatedAt || 0) - new Date(b.createdAt || b.updatedAt || 0));
+            }
+            if (sortMode === "created_desc") {
+                return list.sort((a, b) => new Date(b.createdAt || b.updatedAt || 0) - new Date(a.createdAt || a.updatedAt || 0));
+            }
+            if (sortMode === "updated_desc") {
+                return list.sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0));
+            }
+            if (sortMode === "title_asc") {
+                return list.sort((a, b) => (a.title || "").localeCompare(b.title || "", "ja"));
+            }
+            // "custom": orderIndex 昇順。未設定の場合は createdAt 昇順で安定比較
+            return list.sort((a, b) => {
+                const hasA = typeof a.orderIndex === "number" && !isNaN(a.orderIndex);
+                const hasB = typeof b.orderIndex === "number" && !isNaN(b.orderIndex);
+                if (hasA && hasB) return a.orderIndex - b.orderIndex;
+                if (hasA) return -1;
+                if (hasB) return 1;
+                const timeA = new Date(a.createdAt || a.updatedAt || 0).getTime();
+                const timeB = new Date(b.createdAt || b.updatedAt || 0).getTime();
+                return timeA - timeB;
+            });
+        }
+
+        function renderLessonCardHtml(l, index, totalInGroup, subjectGroup) {
             const total = (l.parts || []).length;
             const done = l.status === "completed";
             const badgeClass = done ? "badge-completed" : "badge-teaching";
             const badgeText = done ? "完了" : `パート ${((l.currentPartIndex || 0) + 1)}/${total}`;
-            const updated = new Date(l.updatedAt).toLocaleDateString("ja-JP", { month: "numeric", day: "numeric" });
+
+            // 🗓️ 受講日（作成日）を優先表示。暗記事項再作成等で updatedAt が更新されても受講履歴の日付は維持
+            const createdDate = l.createdAt ? new Date(l.createdAt) : (l.updatedAt ? new Date(l.updatedAt) : new Date());
+            const createdStr = isNaN(createdDate.getTime()) ? "" : createdDate.toLocaleDateString("ja-JP", { month: "numeric", day: "numeric" });
+            const updatedDate = l.updatedAt ? new Date(l.updatedAt) : null;
+            const updatedStr = (updatedDate && !isNaN(updatedDate.getTime())) ? updatedDate.toLocaleDateString("ja-JP", { month: "numeric", day: "numeric" }) : "";
+            const isEdited = updatedStr && createdStr && updatedStr !== createdStr;
+            const dateTooltip = `受講日: ${createdDate.toLocaleDateString('ja-JP')} ${isEdited ? `(再更新: ${updatedDate.toLocaleDateString('ja-JP')})` : ''}`;
 
             const isSocratic = l.teachingStyle === "socratic";
             const styleBadge = `<span class="lesson-style-badge ${isSocratic ? 'badge-style-socratic' : 'badge-style-standard'}">${isSocratic ? '🧠 ソクラテス' : '📖 標準'}</span>`;
@@ -4449,27 +4557,117 @@ ${subjectGuide}
                 : "";
 
             const subj = detectLessonSubject(l);
+            const canMovePrev = typeof index === "number" && index > 0;
+            const canMoveNext = typeof index === "number" && typeof totalInGroup === "number" && index < totalInGroup - 1;
 
             return `
-                <div class="squircle-tile lesson-grid-card" data-lesson-id="${l.id}">
+                <div class="squircle-tile lesson-grid-card" data-lesson-id="${l.id}" data-subject-group="${subjectGroup || subj}" draggable="true">
                     <div class="lesson-grid-card-top">
                         <div style="display:flex; align-items:center; gap:0.35rem; flex-wrap:wrap;">
                             <span class="lesson-progress-badge ${badgeClass}">${badgeText}</span>
                             <button type="button" class="lesson-subject-badge-btn" data-change-subject-id="${l.id}" title="クリックして教科を変更">${LESSON_SUBJECT_ICONS[subj] || "📎"} ${subj} ▾</button>
                         </div>
-                        ${l.level ? `<span class="lesson-level-badge">🎚️ ${LEVEL_SHORT[l.levelIndex] || l.level}</span>` : ""}
+                        <div style="display:flex; align-items:center; gap:0.35rem;">
+                            ${l.level ? `<span class="lesson-level-badge">🎚️ ${LEVEL_SHORT[l.levelIndex] || l.level}</span>` : ""}
+                            <span class="lesson-drag-handle" data-drag-handle="${l.id}" title="ドラッグして並べ替え">⋮⋮</span>
+                        </div>
                     </div>
                     <div class="lesson-grid-card-title">${(l.title || "無題の授業").replace(/</g, "&lt;")}</div>
                     <div class="lesson-grid-card-meta">
                         ${styleBadge}
-                        <span>🗓️ ${updated}</span>
+                        <span title="${dateTooltip}">🗓️ ${createdStr}${isEdited ? ` <span style="font-size:0.68rem; color:var(--text-muted); font-weight:normal;">(更新 ${updatedStr})</span>` : ""}</span>
                     </div>
                     <div class="lesson-grid-card-actions">
-                        ${levelUpBtnHtml || "<span></span>"}
-                        <button type="button" class="lesson-grid-card-delete" data-delete-id="${l.id}" title="この授業を削除">🗑️</button>
+                        <div class="lesson-reorder-group" style="display:flex; align-items:center; gap:0.25rem;">
+                            <button type="button" class="lesson-order-btn" data-move-lesson="${l.id}" data-move-dir="-1" title="この授業を1つ前に移動" ${canMovePrev ? "" : "disabled"}>◀</button>
+                            <button type="button" class="lesson-order-btn" data-move-lesson="${l.id}" data-move-dir="1" title="この授業を1つ後ろに移動" ${canMoveNext ? "" : "disabled"}>▶</button>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:0.4rem;">
+                            ${levelUpBtnHtml || ""}
+                            <button type="button" class="lesson-grid-card-delete" data-delete-id="${l.id}" title="この授業を削除">🗑️</button>
+                        </div>
                     </div>
                 </div>
             `;
+        }
+
+        async function persistLessonOrders(orderedLessons) {
+            if (!loginUid) return;
+            const updates = {};
+            orderedLessons.forEach((l, idx) => {
+                l.orderIndex = idx;
+                updates[`lessons/${l.id}/orderIndex`] = idx;
+                if (lastLessonsSnapshot[l.id]) {
+                    lastLessonsSnapshot[l.id].orderIndex = idx;
+                }
+            });
+
+            // 並び替えたら自動的にカスタム順モードへ
+            lessonSortMode = "custom";
+            localStorage.setItem("flora_lesson_sort_mode", "custom");
+            const sel = el("lesson-sort-select");
+            if (sel) sel.value = "custom";
+
+            renderLessonList(lastLessonsSnapshot);
+
+            try {
+                await update(ref(database, 'users/' + loginUid), updates);
+                showToast("✅ 授業の並び順を保存しました！", "success", 1800);
+            } catch (err) {
+                console.error("Failed to save lesson order:", err);
+                showToast("並び順の保存に失敗しました: " + err.message, "error", 4000);
+            }
+        }
+
+        async function moveLessonInGroup(lessonId, dir) {
+            if (!lastLessonsSnapshot || !loginUid) return;
+            const lesson = lastLessonsSnapshot[lessonId];
+            if (!lesson) return;
+            const subj = detectLessonSubject(lesson);
+
+            const all = Object.values(lastLessonsSnapshot).filter(l => !(l.topicKey && l.level));
+            const sorted = sortLessonsByRule(all, "custom");
+
+            // 同一教科グループ内の授業一覧を取得
+            const group = sorted.filter(l => detectLessonSubject(l) === subj);
+            const currIdx = group.findIndex(l => l.id === lessonId);
+            if (currIdx < 0) return;
+            const targetIdx = currIdx + dir;
+            if (targetIdx < 0 || targetIdx >= group.length) return;
+
+            // スワップ
+            const swapped = [...group];
+            const temp = swapped[currIdx];
+            swapped[currIdx] = swapped[targetIdx];
+            swapped[targetIdx] = temp;
+
+            // 全体リストに差し戻し
+            let p = 0;
+            const newAll = sorted.map(item => {
+                if (detectLessonSubject(item) === subj) {
+                    return swapped[p++];
+                }
+                return item;
+            });
+
+            await persistLessonOrders(newAll);
+        }
+
+        async function handleLessonDrop(draggedId, targetId) {
+            if (!draggedId || !targetId || draggedId === targetId) return;
+            if (!lastLessonsSnapshot || !loginUid) return;
+
+            const all = Object.values(lastLessonsSnapshot).filter(l => !(l.topicKey && l.level));
+            const sorted = sortLessonsByRule(all, "custom");
+
+            const fromIdx = sorted.findIndex(l => l.id === draggedId);
+            const toIdx = sorted.findIndex(l => l.id === targetId);
+            if (fromIdx < 0 || toIdx < 0) return;
+
+            const [moved] = sorted.splice(fromIdx, 1);
+            sorted.splice(toIdx, 0, moved);
+
+            await persistLessonOrders(sorted);
         }
 
         function renderLessonList(lessonsObj) {
@@ -4477,14 +4675,31 @@ ${subjectGuide}
             //    一元管理する（レベルアップの開始もロードマップの「＋」ステップから行える）ため、
             //    ここでは対象外にして二重表示を避ける。
             const allLessons = Object.values(lessonsObj || {})
-                .filter(l => !(l.topicKey && l.level))
-                .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+                .filter(l => !(l.topicKey && l.level));
+            
+            // 選択された並び順ルールでソート
+            const sortedAll = sortLessonsByRule(allLessons, lessonSortMode);
+
             const listEl = el("lesson-list");
 
-            renderLessonSubjectChips(allLessons);
+            renderLessonSubjectChips(sortedAll);
+
+            // ソートセレクターの状態同期
+            const sortSelect = el("lesson-sort-select");
+            if (sortSelect) {
+                sortSelect.value = lessonSortMode;
+                if (!sortSelect.dataset.listenerBound) {
+                    sortSelect.dataset.listenerBound = "true";
+                    sortSelect.addEventListener("change", (e) => {
+                        lessonSortMode = e.target.value;
+                        localStorage.setItem("flora_lesson_sort_mode", lessonSortMode);
+                        renderLessonList(lastLessonsSnapshot);
+                    });
+                }
+            }
 
             const query = lessonListSearchQuery.trim().toLowerCase();
-            const filtered = allLessons.filter(l => {
+            const filtered = sortedAll.filter(l => {
                 if (lessonListSubjectFilter !== "すべて" && detectLessonSubject(l) !== lessonListSubjectFilter) return false;
                 if (query && !(l.title || "").toLowerCase().includes(query)) return false;
                 return true;
@@ -4507,7 +4722,7 @@ ${subjectGuide}
             }
             el("lesson-list-empty").style.display = "none";
 
-            // 教科ごとにグループ化（各グループ内は更新日時順）
+            // 教科ごとにグループ化（各グループ内は選択されたソート順序を維持）
             const groups = {};
             filtered.forEach(l => {
                 const s = detectLessonSubject(l);
@@ -4517,22 +4732,80 @@ ${subjectGuide}
             const subjectKeys = Object.keys(groups).sort((a, b) => groups[b].length - groups[a].length);
 
             listEl.innerHTML = subjectKeys.map(subject => `
-                <div class="lesson-subject-group">
+                <div class="lesson-subject-group" data-subject-container="${subject}">
                     <div class="lesson-subject-group-header">
                         <span>${LESSON_SUBJECT_ICONS[subject] || "📎"} ${subject}</span>
                         <span class="lesson-subject-group-count">${groups[subject].length}件</span>
                     </div>
                     <div class="lesson-grid">
-                        ${groups[subject].map(l => renderLessonCardHtml(l)).join("")}
+                        ${groups[subject].map((l, idx) => renderLessonCardHtml(l, idx, groups[subject].length, subject)).join("")}
                     </div>
                 </div>
             `).join("");
 
-            listEl.querySelectorAll("[data-lesson-id]").forEach(row => {
-                row.addEventListener("click", () => {
-                    window.location.href = `lesson.html?id=${row.getAttribute("data-lesson-id")}`;
+            // 🖱️ カードクリック（授業受講画面へ遷移）
+            listEl.querySelectorAll("[data-lesson-id]").forEach(card => {
+                card.addEventListener("click", (e) => {
+                    if (isDraggingLessonCard) return;
+                    if (e.target.closest("button") || e.target.closest(".lesson-drag-handle")) return;
+                    window.location.href = `lesson.html?id=${card.getAttribute("data-lesson-id")}`;
+                });
+
+                // 🖐️ HTML5 ドラッグ＆ドロップ（PC・タブレット）
+                card.addEventListener("dragstart", (e) => {
+                    draggedLessonCardId = card.getAttribute("data-lesson-id");
+                    isDraggingLessonCard = true;
+                    card.classList.add("dragging");
+                    e.dataTransfer.effectAllowed = "move";
+                    e.dataTransfer.setData("text/plain", draggedLessonCardId);
+                });
+
+                card.addEventListener("dragend", () => {
+                    card.classList.remove("dragging");
+                    listEl.querySelectorAll(".drag-over").forEach(c => c.classList.remove("drag-over"));
+                    setTimeout(() => {
+                        isDraggingLessonCard = false;
+                        draggedLessonCardId = null;
+                    }, 120);
+                });
+
+                card.addEventListener("dragover", (e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = "move";
+                    const currentTarget = e.currentTarget;
+                    if (currentTarget && !currentTarget.classList.contains("dragging")) {
+                        currentTarget.classList.add("drag-over");
+                    }
+                });
+
+                card.addEventListener("dragleave", (e) => {
+                    e.currentTarget.classList.remove("drag-over");
+                });
+
+                card.addEventListener("drop", (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const targetCard = e.currentTarget;
+                    targetCard.classList.remove("drag-over");
+                    const targetId = targetCard.getAttribute("data-lesson-id");
+                    if (draggedLessonCardId && targetId && draggedLessonCardId !== targetId) {
+                        handleLessonDrop(draggedLessonCardId, targetId);
+                    }
                 });
             });
+
+            // ◀ ▶ クイック並べ替えボタン
+            listEl.querySelectorAll("[data-move-lesson]").forEach(btn => {
+                btn.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    const id = btn.getAttribute("data-move-lesson");
+                    const dir = parseInt(btn.getAttribute("data-move-dir"), 10);
+                    if (id && !isNaN(dir)) {
+                        moveLessonInGroup(id, dir);
+                    }
+                });
+            });
+
             listEl.querySelectorAll("[data-change-subject-id]").forEach(btn => {
                 btn.addEventListener("click", (e) => {
                     e.stopPropagation();
@@ -6108,6 +6381,9 @@ ${EXPERT_TEACHER_PROMPT}
         }
 
         async function saveLesson() {
+            if (!currentLesson.createdAt) {
+                currentLesson.createdAt = currentLesson.updatedAt || new Date().toISOString();
+            }
             currentLesson.updatedAt = new Date().toISOString();
             await set(ref(database, 'users/' + loginUid + '/lessons/' + currentLessonId), currentLesson);
         }
