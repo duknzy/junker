@@ -60,16 +60,19 @@
             margin-bottom: 0.75rem;
             box-shadow: var(--shadow-xs);
             transition: all 0.15s;
+            overflow: hidden;
         }
 
         .insight-text {
             font-size: var(--fs-base);
-            line-height: 1.7;
+            line-height: 1.65;
             color: var(--text-primary);
             font-weight: 500;
-            margin: 0.5rem 0;
+            margin: 0.4rem 0;
             word-break: break-word;
-            white-space: pre-wrap;
+            overflow-wrap: break-word;
+            line-break: strict;
+            white-space: pre-line;
         }
 
         .insight-meta {
@@ -162,39 +165,99 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* モバイル用フラッシュカードモーダル */
+        /* ==========================================================
+           🎴 モバイル用フラッシュカード復習モーダル（超最適化・完全レスポンシブ）
+           ========================================================== */
         .m-fc-modal {
             position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(15, 23, 42, 0.75);
+            inset: 0;
+            background: rgba(15, 23, 42, 0.78);
             z-index: 100050;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 14px;
-            backdrop-filter: blur(6px);
+            padding: 12px 14px;
+            padding-top: max(12px, env(safe-area-inset-top));
+            padding-bottom: max(12px, env(safe-area-inset-bottom));
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
         }
         .m-fc-content {
             background: var(--bg-surface);
-            border-radius: 18px;
+            border-radius: 22px;
             width: 100%;
-            max-width: 460px;
-            padding: 16px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            max-width: 440px;
+            height: min(88vh, 640px);
+            padding: 14px 16px 16px 16px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
             display: flex;
             flex-direction: column;
             border: 1px solid var(--border-color);
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+        .m-fc-top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.55rem;
+            margin-bottom: 0.55rem;
+            flex-shrink: 0;
+        }
+        .m-fc-modal-close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            line-height: 1;
+            padding: 0.2rem 0.5rem;
+            border-radius: 8px;
+            transition: all 0.15s;
+        }
+        .m-fc-modal-close-btn:active {
+            background: var(--bg-subtle);
+            color: var(--text-primary);
+        }
+        .m-fc-active-area {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+        }
+        .m-fc-progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            margin-bottom: 0.35rem;
+            flex-shrink: 0;
+        }
+        .m-fc-progress-track {
+            width: 100%;
+            height: 5px;
+            background: var(--bg-subtle);
+            border-radius: 9999px;
+            overflow: hidden;
+            margin-bottom: 0.55rem;
+            flex-shrink: 0;
+            border: 1px solid rgba(0, 0, 0, 0.04);
         }
         .m-fc-stage {
             perspective: 1000px;
-            min-height: 250px;
-            margin: 12px 0;
+            flex: 1;
+            min-height: 0;
+            margin: 0 0 4px 0;
             cursor: pointer;
+            position: relative;
         }
         .m-fc-inner {
             position: relative;
             width: 100%;
-            min-height: 250px;
+            height: 100%;
             transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             transform-style: preserve-3d;
         }
@@ -206,23 +269,244 @@
             inset: 0;
             -webkit-backface-visibility: hidden;
             backface-visibility: hidden;
-            border-radius: 14px;
+            border-radius: 16px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            padding: 16px;
-            border: 1px solid var(--border-color);
-            background: var(--bg-subtle);
+            padding: 16px 18px;
+            border: 1.5px solid var(--border-color);
+            background: var(--bg-surface);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.03);
+            box-sizing: border-box;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
         .m-fc-back {
-            background: rgba(16, 185, 129, 0.06);
-            border-color: rgba(16, 185, 129, 0.35);
+            background: #FAFCF9;
+            border-color: rgba(16, 185, 129, 0.45);
             transform: rotateY(180deg);
         }
         .m-fc-stage .m-fc-front { pointer-events: auto; }
         .m-fc-stage .m-fc-back { pointer-events: none; }
         .m-fc-stage.flipped .m-fc-front { pointer-events: none; }
         .m-fc-stage.flipped .m-fc-back { pointer-events: auto; }
+
+        /* カード内部ヘッダー（絶対に改行崩れを起こさない2段スマート構造） */
+        .m-fc-face-header {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.6rem;
+            margin-bottom: 0.65rem;
+            flex-shrink: 0;
+        }
+        .m-fc-face-header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.5rem;
+            width: 100%;
+        }
+        .m-fc-badge {
+            font-size: 0.8rem;
+            font-weight: 800;
+            white-space: nowrap;
+            flex-shrink: 0;
+            line-height: 1.3;
+        }
+        .m-fc-cat-badge {
+            color: var(--brand-primary);
+            background: var(--brand-light);
+            border: 1px solid var(--brand-border);
+            padding: 0.2rem 0.55rem;
+            border-radius: 6px;
+        }
+        .m-fc-ans-badge {
+            color: #047857;
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid rgba(16, 185, 129, 0.28);
+            padding: 0.2rem 0.55rem;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        .m-fc-flip-back-pill {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-size: 0.74rem;
+            font-weight: 700;
+            padding: 0.25rem 0.7rem;
+            border-radius: 9999px;
+            cursor: pointer;
+            white-space: nowrap;
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            transition: all 0.15s;
+        }
+        .m-fc-flip-back-pill:active {
+            background: var(--bg-subtle);
+            transform: scale(0.96);
+        }
+        .m-fc-source-title {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-weight: 500;
+            display: block;
+            width: 100%;
+            line-height: 1.3;
+        }
+
+        /* 表面：問題文エリア */
+        .m-fc-front-body {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            justify-content: center;
+            margin: auto 0;
+            padding: 0.4rem 0.1rem;
+            overflow-y: auto;
+        }
+        .m-fc-prompt-lead {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            margin-bottom: 0.65rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            width: fit-content;
+        }
+        .m-fc-front-term {
+            color: var(--text-primary);
+            word-break: break-word;
+            overflow-wrap: break-word;
+            line-break: strict;
+        }
+        .m-fc-front-term.is-short {
+            font-size: 1.25rem;
+            font-weight: 800;
+            line-height: 1.45;
+            text-align: center;
+        }
+        .m-fc-front-term.is-long {
+            font-size: 1.05rem;
+            font-weight: 700;
+            line-height: 1.68;
+            text-align: left;
+        }
+        .m-fc-btn-flip {
+            font-size: 0.94rem;
+            font-weight: 800;
+            padding: 0.78rem 1.2rem;
+            border-radius: 14px;
+            background: linear-gradient(135deg, var(--brand-primary), #047857);
+            color: #fff;
+            border: none;
+            width: 100%;
+            box-shadow: 0 4px 14px rgba(5, 150, 105, 0.28);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            flex-shrink: 0;
+            transition: transform 0.12s, box-shadow 0.12s;
+        }
+        .m-fc-btn-flip:active {
+            transform: scale(0.98);
+        }
+
+        /* 裏面：解答・解説エリア */
+        .m-fc-back-body {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            justify-content: center;
+            margin: auto 0;
+            padding: 0.4rem 0.1rem;
+            overflow-y: auto;
+        }
+        .m-fc-back-main-term {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #047857;
+            line-height: 1.45;
+            word-break: break-word;
+            margin-bottom: 0.5rem;
+        }
+        .m-fc-back-note-box {
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.22);
+            border-left: 3.5px solid #10B981;
+            border-radius: 10px;
+            padding: 0.65rem 0.85rem;
+            font-size: 0.92rem;
+            line-height: 1.65;
+            color: var(--text-primary);
+            margin-top: 0.5rem;
+            word-break: break-word;
+        }
+        .m-fc-back-plain-text {
+            font-size: 1.0rem;
+            line-height: 1.7;
+            color: var(--text-primary);
+            word-break: break-word;
+        }
+        .m-fc-action-row {
+            display: flex;
+            gap: 0.65rem;
+            margin-top: 0.6rem;
+            flex-shrink: 0;
+        }
+        .m-fc-btn-retry {
+            flex: 1;
+            background: rgba(217, 119, 6, 0.1);
+            color: #b45309;
+            border: 1.5px solid rgba(217, 119, 6, 0.35);
+            font-weight: 800;
+            font-size: 0.92rem;
+            padding: 0.75rem 0.5rem;
+            border-radius: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.35rem;
+            transition: transform 0.12s;
+        }
+        .m-fc-btn-retry:active {
+            transform: scale(0.97);
+            background: rgba(217, 119, 6, 0.18);
+        }
+        .m-fc-btn-mastered {
+            flex: 1;
+            background: linear-gradient(135deg, #10B981, #059669);
+            color: #fff;
+            border: none;
+            font-weight: 800;
+            font-size: 0.92rem;
+            padding: 0.75rem 0.5rem;
+            border-radius: 14px;
+            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.28);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.35rem;
+            transition: transform 0.12s;
+        }
+        .m-fc-btn-mastered:active {
+            transform: scale(0.97);
+        }
     </style>
 </head>
 <body>
@@ -267,66 +551,66 @@
     <!-- 🎴 モバイル用フラッシュカード復習モーダル -->
     <div id="m-flashcard-modal" class="m-fc-modal" style="display:none;">
         <div class="m-fc-content">
-            <!-- ヘッダー -->
-            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-color); padding-bottom:0.5rem; margin-bottom:0.6rem;">
-                <div style="display:flex; align-items:center; gap:0.4rem;">
-                    <span style="background:rgba(16,185,129,0.15); color:#059669; font-size:0.72rem; font-weight:800; padding:0.15rem 0.5rem; border-radius:9999px;">🎴 カード</span>
-                    <span id="m-fc-meta-subject" style="font-size:0.8rem; font-weight:800; color:var(--text-primary);">公共</span>
+            <!-- モーダル上部バー -->
+            <div class="m-fc-top-bar">
+                <div style="display:flex; align-items:center; gap:0.45rem;">
+                    <span style="background:rgba(16,185,129,0.15); color:#047857; font-size:0.75rem; font-weight:800; padding:0.2rem 0.55rem; border-radius:9999px; border:1px solid rgba(16,185,129,0.3);">🎴 カード特訓</span>
+                    <span id="m-fc-meta-subject" style="font-size:0.84rem; font-weight:800; color:var(--text-primary);">公共</span>
                 </div>
-                <button type="button" id="m-fc-modal-close" style="background:none; border:none; font-size:1.4rem; color:var(--text-muted); cursor:pointer; line-height:1;">×</button>
+                <button type="button" id="m-fc-modal-close" class="m-fc-modal-close-btn" title="閉じる">×</button>
             </div>
 
             <!-- 出題エリア -->
-            <div id="m-fc-active-area">
-                <!-- プログレス -->
-                <div style="display:flex; justify-content:space-between; font-size:0.72rem; font-weight:700; color:var(--text-secondary); margin-bottom:0.25rem;">
+            <div id="m-fc-active-area" class="m-fc-active-area">
+                <!-- プログレスバー & カウンター -->
+                <div class="m-fc-progress-header">
                     <span id="m-fc-progress-text">1 / 10</span>
-                    <div>
-                        <span style="color:#059669;">✅ <span id="m-fc-count-mastered">0</span></span>
-                        <span style="color:#D97706; margin-left:0.5rem;">🔄 <span id="m-fc-count-retry">0</span></span>
+                    <div style="display:flex; gap:0.6rem;">
+                        <span style="color:#059669; font-weight:800;">✅ <span id="m-fc-count-mastered">0</span></span>
+                        <span style="color:#D97706; font-weight:800;">🔄 <span id="m-fc-count-retry">0</span></span>
                     </div>
                 </div>
-                <div style="width:100%; height:4px; background:var(--bg-subtle); border-radius:9999px; overflow:hidden; margin-bottom:0.6rem;">
-                    <div id="m-fc-progress-bar" style="width:0%; height:100%; background:#10B981; transition:width 0.2s;"></div>
+                <div class="m-fc-progress-track">
+                    <div id="m-fc-progress-bar" style="width:0%; height:100%; background:linear-gradient(90deg, #10B981, #059669); transition:width 0.25s ease;"></div>
                 </div>
 
                 <!-- カードステージ -->
-                <div class="m-fc-stage" id="m-fc-stage">
+                <div class="m-fc-stage" id="m-fc-stage" title="タップしてめくる">
                     <div class="m-fc-inner" id="m-fc-inner">
                         <!-- 表面 -->
                         <div class="m-fc-face m-fc-front">
-                            <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.72rem;">
-                                <span style="font-weight:700; color:var(--brand-primary);" id="m-fc-front-cat">重要事項</span>
-                                <span style="color:var(--text-muted);" id="m-fc-front-source">単元</span>
+                            <div class="m-fc-face-header">
+                                <div class="m-fc-face-header-top">
+                                    <span class="m-fc-badge m-fc-cat-badge" id="m-fc-front-cat">重要事項</span>
+                                </div>
+                                <div class="m-fc-source-title" id="m-fc-front-source">単元名</div>
                             </div>
-                            <div style="margin:auto 0; text-align:center;">
-                                <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:0.4rem;">Q. 定義・要点を思い出そう</div>
-                                <div id="m-fc-front-term" style="font-size:1.15rem; font-weight:800; color:var(--text-primary); line-height:1.4;">--</div>
+                            <div class="m-fc-front-body">
+                                <div class="m-fc-prompt-lead">Q. 定義・要点を思い出そう</div>
+                                <div id="m-fc-front-term" class="m-fc-front-term">--</div>
                             </div>
-                            <div style="text-align:center;">
-                                <button type="button" class="tactile-btn" id="m-fc-btn-flip" style="font-size:0.75rem; padding:0.35rem 1rem; border-radius:9999px; background:var(--brand-primary); color:#fff; border:none; width:100%;">
-                                    答えを見る ▶
-                                </button>
-                            </div>
+                            <button type="button" class="m-fc-btn-flip" id="m-fc-btn-flip">
+                                答えを見る ▶
+                            </button>
                         </div>
 
                         <!-- 裏面 -->
                         <div class="m-fc-face m-fc-back">
-                            <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.72rem;">
-                                <div style="display:flex; align-items:center; gap:0.4rem;">
-                                    <span style="font-weight:800; color:#059669;">💡 解答・ポイント</span>
-                                    <button type="button" id="m-fc-btn-flip-back" style="background:var(--bg-subtle); border:1px solid var(--border-color); color:var(--text-secondary); font-size:0.68rem; font-weight:700; padding:0.15rem 0.45rem; border-radius:4px; cursor:pointer;">◀ 問題</button>
+                            <div class="m-fc-face-header">
+                                <div class="m-fc-face-header-top">
+                                    <span class="m-fc-badge m-fc-ans-badge">💡 解答・ポイント</span>
+                                    <button type="button" id="m-fc-btn-flip-back" class="m-fc-flip-back-pill" title="問題面に戻る">◀ 問題を確認</button>
                                 </div>
-                                <span style="color:var(--text-muted);" id="m-fc-back-source">単元</span>
+                                <div class="m-fc-source-title" id="m-fc-back-source">単元名</div>
                             </div>
-                            <div style="margin:auto 0; text-align:left; overflow-y:auto; max-height:130px; font-size:0.88rem; line-height:1.5; color:var(--text-primary);" id="m-fc-back-answer">
-                                --
+                            <div class="m-fc-back-body" id="m-fc-back-answer-wrap">
+                                <div id="m-fc-back-answer">--</div>
                             </div>
-                            <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
-                                <button type="button" id="m-fc-btn-retry" class="tactile-btn" style="flex:1; background:rgba(217,119,6,0.12); color:#D97706; border:1px solid rgba(217,119,6,0.3); font-weight:800; font-size:0.75rem; padding:0.45rem; border-radius:8px;">
+                            <div class="m-fc-action-row">
+                                <button type="button" id="m-fc-btn-retry" class="m-fc-btn-retry">
                                     🔄 もう一度
                                 </button>
-                                <button type="button" id="m-fc-btn-mastered" class="tactile-btn" style="flex:1; background:#059669; color:#fff; border:none; font-weight:800; font-size:0.75rem; padding:0.45rem; border-radius:8px;">
+                                <button type="button" id="m-fc-btn-mastered" class="m-fc-btn-mastered">
                                     ✅ 覚えた！
                                 </button>
                             </div>
@@ -336,21 +620,21 @@
             </div>
 
             <!-- 完了画面 -->
-            <div id="m-fc-finish-area" style="display:none; text-align:center; padding:1rem 0;">
-                <div style="font-size:2.5rem; margin-bottom:0.4rem;">🎉</div>
-                <div style="font-weight:800; font-size:1.1rem; color:var(--text-primary); margin-bottom:0.3rem;">演習完了！</div>
-                <div style="font-size:0.78rem; color:var(--text-secondary); margin-bottom:1rem;">全カードの復習が完了しました。</div>
-                <div style="display:flex; justify-content:center; gap:0.8rem; margin-bottom:1.2rem;">
-                    <div style="background:var(--bg-subtle); padding:0.5rem 1rem; border-radius:10px; border:1px solid var(--border-color);">
-                        <div style="font-size:0.68rem; color:var(--text-muted);">習得カード</div>
-                        <div style="font-size:1.2rem; font-weight:800; color:#059669;" id="m-fc-stat-total">0</div>
+            <div id="m-fc-finish-area" style="display:none; text-align:center; padding:1.2rem 0.5rem; margin:auto 0;">
+                <div style="font-size:2.8rem; margin-bottom:0.4rem;">🎉</div>
+                <div style="font-weight:800; font-size:1.15rem; color:var(--text-primary); margin-bottom:0.35rem;">復習セッション完了！</div>
+                <div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:1.2rem;">すべてのカードの確認が終了しました。</div>
+                <div style="display:flex; justify-content:center; gap:0.8rem; margin-bottom:1.4rem;">
+                    <div style="background:var(--bg-subtle); padding:0.6rem 1.1rem; border-radius:12px; border:1px solid var(--border-color); min-width:80px;">
+                        <div style="font-size:0.7rem; color:var(--text-muted); font-weight:700;">習得カード</div>
+                        <div style="font-size:1.3rem; font-weight:800; color:#059669;" id="m-fc-stat-total">0</div>
                     </div>
-                    <div style="background:var(--bg-subtle); padding:0.5rem 1rem; border-radius:10px; border:1px solid var(--border-color);">
-                        <div style="font-size:0.68rem; color:var(--text-muted);">復習回数</div>
-                        <div style="font-size:1.2rem; font-weight:800; color:#D97706;" id="m-fc-stat-retries">0</div>
+                    <div style="background:var(--bg-subtle); padding:0.6rem 1.1rem; border-radius:12px; border:1px solid var(--border-color); min-width:80px;">
+                        <div style="font-size:0.7rem; color:var(--text-muted); font-weight:700;">復習回数</div>
+                        <div style="font-size:1.3rem; font-weight:800; color:#D97706;" id="m-fc-stat-retries">0</div>
                     </div>
                 </div>
-                <button type="button" id="m-fc-btn-finish-close" class="tactile-btn" style="background:var(--brand-primary); color:#fff; border:none; padding:0.5rem 1.5rem; border-radius:9999px; font-weight:800; font-size:0.8rem;">
+                <button type="button" id="m-fc-btn-finish-close" class="tactile-btn" style="background:linear-gradient(135deg, var(--brand-primary), #047857); color:#fff; border:none; padding:0.65rem 2rem; border-radius:9999px; font-weight:800; font-size:0.88rem; box-shadow:0 4px 12px rgba(5,150,105,0.25);">
                     完了して閉じる
                 </button>
             </div>
@@ -682,16 +966,18 @@
                         </div>
                     </div>
                 ` : hasQA ? `
-                    <div class="insight-text tex2jax_process" style="font-weight:700; margin-bottom:0.25rem;">
-                        <span style="color:var(--accent-cyan); margin-right:0.25rem;">Q.</span>${escapeHtml(p.question)}
+                    <div style="margin:0.4rem 0;">
+                        <div class="tex2jax_process" style="font-size:0.95rem; font-weight:700; color:var(--text-primary); line-height:1.55; margin-bottom:0.35rem; word-break:break-word;">
+                            <span style="color:var(--accent-cyan); margin-right:0.35rem; font-weight:800;">Q.</span>${escapeHtml(p.question)}
+                        </div>
+                        <div class="tex2jax_process" style="background:rgba(5, 150, 105, 0.08); border-left:3.5px solid var(--brand-primary); border-radius:8px; padding:0.45rem 0.65rem; font-size:0.95rem; font-weight:700; color:#047857; line-height:1.55; word-break:break-word;">
+                            <span style="margin-right:0.35rem; font-weight:800;">A.</span>${escapeHtml(p.answer)}
+                        </div>
+                        ${p.note ? `<div class="tex2jax_process" style="font-size:0.84rem; line-height:1.5; color:#b45309; background:rgba(217, 119, 6, 0.08); padding:0.35rem 0.6rem; border-radius:6px; margin-top:0.4rem; word-break:break-word;">💡 ${escapeHtml(p.note)}</div>` : ''}
                     </div>
-                    <div class="insight-text tex2jax_process" style="color:var(--brand-primary); font-weight:600; padding:0.25rem 0.4rem; background:var(--bg-subtle); border-radius:var(--radius-sm); border-left:3px solid var(--brand-primary);">
-                        <span style="font-weight:700; margin-right:0.25rem;">A.</span>${escapeHtml(p.answer)}
-                    </div>
-                    ${p.note ? `<div class="tex2jax_process" style="font-size:0.8rem; color:var(--accent-yellow); margin-top:0.3rem;">💡 ${escapeHtml(p.note)}</div>` : ''}
                 ` : `
                     <div class="insight-text tex2jax_process">${escapeHtml(p.content)}</div>
-                    ${p.note ? `<div class="tex2jax_process" style="font-size:0.8rem; color:var(--accent-yellow); margin-top:0.3rem;">💡 ${escapeHtml(p.note)}</div>` : ''}
+                    ${p.note ? `<div class="tex2jax_process" style="font-size:0.84rem; line-height:1.5; color:#b45309; background:rgba(217, 119, 6, 0.08); padding:0.35rem 0.6rem; border-radius:6px; margin-top:0.4rem; word-break:break-word;">💡 ${escapeHtml(p.note)}</div>` : ''}
                 `;
 
                 return `
@@ -1019,44 +1305,47 @@
                     const note = (item.note || "").trim();
                     const category = (item.category || "").trim();
                     let term = "";
-                    let definition = "";
+                    let answer = "";
+                    let subNote = note;
 
                     // 0. 新フォーマット：表面（question）と裏面（answer）が分離されている場合（最優先）
                     if (item.question && item.answer) {
                         term = item.question.trim();
-                        definition = item.answer.trim();
-                        if (note) definition += `\n(💡 ${note})`;
+                        answer = item.answer.trim();
                     } else if (content.indexOf("：") !== -1 || content.indexOf(":") !== -1) {
                         const colonIdx = content.indexOf("：") !== -1 ? content.indexOf("：") : content.indexOf(":");
                         if (colonIdx > 0 && colonIdx < 50) {
                             term = content.slice(0, colonIdx).trim();
-                            definition = content.slice(colonIdx + 1).trim();
-                            if (note) definition += `\n(💡 ${note})`;
+                            answer = content.slice(colonIdx + 1).trim();
                         } else {
                             term = content;
-                            definition = note || content;
+                            answer = note || content;
+                            subNote = "";
                         }
                     } else if (note) {
                         term = content;
-                        definition = note;
+                        answer = note;
+                        subNote = "";
                     } else {
                         term = content;
-                        definition = content;
+                        answer = content;
                     }
                     return {
                         subject: item.subject || "未分類",
                         category: category || "重要事項",
                         sourceTitle: item.short_title || "授業暗記",
                         term: term,
-                        answer: definition
+                        answer: answer,
+                        note: subNote
                     };
                 } else if (item.type === 'problem') {
                     return {
                         subject: item.subject || "未分類",
                         category: item.field || "解法の極意",
                         sourceTitle: item.short_title || "演習問題",
-                        term: item.short_title || item.field || "問題",
-                        answer: item.insight || ""
+                        term: item.short_title || item.field || "解法の極意",
+                        answer: item.insight || "",
+                        note: ""
                     };
                 } else if (item.type === 'lessonmemo') {
                     return {
@@ -1064,7 +1353,8 @@
                         category: "授業メモ",
                         sourceTitle: item.short_title || "授業",
                         term: [item.short_title, item.partTitle].filter(Boolean).join(" / ") || "授業メモ",
-                        answer: item.text || ""
+                        answer: item.text || "",
+                        note: ""
                     };
                 }
                 return null;
@@ -1082,7 +1372,7 @@
             mFcRetryCount = 0;
             mFcQueue = [...pool].sort(() => Math.random() - 0.5);
 
-            mFcActiveArea.style.display = "block";
+            mFcActiveArea.style.display = "flex";
             mFcFinishArea.style.display = "none";
             mFcModal.style.display = "flex";
 
@@ -1106,10 +1396,53 @@
             mFcMetaSubject.textContent = mFcCurrentCard.subject;
             mFcFrontCat.textContent = mFcCurrentCard.category;
             mFcFrontSource.textContent = mFcCurrentCard.sourceTitle;
-            mFcFrontTerm.innerHTML = escapeHtml(mFcCurrentCard.term);
 
+            // 表面：文字数に応じたレイアウト調整（短文は中央に大きく、長文は左揃えで行間広め）
+            const termText = (mFcCurrentCard.term || "").trim();
+            mFcFrontTerm.classList.remove("is-short", "is-long");
+            if (termText.length > 40) {
+                mFcFrontTerm.classList.add("is-long");
+            } else {
+                mFcFrontTerm.classList.add("is-short");
+            }
+            mFcFrontTerm.innerHTML = escapeHtml(termText);
+
+            // 裏面：解答と補足のスマートフォーマット
             mFcBackSource.textContent = mFcCurrentCard.sourceTitle;
-            mFcBackAnswer.innerHTML = escapeHtml(mFcCurrentCard.answer).replace(/\n/g, "<br>");
+
+            let mainAnswer = (mFcCurrentCard.answer || "").trim();
+            let noteText = (mFcCurrentCard.note || "").trim();
+
+            // もし answer の中に "(💡 ...)" や "（💡 ...）" が埋め込まれている場合の救済抽出
+            if (!noteText && (mainAnswer.includes("💡") || mainAnswer.includes("（💡") || mainAnswer.includes("(💡"))) {
+                const noteMatch = mainAnswer.match(/[（(]?\s*💡\s*([^）)]+)[）)]?/);
+                if (noteMatch) {
+                    noteText = noteMatch[1].trim();
+                    mainAnswer = mainAnswer.replace(noteMatch[0], "").trim();
+                }
+            }
+
+            // HTML組み立て
+            let backHtml = "";
+            if (mainAnswer) {
+                if (mainAnswer.length <= 40 && !mainAnswer.includes("\n")) {
+                    backHtml += `<div class="m-fc-back-main-term">${escapeHtml(mainAnswer)}</div>`;
+                } else {
+                    backHtml += `<div class="m-fc-back-plain-text">${escapeHtml(mainAnswer).replace(/\n/g, "<br>")}</div>`;
+                }
+            }
+            if (noteText) {
+                backHtml += `
+                    <div class="m-fc-back-note-box">
+                        <div style="font-weight:700; font-size:0.75rem; color:#047857; margin-bottom:0.25rem;">💡 ポイント・補足解説</div>
+                        <div>${escapeHtml(noteText).replace(/\n/g, "<br>")}</div>
+                    </div>
+                `;
+            }
+            if (!backHtml) {
+                backHtml = `<div class="m-fc-back-plain-text">--</div>`;
+            }
+            mFcBackAnswer.innerHTML = backHtml;
 
             const remaining = mFcQueue.length;
             const cur = mFcTotalInitial - remaining + 1;
