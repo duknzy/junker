@@ -2481,8 +2481,22 @@ ${glossaryBlock}`;
 
             qnaArchiveDetailMeta.textContent = `📌 ${log.shortTitle || "無題の問題"} ｜ ${log.subject || "未分類"} // ${log.field || "未分類"} ｜ 🗓️ ${formatQnaArchiveDate(log.savedAt)}`;
             qnaArchiveDetailMessages.innerHTML = (log.messages || []).map(m => {
-                const cls = m.role === "user" ? "bubble-user" : "bubble-ai";
-                return `<div class="chat-bubble ${cls} tex2jax_process">${renderQnaArchiveFormattedText(m.content)}</div>`;
+                const isUser = m.role === "user";
+                if (isUser) {
+                    let cleanText = (m.content || "").trim().replace(/\n{3,}/g, "\n\n");
+                    return `
+                        <div style="display:flex; flex-direction:column; align-items:flex-end; width:100%; margin-bottom:0.6rem;">
+                            <div class="chat-bubble bubble-user tex2jax_process">${renderQnaArchiveFormattedText(cleanText)}</div>
+                        </div>
+                    `;
+                } else {
+                    return `
+                        <div style="display:flex; flex-direction:column; align-items:flex-start; width:100%; margin-bottom:0.6rem;">
+                            <div style="font-size:0.72rem; font-weight:700; color:var(--text-muted); margin-bottom:0.2rem; padding-left:0.2rem;">🤖 AIチューター</div>
+                            <div class="chat-bubble bubble-ai tex2jax_process">${renderQnaArchiveFormattedText(m.content)}</div>
+                        </div>
+                    `;
+                }
             }).join("");
 
             qnaArchiveModal.style.display = "none";
