@@ -219,6 +219,10 @@
             border-color: rgba(16, 185, 129, 0.35);
             transform: rotateY(180deg);
         }
+        .m-fc-stage .m-fc-front { pointer-events: auto; }
+        .m-fc-stage .m-fc-back { pointer-events: none; }
+        .m-fc-stage.flipped .m-fc-front { pointer-events: none; }
+        .m-fc-stage.flipped .m-fc-back { pointer-events: auto; }
     </style>
 </head>
 <body>
@@ -309,7 +313,10 @@
                         <!-- 裏面 -->
                         <div class="m-fc-face m-fc-back">
                             <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.72rem;">
-                                <span style="font-weight:800; color:#059669;">💡 解答・ポイント</span>
+                                <div style="display:flex; align-items:center; gap:0.4rem;">
+                                    <span style="font-weight:800; color:#059669;">💡 解答・ポイント</span>
+                                    <button type="button" id="m-fc-btn-flip-back" style="background:var(--bg-subtle); border:1px solid var(--border-color); color:var(--text-secondary); font-size:0.68rem; font-weight:700; padding:0.15rem 0.45rem; border-radius:4px; cursor:pointer;">◀ 問題</button>
+                                </div>
                                 <span style="color:var(--text-muted);" id="m-fc-back-source">単元</span>
                             </div>
                             <div style="margin:auto 0; text-align:left; overflow-y:auto; max-height:130px; font-size:0.88rem; line-height:1.5; color:var(--text-primary);" id="m-fc-back-answer">
@@ -676,7 +683,7 @@
                         ${bodyHtml}
                         <div class="insight-meta">
                             <span>📘 ${escapeHtml(p.short_title)}</span>
-                            <a href="lesson.html?id=${p.lessonId}" style="color:var(--brand-primary); font-weight:700; text-decoration:none;">授業を開く →</a>
+                            <a href="lesson.html?id=${encodeURIComponent(p.lessonId)}" style="color:var(--brand-primary); font-weight:700; text-decoration:none;">授業を開く →</a>
                         </div>
                     </div>
                 `;
@@ -734,7 +741,7 @@
                         ${bodyHtml}
                         <div class="insight-meta">
                             <span>🗓️ ${formatDate(p.updatedAt)}</span>
-                            <a href="lesson.html?id=${p.lessonId}" style="color:var(--brand-primary); font-weight:700; text-decoration:none;">授業を開く →</a>
+                            <a href="lesson.html?id=${encodeURIComponent(p.lessonId)}" style="color:var(--brand-primary); font-weight:700; text-decoration:none;">授業を開く →</a>
                         </div>
                     </div>
                 `;
@@ -968,20 +975,34 @@
             return items.map(item => {
                 if (item.type === 'memorize') {
                     const content = (item.content || "").trim();
+                    const note = (item.note || "").trim();
+                    const category = (item.category || "").trim();
                     let term = "";
-                    let definition = content;
+                    let definition = "";
                     const colonIdx = content.indexOf("：") !== -1 ? content.indexOf("：") : content.indexOf(":");
-                    if (colonIdx > 0 && colonIdx < 40) {
+                    if (colonIdx > 0 && colonIdx < 50) {
                         term = content.slice(0, colonIdx).trim();
                         definition = content.slice(colonIdx + 1).trim();
+                        if (note) definition += `\n(💡 ${note})`;
+                    } else if (content.includes(" = ") || content.includes(" ＝ ")) {
+                        const eqIdx = content.indexOf(" ＝ ") !== -1 ? content.indexOf(" ＝ ") : content.indexOf(" = ");
+                        term = content.slice(0, eqIdx).trim();
+                        definition = content;
+                    } else if (!content.includes("$") && content.match(/^(.+?)\s+[-ー—]\s+(.+)$/)) {
+                        const dashMatch = content.match(/^(.+?)\s+[-ー—]\s+(.+)$/);
+                        term = dashMatch[1].trim();
+                        definition = dashMatch[2].trim();
+                        if (note) definition += `\n(💡 ${note})`;
+                    } else if (note) {
+                        term = content;
+                        definition = note;
                     } else {
-                        term = item.category ? `【${item.category}】` : (item.short_title || "暗記事項");
+                        term = content;
                         definition = content;
                     }
-                    if (item.note) definition += `\n(💡 ${item.note})`;
                     return {
                         subject: item.subject || "公共",
-                        category: item.category || "重要用語",
+                        category: category || "重要事項",
                         sourceTitle: item.short_title || "授業暗記",
                         term: term,
                         answer: definition
@@ -1061,12 +1082,15 @@
             }
         }
 
-        function flipMobileFc() {
-            if (mFcIsFlipped) return;
-            mFcIsFlipped = true;
-            mFcStage.classList.add("flipped");
+        function flipMobileFc(forceState) {
+            if (typeof forceState === "boolean") {
+                mFcIsFlipped = forceState;
+            } else {
+                mFcIsFlipped = !mFcIsFlipped;
+            }
+            mFcStage.classList.toggle("flipped", mFcIsFlipped);
             if (window.MathJax && window.MathJax.typesetPromise) {
-                window.MathJax.typesetPromise([mFcBackAnswer]).catch(() => {});
+                window.MathJax.typesetPromise([mFcStage]).catch(() => {});
             }
         }
 
@@ -1099,7 +1123,9 @@
                 flipMobileFc();
             };
         }
-        if (mFcBtnFlip) mFcBtnFlip.onclick = (e) => { e.stopPropagation(); flipMobileFc(); };
+        if (mFcBtnFlip) mFcBtnFlip.onclick = (e) => { e.stopPropagation(); flipMobileFc(true); };
+        const mFcBtnFlipBack = document.getElementById("m-fc-btn-flip-back");
+        if (mFcBtnFlipBack) mFcBtnFlipBack.onclick = (e) => { e.stopPropagation(); flipMobileFc(false); };
         if (mFcBtnRetry) mFcBtnRetry.onclick = (e) => { e.stopPropagation(); markMobileFc(false); };
         if (mFcBtnMastered) mFcBtnMastered.onclick = (e) => { e.stopPropagation(); markMobileFc(true); };
     </script>

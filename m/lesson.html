@@ -134,11 +134,94 @@
             font-size: 0.72rem;
             color: var(--brand-primary);
             font-weight: 700;
-            margin: 0.4rem 0;
+            margin: 0.5rem 0;
             background: var(--brand-light);
             border: 1px solid var(--brand-border);
-            padding: 0.2rem 0.75rem;
+            padding: 0.25rem 0.85rem;
             border-radius: var(--radius-full);
+            width: fit-content;
+            max-width: 95%;
+            box-sizing: border-box;
+        }
+
+        /* 💬 吹き出しアクション（再作成・コピー） */
+        .m-bubble-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 0.4rem;
+            margin-top: 0.45rem;
+            padding-top: 0.4rem;
+            border-top: 1px dashed var(--border-subtle);
+        }
+        .m-bubble-action-btn {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-size: 0.68rem;
+            font-weight: 700;
+            padding: 0.22rem 0.55rem;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            line-height: 1.2;
+            transition: all 0.15s ease;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        .m-bubble-action-btn:active {
+            background: var(--brand-light);
+            border-color: var(--brand-primary);
+            color: var(--brand-primary);
+            transform: scale(0.96);
+        }
+        .m-bubble-regen-btn {
+            color: var(--brand-primary);
+            border-color: var(--brand-border);
+            background: var(--brand-light);
+        }
+
+        /* 再作成中のローディング表示 */
+        .m-bubble-regenerating {
+            opacity: 0.75;
+            position: relative;
+        }
+        .m-bubble-loading-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-size: 0.72rem;
+            color: var(--brand-primary);
+            font-weight: 700;
+            background: var(--brand-light);
+            border: 1px solid var(--brand-border);
+            padding: 0.25rem 0.65rem;
+            border-radius: var(--radius-full);
+            margin-top: 0.45rem;
+            animation: mPulse 1.4s infinite;
+        }
+        @keyframes mPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.98); }
+        }
+
+        /* 各回リスト（モーダル内カード） */
+        .part-select-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 0.75rem 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            transition: all 0.15s ease;
+        }
+        .part-select-card.active {
+            border-color: var(--brand-primary);
+            background: rgba(5, 150, 105, 0.04);
         }
 
         .lecture-note-box {
@@ -252,18 +335,26 @@
 
         <!-- 授業受講画面ビュー -->
         <div id="lesson-active-view">
-            <!-- 進捗バー -->
+            <!-- 進捗バー & 回アクション -->
             <div class="lesson-progress-header">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.45rem; flex-wrap:wrap; gap:0.4rem;">
                     <button class="m-btn" id="leave-lesson-btn" style="padding:0.25rem 0.6rem; font-size:0.7rem; min-height:28px;">
                         ← 授業一覧へ
                     </button>
-                    <span style="font-size:0.75rem; font-weight:700; color:var(--text-secondary);" id="lesson-part-indicator">
-                        Part 1 / 3
-                    </span>
+                    <div style="display:flex; align-items:center; gap:0.35rem;">
+                        <span style="font-size:0.75rem; font-weight:700; color:var(--text-secondary);" id="lesson-part-indicator">
+                            Part 1 / 1
+                        </span>
+                        <button type="button" class="m-bubble-action-btn m-bubble-regen-btn" id="m-btn-regen-current-part" title="現在の回を作り直す">
+                            🔄 この回を再作成
+                        </button>
+                        <button type="button" class="m-bubble-action-btn" id="m-btn-open-parts-modal" title="各回一覧・目次">
+                            📑 各回一覧
+                        </button>
+                    </div>
                 </div>
                 <div class="m-progress">
-                    <div class="m-progress-bar" id="lesson-progress-bar" style="width:33%;"></div>
+                    <div class="m-progress-bar" id="lesson-progress-bar" style="width:100%;"></div>
                 </div>
             </div>
 
@@ -312,8 +403,8 @@
                 </select>
             </div>
 
-            <!-- レベル選択 -->
-            <div style="margin-bottom:0.75rem;">
+            <!-- レベル選択（数学・理科・英語等で表示。社会系は自動で流れと用語を網羅するため非表示） -->
+            <div id="create-level-wrap" style="margin-bottom:0.75rem;">
                 <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">難易度・目標</label>
                 <select id="create-level-select" class="m-input" style="padding:0.4rem 0.6rem;">
                     <option value="教科書レベル（基礎の基礎から）">🌱 教科書レベル（基礎の基礎から）</option>
@@ -321,6 +412,11 @@
                     <option value="入試基礎レベル">🎯 入試基礎レベル</option>
                     <option value="入試標準〜応用レベル">🔥 入試標準〜応用レベル</option>
                 </select>
+            </div>
+
+            <!-- 🏛️ 社会系（歴史・地理・公民）専用のスマート案内（レベル選択不要） -->
+            <div id="create-social-note" style="display:none; margin-bottom:0.75rem; background:rgba(5, 150, 105, 0.08); border:1px solid var(--brand-border); border-radius:var(--radius-md); padding:0.5rem 0.75rem; font-size:0.73rem; color:var(--brand-primary); font-weight:600; line-height:1.45;">
+                🏛️ 社会系（歴史・地理・公民）はレベル選択不要です。用語・因果関係・歴史の流れ・頻出ポイントを一挙に網羅した最適な講義を自動構成します！
             </div>
 
             <!-- テーマ名入力欄（テーマモード時） -->
@@ -345,6 +441,20 @@
             <button type="button" class="m-btn m-btn-primary m-btn-full" id="run-create-lesson-btn" style="min-height:48px; font-size:0.95rem;">
                 🚀 AI授業を生成（AI3並列）
             </button>
+        </div>
+    </div>
+
+    <!-- 📑 各回一覧・再作成モーダル（ボトムシート） -->
+    <div class="create-modal-overlay" id="parts-modal">
+        <div class="create-modal-sheet">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem;">
+                <h3 style="font-family:var(--font-heading); font-size:1.05rem; font-weight:800; color:var(--text-primary);">📑 各回の一覧・再作成</h3>
+                <button type="button" id="close-parts-modal-btn" style="background:none; border:none; font-size:1.25rem; cursor:pointer; color:var(--text-muted); padding:0.2rem;">✕</button>
+            </div>
+            <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:0.8rem; line-height:1.4;">
+                受講する回を切り替えたり、各回の解説を最初から作り直すことができます。
+            </p>
+            <div id="parts-modal-list" style="display:flex; flex-direction:column; gap:0.55rem; max-height:60vh; overflow-y:auto; padding-bottom:0.5rem;"></div>
         </div>
     </div>
 
@@ -382,6 +492,11 @@
         let createMode = "topic"; // "topic" or "photo"
         let createSelectedImages = [];
 
+        // 🎯 URLパラメータから特定の授業IDを取得（暗記事項・タイムライン等からの直行用）
+        const urlParams = new URLSearchParams(window.location.search);
+        const requestedLessonId = urlParams.get('id') || urlParams.get('lessonId');
+        let initialLessonOpened = false;
+
         // ==================== 認証 ====================
         onAuthStateChanged(auth, (user) => {
             const loginNotice = document.getElementById("login-required-notice");
@@ -412,6 +527,26 @@
             onValue(ref(database, `users/${uid}/lessons`), (snap) => {
                 lessonsCache = snap.val() || {};
                 renderLessonList();
+
+                // 🎯 暗記事項・ノート等から「授業を開く」で渡された特定授業へ直行
+                if (requestedLessonId && !initialLessonOpened) {
+                    if (lessonsCache[requestedLessonId]) {
+                        initialLessonOpened = true;
+                        openLesson(requestedLessonId);
+                    } else {
+                        // キャッシュにまだ反映されていない場合のフェイルセーフ単体取得
+                        get(ref(database, `users/${uid}/lessons/${requestedLessonId}`)).then((s) => {
+                            if (s.exists() && !initialLessonOpened) {
+                                initialLessonOpened = true;
+                                lessonsCache[requestedLessonId] = s.val();
+                                openLesson(requestedLessonId);
+                            } else if (!initialLessonOpened) {
+                                initialLessonOpened = true;
+                                if (window.mToast) mToast("⚠️ 指定された授業が見つかりませんでした");
+                            }
+                        }).catch(() => {});
+                    }
+                }
             });
         }
 
@@ -525,6 +660,10 @@
         }
 
         // ==================== 授業受講画面 ====================
+        let regeneratingMsgIndex = null;
+        let isRegeneratingLectureNote = false;
+        let isRegeneratingPart = false;
+
         function openLesson(lessonId) {
             const lesson = lessonsCache[lessonId];
             if (!lesson) return;
@@ -535,15 +674,60 @@
             document.getElementById("lesson-active-view").style.display = "flex";
             document.getElementById("header-title").textContent = lesson.title || "授業受講";
 
+            // URLパラメータを同期（リロード時にも該当授業が開くようにする）
+            try {
+                const url = new URL(window.location.href);
+                url.searchParams.set('id', lessonId);
+                window.history.replaceState(null, '', url.pathname + (url.search ? url.search : ''));
+            } catch(e) {}
+
+            renderActiveLessonUI(true);
+        }
+
+        function renderActiveLessonUI(shouldScrollToBottom = false) {
+            if (!activeLessonId) return;
+            const lesson = lessonsCache[activeLessonId];
+            if (!lesson) return;
+
             const chatFlow = document.getElementById("lesson-chat-flow");
             chatFlow.innerHTML = "";
 
+            // パート情報の取得
+            const parts = Array.isArray(lesson.parts) && lesson.parts.length > 0 ? lesson.parts : [{ title: lesson.title, summary: lesson.topic || "" }];
+            const currentPartIdx = Math.min(Math.max(0, lesson.currentPartIndex || 0), parts.length - 1);
+
+            // 進捗バーとインジケータ更新
+            const partIndicator = document.getElementById("lesson-part-indicator");
+            const progressBar = document.getElementById("lesson-progress-bar");
+            if (partIndicator) {
+                partIndicator.textContent = `Part ${currentPartIdx + 1} / ${parts.length}`;
+            }
+            if (progressBar) {
+                const pct = Math.min(100, Math.round(((currentPartIdx + 1) / parts.length) * 100));
+                progressBar.style.width = `${pct}%`;
+            }
+
+            // 1. プロ講師の講義ノート（単一ノート型または基礎ノート）
             if (lesson.lectureNote) {
+                const isRegenNote = isRegeneratingLectureNote;
                 chatFlow.innerHTML += `
-                    <div class="lesson-bubble teacher">
-                        <strong>👨‍🏫 プロ講師の講義ノート</strong>
-                        <div class="lecture-note-box tex2jax_process">${formatText(lesson.lectureNote)}</div>
-                        <div>準備ができたら、下の入力欄から質問するか「次へ進む」と伝えてください。</div>
+                    <div class="lesson-bubble teacher ${isRegenNote ? 'm-bubble-regenerating' : ''}" id="lecture-note-bubble">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <strong>👨‍🏫 プロ講師の講義ノート</strong>
+                            <span style="font-size:0.68rem; color:var(--text-muted);">基礎解説</span>
+                        </div>
+                        ${isRegenNote ? `<div class="m-bubble-loading-badge">⚙️ 講義ノートを再作成中...</div>` : `<div class="lecture-note-box tex2jax_process">${formatText(lesson.lectureNote)}</div>`}
+                        <div style="font-size:0.75rem; color:var(--text-secondary); margin-top:0.35rem;">
+                            疑問点があれば下の入力欄から自由に質問できます。
+                        </div>
+                        <div class="m-bubble-actions">
+                            <button type="button" class="m-bubble-action-btn m-bubble-regen-btn" id="btn-regen-lecture-note" title="講義ノートを最初から再作成">
+                                🔄 講義ノートを再作成
+                            </button>
+                            <button type="button" class="m-bubble-action-btn" id="btn-copy-lecture-note" title="講義ノートをコピー">
+                                📋 コピー
+                            </button>
+                        </div>
                     </div>
                 `;
             } else if (lesson.plan) {
@@ -555,17 +739,41 @@
                 `;
             }
 
+            // 2. チャット履歴（講義メッセージ・生徒質問・ディバイダー）
             if (Array.isArray(lesson.chatHistory)) {
-                lesson.chatHistory.forEach(msg => {
+                // dividerの出現回数からパート番号を特定
+                let currentDividerPartIdx = -1;
+
+                lesson.chatHistory.forEach((msg, idx) => {
                     if (msg.role === "divider") {
-                        chatFlow.innerHTML += `<div class="m-bubble-divider">${escapeHtml(msg.content || '')}</div>`;
+                        currentDividerPartIdx++;
+                        const partIdx = currentDividerPartIdx;
+                        chatFlow.innerHTML += `
+                            <div class="m-bubble-divider" style="display:flex; align-items:center; justify-content:space-between; gap:0.5rem;">
+                                <span style="font-weight:700;">${escapeHtml(msg.content || `第${partIdx + 1}回`)}</span>
+                                <button type="button" class="m-bubble-action-btn m-bubble-regen-btn" data-regen-part-idx="${partIdx}" style="padding:0.12rem 0.45rem; font-size:0.65rem; background:#fff; flex-shrink:0;">
+                                    🔄 この回を再作成
+                                </button>
+                            </div>
+                        `;
                         return;
                     }
-                    const cls = msg.role === "user" ? "student" : "teacher";
-                    let inner = `<div class="lesson-bubble ${cls} tex2jax_process">${formatText(msg.text || msg.content || "")}`;
+
+                    if (msg.role === "user") {
+                        chatFlow.innerHTML += `
+                            <div class="lesson-bubble student tex2jax_process">
+                                ${formatText(msg.text || msg.content || "")}
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    // アシスタント（講師AI）の吹き出し
+                    const isMsgRegenerating = (regeneratingMsgIndex === idx);
+                    let diagramHtml = "";
                     if (msg.diagramSvg) {
-                        inner += `
-                            <div class="ai-diagram-box theme-dark">
+                        diagramHtml = `
+                            <div class="ai-diagram-box theme-dark" style="margin-top:0.5rem;">
                                 <div class="ai-diagram-box-header">
                                     <span>📊 AI図解・概念マップ</span>
                                 </div>
@@ -575,23 +783,421 @@
                             </div>
                         `;
                     }
-                    inner += `</div>`;
-                    chatFlow.innerHTML += inner;
+
+                    let bodyHtml = "";
+                    if (isMsgRegenerating) {
+                        bodyHtml = `<div class="m-bubble-loading-badge">⚙️ この返答を再作成中...</div>`;
+                    } else {
+                        bodyHtml = `
+                            <div>${formatText(msg.text || msg.content || "")}</div>
+                            ${diagramHtml}
+                            <div class="m-bubble-actions">
+                                <button type="button" class="m-bubble-action-btn m-bubble-regen-btn" data-regen-msg="${idx}" title="この返答だけを再作成">
+                                    🔄 返答を再作成
+                                </button>
+                                <button type="button" class="m-bubble-action-btn" data-copy-msg="${idx}" title="テキストをコピー">
+                                    📋 コピー
+                                </button>
+                            </div>
+                        `;
+                    }
+
+                    chatFlow.innerHTML += `
+                        <div class="lesson-bubble teacher tex2jax_process ${isMsgRegenerating ? 'm-bubble-regenerating' : ''}" data-bubble-idx="${idx}">
+                            ${bodyHtml}
+                        </div>
+                    `;
                 });
             }
 
+            // MathJax レンダリング
             if (window.MathJax && window.MathJax.typesetPromise) {
                 window.MathJax.typesetPromise([chatFlow]).catch(() => {});
             }
-            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+
+            if (shouldScrollToBottom) {
+                setTimeout(() => {
+                    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                }, 100);
+            }
         }
 
+        // ==================== 一部の返答の再作成 ====================
+        async function regenerateMobileMessage(msgIndex) {
+            if (!activeLessonId || !currentUser || regeneratingMsgIndex !== null) return;
+            const lesson = lessonsCache[activeLessonId];
+            if (!lesson) return;
+            const history = lesson.chatHistory || [];
+            const targetMsg = history[msgIndex];
+            if (!targetMsg || targetMsg.role === "user" || targetMsg.role === "divider") return;
+
+            // 属するパートを特定
+            let partIndex = 0;
+            let currentPartDividerIdx = -1;
+            let dividerCount = -1;
+            for (let i = 0; i <= msgIndex; i++) {
+                if (history[i].role === "divider") {
+                    dividerCount++;
+                    currentPartDividerIdx = i;
+                }
+            }
+            partIndex = Math.max(0, dividerCount >= 0 ? dividerCount : (lesson.currentPartIndex || 0));
+            const parts = Array.isArray(lesson.parts) && lesson.parts.length > 0 ? lesson.parts : [{ title: lesson.title, summary: lesson.topic || "" }];
+            const part = parts[partIndex] || { title: lesson.title, summary: "" };
+
+            // 直前の生徒の質問を探す
+            let prevUserMsg = null;
+            for (let i = msgIndex - 1; i >= 0; i--) {
+                if (history[i].role === "divider") break;
+                if (history[i].role === "user") {
+                    prevUserMsg = history[i].text || history[i].content || "";
+                    break;
+                }
+            }
+
+            regeneratingMsgIndex = msgIndex;
+            renderActiveLessonUI(false);
+
+            try {
+                let contextHistory = [];
+                const systemInstruction = `あなたは高校・大学受験指導の専任プロ講師AIです。
+論理と公式・解法の厳密性を最優先に教えてください。
+数式は必ず $ $ または $$ $$ で囲んでください。
+前置きや挨拶は省き、本題から直接わかりやすく解説してください。`;
+
+                if (prevUserMsg) {
+                    contextHistory = [{
+                        role: "user",
+                        parts: [{
+                            text: `【授業テーマ】${lesson.title}\n【第${partIndex + 1}回】${part.title}\n【生徒の質問】${prevUserMsg}\n\n【指示】生徒の質問に対して、前回の回答とは別の切り口や具体的でわかりやすい例え、解法ステップを用いて丁寧に再回答してください。論理と厳密性を大切にしてください。`
+                        }]
+                    }];
+                } else {
+                    contextHistory = [{
+                        role: "user",
+                        parts: [{
+                            text: `【授業テーマ】${lesson.title}\n【第${partIndex + 1}回】${part.title}（${part.summary || ''}）\n\n【指示】第${partIndex + 1}回の導入講義を、初回1通目として最初からわかりやすく解説してください。前回の説明とは別の例えや切り口を用いてください。前置きは省いて本題から始めてください。`
+                        }]
+                    }];
+                }
+
+                const reply = await callGeminiChat(contextHistory, systemInstruction, { featureId: "lesson_teach" });
+                const replyText = typeof reply === "string" ? reply : (reply?.message || reply?.reply || JSON.stringify(reply));
+
+                lesson.chatHistory[msgIndex].content = replyText;
+                lesson.chatHistory[msgIndex].text = replyText;
+
+                await update(ref(database, `users/${currentUser.uid}/lessons/${activeLessonId}`), {
+                    chatHistory: lesson.chatHistory
+                });
+
+                if (window.mToast) mToast("✅ 返答を再作成しました");
+            } catch (err) {
+                console.error("返答再作成エラー:", err);
+                if (window.mToast) mToast("⚠️ 再作成に失敗しました: " + err.message);
+            } finally {
+                regeneratingMsgIndex = null;
+                renderActiveLessonUI(false);
+            }
+        }
+
+        // ==================== 返答のコピー ====================
+        async function copyMobileMessage(msgIndex) {
+            const lesson = lessonsCache[activeLessonId];
+            if (!lesson || !Array.isArray(lesson.chatHistory)) return;
+            const msg = lesson.chatHistory[msgIndex];
+            if (!msg) return;
+            const text = msg.text || msg.content || "";
+            try {
+                await navigator.clipboard.writeText(text);
+                if (window.mToast) mToast("📋 テキストをコピーしました");
+            } catch (e) {
+                if (window.mToast) mToast("⚠️ コピーに失敗しました");
+            }
+        }
+
+        // ==================== 講義ノートの再作成 ====================
+        async function regenerateMobileLectureNote() {
+            if (!activeLessonId || !currentUser || isRegeneratingLectureNote) return;
+            const lesson = lessonsCache[activeLessonId];
+            if (!lesson) return;
+
+            const ok = confirm(`「${lesson.title}」の講義ノートを最初から作り直します。\nよろしいですか？`);
+            if (!ok) return;
+
+            isRegeneratingLectureNote = true;
+            renderActiveLessonUI(false);
+
+            try {
+                const prompt = `【教科：${lesson.subject || "高校学習"}】
+【授業テーマ】${lesson.title}
+【目標レベル】${lesson.level || "高校標準"}
+【単元・要望】${lesson.topic || lesson.title}
+
+【指示】
+この単元についての超詳細な講義ノート全文を最初からわかりやすく執筆してください。
+前回の説明とは別の例えや直感的なアプローチを取り入れ、論理と公式の導出を厳密に行ってください。
+数式は必ず $ $ または $$ $$ で囲んでください。`;
+
+                const reply = await callGeminiChat(
+                    [{ role: "user", parts: [{ text: prompt }] }],
+                    "あなたは予備校の専任プロ講師です。論理的で厳密、初学者にもわかりやすく深い講義ノート全文を執筆してください。",
+                    { featureId: "lesson_plan" }
+                );
+                const replyText = typeof reply === "string" ? reply : (reply?.message || reply?.reply || JSON.stringify(reply));
+
+                lesson.lectureNote = replyText;
+                await update(ref(database, `users/${currentUser.uid}/lessons/${activeLessonId}`), {
+                    lectureNote: replyText
+                });
+
+                if (window.mToast) mToast("✅ 講義ノートを再作成しました");
+            } catch (err) {
+                console.error("講義ノート再作成エラー:", err);
+                if (window.mToast) mToast("⚠️ 再作成に失敗しました: " + err.message);
+            } finally {
+                isRegeneratingLectureNote = false;
+                renderActiveLessonUI(false);
+            }
+        }
+
+        async function copyMobileLectureNote() {
+            const lesson = lessonsCache[activeLessonId];
+            if (!lesson || !lesson.lectureNote) return;
+            try {
+                await navigator.clipboard.writeText(lesson.lectureNote);
+                if (window.mToast) mToast("📋 講義ノートをコピーしました");
+            } catch (e) {
+                if (window.mToast) mToast("⚠️ コピーに失敗しました");
+            }
+        }
+
+        // ==================== 授業内の各回の再作成 ====================
+        async function regenerateMobilePart(partIndex) {
+            if (!activeLessonId || !currentUser || isRegeneratingPart) return;
+            const lesson = lessonsCache[activeLessonId];
+            if (!lesson) return;
+
+            const parts = Array.isArray(lesson.parts) && lesson.parts.length > 0 ? lesson.parts : [{ title: lesson.title, summary: lesson.topic || "" }];
+            const part = parts[partIndex] || { title: lesson.title, summary: "" };
+
+            const ok = confirm(`第${partIndex + 1}回「${part.title}」の授業を作り直します。\nこの回の説明・質問履歴は新しい講義内容に置き換わります。よろしいですか？`);
+            if (!ok) return;
+
+            // モーダルを閉じる
+            const partsModal = document.getElementById("parts-modal");
+            if (partsModal) partsModal.style.display = "none";
+
+            isRegeneratingPart = true;
+            const indicator = document.getElementById("lesson-part-indicator");
+            if (indicator) indicator.textContent = `⚙️ 第${partIndex + 1}回を作成中...`;
+
+            try {
+                const prompt = `【教科：${lesson.subject || "高校学習"}】
+【授業テーマ】${lesson.title}
+【単元目標】${lesson.topic || lesson.title}
+【第${partIndex + 1}回タイトル】${part.title}
+【第${partIndex + 1}回要点】${part.summary || ""}
+【全体の講義ノート】${lesson.lectureNote || ""}
+
+【指示】
+第${partIndex + 1}回「${part.title}」の講義を、初回1通目として最初からわかりやすく、論理的かつ厳密に解説してください。
+前回の説明とは別の例えや直感的なアプローチを交え、初学者がつまずきやすい急所を明確に示してください。
+数式は必ず $ $ または $$ $$ で囲むこと。前置きやお礼は省き、第${partIndex + 1}回の本題から始めてください。`;
+
+                const reply = await callGeminiChat(
+                    [{ role: "user", parts: [{ text: prompt }] }],
+                    "あなたは高校・難関大受験指導のプロ講師AIです。わかりやすく明快、論理的で厳密な講義を行ってください。",
+                    { featureId: "lesson_teach" }
+                );
+                const replyText = typeof reply === "string" ? reply : (reply?.message || reply?.reply || JSON.stringify(reply));
+
+                const newAssistantMsg = {
+                    role: "assistant",
+                    content: replyText,
+                    text: replyText
+                };
+
+                if (!Array.isArray(lesson.chatHistory)) lesson.chatHistory = [];
+                const history = lesson.chatHistory;
+
+                // dividerの位置を特定
+                const dividerIndices = [];
+                history.forEach((m, idx) => {
+                    if (m.role === "divider") dividerIndices.push(idx);
+                });
+
+                if (dividerIndices.length > 0 && dividerIndices[partIndex] !== undefined) {
+                    const startIdx = dividerIndices[partIndex];
+                    const endIdx = (dividerIndices[partIndex + 1] !== undefined) ? dividerIndices[partIndex + 1] : history.length;
+                    history.splice(startIdx + 1, endIdx - (startIdx + 1), newAssistantMsg);
+                } else if (dividerIndices.length === 0) {
+                    history.length = 0;
+                    history.push({ role: "divider", content: `第${partIndex + 1}回: ${part.title}` });
+                    history.push(newAssistantMsg);
+                } else {
+                    history.push({ role: "divider", content: `第${partIndex + 1}回: ${part.title}` });
+                    history.push(newAssistantMsg);
+                }
+
+                lesson.currentPartIndex = partIndex;
+                await update(ref(database, `users/${currentUser.uid}/lessons/${activeLessonId}`), {
+                    chatHistory: lesson.chatHistory,
+                    currentPartIndex: partIndex
+                });
+
+                if (window.mToast) mToast(`✅ 第${partIndex + 1}回の授業を作り直しました`);
+            } catch (err) {
+                console.error("回再作成エラー:", err);
+                if (window.mToast) mToast("⚠️ 作り直しに失敗しました: " + err.message);
+            } finally {
+                isRegeneratingPart = false;
+                renderActiveLessonUI(true);
+            }
+        }
+
+        // ==================== 📑 各回一覧・再作成モーダル ====================
+        function openPartsModal() {
+            if (!activeLessonId) return;
+            const lesson = lessonsCache[activeLessonId];
+            if (!lesson) return;
+
+            const modal = document.getElementById("parts-modal");
+            const listEl = document.getElementById("parts-modal-list");
+            if (!modal || !listEl) return;
+
+            const parts = Array.isArray(lesson.parts) && lesson.parts.length > 0 ? lesson.parts : [{ title: lesson.title, summary: lesson.topic || "" }];
+            const currentPartIdx = Math.min(Math.max(0, lesson.currentPartIndex || 0), parts.length - 1);
+
+            listEl.innerHTML = parts.map((p, idx) => {
+                const isCurrent = (idx === currentPartIdx);
+                return `
+                    <div class="part-select-card ${isCurrent ? 'active' : ''}">
+                        <div style="flex:1; min-width:0;">
+                            <div style="display:flex; align-items:center; gap:0.4rem; margin-bottom:0.2rem;">
+                                <span style="font-size:0.75rem; font-weight:800; color:var(--brand-primary);">第${idx + 1}回</span>
+                                ${isCurrent ? '<span style="font-size:0.65rem; background:var(--brand-primary); color:#fff; padding:0.1rem 0.4rem; border-radius:var(--radius-full);">受講中</span>' : ''}
+                            </div>
+                            <div style="font-size:0.85rem; font-weight:700; color:var(--text-primary);">${escapeHtml(p.title || '')}</div>
+                            ${p.summary ? `<div style="font-size:0.72rem; color:var(--text-muted); margin-top:0.2rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(p.summary)}</div>` : ''}
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:0.35rem; flex-shrink:0;">
+                            <button type="button" class="m-bubble-action-btn m-bubble-regen-btn" data-modal-regen-part="${idx}" style="justify-content:center;">
+                                🔄 再作成
+                            </button>
+                            ${!isCurrent ? `
+                                <button type="button" class="m-bubble-action-btn" data-modal-switch-part="${idx}" style="justify-content:center;">
+                                    📖 受講する
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join("");
+
+            // イベント付与
+            listEl.querySelectorAll("[data-modal-regen-part]").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    const idx = parseInt(btn.getAttribute("data-modal-regen-part"), 10);
+                    regenerateMobilePart(idx);
+                });
+            });
+
+            listEl.querySelectorAll("[data-modal-switch-part]").forEach(btn => {
+                btn.addEventListener("click", async () => {
+                    const idx = parseInt(btn.getAttribute("data-modal-switch-part"), 10);
+                    lesson.currentPartIndex = idx;
+                    await update(ref(database, `users/${currentUser.uid}/lessons/${activeLessonId}`), {
+                        currentPartIndex: idx
+                    });
+                    modal.style.display = "none";
+                    renderActiveLessonUI(true);
+                    if (window.mToast) mToast(`📖 第${idx + 1}回へ切り替えました`);
+                });
+            });
+
+            modal.style.display = "flex";
+        }
+
+        document.getElementById("m-btn-open-parts-modal")?.addEventListener("click", openPartsModal);
+        document.getElementById("close-parts-modal-btn")?.addEventListener("click", () => {
+            const modal = document.getElementById("parts-modal");
+            if (modal) modal.style.display = "none";
+        });
+        document.getElementById("parts-modal")?.addEventListener("click", (e) => {
+            const modal = document.getElementById("parts-modal");
+            if (e.target === modal) modal.style.display = "none";
+        });
+
+        // 現在の回を再作成ボタン（ヘッダー内）
+        document.getElementById("m-btn-regen-current-part")?.addEventListener("click", () => {
+            if (!activeLessonId) return;
+            const lesson = lessonsCache[activeLessonId];
+            if (!lesson) return;
+            const parts = Array.isArray(lesson.parts) && lesson.parts.length > 0 ? lesson.parts : [{ title: lesson.title, summary: lesson.topic || "" }];
+            const currentPartIdx = Math.min(Math.max(0, lesson.currentPartIndex || 0), parts.length - 1);
+            regenerateMobilePart(currentPartIdx);
+        });
+
+        // チャットフロー全体のイベント委譲（再作成・コピー・回再作成）
+        (function bindChatFlowEvents() {
+            const chatFlow = document.getElementById("lesson-chat-flow");
+            if (!chatFlow) return;
+
+            chatFlow.addEventListener("click", (e) => {
+                // 返答再作成
+                const regenMsgBtn = e.target.closest("[data-regen-msg]");
+                if (regenMsgBtn) {
+                    const idx = parseInt(regenMsgBtn.getAttribute("data-regen-msg"), 10);
+                    if (!isNaN(idx)) regenerateMobileMessage(idx);
+                    return;
+                }
+
+                // 返答コピー
+                const copyMsgBtn = e.target.closest("[data-copy-msg]");
+                if (copyMsgBtn) {
+                    const idx = parseInt(copyMsgBtn.getAttribute("data-copy-msg"), 10);
+                    if (!isNaN(idx)) copyMobileMessage(idx);
+                    return;
+                }
+
+                // パート再作成（divider内ボタン）
+                const regenPartBtn = e.target.closest("[data-regen-part-idx]");
+                if (regenPartBtn) {
+                    const pIdx = parseInt(regenPartBtn.getAttribute("data-regen-part-idx"), 10);
+                    if (!isNaN(pIdx)) regenerateMobilePart(pIdx);
+                    return;
+                }
+
+                // 講義ノート再作成
+                if (e.target.closest("#btn-regen-lecture-note")) {
+                    regenerateMobileLectureNote();
+                    return;
+                }
+
+                // 講義ノートコピー
+                if (e.target.closest("#btn-copy-lecture-note")) {
+                    copyMobileLectureNote();
+                    return;
+                }
+            });
+        })();
+
+        // ==================== 授業一覧へ戻る ====================
         function leaveLesson() {
             activeLessonId = null;
             document.getElementById("lesson-active-view").style.display = "none";
             document.getElementById("open-create-modal-btn").style.display = "inline-flex";
             document.getElementById("lessons-list-view").style.display = "block";
             document.getElementById("header-title").textContent = "📖 参考書 授業モード";
+
+            // URLパラメータをクリアして次回リロード時に一覧へ戻れるようにする
+            try {
+                const url = new URL(window.location.href);
+                url.searchParams.delete('id');
+                url.searchParams.delete('lessonId');
+                window.history.replaceState(null, '', url.pathname + (url.search ? url.search : ''));
+            } catch(e) {}
         }
         document.getElementById("leave-lesson-btn")?.addEventListener("click", leaveLesson);
 
@@ -603,19 +1209,51 @@
             input.value = "";
 
             const chatFlow = document.getElementById("lesson-chat-flow");
-            chatFlow.insertAdjacentHTML("beforeend", `<div class="lesson-bubble student">${escapeHtml(text)}</div>`);
+            chatFlow.insertAdjacentHTML("beforeend", `<div class="lesson-bubble student tex2jax_process">${escapeHtml(text)}</div>`);
 
             const thinkingEl = document.createElement("div");
             thinkingEl.className = "lesson-bubble teacher";
-            thinkingEl.textContent = "先生が返答を作成中...";
+            thinkingEl.innerHTML = `<div class="m-bubble-loading-badge">先生が返答を作成中...</div>`;
             chatFlow.appendChild(thinkingEl);
             window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
 
             try {
                 const lesson = lessonsCache[activeLessonId];
+                const parts = Array.isArray(lesson.parts) && lesson.parts.length > 0 ? lesson.parts : [{ title: lesson.title, summary: "" }];
+                const currentPartIdx = Math.min(Math.max(0, lesson.currentPartIndex || 0), parts.length - 1);
+                const currentPart = parts[currentPartIdx] || { title: lesson.title };
+
+                // 「次へ」や「次の回」の場合の自動パート進捗判定
+                if (/^(次へ|次|進む|次の回|次のパート|next)$/i.test(text.replace(/\s+/g, '')) && currentPartIdx < parts.length - 1) {
+                    const nextPartIdx = currentPartIdx + 1;
+                    const nextPart = parts[nextPartIdx];
+                    lesson.currentPartIndex = nextPartIdx;
+
+                    const nextPrompt = `【授業テーマ】${lesson.title}\n【第${nextPartIdx + 1}回】${nextPart.title}（${nextPart.summary || ''}）\n\n【指示】第${nextPartIdx + 1}回の講義を始めてください。論理と公式の厳密性を最優先に、初学者にもわかりやすく解説してください。`;
+                    const reply = await callGeminiChat(
+                        [{ role: "user", parts: [{ text: nextPrompt }] }],
+                        "あなたは予備校の専任プロ講師AIです。論理的で厳密、かつ明快な講義を行ってください。数式は$ $で囲んでください。",
+                        { featureId: "lesson_teach" }
+                    );
+                    const replyText = typeof reply === "string" ? reply : (reply?.message || reply?.reply || JSON.stringify(reply));
+
+                    if (!Array.isArray(lesson.chatHistory)) lesson.chatHistory = [];
+                    lesson.chatHistory.push({ role: "divider", content: `第${nextPartIdx + 1}回: ${nextPart.title}` });
+                    lesson.chatHistory.push({ role: "assistant", content: replyText, text: replyText });
+
+                    await update(ref(database, `users/${currentUser.uid}/lessons/${activeLessonId}`), {
+                        chatHistory: lesson.chatHistory,
+                        currentPartIndex: nextPartIdx
+                    });
+
+                    renderActiveLessonUI(true);
+                    if (window.mToast) mToast(`🎉 第${nextPartIdx + 1}回へ進みました！`);
+                    return;
+                }
+
                 const history = [{
                     role: "user",
-                    parts: [{ text: `あなたは高校・難関大学受験指導の専任プロ講師AIです。以下の授業について生徒と対話してください。\n丁寧かつ簡潔・明瞭に、論理と公式・解法の厳密性を最優先に教えてください。無駄な前置きや過度な装飾は省いてください。\nテーマ: ${lesson.title}\n講義内容: ${lesson.lectureNote || lesson.plan || ""}` }]
+                    parts: [{ text: `あなたは高校・難関大学受験指導の専任プロ講師AIです。以下の授業について生徒と対話してください。\n丁寧かつ簡潔・明瞭に、論理と公式・解法の厳密性を最優先に教えてください。数式は必ず$ $で囲んでください。無駄な前置きや過度な装飾は省いてください。\nテーマ: ${lesson.title}\n受講中パート: 第${currentPartIdx + 1}回「${currentPart.title}」\n講義ノート: ${lesson.lectureNote || lesson.plan || ""}` }]
                 }, {
                     role: "model",
                     parts: [{ text: "承知いたしました。どのような疑問点でもご質問ください。" }]
@@ -624,22 +1262,22 @@
                     parts: [{ text }]
                 }];
 
-                const reply = await callGeminiChat(history, "高校の学習指導エキスパートAIとして、授業内容に関する生徒の質問に分かりやすく丁寧に答えてください。", { featureId: "lesson_teach" });
+                const reply = await callGeminiChat(history, "高校の学習指導エキスパートAIとして、授業内容に関する生徒の質問に分かりやすく丁寧に答えてください。数式は必ず$ $で囲んでください。", { featureId: "lesson_teach" });
                 const replyText = typeof reply === "string" ? reply : (reply?.message || reply?.reply || JSON.stringify(reply));
-                thinkingEl.innerHTML = formatText(replyText || "了解！");
 
-                // Firebaseにチャット履歴を保存
-                const currentHistory = Array.isArray(lesson.chatHistory) ? lesson.chatHistory : [];
-                currentHistory.push({ role: "user", content: text }, { role: "assistant", content: replyText || "" });
-                await update(ref(database, `users/${currentUser.uid}/lessons/${activeLessonId}`), { chatHistory: currentHistory });
+                // チャット履歴に保存
+                if (!Array.isArray(lesson.chatHistory)) lesson.chatHistory = [];
+                lesson.chatHistory.push({ role: "user", content: text, text });
+                lesson.chatHistory.push({ role: "assistant", content: replyText || "", text: replyText || "" });
 
-                if (window.MathJax && window.MathJax.typesetPromise) {
-                    window.MathJax.typesetPromise([thinkingEl]).catch(() => {});
-                }
+                await update(ref(database, `users/${currentUser.uid}/lessons/${activeLessonId}`), {
+                    chatHistory: lesson.chatHistory
+                });
+
+                renderActiveLessonUI(true);
             } catch(e) {
                 thinkingEl.textContent = "⚠️ エラー: " + e.message;
             }
-            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
         }
 
         document.getElementById("lesson-send-btn")?.addEventListener("click", sendLessonMessage);
@@ -651,8 +1289,45 @@
         });
 
         // ==================== 🎓 新規授業作成モーダル & AI3並列生成 ====================
+        function isSocialStudiesSubject(subject) {
+            if (!subject) return false;
+            const s = String(subject).trim();
+            const targets = ["地理", "日本史", "世界史", "歴史", "公共", "公民", "倫政", "倫理", "政治・経済", "現代社会", "社会"];
+            return targets.some(t => s.includes(t));
+        }
+
+        function updateMobileSubjectUI() {
+            const sub = document.getElementById("create-subject-select")?.value || "数学";
+            const isSocial = isSocialStudiesSubject(sub);
+            const levelWrap = document.getElementById("create-level-wrap");
+            const socialNote = document.getElementById("create-social-note");
+            const topicInput = document.getElementById("create-topic-input");
+
+            if (levelWrap) levelWrap.style.display = isSocial ? "none" : "block";
+            if (socialNote) socialNote.style.display = isSocial ? "block" : "none";
+
+            const examples = {
+                "数学": "例：3次関数の微分と極値、確率と漸化式 など",
+                "物理": "例：コンデンサー回路の過渡現象、力学的エネルギー保存 など",
+                "化学": "例：酸・塩基の中和滴定、有機化合物の構造決定 など",
+                "生物": "例：DNAの転写と翻訳、光合成の反応経路 など",
+                "情報": "例：情報I アルゴリズムと計算量、2進数と論理回路 など",
+                "地理": "例：ケッペンの気候区分、東南アジアの産業と貿易 など",
+                "日本史": "例：荘園公領制の成立、明治維新と富国強兵 など",
+                "世界史": "例：フランス革命とナポレオン、冷戦構造の変遷 など",
+                "英語": "例：関係詞の非制限用法、仮定法過去完了 など",
+                "国語": "例：現代文の対比構造、古文助動詞の識別 など",
+                "公共": "例：日本国憲法と三権分立、市場経済の仕組み など",
+                "公民": "例：基本的人権の保障、金融政策と財政政策 など"
+            };
+            if (topicInput && examples[sub]) {
+                topicInput.placeholder = examples[sub];
+            }
+        }
+
         const createModal = document.getElementById("create-modal");
         document.getElementById("open-create-modal-btn")?.addEventListener("click", () => {
+            updateMobileSubjectUI();
             createModal.style.display = "flex";
         });
         document.getElementById("close-create-modal-btn")?.addEventListener("click", () => {
@@ -661,6 +1336,9 @@
         createModal?.addEventListener("click", (e) => {
             if (e.target === createModal) createModal.style.display = "none";
         });
+
+        // 教科切り替え時に難易度選択の要否を自動切り替え（社会系はレベル選択をスキップ）
+        document.getElementById("create-subject-select")?.addEventListener("change", updateMobileSubjectUI);
 
         // モード切替
         document.getElementById("mode-topic-btn")?.addEventListener("click", () => {
@@ -708,7 +1386,11 @@
             }
 
             const subject = document.getElementById("create-subject-select").value;
-            const level = document.getElementById("create-level-select").value;
+            const isSocial = isSocialStudiesSubject(subject);
+            const rawLevel = document.getElementById("create-level-select")?.value || "定期テストレベル";
+            const level = isSocial 
+                ? "基礎〜入試頻出網羅（因果関係・歴史の流れ・重要用語重視）" 
+                : rawLevel;
             const topic = document.getElementById("create-topic-input").value.trim();
             const note = document.getElementById("create-note-input").value.trim();
 
@@ -733,7 +1415,11 @@
                 let events = [];
 
                 if (createMode === "topic") {
-                    const basePrompt = `【教科：${subject}】\n【単元名】${topic}\n【レベル】${level}\n【生徒からの要望】${note}`;
+                    let basePrompt = `【教科：${subject}】\n【単元名】${topic}\n【レベル】${level}`;
+                    if (isSocial) {
+                        basePrompt += `\n【社会科の特別指示】歴史・地理・公民の因果関係、時代の流れ、重要専門用語、共通テスト・入試頻出ポイントを初学者にも極めて分かりやすく論理的・体系的に網羅してください。`;
+                    }
+                    if (note) basePrompt += `\n【生徒からの要望】${note}`;
 
                     // Engine 1: カリキュラム構成
                     const STRUCTURE_SCHEMA = {

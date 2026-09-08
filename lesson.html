@@ -2376,15 +2376,22 @@
                                     </label>
                                     <input type="text" id="topic-input" class="flora-input" placeholder="例：微分方程式の解法 / 物理 コンデンサー回路 / 情報I アルゴリズムと計算量 など" style="margin-bottom:0.6rem;">
                                     
-                                    <label style="font-size:0.8rem; color:var(--text-secondary); display:block; margin-bottom:0.3rem; font-weight:600;">
-                                        🎚️ レベル感
-                                    </label>
-                                    <select id="topic-level-select" class="flora-select" style="margin-bottom:0.6rem;">
-                                        <option value="教科書レベル（基礎の基礎から）">教科書レベル（基礎の基礎から）</option>
-                                        <option value="定期テストレベル">定期テストレベル</option>
-                                        <option value="入試基礎レベル" selected>入試基礎レベル</option>
-                                        <option value="入試標準〜応用レベル">入試標準〜応用レベル</option>
-                                    </select>
+                                    <div id="topic-level-wrap">
+                                        <label style="font-size:0.8rem; color:var(--text-secondary); display:block; margin-bottom:0.3rem; font-weight:600;">
+                                            🎚️ レベル感
+                                        </label>
+                                        <select id="topic-level-select" class="flora-select" style="margin-bottom:0.6rem;">
+                                            <option value="教科書レベル（基礎の基礎から）">教科書レベル（基礎の基礎から）</option>
+                                            <option value="定期テストレベル">定期テストレベル</option>
+                                            <option value="入試基礎レベル" selected>入試基礎レベル</option>
+                                            <option value="入試標準〜応用レベル">入試標準〜応用レベル</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- 🏛️ 社会系（歴史・地理・公民）専用のスマート案内（レベル選択不要） -->
+                                    <div id="topic-social-note" style="display:none; background:rgba(5, 150, 105, 0.08); border:1px solid var(--brand-border); border-radius:var(--radius-md); padding:0.55rem 0.85rem; margin-bottom:0.75rem; font-size:0.78rem; color:var(--brand-primary); font-weight:600; line-height:1.45;">
+                                        🏛️ 社会科目（歴史・地理・公民）はレベル選択不要です。用語・因果関係・歴史の流れ・頻出ポイントを一挙に網羅した最適な講義を自動構成します！
+                                    </div>
                                     <textarea class="note-textarea" id="topic-note-input" placeholder="（任意）特に重点を置いてほしい内容、すでに知っている前提などがあれば入力してください"></textarea>
                                     <div style="font-size:0.75rem; color:var(--brand-primary); margin-top:0.4rem; font-weight:600;">
                                         ⚡ 複数Geminiキーを並列稼働させ、カリキュラム・超詳細解説・暗記ポイントを同時生成します！
@@ -2904,6 +2911,28 @@
             });
             const badge = el("selected-subject-badge-hint");
             if (badge) badge.textContent = `選択中: ${selectedSubject}`;
+            updateTopicSubjectUI();
+        }
+
+        function isSocialStudiesSubject(subject) {
+            if (!subject) return false;
+            const s = String(subject).trim();
+            const targets = ["地理", "日本史", "世界史", "歴史", "公共", "公民", "倫政", "倫理", "政治・経済", "現代社会", "社会", "地歴公民"];
+            return targets.some(t => s.includes(t));
+        }
+
+        function updateTopicSubjectUI() {
+            const isSocial = isSocialStudiesSubject(selectedSubject);
+            const levelWrap = el("topic-level-wrap");
+            const socialNote = el("topic-social-note");
+            if (levelWrap) levelWrap.style.display = isSocial ? "none" : "block";
+            if (socialNote) socialNote.style.display = isSocial ? "block" : "none";
+
+            // AI要件定義カード内の難易度欄も連動
+            const counselingLevelItem = el("counseling-summary-level") ? el("counseling-summary-level").closest(".summary-item") : null;
+            if (counselingLevelItem) {
+                counselingLevelItem.style.display = isSocial ? "none" : "block";
+            }
         }
 
         function setupSubjectCardSelection() {
@@ -2938,6 +2967,7 @@
                     if (inputEl && examples[selectedSubject]) {
                         inputEl.placeholder = `例：${examples[selectedSubject]}`;
                     }
+                    updateTopicSubjectUI();
                 };
             });
 
@@ -2953,6 +2983,7 @@
             });
         }
         setupSubjectCardSelection();
+        updateTopicSubjectUI();
 
         function setTeachingStyle(style) {
             selectedTeachingStyle = style;
@@ -2988,6 +3019,7 @@
                 topicBtn.classList.add("flora-btn-primary", "active");
                 photoGroup.style.display = "none";
                 topicGroup.style.display = "block";
+                updateTopicSubjectUI();
             } else {
                 topicBtn.classList.remove("flora-btn-primary", "active");
                 topicBtn.classList.add("flora-btn-secondary");
@@ -3189,7 +3221,13 @@
 
             card.classList.remove("hidden");
             if (titleInput) titleInput.value = spec.topic_title || "";
-            if (levelSelect) levelSelect.value = spec.recommended_level || "定期テストレベル";
+            if (levelSelect) {
+                levelSelect.value = spec.recommended_level || "定期テストレベル";
+                const lvlItem = levelSelect.closest(".summary-item");
+                if (lvlItem) {
+                    lvlItem.style.display = isSocialStudiesSubject(selectedSubject) ? "none" : "block";
+                }
+            }
             if (notesTextarea) notesTextarea.value = spec.custom_request_notes || "";
         }
 
@@ -3284,8 +3322,11 @@
             const levelSelect = el("counseling-summary-level");
             const notesTextarea = el("counseling-summary-notes");
 
+            const isSocial = isSocialStudiesSubject(selectedSubject);
             const finalTitle = titleInput ? titleInput.value.trim() : (latestRefinedSpec?.topic_title || "");
-            const finalLevel = levelSelect ? levelSelect.value : (latestRefinedSpec?.recommended_level || "定期テストレベル");
+            const finalLevel = isSocial
+                ? "基礎〜入試頻出網羅（因果関係・歴史の流れ・重要用語重視）"
+                : (levelSelect ? levelSelect.value : (latestRefinedSpec?.recommended_level || "定期テストレベル"));
             const finalNotes = notesTextarea ? notesTextarea.value.trim() : (latestRefinedSpec?.custom_request_notes || "");
 
             if (!finalTitle && !finalNotes) {
@@ -3297,6 +3338,7 @@
             if (creationMode === "photo" && selectedImages.length === 0) {
                 setCreationMode("topic");
             }
+            updateTopicSubjectUI();
 
             if (el("topic-input")) el("topic-input").value = finalTitle;
             if (el("topic-level-select")) el("topic-level-select").value = finalLevel;
@@ -3363,7 +3405,7 @@
         let currentLessonId = null;
 
         const urlParams = new URLSearchParams(window.location.search);
-        const REQUESTED_ID = urlParams.get('id');
+        const REQUESTED_ID = urlParams.get('id') || urlParams.get('lessonId');
         let pendingSourceProblem = null;
 
         const LEVEL_ORDER = ["教科書レベル（基礎の基礎から）", "定期テストレベル", "入試基礎レベル", "入試標準〜応用レベル"];
@@ -3710,8 +3752,12 @@ ${socraticAddon}
 
                 } else {
                     // ⚡ 単元名モード：複数GeminiキーによるマルチAI並列生成！
+                    const isSocial = isSocialStudiesSubject(selectedSubject);
                     const topicText = el("topic-input").value.trim();
-                    const levelText = el("topic-level-select").value;
+                    const rawLevelText = el("topic-level-select") ? el("topic-level-select").value : "入試基礎レベル";
+                    const levelText = isSocial 
+                        ? "基礎〜入試頻出網羅（因果関係・歴史の流れ・重要用語重視）" 
+                        : rawLevelText;
                     const topicNoteText = el("topic-note-input").value.trim();
 
                     // Engine 1: カリキュラム・構成・タイトル・年代イベント策定AI
@@ -3801,6 +3847,9 @@ ${subjectGuide}
                     };
 
                     let basePrompt = `【教科：${selectedSubject}】\n【単元名】${topicText}\n【レベル】${levelText}`;
+                    if (isSocial) {
+                        basePrompt += `\n【社会科の特別指示】歴史・地理・公民の因果関係、時代の流れ、重要専門用語、共通テスト・入試頻出ポイントを初学者にも極めて分かりやすく論理的・体系的に網羅してください。数学や理科のような難易度分断ではなく、基礎〜頻出要点を一貫してマスターできる講義にしてください。`;
+                    }
                     if (topicNoteText) basePrompt += `\n【生徒からの要望】${topicNoteText}`;
                     if (pendingLevelUp) {
                         basePrompt += `\n\n【レベルアップ授業】前回レベル（${pendingLevelUp.fromLevel}）ノート:\n${pendingLevelUp.fromNote || ""}`;
