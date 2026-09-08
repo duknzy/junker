@@ -460,7 +460,8 @@
             if (!lesson) return "未分類";
             if (lesson.subject && typeof lesson.subject === "string" && lesson.subject.trim() !== "") {
                 const s = lesson.subject.trim();
-                if (s !== "未分類") return s;
+                if (s === "政経") return "政治・経済";
+                if (s !== "未分類" && s !== "その他") return s;
             }
             
             // タイトル、トピック、暗記事項、パート、授業メモの内容を横断してテキスト判定
@@ -468,7 +469,7 @@
                 ? lesson.parts.map(p => (p.title || "") + " " + (p.topic || "")).join(" ") 
                 : "";
             const memoPointsText = Array.isArray(lesson.memorizationPoints)
-                ? lesson.memorizationPoints.map(m => (m.category || "") + " " + (m.content || "") + " " + (m.note || "")).join(" ")
+                ? lesson.memorizationPoints.map(m => (m.category || "") + " " + (m.content || "") + " " + (m.question || "") + " " + (m.answer || "") + " " + (m.note || "")).join(" ")
                 : "";
             const memosText = Array.isArray(lesson.lessonMemos)
                 ? lesson.lessonMemos.map(m => m.text || "").join(" ")
@@ -483,10 +484,16 @@
                 memosText
             ].join(" ").toLowerCase();
 
-            if (/公共|公民|政治|経済|憲法|倫理|現代社会|諸課題|中小企業|財政|農業|防災|少子|高齢|福祉|労働|金融|資本|ベンチャー|csr|ステークホルダー/i.test(text)) return "公共";
+            if (/政治|経済|財政|金融|市場|租税|政党|国会|内閣|憲法|司法|地方自治|少子|高齢|社会保障|福祉|労働|雇用|消費者|中小企業|農業|防災|諸課題|国際連合|安保理|国際法|平和主義|法の支配|民主政治|資本主義|株式|為替|インフレ|デフレ|gdp/i.test(text)) {
+                if (/政治|経済|財政|租税|金融|市場|雇用|労働|社会保障|福祉|司法|地方自治|諸課題|中小企業|少子|高齢|消費者/i.test(text)) return "政治・経済";
+                if (/公共/i.test(text)) return "公共";
+                return "公民";
+            }
+            if (/公共/i.test(text)) return "公共";
+            if (/公民|倫理/i.test(text)) return "公民";
+            if (/化学|周期表|周期律|元素|構成粒子|三態|熱運動|結合|イオン|分子|原子|mol|モル|酸化|還元|酸|塩基|有機化学|無機化学|高分子/i.test(text)) return "化学";
             if (/数学|微分|積分|ベクトル|数列|三角関数|確率|二次関数|図形/i.test(text)) return "数学";
             if (/物理|力学|電磁気|波動|熱力学|運動方程式|単振動/i.test(text)) return "物理";
-            if (/化学|mol|モル|酸化|還元|酸|塩基|有機化学|無機化学|高分子/i.test(text)) return "化学";
             if (/生物|遺伝|細胞|dna|光合成|生態系|神経|免疫|ホルモン/i.test(text)) return "生物";
             if (/情報|プログラミング|python|アルゴリズム|ネットワーク|セキュリティ|データベース/i.test(text)) return "情報";
             if (/地理|気候|ケッペン|地形|貿易|資源|農業地域/i.test(text)) return "地理";
@@ -496,7 +503,7 @@
             if (/現代文|古文|漢文|国語|敬語|助詞|助動詞/i.test(text)) return "国語";
             if (/地学|地層|天体|気象|プレート|地震|火山|恒星|銀河/i.test(text)) return "地学";
             if (/理科/i.test(text)) return "理科";
-            return "未分類";
+            return (lesson.subject && lesson.subject !== "未分類") ? lesson.subject : "未分類";
         }
 
         function getActiveItems() {
@@ -508,14 +515,17 @@
                 const list = [];
                 Object.entries(allLessons).forEach(([lessonId, l]) => {
                     if (l && Array.isArray(l.memorizationPoints)) {
-                        const subj = l.subject || detectSubjectFromLesson(l);
+                        let subj = l.subject;
+                        if (!subj || subj === "未分類" || subj === "その他") subj = detectSubjectFromLesson(l);
                         l.memorizationPoints.forEach((mp, idx) => {
                             const mpId = mp.id || `mp_${idx}`;
+                            let pointSubj = mp.subject;
+                            if (!pointSubj || pointSubj === "未分類" || pointSubj === "その他") pointSubj = subj;
                             list.push({
                                 id: `${lessonId}:${mpId}`,
                                 lessonId,
                                 memoId: mpId,
-                                subject: mp.subject || subj,
+                                subject: pointSubj,
                                 short_title: l.title || "授業",
                                 category: mp.category || "重要事項",
                                 question: mp.question || "",
@@ -533,14 +543,16 @@
                 const list = [];
                 Object.entries(allLessons).forEach(([lessonId, l]) => {
                     if (l && Array.isArray(l.lessonMemos)) {
-                        const subj = detectSubjectFromLesson(l);
+                        let subj = l.subject;
+                        if (!subj || subj === "未分類" || subj === "その他") subj = detectSubjectFromLesson(l);
                         l.lessonMemos.forEach((m) => {
                             if (m && m.text && m.text.trim()) {
+                                const memoSubj = (m.subject && m.subject !== "未分類" && m.subject !== "その他") ? m.subject : subj;
                                 list.push({
                                     id: `${lessonId}:${m.id}`,
                                     lessonId,
                                     memoId: m.id,
-                                    subject: subj,
+                                    subject: memoSubj,
                                     short_title: l.title || "授業",
                                     partTitle: m.partTitle || "",
                                     partIndex: m.partIndex,

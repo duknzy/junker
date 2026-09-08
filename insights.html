@@ -743,6 +743,7 @@
                         </button>
                         <div style="display:flex; align-items:center; gap:0.3rem;">
                             <select id="batch-unclassified-subject" class="flora-select" style="font-size:0.75rem; padding:0.3rem 0.5rem; height:auto; width:auto;">
+                                <option value="政治・経済">政治・経済</option>
                                 <option value="公共">公共</option>
                                 <option value="公民">公民</option>
                                 <option value="数学">数学</option>
@@ -1166,7 +1167,7 @@
         sortSelect.addEventListener("change", renderActiveView);
         subjectSelect.addEventListener("change", renderActiveView);
 
-        const AVAILABLE_SUBJECTS = ["公共", "公民", "数学", "英語", "国語", "物理", "化学", "生物", "地学", "日本史", "世界史", "地理", "情報", "その他"];
+        const AVAILABLE_SUBJECTS = ["政治・経済", "公共", "公民", "数学", "英語", "国語", "物理", "化学", "生物", "地学", "日本史", "世界史", "地理", "情報", "その他"];
 
         function populateSubjectFilter() {
             const currentVal = subjectSelect.value || "ALL";
@@ -1178,19 +1179,19 @@
                     if (p.insight) {
                         const s = p.subject || "未分類";
                         subjects.add(s);
-                        if (s === "未分類") unclassifiedCount++;
+                        if (s === "未分類" || s === "その他") unclassifiedCount++;
                     }
                 });
                 buildLessonMemoItems().forEach(item => {
                     const s = item.subject || "未分類";
                     subjects.add(s);
-                    if (s === "未分類") unclassifiedCount++;
+                    if (s === "未分類" || s === "その他") unclassifiedCount++;
                 });
             } else if (activeTab === "memorize") {
                 buildMemorizationItems().forEach(item => {
                     const s = item.subject || "未分類";
                     subjects.add(s);
-                    if (s === "未分類") unclassifiedCount++;
+                    if (s === "未分類" || s === "その他") unclassifiedCount++;
                 });
             } else if (activeTab === "qna") {
                 Object.values(rawQnaLogs).forEach(l => { if (l.subject) subjects.add(l.subject); });
@@ -1227,11 +1228,12 @@
             if (!lesson) return "未分類";
             if (lesson.subject && typeof lesson.subject === "string" && lesson.subject.trim() !== "") {
                 const s = lesson.subject.trim();
-                if (s !== "未分類") return s;
+                if (s === "政経") return "政治・経済";
+                if (s !== "未分類" && s !== "その他") return s;
             }
             // 授業のタイトル・トピック・暗記事項内容・パート見出し・メモ内容を総合的に解析
             const memText = Array.isArray(lesson.memorizationPoints) 
-                ? lesson.memorizationPoints.map(m => (m.content || '') + ' ' + (m.category || '') + ' ' + (m.note || '')).join(' ') 
+                ? lesson.memorizationPoints.map(m => (m.content || '') + ' ' + (m.question || '') + ' ' + (m.answer || '') + ' ' + (m.category || '') + ' ' + (m.note || '')).join(' ') 
                 : '';
             const partText = Array.isArray(lesson.parts) 
                 ? lesson.parts.map(p => (p.title || '') + ' ' + (p.content || '')).join(' ') 
@@ -1241,35 +1243,68 @@
                 : '';
             const text = [lesson.title, lesson.topicKey, lesson.topic, memText, partText, memoText].filter(Boolean).join(" ").toLowerCase();
 
-            // 公共 / 公民 / 政治経済 / 現代社会
-            if (/公共|公民|政治|経済|憲法|倫理|現代社会|諸課題|中小企業|財政|農業|防災|少子|高齢|社会保障|福祉|労働|雇用|市場経済|金融|資本|ベンチャー|csr|ステークホルダー|規模の経済|流通|株式会社|独占禁止|公正取引|消費者|租税|公債|国債|インフレ|デフレ|円高|円安|gdp|国会|内閣|裁判所|地方自治|司法|行政|立法|選挙|政党|基本的人権|人権|国際連合|安保理|国際法|sdgs|地球温暖化|循環型社会/i.test(text)) return "公共";
-            if (/数学|微分|積分|ベクトル|数列|三角関数|確率|二次関数|図形|整数|複素数|行列|極限|導関数/i.test(text)) return "数学";
-            if (/物理|力学|電磁気|波動|熱力学|原子|運動方程式|オームの法則|クーロン/i.test(text)) return "物理";
-            if (/化学|mol|モル|酸化|還元|酸|塩基|無機|有機|結合|沈殿|元素|周期表/i.test(text)) return "化学";
-            if (/生物|遺伝|細胞|dna|光合成|生態系|呼吸|酵素|免疫|生殖|ホルモン/i.test(text)) return "生物";
-            if (/地学|地層|天体|気象|プレート|火山|地震|恒星|銀河|堆積/i.test(text)) return "地学";
-            if (/情報|プログラミング|python|アルゴリズム|ネットワーク|二進数|暗号|セキュリティ/i.test(text)) return "情報";
-            if (/地理|気候|ケッペン|地形|農業区分|資源|貿易|人口ピラミッド/i.test(text)) return "地理";
+            // 1. 政治・経済 / 公共 / 公民
+            if (/政治|経済|財政|金融|市場|租税|政党|国会|内閣|憲法|司法|地方自治|少子|高齢|社会保障|福祉|労働|雇用|消費者|中小企業|農業|防災|諸課題|国際連合|安保理|国際法|平和主義|法の支配|民主政治|資本主義|株式|為替|インフレ|デフレ|gdp/i.test(text)) {
+                if (/政治|経済|財政|租税|金融|市場|雇用|労働|社会保障|福祉|司法|地方自治|諸課題|中小企業|少子|高齢|消費者/i.test(text)) return "政治・経済";
+                if (/公共/i.test(text)) return "公共";
+                return "公民";
+            }
+            if (/公共/i.test(text)) return "公共";
+            if (/公民|倫理/i.test(text)) return "公民";
+
+            // 2. 化学
+            if (/化学|周期表|周期律|元素|構成粒子|三態|熱運動|結合|イオン|分子|原子|mol|モル|酸化|還元|酸|塩基|中和|沈殿|溶液|濃度|気体|無機|有機|結晶/i.test(text)) return "化学";
+
+            // 3. 物理
+            if (/物理|力学|電磁気|波動|運動方程式|単振動|熱力学|オーム|クーロン|落体|摩擦|浮力/i.test(text)) return "物理";
+
+            // 4. 生物
+            if (/生物|細胞|dna|rna|遺伝|光合成|代謝|呼吸|酵素|免疫|生殖|ホルモン|神経|生態系/i.test(text)) return "生物";
+
+            // 5. 地学
+            if (/地学|地球|プレート|地震|火山|地層|気象|天体|恒星|銀河/i.test(text)) return "地学";
+
+            // 6. 数学
+            if (/数学|微分|積分|ベクトル|数列|三角関数|確率|二次関数|図形|整数|複素数|極限|導関数/i.test(text)) return "数学";
+
+            // 7. 情報
+            if (/情報|プログラミング|アルゴリズム|python|二進数|ネットワーク|セキュリティ|データベース/i.test(text)) return "情報";
+
+            // 8. 地理
+            if (/地理|気候|ケッペン|地誌|貿易|地形|農業区分/i.test(text)) return "地理";
+
+            // 9. 日本史
             if (/日本史|幕府|天皇|大名|武士|明治維新|江戸|平安|鎌倉|室町|戦国|縄文|弥生|古墳|大化/i.test(text)) return "日本史";
-            if (/世界史|歴史|王朝|帝国|革命|ルネサンス|ローマ|ギリシャ|冷戦|十字軍|封建|植民地/i.test(text)) return "世界史";
-            if (/英語|文法|単語|英文|tense|clause|syntax|pronoun|passive/i.test(text)) return "英語";
-            if (/現代文|古文|漢文|国語|評論文|小説|助動詞|係り結び|返り点|訓読/i.test(text)) return "国語";
-            if (/理科/i.test(text)) return "理科";
-            return "未分類";
+
+            // 10. 世界史
+            if (/世界史|王朝|帝国|革命|ルネサンス|ローマ|ギリシャ|冷戦|十字軍|封建|植民地|条約/i.test(text)) return "世界史";
+
+            // 11. 英語
+            if (/英語|英文法|構文|単語|語彙|grammar|svoc|relative clause/i.test(text)) return "英語";
+
+            // 12. 国語
+            if (/現代文|古文|漢文|国語|評論文|助動詞|係り結び|返り点|訓読|漢詩/i.test(text)) return "国語";
+
+            return (lesson.subject && lesson.subject !== "未分類") ? lesson.subject : "未分類";
         }
 
         function buildLessonMemoItems() {
             const items = [];
             Object.entries(rawLessons).forEach(([lessonId, lesson]) => {
                 if (!lesson || !Array.isArray(lesson.lessonMemos)) return;
+                let subj = lesson.subject;
+                if (!subj || subj === "未分類" || subj === "その他") {
+                    subj = detectSubjectFromLesson(lesson);
+                }
                 lesson.lessonMemos.forEach(m => {
                     if (!m || !m.text || !m.text.trim()) return;
+                    const memoSubj = (m.subject && m.subject !== "未分類" && m.subject !== "その他") ? m.subject : subj;
                     items.push({
                         id: `lessonmemo_${lessonId}_${m.id}`,
                         lessonId,
                         memoId: m.id,
                         insight: m.text,
-                        subject: detectSubjectFromLesson(lesson),
+                        subject: memoSubj,
                         field: lesson.topicKey || lesson.title || "授業メモ",
                         short_title: lesson.title || "授業メモ",
                         insightUpdatedAt: m.updatedAt || m.createdAt,
@@ -1290,13 +1325,20 @@
             const items = [];
             Object.entries(rawLessons).forEach(([lessonId, lesson]) => {
                 if (!lesson || !Array.isArray(lesson.memorizationPoints)) return;
-                const lessonSubj = lesson.subject || detectSubjectFromLesson(lesson);
+                let lessonSubj = lesson.subject;
+                if (!lessonSubj || lessonSubj === "未分類" || lessonSubj === "その他") {
+                    lessonSubj = detectSubjectFromLesson(lesson);
+                }
                 lesson.memorizationPoints.forEach((mp, idx) => {
                     const content = (mp.content || "").trim();
                     const question = (mp.question || "").trim();
                     const answer = (mp.answer || "").trim();
                     if (!content && !answer && !question) return;
                     const mpId = mp.id || `idx${idx}`;
+                    let pointSubj = mp.subject;
+                    if (!pointSubj || pointSubj === "未分類" || pointSubj === "その他") {
+                        pointSubj = lessonSubj;
+                    }
                     items.push({
                         id: `memorize_${lessonId}_${mpId}`,
                         lessonId,
@@ -1310,7 +1352,7 @@
                             ? `${question}\n↳ ${answer}${mp.note ? `\n💡 ${mp.note}` : ""}` 
                             : (content + (mp.note ? `\n💡 ${mp.note}` : "")),
                         category: mp.category || "",
-                        subject: mp.subject || lessonSubj,
+                        subject: pointSubj,
                         field: lesson.topicKey || lesson.title || "暗記事項",
                         short_title: lesson.title || "暗記事項",
                         insightUpdatedAt: mp.updatedAt || lesson.updatedAt || lesson.createdAt,
@@ -1448,11 +1490,22 @@
 
             try {
                 if (type === 'lesson') {
-                    await update(ref(database, 'users/' + currentUser.uid + '/lessons/' + id), {
+                    const updates = {
                         subject: newSubj,
                         updatedAt: new Date().toISOString()
-                    });
-                    if (rawLessons[id]) rawLessons[id].subject = newSubj;
+                    };
+                    if (rawLessons[id]) {
+                        rawLessons[id].subject = newSubj;
+                        if (Array.isArray(rawLessons[id].memorizationPoints)) {
+                            rawLessons[id].memorizationPoints.forEach(p => { p.subject = newSubj; });
+                            updates.memorizationPoints = rawLessons[id].memorizationPoints;
+                        }
+                        if (Array.isArray(rawLessons[id].lessonMemos)) {
+                            rawLessons[id].lessonMemos.forEach(m => { m.subject = newSubj; });
+                            updates.lessonMemos = rawLessons[id].lessonMemos;
+                        }
+                    }
+                    await update(ref(database, 'users/' + currentUser.uid + '/lessons/' + id), updates);
                 } else if (type === 'problem') {
                     await update(ref(database, 'users/' + currentUser.uid + '/problems/' + id), {
                         subject: newSubj,
@@ -1462,7 +1515,7 @@
                 }
 
                 closeQuickSubjectModal();
-                showToast(`教科を「${newSubj}」に変更しました！`, "success", 2000);
+                showToast(`教科を「${newSubj}」に変更し、暗記カードも同期しました！`, "success", 2500);
                 populateSubjectFilter();
                 renderActiveView();
             } catch (err) {
@@ -1478,32 +1531,43 @@
             const updates = {};
             const now = new Date().toISOString();
 
-            // 1. レッスンの未分類を自動判別
+            // 1. レッスンの未分類・その他を自動判別
             Object.entries(rawLessons).forEach(([id, lesson]) => {
                 if (!lesson) return;
                 const currentSubj = lesson.subject;
-                if (!currentSubj || currentSubj === "未分類") {
+                if (!currentSubj || currentSubj === "未分類" || currentSubj === "その他") {
                     const detected = detectSubjectFromLesson(lesson);
-                    if (detected && detected !== "未分類") {
+                    if (detected && detected !== "未分類" && detected !== "その他") {
                         updates[`lessons/${id}/subject`] = detected;
                         updates[`lessons/${id}/updatedAt`] = now;
                         lesson.subject = detected;
+
+                        if (Array.isArray(lesson.memorizationPoints)) {
+                            lesson.memorizationPoints.forEach(p => { p.subject = detected; });
+                            updates[`lessons/${id}/memorizationPoints`] = lesson.memorizationPoints;
+                        }
+                        if (Array.isArray(lesson.lessonMemos)) {
+                            lesson.lessonMemos.forEach(m => { m.subject = detected; });
+                            updates[`lessons/${id}/lessonMemos`] = lesson.lessonMemos;
+                        }
                         updatedCount++;
                     }
                 }
             });
 
-            // 2. 問題の未分類を自動判別
+            // 2. 問題の未分類・その他を自動判別
             Object.entries(rawProblems).forEach(([id, prob]) => {
                 if (!prob || !prob.insight) return;
                 const currentSubj = prob.subject;
-                if (!currentSubj || currentSubj === "未分類") {
+                if (!currentSubj || currentSubj === "未分類" || currentSubj === "その他") {
                     const text = [prob.title, prob.short_title, prob.field, prob.insight].join(" ").toLowerCase();
                     let detected = null;
-                    if (/公共|公民|政治|経済|憲法|倫理|現代社会|諸課題|中小企業|財政|農業|防災|少子|高齢|福祉|労働|金融|資本|ベンチャー|csr|ステークホルダー/i.test(text)) detected = "公共";
+                    if (/政治|経済|財政|租税|金融|市場|雇用|労働|社会保障|福祉|司法|地方自治|諸課題|中小企業|少子|高齢|消費者/i.test(text)) detected = "政治・経済";
+                    else if (/公共/i.test(text)) detected = "公共";
+                    else if (/公民|倫理/i.test(text)) detected = "公民";
                     else if (/数学|微分|積分|ベクトル|数列|三角関数|確率/i.test(text)) detected = "数学";
                     else if (/物理|力学|電磁気|波動/i.test(text)) detected = "物理";
-                    else if (/化学|mol|酸化|還元|酸|塩基/i.test(text)) detected = "化学";
+                    else if (/化学|mol|酸化|還元|酸|塩基|元素|周期表|周期律|構成粒子|三態|熱運動|結合/i.test(text)) detected = "化学";
                     else if (/生物|遺伝|細胞|dna/i.test(text)) detected = "生物";
                     else if (/情報|プログラミング|python/i.test(text)) detected = "情報";
                     else if (/地理/i.test(text)) detected = "地理";
@@ -1527,7 +1591,7 @@
 
             try {
                 await update(ref(database, 'users/' + currentUser.uid), updates);
-                showToast(`⚡ ${updatedCount} 件のデータを自動判別（公共等）して保存しました！`, "success", 3000);
+                showToast(`⚡ ${updatedCount} 件のデータ（政治・経済など）と暗記カードを自動判別して保存しました！`, "success", 3000);
                 populateSubjectFilter();
                 renderActiveView();
             } catch (err) {
@@ -1539,8 +1603,8 @@
         // 📦 指定教科に一括変更
         async function batchApplyUnclassifiedSubject() {
             if (!currentUser) return;
-            const targetSubject = document.getElementById("batch-unclassified-subject")?.value || "公共";
-            if (!confirm(`現在「未分類」になっているすべての授業・暗記事項・気づきデータを「${targetSubject}」に変更してFirebaseに保存しますか？`)) {
+            const targetSubject = document.getElementById("batch-unclassified-subject")?.value || "政治・経済";
+            if (!confirm(`現在「未分類」「その他」になっているすべての授業・暗記事項・気づきデータを「${targetSubject}」に変更してFirebaseに保存しますか？`)) {
                 return;
             }
 
@@ -1551,10 +1615,19 @@
             Object.entries(rawLessons).forEach(([id, lesson]) => {
                 if (!lesson) return;
                 const currentSubj = lesson.subject;
-                if (!currentSubj || currentSubj === "未分類" || detectSubjectFromLesson(lesson) === "未分類") {
+                if (!currentSubj || currentSubj === "未分類" || currentSubj === "その他" || detectSubjectFromLesson(lesson) === "未分類") {
                     updates[`lessons/${id}/subject`] = targetSubject;
                     updates[`lessons/${id}/updatedAt`] = now;
                     lesson.subject = targetSubject;
+
+                    if (Array.isArray(lesson.memorizationPoints)) {
+                        lesson.memorizationPoints.forEach(p => { p.subject = targetSubject; });
+                        updates[`lessons/${id}/memorizationPoints`] = lesson.memorizationPoints;
+                    }
+                    if (Array.isArray(lesson.lessonMemos)) {
+                        lesson.lessonMemos.forEach(m => { m.subject = targetSubject; });
+                        updates[`lessons/${id}/lessonMemos`] = lesson.lessonMemos;
+                    }
                     updatedCount++;
                 }
             });
@@ -1562,7 +1635,7 @@
             Object.entries(rawProblems).forEach(([id, prob]) => {
                 if (!prob || !prob.insight) return;
                 const currentSubj = prob.subject;
-                if (!currentSubj || currentSubj === "未分類") {
+                if (!currentSubj || currentSubj === "未分類" || currentSubj === "その他") {
                     updates[`problems/${id}/subject`] = targetSubject;
                     prob.subject = targetSubject;
                     updatedCount++;

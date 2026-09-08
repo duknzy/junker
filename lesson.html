@@ -156,6 +156,27 @@
         }
         .lesson-grid-card-delete:hover { background: var(--error-bg); }
 
+        .lesson-subject-badge-btn {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 0.18rem 0.55rem;
+            border-radius: var(--radius-full);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+        }
+        .lesson-subject-badge-btn:hover {
+            border-color: var(--brand-primary);
+            color: var(--brand-primary);
+            background: var(--brand-light);
+        }
+
         .new-lesson-form {
             display: flex; flex-direction: column;
             background: var(--bg-surface); border: 1px solid var(--border-color);
@@ -2219,6 +2240,11 @@
                                         <div class="subject-card-name">国語</div>
                                         <div class="subject-card-tag">現代文・古文・漢文</div>
                                     </div>
+                                    <div class="subject-select-card" data-subject="政治・経済">
+                                        <div class="subject-card-icon">⚖️</div>
+                                        <div class="subject-card-name">政治・経済</div>
+                                        <div class="subject-card-tag">政治・経済・社会保障・国際</div>
+                                    </div>
                                     <div class="subject-select-card" data-subject="公共">
                                         <div class="subject-card-icon">⚖️</div>
                                         <div class="subject-card-name">公共</div>
@@ -2420,6 +2446,9 @@
                         <div class="lesson-list-toolbar">
                             <input type="text" class="lesson-search-input" id="lesson-search-input" placeholder="🔍 授業名で検索...">
                             <div class="lesson-subject-chips" id="lesson-subject-chips"></div>
+                            <button type="button" class="tactile-btn" id="btn-autofix-lesson-subjects" style="font-size:0.75rem; font-weight:700; padding:0.4rem 0.85rem; background:var(--brand-light); color:var(--brand-primary); border:1px solid var(--brand-border); border-radius:var(--radius-full); white-space:nowrap; display:inline-flex; align-items:center; gap:0.35rem; cursor:pointer;" title="「その他」や「未分類」の授業のタイトル・内容を自動判定し、政経・化学などの適切な教科へ一括で分類し直します（暗記カードも同期）">
+                                ⚡ 過去の授業の教科を一括自動判別
+                            </button>
                         </div>
                         <div id="lesson-list"></div>
                         <div id="lesson-list-empty" style="color: var(--text-muted); font-size:0.85rem; display:none; text-align:center; padding: 2rem 0;">まだ授業履歴はありません。</div>
@@ -2467,8 +2496,9 @@
                             <!-- 左メイン：授業チャット -->
                             <div class="lesson-main-card">
                                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 0.6rem; flex-wrap: wrap; gap: 0.4rem;">
-                                    <div style="display: flex; align-items: center; gap: 0.45rem; min-width: 0;">
+                                    <div style="display: flex; align-items: center; gap: 0.45rem; min-width: 0; flex-wrap: wrap;">
                                         <span id="lesson-title-display" style="font-weight: 700; color: var(--text-primary); font-size: 0.98rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">---</span>
+                                        <button type="button" id="lesson-header-subject-btn" class="lesson-subject-badge-btn" title="教科を変更" style="cursor: pointer; display: none;"></button>
                                         <span id="lesson-style-display-badge" class="lesson-style-badge" style="font-size: 0.72rem; padding: 0.15rem 0.5rem;"></span>
                                     </div>
                                 </div>
@@ -2813,6 +2843,39 @@
                 <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="reset-settings-btn">デフォルトに戻す</button>
                 <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="close-settings-btn">キャンセル</button>
                 <button type="button" class="flora-btn flora-btn-primary btn-sm" id="save-settings-btn">💾 保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 📚 授業の教科変更モーダル -->
+    <div class="modal-overlay" id="lesson-subject-change-modal" style="display: none;">
+        <div class="modal-content" style="max-width: 480px;">
+            <div class="modal-header">
+                <h3 class="modal-title">📚 授業の教科を変更</h3>
+                <button type="button" class="modal-close-btn" id="close-lesson-subject-modal-btn">✕</button>
+            </div>
+            <div id="lesson-subject-modal-target-title" style="font-size:0.88rem; font-weight:700; color:var(--text-primary); margin-bottom:0.8rem; padding:0.6rem 0.8rem; background:var(--bg-subtle); border-radius:var(--radius-md); border:1px solid var(--border-color); line-height:1.4;"></div>
+            <p style="font-size:0.78rem; color:var(--text-secondary); margin-bottom:0.8rem;">
+                割り当てたい教科を選択してください。この授業に属するすべての暗記事項（フラッシュカード）の教科分類も自動的に同期更新されます。
+            </p>
+            <div id="lesson-subject-chips-picker" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 0.45rem; max-height: 320px; overflow-y: auto; padding: 0.2rem;"></div>
+        </div>
+    </div>
+
+    <!-- ⚡ 過去の授業の一括自動判別モーダル -->
+    <div class="modal-overlay" id="batch-autofix-subject-modal" style="display: none;">
+        <div class="modal-content" style="max-width: 540px;">
+            <div class="modal-header">
+                <h3 class="modal-title">⚡ 過去の授業の教科を一括自動判別</h3>
+                <button type="button" class="modal-close-btn" id="close-batch-autofix-modal-btn">✕</button>
+            </div>
+            <p style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:0.8rem;">
+                「その他」や「未分類」の授業のタイトルや内容をスキャンし、以下の教科への更新候補を検出しました：
+            </p>
+            <div id="batch-autofix-candidates-list" style="max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem;"></div>
+            <div style="display: flex; justify-content: flex-end; gap: 0.6rem;">
+                <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="cancel-batch-autofix-btn">キャンセル</button>
+                <button type="button" class="flora-btn flora-btn-primary btn-sm" id="confirm-batch-autofix-btn">⚡ 確定して一括適用（暗記カードも同期）</button>
             </div>
         </div>
     </div>
@@ -3423,25 +3486,93 @@
 
         // 📚 授業一覧のグループ化用アイコン
         const LESSON_SUBJECT_ICONS = {
-            "数学": "📐", "物理": "⚡", "化学": "🧪", "生物": "🧬",
+            "政治・経済": "⚖️", "政経": "⚖️", "公共": "⚖️", "公民": "🏛️", "現代社会": "🌐", "倫理": "💭", "地歴公民": "🗾",
+            "数学": "📐", "物理": "⚡", "化学": "🧪", "生物": "🧬", "地学": "🌍", "理科": "🧪",
             "情報": "💻", "地理": "🗺️", "日本史": "⛩️", "世界史": "🏛️",
-            "英語": "🔤", "国語": "📜", "公共": "⚖️", "公民": "🏛️", "地歴公民": "🗾", "その他": "📎"
+            "英語": "🔤", "国語": "📜", "その他": "📎"
         };
+
+        const AVAILABLE_LESSON_SUBJECTS = [
+            "政治・経済", "公共", "公民", "現代社会", "倫理",
+            "数学", "物理", "化学", "生物", "地学",
+            "日本史", "世界史", "地理", "情報", "英語", "国語", "その他"
+        ];
+
         function detectLessonSubject(lesson) {
-            if (lesson.subject && LESSON_SUBJECT_ICONS[lesson.subject]) return lesson.subject;
-            const text = ((lesson.title || "") + " " + (lesson.topicKey || "")).toLowerCase();
+            if (!lesson) return "その他";
+            if (lesson.subject && typeof lesson.subject === "string" && lesson.subject.trim() !== "") {
+                const s = lesson.subject.trim();
+                if (s === "政経") return "政治・経済";
+                if (s !== "その他" && s !== "未分類" && LESSON_SUBJECT_ICONS[s]) return s;
+            }
+
+            // タイトル、トピック、パート、暗記事項、メモ等のテキストを総合判別
+            const partsText = Array.isArray(lesson.parts)
+                ? lesson.parts.map(p => (p.title || "") + " " + (p.summary || "") + " " + (p.content || "")).join(" ")
+                : "";
+            const memoPointsText = Array.isArray(lesson.memorizationPoints)
+                ? lesson.memorizationPoints.map(m => (m.category || "") + " " + (m.question || "") + " " + (m.answer || "") + " " + (m.content || "") + " " + (m.note || "")).join(" ")
+                : "";
+            const memosText = Array.isArray(lesson.lessonMemos)
+                ? lesson.lessonMemos.map(m => m.text || "").join(" ")
+                : "";
+
+            const text = [
+                lesson.title || "",
+                lesson.topicKey || "",
+                lesson.topic || "",
+                partsText,
+                memoPointsText,
+                memosText,
+                (lesson.extractedText || "").slice(0, 1000)
+            ].join(" ").toLowerCase();
+
+            // 1. 政治・経済 / 公共 / 公民
+            if (/政治|経済|財政|金融|市場|租税|政党|国会|内閣|憲法|司法|地方自治|少子|高齢|社会保障|福祉|労働|雇用|消費者|中小企業|農業|防災|諸課題|国際連合|安保理|国際法|平和主義|法の支配|民主政治|資本主義|株式|為替|インフレ|デフレ|gdp/i.test(text)) {
+                if (/政治|経済|財政|租税|金融|市場|雇用|労働|社会保障|福祉|司法|地方自治|諸課題|中小企業|少子|高齢|消費者/i.test(text)) return "政治・経済";
+                if (/公共/i.test(text)) return "公共";
+                return "公民";
+            }
             if (/公共/i.test(text)) return "公共";
-            if (/情報|プログラミング|アルゴリズム|python|二進数|ネットワーク/i.test(text)) return "情報";
-            if (/地理|気候|ケッペン|地誌|貿易/i.test(text)) return "地理";
-            if (/日本史|幕府|天皇|江戸|明治|戦国|縄文|弥生|平安/i.test(text)) return "日本史";
-            if (/世界史|革命|ローマ|帝国|ナポレオン|ルネサンス|冷戦/i.test(text)) return "世界史";
-            if (/生物|細胞|dna|遺伝|光合成|代謝/i.test(text)) return "生物";
-            if (/数学|微分|積分|ベクトル|数列|三角関数|確率/i.test(text)) return "数学";
-            if (/物理|力学|電磁気|波動|運動方程式/i.test(text)) return "物理";
-            if (/化学|mol|酸化|還元|酸|塩基|無機|有機/i.test(text)) return "化学";
-            if (/英語|文法|英文法|長文|grammar/i.test(text)) return "英語";
-            if (/現代文|古文|漢文|国語/i.test(text)) return "国語";
-            if (/公民|政治|経済|憲法|倫理/i.test(text)) return "公民";
+            if (/公民|倫理/i.test(text)) return "公民";
+
+            // 2. 化学
+            if (/化学|周期表|周期律|元素|構成粒子|三態|熱運動|結合|イオン|分子|原子|mol|モル|酸化|還元|酸|塩基|中和|沈殿|溶液|濃度|気体|無機|有機|結晶/i.test(text)) return "化学";
+
+            // 3. 物理
+            if (/物理|力学|電磁気|波動|運動方程式|単振動|熱力学|オーム|クーロン|落体|摩擦|浮力/i.test(text)) return "物理";
+
+            // 4. 生物
+            if (/生物|細胞|dna|rna|遺伝|光合成|代謝|呼吸|酵素|免疫|生殖|ホルモン|神経|生態系/i.test(text)) return "生物";
+
+            // 5. 地学
+            if (/地学|地球|プレート|地震|火山|地層|気象|天体|恒星|銀河/i.test(text)) return "地学";
+
+            // 6. 数学
+            if (/数学|微分|積分|ベクトル|数列|三角関数|確率|二次関数|図形|整数|複素数|極限|導関数/i.test(text)) return "数学";
+
+            // 7. 情報
+            if (/情報|プログラミング|アルゴリズム|python|二進数|ネットワーク|セキュリティ|データベース/i.test(text)) return "情報";
+
+            // 8. 地理
+            if (/地理|気候|ケッペン|地誌|貿易|地形|農業区分/i.test(text)) return "地理";
+
+            // 9. 日本史
+            if (/日本史|幕府|天皇|江戸|明治|戦国|縄文|弥生|平安|鎌倉|室町|大正|昭和/i.test(text)) return "日本史";
+
+            // 10. 世界史
+            if (/世界史|革命|ローマ|帝国|ナポレオン|ルネサンス|冷戦|王朝|条約/i.test(text)) return "世界史";
+
+            // 11. 英語
+            if (/英語|文法|英文法|長文|grammar|英単語|構文/i.test(text)) return "英語";
+
+            // 12. 国語
+            if (/現代文|古文|漢文|国語|評論文|小説|和歌/i.test(text)) return "国語";
+
+            if (lesson.subject && typeof lesson.subject === "string" && lesson.subject.trim() !== "" && lesson.subject !== "未分類") {
+                return lesson.subject.trim();
+            }
+
             return "その他";
         }
         let pendingLevelUp = null;
@@ -3633,6 +3764,16 @@
 ・現代の社会諸課題（民主主義・立憲主義・基本的人権・国際協調・地球環境・少子高齢化・情報社会・金融リテラシー）の背景と対立軸を論理的に解説すること。
 ・青年期の自己形成、倫理思想、法と政治の原理、経済の仕組みを具体的事例や判例と結びつけて説明すること。
 ・暗記事項には重要概念、憲法条文、重要判例、経済用語、国際条約を漏れなく抽出すること。`,
+            "政治・経済": `
+【政治・経済科特化ルール】
+・政治分野：民主政治の基本原理、日本国憲法（三大原理、統治機構、地方自治）、現代政治の課題（選挙制度、行政機能の拡大）、国際政治（国際連盟・国際連合、安全保障、国際法、冷戦と多極化）を論理的に構造化して解説すること。
+・経済分野：市場メカニズム（需要供給、価格弾力性、市場の失敗、独占・寡占）、国民経済計算（GDP、三面等価）、財政・租税・公債、金融（日本銀行の金融政策、量的緩和）、日本経済の歩み（高度成長、バブル、デフレと課題）、国際経済（為替相場、貿易体制、経済格差）の因果関係と計算・グラフ読解の急所を明確にすること。
+・暗記事項には、法令名・重要判例・経済用語・指標・政策手段を問いと答えに明確に分離して漏れなく抽出すること。`,
+            "政経": `
+【政治・経済科特化ルール】
+・政治分野：民主政治の基本原理、日本国憲法（三大原理、統治機構、地方自治）、現代政治の課題、国際政治の因果関係を論理的に構造化して解説すること。
+・経済分野：市場メカニズム、国民所得、金融政策、財政政策、国際経済、為替のメカニズムを解説すること。
+・暗記事項には、法令名・重要判例・経済用語・指標・政策手段を問いと答えに明確に分離して漏れなく抽出すること。`,
             "公民": `
 【公民・倫政特化ルール】
 ・憲法・政治制度・経済理論・思想史の思想的背景と思想家たちの主張の対比を論理的に解説すること。`
@@ -4307,10 +4448,15 @@ ${subjectGuide}
                 ? `<button type="button" class="tactile-btn lesson-levelup-btn" data-levelup-id="${l.id}" style="font-size:0.68rem; padding:0.3rem 0.6rem; background:transparent; color:var(--accent-yellow); border:1px solid var(--accent-yellow); box-shadow:none;">🎓 ${LEVEL_SHORT[LEVEL_ORDER.indexOf(nxt)]}へ</button>`
                 : "";
 
+            const subj = detectLessonSubject(l);
+
             return `
                 <div class="squircle-tile lesson-grid-card" data-lesson-id="${l.id}">
                     <div class="lesson-grid-card-top">
-                        <span class="lesson-progress-badge ${badgeClass}">${badgeText}</span>
+                        <div style="display:flex; align-items:center; gap:0.35rem; flex-wrap:wrap;">
+                            <span class="lesson-progress-badge ${badgeClass}">${badgeText}</span>
+                            <button type="button" class="lesson-subject-badge-btn" data-change-subject-id="${l.id}" title="クリックして教科を変更">${LESSON_SUBJECT_ICONS[subj] || "📎"} ${subj} ▾</button>
+                        </div>
                         ${l.level ? `<span class="lesson-level-badge">🎚️ ${LEVEL_SHORT[l.levelIndex] || l.level}</span>` : ""}
                     </div>
                     <div class="lesson-grid-card-title">${(l.title || "無題の授業").replace(/</g, "&lt;")}</div>
@@ -4387,6 +4533,14 @@ ${subjectGuide}
                     window.location.href = `lesson.html?id=${row.getAttribute("data-lesson-id")}`;
                 });
             });
+            listEl.querySelectorAll("[data-change-subject-id]").forEach(btn => {
+                btn.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    const lessonId = btn.getAttribute("data-change-subject-id");
+                    const lesson = (lastLessonsSnapshot || {})[lessonId];
+                    if (lesson) openLessonSubjectChangeModal(lessonId, lesson);
+                });
+            });
             listEl.querySelectorAll("[data-levelup-id]").forEach(btn => {
                 btn.addEventListener("click", (e) => {
                     e.stopPropagation();
@@ -4401,6 +4555,200 @@ ${subjectGuide}
                 });
             });
         }
+
+        // ==============================================================
+        // 📚 授業の教科変更モーダル制御
+        // ==============================================================
+        let activeChangingLessonId = null;
+        function openLessonSubjectChangeModal(lessonId, lessonObj) {
+            const lesson = lessonObj || (lastLessonsSnapshot || {})[lessonId] || currentLesson;
+            if (!lesson) return;
+            activeChangingLessonId = lessonId;
+
+            const modal = el("lesson-subject-change-modal");
+            const titleEl = el("lesson-subject-modal-target-title");
+            const picker = el("lesson-subject-chips-picker");
+            if (!modal || !picker) return;
+
+            const currentSubj = lesson.subject || detectLessonSubject(lesson);
+            if (titleEl) {
+                titleEl.innerHTML = `対象: <strong>${escapeHtml(lesson.title || "無題の授業")}</strong><br><span style="font-size:0.75rem; color:var(--text-secondary);">現在の教科: <b style="color:var(--brand-primary);">${LESSON_SUBJECT_ICONS[currentSubj] || "📎"} ${currentSubj}</b></span>`;
+            }
+
+            picker.innerHTML = AVAILABLE_LESSON_SUBJECTS.map(subj => {
+                const isSelected = subj === currentSubj;
+                return `
+                    <button type="button" class="tactile-btn" data-pick-subject="${subj}" style="padding:0.45rem 0.5rem; font-size:0.8rem; font-weight:700; text-align:center; ${isSelected ? 'background:var(--brand-primary); color:#fff;' : 'background:var(--bg-subtle); color:var(--text-primary); border:1px solid var(--border-color);'}">
+                        ${LESSON_SUBJECT_ICONS[subj] || "📎"} ${subj}
+                    </button>
+                `;
+            }).join("");
+
+            picker.querySelectorAll("[data-pick-subject]").forEach(btn => {
+                btn.onclick = async () => {
+                    const newSubj = btn.getAttribute("data-pick-subject");
+                    modal.style.display = "none";
+                    await applyLessonSubjectChange(lessonId, newSubj);
+                };
+            });
+
+            modal.style.display = "flex";
+        }
+
+        async function applyLessonSubjectChange(lessonId, newSubj) {
+            if (!loginUid || !lessonId) return;
+            try {
+                const lesson = (lastLessonsSnapshot || {})[lessonId] || (currentLesson && currentLesson.id === lessonId ? currentLesson : null);
+                const updates = {
+                    subject: newSubj,
+                    updatedAt: new Date().toISOString()
+                };
+
+                if (lesson) {
+                    lesson.subject = newSubj;
+                    if (Array.isArray(lesson.memorizationPoints)) {
+                        lesson.memorizationPoints.forEach(p => { p.subject = newSubj; });
+                        updates.memorizationPoints = lesson.memorizationPoints;
+                    }
+                    if (Array.isArray(lesson.lessonMemos)) {
+                        lesson.lessonMemos.forEach(m => { m.subject = newSubj; });
+                        updates.lessonMemos = lesson.lessonMemos;
+                    }
+                }
+
+                await update(ref(database, `users/${loginUid}/lessons/${lessonId}`), updates);
+
+                if (currentLesson && currentLesson.id === lessonId) {
+                    currentLesson.subject = newSubj;
+                    updateProgressStrip();
+                    renderVscodeIDE();
+                    if (Array.isArray(currentLesson.memorizationPoints)) {
+                        renderMemorizationPoints();
+                    }
+                }
+
+                if (lastLessonsSnapshot && lastLessonsSnapshot[lessonId]) {
+                    lastLessonsSnapshot[lessonId].subject = newSubj;
+                    renderLessonList(lastLessonsSnapshot);
+                }
+
+                showToast(`✅ 教科を【${newSubj}】に変更し、暗記カードも同期しました！`, "success", 3000);
+            } catch (err) {
+                console.error("Failed to update lesson subject:", err);
+                showToast("教科の更新に失敗しました: " + err.message, "error", 5000);
+            }
+        }
+
+        // ==============================================================
+        // ⚡ 過去の授業の一括自動判別モーダル制御
+        // ==============================================================
+        let batchAutofixCandidates = [];
+        function openBatchAutofixModal() {
+            if (!lastLessonsSnapshot) return;
+            const candidates = [];
+            Object.entries(lastLessonsSnapshot).forEach(([id, l]) => {
+                if (!l) return;
+                const currentSubj = l.subject || "その他";
+                const detected = detectLessonSubject(l);
+                // 「その他」または「未分類」、あるいは未設定で、自動判定で具体教科が判明するもの
+                const isUnclassifiedOrOther = !l.subject || l.subject === "その他" || l.subject === "未分類";
+                if (isUnclassifiedOrOther && detected && detected !== "その他" && detected !== "未分類") {
+                    candidates.push({
+                        id,
+                        title: l.title || "無題の授業",
+                        currentSubject: currentSubj,
+                        newSubject: detected,
+                        lesson: l
+                    });
+                }
+            });
+
+            const modal = el("batch-autofix-subject-modal");
+            const listEl = el("batch-autofix-candidates-list");
+            const confirmBtn = el("confirm-batch-autofix-btn");
+            if (!modal || !listEl) return;
+
+            if (candidates.length === 0) {
+                showToast("更新が必要な「その他・未分類」の授業は見つかりませんでした（すべて分類済みです）。", "info", 3000);
+                return;
+            }
+
+            batchAutofixCandidates = candidates;
+            listEl.innerHTML = candidates.map(c => `
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:0.6rem 0.8rem; background:var(--bg-subtle); border:1px solid var(--border-color); border-radius:var(--radius-md); font-size:0.82rem; gap:0.5rem;">
+                    <div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; font-weight:600; color:var(--text-primary);">
+                        ${escapeHtml(c.title)}
+                    </div>
+                    <div style="display:flex; align-items:center; gap:0.35rem; flex-shrink:0;">
+                        <span style="color:var(--text-muted); font-size:0.75rem;">${c.currentSubject}</span>
+                        <span style="color:var(--text-muted);">➔</span>
+                        <span style="font-weight:700; color:var(--brand-primary);">${LESSON_SUBJECT_ICONS[c.newSubject] || "📎"} ${c.newSubject}</span>
+                    </div>
+                </div>
+            `).join("");
+
+            if (confirmBtn) {
+                confirmBtn.textContent = `⚡ 確定して一括適用（${candidates.length}件の授業・暗記カードを更新）`;
+            }
+
+            modal.style.display = "flex";
+        }
+
+        async function applyBatchAutofix() {
+            if (!loginUid || batchAutofixCandidates.length === 0) return;
+            const confirmBtn = el("confirm-batch-autofix-btn");
+            if (confirmBtn) {
+                confirmBtn.disabled = true;
+                confirmBtn.textContent = "⏳ 更新中...";
+            }
+
+            try {
+                const updates = {};
+                const now = new Date().toISOString();
+                batchAutofixCandidates.forEach(c => {
+                    const l = c.lesson;
+                    l.subject = c.newSubject;
+                    l.updatedAt = now;
+                    updates[`lessons/${c.id}/subject`] = c.newSubject;
+                    updates[`lessons/${c.id}/updatedAt`] = now;
+
+                    if (Array.isArray(l.memorizationPoints)) {
+                        l.memorizationPoints.forEach(p => { p.subject = c.newSubject; });
+                        updates[`lessons/${c.id}/memorizationPoints`] = l.memorizationPoints;
+                    }
+                    if (Array.isArray(l.lessonMemos)) {
+                        l.lessonMemos.forEach(m => { m.subject = c.newSubject; });
+                        updates[`lessons/${c.id}/lessonMemos`] = l.lessonMemos;
+                    }
+                });
+
+                await update(ref(database, `users/${loginUid}`), updates);
+                showToast(`🎉 ${batchAutofixCandidates.length}件の授業と暗記事項の教科を一括更新しました！`, "success", 4000);
+                el("batch-autofix-subject-modal").style.display = "none";
+                renderLessonList(lastLessonsSnapshot);
+            } catch (err) {
+                console.error("Batch autofix failed:", err);
+                showToast("一括更新に失敗しました: " + err.message, "error", 5000);
+            } finally {
+                if (confirmBtn) {
+                    confirmBtn.disabled = false;
+                    confirmBtn.textContent = "⚡ 確定して一括適用（暗記カードも同期）";
+                }
+            }
+        }
+
+        // モーダル閉じるイベント登録
+        el("close-lesson-subject-modal-btn")?.addEventListener("click", () => el("lesson-subject-change-modal").style.display = "none");
+        el("lesson-subject-change-modal")?.addEventListener("click", (e) => {
+            if (e.target.id === "lesson-subject-change-modal") el("lesson-subject-change-modal").style.display = "none";
+        });
+        el("close-batch-autofix-modal-btn")?.addEventListener("click", () => el("batch-autofix-subject-modal").style.display = "none");
+        el("cancel-batch-autofix-btn")?.addEventListener("click", () => el("batch-autofix-subject-modal").style.display = "none");
+        el("batch-autofix-subject-modal")?.addEventListener("click", (e) => {
+            if (e.target.id === "batch-autofix-subject-modal") el("batch-autofix-subject-modal").style.display = "none";
+        });
+        el("confirm-batch-autofix-btn")?.addEventListener("click", applyBatchAutofix);
+        el("btn-autofix-lesson-subjects")?.addEventListener("click", openBatchAutofixModal);
 
         const lessonSearchInputEl = el("lesson-search-input");
         if (lessonSearchInputEl) {
@@ -5711,6 +6059,13 @@ ${EXPERT_TEACHER_PROMPT}
 
         function updateProgressStrip() {
             el("lesson-title-display").textContent = `📘 ${currentLesson.title}`;
+            const subj = detectLessonSubject(currentLesson);
+            const subjBtn = el("lesson-header-subject-btn");
+            if (subjBtn) {
+                subjBtn.style.display = "inline-flex";
+                subjBtn.innerHTML = `${LESSON_SUBJECT_ICONS[subj] || "📎"} ${subj} ▾`;
+                subjBtn.onclick = () => openLessonSubjectChangeModal(currentLesson.id, currentLesson);
+            }
             const styleBadge = el("lesson-style-display-badge");
             const isSocratic = currentLesson.teachingStyle === "socratic";
             styleBadge.textContent = isSocratic ? "🧠 ソクラテス対話ゼミ" : "📖 標準講義";
@@ -6000,7 +6355,12 @@ ${EXPERT_TEACHER_PROMPT}
             if (el("vsc-titlebar-title-text")) {
                 el("vsc-titlebar-title-text").textContent = `flora-workspace > ${subject} > ${currentLesson.title} > ${fileName}`;
             }
-            if (el("vsc-crumb-subject")) el("vsc-crumb-subject").textContent = subject;
+            if (el("vsc-crumb-subject")) {
+                el("vsc-crumb-subject").innerHTML = `${LESSON_SUBJECT_ICONS[subject] || "📎"} ${subject} ▾`;
+                el("vsc-crumb-subject").style.cursor = "pointer";
+                el("vsc-crumb-subject").title = "クリックして教科を変更";
+                el("vsc-crumb-subject").onclick = () => openLessonSubjectChangeModal(currentLesson.id, currentLesson);
+            }
             if (el("vsc-crumb-lesson")) el("vsc-crumb-lesson").textContent = (currentLesson.title || "Lesson").slice(0, 18);
             if (el("vsc-crumb-file")) el("vsc-crumb-file").textContent = fileName;
         }
