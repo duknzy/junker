@@ -1290,19 +1290,27 @@
             const items = [];
             Object.entries(rawLessons).forEach(([lessonId, lesson]) => {
                 if (!lesson || !Array.isArray(lesson.memorizationPoints)) return;
+                const lessonSubj = lesson.subject || detectSubjectFromLesson(lesson);
                 lesson.memorizationPoints.forEach((mp, idx) => {
-                    if (!mp || !mp.content || !mp.content.trim()) return;
+                    const content = (mp.content || "").trim();
+                    const question = (mp.question || "").trim();
+                    const answer = (mp.answer || "").trim();
+                    if (!content && !answer && !question) return;
                     const mpId = mp.id || `idx${idx}`;
                     items.push({
                         id: `memorize_${lessonId}_${mpId}`,
                         lessonId,
                         memoId: mpId,
-                        rawContent: mp.content,
+                        question: question,
+                        answer: answer,
+                        rawContent: content,
                         rawCategory: mp.category || "",
                         rawNote: mp.note || "",
-                        insight: mp.content + (mp.note ? `\n💡 ${mp.note}` : ""),
+                        insight: (question && answer) 
+                            ? `${question}\n↳ ${answer}${mp.note ? `\n💡 ${mp.note}` : ""}` 
+                            : (content + (mp.note ? `\n💡 ${mp.note}` : "")),
                         category: mp.category || "",
-                        subject: detectSubjectFromLesson(lesson),
+                        subject: mp.subject || lessonSubj,
                         field: lesson.topicKey || lesson.title || "暗記事項",
                         short_title: lesson.title || "暗記事項",
                         insightUpdatedAt: mp.updatedAt || lesson.updatedAt || lesson.createdAt,
@@ -1335,16 +1343,21 @@
             if (!lesson || !Array.isArray(lesson.memorizationPoints)) return;
 
             const catInput = document.getElementById(`memorize-edit-cat-${lessonId}_${mpId}`);
+            const qInput = document.getElementById(`memorize-edit-q-${lessonId}_${mpId}`);
+            const aInput = document.getElementById(`memorize-edit-a-${lessonId}_${mpId}`);
             const contentInput = document.getElementById(`memorize-edit-content-${lessonId}_${mpId}`);
             const noteInput = document.getElementById(`memorize-edit-note-${lessonId}_${mpId}`);
             const subjSelect = document.getElementById(`memorize-edit-subject-${lessonId}_${mpId}`);
 
             const newCat = catInput ? catInput.value.trim() : "";
-            const newContent = contentInput ? contentInput.value.trim() : "";
+            const newQ = qInput ? qInput.value.trim() : "";
+            const newA = aInput ? aInput.value.trim() : "";
+            const oldContent = contentInput ? contentInput.value.trim() : "";
+            const newContent = (newQ && newA) ? `${newQ}：${newA}` : (newA || newQ || oldContent);
             const newNote = noteInput ? noteInput.value.trim() : "";
             const newSubj = subjSelect ? subjSelect.value : null;
 
-            if (!newContent) {
+            if (!newContent && !newA && !newQ) {
                 showToast("暗記すべき内容を入力してください。", "error");
                 return;
             }
@@ -1356,8 +1369,11 @@
                         ...mp,
                         id: curId,
                         category: newCat || "重要事項",
+                        question: newQ,
+                        answer: newA,
                         content: newContent,
                         note: newNote,
+                        subject: newSubj || mp.subject || lesson.subject || "その他",
                         updatedAt: new Date().toISOString()
                     };
                 }
@@ -2120,6 +2136,7 @@
             const isEditing = editingMemorizeKey === memoKey;
             const safeLessonTitle = (p.short_title || "暗記事項").replace(/'/g, "\\'");
 
+            const hasQA = p.question && p.answer;
             const editBody = isEditing ? `
                 <div style="display:flex; flex-direction:column; gap:0.45rem; margin-top:0.3rem;">
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.4rem;">
@@ -2131,12 +2148,16 @@
                         </div>
                         <div>
                             <label style="font-size:0.72rem; color:var(--text-muted); display:block; margin-bottom:0.2rem;">分類タグ:</label>
-                            <input type="text" id="memorize-edit-cat-${p.lessonId}_${p.memoId}" value="${(p.rawCategory || '').replace(/"/g, '&quot;')}" placeholder="例: 重要用語、概念" style="width:100%; box-sizing:border-box; padding:0.35rem 0.6rem; font-size:0.8rem; background:var(--bg-subtle); border:1px solid var(--border-color); border-radius:var(--radius-sm); color:var(--text-primary);">
+                            <input type="text" id="memorize-edit-cat-${p.lessonId}_${p.memoId}" value="${(p.rawCategory || '').replace(/"/g, '&quot;')}" placeholder="例: 公式・法則、用語" style="width:100%; box-sizing:border-box; padding:0.35rem 0.6rem; font-size:0.8rem; background:var(--bg-subtle); border:1px solid var(--border-color); border-radius:var(--radius-sm); color:var(--text-primary);">
                         </div>
                     </div>
                     <div>
-                        <label style="font-size:0.72rem; color:var(--text-muted); display:block; margin-bottom:0.2rem;">暗記事項（数式は $...$ で記述可）:</label>
-                        <textarea class="inline-edit-textarea" id="memorize-edit-content-${p.lessonId}_${p.memoId}" style="min-height:65px;">${(p.rawContent || '').replace(/</g, '&lt;')}</textarea>
+                        <label style="font-size:0.72rem; color:var(--text-muted); display:block; margin-bottom:0.2rem;">表面（問い・キーワード・公式名）:</label>
+                        <input type="text" id="memorize-edit-q-${p.lessonId}_${p.memoId}" value="${(p.question || '').replace(/"/g, '&quot;')}" placeholder="例: 余事象の確率の定義と公式は？" style="width:100%; box-sizing:border-box; padding:0.35rem 0.6rem; font-size:0.8rem; background:var(--bg-subtle); border:1px solid var(--border-color); border-radius:var(--radius-sm); color:var(--text-primary);">
+                    </div>
+                    <div>
+                        <label style="font-size:0.72rem; color:var(--text-muted); display:block; margin-bottom:0.2rem;">裏面（答え・結論・完全な数式 $...$）:</label>
+                        <textarea class="inline-edit-textarea" id="memorize-edit-a-${p.lessonId}_${p.memoId}" style="min-height:55px;" placeholder="例: $P(\\bar{A}) = 1 - P(A)$">${(p.answer || p.rawContent || '').replace(/</g, '&lt;')}</textarea>
                     </div>
                     <div>
                         <label style="font-size:0.72rem; color:var(--text-muted); display:block; margin-bottom:0.2rem;">補足・語呂合わせ・注意点（任意）:</label>
@@ -2147,6 +2168,14 @@
                         <button type="button" class="tactile-btn" style="font-size:0.72rem; padding:0.35rem 0.7rem; background:var(--accent-cyan); color:#000; font-weight:700;" onclick="saveEditMemorizeFromInsights('${p.lessonId}', '${p.memoId}', event)">💾 保存</button>
                     </div>
                 </div>
+            ` : hasQA ? `
+                <div class="insight-text tex2jax_process" onclick="startEditMemorizeFromInsights('${p.lessonId}', '${p.memoId}', event)" title="クリックしてその場で編集" style="font-weight:700; margin-bottom:0.3rem; line-height:1.4;">
+                    <span style="color:var(--accent-cyan); margin-right:0.3rem;">Q.</span>${normalizeMathSyntax(p.question)}
+                </div>
+                <div class="insight-text tex2jax_process" onclick="startEditMemorizeFromInsights('${p.lessonId}', '${p.memoId}', event)" title="クリックしてその場で編集" style="font-weight:600; color:var(--brand-primary); padding:0.3rem 0.5rem; background:var(--bg-subtle); border-radius:var(--radius-sm); border-left:3px solid var(--brand-primary); line-height:1.4;">
+                    <span style="font-weight:700; margin-right:0.3rem;">A.</span>${normalizeMathSyntax(p.answer)}
+                </div>
+                ${p.rawNote ? `<div class="tex2jax_process" style="font-size:0.82rem; color:var(--accent-yellow); margin-top:0.4rem; padding-top:0.4rem; border-top:1px dashed rgba(255,255,255,0.08);">💡 ${normalizeMathSyntax(p.rawNote)}</div>` : ''}
             ` : `
                 <div class="insight-text tex2jax_process" onclick="startEditMemorizeFromInsights('${p.lessonId}', '${p.memoId}', event)" title="クリックしてその場で編集">${normalizeMathSyntax(p.rawContent || p.insight)}</div>
                 ${p.rawNote ? `<div class="tex2jax_process" style="font-size:0.82rem; color:var(--accent-yellow); margin-top:0.4rem; padding-top:0.4rem; border-top:1px dashed rgba(255,255,255,0.08);">💡 ${normalizeMathSyntax(p.rawNote)}</div>` : ''}
@@ -3181,42 +3210,36 @@
                 let backNote = note ? `💡 覚え方・ポイント: ${note}` : "";
                 let frontPrompt = "Q. この重要事項の定義・急所を思い出そう";
 
+                // 0. 新フォーマット：表面（question）と裏面（answer）が明確に分かれている場合（最優先）
+                if (raw.question && raw.answer) {
+                    term = raw.question.trim();
+                    definition = raw.answer.trim();
+                    backTermTitle = term;
+                    frontPrompt = category ? `Q. この${category}の要点・公式を思い出そう` : "Q. この重要事項の要点を思い出そう";
+                }
                 // 1. コロン（：または:）による用語・定義の分割チェック (例: "契約自由の原則：契約の内容を自由に...")
-                const colonIdx = content.indexOf("：") !== -1 ? content.indexOf("：") : content.indexOf(":");
-                if (colonIdx > 0 && colonIdx < 50) {
-                    term = content.slice(0, colonIdx).trim();
-                    definition = content.slice(colonIdx + 1).trim();
-                    backTermTitle = term;
-                    frontPrompt = category ? `Q. この${category}の定義・要点を思い出そう` : "Q. この用語の定義・内容を思い出そう";
+                else if (content.indexOf("：") !== -1 || content.indexOf(":") !== -1) {
+                    const colonIdx = content.indexOf("：") !== -1 ? content.indexOf("：") : content.indexOf(":");
+                    if (colonIdx > 0 && colonIdx < 50) {
+                        term = content.slice(0, colonIdx).trim();
+                        definition = content.slice(colonIdx + 1).trim();
+                        backTermTitle = term;
+                        frontPrompt = category ? `Q. この${category}の定義・要点を思い出そう` : "Q. この用語の定義・内容を思い出そう";
+                    } else {
+                        term = content;
+                        definition = note || content;
+                        backTermTitle = term;
+                    }
                 }
-                // 2. 等号・公式（例: "$GDP = 国内での生産総額$" など）
-                else if (content.includes(" = ") || content.includes(" ＝ ")) {
-                    const eqIdx = content.indexOf(" ＝ ") !== -1 ? content.indexOf(" ＝ ") : content.indexOf(" = ");
-                    term = content.slice(0, eqIdx).trim();
-                    definition = content; // 全体を見せて関係を確認できるようにする
-                    backTermTitle = term;
-                    frontPrompt = "Q. この重要公式・等式の関係を思い出そう";
-                }
-                // 3. 数式以外の明確なハイフン区切り（前後に空白があるもの）
-                else if (!content.includes("$") && content.match(/^(.+?)\s+[-ー—]\s+(.+)$/)) {
-                    const dashMatch = content.match(/^(.+?)\s+[-ー—]\s+(.+)$/);
-                    term = dashMatch[1].trim();
-                    definition = dashMatch[2].trim();
-                    backTermTitle = term;
-                    frontPrompt = category ? `Q. この${category}の定義・要点を思い出そう` : "Q. この用語の定義・ポイントを思い出そう";
-                }
-                // 4. contentに明確な区切りはないが、noteに解説・定義がある場合
-                //    例: content="三審制（審級制度）", note="慎重な審理により人権を保障するため..."
-                //    contentが問題の用語・重要事項、noteが解答の定義・急所！
+                // 2. noteがある場合
                 else if (note) {
                     term = content;
                     definition = note;
                     backTermTitle = content;
-                    backNote = ""; // backTermTitleとdefinitionで十分伝わるため重複させない
+                    backNote = "";
                     frontPrompt = category ? `Q. この${category}の定義・要点を思い出そう` : "Q. この重要事項の定義・要点を思い出そう";
                 }
-                // 5. 単独の暗記フレーズや文章（区切りもnoteもない場合）
-                //    決して【カテゴリ名】に化けさせず、contentそのものを問題に出題する！
+                // 3. その他
                 else {
                     term = content;
                     definition = content;
@@ -3229,7 +3252,7 @@
                     id: raw.id || `${raw.lessonId}:${raw.memoId}`,
                     type: 'memorize',
                     typeName: '暗記事項',
-                    subject: raw.subject || '公共',
+                    subject: raw.subject || '未分類',
                     category: category || '暗記事項',
                     sourceTitle: lessonTitle,
                     frontPrompt: frontPrompt,

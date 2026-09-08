@@ -2541,11 +2541,15 @@
 
                                 <!-- パネル3: 暗記事項リスト -->
                                 <div class="sidebar-panel" id="tab-memorize">
-                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem; gap: 0.4rem; flex-wrap: wrap;">
                                         <div style="font-size: 0.78rem; color: var(--text-secondary); font-weight: 600;">
                                             🧠 暗記すべき公式・用語一覧
                                         </div>
-                                        <button type="button" class="flora-btn flora-btn-secondary btn-sm" onclick="toggleAddMemorizePointForm(true)" style="padding: 0.2rem 0.5rem; font-size: 0.72rem;">＋項目追加</button>
+                                        <div style="display: flex; gap: 0.35rem; align-items: center;">
+                                            <button type="button" class="flora-btn flora-btn-secondary btn-sm" onclick="toggleAddMemorizePointForm(true)" style="padding: 0.2rem 0.5rem; font-size: 0.72rem;">＋項目追加</button>
+                                            <button type="button" id="btn-regen-memorize-points" class="flora-btn flora-btn-secondary btn-sm" onclick="regenerateLessonMemorizationPoints()" style="padding: 0.2rem 0.5rem; font-size: 0.72rem; color: var(--brand-primary); font-weight: 700;" title="この授業の暗記事項をAIで新フォーマット（表面：問い／裏面：答え）で再生成します">🔄 AI再生成</button>
+                                            <button type="button" id="btn-clear-memorize-points" class="flora-btn flora-btn-secondary btn-sm" onclick="clearLessonMemorizationPoints()" style="padding: 0.2rem 0.5rem; font-size: 0.72rem; color: var(--error);" title="この授業の暗記事項をすべて削除します（暗記完了時のクリア用）">🗑️ 全削除</button>
+                                        </div>
                                     </div>
 
                                     <!-- 新規暗記事項追加フォーム（トグル表示） -->
@@ -2553,7 +2557,8 @@
                                         <div style="font-size: 0.74rem; font-weight: 700; color: var(--accent-cyan); margin-bottom: 0.4rem;">＋ 暗記事項を新規追加</div>
                                         <div style="display: flex; flex-direction: column; gap: 0.4rem;">
                                             <input type="text" id="memorize-add-cat-input" placeholder="カテゴリ (例: 公式・法則、用語、反応式)" class="flora-input" style="padding: 0.35rem 0.5rem; font-size: 0.78rem; width: 100%; box-sizing: border-box;">
-                                            <textarea id="memorize-add-content-input" class="flora-textarea" rows="2" placeholder="暗記すべき内容を入力（数式は $...$ で記述可）" style="font-size: 0.82rem; width: 100%; box-sizing: border-box;"></textarea>
+                                            <input type="text" id="memorize-add-q-input" placeholder="表面の問い・公式名（例: 余事象の確率の公式は？）" class="flora-input" style="padding: 0.35rem 0.5rem; font-size: 0.78rem; width: 100%; box-sizing: border-box;">
+                                            <textarea id="memorize-add-a-input" class="flora-textarea" rows="2" placeholder="裏面の答え・定義・数式（数式は $...$ で記述可）" style="font-size: 0.82rem; width: 100%; box-sizing: border-box;"></textarea>
                                             <input type="text" id="memorize-add-note-input" placeholder="💡 補足やコツなど（任意）" class="flora-input" style="padding: 0.35rem 0.5rem; font-size: 0.78rem; width: 100%; box-sizing: border-box;">
                                             <div style="display: flex; justify-content: flex-end; gap: 0.35rem; margin-top: 0.2rem;">
                                                 <button type="button" class="tactile-btn tactile-btn-secondary" style="font-size: 0.72rem; padding: 0.3rem 0.6rem;" onclick="toggleAddMemorizePointForm(false)">閉じる</button>
@@ -3909,49 +3914,66 @@ ${subjectGuide}
                     items: {
                         type: "OBJECT",
                         properties: {
-                            category: { type: "STRING", enum: ["公式・法則", "反応式・現象", "用語・定義", "数値・データ", "暗記のコツ・語呂合わせ"] },
-                            content: { type: "STRING" },
+                            category: { type: "STRING", enum: ["公式・法則", "反応式・現象", "用語・定義", "数値・データ", "解法パターン・急所", "暗記のコツ・語呂合わせ"] },
+                            question: { type: "STRING" },
+                            answer: { type: "STRING" },
                             note: { type: "STRING" }
                         },
-                        required: ["category", "content"]
+                        required: ["category", "question", "answer"]
                     }
                 }
             },
             required: ["memorization_points"]
         };
 
-        const MEMORIZATION_SYSTEM_INSTRUCTION = `あなたは生徒の暗記を助ける専門家です。以下に渡される「授業ノート（本文）」を読み、この単元をマスターするために生徒が確実に暗記すべき事項をすべて洗い出してリスト化してください。
+        const MEMORIZATION_SYSTEM_INSTRUCTION = `あなたは生徒の暗記学習を支援するフラッシュカード専門AIです。
+渡された「授業ノート」を精読し、この単元の試験で満点を取るために絶対に暗記すべき重要事項を漏れなく抽出して、フラッシュカード形式（表面＝問い、裏面＝答え）で出力してください。
+
+【最重要ルール：表面（question）と裏面（answer）の明確な分離】
+1. 表面（question）：フラッシュカードの表面に表示する「問い・公式名・問いかけ・キーワード」
+   - 【絶対厳禁】表面（question）の中に答えとなる結論・定義・数式・具体的操作を絶対に書かないでください！
+     × 悪い例: 「事象Aが起こらない事象を余事象といい、確率は P(A)=1-P(A) となる」
+     ○ 良い例: 「事象 $A$ が起こらない事象（余事象 $\bar{A}$）の定義とその確率の公式は？」
+     × 悪い例: 「不況期（金融緩和）には買いオペ・金利引き下げ・準備率引き下げを行う」
+     ○ 良い例: 「不況期（金融緩和）における日本銀行の3大政策（公開市場操作・政策金利・預金準備率）の操作方法は？」
+     × 悪い例: 「水酸化ナトリウムの電離式：NaOH → Na+ + OH-」
+     ○ 良い例: 「水酸化ナトリウムの電離式とその液性は？」
+2. 裏面（answer）：フラッシュカードの裏面に表示する「核心の答え・結論・正確な数式・定義」
+   - 数式は途中で切らず、完全な LaTeX 数式として $ ... $ で記述してください（例: $P(\bar{A}) = 1 - P(A)$）。
+3. 補足・コツ（note）：
+   - 覚え方のコツ、問題文での見分け方、注意点などがあれば記述してください（無ければ空文字）。
 
 対象にすべきもの:
-- 公式・法則・定理（成り立ちではなく、覚えるべき結論の形）
-- 化学反応式・反応名・反応条件・現象（色の変化など）
-- 覚えるべき用語とその正確な定義
-- 覚えるべき数値・定数・単位・周期表的な暗記データ
-- 有効な語呂合わせや暗記のコツがあれば（一般的に知られているもの、または自然に作れるもの）
+- 公式・法則・定理・等式（導出過程ではなく、覚えるべき結論の形）
+- 化学反応式・電離式・反応名・反応条件・現象（色の変化など）
+- 覚えるべき専門用語とその正確な定義
+- 覚えるべき数値・定数・単位・年代・条約・制度
+- 有効な語呂合わせや暗記のコツ
 
-対象にしないもの:
-- 問題の解き方の手順そのもの（暗記ではなく理解で対応すべきもの）
-- 一般常識レベルの内容
+数式は必ず $ $ で囲み、抜け漏れなく簡潔かつ正確に出力してください。`;
 
-数式は $ $ で囲むこと。抜け漏れなく、しかし冗長にならないように1項目1〜2文程度で簡潔にまとめること。
-
-出力は必ず以下のJSON形式のみで返してください。他のテキストは一切含めないこと。
-{
-  "memorization_points": [
-    { "category": "公式・法則／反応式・現象／用語・定義／数値・データ／暗記のコツ・語呂合わせ のいずれか1つ", "content": "暗記すべき内容そのもの（簡潔に）", "note": "補足・注意点・語呂合わせなど（無ければ空文字）" }
-  ]
-}`;
-
-        // extractedText: 授業ノート/参考書書き起こし全文, lessonTitle: 授業タイトル
+        // extractedText: 授業ノート/参考書書き起こし全文, lessonTitle: 授業タイトル, subjectName: 教科名
         // 戻り値: memorization_points の配列（失敗時は例外throw）
-        async function generateMemorizationPoints(extractedText, lessonTitle) {
-            const promptText = `【授業タイトル】\n${lessonTitle}\n\n【授業ノート本文】\n${extractedText || "（本文なし）"}`;
+        async function generateMemorizationPoints(extractedText, lessonTitle, subjectName) {
+            const promptText = `【教科】${subjectName || "指定なし"}\n【授業タイトル】\n${lessonTitle}\n\n【授業ノート本文】\n${extractedText || "（本文なし）"}`;
             const result = await callGeminiJSON(
                 [{ text: promptText }],
                 MEMORIZATION_SYSTEM_INSTRUCTION,
                 { responseSchema: MEMORIZATION_RESPONSE_SCHEMA, featureId: "memorization_points", silentFallback: true }
             );
-            return Array.isArray(result.memorization_points) ? result.memorization_points : [];
+            const list = Array.isArray(result.memorization_points) ? result.memorization_points : [];
+            return list.map(item => {
+                const q = (item.question || "").trim();
+                const a = (item.answer || "").trim();
+                const content = (q && a) ? `${q}：${a}` : (a || q || "");
+                return {
+                    category: item.category || "重要事項",
+                    question: q,
+                    answer: a,
+                    content: content,
+                    note: (item.note || "").trim()
+                };
+            });
         }
 
         // 授業画面ロード時に自動実行。すでに生成済みならスキップ。バックグラウンドで動くため
@@ -3964,10 +3986,17 @@ ${subjectGuide}
             }
             renderMemorizationPoints("loading");
             try {
-                const points = await generateMemorizationPoints(currentLesson.extractedText, currentLesson.title);
+                const subject = currentLesson.subject || detectLessonSubject(currentLesson) || "その他";
+                const points = await generateMemorizationPoints(currentLesson.extractedText, currentLesson.title, subject);
                 currentLesson.memorizationPoints = points.map((p, idx) => ({
                     id: "mp_" + Date.now() + "_" + idx,
-                    ...p
+                    category: p.category || "重要事項",
+                    question: p.question || "",
+                    answer: p.answer || "",
+                    content: p.content || (p.question && p.answer ? `${p.question}：${p.answer}` : (p.answer || p.question || "")),
+                    note: p.note || "",
+                    subject: subject,
+                    createdAt: new Date().toISOString()
                 }));
                 renderMemorizationPoints();
                 await saveLesson();
@@ -3983,7 +4012,7 @@ ${subjectGuide}
             if (!container) return;
 
             if (state === "loading") {
-                container.innerHTML = `<div class="memorize-loading">🧠 暗記事項リストを準備中...</div>`;
+                container.innerHTML = `<div class="memorize-loading">🧠 AIが暗記事項リスト（表面：問い／裏面：答え）を分析・生成中...</div>`;
                 return;
             }
             if (state === "error") {
@@ -3992,13 +4021,24 @@ ${subjectGuide}
                     <button type="button" class="tactile-btn memorize-error-retry" id="memorize-retry-btn" style="font-size:0.75rem; padding:0.5rem 0.9rem;">🔁 再試行</button>
                 `;
                 const retryBtn = el("memorize-retry-btn");
-                if (retryBtn) retryBtn.addEventListener("click", () => ensureMemorizationPoints());
+                if (retryBtn) retryBtn.addEventListener("click", () => regenerateLessonMemorizationPoints());
                 return;
             }
 
             const points = Array.isArray(currentLesson?.memorizationPoints) ? currentLesson.memorizationPoints : [];
             if (points.length === 0) {
-                container.innerHTML = `<div class="memorize-empty">この単元では特筆すべき暗記事項がまだ登録されていません。<br>上の「＋項目追加」ボタンから自由に追加できます。</div>`;
+                container.innerHTML = `
+                    <div class="memorize-empty" style="padding:1.5rem 1rem; text-align:center;">
+                        <div style="font-size:1.2rem; margin-bottom:0.4rem;">🧠</div>
+                        <div style="font-size:0.82rem; color:var(--text-secondary); line-height:1.5; margin-bottom:0.8rem;">
+                            この単元には暗記事項がまだありません。<br>「完璧に覚えたため削除済み」か「未作成」です。
+                        </div>
+                        <div style="display:flex; justify-content:center; gap:0.4rem; flex-wrap:wrap;">
+                            <button type="button" class="tactile-btn" style="font-size:0.74rem; padding:0.35rem 0.75rem; background:var(--brand-primary); color:#fff; font-weight:600;" onclick="regenerateLessonMemorizationPoints()">🔄 AIで暗記事項を生成</button>
+                            <button type="button" class="tactile-btn tactile-btn-secondary" style="font-size:0.74rem; padding:0.35rem 0.75rem;" onclick="toggleAddMemorizePointForm(true)">＋ 手動追加</button>
+                        </div>
+                    </div>
+                `;
                 return;
             }
 
@@ -4009,7 +4049,8 @@ ${subjectGuide}
                     <div class="memorize-item" style="border-left-color: var(--accent-cyan); background: var(--bg-surface);">
                         <div style="display:flex; flex-direction:column; gap:0.4rem;">
                             <input type="text" id="memorize-point-edit-cat-${curId}" value="${(p.category || '').replace(/"/g, '&quot;')}" placeholder="カテゴリ (例: 公式・法則、用語、反応式)" class="flora-input" style="padding:0.3rem 0.5rem; font-size:0.78rem; width:100%; box-sizing:border-box;">
-                            <textarea id="memorize-point-edit-content-${curId}" class="lesson-memo-edit-textarea" style="min-height:60px;" placeholder="暗記すべき内容">${(p.content || '').replace(/</g, '&lt;')}</textarea>
+                            <input type="text" id="memorize-point-edit-q-${curId}" value="${(p.question || '').replace(/"/g, '&quot;')}" placeholder="表面（問い・キーワード）" class="flora-input" style="padding:0.3rem 0.5rem; font-size:0.78rem; width:100%; box-sizing:border-box;">
+                            <textarea id="memorize-point-edit-a-${curId}" class="lesson-memo-edit-textarea" style="min-height:55px;" placeholder="裏面（答え・定義・数式）">${(p.answer || p.content || '').replace(/</g, '&lt;')}</textarea>
                             <input type="text" id="memorize-point-edit-note-${curId}" value="${(p.note || '').replace(/"/g, '&quot;')}" placeholder="💡 補足・注意点（任意）" class="flora-input" style="padding:0.3rem 0.5rem; font-size:0.78rem; width:100%; box-sizing:border-box;">
                             <div class="lesson-memo-edit-actions">
                                 <button type="button" class="tactile-btn tactile-btn-secondary" style="font-size:0.72rem; padding:0.35rem 0.7rem;" onclick="cancelEditMemorizePoint()">キャンセル</button>
@@ -4019,16 +4060,27 @@ ${subjectGuide}
                     </div>`;
                 }
 
+                const hasQA = p.question && p.answer;
+
                 return `
                 <div class="memorize-item">
-                    <div class="memorize-item-top" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.3rem;">
+                    <div class="memorize-item-top" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem;">
                         <span class="memorize-item-category">${(p.category || "重要事項").replace(/</g, "&lt;")}</span>
                         <div class="lesson-memo-actions">
                             <button type="button" class="lesson-memo-edit-btn" onclick="startEditMemorizePoint('${curId}')" title="編集">✏️</button>
                             <button type="button" class="lesson-memo-del-btn" onclick="deleteMemorizePoint('${curId}')" title="削除">🗑</button>
                         </div>
                     </div>
-                    <div class="memorize-item-content tex2jax_process" onclick="startEditMemorizePoint('${curId}')" title="クリックして編集">${renderFormattedMarkdown(p.content || "")}</div>
+                    ${hasQA ? `
+                        <div class="memorize-item-q tex2jax_process" onclick="startEditMemorizePoint('${curId}')" title="クリックして編集" style="font-size:0.84rem; font-weight:700; color:var(--text-primary); margin-bottom:0.3rem; line-height:1.4;">
+                            <span style="color:var(--accent-cyan); margin-right:0.3rem;">Q.</span>${renderFormattedMarkdown(p.question)}
+                        </div>
+                        <div class="memorize-item-a tex2jax_process" onclick="startEditMemorizePoint('${curId}')" title="クリックして編集" style="font-size:0.82rem; color:var(--brand-primary); font-weight:600; padding:0.3rem 0.5rem; background:var(--bg-subtle); border-radius:var(--radius-sm); border-left:3px solid var(--brand-primary); line-height:1.4;">
+                            <span style="color:var(--brand-primary); margin-right:0.3rem; font-weight:700;">A.</span>${renderFormattedMarkdown(p.answer)}
+                        </div>
+                    ` : `
+                        <div class="memorize-item-content tex2jax_process" onclick="startEditMemorizePoint('${curId}')" title="クリックして編集">${renderFormattedMarkdown(p.content || "")}</div>
+                    `}
                     ${p.note ? `<div class="memorize-item-note tex2jax_process" style="margin-top:0.35rem; padding-top:0.35rem; border-top:1px dashed var(--border-subtle); font-size:0.78rem; color:var(--accent-yellow);">💡 ${renderFormattedMarkdown(p.note)}</div>` : ""}
                 </div>
                 `;
@@ -5462,8 +5514,10 @@ ${EXPERT_TEACHER_PROMPT}
         window.startEditMemorizePoint = function(id) {
             editingMemorizePointId = id;
             renderMemorizationPoints();
+            const elQ = document.getElementById(`memorize-point-edit-q-${id}`);
             const elContent = document.getElementById(`memorize-point-edit-content-${id}`);
-            if (elContent) elContent.focus();
+            if (elQ) elQ.focus();
+            else if (elContent) elContent.focus();
         };
 
         window.cancelEditMemorizePoint = function() {
@@ -5474,16 +5528,24 @@ ${EXPERT_TEACHER_PROMPT}
         window.saveEditMemorizePoint = async function(id) {
             if (!currentLesson || !Array.isArray(currentLesson.memorizationPoints)) return;
             const elCat = document.getElementById(`memorize-point-edit-cat-${id}`);
+            const elQ = document.getElementById(`memorize-point-edit-q-${id}`);
+            const elA = document.getElementById(`memorize-point-edit-a-${id}`);
             const elContent = document.getElementById(`memorize-point-edit-content-${id}`);
             const elNote = document.getElementById(`memorize-point-edit-note-${id}`);
-            const content = elContent ? elContent.value.trim() : "";
+            
             const category = elCat ? elCat.value.trim() : "";
+            const question = elQ ? elQ.value.trim() : "";
+            const answer = elA ? elA.value.trim() : "";
+            const oldContent = elContent ? elContent.value.trim() : "";
+            const content = (question && answer) ? `${question}：${answer}` : (answer || question || oldContent);
             const note = elNote ? elNote.value.trim() : "";
 
-            if (!content) {
-                showToast("暗記内容を入力してください。", "error");
+            if (!content && !answer && !question) {
+                showToast("暗記内容（問いまたは答え）を入力してください。", "error");
                 return;
             }
+
+            const subject = currentLesson.subject || detectLessonSubject(currentLesson) || "その他";
 
             currentLesson.memorizationPoints = currentLesson.memorizationPoints.map((p, idx) => {
                 const curId = p.id || `mp_${idx}`;
@@ -5492,8 +5554,11 @@ ${EXPERT_TEACHER_PROMPT}
                         ...p,
                         id: curId,
                         category: category || "重要事項",
+                        question,
+                        answer,
                         content,
                         note,
+                        subject: subject,
                         updatedAt: new Date().toISOString()
                     };
                 }
@@ -5524,7 +5589,7 @@ ${EXPERT_TEACHER_PROMPT}
             if (!form) return;
             form.style.display = show ? "block" : "none";
             if (show) {
-                const input = el("memorize-add-content-input");
+                const input = el("memorize-add-q-input") || el("memorize-add-content-input");
                 if (input) input.focus();
             }
         };
@@ -5532,26 +5597,39 @@ ${EXPERT_TEACHER_PROMPT}
         window.addNewMemorizePoint = async function() {
             if (!currentLesson) return;
             const elCat = el("memorize-add-cat-input");
+            const elQ = el("memorize-add-q-input");
+            const elA = el("memorize-add-a-input");
             const elContent = el("memorize-add-content-input");
             const elNote = el("memorize-add-note-input");
-            const content = elContent ? elContent.value.trim() : "";
+
             const category = elCat ? elCat.value.trim() : "";
+            const question = elQ ? elQ.value.trim() : "";
+            const answer = elA ? elA.value.trim() : "";
+            const oldContent = elContent ? elContent.value.trim() : "";
+            const content = (question && answer) ? `${question}：${answer}` : (answer || question || oldContent);
             const note = elNote ? elNote.value.trim() : "";
 
-            if (!content) {
-                showToast("暗記内容を入力してください。", "error");
+            if (!content && !answer && !question) {
+                showToast("暗記内容（問いまたは答え）を入力してください。", "error");
                 return;
             }
+
+            const subject = currentLesson.subject || detectLessonSubject(currentLesson) || "その他";
 
             if (!Array.isArray(currentLesson.memorizationPoints)) currentLesson.memorizationPoints = [];
             currentLesson.memorizationPoints.push({
                 id: "mp_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
                 category: category || "重要事項",
+                question,
+                answer,
                 content,
                 note,
+                subject: subject,
                 createdAt: new Date().toISOString()
             });
 
+            if (elQ) elQ.value = "";
+            if (elA) elA.value = "";
             if (elContent) elContent.value = "";
             if (elNote) elNote.value = "";
             window.toggleAddMemorizePointForm(false);
@@ -5559,6 +5637,55 @@ ${EXPERT_TEACHER_PROMPT}
             await forceTriggerMathJax();
             await saveLesson();
             showToast("暗記事項を追加しました！", "success", 1500);
+        };
+
+        window.regenerateLessonMemorizationPoints = async function() {
+            if (!currentLesson) return;
+            const currentCount = Array.isArray(currentLesson.memorizationPoints) ? currentLesson.memorizationPoints.length : 0;
+            const confirmMsg = currentCount > 0
+                ? `この授業の暗記事項（全${currentCount}件）をAIで再抽出しますか？\n（現在のリストは、表面＝問い・裏面＝答えの新フォーマットで再生成されます）`
+                : "この授業のノートからAIで暗記事項（表面＝問い／裏面＝答え）を抽出しますか？";
+            if (!confirm(confirmMsg)) return;
+
+            renderMemorizationPoints("loading");
+            try {
+                const subject = currentLesson.subject || detectLessonSubject(currentLesson) || "その他";
+                const points = await generateMemorizationPoints(currentLesson.extractedText, currentLesson.title, subject);
+                currentLesson.memorizationPoints = points.map((p, idx) => ({
+                    id: "mp_" + Date.now() + "_" + idx,
+                    category: p.category || "重要事項",
+                    question: p.question || "",
+                    answer: p.answer || "",
+                    content: p.content || (p.question && p.answer ? `${p.question}：${p.answer}` : (p.answer || p.question || "")),
+                    note: p.note || "",
+                    subject: subject,
+                    createdAt: new Date().toISOString()
+                }));
+                renderMemorizationPoints();
+                await forceTriggerMathJax();
+                await saveLesson();
+                showToast(`✨ 暗記事項を新形式で${points.length}件再生成しました！`, "success", 3000);
+            } catch (err) {
+                console.error("⚠️ 暗記事項再生成エラー:", err);
+                renderMemorizationPoints("error", err.message);
+                showToast("暗記事項の再生成に失敗しました: " + err.message, "error", 5000);
+            }
+        };
+
+        window.clearLessonMemorizationPoints = async function() {
+            if (!currentLesson) return;
+            const currentCount = Array.isArray(currentLesson.memorizationPoints) ? currentLesson.memorizationPoints.length : 0;
+            if (currentCount === 0) {
+                showToast("この単元には削除する暗記事項がありません。", "info", 2000);
+                return;
+            }
+            const ok = confirm(`この授業の暗記事項（全${currentCount}件）をすべて削除しますか？\n\n※「この単元の暗記は完璧にマスターした！」という場合やデータを整理したい時に使用してください。いつでも「🔄 AI再生成」から作り直せます。`);
+            if (!ok) return;
+
+            currentLesson.memorizationPoints = [];
+            renderMemorizationPoints();
+            await saveLesson();
+            showToast("この単元の暗記事項をすべて削除しました。", "success", 2500);
         };
 
         function renderSourceText() {

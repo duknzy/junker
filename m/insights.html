@@ -508,16 +508,18 @@
                 const list = [];
                 Object.entries(allLessons).forEach(([lessonId, l]) => {
                     if (l && Array.isArray(l.memorizationPoints)) {
-                        const subj = detectSubjectFromLesson(l);
+                        const subj = l.subject || detectSubjectFromLesson(l);
                         l.memorizationPoints.forEach((mp, idx) => {
                             const mpId = mp.id || `mp_${idx}`;
                             list.push({
                                 id: `${lessonId}:${mpId}`,
                                 lessonId,
                                 memoId: mpId,
-                                subject: subj,
+                                subject: mp.subject || subj,
                                 short_title: l.title || "授業",
                                 category: mp.category || "重要事項",
+                                question: mp.question || "",
+                                answer: mp.answer || "",
                                 content: mp.content || "",
                                 note: mp.note || "",
                                 updatedAt: mp.updatedAt || l.updatedAt || l.createdAt,
@@ -655,16 +657,26 @@
 
             listEl.innerHTML = items.map(p => {
                 const isEditing = editingMemorizeKey === p.id;
+                const hasQA = p.question && p.answer;
                 const bodyHtml = isEditing ? `
                     <div class="inline-edit-box">
                         <input type="text" class="inline-input" id="m-edit-cat-${p.lessonId}_${p.memoId}" value="${escapeHtml(p.category)}" placeholder="カテゴリ">
-                        <textarea class="inline-textarea" id="m-edit-content-${p.lessonId}_${p.memoId}">${escapeHtml(p.content)}</textarea>
+                        <input type="text" class="inline-input" id="m-edit-q-${p.lessonId}_${p.memoId}" value="${escapeHtml(p.question || '')}" placeholder="表面（問い・キーワード）">
+                        <textarea class="inline-textarea" id="m-edit-a-${p.lessonId}_${p.memoId}" placeholder="裏面（答え・定義・数式）">${escapeHtml(p.answer || p.content || '')}</textarea>
                         <input type="text" class="inline-input" id="m-edit-note-${p.lessonId}_${p.memoId}" value="${escapeHtml(p.note)}" placeholder="💡 補足・語呂合わせ">
                         <div style="display:flex; justify-content:flex-end; gap:0.4rem; margin-top:0.2rem;">
                             <button type="button" class="tactile-btn tactile-btn-secondary" style="font-size:0.75rem; padding:0.3rem 0.6rem;" onclick="cancelEditMemorize(event)">キャンセル</button>
                             <button type="button" class="tactile-btn" style="font-size:0.75rem; padding:0.3rem 0.6rem; background:var(--brand-primary); color:#fff;" onclick="saveEditMemorize('${p.lessonId}', '${p.memoId}', event)">💾 保存</button>
                         </div>
                     </div>
+                ` : hasQA ? `
+                    <div class="insight-text tex2jax_process" style="font-weight:700; margin-bottom:0.25rem;">
+                        <span style="color:var(--accent-cyan); margin-right:0.25rem;">Q.</span>${escapeHtml(p.question)}
+                    </div>
+                    <div class="insight-text tex2jax_process" style="color:var(--brand-primary); font-weight:600; padding:0.25rem 0.4rem; background:var(--bg-subtle); border-radius:var(--radius-sm); border-left:3px solid var(--brand-primary);">
+                        <span style="font-weight:700; margin-right:0.25rem;">A.</span>${escapeHtml(p.answer)}
+                    </div>
+                    ${p.note ? `<div class="tex2jax_process" style="font-size:0.8rem; color:var(--accent-yellow); margin-top:0.3rem;">💡 ${escapeHtml(p.note)}</div>` : ''}
                 ` : `
                     <div class="insight-text tex2jax_process">${escapeHtml(p.content)}</div>
                     ${p.note ? `<div class="tex2jax_process" style="font-size:0.8rem; color:var(--accent-yellow); margin-top:0.3rem;">💡 ${escapeHtml(p.note)}</div>` : ''}
@@ -831,24 +843,41 @@
             if (e) e.stopPropagation();
             if (!currentUser) return;
             const elCat = document.getElementById(`m-edit-cat-${lessonId}_${memoId}`);
+            const elQ = document.getElementById(`m-edit-q-${lessonId}_${memoId}`);
+            const elA = document.getElementById(`m-edit-a-${lessonId}_${memoId}`);
             const elContent = document.getElementById(`m-edit-content-${lessonId}_${memoId}`);
             const elNote = document.getElementById(`m-edit-note-${lessonId}_${memoId}`);
-            const content = elContent ? elContent.value.trim() : "";
+            
+            const question = elQ ? elQ.value.trim() : "";
+            const answer = elA ? elA.value.trim() : "";
+            const oldContent = elContent ? elContent.value.trim() : "";
+            const content = (question && answer) ? `${question}：${answer}` : (answer || question || oldContent);
             const category = elCat ? elCat.value.trim() : "";
             const note = elNote ? elNote.value.trim() : "";
 
-            if (!content) {
+            if (!content && !answer && !question) {
                 showMToast("暗記内容を入力してください");
                 return;
             }
 
             const lesson = allLessons[lessonId];
             if (!lesson || !Array.isArray(lesson.memorizationPoints)) return;
+            const subject = lesson.subject || detectSubjectFromLesson(lesson) || "その他";
 
             const newPoints = lesson.memorizationPoints.map((p, idx) => {
                 const curId = p.id || `mp_${idx}`;
                 if (curId === memoId) {
-                    return { ...p, id: curId, category: category || "重要事項", content, note, updatedAt: new Date().toISOString() };
+                    return { 
+                        ...p, 
+                        id: curId, 
+                        category: category || "重要事項", 
+                        question,
+                        answer,
+                        content, 
+                        note, 
+                        subject,
+                        updatedAt: new Date().toISOString() 
+                    };
                 }
                 return p;
             });
@@ -979,20 +1008,22 @@
                     const category = (item.category || "").trim();
                     let term = "";
                     let definition = "";
-                    const colonIdx = content.indexOf("：") !== -1 ? content.indexOf("：") : content.indexOf(":");
-                    if (colonIdx > 0 && colonIdx < 50) {
-                        term = content.slice(0, colonIdx).trim();
-                        definition = content.slice(colonIdx + 1).trim();
+
+                    // 0. 新フォーマット：表面（question）と裏面（answer）が分離されている場合（最優先）
+                    if (item.question && item.answer) {
+                        term = item.question.trim();
+                        definition = item.answer.trim();
                         if (note) definition += `\n(💡 ${note})`;
-                    } else if (content.includes(" = ") || content.includes(" ＝ ")) {
-                        const eqIdx = content.indexOf(" ＝ ") !== -1 ? content.indexOf(" ＝ ") : content.indexOf(" = ");
-                        term = content.slice(0, eqIdx).trim();
-                        definition = content;
-                    } else if (!content.includes("$") && content.match(/^(.+?)\s+[-ー—]\s+(.+)$/)) {
-                        const dashMatch = content.match(/^(.+?)\s+[-ー—]\s+(.+)$/);
-                        term = dashMatch[1].trim();
-                        definition = dashMatch[2].trim();
-                        if (note) definition += `\n(💡 ${note})`;
+                    } else if (content.indexOf("：") !== -1 || content.indexOf(":") !== -1) {
+                        const colonIdx = content.indexOf("：") !== -1 ? content.indexOf("：") : content.indexOf(":");
+                        if (colonIdx > 0 && colonIdx < 50) {
+                            term = content.slice(0, colonIdx).trim();
+                            definition = content.slice(colonIdx + 1).trim();
+                            if (note) definition += `\n(💡 ${note})`;
+                        } else {
+                            term = content;
+                            definition = note || content;
+                        }
                     } else if (note) {
                         term = content;
                         definition = note;
@@ -1001,7 +1032,7 @@
                         definition = content;
                     }
                     return {
-                        subject: item.subject || "公共",
+                        subject: item.subject || "未分類",
                         category: category || "重要事項",
                         sourceTitle: item.short_title || "授業暗記",
                         term: term,
