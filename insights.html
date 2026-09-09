@@ -165,6 +165,66 @@
             font-weight: 600;
         }
 
+        /* 🧠 暗記事項カードのQ&A専用レイアウト（インデントずれ完全解消＆ぶら下げ揃え） */
+        .insight-memorize-q {
+            font-size: 0.94rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.45rem;
+            line-height: 1.5;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.45rem;
+            cursor: pointer;
+            text-align: left;
+        }
+        .insight-memorize-q-badge {
+            color: var(--accent-cyan);
+            font-weight: 800;
+            flex-shrink: 0;
+            line-height: 1.5;
+            font-size: 0.96rem;
+        }
+        .insight-memorize-q-text {
+            flex: 1;
+            min-width: 0;
+            white-space: pre-wrap;
+            word-break: break-word;
+            line-height: 1.5;
+            text-align: left;
+        }
+
+        .insight-memorize-a {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--brand-primary);
+            padding: 0.45rem 0.65rem;
+            background: var(--bg-subtle);
+            border-radius: var(--radius-sm);
+            border-left: 3px solid var(--brand-primary);
+            line-height: 1.5;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.45rem;
+            cursor: pointer;
+            text-align: left;
+        }
+        .insight-memorize-a-badge {
+            color: var(--brand-primary);
+            font-weight: 800;
+            flex-shrink: 0;
+            line-height: 1.5;
+            font-size: 0.92rem;
+        }
+        .insight-memorize-a-text {
+            flex: 1;
+            min-width: 0;
+            white-space: pre-wrap;
+            word-break: break-word;
+            line-height: 1.5;
+            text-align: left;
+        }
+
         /* 📋 爆速コンパクトリスト表示 */
         .insight-compact-list { display: flex; flex-direction: column; gap: 0.5rem; }
         .insight-compact-row {
@@ -2269,7 +2329,9 @@
             const isEditing = editingMemorizeKey === memoKey;
             const safeLessonTitle = (p.short_title || "暗記事項").replace(/'/g, "\\'");
 
-            const hasQA = p.question && p.answer;
+            const cleanQ = (p.question || "").trim().replace(/^(?:Q[.:：]|問題[.:：]?)\s*/i, "");
+            const cleanA = (p.answer || "").trim().replace(/^(?:A[.:：]|答え[.:：]?|解答[.:：]?)\s*/i, "");
+            const hasQA = Boolean(cleanQ && cleanA);
             const editBody = isEditing ? `
                 <div style="display:flex; flex-direction:column; gap:0.45rem; margin-top:0.3rem;">
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.4rem;">
@@ -2302,16 +2364,12 @@
                     </div>
                 </div>
             ` : hasQA ? `
-                <div class="insight-text tex2jax_process" onclick="startEditMemorizeFromInsights('${p.lessonId}', '${p.memoId}', event)" title="クリックしてその場で編集" style="font-weight:700; margin-bottom:0.3rem; line-height:1.4;">
-                    <span style="color:var(--accent-cyan); margin-right:0.3rem;">Q.</span>${normalizeMathSyntax(p.question)}
-                </div>
-                <div class="insight-text tex2jax_process" onclick="startEditMemorizeFromInsights('${p.lessonId}', '${p.memoId}', event)" title="クリックしてその場で編集" style="font-weight:600; color:var(--brand-primary); padding:0.3rem 0.5rem; background:var(--bg-subtle); border-radius:var(--radius-sm); border-left:3px solid var(--brand-primary); line-height:1.4;">
-                    <span style="font-weight:700; margin-right:0.3rem;">A.</span>${normalizeMathSyntax(p.answer)}
-                </div>
-                ${p.rawNote ? `<div class="tex2jax_process" style="font-size:0.82rem; color:var(--accent-yellow); margin-top:0.4rem; padding-top:0.4rem; border-top:1px dashed rgba(255,255,255,0.08);">💡 ${normalizeMathSyntax(p.rawNote)}</div>` : ''}
+                <div class="insight-memorize-q tex2jax_process" onclick="startEditMemorizeFromInsights('${p.lessonId}', '${p.memoId}', event)" title="クリックしてその場で編集"><span class="insight-memorize-q-badge">Q.</span><span class="insight-memorize-q-text">${normalizeMathSyntax(cleanQ || p.question)}</span></div>
+                <div class="insight-memorize-a tex2jax_process" onclick="startEditMemorizeFromInsights('${p.lessonId}', '${p.memoId}', event)" title="クリックしてその場で編集"><span class="insight-memorize-a-badge">A.</span><span class="insight-memorize-a-text">${normalizeMathSyntax(cleanA || p.answer)}</span></div>
+                ${p.rawNote ? `<div class="tex2jax_process" style="font-size:0.82rem; color:var(--accent-yellow); margin-top:0.45rem; padding-top:0.45rem; border-top:1px dashed rgba(255,255,255,0.08); word-break:break-word; line-height:1.5;">💡 ${normalizeMathSyntax(p.rawNote).trim()}</div>` : ''}
             ` : `
-                <div class="insight-text tex2jax_process" onclick="startEditMemorizeFromInsights('${p.lessonId}', '${p.memoId}', event)" title="クリックしてその場で編集">${normalizeMathSyntax(p.rawContent || p.insight)}</div>
-                ${p.rawNote ? `<div class="tex2jax_process" style="font-size:0.82rem; color:var(--accent-yellow); margin-top:0.4rem; padding-top:0.4rem; border-top:1px dashed rgba(255,255,255,0.08);">💡 ${normalizeMathSyntax(p.rawNote)}</div>` : ''}
+                <div class="insight-text tex2jax_process" onclick="startEditMemorizeFromInsights('${p.lessonId}', '${p.memoId}', event)" title="クリックしてその場で編集">${normalizeMathSyntax(p.rawContent || p.insight).trim()}</div>
+                ${p.rawNote ? `<div class="tex2jax_process" style="font-size:0.82rem; color:var(--accent-yellow); margin-top:0.45rem; padding-top:0.45rem; border-top:1px dashed rgba(255,255,255,0.08); word-break:break-word; line-height:1.5;">💡 ${normalizeMathSyntax(p.rawNote).trim()}</div>` : ''}
             `;
 
             return `
