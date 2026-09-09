@@ -310,45 +310,141 @@
     <!-- 📸 写真から問題登録モーダル（スマホ完結） -->
     <div class="add-prob-modal-overlay" id="add-prob-modal">
         <div class="add-prob-modal-sheet">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.8rem;">
-                <h3 style="font-family:var(--font-heading); font-size:1.05rem; font-weight:800;">📸 写真から問題を登録</h3>
-                <button type="button" id="close-add-prob-modal-btn" style="background:none; border:none; font-size:1.2rem; cursor:pointer; color:var(--text-muted);">✕</button>
+            <!-- ステップ1: 写真・メモ選択 -->
+            <div id="m-prob-step-input">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.8rem;">
+                    <h3 style="font-family:var(--font-heading); font-size:1.05rem; font-weight:800;">📸 写真から問題を登録</h3>
+                    <button type="button" id="close-add-prob-modal-btn" style="background:none; border:none; font-size:1.2rem; cursor:pointer; color:var(--text-muted);">✕</button>
+                </div>
+
+                <!-- 教科選択 -->
+                <div style="margin-bottom:0.75rem;">
+                    <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">教科</label>
+                    <select id="prob-subject-select" class="m-input" style="padding:0.4rem 0.6rem;">
+                        <option value="数学">📐 数学</option>
+                        <option value="物理">⚡ 物理</option>
+                        <option value="化学">🧪 化学</option>
+                        <option value="生物">🧬 生物</option>
+                        <option value="情報">💻 情報</option>
+                        <option value="地理">🗺️ 地理</option>
+                        <option value="日本史">⛩️ 日本史</option>
+                        <option value="世界史">🏛️ 世界史</option>
+                        <option value="英語">🔤 英語</option>
+                        <option value="国語">📜 国語</option>
+                        <option value="公民">⚖️ 公民</option>
+                    </select>
+                </div>
+
+                <!-- 写真選択 -->
+                <div style="margin-bottom:0.75rem;">
+                    <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">問題の写真（カメラまたはアルバムから）</label>
+                    <input type="file" accept="image/*" multiple id="prob-photo-input" class="m-input" style="padding:0.4rem;">
+                    <div id="prob-thumb-preview" style="display:flex; gap:0.4rem; overflow-x:auto; margin-top:0.4rem;"></div>
+                </div>
+
+                <!-- メモ（任意） -->
+                <div style="margin-bottom:1rem;">
+                    <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">問題文またはメモ（任意）</label>
+                    <textarea id="prob-memo-input" class="m-input" rows="2" placeholder="例：大問3の(2)が分からなかった、計算ミス" style="resize:vertical;"></textarea>
+                </div>
+
+                <div style="display:flex; flex-direction:column; gap:0.5rem;">
+                    <button type="button" class="m-btn m-btn-primary m-btn-full" id="run-add-prob-btn" style="min-height:46px; font-size:0.95rem; font-weight:700;">
+                        ✨ AIで解析する
+                    </button>
+                    <button type="button" class="m-btn m-btn-secondary m-btn-full" id="m-manual-entry-btn" style="min-height:40px; font-size:0.88rem;">
+                        ✏️ 手動で入力・登録する
+                    </button>
+                </div>
             </div>
 
-            <!-- 教科選択 -->
-            <div style="margin-bottom:0.75rem;">
-                <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">教科</label>
-                <select id="prob-subject-select" class="m-input" style="padding:0.4rem 0.6rem;">
-                    <option value="数学">📐 数学</option>
-                    <option value="物理">⚡ 物理</option>
-                    <option value="化学">🧪 化学</option>
-                    <option value="生物">🧬 生物</option>
-                    <option value="情報">💻 情報</option>
-                    <option value="地理">🗺️ 地理</option>
-                    <option value="日本史">⛩️ 日本史</option>
-                    <option value="世界史">🏛️ 世界史</option>
-                    <option value="英語">🔤 英語</option>
-                    <option value="国語">📜 国語</option>
-                    <option value="公民">⚖️ 公民</option>
-                </select>
-            </div>
+            <!-- ステップ2: 解析結果確認・再解析・手動編集 -->
+            <div id="m-prob-step-review" style="display:none;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.8rem;">
+                    <h3 id="m-review-heading" style="font-family:var(--font-heading); font-size:1.05rem; font-weight:800; color:var(--brand-primary);">✨ 解析結果の確認・編集</h3>
+                    <button type="button" id="close-m-review-modal-btn" style="background:none; border:none; font-size:1.2rem; cursor:pointer; color:var(--text-muted);">✕</button>
+                </div>
 
-            <!-- 写真選択 -->
-            <div style="margin-bottom:0.75rem;">
-                <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">問題の写真（カメラまたはアルバムから）</label>
-                <input type="file" accept="image/*" multiple id="prob-photo-input" class="m-input" style="padding:0.4rem;">
-                <div id="prob-thumb-preview" style="display:flex; gap:0.4rem; overflow-x:auto; margin-top:0.4rem;"></div>
-            </div>
+                <div id="m-review-banner" style="background:rgba(5, 150, 105, 0.08); border:1px solid rgba(5, 150, 105, 0.25); border-radius:var(--radius-md); padding:0.6rem 0.8rem; margin-bottom:0.8rem; font-size:0.78rem; color:var(--text-secondary);">
+                    読み取り内容を確認してください。誤りがあれば各項目を直接手動で修正できます。
+                </div>
 
-            <!-- メモ（任意） -->
-            <div style="margin-bottom:1rem;">
-                <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">自分のメモ・間違えた理由（任意）</label>
-                <input type="text" id="prob-memo-input" class="m-input" placeholder="例：計算ミス、公式をど忘れした">
-            </div>
+                <!-- 写真プレビュー帯 -->
+                <div id="m-review-photos-strip" style="display:none; gap:0.4rem; overflow-x:auto; margin-bottom:0.8rem; padding:0.4rem; background:var(--bg-subtle); border-radius:var(--radius-md);"></div>
 
-            <button type="button" class="m-btn m-btn-primary m-btn-full" id="run-add-prob-btn" style="min-height:48px; font-size:0.95rem;">
-                ✨ AIで解析して誤答ノートに追加
-            </button>
+                <!-- 🔄 もう一度解析する -->
+                <div style="background:var(--bg-subtle); border:1px solid var(--border-color); border-left:3px solid var(--brand-primary); border-radius:var(--radius-md); padding:0.7rem; margin-bottom:0.85rem;">
+                    <div style="font-size:0.82rem; font-weight:700; color:var(--text-primary); margin-bottom:0.3rem;">🔄 もう一度問題を解析する</div>
+                    <div style="font-size:0.72rem; color:var(--text-muted); margin-bottom:0.4rem;">AIの読み取りがずれている場合、指示を添えて再解析できます。</div>
+                    <div style="display:flex; gap:0.4rem; flex-direction:column;">
+                        <input type="text" id="m-reanalyze-hint-input" class="m-input" placeholder="再解析の指示（例:『大問2の(3)だけ』など）" style="font-size:0.8rem; padding:0.4rem 0.6rem;">
+                        <button type="button" class="m-btn m-btn-secondary" id="m-reanalyze-run-btn" style="font-size:0.82rem; font-weight:700; padding:0.4rem 0.6rem;">
+                            🔄 再解析を実行
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ✏️ 手動編集フォーム -->
+                <div style="display:flex; flex-direction:column; gap:0.65rem;">
+                    <div style="display:flex; gap:0.5rem;">
+                        <div style="width:110px;">
+                            <label style="font-size:0.72rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:0.2rem;">教科</label>
+                            <select id="m-review-subject-select" class="m-input" style="padding:0.4rem 0.5rem; font-size:0.8rem;">
+                                <option value="数学">数学</option>
+                                <option value="物理">物理</option>
+                                <option value="化学">化学</option>
+                                <option value="生物">生物</option>
+                                <option value="情報">情報</option>
+                                <option value="地理">地理</option>
+                                <option value="日本史">日本史</option>
+                                <option value="世界史">世界史</option>
+                                <option value="英語">英語</option>
+                                <option value="国語">国語</option>
+                                <option value="公民">公民</option>
+                            </select>
+                        </div>
+                        <div style="flex:1;">
+                            <label style="font-size:0.72rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:0.2rem;">単元・分野</label>
+                            <input type="text" id="m-review-field-input" class="m-input" placeholder="単元名" style="font-size:0.8rem; padding:0.4rem 0.6rem;">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label style="font-size:0.72rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:0.2rem;">問題の要約タイトル</label>
+                        <input type="text" id="m-review-title-input" class="m-input" placeholder="問題タイトル" style="font-size:0.85rem; font-weight:600; padding:0.45rem 0.6rem;">
+                    </div>
+
+                    <div>
+                        <label style="font-size:0.72rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:0.2rem;">問題文（手動で編集可能）</label>
+                        <textarea id="m-review-text-input" class="m-input" rows="3" placeholder="問題文" style="font-size:0.85rem; resize:vertical;"></textarea>
+                    </div>
+
+                    <div>
+                        <label style="font-size:0.72rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:0.2rem;">模範解答・解説（手動で編集可能）</label>
+                        <textarea id="m-review-answer-input" class="m-input" rows="3" placeholder="正解・解説" style="font-size:0.85rem; resize:vertical;"></textarea>
+                    </div>
+
+                    <div>
+                        <label style="font-size:0.72rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:0.2rem;">つまずき・罠の解説</label>
+                        <textarea id="m-review-trap-input" class="m-input" rows="2" placeholder="間違えやすいポイント" style="font-size:0.8rem; resize:vertical;"></textarea>
+                    </div>
+
+                    <div>
+                        <label style="font-size:0.72rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:0.2rem;">解法の定石パターン</label>
+                        <textarea id="m-review-strategy-input" class="m-input" rows="2" placeholder="解法のアプローチ" style="font-size:0.8rem; resize:vertical;"></textarea>
+                    </div>
+                </div>
+
+                <!-- ステップ2 アクション -->
+                <div style="display:flex; gap:0.5rem; margin-top:1rem; border-top:1px solid var(--border-subtle); padding-top:0.8rem;">
+                    <button type="button" class="m-btn m-btn-secondary" id="m-review-back-btn" style="flex:1;">
+                        ← 戻る
+                    </button>
+                    <button type="button" class="m-btn m-btn-primary" id="m-review-save-btn" style="flex:2; font-weight:700;">
+                        💾 登録する
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -649,15 +745,56 @@
 
         // ==================== 📸 問題登録モーダル（スマホ完結） ====================
         const addProbModal = document.getElementById("add-prob-modal");
+        let mCurrentAiResult = null;
+
+        function closeMobileModalAndReset() {
+            addProbModal.style.display = "none";
+            document.getElementById("m-prob-step-input").style.display = "block";
+            document.getElementById("m-prob-step-review").style.display = "none";
+            document.getElementById("prob-memo-input").value = "";
+            document.getElementById("prob-photo-input").value = "";
+            document.getElementById("m-reanalyze-hint-input").value = "";
+            document.getElementById("m-review-title-input").value = "";
+            document.getElementById("m-review-field-input").value = "";
+            document.getElementById("m-review-text-input").value = "";
+            document.getElementById("m-review-answer-input").value = "";
+            document.getElementById("m-review-trap-input").value = "";
+            document.getElementById("m-review-strategy-input").value = "";
+            probSelectedImages = [];
+            mCurrentAiResult = null;
+            document.getElementById("prob-thumb-preview").innerHTML = "";
+            const strip = document.getElementById("m-review-photos-strip");
+            strip.innerHTML = "";
+            strip.style.display = "none";
+        }
+
         document.getElementById("fab-add")?.addEventListener("click", () => {
             addProbModal.style.display = "flex";
         });
         document.getElementById("close-add-prob-modal-btn")?.addEventListener("click", () => {
-            addProbModal.style.display = "none";
+            closeMobileModalAndReset();
+        });
+        document.getElementById("close-m-review-modal-btn")?.addEventListener("click", () => {
+            closeMobileModalAndReset();
         });
         addProbModal?.addEventListener("click", (e) => {
-            if (e.target === addProbModal) addProbModal.style.display = "none";
+            if (e.target === addProbModal) closeMobileModalAndReset();
         });
+
+        function renderMobileReviewPhotos() {
+            const strip = document.getElementById("m-review-photos-strip");
+            if (!strip) return;
+            if (probSelectedImages.length === 0) {
+                strip.style.display = "none";
+                strip.innerHTML = "";
+                return;
+            }
+            strip.style.display = "flex";
+            strip.innerHTML = "";
+            probSelectedImages.forEach((img, idx) => {
+                strip.innerHTML += `<img src="${img.dataUrl}" title="提出写真 #${idx+1}" style="height:54px; width:auto; border-radius:6px; border:1px solid var(--border-color); flex-shrink:0;">`;
+            });
+        }
 
         document.getElementById("prob-photo-input")?.addEventListener("change", (e) => {
             const files = Array.from(e.target.files || []);
@@ -675,73 +812,183 @@
                         dataUrl
                     });
                     previewEl.innerHTML += `<img src="${dataUrl}" style="height:60px; border-radius:6px; border:1px solid var(--border-color);">`;
+                    renderMobileReviewPhotos();
                 };
                 reader.readAsDataURL(f);
             });
         });
 
+        // 🤖 モバイルAI解析（初回・再解析共通）
+        async function runMobileAiAnalysis(hint = "") {
+            const subject = document.getElementById("prob-subject-select").value;
+            const memo = document.getElementById("prob-memo-input").value.trim();
+            const currentDraftText = document.getElementById("m-review-text-input").value.trim();
+
+            const parts = [{ text: `教科「${subject}」の問題です。写真から問題文、罠の解説、定石パターン、模範解答を抽出してJSONで返してください。` }];
+            if (memo) parts[0].text += `\n生徒のメモ: ${memo}`;
+            if (currentDraftText) parts[0].text += `\n現在の下書き問題文: ${currentDraftText}`;
+            if (hint) {
+                parts[0].text += `\n\n【再解析指示・修正リクエスト】\n${hint}\n上記の指示を最優先に反映して、改めて問題文や解答を厳密に抽出してください。`;
+            }
+
+            probSelectedImages.forEach(img => {
+                parts.push({ inlineData: { mimeType: img.mimeType, data: img.data } });
+            });
+
+            const schema = {
+                type: "OBJECT",
+                properties: {
+                    short_title: { type: "STRING" },
+                    extracted_text: { type: "STRING" },
+                    field: { type: "STRING" },
+                    trap_description: { type: "STRING" },
+                    strategy_pattern: { type: "STRING" },
+                    model_answer: { type: "STRING" }
+                },
+                required: ["short_title", "extracted_text", "model_answer"]
+            };
+
+            const res = await callGeminiJSON(parts, "高校各教科のエキスパート誤答分析AIです。数式は$ $で囲むこと。", {
+                responseSchema: schema,
+                featureId: "subject_analysis"
+            });
+
+            mCurrentAiResult = res;
+
+            // ステップ2のフォームに反映
+            const subjSelect = document.getElementById("m-review-subject-select");
+            if (subjSelect) subjSelect.value = subject;
+            document.getElementById("m-review-field-input").value = res.field || "";
+            document.getElementById("m-review-title-input").value = res.short_title || `【${subject}】問題`;
+            document.getElementById("m-review-text-input").value = res.extracted_text || memo || "";
+            document.getElementById("m-review-answer-input").value = res.model_answer || "";
+            document.getElementById("m-review-trap-input").value = res.trap_description || "";
+            document.getElementById("m-review-strategy-input").value = res.strategy_pattern || "";
+
+            renderMobileReviewPhotos();
+
+            document.getElementById("m-prob-step-input").style.display = "none";
+            document.getElementById("m-prob-step-review").style.display = "block";
+        }
+
+        // AI解析ボタン
         document.getElementById("run-add-prob-btn")?.addEventListener("click", async () => {
             if (!currentUser) {
                 if (window.mToast) mToast("⚠️ ログインしてください");
                 return;
             }
-            if (probSelectedImages.length === 0) {
-                if (window.mToast) mToast("⚠️ 写真を選択してください");
+            const memo = document.getElementById("prob-memo-input").value.trim();
+            if (probSelectedImages.length === 0 && !memo) {
+                if (window.mToast) mToast("⚠️ 写真を選択するかメモを入力してください");
                 return;
             }
 
-            const subject = document.getElementById("prob-subject-select").value;
-            const memo = document.getElementById("prob-memo-input").value.trim();
             const btn = document.getElementById("run-add-prob-btn");
-
             btn.disabled = true;
             btn.textContent = "AIが問題を解析中...";
 
             try {
-                const parts = [{ text: `教科「${subject}」の問題です。写真から問題文、罠の解説、定石パターン、模範解答を抽出してJSONで返してください。` }];
-                if (memo) parts[0].text += `\n生徒のメモ: ${memo}`;
-                probSelectedImages.forEach(img => {
-                    parts.push({ inlineData: { mimeType: img.mimeType, data: img.data } });
-                });
+                await runMobileAiAnalysis();
+                if (window.mToast) mToast("✨ 解析完了！内容を確認・編集できます");
+            } catch(e) {
+                console.error(e);
+                if (window.mToast) mToast("⚠️ 解析エラー: " + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "✨ AIで解析する";
+            }
+        });
 
-                const schema = {
-                    type: "OBJECT",
-                    properties: {
-                        short_title: { type: "STRING" },
-                        extracted_text: { type: "STRING" },
-                        field: { type: "STRING" },
-                        trap_description: { type: "STRING" },
-                        strategy_pattern: { type: "STRING" },
-                        model_answer: { type: "STRING" }
-                    },
-                    required: ["short_title", "extracted_text", "model_answer"]
-                };
+        // ✏️ 手動で入力・登録するボタン
+        document.getElementById("m-manual-entry-btn")?.addEventListener("click", () => {
+            const subject = document.getElementById("prob-subject-select").value;
+            const memo = document.getElementById("prob-memo-input").value.trim();
+            
+            const subjSelect = document.getElementById("m-review-subject-select");
+            if (subjSelect) subjSelect.value = subject;
+            document.getElementById("m-review-title-input").value = memo ? memo.slice(0, 20) : `【${subject}】問題`;
+            document.getElementById("m-review-text-input").value = memo;
 
-                const res = await callGeminiJSON(parts, "高校各教科のエキスパート誤答分析AIです。数式は$ $で囲むこと。", {
-                    responseSchema: schema,
-                    featureId: "subject_analysis"
-                });
+            const banner = document.getElementById("m-review-banner");
+            if (banner) banner.textContent = "✏️ 手動入力・登録モードです。問題文や解答を入力して登録してください。";
 
-                // サムネイル生成
+            renderMobileReviewPhotos();
+
+            document.getElementById("m-prob-step-input").style.display = "none";
+            document.getElementById("m-prob-step-review").style.display = "block";
+        });
+
+        // ステップ2: 戻るボタン
+        document.getElementById("m-review-back-btn")?.addEventListener("click", () => {
+            document.getElementById("m-prob-step-review").style.display = "none";
+            document.getElementById("m-prob-step-input").style.display = "block";
+        });
+
+        // ステップ2: 🔄 再解析ボタン
+        document.getElementById("m-reanalyze-run-btn")?.addEventListener("click", async () => {
+            const hint = document.getElementById("m-reanalyze-hint-input").value.trim();
+            const btn = document.getElementById("m-reanalyze-run-btn");
+            btn.disabled = true;
+            btn.textContent = "🔄 再解析中...";
+
+            try {
+                await runMobileAiAnalysis(hint);
+                if (window.mToast) mToast("✨ 再解析が完了しました！");
+            } catch(e) {
+                console.error(e);
+                if (window.mToast) mToast("⚠️ 再解析エラー: " + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "🔄 再解析を実行";
+            }
+        });
+
+        // ステップ2: 💾 登録するボタン
+        document.getElementById("m-review-save-btn")?.addEventListener("click", async () => {
+            if (!currentUser) {
+                if (window.mToast) mToast("⚠️ ログインしてください");
+                return;
+            }
+
+            const subject = document.getElementById("m-review-subject-select").value;
+            const field = document.getElementById("m-review-field-input").value.trim() || "演習問題";
+            const title = document.getElementById("m-review-title-input").value.trim() || `【${subject}】問題`;
+            const text = document.getElementById("m-review-text-input").value.trim();
+            const answer = document.getElementById("m-review-answer-input").value.trim() || "解説データなし";
+            const trap = document.getElementById("m-review-trap-input").value.trim();
+            const strategy = document.getElementById("m-review-strategy-input").value.trim();
+
+            if (!text && probSelectedImages.length === 0) {
+                if (window.mToast) mToast("⚠️ 問題文または写真を入力してください");
+                return;
+            }
+
+            const saveBtn = document.getElementById("m-review-save-btn");
+            saveBtn.disabled = true;
+            saveBtn.textContent = "💾 保存中...";
+
+            try {
                 let thumb = null;
-                try {
-                    thumb = await generateTinyThumbnail(probSelectedImages[0].dataUrl);
-                } catch(e) {
-                    thumb = probSelectedImages[0].dataUrl;
+                if (probSelectedImages.length > 0) {
+                    try {
+                        thumb = await generateTinyThumbnail(probSelectedImages[0].dataUrl);
+                    } catch(e) {
+                        thumb = probSelectedImages[0].dataUrl;
+                    }
                 }
 
                 const newId = "CUSTOM_" + Date.now();
                 const nowIso = new Date().toISOString();
                 const newProblem = {
                     id: newId,
-                    title: res.extracted_text || "問題文",
-                    short_title: res.short_title || `【${subject}】問題`,
+                    title: text || title,
+                    short_title: title,
                     subject,
-                    field: res.field || "演習問題",
-                    trap_description: res.trap_description || "",
-                    strategyPattern: res.strategy_pattern || "",
-                    model_answer: res.model_answer || "",
-                    answerFormula: res.model_answer || "",
+                    field,
+                    trap_description: trap,
+                    strategyPattern: strategy,
+                    model_answer: answer,
+                    answerFormula: answer,
                     errorCount: 1,
                     lastAttemptAt: nowIso,
                     lastResult: false,
@@ -750,21 +997,22 @@
                     createdAt: nowIso
                 };
 
-                // Firebase保存
                 await set(ref(database, `users/${currentUser.uid}/problems/${newId}`), newProblem);
-                await set(ref(database, `users/${currentUser.uid}/problemImages/${newId}`), {
-                    images: probSelectedImages.map(i => i.dataUrl)
-                });
+                if (probSelectedImages.length > 0) {
+                    await set(ref(database, `users/${currentUser.uid}/problemImages/${newId}`), {
+                        images: probSelectedImages.map(i => i.dataUrl)
+                    });
+                }
 
-                addProbModal.style.display = "none";
+                closeMobileModalAndReset();
                 if (window.mToast) mToast("🎉 誤答ノートに問題を追加しました！");
 
             } catch(e) {
                 console.error(e);
-                if (window.mToast) mToast("⚠️ 解析エラー: " + e.message);
+                if (window.mToast) mToast("⚠️ 保存エラー: " + e.message);
             } finally {
-                btn.disabled = false;
-                btn.textContent = "✨ AIで解析して誤答ノートに追加";
+                saveBtn.disabled = false;
+                saveBtn.textContent = "💾 登録する";
             }
         });
 

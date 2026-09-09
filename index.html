@@ -557,78 +557,190 @@
 
     <!-- 1. 問題登録モーダル -->
     <div class="modal-overlay" id="add-problem-modal">
-        <div class="modal-content">
+        <div class="modal-content" style="max-width: 720px;">
             <div class="modal-header">
                 <div>
-                    <h3 class="modal-title">間違えた問題の登録・解析</h3>
-                    <p style="color: var(--text-secondary); font-size: 0.84rem; margin-top: 0.2rem;">テキスト入力または写真を追加して登録します。数式はパレットを活用してください。</p>
+                    <h3 class="modal-title" id="add-problem-modal-heading">間違えた問題の登録・解析</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.84rem; margin-top: 0.2rem;" id="add-problem-modal-desc">テキスト入力または写真を追加して登録します。数式はパレットを活用してください。</p>
                 </div>
                 <button type="button" class="modal-close-btn" id="close-modal-btn-top" onclick="document.getElementById('close-modal-btn').click();">✕</button>
             </div>
 
-            <div id="linked-lesson-badge" style="display:none; background: var(--brand-light); border: 1px solid var(--brand-border); border-radius: var(--radius-md); padding: 0.6rem 0.9rem; margin-bottom: 0.8rem; font-size: 0.82rem; font-weight: 700; color: var(--brand-hover);">
-                🎓 授業「<span id="linked-lesson-title-text"></span>」の続きとして登録されます
-            </div>
+            <!-- ステップ1: 写真・テキスト入力 -->
+            <div id="prob-modal-step-input">
+                <div id="linked-lesson-badge" style="display:none; background: var(--brand-light); border: 1px solid var(--brand-border); border-radius: var(--radius-md); padding: 0.6rem 0.9rem; margin-bottom: 0.8rem; font-size: 0.82rem; font-weight: 700; color: var(--brand-hover);">
+                    🎓 授業「<span id="linked-lesson-title-text"></span>」の続きとして登録されます
+                </div>
 
-            <div style="margin-bottom: 0.8rem;">
-                <span class="filter-label" style="display:block; margin-bottom:0.4rem;">📚 教科を選択：</span>
-                <div id="subject-select-group" style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
-                    <button type="button" class="subject-select-btn active" data-subject="数学" onclick="setSelectedSubject('数学')">数学</button>
-                    <button type="button" class="subject-select-btn" data-subject="物理" onclick="setSelectedSubject('物理')">物理</button>
-                    <button type="button" class="subject-select-btn" data-subject="化学" onclick="setSelectedSubject('化学')">化学</button>
-                    <button type="button" class="subject-select-btn" data-subject="生物" onclick="setSelectedSubject('生物')">生物</button>
-                    <button type="button" class="subject-select-btn" data-subject="情報" onclick="setSelectedSubject('情報')">情報</button>
-                    <button type="button" class="subject-select-btn" data-subject="地理" onclick="setSelectedSubject('地理')">地理</button>
-                    <button type="button" class="subject-select-btn" data-subject="日本史" onclick="setSelectedSubject('日本史')">日本史</button>
-                    <button type="button" class="subject-select-btn" data-subject="世界史" onclick="setSelectedSubject('世界史')">世界史</button>
-                    <button type="button" class="subject-select-btn" data-subject="英語" onclick="setSelectedSubject('英語')">英語</button>
-                    <button type="button" class="subject-select-btn" data-subject="国語" onclick="setSelectedSubject('国語')">国語</button>
-                    <button type="button" class="subject-select-btn" data-subject="地歴公民" onclick="setSelectedSubject('地歴公民')">公民</button>
+                <div style="margin-bottom: 0.8rem;">
+                    <span class="filter-label" style="display:block; margin-bottom:0.4rem;">📚 教科を選択：</span>
+                    <div id="subject-select-group" style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                        <button type="button" class="subject-select-btn active" data-subject="数学" onclick="setSelectedSubject('数学')">数学</button>
+                        <button type="button" class="subject-select-btn" data-subject="物理" onclick="setSelectedSubject('物理')">物理</button>
+                        <button type="button" class="subject-select-btn" data-subject="化学" onclick="setSelectedSubject('化学')">化学</button>
+                        <button type="button" class="subject-select-btn" data-subject="生物" onclick="setSelectedSubject('生物')">生物</button>
+                        <button type="button" class="subject-select-btn" data-subject="情報" onclick="setSelectedSubject('情報')">情報</button>
+                        <button type="button" class="subject-select-btn" data-subject="地理" onclick="setSelectedSubject('地理')">地理</button>
+                        <button type="button" class="subject-select-btn" data-subject="日本史" onclick="setSelectedSubject('日本史')">日本史</button>
+                        <button type="button" class="subject-select-btn" data-subject="世界史" onclick="setSelectedSubject('世界史')">世界史</button>
+                        <button type="button" class="subject-select-btn" data-subject="英語" onclick="setSelectedSubject('英語')">英語</button>
+                        <button type="button" class="subject-select-btn" data-subject="国語" onclick="setSelectedSubject('国語')">国語</button>
+                        <button type="button" class="subject-select-btn" data-subject="地歴公民" onclick="setSelectedSubject('地歴公民')">公民</button>
+                    </div>
+                </div>
+
+                <div class="math-keyboard" id="math-keyboard-group">
+                    <button type="button" class="math-key btn-accent" onclick="insertMathSymbol('$', '$')">$$</button>
+                    <button type="button" class="math-key" onclick="insertMathSymbol('\\frac{', '}{}')">分数</button>
+                    <button type="button" class="math-key" onclick="insertMathSymbol('\\sqrt{', '}')">√</button>
+                    <button type="button" class="math-key" onclick="insertMathSymbol('^{', '}')">xⁿ</button>
+                    <button type="button" class="math-key" onclick="insertMathSymbol('_{', '}')">xₙ</button>
+                    <button type="button" class="math-key" onclick="insertMathSymbol('\\theta')">θ</button>
+                    <button type="button" class="math-key" onclick="insertMathSymbol('\\pi')">π</button>
+                    <button type="button" class="math-key" onclick="insertMathSymbol('\\alpha')">α</button>
+                    <button type="button" class="math-key" onclick="insertMathSymbol('\\beta')">β</button>
+                    <button type="button" class="math-key" onclick="insertMathSymbol('\\Delta')">Δ</button>
+                    <button type="button" class="math-key" onclick="insertMathSymbol('\\pm')">±</button>
+                    <button type="button" class="math-key" onclick="insertMathSymbol('\\le')">≦</button>
+                    <button type="button" class="math-key" onclick="insertMathSymbol('\\ge')">≧</button>
+                    <button type="button" class="math-key" onclick="insertMathSymbol('\\vec{', '}')">ベクトル</button>
+                    <button type="button" class="math-key" onclick="insertMathSymbol('\\int_{', '}^{}')">∫</button>
+                    <button type="button" class="math-key" onclick="insertMathSymbol('\\log_{', '}')">log</button>
+                    <button type="button" class="math-key" onclick="insertMathSymbol('\\sin')">sin</button>
+                    <button type="button" class="math-key" onclick="insertMathSymbol('\\cos')">cos</button>
+                </div>
+
+                <textarea class="flora-textarea" id="problem-text-input" placeholder="問題文を直接入力するか、写真の補足メモを入力してください。数式は $x^2+y^2=1$ のように $ で挟むと綺麗にプレビューされます。" style="margin-top: 0.8rem;"></textarea>
+                
+                <div id="math-preview" class="math-preview tex2jax_process">数式プレビューがここに表示されます</div>
+
+                <div style="display: flex; gap: 0.6rem; align-items: center; margin-top: 0.8rem; flex-wrap: wrap;">
+                    <label for="problem-image-input" class="image-upload-zone" style="flex: 1; margin: 0; min-width: 150px;">
+                        📸 写真を追加（複数可）
+                    </label>
+                    <button type="button" onclick="openGooglePhotosPopout(event)" title="Google Photosを小窓で開く" class="flora-btn flora-btn-secondary" style="font-size: var(--fs-xs);">
+                        📷 Google Photos
+                    </button>
+                </div>
+                <input type="file" id="problem-image-input" accept="image/*" multiple style="display: none;">
+                <p style="font-size: 0.74rem; color: var(--text-muted); margin-top: 0.4rem;">💡 問題文＋解説など複数枚ある場合はまとめて選択できます。</p>
+
+                <div class="preview-box" id="image-preview-container"></div>
+                
+                <div style="display: flex; gap: 0.6rem; justify-content: space-between; align-items: center; width: 100%; margin-top: 1.5rem; border-top: 1px solid var(--border-subtle); padding-top: 1rem; flex-wrap: wrap;">
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button type="button" class="flora-btn flora-btn-ghost" id="close-modal-btn">キャンセル</button>
+                        <button type="button" class="flora-btn flora-btn-secondary" id="clear-keys-btn" style="color: var(--error); font-size: var(--fs-xs);">APIキーリセット</button>
+                    </div>
+                    <div style="display: flex; gap: 0.6rem;">
+                        <button type="button" class="flora-btn flora-btn-secondary" id="manual-entry-step-btn">✏️ 手動で入力・登録</button>
+                        <button type="button" class="flora-btn flora-btn-primary" id="analyze-submit-btn">🤖 AI自動解析を実行</button>
+                    </div>
                 </div>
             </div>
 
-            <div class="math-keyboard" id="math-keyboard-group">
-                <button type="button" class="math-key btn-accent" onclick="insertMathSymbol('$', '$')">$$</button>
-                <button type="button" class="math-key" onclick="insertMathSymbol('\\frac{', '}{}')">分数</button>
-                <button type="button" class="math-key" onclick="insertMathSymbol('\\sqrt{', '}')">√</button>
-                <button type="button" class="math-key" onclick="insertMathSymbol('^{', '}')">xⁿ</button>
-                <button type="button" class="math-key" onclick="insertMathSymbol('_{', '}')">xₙ</button>
-                <button type="button" class="math-key" onclick="insertMathSymbol('\\theta')">θ</button>
-                <button type="button" class="math-key" onclick="insertMathSymbol('\\pi')">π</button>
-                <button type="button" class="math-key" onclick="insertMathSymbol('\\alpha')">α</button>
-                <button type="button" class="math-key" onclick="insertMathSymbol('\\beta')">β</button>
-                <button type="button" class="math-key" onclick="insertMathSymbol('\\Delta')">Δ</button>
-                <button type="button" class="math-key" onclick="insertMathSymbol('\\pm')">±</button>
-                <button type="button" class="math-key" onclick="insertMathSymbol('\\le')">≦</button>
-                <button type="button" class="math-key" onclick="insertMathSymbol('\\ge')">≧</button>
-                <button type="button" class="math-key" onclick="insertMathSymbol('\\vec{', '}')">ベクトル</button>
-                <button type="button" class="math-key" onclick="insertMathSymbol('\\int_{', '}^{}')">∫</button>
-                <button type="button" class="math-key" onclick="insertMathSymbol('\\log_{', '}')">log</button>
-                <button type="button" class="math-key" onclick="insertMathSymbol('\\sin')">sin</button>
-                <button type="button" class="math-key" onclick="insertMathSymbol('\\cos')">cos</button>
-            </div>
+            <!-- ステップ2: 解析結果の確認・再解析・手動編集 -->
+            <div id="prob-modal-step-review" style="display: none;">
+                <!-- ステータスバナー -->
+                <div id="review-status-banner" style="background: rgba(5, 150, 105, 0.08); border: 1px solid rgba(5, 150, 105, 0.3); border-radius: var(--radius-md); padding: 0.75rem 1rem; margin-bottom: 1rem; font-size: 0.84rem; color: var(--text-primary);">
+                    <span id="review-banner-title" style="font-weight: 700; color: var(--brand-primary); display: block; margin-bottom: 0.2rem;">✨ AI解析が完了しました</span>
+                    <span id="review-banner-desc" style="font-size: 0.78rem; color: var(--text-secondary);">読み取り内容をご確認ください。誤りがあれば各項目を手動で修正するか、再解析を実行できます。</span>
+                </div>
 
-            <textarea class="flora-textarea" id="problem-text-input" placeholder="問題文を直接入力するか、写真の補足メモを入力してください。数式は $x^2+y^2=1$ のように $ で挟むと綺麗にプレビューされます。" style="margin-top: 0.8rem;"></textarea>
-            
-            <div id="math-preview" class="math-preview tex2jax_process">数式プレビューがここに表示されます</div>
+                <!-- 📸 参照元の写真一覧（クリックで別窓拡大） -->
+                <div id="review-photos-box" style="display: none; margin-bottom: 1rem; background: var(--bg-subtle); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.6rem 0.8rem;">
+                    <span style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 0.4rem;">📸 提出された元画像（クリックで別窓拡大）：</span>
+                    <div id="review-photos-strip" style="display: flex; gap: 0.5rem; overflow-x: auto; align-items: center; padding-bottom: 0.2rem;"></div>
+                </div>
 
-            <div style="display: flex; gap: 0.6rem; align-items: center; margin-top: 0.8rem; flex-wrap: wrap;">
-                <label for="problem-image-input" class="image-upload-zone" style="flex: 1; margin: 0; min-width: 150px;">
-                    📸 写真を追加（複数可）
-                </label>
-                <button type="button" onclick="openGooglePhotosPopout(event)" title="Google Photosを小窓で開く" class="flora-btn flora-btn-secondary" style="font-size: var(--fs-xs);">
-                    📷 Google Photos
-                </button>
-            </div>
-            <input type="file" id="problem-image-input" accept="image/*" multiple style="display: none;">
-            <p style="font-size: 0.74rem; color: var(--text-muted); margin-top: 0.4rem;">💡 問題文＋解説など複数枚ある場合はまとめて選択できます。</p>
+                <!-- 🔄 もう一度問題を解析する（AI再解析パネル） -->
+                <div id="reanalyze-panel" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-left: 4px solid var(--brand-primary); border-radius: var(--radius-md); padding: 0.85rem 1rem; margin-bottom: 1.25rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                        <span style="font-size: 0.86rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 0.35rem;">
+                            🔄 もう一度問題を解析する
+                        </span>
+                        <span style="font-size: 0.72rem; color: var(--text-muted);">写真と指示をもとにAIが再抽出します</span>
+                    </div>
+                    <p style="font-size: 0.76rem; color: var(--text-secondary); margin-bottom: 0.6rem;">
+                        AIが問題文を読み落としている場合や、別の設問を抜き出したい場合は、補足指示を入力して再解析できます。
+                    </p>
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <input type="text" id="reanalyze-hint-input" class="flora-input" placeholder="再解析のヒント（例:『大問2の(3)だけ読み取って』『数式の分母を正確に』など）" style="flex: 1; min-width: 220px; font-size: var(--fs-xs); padding: 0.45rem 0.75rem;">
+                        <button type="button" class="flora-btn flora-btn-secondary" id="reanalyze-run-btn" style="font-size: var(--fs-xs); font-weight: 700; white-space: nowrap;">
+                            🔄 再解析を実行
+                        </button>
+                    </div>
+                </div>
 
-            <div class="preview-box" id="image-preview-container"></div>
-            
-            <div style="display: flex; gap: 0.6rem; justify-content: flex-end; width: 100%; margin-top: 1.5rem; border-top: 1px solid var(--border-subtle); padding-top: 1rem; flex-wrap: wrap;">
-                <button type="button" class="flora-btn flora-btn-ghost" id="close-modal-btn">キャンセル</button>
-                <button type="button" class="flora-btn flora-btn-secondary" id="clear-keys-btn" style="color: var(--error);">APIキーをリセット</button>
-                <button type="button" class="flora-btn flora-btn-primary" id="analyze-submit-btn">AI自動解析を実行</button>
+                <!-- ✏️ 手動で編集できるフォーム -->
+                <div style="display: flex; flex-direction: column; gap: 0.85rem;">
+                    <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+                        <div style="width: 140px;">
+                            <label style="font-size: 0.76rem; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">教科：</label>
+                            <select id="review-subject-select" class="flora-select" style="font-size: var(--fs-xs); padding: 0.45rem 1.6rem 0.45rem 0.6rem;">
+                                <option value="数学">数学</option>
+                                <option value="物理">物理</option>
+                                <option value="化学">化学</option>
+                                <option value="生物">生物</option>
+                                <option value="情報">情報</option>
+                                <option value="地理">地理</option>
+                                <option value="日本史">日本史</option>
+                                <option value="世界史">世界史</option>
+                                <option value="英語">英語</option>
+                                <option value="国語">国語</option>
+                                <option value="地歴公民">公民</option>
+                            </select>
+                        </div>
+                        <div style="flex: 1; min-width: 180px;">
+                            <label style="font-size: 0.76rem; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">単元・分野：</label>
+                            <input type="text" id="review-field-input" class="flora-input" placeholder="例: 数学II 複素数と方程式" style="font-size: var(--fs-xs); padding: 0.45rem 0.75rem;">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label style="font-size: 0.76rem; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">問題の要約タイトル：</label>
+                        <input type="text" id="review-title-input" class="flora-input" placeholder="例: 【数学II】剰余の定理を用いた余りの決定" style="font-size: var(--fs-sm); font-weight: 600; padding: 0.5rem 0.75rem;">
+                    </div>
+
+                    <div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
+                            <label style="font-size: 0.76rem; font-weight: 700; color: var(--text-secondary);">問題文（手動で編集可能 / 数式は $ $ で囲む）：</label>
+                            <div style="display: flex; gap: 0.2rem;">
+                                <button type="button" class="flora-btn flora-btn-ghost btn-sm" onclick="insertReviewMathSymbol('$', '$')" style="padding: 0.1rem 0.4rem; font-size: 0.72rem;">$$</button>
+                                <button type="button" class="flora-btn flora-btn-ghost btn-sm" onclick="insertReviewMathSymbol('\\frac{', '}{}')" style="padding: 0.1rem 0.4rem; font-size: 0.72rem;">分数</button>
+                                <button type="button" class="flora-btn flora-btn-ghost btn-sm" onclick="insertReviewMathSymbol('\\sqrt{', '}')" style="padding: 0.1rem 0.4rem; font-size: 0.72rem;">√</button>
+                                <button type="button" class="flora-btn flora-btn-ghost btn-sm" onclick="insertReviewMathSymbol('^{', '}')" style="padding: 0.1rem 0.4rem; font-size: 0.72rem;">xⁿ</button>
+                            </div>
+                        </div>
+                        <textarea id="review-text-input" class="flora-textarea" rows="4" placeholder="問題文" style="font-size: var(--fs-sm); line-height: 1.5;"></textarea>
+                        <div id="review-text-math-preview" class="math-preview tex2jax_process" style="margin-top: 0.35rem; font-size: 0.85rem; max-height: 100px; overflow-y: auto;">数式プレビュー</div>
+                    </div>
+
+                    <div>
+                        <label style="font-size: 0.76rem; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">模範解答・解説（手動で編集可能）：</label>
+                        <textarea id="review-answer-input" class="flora-textarea" rows="3" placeholder="正解と解説ステップ" style="font-size: var(--fs-sm); line-height: 1.5;"></textarea>
+                        <div id="review-answer-math-preview" class="math-preview tex2jax_process" style="margin-top: 0.35rem; font-size: 0.85rem; max-height: 80px; overflow-y: auto;">解答プレビュー</div>
+                    </div>
+
+                    <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 240px;">
+                            <label style="font-size: 0.74rem; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">つまずきポイント・罠：</label>
+                            <textarea id="review-trap-input" class="flora-textarea" rows="2" placeholder="間違えやすいポイント" style="font-size: var(--fs-xs);"></textarea>
+                        </div>
+                        <div style="flex: 1; min-width: 240px;">
+                            <label style="font-size: 0.74rem; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">解法の定石パターン：</label>
+                            <textarea id="review-strategy-input" class="flora-textarea" rows="2" placeholder="着眼点・定石アプローチ" style="font-size: var(--fs-xs);"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ステップ2 フッターアクション -->
+                <div style="display: flex; gap: 0.6rem; justify-content: space-between; align-items: center; width: 100%; margin-top: 1.5rem; border-top: 1px solid var(--border-subtle); padding-top: 1rem; flex-wrap: wrap;">
+                    <button type="button" class="flora-btn flora-btn-ghost" id="review-back-btn">⬅️ 写真・入力に戻る</button>
+                    <div style="display: flex; gap: 0.6rem;">
+                        <button type="button" class="flora-btn flora-btn-primary" id="review-save-btn">💾 この内容で誤答ノートに登録</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -1885,21 +1997,91 @@ thumbHtml = `<div class="row-thumb row-thumb-icon ${glowClass} tex2jax_process">
             }
         }
 
-        // 📸【Gemini復帰】写真の画像認識が必要なので、ここはGemini Visionをそのまま叩く
-        async function analyzeAndAddProblem(userRawText) {
+        let currentAiResult = null;
+
+        window.insertReviewMathSymbol = function(before, after = "") {
+            const textarea = document.getElementById("review-text-input");
+            if (!textarea) return;
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const selected = textarea.value.substring(start, end);
+            const replacement = before + selected + after;
+            textarea.value = textarea.value.substring(0, start) + replacement + textarea.value.substring(end);
+            const newCursor = start + before.length + selected.length;
+            textarea.focus();
+            textarea.selectionStart = newCursor;
+            textarea.selectionEnd = newCursor;
+            window.updateReviewMathPreview(true);
+        };
+
+        let reviewPreviewTimeout = null;
+        window.updateReviewMathPreview = function(immediate = false) {
+            const textInput = document.getElementById('review-text-input');
+            const textPreview = document.getElementById('review-text-math-preview');
+            const answerInput = document.getElementById('review-answer-input');
+            const answerPreview = document.getElementById('review-answer-math-preview');
+
+            if (textInput && textPreview) {
+                textPreview.innerHTML = textInput.value ? textInput.value : "問題文プレビュー";
+            }
+            if (answerInput && answerPreview) {
+                answerPreview.innerHTML = answerInput.value ? answerInput.value : "解答プレビュー";
+            }
+
+            if (reviewPreviewTimeout) clearTimeout(reviewPreviewTimeout);
+            const renderMath = () => {
+                if (window.MathJax && window.MathJax.typesetPromise) {
+                    const targets = [];
+                    if (textPreview) targets.push(textPreview);
+                    if (answerPreview) targets.push(answerPreview);
+                    if (targets.length > 0) {
+                        window.MathJax.typesetPromise(targets).catch((err) => console.log(err.message));
+                    }
+                }
+            };
+            if (immediate) {
+                renderMath();
+            } else {
+                reviewPreviewTimeout = setTimeout(renderMath, 300);
+            }
+        };
+
+        function renderReviewPhotosStrip() {
+            const box = document.getElementById("review-photos-box");
+            const strip = document.getElementById("review-photos-strip");
+            if (!box || !strip) return;
+            if (selectedImages.length === 0) {
+                box.style.display = "none";
+                strip.innerHTML = "";
+                return;
+            }
+            box.style.display = "block";
+            strip.innerHTML = "";
+            selectedImages.forEach((img, idx) => {
+                const imgWrap = document.createElement("div");
+                imgWrap.style.cssText = "position: relative; flex-shrink: 0; cursor: pointer; border-radius: 6px; overflow: hidden; border: 1px solid var(--border-color);";
+                imgWrap.title = `写真 #${idx + 1} (クリックで別窓拡大表示)`;
+                imgWrap.innerHTML = `<img src="${img.dataUrl}" style="height: 64px; width: auto; max-width: 100px; object-fit: cover; display: block;">`;
+                imgWrap.addEventListener("click", () => {
+                    const w = window.open("");
+                    if (w) {
+                        w.document.write(`<title>提出写真 #${idx + 1}</title><body style="margin:0; background:#111; display:flex; justify-content:center; align-items:center; min-height:100vh;"><img src="${img.dataUrl}" style="max-width:100%; max-height:100vh; object-fit:contain;"></body>`);
+                    }
+                });
+                strip.appendChild(imgWrap);
+            });
+        }
+
+        // 🤖 問題のAI解析（初回・再解析共通）
+        async function runProblemAiAnalysis(userRawText, hint = "") {
             if (!currentUser) {
                 showToast("ログイン状態が確認できません。Google接続してください。", "error");
-                return;
+                return false;
             }
             if (getGeminiKeys().length === 0) {
                 showToast("GeminiのAPIキーが登録されていません。右下の🔑ボタンから登録してください。", "error");
-                return;
+                return false;
             }
-            
-            const submitBtn = document.getElementById("analyze-submit-btn");
-            
-            submitBtn.textContent = "Gemini Visionが画像を分析中...";
-            submitBtn.disabled = true;
 
             let parts = [{ "text": "提出されたデータを解析し、最終的な『正しい答え（model_answer）』も含めて指定のJSONで返してください。" }];
             if (userRawText) parts[0].text += `\nユーザーの入力メモ: ${userRawText}`;
@@ -1907,25 +2089,23 @@ thumbHtml = `<div class="row-thumb row-thumb-icon ${glowClass} tex2jax_process">
                 selectedImages.forEach(img => {
                     parts.push({ "inlineData": { "mimeType": img.mimeType, "data": img.base64 } });
                 });
-                // 🖼️【複数枚対応】写真が複数枚ある場合、それらは同じ1問の異なるページ・カット
-                // （問題文ページ＋解答用紙／続きのページなど）である可能性が高いことをAIに明示する
                 if (selectedImages.length > 1) {
                     parts[0].text += `\n\n【重要】画像は${selectedImages.length}枚提出されていますが、これらは全て同じ1つの問題に関する別々のページ・カット（例：問題文のページと、生徒が実際に解いた解答用紙のページなど）です。複数の異なる問題として分割せず、すべての画像の情報を統合して、この1問についての内容としてextracted_textやtrap_descriptionなどを作成してください。`;
                 }
             }
 
-            try {
-                let activeSystemInstruction = SUBJECT_CREATE_PROMPTS[selectedSubject] || SUBJECT_CREATE_PROMPTS["数学"];
+            if (hint) {
+                parts[0].text += `\n\n【重要：再解析のリクエスト・修正指示】\n${hint}\n上記の指示や修正要望を最優先に反映して、改めて問題文や解答を厳密に抽出してください。`;
+            }
 
-                // 🎓【授業からの継続問題】直前に受けた授業の参考書全文をAIに渡し、
-                //   その授業固有の用語・法則名・手順番号をそのまま使って解説させる
-                if (linkedLessonText) {
-                    const glossaryBlock = (linkedLessonKeyTerms && linkedLessonKeyTerms.length > 0)
-                        ? `\n\n【この授業までに生徒が習った、参考書オリジナルの用語集（前の講の内容も含む）】\n` +
-                          linkedLessonKeyTerms.map(t => `・${t.name}：${t.definition}`).join("\n") +
-                          `\n※これらの用語は、たとえこの授業のテキスト全文に載っていなくても、生徒はすでに正確な定義を知っています。解説中でこれらの言葉が使える場面では、遠慮せずこの定義通りに名指しで使ってください。`
-                        : "";
-                    activeSystemInstruction += `
+            let activeSystemInstruction = SUBJECT_CREATE_PROMPTS[selectedSubject] || SUBJECT_CREATE_PROMPTS["数学"];
+            if (linkedLessonText) {
+                const glossaryBlock = (linkedLessonKeyTerms && linkedLessonKeyTerms.length > 0)
+                    ? `\n\n【この授業までに生徒が習った、参考書オリジナルの用語集（前の講の内容も含む）】\n` +
+                      linkedLessonKeyTerms.map(t => `・${t.name}：${t.definition}`).join("\n") +
+                      `\n※これらの用語は、たとえこの授業のテキスト全文に載っていなくても、生徒はすでに正確な定義を知っています。解説中でこれらの言葉が使える場面では、遠慮せずこの定義通りに名指しで使ってください。`
+                    : "";
+                activeSystemInstruction += `
 
 【直前に受けた授業からの継続問題】
 この問題は、直前に受けた授業「${linkedLessonTitle || "無題の授業"}」の続きとして生徒が解いている問題です。
@@ -1934,17 +2114,93 @@ thumbHtml = `<div class="row-thumb row-thumb-icon ${glowClass} tex2jax_process">
 【授業で読んだ参考書の全文】
 ${linkedLessonText}
 ${glossaryBlock}`;
-                }
+            }
 
-                // ✨ モデル×キーの二重フォールバックループは api-key-manager.js の callGeminiJSON に共通化済み
-                const aiResult = await callGeminiJSON(parts, activeSystemInstruction, { temperature: 0.3, responseSchema: SUBJECT_ANALYSIS_RESPONSE_SCHEMA, featureId: "subject_analysis" });
+            const aiResult = await callGeminiJSON(parts, activeSystemInstruction, { temperature: 0.3, responseSchema: SUBJECT_ANALYSIS_RESPONSE_SCHEMA, featureId: "subject_analysis" });
+            currentAiResult = aiResult;
 
+            // ステップ2のフォームにAI結果を反映
+            const subjSelect = document.getElementById("review-subject-select");
+            if (subjSelect) subjSelect.value = aiResult.subject || selectedSubject;
+            document.getElementById("review-field-input").value = aiResult.field || "";
+            document.getElementById("review-title-input").value = aiResult.short_title || "解析問題";
+            document.getElementById("review-text-input").value = aiResult.extracted_text || userRawText || "";
+            document.getElementById("review-answer-input").value = aiResult.model_answer || "";
+            document.getElementById("review-trap-input").value = aiResult.trap_description || "";
+            document.getElementById("review-strategy-input").value = aiResult.strategy_pattern || "";
+
+            // バナーをAI完了表示にする
+            const banner = document.getElementById("review-status-banner");
+            if (banner) {
+                banner.style.background = "rgba(5, 150, 105, 0.08)";
+                banner.style.borderColor = "rgba(5, 150, 105, 0.3)";
+            }
+            document.getElementById("review-banner-title").textContent = hint ? "✨ AIによる再解析が完了しました" : "✨ AI解析が完了しました";
+            document.getElementById("review-banner-desc").textContent = "読み取り内容をご確認ください。誤りがあれば各項目を手動で修正するか、さらに指示を添えて再解析できます。";
+
+            renderReviewPhotosStrip();
+            window.updateReviewMathPreview(true);
+
+            // 表示切り替え
+            document.getElementById("prob-modal-step-input").style.display = "none";
+            document.getElementById("prob-modal-step-review").style.display = "block";
+
+            return true;
+        }
+
+        // ✏️ 手動入力・登録モードの起動
+        function openManualEntryStep() {
+            const rawText = document.getElementById("problem-text-input").value.trim();
+            const subjSelect = document.getElementById("review-subject-select");
+            if (subjSelect) subjSelect.value = selectedSubject;
+            if (!document.getElementById("review-text-input").value || !currentAiResult) {
+                document.getElementById("review-text-input").value = rawText;
+                document.getElementById("review-title-input").value = rawText ? rawText.slice(0, 24) : `【${selectedSubject}】手動登録問題`;
+            }
+
+            const banner = document.getElementById("review-status-banner");
+            if (banner) {
+                banner.style.background = "rgba(59, 130, 246, 0.08)";
+                banner.style.borderColor = "rgba(59, 130, 246, 0.3)";
+            }
+            document.getElementById("review-banner-title").textContent = "✏️ 手動入力・編集モード";
+            document.getElementById("review-banner-desc").textContent = "問題文や模範解答を入力・編集して登録できます。写真が選択されている場合は写真も一緒に保存されます。";
+
+            renderReviewPhotosStrip();
+            window.updateReviewMathPreview(true);
+
+            document.getElementById("prob-modal-step-input").style.display = "none";
+            document.getElementById("prob-modal-step-review").style.display = "block";
+        }
+
+        // 💾 ステップ2からの問題保存処理
+        async function saveReviewedProblem() {
+            if (!currentUser) {
+                showToast("ログイン状態が確認できません。Google接続してください。", "error");
+                return;
+            }
+
+            const text = document.getElementById("review-text-input").value.trim();
+            const shortTitle = document.getElementById("review-title-input").value.trim() || "手動登録問題";
+            const subject = document.getElementById("review-subject-select").value || selectedSubject;
+            const field = document.getElementById("review-field-input").value.trim() || "演習問題";
+            const answer = document.getElementById("review-answer-input").value.trim() || "解説データなし";
+            const trap = document.getElementById("review-trap-input").value.trim();
+            const strategy = document.getElementById("review-strategy-input").value.trim();
+
+            if (!text && selectedImages.length === 0) {
+                showToast("問題文または写真のいずれかを入力してください。", "error");
+                return;
+            }
+
+            const saveBtn = document.getElementById("review-save-btn");
+            saveBtn.disabled = true;
+            saveBtn.textContent = "保存中...";
+
+            try {
                 const newId = "CUSTOM_" + Date.now();
                 const nowIso = new Date().toISOString();
 
-                // 🖼️【新設・パフォーマンス改善】フルサイズ画像は一覧取得の対象外である
-                // users/{uid}/problemImages/{id} に分離保存し、problems側には
-                // 一覧表示専用の極小サムネイル(thumb)だけを持たせる。
                 const fullImageDataUrls = selectedImages.map(img => img.dataUrl);
                 let thumbDataUrl = null;
                 if (fullImageDataUrls.length > 0) {
@@ -1952,26 +2208,26 @@ ${glossaryBlock}`;
                         thumbDataUrl = await generateTinyThumbnail(fullImageDataUrls[0]);
                     } catch (e) {
                         console.error("サムネイル生成に失敗、フル画像を暫定的に使用します:", e);
-                        thumbDataUrl = fullImageDataUrls[0]; // 失敗時のフォールバック（次回保存時に解消される想定）
+                        thumbDataUrl = fullImageDataUrls[0];
                     }
                 }
 
                 const newProblem = {
                     id: newId,
-                    title: aiResult.extracted_text || userRawText, 
-                    short_title: aiResult.short_title || "解析問題",
-                    subject: selectedSubject,
-                    field: aiResult.field || "手動管理",
-                    trap_description: aiResult.trap_description || "",
-                    strategyPattern: aiResult.strategy_pattern || "",
+                    title: text || shortTitle, 
+                    short_title: shortTitle,
+                    subject: subject,
+                    field: field,
+                    trap_description: trap,
+                    strategyPattern: strategy,
                     errorCount: 1,
                     lastAttemptAt: nowIso,
                     lastResult: false,
                     thumb: thumbDataUrl,
                     imageCount: fullImageDataUrls.length,
-                    answerFormula: aiResult.model_answer || "解説データなし",
-                    mnemonic: aiResult.mnemonic || "",
-                    events: Array.isArray(aiResult.events) ? aiResult.events : [],
+                    answerFormula: answer,
+                    mnemonic: (currentAiResult && currentAiResult.mnemonic) || "",
+                    events: (currentAiResult && Array.isArray(currentAiResult.events)) ? currentAiResult.events : [],
                     createdAt: nowIso,
                     ...(linkedLessonId ? {
                         sourceLessonId: linkedLessonId,
@@ -1985,23 +2241,36 @@ ${glossaryBlock}`;
                 if (fullImageDataUrls.length > 0) {
                     await set(ref(database, 'users/' + currentUser.uid + '/problemImages/' + newId), { images: fullImageDataUrls });
                 }
+
                 closeModalAndReset();
+                showToast("🎉 誤答ノートに問題を登録しました！", "success", 3500);
 
             } catch (error) {
-                console.error("AI解析エラー発生:", error);
-                showToast("AI自動解析に失敗しました！\n\n【原因】" + error.message, "error", 8000);
+                console.error("問題保存エラー:", error);
+                showToast("問題の保存に失敗しました: " + error.message, "error", 6000);
             } finally {
-                submitBtn.textContent = "AI自動解析を実行";
-                submitBtn.disabled = false;
+                saveBtn.disabled = false;
+                saveBtn.textContent = "💾 この内容で誤答ノートに登録";
             }
         }
 
         function closeModalAndReset() {
             document.getElementById("add-problem-modal").style.display = "none";
+            document.getElementById("prob-modal-step-input").style.display = "block";
+            document.getElementById("prob-modal-step-review").style.display = "none";
             document.getElementById("problem-text-input").value = "";
             document.getElementById("problem-image-input").value = "";
+            document.getElementById("reanalyze-hint-input").value = "";
+            document.getElementById("review-title-input").value = "";
+            document.getElementById("review-field-input").value = "";
+            document.getElementById("review-text-input").value = "";
+            document.getElementById("review-answer-input").value = "";
+            document.getElementById("review-trap-input").value = "";
+            document.getElementById("review-strategy-input").value = "";
+            currentAiResult = null;
             selectedImages = [];
             renderImagePreviews();
+            renderReviewPhotosStrip();
             
             const preview = document.getElementById("math-preview");
             if (window.MathJax && window.MathJax.typesetClear) {
@@ -2017,7 +2286,6 @@ ${glossaryBlock}`;
             linkedLessonKeyTerms = null;
             const badge = document.getElementById("linked-lesson-badge");
             if (badge) badge.style.display = "none";
-            // URLの?fromLessonを消して、再度開いた時に誤って再リンクされないようにする
             if (window.location.search.includes("fromLesson")) {
                 window.history.replaceState({}, "", window.location.pathname);
             }
@@ -2037,6 +2305,97 @@ ${glossaryBlock}`;
 
         if (textInput) {
             textInput.addEventListener('input', () => { window.updateMathPreview(false); });
+        }
+
+        // 手動入力ステップへ直接遷移するボタン
+        const manualEntryStepBtn = document.getElementById("manual-entry-step-btn");
+        if (manualEntryStepBtn) {
+            manualEntryStepBtn.addEventListener("click", () => {
+                openManualEntryStep();
+            });
+        }
+
+        // ステップ2: 戻るボタン
+        const reviewBackBtn = document.getElementById("review-back-btn");
+        if (reviewBackBtn) {
+            reviewBackBtn.addEventListener("click", () => {
+                document.getElementById("prob-modal-step-review").style.display = "none";
+                document.getElementById("prob-modal-step-input").style.display = "block";
+            });
+        }
+
+        // ステップ2: 保存ボタン
+        const reviewSaveBtn = document.getElementById("review-save-btn");
+        if (reviewSaveBtn) {
+            reviewSaveBtn.addEventListener("click", () => {
+                saveReviewedProblem();
+            });
+        }
+
+        // ステップ2: 🔄 もう一度問題を解析する（再解析）
+        const reanalyzeRunBtn = document.getElementById("reanalyze-run-btn");
+        if (reanalyzeRunBtn) {
+            reanalyzeRunBtn.addEventListener("click", async () => {
+                const hint = document.getElementById("reanalyze-hint-input").value.trim();
+                const currentDraftText = document.getElementById("review-text-input").value.trim();
+                const memoText = document.getElementById("problem-text-input").value.trim();
+                const textForAnalysis = currentDraftText || memoText;
+
+                reanalyzeRunBtn.disabled = true;
+                reanalyzeRunBtn.textContent = "🔄 再解析中...";
+
+                try {
+                    const success = await runProblemAiAnalysis(textForAnalysis, hint);
+                    if (success) {
+                        showToast("✨ 問題を再解析しました！結果を確認してください。", "success", 3500);
+                    }
+                } catch (error) {
+                    console.error("再解析エラー:", error);
+                    showToast("再解析に失敗しました: " + error.message, "error", 6000);
+                } finally {
+                    reanalyzeRunBtn.disabled = false;
+                    reanalyzeRunBtn.textContent = "🔄 再解析を実行";
+                }
+            });
+        }
+
+        // ステップ2: 手動編集時のリアルタイム数式プレビュー
+        const reviewTextInput = document.getElementById("review-text-input");
+        if (reviewTextInput) {
+            reviewTextInput.addEventListener("input", () => {
+                window.updateReviewMathPreview(false);
+            });
+        }
+        const reviewAnswerInput = document.getElementById("review-answer-input");
+        if (reviewAnswerInput) {
+            reviewAnswerInput.addEventListener("input", () => {
+                window.updateReviewMathPreview(false);
+            });
+        }
+
+        // 初回AI自動解析実行ボタン
+        if (submitBtn) {
+            submitBtn.addEventListener("click", async () => {
+                const userRawText = document.getElementById("problem-text-input").value.trim();
+                if (!userRawText && selectedImages.length === 0) {
+                    showToast("問題文を入力するか、問題の写真を最低1枚追加してください。", "error");
+                    return;
+                }
+                submitBtn.textContent = "Gemini Visionが画像を分析中...";
+                submitBtn.disabled = true;
+                try {
+                    const ok = await runProblemAiAnalysis(userRawText);
+                    if (ok) {
+                        showToast("✨ AI解析が完了しました。内容を確認・編集できます。", "success", 3000);
+                    }
+                } catch (error) {
+                    console.error("AI解析エラー発生:", error);
+                    showToast("AI自動解析に失敗しました！\n\n【原因】" + error.message, "error", 8000);
+                } finally {
+                    submitBtn.textContent = "🤖 AI自動解析を実行";
+                    submitBtn.disabled = false;
+                }
+            });
         }
 
         if (clearKeysBtn) {
