@@ -103,18 +103,49 @@
         .roadmap-arrow { color: var(--text-muted); font-size: 0.65rem; flex-shrink: 0; }
 
         /* 📚 授業一覧ツールバー */
-        .lesson-list-toolbar { display: flex; gap: 0.6rem; margin-bottom: 1rem; flex-wrap: wrap; align-items: center; }
-        .lesson-search-input {
-            flex: 1;
-            min-width: 180px;
+        .lesson-list-toolbar {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
             background: var(--bg-surface);
             border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 0.9rem 1.15rem;
+            box-shadow: var(--shadow-xs);
+        }
+        .lesson-toolbar-top-row {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .lesson-search-input {
+            flex: 1;
+            min-width: 220px;
+            height: 36px;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
             color: var(--text-primary);
-            padding: 0.55rem 0.9rem;
+            padding: 0 0.85rem;
             border-radius: var(--radius-md);
             font-size: var(--fs-sm);
+            box-sizing: border-box;
         }
-        .lesson-subject-chips { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+        .lesson-sort-control {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            flex-shrink: 0;
+        }
+        .lesson-subject-chips {
+            display: flex;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+            align-items: center;
+            padding-top: 0.35rem;
+            border-top: 1px dashed var(--border-subtle);
+        }
         .lesson-subject-chip {
             font-size: 0.76rem;
             font-weight: 700;
@@ -206,9 +237,35 @@
             pointer-events: none;
         }
         .lesson-grid-card-top { display: flex; justify-content: space-between; align-items: center; gap: 0.4rem; }
-        .lesson-grid-card-title { font-weight: 700; font-size: 0.95rem; line-height: 1.35; color: var(--text-primary); }
-        .lesson-grid-card-meta { font-size: 0.74rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; }
-        .lesson-grid-card-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 0.3rem; border-top: 1px solid var(--border-subtle); padding-top: 0.5rem; gap: 0.5rem; }
+        .lesson-grid-card-title {
+            font-weight: 700;
+            font-size: 0.95rem;
+            line-height: 1.4;
+            color: var(--text-primary);
+            min-height: 2.7rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .lesson-grid-card-meta {
+            font-size: 0.74rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            flex-wrap: wrap;
+            min-height: 22px;
+        }
+        .lesson-grid-card-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: auto;
+            border-top: 1px solid var(--border-subtle);
+            padding-top: 0.55rem;
+            gap: 0.5rem;
+        }
         .lesson-grid-card-delete {
             background: transparent; color: var(--error); border: 1px solid #FECACA;
             padding: 0.25rem 0.55rem; font-size: var(--fs-xs); border-radius: var(--radius-sm); cursor: pointer;
@@ -730,16 +787,16 @@
         /* 💻 PC用 2カラムGrid構成（画面全体を有効活用し、左右の無駄な余白を排除） */
         .lesson-layout-grid {
             display: grid;
-            grid-template-columns: minmax(0, 1fr) 360px;
+            grid-template-columns: minmax(0, 1fr) 380px;
             gap: 1.25rem;
             align-items: stretch;
-            height: calc(100vh - 110px);
-            min-height: 520px;
+            height: calc(100vh - 195px);
+            min-height: 540px;
             width: 100%;
         }
         @media (min-width: 1600px) {
             .lesson-layout-grid {
-                grid-template-columns: minmax(0, 1fr) 400px;
+                grid-template-columns: minmax(0, 1fr) 420px;
             }
         }
         @media (max-width: 1100px) {
@@ -753,7 +810,7 @@
             background: var(--bg-surface);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-lg);
-            padding: 1.1rem 1.35rem;
+            padding: 1.1rem 1.25rem;
             box-shadow: var(--shadow-sm);
             display: flex;
             flex-direction: column;
@@ -761,11 +818,21 @@
             min-width: 0;
             overflow: hidden;
         }
+        .lesson-main-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.55rem;
+            margin-bottom: 0.75rem;
+            min-height: 38px;
+            gap: 0.5rem;
+        }
         .lesson-sidebar-card {
             background: var(--bg-surface);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-lg);
-            padding: 1rem 1.15rem;
+            padding: 1.1rem 1.25rem;
             box-shadow: var(--shadow-sm);
             display: flex;
             flex-direction: column;
@@ -1334,6 +1401,8 @@
             border-bottom: 1px solid var(--border-color);
             padding-bottom: 0.55rem;
             margin-bottom: 0.75rem;
+            min-height: 38px;
+            align-items: center;
         }
         .sidebar-tab-btn {
             text-align: center;
@@ -1609,8 +1678,8 @@
             color: #cccccc;
             border: 1px solid #3c3c3c;
             border-radius: 10px;
-            height: calc(100vh - 165px);
-            min-height: 640px;
+            height: calc(100vh - 195px);
+            min-height: 540px;
             box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
             overflow: hidden;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -2807,21 +2876,23 @@
                     <div id="lesson-list-wrap" style="margin-top: 1.5rem;">
                         <div style="font-family: var(--font-heading); font-weight:700; font-size:1.05rem; margin-bottom: 0.8rem;">📚 過去の授業一覧</div>
                         <div class="lesson-list-toolbar">
-                            <input type="text" class="lesson-search-input" id="lesson-search-input" placeholder="🔍 授業名で検索...">
-                            <div class="lesson-sort-control" style="display:inline-flex; align-items:center; gap:0.4rem;">
-                                <label for="lesson-sort-select" style="font-size:0.75rem; color:var(--text-secondary); white-space:nowrap; font-weight:600;">並び順:</label>
-                                <select id="lesson-sort-select" class="flora-select" style="font-size:0.75rem; padding:0.4rem 0.65rem; height:auto; width:auto; border-radius:var(--radius-md); background:var(--bg-surface); border:1px solid var(--border-color); color:var(--text-primary); cursor:pointer;">
-                                    <option value="custom">📌 自由並べ替え（ドラッグ＆ボタン）</option>
-                                    <option value="created_asc">📅 受講日（古い順・カリキュラム順）</option>
-                                    <option value="created_desc">📅 受講日（新しい順）</option>
-                                    <option value="updated_desc">⚡ 最終更新日順</option>
-                                    <option value="title_asc">🔤 授業タイトル順</option>
-                                </select>
+                            <div class="lesson-toolbar-top-row">
+                                <input type="text" class="lesson-search-input" id="lesson-search-input" placeholder="🔍 授業名で検索...">
+                                <div class="lesson-sort-control">
+                                    <label for="lesson-sort-select" style="font-size:0.75rem; color:var(--text-secondary); white-space:nowrap; font-weight:600;">並び順:</label>
+                                    <select id="lesson-sort-select" class="flora-select" style="font-size:0.75rem; padding:0.4rem 0.65rem; height:36px; width:auto; border-radius:var(--radius-md); background:var(--bg-surface); border:1px solid var(--border-color); color:var(--text-primary); cursor:pointer;">
+                                        <option value="custom">📌 自由並べ替え（ドラッグ＆ボタン）</option>
+                                        <option value="created_asc">📅 受講日（古い順・カリキュラム順）</option>
+                                        <option value="created_desc">📅 受講日（新しい順）</option>
+                                        <option value="updated_desc">⚡ 最終更新日順</option>
+                                        <option value="title_asc">🔤 授業タイトル順</option>
+                                    </select>
+                                </div>
+                                <button type="button" class="tactile-btn" id="btn-autofix-lesson-subjects" style="font-size:0.75rem; font-weight:700; padding:0.4rem 0.85rem; height:36px; background:var(--brand-light); color:var(--brand-primary); border:1px solid var(--brand-border); border-radius:var(--radius-full); white-space:nowrap; display:inline-flex; align-items:center; gap:0.35rem; cursor:pointer;" title="「その他」や「未分類」の授業のタイトル・内容を自動判定し、政経・化学などの適切な教科へ一括で分類し直します（暗記カードも同期）">
+                                    ⚡ 過去の授業の教科を一括自動判別
+                                </button>
                             </div>
                             <div class="lesson-subject-chips" id="lesson-subject-chips"></div>
-                            <button type="button" class="tactile-btn" id="btn-autofix-lesson-subjects" style="font-size:0.75rem; font-weight:700; padding:0.4rem 0.85rem; background:var(--brand-light); color:var(--brand-primary); border:1px solid var(--brand-border); border-radius:var(--radius-full); white-space:nowrap; display:inline-flex; align-items:center; gap:0.35rem; cursor:pointer;" title="「その他」や「未分類」の授業のタイトル・内容を自動判定し、政経・化学などの適切な教科へ一括で分類し直します（暗記カードも同期）">
-                                ⚡ 過去の授業の教科を一括自動判別
-                            </button>
                         </div>
                         <div id="lesson-list"></div>
                         <div id="lesson-list-empty" style="color: var(--text-muted); font-size:0.85rem; display:none; text-align:center; padding: 2rem 0;">まだ授業履歴はありません。</div>
@@ -2868,11 +2939,19 @@
                         <div class="lesson-layout-grid">
                             <!-- 左メイン：授業チャット -->
                             <div class="lesson-main-card">
-                                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 0.6rem; flex-wrap: wrap; gap: 0.4rem;">
-                                    <div style="display: flex; align-items: center; gap: 0.45rem; min-width: 0; flex-wrap: wrap;">
-                                        <span id="lesson-title-display" style="font-weight: 700; color: var(--text-primary); font-size: 0.98rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">---</span>
+                                <div class="lesson-main-card-header" id="lesson-main-card-header">
+                                    <div id="lesson-title-view-mode" style="display: flex; align-items: center; gap: 0.45rem; min-width: 0; flex: 1;">
+                                        <span id="lesson-title-display" style="font-weight: 700; color: var(--text-primary); font-size: 0.98rem; max-width: calc(100% - 240px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer;" title="クリックしてタイトルを変更">---</span>
+                                        <button type="button" id="lesson-title-edit-trigger-btn" class="lesson-order-btn" title="授業タイトルを変更" style="font-size: 0.72rem; padding: 0.15rem 0.55rem; height: 26px; min-width: auto; gap: 0.25rem; display: inline-flex; align-items: center; border-radius: var(--radius-full);">
+                                            ✏️ <span style="font-size: 0.7rem; font-weight: 700;">変更</span>
+                                        </button>
                                         <button type="button" id="lesson-header-subject-btn" class="lesson-subject-badge-btn" title="教科を変更" style="cursor: pointer; display: none;"></button>
                                         <span id="lesson-style-display-badge" class="lesson-style-badge" style="font-size: 0.72rem; padding: 0.15rem 0.5rem;"></span>
+                                    </div>
+                                    <div id="lesson-title-edit-mode" style="display: none; align-items: center; gap: 0.35rem; flex: 1; min-width: 0;">
+                                        <input type="text" id="lesson-title-edit-input" class="flora-input" style="flex: 1; min-width: 140px; font-weight: 700; font-size: 0.9rem; padding: 0.25rem 0.6rem; height: 30px;" placeholder="授業タイトルを入力...">
+                                        <button type="button" id="lesson-title-save-btn" class="flora-btn flora-btn-primary btn-sm" style="padding: 0.2rem 0.65rem; height: 30px; font-size: 0.74rem; white-space: nowrap;">💾 保存</button>
+                                        <button type="button" id="lesson-title-cancel-btn" class="flora-btn flora-btn-ghost btn-sm" style="padding: 0.2rem 0.5rem; height: 30px; font-size: 0.74rem; white-space: nowrap;">✕</button>
                                     </div>
                                 </div>
 
@@ -5520,6 +5599,7 @@ ${subjectGuide}
                         <div class="lesson-reorder-group" style="display:flex; align-items:center; gap:0.25rem;">
                             <button type="button" class="lesson-order-btn" data-move-lesson="${l.id}" data-move-dir="-1" title="この授業を1つ前に移動" ${canMovePrev ? "" : "disabled"}>◀</button>
                             <button type="button" class="lesson-order-btn" data-move-lesson="${l.id}" data-move-dir="1" title="この授業を1つ後ろに移動" ${canMoveNext ? "" : "disabled"}>▶</button>
+                            <button type="button" class="lesson-order-btn" data-rename-lesson-id="${l.id}" title="授業タイトルを変更" style="font-size:0.7rem;">✏️</button>
                         </div>
                         <div style="display:flex; align-items:center; gap:0.4rem;">
                             ${levelUpBtnHtml || ""}
@@ -5745,6 +5825,15 @@ ${subjectGuide}
                 });
             });
 
+            listEl.querySelectorAll("[data-rename-lesson-id]").forEach(btn => {
+                btn.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    const lessonId = btn.getAttribute("data-rename-lesson-id");
+                    const lesson = (lastLessonsSnapshot || {})[lessonId];
+                    if (lesson) renameLessonById(lessonId, lesson.title);
+                });
+            });
+
             listEl.querySelectorAll("[data-change-subject-id]").forEach(btn => {
                 btn.addEventListener("click", (e) => {
                     e.stopPropagation();
@@ -5766,6 +5855,43 @@ ${subjectGuide}
                     deleteLesson(btn.getAttribute("data-delete-id"));
                 });
             });
+        }
+
+        // ==============================================================
+        // ✏️ 授業タイトルの変更（一覧カード・授業受講画面）
+        // ==============================================================
+        async function renameLessonById(lessonId, currentTitle) {
+            const initial = currentTitle || ((lastLessonsSnapshot || {})[lessonId] || {}).title || "";
+            const newTitle = prompt("新しい授業タイトルを入力してください:", initial);
+            if (newTitle === null) return;
+            const clean = newTitle.trim();
+            if (!clean) {
+                showToast("授業タイトルを入力してください。", "error");
+                return;
+            }
+            if (clean === initial) return;
+
+            try {
+                const nowIso = new Date().toISOString();
+                await update(ref(database, 'users/' + loginUid + '/lessons/' + lessonId), {
+                    title: clean,
+                    updatedAt: nowIso
+                });
+                if (lastLessonsSnapshot && lastLessonsSnapshot[lessonId]) {
+                    lastLessonsSnapshot[lessonId].title = clean;
+                    lastLessonsSnapshot[lessonId].updatedAt = nowIso;
+                }
+                if (currentLesson && currentLessonId === lessonId) {
+                    currentLesson.title = clean;
+                    currentLesson.updatedAt = nowIso;
+                    updateProgressStrip();
+                }
+                renderLessonList(lastLessonsSnapshot);
+                showToast(`✅ 授業タイトルを「${clean}」に変更しました！`, "success", 2500);
+            } catch (err) {
+                console.error("Failed to rename lesson:", err);
+                showToast("授業タイトルの変更に失敗しました: " + err.message, "error", 4000);
+            }
         }
 
         // ==============================================================
@@ -7324,7 +7450,16 @@ ${EXPERT_TEACHER_PROMPT}
         });
 
         function updateProgressStrip() {
-            el("lesson-title-display").textContent = `📘 ${currentLesson.title}`;
+            const titleText = currentLesson.title || "無題の授業";
+            const titleDisplay = el("lesson-title-display");
+            if (titleDisplay) {
+                titleDisplay.textContent = `📘 ${titleText}`;
+                titleDisplay.title = `クリックして授業タイトルを変更（現在: ${titleText}）`;
+            }
+            const titleInput = el("lesson-title-edit-input");
+            if (titleInput) {
+                titleInput.value = titleText;
+            }
             const subj = detectLessonSubject(currentLesson);
             const subjBtn = el("lesson-header-subject-btn");
             if (subjBtn) {
@@ -7349,6 +7484,105 @@ ${EXPERT_TEACHER_PROMPT}
             const total = currentLesson.parts.length;
             el("part-progress-display").textContent = `${currentLesson.currentPartIndex + 1}/${total}`;
             renderPartsTOC();
+        }
+
+        async function updateLessonTitle(newTitle) {
+            if (!currentLesson || !currentLessonId || !loginUid) return false;
+            const cleanTitle = (newTitle || "").trim();
+            if (!cleanTitle) {
+                showToast("授業タイトルを入力してください。", "error");
+                return false;
+            }
+
+            currentLesson.title = cleanTitle;
+            currentLesson.updatedAt = new Date().toISOString();
+
+            updateProgressStrip();
+
+            // VS Code モードのタイトルバー・パンくずも同期
+            if (el("vsc-titlebar-title-text")) {
+                const subj = detectLessonSubject(currentLesson);
+                const fileName = typeof getFileDisplayName === "function" ? getFileDisplayName(vscodeActiveFile) : "講義ノート";
+                el("vsc-titlebar-title-text").textContent = `flora-workspace > ${subj} > ${cleanTitle} > ${fileName}`;
+            }
+            if (el("vsc-crumb-lesson")) {
+                el("vsc-crumb-lesson").textContent = cleanTitle.slice(0, 18);
+            }
+
+            if (lastLessonsSnapshot && lastLessonsSnapshot[currentLessonId]) {
+                lastLessonsSnapshot[currentLessonId].title = cleanTitle;
+                lastLessonsSnapshot[currentLessonId].updatedAt = currentLesson.updatedAt;
+            }
+
+            try {
+                await saveLesson();
+                showToast(`✅ 授業タイトルを「${cleanTitle}」に変更しました`, "success", 2000);
+                return true;
+            } catch (err) {
+                console.error("Failed to update lesson title:", err);
+                showToast("授業タイトルの保存に失敗しました: " + err.message, "error", 4000);
+                return false;
+            }
+        }
+
+        let isLessonTitleEditorInited = false;
+        function initLessonTitleEditor() {
+            if (isLessonTitleEditorInited) return;
+            isLessonTitleEditorInited = true;
+
+            const viewMode = el("lesson-title-view-mode");
+            const editMode = el("lesson-title-edit-mode");
+            const titleDisplay = el("lesson-title-display");
+            const editTriggerBtn = el("lesson-title-edit-trigger-btn");
+            const input = el("lesson-title-edit-input");
+            const saveBtn = el("lesson-title-save-btn");
+            const cancelBtn = el("lesson-title-cancel-btn");
+
+            if (!viewMode || !editMode || !input) return;
+
+            function openEdit() {
+                if (!currentLesson) return;
+                viewMode.style.display = "none";
+                editMode.style.display = "flex";
+                input.value = currentLesson.title || "";
+                input.focus();
+                input.select();
+            }
+
+            function closeEdit() {
+                editMode.style.display = "none";
+                viewMode.style.display = "flex";
+            }
+
+            async function handleSave() {
+                const val = input.value.trim();
+                if (!val) {
+                    showToast("授業タイトルを入力してください。", "error");
+                    input.focus();
+                    return;
+                }
+                if (saveBtn) saveBtn.disabled = true;
+                const success = await updateLessonTitle(val);
+                if (saveBtn) saveBtn.disabled = false;
+                if (success) {
+                    closeEdit();
+                }
+            }
+
+            if (editTriggerBtn) editTriggerBtn.onclick = openEdit;
+            if (titleDisplay) titleDisplay.onclick = openEdit;
+            if (saveBtn) saveBtn.onclick = handleSave;
+            if (cancelBtn) cancelBtn.onclick = closeEdit;
+
+            input.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleSave();
+                } else if (e.key === "Escape") {
+                    e.preventDefault();
+                    closeEdit();
+                }
+            });
         }
 
         function updateCompletionUI() {
@@ -7630,7 +7864,15 @@ ${EXPERT_TEACHER_PROMPT}
                 el("vsc-crumb-subject").title = "クリックして教科を変更";
                 el("vsc-crumb-subject").onclick = () => openLessonSubjectChangeModal(currentLesson.id, currentLesson);
             }
-            if (el("vsc-crumb-lesson")) el("vsc-crumb-lesson").textContent = (currentLesson.title || "Lesson").slice(0, 18);
+            if (el("vsc-crumb-lesson")) {
+                el("vsc-crumb-lesson").textContent = (currentLesson.title || "Lesson").slice(0, 18);
+                el("vsc-crumb-lesson").style.cursor = "pointer";
+                el("vsc-crumb-lesson").title = "クリックして授業タイトルを変更";
+                el("vsc-crumb-lesson").onclick = () => {
+                    const newTitle = prompt("新しい授業タイトルを入力してください:", currentLesson.title || "");
+                    if (newTitle && newTitle.trim()) updateLessonTitle(newTitle.trim());
+                };
+            }
             if (el("vsc-crumb-file")) el("vsc-crumb-file").textContent = fileName;
         }
 
@@ -8410,6 +8652,7 @@ ${EXPERT_TEACHER_PROMPT}
             el("view-plan-preview").classList.add("hidden");
             el("view-lesson").classList.remove("hidden");
 
+            initLessonTitleEditor();
             updateProgressStrip();
             updateCompletionUI();
 
