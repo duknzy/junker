@@ -426,9 +426,12 @@
 
             <!-- 写真選択欄（写真モード時） -->
             <div id="field-photo-wrap" style="display:none; margin-bottom:0.75rem;">
-                <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">参考書の写真（1〜3枚推奨）</label>
+                <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">教科書・参考書の写真</label>
                 <input type="file" accept="image/*" multiple id="create-photo-input" class="m-input" style="padding:0.4rem;">
-                <div id="create-thumb-preview" style="display:flex; gap:0.4rem; overflow-x:auto; margin-top:0.4rem;"></div>
+                <div id="mobile-photo-order-guide" style="display:none; margin-top:0.4rem; font-size:0.7rem; color:var(--brand-primary); background:rgba(5,150,105,0.08); padding:0.35rem 0.5rem; border-radius:var(--radius-sm); line-height:1.4;">
+                    💡 <b>読む順番</b>：左から右へ「①→②…」の順に教科書の内容を繋げてAIが読みます。◀ ▶で並び替えできます。
+                </div>
+                <div id="create-thumb-preview" style="display:flex; gap:0.5rem; overflow-x:auto; margin-top:0.5rem; padding-bottom:0.3rem;"></div>
             </div>
 
             <!-- メモ・要望 -->
@@ -1397,13 +1400,63 @@
             document.getElementById("field-photo-wrap").style.display = "block";
         });
 
-        // 写真選択
+        // 写真選択 & 並び替え
+        function renderMobileThumbs() {
+            const previewEl = document.getElementById("create-thumb-preview");
+            const guideEl = document.getElementById("mobile-photo-order-guide");
+            if (!previewEl) return;
+            if (createSelectedImages.length === 0) {
+                previewEl.innerHTML = "";
+                if (guideEl) guideEl.style.display = "none";
+                return;
+            }
+            if (guideEl) guideEl.style.display = "block";
+
+            const CIRCLE_NUMS = ["①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧", "⑨", "⑩"];
+            previewEl.innerHTML = createSelectedImages.map((img, idx) => {
+                const num = CIRCLE_NUMS[idx] || `${idx + 1}`;
+                const isFirst = idx === 0;
+                const isLast = idx === createSelectedImages.length - 1;
+                return `
+                    <div style="flex-shrink:0; width:92px; background:var(--bg-surface); border:1px solid var(--border-color); border-radius:6px; padding:4px; display:flex; flex-direction:column; gap:3px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.65rem; font-weight:750; color:var(--brand-primary);">
+                            <span>${num} ${idx + 1}枚目</span>
+                            <button type="button" data-m-del="${idx}" style="border:none; background:none; color:var(--text-muted); cursor:pointer; padding:0 2px;">✕</button>
+                        </div>
+                        <img src="${img.dataUrl}" style="width:100%; height:60px; object-fit:contain; background:#1e293b; border-radius:4px;">
+                        <div style="display:flex; gap:2px; justify-content:space-between;">
+                            <button type="button" data-m-move="${idx}" data-m-dir="-1" ${isFirst ? "disabled" : ""} style="flex:1; padding:2px 0; font-size:0.65rem; background:var(--bg-subtle); border:1px solid var(--border-color); border-radius:3px; cursor:pointer;">◀</button>
+                            <button type="button" data-m-move="${idx}" data-m-dir="1" ${isLast ? "disabled" : ""} style="flex:1; padding:2px 0; font-size:0.65rem; background:var(--bg-subtle); border:1px solid var(--border-color); border-radius:3px; cursor:pointer;">▶</button>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+
+            previewEl.querySelectorAll("[data-m-del]").forEach(b => {
+                b.addEventListener("click", () => {
+                    const i = parseInt(b.getAttribute("data-m-del"), 10);
+                    createSelectedImages.splice(i, 1);
+                    renderMobileThumbs();
+                });
+            });
+            previewEl.querySelectorAll("[data-m-move]").forEach(b => {
+                b.addEventListener("click", () => {
+                    const i = parseInt(b.getAttribute("data-m-move"), 10);
+                    const dir = parseInt(b.getAttribute("data-m-dir"), 10);
+                    const target = i + dir;
+                    if (target >= 0 && target < createSelectedImages.length) {
+                        const tmp = createSelectedImages[i];
+                        createSelectedImages[i] = createSelectedImages[target];
+                        createSelectedImages[target] = tmp;
+                        renderMobileThumbs();
+                    }
+                });
+            });
+        }
+
         document.getElementById("create-photo-input")?.addEventListener("change", (e) => {
             const files = Array.from(e.target.files || []);
-            createSelectedImages = [];
-            const previewEl = document.getElementById("create-thumb-preview");
-            previewEl.innerHTML = "";
-
+            let loaded = 0;
             files.forEach(f => {
                 const reader = new FileReader();
                 reader.onload = (ev) => {
@@ -1413,10 +1466,14 @@
                         data: dataUrl.split(",")[1],
                         dataUrl
                     });
-                    previewEl.innerHTML += `<img src="${dataUrl}" style="height:60px; border-radius:6px; border:1px solid var(--border-color);">`;
+                    loaded++;
+                    if (loaded === files.length) {
+                        renderMobileThumbs();
+                    }
                 };
                 reader.readAsDataURL(f);
             });
+            e.target.value = "";
         });
 
         // 🚀 AI授業生成実行（AI3並列処理）
@@ -1533,7 +1590,12 @@
 
                 } else {
                     // 写真モード
-                    const photoPromptParts = [{ text: `【教科：${subject}】\n添付した参考書の写真を解析し、講義ノート全文と構成をJSONで作成してください。` }];
+                    const photoPromptParts = [{
+                        text: `【教科：${subject}】
+【🚨 添付写真のページ順序と連続性の厳守ルール】
+・添付された画像は、生徒が教科書のページ順・文章順に指定した【1枚目】から順に並んでいます（全${createSelectedImages.length}枚）。
+・写真1の末尾の文章は、写真2の冒頭へと続いています。写真の境界で段落や文が途切れていても、1つの連続した文章・ストーリーとして結合して正確にテキストを抽出し、講義ノート全文と構成をJSONで作成してください。`
+                    }];
                     createSelectedImages.forEach(img => {
                         photoPromptParts.push({ inlineData: { mimeType: img.mimeType, data: img.data } });
                     });

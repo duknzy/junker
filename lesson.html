@@ -275,6 +275,234 @@
         .file-drop-label:hover { border-color: var(--brand-primary); color: var(--brand-primary); background: var(--brand-light); }
         .thumb-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.6rem; }
         .thumb-row img { width: 64px; height: 64px; object-fit: cover; border-radius: var(--radius-sm); border: 1px solid var(--border-color); }
+
+        /* 📸 教科書写真の並び替えカード & トリミング */
+        .photo-sequence-guide {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(5, 150, 105, 0.08);
+            border: 1px solid var(--brand-border);
+            border-radius: var(--radius-md);
+            padding: 0.55rem 0.8rem;
+            font-size: 0.76rem;
+            color: var(--brand-primary);
+            font-weight: 600;
+            margin-top: 0.6rem;
+            line-height: 1.4;
+        }
+        .thumb-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 0.75rem;
+            margin-top: 0.6rem;
+        }
+        .photo-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 0.45rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+            position: relative;
+            box-shadow: var(--shadow-xs);
+            transition: transform 0.15s ease, border-color 0.15s ease;
+        }
+        .photo-card:hover { border-color: var(--brand-primary); }
+        .photo-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .photo-card-order-badge {
+            font-size: 0.72rem;
+            font-weight: 750;
+            color: #fff;
+            background: var(--brand-primary);
+            padding: 0.1rem 0.45rem;
+            border-radius: var(--radius-full);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.2rem;
+        }
+        .photo-card-delete-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.85rem;
+            padding: 0.1rem 0.25rem;
+            border-radius: var(--radius-sm);
+            line-height: 1;
+        }
+        .photo-card-delete-btn:hover { color: #ef4444; background: var(--bg-subtle); }
+        .photo-card-img-wrap {
+            position: relative;
+            width: 100%;
+            height: 110px;
+            background: var(--bg-subtle);
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--border-subtle);
+        }
+        .photo-card-img-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: #1e293b;
+        }
+        .photo-crop-badge {
+            position: absolute;
+            bottom: 4px;
+            right: 4px;
+            background: rgba(0, 0, 0, 0.75);
+            color: #34d399;
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 0.1rem 0.35rem;
+            border-radius: 4px;
+            backdrop-filter: blur(4px);
+        }
+        .photo-card-actions {
+            display: flex;
+            gap: 0.25rem;
+            align-items: center;
+        }
+        .photo-btn-nav {
+            flex: 0 0 28px;
+            height: 26px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            font-size: 0.75rem;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+        .photo-btn-nav:disabled { opacity: 0.35; cursor: not-allowed; }
+        .photo-btn-nav:not(:disabled):hover { background: var(--brand-light); border-color: var(--brand-primary); color: var(--brand-primary); }
+        .photo-btn-crop {
+            flex: 1;
+            height: 26px;
+            padding: 0 0.3rem;
+            font-size: 0.72rem;
+            font-weight: 700;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            color: var(--text-primary);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.2rem;
+            white-space: nowrap;
+        }
+        .photo-btn-crop:hover {
+            border-color: var(--brand-primary);
+            color: var(--brand-primary);
+            background: var(--brand-light);
+        }
+
+        /* ✂️ トリミングモーダル */
+        .crop-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.82);
+            backdrop-filter: blur(6px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            padding: 1rem;
+        }
+        .crop-modal-sheet {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            width: 100%;
+            max-width: 680px;
+            max-height: 92vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: var(--shadow-lg);
+        }
+        .crop-modal-header {
+            padding: 0.85rem 1.1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .crop-modal-body {
+            padding: 0.85rem 1.1rem;
+            overflow-y: auto;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .crop-stage-wrapper {
+            position: relative;
+            background: #0f172a;
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 320px;
+            max-height: 52vh;
+            user-select: none;
+            touch-action: none;
+        }
+        .crop-image-element {
+            max-width: 100%;
+            max-height: 52vh;
+            object-fit: contain;
+            display: block;
+            pointer-events: none;
+        }
+        .crop-box {
+            position: absolute;
+            border: 2px solid #10b981;
+            background: rgba(16, 185, 129, 0.15);
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.55);
+            cursor: move;
+            box-sizing: border-box;
+        }
+        .crop-handle {
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            background: #fff;
+            border: 2px solid #10b981;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        .crop-handle.tl { top: -7px; left: -7px; cursor: nwse-resize; }
+        .crop-handle.tr { top: -7px; right: -7px; cursor: nesw-resize; }
+        .crop-handle.bl { bottom: -7px; left: -7px; cursor: nesw-resize; }
+        .crop-handle.br { bottom: -7px; right: -7px; cursor: nwse-resize; }
+        .crop-handle.edge-t { top: -5px; left: 50%; transform: translateX(-50%); width: 24px; height: 8px; border-radius: 4px; cursor: ns-resize; }
+        .crop-handle.edge-b { bottom: -5px; left: 50%; transform: translateX(-50%); width: 24px; height: 8px; border-radius: 4px; cursor: ns-resize; }
+        .crop-handle.edge-l { left: -5px; top: 50%; transform: translateY(-50%); width: 8px; height: 24px; border-radius: 4px; cursor: ew-resize; }
+        .crop-handle.edge-r { right: -5px; top: 50%; transform: translateY(-50%); width: 8px; height: 24px; border-radius: 4px; cursor: ew-resize; }
+        .crop-modal-footer {
+            padding: 0.85rem 1.1rem;
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.6rem;
+            border-top: 1px solid var(--border-color);
+            background: var(--bg-subtle);
+        }
         .note-textarea {
             width: 100%; min-height: 70px; background: var(--bg-surface); border: 1px solid var(--border-color);
             color: var(--text-primary); padding: 0.75rem; border-radius: var(--radius-md); font-family: inherit; font-size: var(--fs-sm); resize: vertical; margin-top: 0.6rem;
@@ -2449,11 +2677,17 @@
 
                                 <div id="mode-group-photo">
                                     <label class="file-drop-label" id="file-drop-label" for="image-input">
-                                        📷 参考書のページ写真をアップロード（複数枚OK）
+                                        📷 教科書・参考書のページ写真をアップロード（複数枚OK）
                                     </label>
                                     <input type="file" id="image-input" accept="image/*" multiple style="display:none;">
-                                    <div class="thumb-row" id="thumb-row"></div>
-                                    <textarea class="note-textarea" id="note-input" placeholder="（任意）特にここが分からない、というメモがあれば入力してください"></textarea>
+
+                                    <div id="photo-sequence-guide" class="photo-sequence-guide" style="display:none;">
+                                        <span>💡 <b>読む順番ガイド</b>：左から右へ「① 1ページ目 → ② 2ページ目…」の順にAIが教科書の文章を繋げて読みます。<br>順序がズレている場合は「◀」「▶」で並び替え、ページの一部（段落や下半分など）だけを読ませたい場合は「✂️ 範囲指定」で切り抜けます。</span>
+                                    </div>
+
+                                    <div class="thumb-grid" id="thumb-grid"></div>
+                                    <div class="thumb-row" id="thumb-row" style="display:none;"></div>
+                                    <textarea class="note-textarea" id="note-input" placeholder="（任意）特にここが分からない、この小見出しを重点的に、などのメモがあれば入力してください"></textarea>
                                 </div>
 
                                 <div id="mode-group-topic" style="display:none;">
@@ -2897,6 +3131,50 @@
 
             </div>
         </main>
+    </div>
+
+    <!-- ✂️ 教科書写真トリミングモーダル -->
+    <div class="crop-modal-overlay" id="crop-modal" style="display:none;">
+        <div class="crop-modal-sheet">
+            <div class="crop-modal-header">
+                <div style="display:flex; align-items:center; gap:0.5rem;">
+                    <span style="font-weight:750; font-size:0.95rem; color:var(--text-primary);">✂️ 教科書の範囲指定・トリミング</span>
+                    <span id="crop-page-badge" class="photo-card-order-badge">① 1ページ目</span>
+                </div>
+                <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="close-crop-modal-btn" style="padding:0.2rem 0.5rem; font-size:0.8rem;">✕ 閉じる</button>
+            </div>
+            <div class="crop-modal-body">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.4rem;">
+                    <div style="font-size:0.75rem; color:var(--text-secondary);">
+                        💡 緑の枠をドラッグして、今回の授業で扱いたい文章・図表の範囲を自由に囲んでください。
+                    </div>
+                    <div style="display:flex; gap:0.3rem; flex-wrap:wrap;">
+                        <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="crop-preset-all" style="font-size:0.72rem; padding:0.2rem 0.5rem;">全体</button>
+                        <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="crop-preset-top" style="font-size:0.72rem; padding:0.2rem 0.5rem;">⬆ 上半分</button>
+                        <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="crop-preset-bottom" style="font-size:0.72rem; padding:0.2rem 0.5rem;">⬇ 下半分</button>
+                        <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="crop-preset-reset" style="font-size:0.72rem; padding:0.2rem 0.5rem; color:var(--text-muted);">↺ 元に戻す</button>
+                    </div>
+                </div>
+
+                <div class="crop-stage-wrapper" id="crop-stage-wrapper">
+                    <img id="crop-stage-image" class="crop-image-element" src="" alt="トリミング対象">
+                    <div class="crop-box" id="crop-box">
+                        <div class="crop-handle tl" data-handle="tl"></div>
+                        <div class="crop-handle tr" data-handle="tr"></div>
+                        <div class="crop-handle bl" data-handle="bl"></div>
+                        <div class="crop-handle br" data-handle="br"></div>
+                        <div class="crop-handle edge-t" data-handle="t"></div>
+                        <div class="crop-handle edge-b" data-handle="b"></div>
+                        <div class="crop-handle edge-l" data-handle="l"></div>
+                        <div class="crop-handle edge-r" data-handle="r"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="crop-modal-footer">
+                <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="cancel-crop-btn">キャンセル</button>
+                <button type="button" class="flora-btn flora-btn-primary btn-sm" id="apply-crop-btn" style="font-weight:750;">✂️ この範囲で決定する</button>
+            </div>
+        </div>
     </div>
 
     <!-- 設定モーダル -->
@@ -3846,23 +4124,333 @@
         });
 
         // --------------------------------------------------------------
-        // 画像アップロード
+        // 画像アップロード & 並び替え & トリミング
         // --------------------------------------------------------------
+        let currentCropIndex = -1;
+        let cropBox = { x: 5, y: 5, w: 90, h: 90 }; // パーセント 0〜100
+        let cropDragState = null;
+
         el("image-input").addEventListener("change", async (e) => {
             const files = Array.from(e.target.files || []);
             for (const file of files) {
                 try {
-                    selectedImages.push(await normalizeImageFile(file));
+                    const normalized = await normalizeImageFile(file);
+                    selectedImages.push({
+                        ...normalized,
+                        originalData: normalized.data,
+                        originalPreviewUrl: normalized.previewUrl,
+                        isCropped: false,
+                        cropBoxState: null
+                    });
                 } catch (err) {
                     showToast(err.message, "error");
                 }
             }
+            e.target.value = "";
             renderThumbs();
         });
 
         function renderThumbs() {
-            el("thumb-row").innerHTML = selectedImages.map(img => `<img src="${img.previewUrl}">`).join("");
+            const grid = el("thumb-grid");
+            const guide = el("photo-sequence-guide");
+            if (!grid) return;
+
+            if (selectedImages.length === 0) {
+                grid.innerHTML = "";
+                if (guide) guide.style.display = "none";
+                return;
+            }
+
+            if (guide) guide.style.display = "flex";
+
+            const CIRCLE_NUMS = ["①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧", "⑨", "⑩", "⑪", "⑫", "⑬", "⑭", "⑮", "⑯", "⑰", "⑱", "⑲", "⑳"];
+
+            grid.innerHTML = selectedImages.map((img, idx) => {
+                const numLabel = CIRCLE_NUMS[idx] || `${idx + 1}`;
+                const isFirst = idx === 0;
+                const isLast = idx === selectedImages.length - 1;
+                return `
+                    <div class="photo-card" data-photo-idx="${idx}">
+                        <div class="photo-card-header">
+                            <span class="photo-card-order-badge">${numLabel} ${idx + 1}ページ目</span>
+                            <button type="button" class="photo-card-delete-btn" data-delete-idx="${idx}" title="この写真を削除">✕</button>
+                        </div>
+                        <div class="photo-card-img-wrap" data-crop-idx="${idx}" style="cursor:pointer;" title="クリックして範囲指定・トリミング">
+                            <img src="${img.previewUrl}" alt="教科書ページ ${idx + 1}">
+                            ${img.isCropped ? '<span class="photo-crop-badge">✂️ 範囲指定済</span>' : ''}
+                        </div>
+                        <div class="photo-card-actions">
+                            <button type="button" class="photo-btn-nav" data-move-idx="${idx}" data-dir="-1" title="前へ移動" ${isFirst ? "disabled" : ""}>◀</button>
+                            <button type="button" class="photo-btn-crop" data-crop-idx="${idx}" title="文章や図表の範囲を切り抜く">✂️ 範囲指定</button>
+                            <button type="button" class="photo-btn-nav" data-move-idx="${idx}" data-dir="1" title="次へ移動" ${isLast ? "disabled" : ""}>▶</button>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+
+            // 削除ボタン
+            grid.querySelectorAll("[data-delete-idx]").forEach(btn => {
+                btn.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    const idx = parseInt(btn.getAttribute("data-delete-idx"), 10);
+                    selectedImages.splice(idx, 1);
+                    renderThumbs();
+                });
+            });
+
+            // 前後移動ボタン
+            grid.querySelectorAll("[data-move-idx]").forEach(btn => {
+                btn.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    const idx = parseInt(btn.getAttribute("data-move-idx"), 10);
+                    const dir = parseInt(btn.getAttribute("data-dir"), 10);
+                    const targetIdx = idx + dir;
+                    if (targetIdx >= 0 && targetIdx < selectedImages.length) {
+                        const temp = selectedImages[idx];
+                        selectedImages[idx] = selectedImages[targetIdx];
+                        selectedImages[targetIdx] = temp;
+                        renderThumbs();
+                    }
+                });
+            });
+
+            // トリミング起動
+            grid.querySelectorAll("[data-crop-idx]").forEach(elBtn => {
+                elBtn.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    const idx = parseInt(elBtn.getAttribute("data-crop-idx"), 10);
+                    openCropModal(idx);
+                });
+            });
         }
+
+        // ✂️ トリミングモーダル操作
+        function updateCropBoxDOM() {
+            const boxEl = el("crop-box");
+            if (!boxEl) return;
+            boxEl.style.left = `${cropBox.x}%`;
+            boxEl.style.top = `${cropBox.y}%`;
+            boxEl.style.width = `${cropBox.w}%`;
+            boxEl.style.height = `${cropBox.h}%`;
+        }
+
+        function openCropModal(idx) {
+            if (idx < 0 || idx >= selectedImages.length) return;
+            currentCropIndex = idx;
+            const img = selectedImages[idx];
+            const modal = el("crop-modal");
+            const stageImg = el("crop-stage-image");
+            const badge = el("crop-page-badge");
+
+            const CIRCLE_NUMS = ["①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧", "⑨", "⑩", "⑪", "⑫", "⑬", "⑭", "⑮", "⑯", "⑰", "⑱", "⑲", "⑳"];
+            if (badge) badge.textContent = `${CIRCLE_NUMS[idx] || (idx + 1)} ${idx + 1}ページ目`;
+
+            if (stageImg) {
+                stageImg.src = img.originalPreviewUrl || img.previewUrl;
+            }
+
+            if (img.cropBoxState) {
+                cropBox = { ...img.cropBoxState };
+            } else {
+                cropBox = { x: 5, y: 5, w: 90, h: 90 };
+            }
+            updateCropBoxDOM();
+
+            if (modal) modal.style.display = "flex";
+        }
+
+        function closeCropModal() {
+            const modal = el("crop-modal");
+            if (modal) modal.style.display = "none";
+            currentCropIndex = -1;
+            cropDragState = null;
+        }
+
+        function getStagePointerPos(e, stageWrapper) {
+            const rect = stageWrapper.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return {
+                px: ((clientX - rect.left) / rect.width) * 100,
+                py: ((clientY - rect.top) / rect.height) * 100,
+                clientX,
+                clientY
+            };
+        }
+
+        function initCropEvents() {
+            const stage = el("crop-stage-wrapper");
+            const box = el("crop-box");
+            if (!stage || !box) return;
+
+            // ハンドルのドラッグ
+            box.querySelectorAll(".crop-handle").forEach(handleEl => {
+                const startDrag = (e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    const handle = handleEl.getAttribute("data-handle");
+                    const pos = getStagePointerPos(e, stage);
+                    cropDragState = {
+                        mode: "handle",
+                        handle,
+                        startX: pos.clientX,
+                        startY: pos.clientY,
+                        stageWidth: stage.clientWidth,
+                        stageHeight: stage.clientHeight,
+                        box: { ...cropBox }
+                    };
+                };
+                handleEl.addEventListener("mousedown", startDrag);
+                handleEl.addEventListener("touchstart", startDrag, { passive: false });
+            });
+
+            // 枠のドラッグ移動
+            const startMove = (e) => {
+                if (e.target.classList.contains("crop-handle")) return;
+                e.stopPropagation();
+                e.preventDefault();
+                const pos = getStagePointerPos(e, stage);
+                cropDragState = {
+                    mode: "move",
+                    startX: pos.clientX,
+                    startY: pos.clientY,
+                    stageWidth: stage.clientWidth,
+                    stageHeight: stage.clientHeight,
+                    box: { ...cropBox }
+                };
+            };
+            box.addEventListener("mousedown", startMove);
+            box.addEventListener("touchstart", startMove, { passive: false });
+
+            // ポインタ追従
+            const onPointerMove = (e) => {
+                if (!cropDragState) return;
+                e.preventDefault();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                const dxPct = ((clientX - cropDragState.startX) / cropDragState.stageWidth) * 100;
+                const dyPct = ((clientY - cropDragState.startY) / cropDragState.stageHeight) * 100;
+
+                const b = cropDragState.box;
+                if (cropDragState.mode === "move") {
+                    let newX = Math.max(0, Math.min(100 - b.w, b.x + dxPct));
+                    let newY = Math.max(0, Math.min(100 - b.h, b.y + dyPct));
+                    cropBox.x = newX;
+                    cropBox.y = newY;
+                } else if (cropDragState.mode === "handle") {
+                    const h = cropDragState.handle;
+                    let nx = b.x;
+                    let ny = b.y;
+                    let nw = b.w;
+                    let nh = b.h;
+
+                    if (h.includes("l")) {
+                        const maxDx = b.w - 10;
+                        const actualDx = Math.min(maxDx, Math.max(-b.x, dxPct));
+                        nx = b.x + actualDx;
+                        nw = b.w - actualDx;
+                    }
+                    if (h.includes("r")) {
+                        nw = Math.max(10, Math.min(100 - b.x, b.w + dxPct));
+                    }
+                    if (h.includes("t")) {
+                        const maxDy = b.h - 10;
+                        const actualDy = Math.min(maxDy, Math.max(-b.y, dyPct));
+                        ny = b.y + actualDy;
+                        nh = b.h - actualDy;
+                    }
+                    if (h.includes("b")) {
+                        nh = Math.max(10, Math.min(100 - b.y, b.h + dyPct));
+                    }
+
+                    cropBox = { x: nx, y: ny, w: nw, h: nh };
+                }
+                updateCropBoxDOM();
+            };
+
+            const onPointerUp = () => {
+                cropDragState = null;
+            };
+
+            window.addEventListener("mousemove", onPointerMove);
+            window.addEventListener("touchmove", onPointerMove, { passive: false });
+            window.addEventListener("mouseup", onPointerUp);
+            window.addEventListener("touchend", onPointerUp);
+
+            // プリセット
+            el("crop-preset-all")?.addEventListener("click", () => {
+                cropBox = { x: 0, y: 0, w: 100, h: 100 };
+                updateCropBoxDOM();
+            });
+            el("crop-preset-top")?.addEventListener("click", () => {
+                cropBox = { x: 0, y: 0, w: 100, h: 50 };
+                updateCropBoxDOM();
+            });
+            el("crop-preset-bottom")?.addEventListener("click", () => {
+                cropBox = { x: 0, y: 50, w: 100, h: 50 };
+                updateCropBoxDOM();
+            });
+            el("crop-preset-reset")?.addEventListener("click", () => {
+                if (currentCropIndex >= 0 && selectedImages[currentCropIndex]) {
+                    const img = selectedImages[currentCropIndex];
+                    img.previewUrl = img.originalPreviewUrl || img.previewUrl;
+                    img.data = img.originalData || img.data;
+                    img.isCropped = false;
+                    img.cropBoxState = null;
+                    closeCropModal();
+                    renderThumbs();
+                    showToast("↺ 切り抜きを解除し、元の写真に戻しました", "info");
+                }
+            });
+
+            el("close-crop-modal-btn")?.addEventListener("click", closeCropModal);
+            el("cancel-crop-btn")?.addEventListener("click", closeCropModal);
+
+            // 確定ボタン
+            el("apply-crop-btn")?.addEventListener("click", async () => {
+                if (currentCropIndex < 0 || !selectedImages[currentCropIndex]) return;
+                const img = selectedImages[currentCropIndex];
+                const srcUrl = img.originalPreviewUrl || img.previewUrl;
+
+                try {
+                    const imageObj = new Image();
+                    await new Promise((res, rej) => {
+                        imageObj.onload = res;
+                        imageObj.onerror = rej;
+                        imageObj.src = srcUrl;
+                    });
+
+                    const nw = imageObj.naturalWidth;
+                    const nh = imageObj.naturalHeight;
+                    const sx = Math.round((cropBox.x / 100) * nw);
+                    const sy = Math.round((cropBox.y / 100) * nh);
+                    const sw = Math.round((cropBox.w / 100) * nw);
+                    const sh = Math.round((cropBox.h / 100) * nh);
+
+                    if (sw <= 0 || sh <= 0) throw new Error("無効な選択範囲です");
+
+                    const canvas = document.createElement("canvas");
+                    canvas.width = sw;
+                    canvas.height = sh;
+                    const ctx = canvas.getContext("2d");
+                    ctx.drawImage(imageObj, sx, sy, sw, sh, 0, 0, sw, sh);
+
+                    const croppedDataUrl = canvas.toDataURL(img.mimeType || "image/jpeg", 0.92);
+                    img.previewUrl = croppedDataUrl;
+                    img.data = croppedDataUrl.split(",")[1];
+                    img.isCropped = true;
+                    img.cropBoxState = { ...cropBox };
+
+                    closeCropModal();
+                    renderThumbs();
+                    showToast("✂️ 指定した範囲を切り抜きました（いつでも元に戻せます）", "success");
+                } catch (err) {
+                    console.error("クロップ失敗:", err);
+                    showToast("切り抜きに失敗しました: " + err.message, "error");
+                }
+            });
+        }
+        initCropEvents();
 
         el("chat-attach-btn").addEventListener("click", () => el("chat-image-input").click());
         el("chat-image-input").addEventListener("change", async (e) => {
@@ -4065,20 +4653,56 @@
                     // 📷 参考書写真モード
                     const noteText = el("note-input").value.trim();
 
+                    // 🔗 直前の授業（シリーズ前話）からの引き継ぎ情報を取得
+                    const continuationId = el("continuation-select") ? el("continuation-select").value : "";
+                    let continuationInfoText = "";
+                    let inheritedKeyTerms = [];
+                    if (continuationId && loginUid) {
+                        try {
+                            const prevSnap = await get(ref(database, 'users/' + loginUid + '/lessons/' + continuationId));
+                            const prevLesson = prevSnap.val();
+                            if (prevLesson) {
+                                inheritedKeyTerms = prevLesson.accumulatedKeyTerms || prevLesson.keyTerms || [];
+                                const partsOverview = (prevLesson.parts || []).map((p, idx) => `  ・第${idx + 1}回: ${p.title || "無題"} (${p.summary || ""})`).join("\n");
+                                const termsOverview = inheritedKeyTerms.slice(0, 15).map(t => t.name).join("、");
+                                continuationInfoText = `
+【🚨 最重要：直前の授業（シリーズ第1回/前講）からの引き継ぎ・コンテキスト】
+本授業は、以前の授業「${prevLesson.title || "無題の授業"}」の直後の続き（続編）です！
+・前回の授業でのパート構成と学習到達点:
+${partsOverview || "  （詳細なパート情報なし）"}
+${termsOverview ? `・前回までに習得済みの重要用語: ${termsOverview}` : ""}
+【授業設計の指示】
+1. 今回添付された教科書写真は、上記の直後に続く内容です。生徒は前回の内容を既に完全に理解している前提で構成してください。
+2. 前回の学習内容と重複する解説や導入は省略し、「前回は〜まで学習しました」とスムーズに接続した上で、今回の写真範囲から新しいパート構成（第1回〜）を設計してください。
+3. タイトルも「${prevLesson.title}」の続編であることがわかるように統一感を持たせてください（例: 「${prevLesson.title} (その2)」や後続の時代・単元名）。`;
+                            }
+                        } catch (e) {
+                            console.warn("⚠️ 引き継ぎ情報の事前取得に失敗しました:", e);
+                        }
+                    }
+
+                    // 📸 添付写真の順序と連続性の明示指示
+                    const photoOrderInstruction = `
+【🚨 添付写真のページ順序と連続性の厳守ルール】
+・添付された画像は、生徒が教科書のページ順・文章順に指定した【1枚目】から順に並んでいます（全${selectedImages.length}枚）。
+・写真1の末尾の文章は、写真2の冒頭へと続いています。写真の境界で段落や文が途切れていても、1つの連続した文章・ストーリーとして結合して正確にテキストを抽出し、授業プランを設計してください。
+・各写真でトリミング指定されている場合は、その切り抜かれた範囲の文章・図表に集中して授業を構成してください。`;
+
                     const PLAN_SYSTEM_INSTRUCTION = `${customPolicyPrompt}
 【対象教科：${selectedSubject}】
 ${subjectGuide}
 ${socraticAddon}
 
 今回はまだ授業本編ではなく、授業の準備をしてください。
-1. 添付された参考書ページの内容を正確に読み取り、全文を書き出すこと（数式は $ $ で囲むこと）。【厳守】要約・省略は絶対禁止。ページ数が多くても、最後のページの内容まで一字一句省略せず全文を書き出すこと。
+1. 添付された参考書・教科書ページの内容を正確に読み取り、全文を書き出すこと（数式は $ $ で囲むこと）。【厳守】要約・省略は絶対禁止。ページ数が多くても、最後のページの内容まで一字一句省略せず全文を書き出すこと。
 2. 内容量を踏まえて、区切りの良い単位で「大まかな授業プラン」を作成すること（目安は2〜6パート程度）
 3. この範囲の中で、参考書オリジナルの名前がついた法則・定理・原則・手順があれば抽出すること
 4. 歴史科目または年号を伴う内容の場合、出来事をhistorical_eventsとして抽出すること
 
 出力は必ず指定のJSON形式のみで返してください。`;
 
-                    let promptText = `【教科：${selectedSubject}】\n添付した参考書のページを解析し、指定のJSONで授業プランを作成してください。`;
+                    let promptText = `【教科：${selectedSubject}】\n添付した参考書・教科書のページを解析し、指定のJSONで授業プランを作成してください。\n${photoOrderInstruction}`;
+                    if (continuationInfoText) promptText += `\n\n${continuationInfoText}`;
                     if (noteText) promptText += `\n\n【生徒からのメモ】\n${noteText}`;
 
                     const parts = [{ text: promptText }];
@@ -4090,6 +4714,7 @@ ${socraticAddon}
                     draftPlan.subject = selectedSubject;
                     draftPlan.sourceMode = "photo";
                     draftPlan.teachingStyle = selectedTeachingStyle;
+                    if (continuationId) draftPlan.continuationId = continuationId;
 
                 } else {
                     // ⚡ 単元名モード：複数GeminiキーによるマルチAI並列生成！
