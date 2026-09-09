@@ -2965,6 +2965,9 @@
                                     <div id="level-up-cta-wrap" style="margin-top:0.6rem; display:none;">
                                         <button type="button" class="flora-btn flora-btn-primary btn-sm" id="level-up-cta-btn"></button>
                                     </div>
+                                    <div id="continuation-cta-wrap" style="margin-top:0.6rem; display:none;">
+                                        <button type="button" class="flora-btn flora-btn-primary btn-sm" id="continuation-cta-btn" style="background:var(--brand-primary); color:#fff; font-weight:700;">🔗 この授業の続き（次の時代・単元）を作成する</button>
+                                    </div>
                                 </div>
 
                                 <div class="chat-input-wrap" id="chat-input-wrap">
@@ -3662,6 +3665,9 @@
                         inputEl.placeholder = `例：${examples[selectedSubject]}`;
                     }
                     updateTopicSubjectUI();
+                    if (typeof renderContinuationOptions === "function" && lastLessonsSnapshot) {
+                        renderContinuationOptions(lastLessonsSnapshot);
+                    }
                 };
             });
 
@@ -4894,37 +4900,41 @@
             const subjectGuide = SUBJECT_PROMPT_GUIDES[selectedSubject] || "";
 
             try {
-                if (creationMode === "photo") {
-                    // 📷 参考書写真モード
-                    const noteText = el("note-input").value.trim();
-
-                    // 🔗 直前の授業（シリーズ前話）からの引き継ぎ情報を取得
-                    const continuationId = el("continuation-select") ? el("continuation-select").value : "";
-                    let continuationInfoText = "";
-                    let inheritedKeyTerms = [];
-                    if (continuationId && loginUid) {
-                        try {
-                            const prevSnap = await get(ref(database, 'users/' + loginUid + '/lessons/' + continuationId));
-                            const prevLesson = prevSnap.val();
-                            if (prevLesson) {
-                                inheritedKeyTerms = prevLesson.accumulatedKeyTerms || prevLesson.keyTerms || [];
-                                const partsOverview = (prevLesson.parts || []).map((p, idx) => `  ・第${idx + 1}回: ${p.title || "無題"} (${p.summary || ""})`).join("\n");
-                                const termsOverview = inheritedKeyTerms.slice(0, 15).map(t => t.name).join("、");
-                                continuationInfoText = `
-【🚨 最重要：直前の授業（シリーズ第1回/前講）からの引き継ぎ・コンテキスト】
-本授業は、以前の授業「${prevLesson.title || "無題の授業"}」の直後の続き（続編）です！
+                // 🔗 直前の授業（シリーズ前話）からの引き継ぎ情報を取得（写真モード・単元名モード共通！）
+                const continuationId = el("continuation-select") ? el("continuation-select").value : "";
+                let continuationInfoText = "";
+                let inheritedKeyTerms = [];
+                let prevLessonData = null;
+                if (continuationId && loginUid) {
+                    try {
+                        const prevSnap = await get(ref(database, 'users/' + loginUid + '/lessons/' + continuationId));
+                        prevLessonData = prevSnap.val();
+                        if (prevLessonData) {
+                            inheritedKeyTerms = prevLessonData.accumulatedKeyTerms || prevLessonData.keyTerms || [];
+                            const partsOverview = (prevLessonData.parts || []).map((p, idx) => `  ・第${idx + 1}回: ${p.title || "無題"} (${p.summary || ""})`).join("\n");
+                            const termsOverview = inheritedKeyTerms.slice(0, 15).map(t => t.name).join("、");
+                            const eventsOverview = (prevLessonData.historicalEvents || []).slice(-6).map(ev => `  ・${ev.year || ""} ${ev.name || ""}`).join("\n");
+                            continuationInfoText = `
+【🚨 最重要：直前の授業（シリーズ前講）からの引き継ぎ・コンテキスト】
+本授業は、以前の授業「${prevLessonData.title || "無題の授業"}」の直後の続き（続編）です！
 ・前回の授業でのパート構成と学習到達点:
 ${partsOverview || "  （詳細なパート情報なし）"}
 ${termsOverview ? `・前回までに習得済みの重要用語: ${termsOverview}` : ""}
+${eventsOverview ? `・前回までに到達した主な歴史イベント・年号:\n${eventsOverview}` : ""}
 【授業設計の指示】
-1. 今回添付された教科書写真は、上記の直後に続く内容です。生徒は前回の内容を既に完全に理解している前提で構成してください。
-2. 前回の学習内容と重複する解説や導入は省略し、「前回は〜まで学習しました」とスムーズに接続した上で、今回の写真範囲から新しいパート構成（第1回〜）を設計してください。
-3. タイトルも「${prevLesson.title}」の続編であることがわかるように統一感を持たせてください（例: 「${prevLesson.title} (その2)」や後続の時代・単元名）。`;
-                            }
-                        } catch (e) {
-                            console.warn("⚠️ 引き継ぎ情報の事前取得に失敗しました:", e);
+1. 生徒は前回の内容（${prevLessonData.title}）を既に完全に理解・習得している前提で構成してください。
+2. 前回の学習内容と重複する解説や導入は省略し、「前回は〜まで学習しました」とスムーズに接続した上で、直後に続く後続の時代・単元展開から新しいパート構成を設計してください。
+3. タイトルも「${prevLessonData.title}」の続編であることがわかるように統一感を持たせてください（例: 「${prevLessonData.title} (その2)」や後続の時代・単元名）。
+4. 歴史イベント（historical_events）は、前回の到達年号以降の新しい出来事を抽出してください。`;
                         }
+                    } catch (e) {
+                        console.warn("⚠️ 引き継ぎ情報の事前取得に失敗しました:", e);
                     }
+                }
+
+                if (creationMode === "photo") {
+                    // 📷 参考書写真モード
+                    const noteText = el("note-input").value.trim();
 
                     // 📸 添付写真の順序と連続性の明示指示
                     const photoOrderInstruction = `
@@ -5083,6 +5093,7 @@ ${subjectGuide}
                         basePrompt += `\n【段階ステップ型の特別指示】指定された「${levelText}」に最適化し、ステップ・バイ・ステップで厳密かつ明快に解説してください。`;
                     }
                     if (topicNoteText) basePrompt += `\n【生徒からの要望】${topicNoteText}`;
+                    if (continuationInfoText) basePrompt += `\n\n${continuationInfoText}`;
                     if (pendingLevelUp) {
                         basePrompt += `\n\n【レベルアップ授業】前回レベル（${pendingLevelUp.fromLevel}）ノート:\n${pendingLevelUp.fromNote || ""}`;
                     }
@@ -5106,6 +5117,7 @@ ${subjectGuide}
                         topicKey: topicText,
                         level: levelText
                     };
+                    if (continuationId) draftPlan.continuationId = continuationId;
                 }
 
                 renderPlanPreview();
@@ -5353,8 +5365,9 @@ ${subjectGuide}
             btn.textContent = "⚙️ 準備中...";
             btn.disabled = true;
             try {
-                const continuationId = el("continuation-select") ? el("continuation-select").value : "";
+                const continuationId = draftPlan.continuationId || (el("continuation-select") ? el("continuation-select").value : "");
                 let inheritedKeyTerms = [];
+                let inheritedHistoricalEvents = [];
                 let previousLessonTitle = null;
                 if (continuationId) {
                     try {
@@ -5362,10 +5375,11 @@ ${subjectGuide}
                         const prevLesson = prevSnap.val();
                         if (prevLesson) {
                             inheritedKeyTerms = prevLesson.accumulatedKeyTerms || prevLesson.keyTerms || [];
+                            inheritedHistoricalEvents = prevLesson.historicalEvents || [];
                             previousLessonTitle = prevLesson.title || "無題の授業";
                         }
                     } catch (e) {
-                        console.warn("⚠️ 続きの授業の用語集の読み込みに失敗しました:", e);
+                        console.warn("⚠️ 続きの授業の用語集・年表の読み込みに失敗しました:", e);
                     }
                 }
 
@@ -5375,6 +5389,21 @@ ${subjectGuide}
                     ...inheritedKeyTerms,
                     ...thisLessonKeyTerms.filter(t => t && t.name && !existingNames.has(t.name))
                 ];
+
+                // ⛩️ 日本史・世界史などの歴史イベント（年表）のマージ・重複排除・年代順ソート
+                const thisLessonHistoricalEvents = Array.isArray(draftPlan.historical_events) ? draftPlan.historical_events : [];
+                const seenEvents = new Set();
+                const mergedHistoricalEvents = [];
+                [...inheritedHistoricalEvents, ...thisLessonHistoricalEvents].forEach(ev => {
+                    if (ev && ev.name) {
+                        const k = `${(ev.year || '').trim()}___${(ev.name || '').trim()}`;
+                        if (!seenEvents.has(k)) {
+                            seenEvents.add(k);
+                            mergedHistoricalEvents.push(ev);
+                        }
+                    }
+                });
+                mergedHistoricalEvents.sort((a, b) => (a.year_sort || 0) - (b.year_sort || 0));
 
                 const newId = "LESSON_" + Date.now();
                 const now = new Date().toISOString();
@@ -5396,7 +5425,7 @@ ${subjectGuide}
                     keyTerms: thisLessonKeyTerms,
                     inheritedKeyTerms: inheritedKeyTerms,
                     accumulatedKeyTerms: mergedKeyTerms,
-                    historicalEvents: Array.isArray(draftPlan.historical_events) ? draftPlan.historical_events : [],
+                    historicalEvents: mergedHistoricalEvents,
                     ...(continuationId ? { previousLessonId: continuationId, previousLessonTitle } : {}),
                     ...(pendingSourceProblem ? { sourceProblemId: pendingSourceProblem.id, sourceProblemTitle: pendingSourceProblem.title } : {}),
                     ...(draftPlan.level ? { level: draftPlan.level, levelIndex } : {}),
@@ -5404,6 +5433,17 @@ ${subjectGuide}
                     ...(pendingLevelUp ? { levelUpFromLessonId: pendingLevelUp.fromLessonId } : {})
                 };
                 await set(ref(database, 'users/' + loginUid + '/lessons/' + newId), lessonObj);
+
+                if (continuationId) {
+                    try {
+                        await update(ref(database, 'users/' + loginUid + '/lessons/' + continuationId), {
+                            continuationToLessonId: newId,
+                            continuationToLessonTitle: draftPlan.lesson_title
+                        });
+                    } catch (e) {
+                        console.warn("⚠️ 続き元の授業へのリンク書き戻しに失敗しました:", e);
+                    }
+                }
 
                 if (pendingLevelUp && pendingLevelUp.fromLessonId) {
                     try {
@@ -5432,11 +5472,33 @@ ${subjectGuide}
         function renderContinuationOptions(lessonsObj) {
             const select = el("continuation-select");
             if (!select) return;
-            const lessons = Object.values(lessonsObj || {}).sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
-            const optionsHtml = lessons.map(l =>
-                `<option value="${l.id}">${(l.title || "無題の授業").replace(/</g, "&lt;")}</option>`
-            ).join("");
-            select.innerHTML = `<option value="">続きではない（新規シリーズとして開始）</option>${optionsHtml}`;
+            const currentVal = select.value;
+            const lessons = Object.values(lessonsObj || {}).sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0));
+            
+            const targetSubject = selectedSubject || "日本史";
+            const sameSubjectLessons = lessons.filter(l => detectLessonSubject(l) === targetSubject);
+            const otherLessons = lessons.filter(l => detectLessonSubject(l) !== targetSubject);
+
+            let html = `<option value="">続きではない（新規シリーズとして開始）</option>`;
+            if (sameSubjectLessons.length > 0) {
+                const icon = LESSON_SUBJECT_ICONS[targetSubject] || "📎";
+                html += `<optgroup label="${icon} 選択中（${targetSubject}）の授業から続きを選択">`;
+                html += sameSubjectLessons.map(l =>
+                    `<option value="${l.id}">${(l.title || "無題の授業").replace(/</g, "&lt;")}</option>`
+                ).join("");
+                html += `</optgroup>`;
+            }
+            if (otherLessons.length > 0) {
+                html += `<optgroup label="📚 他の教科の授業">`;
+                html += otherLessons.map(l =>
+                    `<option value="${l.id}">[${detectLessonSubject(l)}] ${(l.title || "無題の授業").replace(/</g, "&lt;")}</option>`
+                ).join("");
+                html += `</optgroup>`;
+            }
+            select.innerHTML = html;
+            if (currentVal && lessons.some(l => l.id === currentVal)) {
+                select.value = currentVal;
+            }
         }
 
         let lessonListSearchQuery = "";
@@ -5570,6 +5632,13 @@ ${subjectGuide}
                 ? `<button type="button" class="tactile-btn lesson-levelup-btn" data-levelup-id="${l.id}" style="font-size:0.68rem; padding:0.3rem 0.6rem; background:transparent; color:var(--accent-yellow); border:1px solid var(--accent-yellow); box-shadow:none;">🎓 ${nxt.replace(/（.*）/, "")}へ</button>`
                 : "";
 
+            const showContinuationBtn = done && !showLevelUpBtn && !l.continuationToLessonId;
+            const continuationBtnHtml = showContinuationBtn
+                ? `<button type="button" class="tactile-btn lesson-continue-new-btn" data-continue-lesson-id="${l.id}" style="font-size:0.68rem; padding:0.3rem 0.55rem; background:transparent; color:var(--brand-primary); border:1px solid var(--brand-border); box-shadow:none;" title="この授業の続き（次の時代・単元）を作成">🔗 続き</button>`
+                : (done && l.continuationToLessonId
+                    ? `<button type="button" class="tactile-btn lesson-continue-new-btn" data-goto-continuation-id="${l.continuationToLessonId}" style="font-size:0.68rem; padding:0.3rem 0.55rem; background:transparent; color:var(--text-secondary); border:1px solid var(--border-color); box-shadow:none;" title="続きの授業へジャンプ">▶ 続きへ</button>`
+                    : "");
+
             const levelBadgeText = trackInfo && trackInfo.current ? trackInfo.current.badge : (l.level ? `🎚️ ${l.level}` : "");
             const canMovePrev = typeof index === "number" && index > 0;
             const canMoveNext = typeof index === "number" && typeof totalInGroup === "number" && index < totalInGroup - 1;
@@ -5599,6 +5668,7 @@ ${subjectGuide}
                         </div>
                         <div style="display:flex; align-items:center; gap:0.4rem;">
                             ${levelUpBtnHtml || ""}
+                            ${continuationBtnHtml || ""}
                             <button type="button" class="lesson-grid-card-delete" data-delete-id="${l.id}" title="この授業を削除">🗑️</button>
                         </div>
                     </div>
@@ -5843,6 +5913,20 @@ ${subjectGuide}
                     e.stopPropagation();
                     const lesson = (lastLessonsSnapshot || {})[btn.getAttribute("data-levelup-id")];
                     if (lesson) startLevelUp(lesson);
+                });
+            });
+            listEl.querySelectorAll("[data-continue-lesson-id]").forEach(btn => {
+                btn.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    const lesson = (lastLessonsSnapshot || {})[btn.getAttribute("data-continue-lesson-id")];
+                    if (lesson) startContinuationLesson(lesson);
+                });
+            });
+            listEl.querySelectorAll("[data-goto-continuation-id]").forEach(btn => {
+                btn.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    const nextId = btn.getAttribute("data-goto-continuation-id");
+                    if (nextId) window.location.href = `lesson.html?id=${nextId}`;
                 });
             });
             listEl.querySelectorAll("[data-delete-id]").forEach(btn => {
@@ -7470,8 +7554,19 @@ ${EXPERT_TEACHER_PROMPT}
 
             const contBadge = el("continuation-source-badge");
             if (contBadge) {
-                if (currentLesson.previousLessonTitle) {
-                    contBadge.textContent = `🔗 続き元: ${currentLesson.previousLessonTitle}`;
+                let badgeHtml = "";
+                if (currentLesson.previousLessonTitle && currentLesson.previousLessonId) {
+                    badgeHtml += `<a href="lesson.html?id=${currentLesson.previousLessonId}" style="color:var(--brand-primary); text-decoration:underline; cursor:pointer;" title="前の授業に戻る">🔗 前講: ${currentLesson.previousLessonTitle.slice(0, 15)}...</a>`;
+                } else if (currentLesson.previousLessonTitle) {
+                    badgeHtml += `<span>🔗 続き元: ${currentLesson.previousLessonTitle.slice(0, 15)}...</span>`;
+                }
+                if (currentLesson.continuationToLessonId) {
+                    const toTitle = currentLesson.continuationToLessonTitle ? currentLesson.continuationToLessonTitle.slice(0, 15) + "..." : "次講";
+                    if (badgeHtml) badgeHtml += ` <span style="color:var(--text-muted);">|</span> `;
+                    badgeHtml += `<a href="lesson.html?id=${currentLesson.continuationToLessonId}" style="color:var(--accent-green); text-decoration:underline; cursor:pointer;" title="続きの授業に進む">▶ ${toTitle} ➔</a>`;
+                }
+                if (badgeHtml) {
+                    contBadge.innerHTML = badgeHtml;
                     contBadge.style.display = "inline";
                 } else {
                     contBadge.style.display = "none";
@@ -7598,6 +7693,28 @@ ${EXPERT_TEACHER_PROMPT}
                 ctaBtn.onclick = () => startLevelUp(currentLesson);
             } else {
                 ctaWrap.style.display = "none";
+            }
+
+            // 🔗 続きの授業（次の単元/時代）を作成するCTA
+            const contWrap = el("continuation-cta-wrap");
+            const contBtn = el("continuation-cta-btn");
+            if (contWrap && contBtn) {
+                if (isCompleted && !currentLesson.continuationToLessonId) {
+                    contWrap.style.display = "block";
+                    const isHistoryOrSingle = (detectLessonSubject(currentLesson) === "日本史" || detectLessonSubject(currentLesson) === "世界史" || getSubjectLearningTrack(detectLessonSubject(currentLesson)) === "single");
+                    contBtn.textContent = isHistoryOrSingle
+                        ? `🔗 この授業の続き（次の時代・単元）を作成する`
+                        : `🔗 この授業の続きを作成する`;
+                    contBtn.onclick = () => startContinuationLesson(currentLesson);
+                } else if (isCompleted && currentLesson.continuationToLessonId) {
+                    contWrap.style.display = "block";
+                    contBtn.textContent = `▶ 次の続きの授業へ進む ➔`;
+                    contBtn.onclick = () => {
+                        window.location.href = `lesson.html?id=${currentLesson.continuationToLessonId}`;
+                    };
+                } else {
+                    contWrap.style.display = "none";
+                }
             }
 
             renderPartsTOC();
@@ -8774,6 +8891,21 @@ ${EXPERT_TEACHER_PROMPT}
                 if (badge) badge.textContent = `選択中: ${selectedSubject}`;
             }
 
+            // 🔗 以前の授業の続きとして作成するハンドオフ
+            if (handoff.isContinuation && handoff.continuationId) {
+                if (typeof renderContinuationOptions === "function" && lastLessonsSnapshot) {
+                    renderContinuationOptions(lastLessonsSnapshot);
+                }
+                const select = el("continuation-select");
+                if (select) {
+                    select.value = handoff.continuationId;
+                }
+                toggleNewLessonPanel(true);
+                goToWizardStep(2);
+                showToast(`🔗 「${handoff.continuationTitle || "前回の授業"}」の続きを作成します。入力方式（写真または単元名）を選んでください！`, "info", 5000);
+                return;
+            }
+
             setCreationMode("topic");
             el("topic-input").value = handoff.topic;
             updateTopicSubjectUI();
@@ -8787,6 +8919,24 @@ ${EXPERT_TEACHER_PROMPT}
                 showToast(`🎓 「${handoff.sourceProblemTitle || "元の問題"}」からの引き継ぎで、単元「${handoff.topic}」の授業プランを作成します`, "info", 4000);
             }
             await generatePlan();
+        }
+
+        function startContinuationLesson(lesson) {
+            if (!lesson) return;
+            const styleToInherit = lesson.teachingStyle || selectedTeachingStyle || "standard";
+            const subjectToInherit = lesson.subject || detectLessonSubject(lesson) || selectedSubject;
+            sessionStorage.setItem("LOLZ_LESSON_HANDOFF", JSON.stringify({
+                continuationId: lesson.id,
+                continuationTitle: lesson.title || "無題の授業",
+                subject: subjectToInherit,
+                teachingStyle: styleToInherit,
+                isContinuation: true
+            }));
+            if (REQUESTED_ID) {
+                window.location.href = "lesson.html";
+            } else {
+                handleLessonHandoff();
+            }
         }
 
         function startLevelUp(lesson) {
