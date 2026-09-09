@@ -218,7 +218,17 @@
 
         <!-- 問題文 -->
         <div class="problem-section">
-            <div class="problem-section-label">📝 問題文</div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem; flex-wrap:wrap; gap:0.4rem;">
+                <div class="problem-section-label" style="margin-bottom:0;">📝 問題文</div>
+                <div style="display:flex; gap:0.4rem;">
+                    <button type="button" id="m-reread-ocr-btn" class="m-btn" style="padding:0.25rem 0.6rem; font-size:0.75rem; min-height:30px; background:var(--bg-subtle);">
+                        🔄 再読取
+                    </button>
+                    <button type="button" id="m-edit-text-btn" class="m-btn" style="padding:0.25rem 0.6rem; font-size:0.75rem; min-height:30px; background:var(--bg-subtle);">
+                        ✏️ 編集
+                    </button>
+                </div>
+            </div>
             <div class="problem-text" id="problem-text">読み込み中...</div>
             <div class="problem-images" id="problem-images"></div>
         </div>
@@ -286,6 +296,68 @@
             <p style="font-size:0.72rem; color:#DC2626; margin-top:0.4rem; margin-bottom:0;">
                 ※削除すると問題データ、写真、質問履歴が完全に抹消されます。
             </p>
+        </div>
+
+        <!-- 問題文編集・再読み取りモーダル -->
+        <div id="m-edit-modal" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); align-items:flex-end; justify-content:center;">
+            <div style="width:100%; max-width:600px; max-height:92vh; background:var(--bg-surface); border-top-left-radius:var(--radius-xl, 20px); border-top-right-radius:var(--radius-xl, 20px); display:flex; flex-direction:column; overflow:hidden; box-shadow:0 -10px 25px rgba(0,0,0,0.2);">
+                <div style="padding:0.9rem 1.1rem; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center; background:var(--bg-subtle);">
+                    <div style="font-weight:700; font-size:0.95rem; color:var(--text-primary); display:flex; align-items:center; gap:0.4rem;">
+                        <span>✏️ 問題文の編集・再読み取り</span>
+                    </div>
+                    <button type="button" id="m-edit-modal-close" style="background:none; border:none; font-size:1.4rem; color:var(--text-muted); cursor:pointer; line-height:1;">×</button>
+                </div>
+                
+                <div style="padding:1rem; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:0.85rem;">
+                    <!-- 再読み取りボタン -->
+                    <div style="background:var(--bg-subtle); padding:0.75rem; border-radius:var(--radius-md); border:1px solid var(--border-color);">
+                        <button type="button" id="m-modal-run-ocr" class="m-btn m-btn-primary" style="width:100%; min-height:40px; font-size:0.85rem; font-weight:700;">
+                            🔄 写真からAIで再読み取り（OCR）
+                        </button>
+                        <div id="m-ocr-status" style="display:none; font-size:0.75rem; color:var(--brand-primary); margin-top:0.4rem; text-align:center; font-weight:600;"></div>
+                    </div>
+
+                    <!-- 問題名入力 -->
+                    <div>
+                        <label style="font-size:0.75rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:0.25rem;">問題名（短縮タイトル）</label>
+                        <input type="text" id="m-edit-short-title" class="m-input" style="width:100%; font-size:0.85rem; padding:0.5rem;" placeholder="例: 円の方程式と接線">
+                    </div>
+
+                    <!-- 問題文入力 -->
+                    <div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.25rem;">
+                            <label style="font-size:0.75rem; font-weight:700; color:var(--text-muted);">問題文本文（数式は $ ... $ で囲む）</label>
+                        </div>
+
+                        <!-- クイック記号挿入バー -->
+                        <div id="m-quick-insert-bar" style="display:flex; gap:0.3rem; overflow-x:auto; padding-bottom:0.35rem; margin-bottom:0.35rem;">
+                            <button type="button" class="m-btn" style="padding:0.2rem 0.5rem; font-size:0.75rem; min-height:28px;" data-m-insert="$|$">$...$</button>
+                            <button type="button" class="m-btn" style="padding:0.2rem 0.5rem; font-size:0.75rem; min-height:28px;" data-m-insert="$$|$$">$$...$$</button>
+                            <button type="button" class="m-btn" style="padding:0.2rem 0.5rem; font-size:0.75rem; min-height:28px;" data-m-insert="\frac{|{}}{}">\frac</button>
+                            <button type="button" class="m-btn" style="padding:0.2rem 0.5rem; font-size:0.75rem; min-height:28px;" data-m-insert="\sqrt{|}">\sqrt</button>
+                            <button type="button" class="m-btn" style="padding:0.2rem 0.5rem; font-size:0.75rem; min-height:28px;" data-m-insert="^{|}">x^2</button>
+                            <button type="button" class="m-btn" style="padding:0.2rem 0.5rem; font-size:0.75rem; min-height:28px;" data-m-insert="_{|}">x_n</button>
+                            <button type="button" class="m-btn" style="padding:0.2rem 0.5rem; font-size:0.75rem; min-height:28px;" data-m-insert="\pi">\pi</button>
+                            <button type="button" class="m-btn" style="padding:0.2rem 0.5rem; font-size:0.75rem; min-height:28px;" data-m-insert="\theta">\theta</button>
+                            <button type="button" class="m-btn" style="padding:0.2rem 0.5rem; font-size:0.75rem; min-height:28px;" data-m-insert="\leqq">\leqq</button>
+                            <button type="button" class="m-btn" style="padding:0.2rem 0.5rem; font-size:0.75rem; min-height:28px;" data-m-insert="\geqq">\geqq</button>
+                        </div>
+
+                        <textarea id="m-edit-text-input" class="insight-textarea" style="min-height:140px; font-size:0.9rem; line-height:1.6;" placeholder="問題文を入力..."></textarea>
+                    </div>
+
+                    <!-- リアルタイム数式プレビュー -->
+                    <div>
+                        <label style="font-size:0.75rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:0.25rem;">数式プレビュー</label>
+                        <div id="m-edit-preview" class="problem-text tex2jax_process" style="background:var(--bg-subtle); padding:0.75rem; border-radius:var(--radius-md); border:1px solid var(--border-color); min-height:60px; max-height:160px; overflow-y:auto; font-size:0.85rem;"></div>
+                    </div>
+                </div>
+
+                <div style="padding:0.85rem 1rem; border-top:1px solid var(--border-color); display:flex; gap:0.5rem; background:var(--bg-subtle);">
+                    <button type="button" id="m-edit-cancel" class="m-btn" style="flex:1;">キャンセル</button>
+                    <button type="button" id="m-edit-save" class="m-btn m-btn-primary" style="flex:2; font-weight:700;">💾 保存して反映</button>
+                </div>
+            </div>
         </div>
 
     </main>
@@ -402,6 +474,7 @@
                 } else if (p.imageData) {
                     images = [p.imageData];
                 }
+                currentProblem.loadedImages = images;
                 images.forEach(src => {
                     const img = document.createElement("img");
                     img.src = src;
@@ -634,6 +707,231 @@
                 e.preventDefault();
                 window.sendChatMessage();
             }
+        });
+
+        // ==================== 問題文の編集・写真からの再読み取り ====================
+        const OCR_SYSTEM_PROMPT = `あなたは超高精度な教材・参考書・試験問題の文字起こし（OCR）専任AIです。
+画像に写っている問題文の全文を、以下の厳格なルールに従って一字一句漏らさず正確に文字起こししてください。
+
+【厳格ルール】
+1. 【要約・省略は絶対禁止】問題文の前提条件、リード文、小問番号（(1), (2), (3)...）、選択肢、空欄記号、図表注記まで一字一句省略せず全文を書き出すこと。
+2. 【数式表記】すべての数式・記号・物理量は、必ず $ ... $（インライン）または $$ ... $$（別行立て）で挟んでLaTeX形式で記述すること。
+3. 【短縮タイトル】問題の内容が一目でわかる短縮名を short_title に出力すること。`;
+
+        const OCR_SCHEMA = {
+            type: "OBJECT",
+            properties: {
+                extracted_text: { type: "STRING" },
+                short_title: { type: "STRING" }
+            },
+            required: ["extracted_text"]
+        };
+
+        const mEditModal = document.getElementById("m-edit-modal");
+        const mEditModalClose = document.getElementById("m-edit-modal-close");
+        const mEditCancel = document.getElementById("m-edit-cancel");
+        const mEditSave = document.getElementById("m-edit-save");
+        const mModalRunOcr = document.getElementById("m-modal-run-ocr");
+        const mOcrStatus = document.getElementById("m-ocr-status");
+        const mEditTextInput = document.getElementById("m-edit-text-input");
+        const mEditShortTitle = document.getElementById("m-edit-short-title");
+        const mEditPreview = document.getElementById("m-edit-preview");
+        const mRereadOcrBtn = document.getElementById("m-reread-ocr-btn");
+        const mEditTextBtn = document.getElementById("m-edit-text-btn");
+
+        let mPreviewDebounceTimer = null;
+        function updateMEditPreview() {
+            clearTimeout(mPreviewDebounceTimer);
+            mPreviewDebounceTimer = setTimeout(() => {
+                if (!mEditTextInput || !mEditPreview) return;
+                const val = mEditTextInput.value.trim();
+                if (!val) {
+                    mEditPreview.innerHTML = '<span style="color:var(--text-muted);">（問題文を入力するとプレビューされます）</span>';
+                    return;
+                }
+                mEditPreview.innerHTML = formatText(val);
+                if (window.MathJax && window.MathJax.typesetPromise) {
+                    window.MathJax.typesetPromise([mEditPreview]).catch(() => {});
+                }
+            }, 100);
+        }
+
+        function openMEditModal(customText) {
+            if (!mEditModal || !currentProblem) return;
+            if (mOcrStatus) mOcrStatus.style.display = "none";
+            if (mEditShortTitle) mEditShortTitle.value = currentProblem.short_title || "";
+            if (mEditTextInput) {
+                mEditTextInput.value = customText !== undefined ? customText : (currentProblem.title || currentProblem.extracted_text || "");
+            }
+            updateMEditPreview();
+            mEditModal.style.display = "flex";
+            if (mEditTextInput) mEditTextInput.focus();
+        }
+
+        function closeMEditModal() {
+            if (mEditModal) mEditModal.style.display = "none";
+        }
+
+        async function runMOcrExtraction() {
+            if (!currentProblem) return;
+            const images = currentProblem.loadedImages || [];
+            if (images.length === 0) {
+                showToast("この問題には写真データがありません。手動で問題文を直接編集してください。", "info");
+                openMEditModal();
+                return;
+            }
+
+            if (mModalRunOcr) {
+                mModalRunOcr.disabled = true;
+                mModalRunOcr.textContent = "⚙️ AIが文字起こし中...";
+            }
+            if (mRereadOcrBtn) {
+                mRereadOcrBtn.disabled = true;
+                mRereadOcrBtn.textContent = "🔄 読取中...";
+            }
+            if (mOcrStatus) {
+                mOcrStatus.style.display = "block";
+                mOcrStatus.textContent = "⏳ 写真から文字起こし中...（数式・小問番号を抽出中）";
+            }
+
+            try {
+                let parts = [{ text: "添付された教材画像から、問題文の全文を一字一句漏らさず正確に文字起こししてください。" }];
+                images.forEach(imageData => {
+                    let base64Raw = imageData.split(",")[1];
+                    let mimeType = imageData.split(",")[0].split(":")[1].split(";")[0];
+                    parts.push({ inlineData: { mimeType: mimeType, data: base64Raw } });
+                });
+                if (images.length > 1) {
+                    parts[0].text += `\n\n【重要】画像は${images.length}枚あります。すべての画像を統合して完全な問題文として書き起こしてください。`;
+                }
+
+                const aiResult = await callGeminiJSON(parts, OCR_SYSTEM_PROMPT, {
+                    temperature: 0.1,
+                    responseSchema: OCR_SCHEMA,
+                    featureId: "ocr"
+                });
+
+                const extractedText = (aiResult && aiResult.extracted_text) || "";
+                if (!extractedText.trim()) throw new Error("問題文の抽出結果を取得できませんでした。");
+
+                openMEditModal(extractedText);
+                if (mEditShortTitle && aiResult.short_title && (!mEditShortTitle.value || mEditShortTitle.value === "未設定")) {
+                    mEditShortTitle.value = aiResult.short_title;
+                }
+                if (mOcrStatus) {
+                    mOcrStatus.style.display = "block";
+                    mOcrStatus.textContent = "✨ 写真から再読み取り完了！保存を押して反映してください。";
+                }
+                showToast("📸 写真から問題文を再読み取りしました！", "success", 3500);
+
+            } catch (err) {
+                console.error("モバイルOCR再読み取りエラー:", err);
+                showToast("再読み取りに失敗しました: " + (err.message || "エラー"), "error");
+                if (mOcrStatus) {
+                    mOcrStatus.style.display = "block";
+                    mOcrStatus.textContent = "⚠️ 読み取り失敗: " + (err.message || "エラー");
+                }
+            } finally {
+                if (mModalRunOcr) {
+                    mModalRunOcr.disabled = false;
+                    mModalRunOcr.textContent = "🔄 写真からAIで再読み取り（OCR）";
+                }
+                if (mRereadOcrBtn) {
+                    mRereadOcrBtn.disabled = false;
+                    mRereadOcrBtn.textContent = "🔄 再読取";
+                }
+            }
+        }
+
+        async function saveMEdit() {
+            if (!auth.currentUser || !currentProblem) return;
+            const newText = mEditTextInput ? mEditTextInput.value.trim() : "";
+            if (!newText) {
+                showToast("問題文を空にすることはできません。", "error");
+                return;
+            }
+
+            const newShortTitle = mEditShortTitle ? mEditShortTitle.value.trim() : "";
+
+            if (mEditSave) {
+                mEditSave.disabled = true;
+                mEditSave.textContent = "保存中...";
+            }
+
+            try {
+                const uid = auth.currentUser.uid;
+                const pid = currentProblem.id;
+
+                const updates = {
+                    title: newText,
+                    isManuallyEdited: true,
+                    problemTextUpdatedAt: new Date().toISOString()
+                };
+                if (newShortTitle) updates.short_title = newShortTitle;
+
+                await update(ref(database, `users/${uid}/problems/${pid}`), updates);
+
+                currentProblem.title = newText;
+                if (newShortTitle) currentProblem.short_title = newShortTitle;
+                currentProblem.isManuallyEdited = true;
+
+                // 画面を更新
+                const problemTextEl = document.getElementById("problem-text");
+                if (problemTextEl) problemTextEl.innerHTML = formatText(newText);
+                const headerTitleEl = document.getElementById("header-title");
+                if (headerTitleEl) headerTitleEl.innerHTML = formatMathTitle(newShortTitle || newText);
+
+                if (window.MathJax && window.MathJax.typesetPromise) {
+                    window.MathJax.typesetPromise([headerTitleEl, problemTextEl]).catch(() => {});
+                }
+
+                closeMEditModal();
+                showToast("✅ 問題文を保存しました！", "success");
+            } catch (err) {
+                console.error("保存エラー:", err);
+                showToast("保存に失敗しました: " + err.message, "error");
+            } finally {
+                if (mEditSave) {
+                    mEditSave.disabled = false;
+                    mEditSave.textContent = "💾 保存して反映";
+                }
+            }
+        }
+
+        if (mEditTextBtn) mEditTextBtn.addEventListener("click", () => openMEditModal());
+        if (mRereadOcrBtn) mRereadOcrBtn.addEventListener("click", () => runMOcrExtraction());
+        if (mModalRunOcr) mModalRunOcr.addEventListener("click", () => runMOcrExtraction());
+        if (mEditModalClose) mEditModalClose.addEventListener("click", closeMEditModal);
+        if (mEditCancel) mEditCancel.addEventListener("click", closeMEditModal);
+        if (mEditSave) mEditSave.addEventListener("click", saveMEdit);
+        if (mEditModal) {
+            mEditModal.addEventListener("click", (e) => {
+                if (e.target === mEditModal) closeMEditModal();
+            });
+        }
+        if (mEditTextInput) mEditTextInput.addEventListener("input", updateMEditPreview);
+
+        // クイック記号挿入
+        document.querySelectorAll("#m-quick-insert-bar [data-m-insert]").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const text = btn.getAttribute("data-m-insert");
+                if (!mEditTextInput || !text) return;
+                const start = mEditTextInput.selectionStart;
+                const end = mEditTextInput.selectionEnd;
+                const before = mEditTextInput.value.substring(0, start);
+                const after = mEditTextInput.value.substring(end);
+                const pipeIdx = text.indexOf("|");
+                if (pipeIdx >= 0) {
+                    const realInsert = text.replace("|", "");
+                    mEditTextInput.value = before + realInsert + after;
+                    mEditTextInput.selectionStart = mEditTextInput.selectionEnd = start + pipeIdx;
+                } else {
+                    mEditTextInput.value = before + text + after;
+                    mEditTextInput.selectionStart = mEditTextInput.selectionEnd = start + text.length;
+                }
+                mEditTextInput.focus();
+                updateMEditPreview();
+            });
         });
 
         // ==================== ユーティリティ ====================

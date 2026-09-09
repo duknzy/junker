@@ -280,16 +280,81 @@
         .photo-sequence-guide {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            justify-content: space-between;
+            gap: 0.75rem;
             background: rgba(5, 150, 105, 0.08);
             border: 1px solid var(--brand-border);
             border-radius: var(--radius-md);
-            padding: 0.55rem 0.8rem;
+            padding: 0.55rem 0.85rem;
             font-size: 0.76rem;
             color: var(--brand-primary);
             font-weight: 600;
             margin-top: 0.6rem;
             line-height: 1.4;
+            flex-wrap: wrap;
+        }
+        .photo-reverse-btn {
+            background: var(--bg-surface);
+            border: 1px solid var(--brand-border);
+            color: var(--brand-primary);
+            font-size: 0.74rem;
+            font-weight: 750;
+            padding: 0.35rem 0.7rem;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            white-space: nowrap;
+            transition: all 0.15s ease;
+            box-shadow: var(--shadow-xs);
+        }
+        .photo-reverse-btn:hover {
+            background: var(--brand-primary);
+            color: #fff;
+            border-color: var(--brand-primary);
+        }
+        .photo-card-to-first-wrap {
+            margin-top: 0.15rem;
+            display: flex;
+        }
+        .photo-btn-to-first {
+            width: 100%;
+            height: 26px;
+            font-size: 0.72rem;
+            font-weight: 750;
+            background: rgba(5, 150, 105, 0.09);
+            border: 1px solid var(--brand-border);
+            color: var(--brand-primary);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
+            transition: all 0.15s ease;
+        }
+        .photo-btn-to-first:hover {
+            background: var(--brand-primary);
+            color: #fff;
+            border-color: var(--brand-primary);
+            box-shadow: var(--shadow-xs);
+            transform: translateY(-1px);
+        }
+        .photo-first-current-tag {
+            width: 100%;
+            height: 26px;
+            font-size: 0.72rem;
+            font-weight: 800;
+            background: rgba(5, 150, 105, 0.14);
+            border: 1px dashed var(--brand-primary);
+            color: var(--brand-primary);
+            border-radius: var(--radius-sm);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.2rem;
+            user-select: none;
         }
         .thumb-grid {
             display: grid;
@@ -2682,7 +2747,12 @@
                                     <input type="file" id="image-input" accept="image/*" multiple style="display:none;">
 
                                     <div id="photo-sequence-guide" class="photo-sequence-guide" style="display:none;">
-                                        <span>💡 <b>読む順番ガイド</b>：左から右へ「① 1ページ目 → ② 2ページ目…」の順にAIが教科書の文章を繋げて読みます。<br>順序がズレている場合は「◀」「▶」で並び替え、ページの一部（段落や下半分など）だけを読ませたい場合は「✂️ 範囲指定」で切り抜けます。</span>
+                                        <div style="flex:1; min-width:240px;">
+                                            <span>💡 <b>読む順番ガイド</b>：左から右へ「① 1ページ目 → ② 2ページ目…」の順にAIが教科書の文章を繋げて読みます。<br>「<b>⤒ こっちを先頭にする</b>」で指定写真を1ページ目に即座に引き上げ、「<b>⇄ 逆順にする</b>」で全体の順序を一発反転できます。</span>
+                                        </div>
+                                        <button type="button" id="photo-reverse-btn" class="photo-reverse-btn" title="写真の並び順を最初から最後まで完全に反転（逆順）にします">
+                                            ⇄ 逆順にする（全反転）
+                                        </button>
                                     </div>
 
                                     <div class="thumb-grid" id="thumb-grid"></div>
@@ -4130,8 +4200,9 @@
         let cropBox = { x: 5, y: 5, w: 90, h: 90 }; // パーセント 0〜100
         let cropDragState = null;
 
-        el("image-input").addEventListener("change", async (e) => {
-            const files = Array.from(e.target.files || []);
+        async function handleAddPhotoFiles(files) {
+            if (!files || files.length === 0) return;
+            let addedCount = 0;
             for (const file of files) {
                 try {
                     const normalized = await normalizeImageFile(file);
@@ -4142,17 +4213,86 @@
                         isCropped: false,
                         cropBoxState: null
                     });
+                    addedCount++;
                 } catch (err) {
                     showToast(err.message, "error");
                 }
             }
+            if (addedCount > 0) {
+                renderThumbs();
+                showToast(`📷 ${addedCount}枚の写真を追加しました`, "success", 2000);
+            }
+        }
+
+        el("image-input").addEventListener("change", async (e) => {
+            const files = Array.from(e.target.files || []);
+            await handleAddPhotoFiles(files);
             e.target.value = "";
+        });
+
+        // ドラッグ＆ドロップ対応
+        const dropLabel = el("file-drop-label");
+        if (dropLabel) {
+            ["dragenter", "dragover"].forEach(evName => {
+                dropLabel.addEventListener(evName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropLabel.style.borderColor = "var(--brand-primary)";
+                    dropLabel.style.background = "var(--brand-light)";
+                });
+            });
+            ["dragleave", "drop"].forEach(evName => {
+                dropLabel.addEventListener(evName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropLabel.style.borderColor = "";
+                    dropLabel.style.background = "";
+                });
+            });
+            dropLabel.addEventListener("drop", (e) => {
+                const dt = e.dataTransfer;
+                if (dt && dt.files && dt.files.length > 0) {
+                    handleAddPhotoFiles(Array.from(dt.files));
+                }
+            });
+        }
+
+        // クリップボード貼り付け（Ctrl+V / Cmd+V）対応
+        window.addEventListener("paste", (e) => {
+            const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : "";
+            if (activeTag === "textarea" || (activeTag === "input" && document.activeElement.type === "text")) {
+                return;
+            }
+            const photoGroup = el("mode-group-photo");
+            if (!photoGroup || photoGroup.style.display === "none") return;
+
+            const items = (e.clipboardData || e.originalEvent?.clipboardData)?.items;
+            if (!items) return;
+            const imageFiles = [];
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type && items[i].type.startsWith("image/")) {
+                    const file = items[i].getAsFile();
+                    if (file) imageFiles.push(file);
+                }
+            }
+            if (imageFiles.length > 0) {
+                e.preventDefault();
+                handleAddPhotoFiles(imageFiles);
+            }
+        });
+
+        // ⇄ 写真の並び順を一括反転（逆順）
+        el("photo-reverse-btn")?.addEventListener("click", () => {
+            if (selectedImages.length <= 1) return;
+            selectedImages.reverse();
             renderThumbs();
+            showToast("⇄ 写真の並び順をすべて反転（逆順）にしました", "info", 2500);
         });
 
         function renderThumbs() {
             const grid = el("thumb-grid");
             const guide = el("photo-sequence-guide");
+            const revBtn = el("photo-reverse-btn");
             if (!grid) return;
 
             if (selectedImages.length === 0) {
@@ -4162,6 +4302,9 @@
             }
 
             if (guide) guide.style.display = "flex";
+            if (revBtn) {
+                revBtn.style.display = selectedImages.length > 1 ? "inline-flex" : "none";
+            }
 
             const CIRCLE_NUMS = ["①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧", "⑨", "⑩", "⑪", "⑫", "⑬", "⑭", "⑮", "⑯", "⑰", "⑱", "⑲", "⑳"];
 
@@ -4179,10 +4322,19 @@
                             <img src="${img.previewUrl}" alt="教科書ページ ${idx + 1}">
                             ${img.isCropped ? '<span class="photo-crop-badge">✂️ 範囲指定済</span>' : ''}
                         </div>
+                        <div class="photo-card-to-first-wrap">
+                            ${isFirst ? `
+                                <span class="photo-first-current-tag" title="現在1ページ目（先頭）です">★ 先頭（1枚目）</span>
+                            ` : `
+                                <button type="button" class="photo-btn-to-first" data-to-first-idx="${idx}" title="この写真を先頭（1ページ目）に移動します">
+                                    ⤒ こっちを先頭にする
+                                </button>
+                            `}
+                        </div>
                         <div class="photo-card-actions">
-                            <button type="button" class="photo-btn-nav" data-move-idx="${idx}" data-dir="-1" title="前へ移動" ${isFirst ? "disabled" : ""}>◀</button>
+                            <button type="button" class="photo-btn-nav" data-move-idx="${idx}" data-dir="-1" title="1つ前へ移動" ${isFirst ? "disabled" : ""}>◀</button>
                             <button type="button" class="photo-btn-crop" data-crop-idx="${idx}" title="文章や図表の範囲を切り抜く">✂️ 範囲指定</button>
-                            <button type="button" class="photo-btn-nav" data-move-idx="${idx}" data-dir="1" title="次へ移動" ${isLast ? "disabled" : ""}>▶</button>
+                            <button type="button" class="photo-btn-nav" data-move-idx="${idx}" data-dir="1" title="1つ次へ移動" ${isLast ? "disabled" : ""}>▶</button>
                         </div>
                     </div>
                 `;
@@ -4195,6 +4347,20 @@
                     const idx = parseInt(btn.getAttribute("data-delete-idx"), 10);
                     selectedImages.splice(idx, 1);
                     renderThumbs();
+                });
+            });
+
+            // 「こっちを先頭にする」ボタン
+            grid.querySelectorAll("[data-to-first-idx]").forEach(btn => {
+                btn.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    const idx = parseInt(btn.getAttribute("data-to-first-idx"), 10);
+                    if (idx > 0 && idx < selectedImages.length) {
+                        const [target] = selectedImages.splice(idx, 1);
+                        selectedImages.unshift(target);
+                        renderThumbs();
+                        showToast(`📸 ${idx + 1}ページ目の写真を先頭（1ページ目）に移動しました`, "success", 2500);
+                    }
                 });
             });
 

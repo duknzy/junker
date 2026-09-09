@@ -428,8 +428,11 @@
             <div id="field-photo-wrap" style="display:none; margin-bottom:0.75rem;">
                 <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">教科書・参考書の写真</label>
                 <input type="file" accept="image/*" multiple id="create-photo-input" class="m-input" style="padding:0.4rem;">
-                <div id="mobile-photo-order-guide" style="display:none; margin-top:0.4rem; font-size:0.7rem; color:var(--brand-primary); background:rgba(5,150,105,0.08); padding:0.35rem 0.5rem; border-radius:var(--radius-sm); line-height:1.4;">
-                    💡 <b>読む順番</b>：左から右へ「①→②…」の順に教科書の内容を繋げてAIが読みます。◀ ▶で並び替えできます。
+                <div id="mobile-photo-order-guide" style="display:none; margin-top:0.4rem; font-size:0.7rem; color:var(--brand-primary); background:rgba(5,150,105,0.08); padding:0.4rem 0.55rem; border-radius:var(--radius-sm); line-height:1.4;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:0.4rem;">
+                        <span style="flex:1;">💡 <b>読む順番</b>：左から右へ「①→②…」の順。写真下の「<b>先頭</b>」で一発移動できます。</span>
+                        <button type="button" id="mobile-photo-reverse-btn" style="flex-shrink:0; font-size:0.68rem; font-weight:750; color:var(--brand-primary); background:var(--bg-surface); border:1px solid var(--brand-border); border-radius:4px; padding:3px 7px; cursor:pointer;">⇄ 逆順にする</button>
+                    </div>
                 </div>
                 <div id="create-thumb-preview" style="display:flex; gap:0.5rem; overflow-x:auto; margin-top:0.5rem; padding-bottom:0.3rem;"></div>
             </div>
@@ -1404,6 +1407,7 @@
         function renderMobileThumbs() {
             const previewEl = document.getElementById("create-thumb-preview");
             const guideEl = document.getElementById("mobile-photo-order-guide");
+            const revBtn = document.getElementById("mobile-photo-reverse-btn");
             if (!previewEl) return;
             if (createSelectedImages.length === 0) {
                 previewEl.innerHTML = "";
@@ -1411,6 +1415,7 @@
                 return;
             }
             if (guideEl) guideEl.style.display = "block";
+            if (revBtn) revBtn.style.display = createSelectedImages.length > 1 ? "inline-block" : "none";
 
             const CIRCLE_NUMS = ["①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧", "⑨", "⑩"];
             previewEl.innerHTML = createSelectedImages.map((img, idx) => {
@@ -1418,12 +1423,19 @@
                 const isFirst = idx === 0;
                 const isLast = idx === createSelectedImages.length - 1;
                 return `
-                    <div style="flex-shrink:0; width:92px; background:var(--bg-surface); border:1px solid var(--border-color); border-radius:6px; padding:4px; display:flex; flex-direction:column; gap:3px;">
+                    <div style="flex-shrink:0; width:98px; background:var(--bg-surface); border:1px solid var(--border-color); border-radius:6px; padding:5px; display:flex; flex-direction:column; gap:4px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.65rem; font-weight:750; color:var(--brand-primary);">
                             <span>${num} ${idx + 1}枚目</span>
                             <button type="button" data-m-del="${idx}" style="border:none; background:none; color:var(--text-muted); cursor:pointer; padding:0 2px;">✕</button>
                         </div>
                         <img src="${img.dataUrl}" style="width:100%; height:60px; object-fit:contain; background:#1e293b; border-radius:4px;">
+                        <div>
+                            ${isFirst ? `
+                                <div style="font-size:0.62rem; font-weight:800; color:var(--brand-primary); text-align:center; padding:2px 0; background:rgba(5,150,105,0.14); border-radius:3px; user-select:none;">★ 先頭</div>
+                            ` : `
+                                <button type="button" data-m-to-first="${idx}" style="width:100%; padding:2px 0; font-size:0.62rem; font-weight:750; color:var(--brand-primary); background:rgba(5,150,105,0.09); border:1px solid var(--brand-border); border-radius:3px; cursor:pointer;">⤒ 先頭にする</button>
+                            `}
+                        </div>
                         <div style="display:flex; gap:2px; justify-content:space-between;">
                             <button type="button" data-m-move="${idx}" data-m-dir="-1" ${isFirst ? "disabled" : ""} style="flex:1; padding:2px 0; font-size:0.65rem; background:var(--bg-subtle); border:1px solid var(--border-color); border-radius:3px; cursor:pointer;">◀</button>
                             <button type="button" data-m-move="${idx}" data-m-dir="1" ${isLast ? "disabled" : ""} style="flex:1; padding:2px 0; font-size:0.65rem; background:var(--bg-subtle); border:1px solid var(--border-color); border-radius:3px; cursor:pointer;">▶</button>
@@ -1439,6 +1451,20 @@
                     renderMobileThumbs();
                 });
             });
+
+            // 先頭に移動
+            previewEl.querySelectorAll("[data-m-to-first]").forEach(b => {
+                b.addEventListener("click", () => {
+                    const i = parseInt(b.getAttribute("data-m-to-first"), 10);
+                    if (i > 0 && i < createSelectedImages.length) {
+                        const [target] = createSelectedImages.splice(i, 1);
+                        createSelectedImages.unshift(target);
+                        renderMobileThumbs();
+                    }
+                });
+            });
+
+            // 前後移動
             previewEl.querySelectorAll("[data-m-move]").forEach(b => {
                 b.addEventListener("click", () => {
                     const i = parseInt(b.getAttribute("data-m-move"), 10);
@@ -1453,6 +1479,13 @@
                 });
             });
         }
+
+        // 逆順にするボタン
+        document.getElementById("mobile-photo-reverse-btn")?.addEventListener("click", () => {
+            if (createSelectedImages.length <= 1) return;
+            createSelectedImages.reverse();
+            renderMobileThumbs();
+        });
 
         document.getElementById("create-photo-input")?.addEventListener("change", (e) => {
             const files = Array.from(e.target.files || []);
