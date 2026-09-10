@@ -253,9 +253,12 @@
             </button>
             <div id="answer-body" style="display:none;margin-top:0.5rem;">
                 <div class="model-answer-box" id="model-answer-text"></div>
-                <div id="answer-action-box" style="margin-top:0.75rem; text-align:center;">
+                <div id="answer-action-box" style="margin-top:0.75rem; display:flex; flex-direction:column; gap:0.5rem;">
                     <button class="m-btn m-btn-primary" id="btn-generate-answer" style="width:100%;">
                         🔄 AIに解説・定石を再生成してもらう
+                    </button>
+                    <button class="m-btn" id="btn-goto-lesson" style="width:100%; background:var(--bg-surface); border:1px solid var(--border-subtle); color:var(--text-primary); font-size:0.85rem; font-weight:700;">
+                        🎓 この問題の単元の授業を受ける
                     </button>
                 </div>
             </div>
@@ -513,6 +516,23 @@
                 // 気づきメモ
                 const insightInput = document.getElementById("insight-input");
                 if (p.insight) insightInput.value = p.insight;
+
+                // 🎓 単元授業へのハンドオフ連携
+                const gotoLessonBtn = document.getElementById("btn-goto-lesson");
+                if (gotoLessonBtn) {
+                    gotoLessonBtn.onclick = () => {
+                        const probSubject = (p.subject && p.subject !== "未分類") ? p.subject : "数学";
+                        const topic = p.unit || p.topic || p.short_title || p.title || "この問題の解法と重要概念";
+                        sessionStorage.setItem("LOLZ_LESSON_HANDOFF", JSON.stringify({
+                            topic: topic,
+                            subject: probSubject,
+                            sourceProblemId: pid,
+                            sourceProblemTitle: p.short_title || p.title || "無題の問題",
+                            note: `問題「${p.short_title || p.title || ''}」の解法や関連概念の基礎・定石を詳しく学びたい`
+                        }));
+                        window.location.href = "lesson.html";
+                    };
+                }
 
                 // MathJax レンダリング（ヘッダーとコンテンツ全体）
                 if (window.MathJax && window.MathJax.typesetPromise) {

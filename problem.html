@@ -3427,10 +3427,14 @@ ${EXPERT_TEACHER_PROMPT}
                 lessonHandoffBtn.textContent = "🔍 つまずきの単元を分析中...";
                 try {
                     const handoff = await analyzeStuckTopicFromQna();
+                    const probSubject = (currentProblemData && currentProblemData.subject && currentProblemData.subject !== "未分類")
+                        ? currentProblemData.subject
+                        : "数学";
                     sessionStorage.setItem("LOLZ_LESSON_HANDOFF", JSON.stringify({
                         topic: handoff.topic,
                         level: handoff.level,
                         note: handoff.note,
+                        subject: probSubject,
                         sourceProblemId: currentProblemData.id || PROBLEM_ID,
                         sourceProblemTitle: currentProblemData.short_title || "無題の問題"
                     }));

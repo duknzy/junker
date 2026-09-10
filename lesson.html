@@ -3553,8 +3553,17 @@
             if (typeof lessonOrSubject === "object" && lessonOrSubject !== null) {
                 subj = lessonOrSubject.subject || (typeof detectLessonSubject === "function" ? detectLessonSubject(lessonOrSubject) : "その他");
                 lvl = lessonOrSubject.level || "";
+            } else if (typeof lessonOrSubject === "string") {
+                // 引数がレベル文字列単体で呼ばれた場合の救済処理
+                if (!rawLevel && (lessonOrSubject.includes("基礎") || lessonOrSubject.includes("典型") || lessonOrSubject.includes("応用") || lessonOrSubject.includes("入試") || lessonOrSubject.includes("完全網羅"))) {
+                    subj = (typeof currentLesson !== "undefined" && currentLesson) ? (currentLesson.subject || detectLessonSubject(currentLesson)) : (typeof selectedSubject !== "undefined" ? selectedSubject : "数学");
+                    lvl = lessonOrSubject;
+                } else {
+                    subj = lessonOrSubject || "数学";
+                    lvl = rawLevel || "";
+                }
             } else {
-                subj = lessonOrSubject || "数学";
+                subj = "数学";
                 lvl = rawLevel || "";
             }
             const track = getSubjectLearningTrack(subj);
@@ -3564,20 +3573,22 @@
                 return { track, levels, index: 0, current: levels[0], next: null };
             }
 
-            let idx = -1;
-            if (track === "two-step") {
-                if (lvl.includes("基礎") || lvl.includes("教科書") || lvl.includes("定期テスト") || lvl.includes("本質")) {
-                    idx = 0;
-                } else if (lvl.includes("実戦") || lvl.includes("演習") || lvl.includes("応用") || lvl.includes("入試")) {
-                    idx = 1;
-                }
-            } else if (track === "three-step") {
-                if (lvl.includes("教科書") || lvl === "基礎・概念理解" || (lvl.includes("基礎") && !lvl.includes("入試"))) {
-                    idx = 0;
-                } else if (lvl.includes("定期テスト") || lvl.includes("入試基礎") || lvl === "入試典型パターン" || lvl.includes("典型")) {
-                    idx = 1;
-                } else if (lvl.includes("応用") || lvl.includes("難関") || lvl === "難関・融合応用") {
-                    idx = 2;
+            let idx = levels.findIndex(l => l.value === lvl);
+            if (idx === -1) {
+                if (track === "two-step") {
+                    if (lvl.includes("基礎") || lvl.includes("教科書") || lvl.includes("定期テスト") || lvl.includes("本質")) {
+                        idx = 0;
+                    } else if (lvl.includes("実戦") || lvl.includes("演習") || lvl.includes("応用") || lvl.includes("入試")) {
+                        idx = 1;
+                    }
+                } else if (track === "three-step") {
+                    if (lvl.includes("教科書") || lvl === "基礎・概念理解" || (lvl.includes("基礎") && !lvl.includes("典型") && !lvl.includes("入試"))) {
+                        idx = 0;
+                    } else if (lvl.includes("定期テスト") || lvl.includes("入試基礎") || lvl === "入試典型パターン" || lvl.includes("典型")) {
+                        idx = 1;
+                    } else if (lvl.includes("応用") || lvl.includes("難関") || lvl === "難関・融合応用") {
+                        idx = 2;
+                    }
                 }
             }
 
@@ -4744,64 +4755,68 @@
         }
 
         // --------------------------------------------------------------
-        // 🎓 教科別最適化プロンプト体系
+        // 🎓 全教科別最適化プロンプト体系
         // --------------------------------------------------------------
         const SUBJECT_PROMPT_GUIDES = {
-            "情報": `
-【情報科・情報I・プログラミング特化ルール】
-・アルゴリズム・計算量・データ構造・プログラミング（Python/疑似言語等）・情報セキュリティ・ネットワーク・基盤アーキテクチャの解説を徹底すること。
-・コードや疑似コード例を示すときは、ブロックを明確にし、変数の動きやトレース表を具体的に説明すること。
-・暗記事項にはプロトコル名、暗号化方式、論理回路、データ表現（2進数/浮動小数点）の定義を網羅すること。`,
-            "地理": `
-【地理科・系統地理・地誌特化ルール】
-・「なぜその気候・土壌・産業・貿易になるのか」という地理的必然性・因果関係を論理的に解説すること。
-・統計データ（生産量・輸入割合・人口推移）の背景にあるメカニズムと思考プロセスを重視すること。
-・地名・気候区分（ケッペン等）・地形形成作用・国際関係を明確に関連付けて説明すること。`,
-            "日本史": `
-【日本史科特化ルール】
-・単なる年号・用語の羅列ではなく、「政治体制の変遷・経済構造・対外関係・社会不安・文化」の相互の因果関係を一本のストーリーとして解説すること。
-・同時代の東アジアや世界情勢（中国王朝の興亡、西洋列強の進出など）との連動を必ず明記すること。
-・重要史料のキーワードや背景、幕府・朝廷・民衆の力関係の力学を深掘りすること。`,
-            "世界史": `
-【世界史科特化ルール】
-・地域史（ヨーロッパ、西アジア、東アジア等）の縦軸と、同時代における交易・戦争・文化伝播の横軸を立体的に結びつけること。
-・年代・世紀・支配領域・帝国崩壊の因果関係を明快に整理すること。`,
             "数学": `
 【数学科特化ルール】
 ・数式や変数はすべて必ず $ または $$ で囲むLaTeX形式で厳格に記述すること。
-・定義・定理・公理の導入から、典型解法パターンの着眼点（なぜその式変形をするのか、何を文字でおくのか）を徹底的に論理化すること。
-・途中式の省略を禁止し、必要十分条件・定義域・場合分けの落とし穴を漏れなく指摘すること。`,
+・「なぜその解法・式変形を選ぶのか」という着眼点・必然性（同値変形、文字の消去、必要条件と十分条件、対称性の利用、幾何的意味）を徹底的に言語化すること。
+・途中計算の飛躍を禁止し、定義域・値域の確認、分母≠0、真数条件、場合分けの網羅性、判別式と実数解条件など、受験生が減点・失点しやすい落とし穴を漏れなく指摘すること。
+・典型パターンにおける「定石の思考フロー」と、別解（ベクトル、初等幾何、微分など別視点のアプローチ）がある場合は比較検討を提示すること。`,
             "物理": `
 【物理科特化ルール】
-・物理現象の「直感的なイメージ」「力の作図」「エネルギーの流れ」を言葉で視覚的に言語化すること。
-・SI単位系、文字式の次元（ディメンション確認）、座標軸の正の向きの宣言を徹底すること。
-・公式の単なる丸暗記ではなく、定義式からの導出や極限・境界値の吟味を解説に盛り込むこと。`,
+・物理現象の「直感的なイメージ」「力の作図プロセス」「エネルギーの授受」を言葉で視覚的に言語化すること。
+・対象物体を孤立させて働く力をすべて矢印で列挙する作図ステップ、座標軸（正の向き）の宣言を必ず明示すること。
+・SI単位系、文字式の次元（ディメンション解析による検算確認）を徹底すること。
+・公式の単なる丸暗記を排し、定義式からの導出や極限・境界値（t→∞、質量比の極限など）での妥当性吟味を解説に盛り込むこと。
+・保存則（力学的エネルギー保存則、運動量保存則、角運動量保存則、電荷保存則）が「なぜその状況で成立するのか（外力や非保存力の有無）」を論理的に明示すること。`,
             "化学": `
 【化学科特化ルール】
-・現象をミクロな原子・電子・分子の視点（結合、エネルギー、平衡）から論理的に説明すること。
-・化学反応式・熱化学方程式・イオン反応式の係数と状態を正確に記述すること。
-・実験手順、色の変化、沈殿、気体発生の原理を確実に網羅すること。`,
+・現象をミクロな原子・電子・分子の視点（電子配置、結合性、電気陰性度、エネルギー準位、平衡論）から論理的に説明すること。
+・化学反応式・イオン反応式・熱化学関係式の係数と状態（気・液・固）を正確に記述すること。
+・理論化学：物質量（mol）計算の立式根拠、気体の状態方程式、平衡移動（ルシャトリエの原理）、酸塩基中和・緩衝液、酸化還元反応の半反応式合成、溶解度積の定量計算定石を明示すること。
+・無機化学：各族・金属/非金属の性質、気体発生法、沈殿生成と錯イオン形成、系統分離の論理フローを整理すること。
+・有機化学：元素分析から分子式決定、不飽和度、官能基識別テスト、異性体（構造・幾何・光学）、反応系統図の解法プロセスを解説すること。
+・実験手順の「操作理由（なぜ加熱するのか、なぜ急冷・弱酸性にするのか）」を確実に網羅すること。`,
             "生物": `
 【生物科特化ルール】
-・生命現象のメカニズム（分子生物学、遺伝、発生、代謝、情報伝達）を図解的に言語化すること。
-・対照実験の論理やグラフ・実験データの読み解き方の要点を明示すること。`,
+・生命現象のメカニズム（分子生物学、代謝経路、遺伝情報の発現・調節、細胞分裂、発生、受容と応答、恒常性維持、免疫系、生態系）を図解的に言語化すること。
+・単なる暗記ではなく、対照実験の論理やグラフ・実験データ（DNA量変化、呼吸商、活動電位など）の読み解き方の要点を明示すること。
+・専門用語の定義を正確にし、フィードバック調節などの因果関係のループを明快に構造化すること。`,
             "英語": `
 【英語科特化ルール】
-・文構造（SVOC、修飾関係、品詞の働き、ディスコースマーカー）の論理的分析を徹底すること。
-・単なる直訳ではなく、前後の文脈展開（抽象→具体、主張→理由）を捉える読み方を提示すること。`,
+・文構造（SVOC、修飾・被修飾関係、句と節、等位接続詞と並列構造、ディスコースマーカー）の論理的・構文的分析を徹底すること。
+・単なる逐語訳ではなく、前後の文脈展開（主張→論拠、抽象→具体、譲歩→反論）を捉える論理的読解法を提示すること。
+・識別が難しい文法事項（関係詞vs接続詞that、分詞構文の意味上の主語、仮定法の時制のズレ、助動詞＋have＋過去分詞、強調構文vs形式主語）の確実な見抜き方を伝授すること。`,
             "国語": `
 【国語科特化ルール】
-・現代文：論理の骨格（対比・言い換え・因果関係）を構造化して解説すること。
-・古文・漢文：文法・助動詞の活用・意味、句法、主語の補完、時代背景を精緻に解説すること。`,
+・現代文：論理の三角構造（主張・理由・具体例）、対比構造（近代vs前近代、西欧vs日本、自己vs他者）、言い換え関係の発見技法、傍線部の指示語・接続語追跡による客観的読解を指導すること。
+・古文：用言の活用形、助動詞の接続・意味・識別（る・らる、す・さす・しむ、き・けり、つ・ぬ、たり・り、む・むず、なり、めり等）、敬語法（尊敬・謙譲・丁寧）による主語判定、古典常識・時代背景の因果関係を精緻に解説すること。
+・漢文：返り点・送りがな・書き下し文の規則、重要句法（使役、受身、反語、否定、疑問、抑揚、仮定、限定、比較）の識別と直訳・意訳の急所を解説すること。`,
+            "日本史": `
+【日本史科特化ルール】
+・単なる年号・用語の羅列ではなく、「政治体制の変遷・経済財政構造・対外関係・社会階層の動向・文化」の相互の因果関係を一本の立体的なストーリーとして解説すること。
+・同時代の東アジア情勢（中国王朝の興亡、朝鮮半島の動向、西洋列強の進出など）との連動を必ず明記すること。
+・重要史料のキーワード・背景・意図、朝廷・幕府・大名・民衆の力関係の力学を深掘りすること。`,
+            "世界史": `
+【世界史科特化ルール】
+・地域史（ヨーロッパ、西アジア・イスラーム、南アジア、東アジア、アメリカ大陸等）の縦の時間の流れと、同時代における東西交易・戦争・文化伝播・グローバルな連動の横の軸を立体的に結びつけること。
+・年代・世紀・支配領域・帝国崩壊・条約締結の背景にある政治・経済・宗教・民族の因果関係を明快に整理すること。`,
+            "地理": `
+【地理科・系統地理・地誌特化ルール】
+・「なぜその気候・土壌・産業・農業・貿易になるのか」という自然地理的要因（プレートテクトニクス、大気大循環、海流）と人文地理的要因の必然的因果関係を論理的に解説すること。
+・統計データ（農産物生産量・鉱工業シェア・エネルギー自給率・人口推移）の背景にあるメカニズムと思考プロセスを重視すること。
+・地名・気候区分（ケッペン等）・地形・都市問題・地域紛争を論理的に関連付けて説明すること。`,
             "公共": `
 【公共・現代社会特化ルール】
-・現代の社会諸課題（民主主義・立憲主義・基本的人権・国際協調・地球環境・少子高齢化・情報社会・金融リテラシー）の背景と対立軸を論理的に解説すること。
-・青年期の自己形成、倫理思想、法と政治の原理、経済の仕組みを具体的事例や判例と結びつけて説明すること。
-・暗記事項には重要概念、憲法条文、重要判例、経済用語、国際条約を漏れなく抽出すること。`,
+・現代の社会諸課題（民主主義・立憲主義・基本的人権・法の支配・国際協調・地球環境・少子高齢化・情報社会・金融リテラシー）の背景と対立軸を論理的に解説すること。
+・青年期の自己形成、倫理思想、法と政治の原理、市場経済の仕組みを具体的事例や重要判例と結びつけて説明すること。
+・暗記事項には重要概念、憲法条文、判例の要旨、経済用語、国際条約を漏れなく抽出すること。`,
             "政治・経済": `
 【政治・経済科特化ルール】
-・政治分野：民主政治の基本原理、日本国憲法（三大原理、統治機構、地方自治）、現代政治の課題（選挙制度、行政機能の拡大）、国際政治（国際連盟・国際連合、安全保障、国際法、冷戦と多極化）を論理的に構造化して解説すること。
-・経済分野：市場メカニズム（需要供給、価格弾力性、市場の失敗、独占・寡占）、国民経済計算（GDP、三面等価）、財政・租税・公債、金融（日本銀行の金融政策、量的緩和）、日本経済の歩み（高度成長、バブル、デフレと課題）、国際経済（為替相場、貿易体制、経済格差）の因果関係と計算・グラフ読解の急所を明確にすること。
+・政治分野：民主政治の基本原理、日本国憲法（三大原理、統治機構の抑制と均衡、地方自治）、現代政治の課題（選挙制度、行政機能拡大）、国際政治（安全保障、国際法、冷戦構造と多極化）を論理的に構造化して解説すること。
+・経済分野：市場メカニズム（価格弾力性、市場の失敗、独占・寡占）、国民経済計算（GDP、三面等価）、財政政策と公債、金融政策（公開市場操作、量的緩和）、日本経済史（戦後復興、高度成長、バブル崩壊、デフレ経済）、国際経済（為替相場決定、国際収支、自由貿易体制）の因果関係と計算・グラフ読解の急所を明確にすること。
 ・暗記事項には、法令名・重要判例・経済用語・指標・政策手段を問いと答えに明確に分離して漏れなく抽出すること。`,
             "政経": `
 【政治・経済科特化ルール】
@@ -4810,8 +4825,128 @@
 ・暗記事項には、法令名・重要判例・経済用語・指標・政策手段を問いと答えに明確に分離して漏れなく抽出すること。`,
             "公民": `
 【公民・倫政特化ルール】
-・憲法・政治制度・経済理論・思想史の思想的背景と思想家たちの主張の対比を論理的に解説すること。`
+・憲法・政治制度・経済理論・思想史の思想的背景と思想家たちの主張の対比を論理的に解説すること。`,
+            "情報": `
+【情報科・情報I・プログラミング特化ルール】
+・アルゴリズム・計算量（オーダー記法）・データ構造（配列、リスト、スタック、キュー、木構造）・プログラミング（Python/共通テスト用疑似言語）・情報セキュリティ・ネットワーク（TCP/IP、DNS、ルーティング）・データベース正規化の解説を徹底すること。
+・コードや疑似コード例を示すときは、ブロックとインデントを明確にし、変数の動きやトレース表を具体的に示してステップ実行を言語化すること。
+・暗記事項にはプロトコル名、暗号化方式（公開鍵/共通鍵）、論理回路、データ表現（2進数/補数/浮動小数点）の定義を網羅すること。`
         };
+
+        // --------------------------------------------------------------
+        // 🔗 全教科対応：前講からの引き継ぎコンテキスト生成エンジン
+        // --------------------------------------------------------------
+        function buildContinuationContext(prevLessonData, targetSubject, targetLevel) {
+            if (!prevLessonData) return "";
+            const prevTitle = prevLessonData.title || "前回の授業";
+            const prevSubj = prevLessonData.subject || (typeof detectLessonSubject === "function" ? detectLessonSubject(prevLessonData) : targetSubject) || "その他";
+            const partsOverview = (prevLessonData.parts || []).map((p, idx) => `  ・第${idx + 1}回: ${p.title || "無題"} (${p.summary || ""})`).join("\n");
+            
+            const inheritedTerms = prevLessonData.accumulatedKeyTerms || prevLessonData.keyTerms || [];
+            const termsList = inheritedTerms.slice(0, 20).map(t => typeof t === "string" ? t : (t && t.name) ? t.name : "").filter(Boolean);
+            const termsOverview = termsList.join("、");
+            
+            const memoPoints = (prevLessonData.memorizationPoints || []).slice(0, 8).map(m => `  ・${m.question || m.title || ""}: ${m.answer || m.content || ""}`).filter(l => l.length > 5).join("\n");
+            const eventsOverview = (prevLessonData.historicalEvents || []).slice(-8).map(ev => `  ・${ev.year || ""} ${ev.name || ""}`).join("\n");
+
+            let subjectSpecificInstruction = "";
+            if (targetSubject === "数学" || prevSubj === "数学") {
+                subjectSpecificInstruction = `
+【📐 数学科・前講からの引き継ぎ＆発展ルール】
+1. 生徒は前講（${prevTitle}）で扱った基本定義・公式・定理（${termsOverview || "前講の公式"}）を完全に理解・導出・計算できる前提です。
+2. 前講の公式の初歩的説明や重複する証明は省略し、「前回の定石を踏まえた直後単元の展開・応用解法・発展パターン（例: 関数の基本定義→増減表と極値・グラフ描画、微積分基本→面積・体積、三角比→加法定理・合成、ベクトル基本→内積と空間図形）」へとシームレスに接続してください。
+3. 記号表記（$f(x)$, $t$, ベクトル表記など）は前講の文脈・流儀と統一性を持たせてください。`;
+            } else if (targetSubject === "物理" || prevSubj === "物理") {
+                subjectSpecificInstruction = `
+【⚡ 物理科・前講からの引き継ぎ＆発展ルール】
+1. 前講（${prevTitle}）で導出した物理法則・運動方程式・保存則（${termsOverview || "基本法則"}）は生徒が完全にマスターしている前提です。
+2. 基本法則の定義説明は省略し、後続の現象・発展トピック（例: 等加速度直線運動→運動方程式・放物運動、仕事とエネルギー→力学的エネルギー保存則、コンデンサー基本→回路過渡現象、波動基本→ドップラー効果・干渉）へ直結させてください。
+3. 座標軸の向き、正の方向、文字の定義は前講と一貫させてください。`;
+            } else if (targetSubject === "化学" || prevSubj === "化学") {
+                subjectSpecificInstruction = `
+【🧪 化学科・前講からの引き継ぎ＆発展ルール】
+1. 前講（${prevTitle}）で学習した化学反応式・物質量（mol）計算・化学結合・状態変化（${termsOverview || "基礎概念"}）は既知として扱ってください。
+2. 前講の物質・反応を前提とし、後続分野（例: モル計算→酸塩基の中和滴定・pH、酸化還元→電池・電気分解、状態変化→気液平衡・飽和蒸気圧、有機基本骨格→異性体・官能基・合成反応）へ論理的に展開してください。`;
+            } else if (targetSubject === "生物" || prevSubj === "生物") {
+                subjectSpecificInstruction = `
+【🧬 生物科・前講からの引き継ぎ＆発展ルール】
+1. 前講（${prevTitle}）で学習した生体分子・細胞構造・基礎メカニズム（${termsOverview || "基礎用語"}）を前提としてください。
+2. 後続の代謝系・遺伝情報発現・細胞分裂・発生・受容応答・恒常性維持へと生命現象の連鎖をストーリー仕立てで展開してください。`;
+            } else if (/日本史|世界史|歴史/.test(targetSubject) || /日本史|世界史|歴史/.test(prevSubj)) {
+                subjectSpecificInstruction = `
+【⛩️ 歴史科・前講からの引き継ぎ＆時代接続ルール】
+1. 前講（${prevTitle}）で到達した時代・最新年号（到達点: ${eventsOverview || "前講の終盤"}）の直後からシームレスに新時代・新体制へと講義を開始してください。
+2. 前講の政権・社会政策がなぜ行き詰まり、どのような社会変動・対外危機によって今回の時代へと移行したのか（因果関係の架け橋）を冒頭で提示してください。
+3. 抽出する出来事（historical_events）は、前講の到達年号以降の新しい歴史イベントのみを抽出してください。`;
+            } else if (targetSubject === "地理" || prevSubj === "地理") {
+                subjectSpecificInstruction = `
+【🗺️ 地理科・前講からの引き継ぎ＆系統・地誌連動ルール】
+1. 前講（${prevTitle}）で扱った自然環境・気候区分・地形（${termsOverview || "基礎データ"}）のメカニズムを前提としてください。
+2. その自然環境が人々の農業・鉱工業・都市・生活にどう結びついているのか、系統地理から地誌への展開、あるいは隣接地域との比較対照を論理的に講義してください。`;
+            } else if (/公共|政治|経済|公民|倫理/.test(targetSubject) || /公共|政治|経済|公民|倫理/.test(prevSubj)) {
+                subjectSpecificInstruction = `
+【🏛️ 公民科・前講からの引き継ぎ＆制度深化ルール】
+1. 前講（${prevTitle}）で扱った憲法条文・基本原理・市場理論・基本思想（${termsOverview || "基本概念"}）は理解済みとして扱ってください。
+2. 抽象的な原理から具体的な現代の政策・重要判例・制度改革の課題・国際的対立軸へと論理を展開してください。`;
+            } else if (targetSubject === "英語" || prevSubj === "英語") {
+                subjectSpecificInstruction = `
+【🔤 英語科・前講からの引き継ぎ＆構文・読解発展ルール】
+1. 前講（${prevTitle}）で学習した英文法・文構造（${termsOverview || "基本文法"}）は完全に習得済みとして扱ってください。
+2. 基本形の解説は省き、発展構文・長文読解での見抜き方・紛らわしい識別・実戦的アウトプットへとステップアップしてください。`;
+            } else if (/国語|現代文|古文|漢文/.test(targetSubject) || /国語|現代文|古文|漢文/.test(prevSubj)) {
+                subjectSpecificInstruction = `
+【📜 国語科・前講からの引き継ぎ＆読解深化ルール】
+1. 古文・漢文では前講（${prevTitle}）で学習した用言・助動詞の活用、句法、重要語（${termsOverview || "基礎文法"}）を前提とし、主語把握や長文読解・和歌・背景把握へ進めてください。
+2. 現代文では前講で培った論理構造（対比・因果・言い換え）を活用し、より抽象度の高い評論・小説の読解を展開してください。`;
+            } else if (targetSubject === "情報" || prevSubj === "情報") {
+                subjectSpecificInstruction = `
+【💻 情報科・前講からの引き継ぎ＆実装発展ルール】
+1. 前講（${prevTitle}）で扱ったデータ構造・アルゴリズム・基盤概念（${termsOverview || "基本概念"}）を前提としてください。
+2. アルゴリズムのさらなる高速化、セキュリティ・ネットワークとの融合、実社会への実装へと発展させてください。`;
+            } else {
+                subjectSpecificInstruction = `
+【📚 前講からの引き継ぎ＆発展ルール】
+1. 生徒は前回の内容（${prevTitle}）を既に完全に理解・習得している前提で構成してください。
+2. 前回の学習内容と重複する解説や導入は省略し、「前回は〜まで学習しました」とスムーズに接続した上で、直後に続く後続単元から新しいパート構成を設計してください。`;
+            }
+
+            return `
+【🚨 最重要：直前の授業（シリーズ前講）からの引き継ぎ・コンテキスト】
+本授業は、以前の授業「${prevTitle}」の直後の続き（続編）です！
+・前回の授業でのパート構成と学習到達点:
+${partsOverview || "  （詳細なパート情報なし）"}
+${termsOverview ? `・前回までに習得済みの重要用語・公式: ${termsOverview}` : ""}
+${memoPoints ? `・前回抽出した重要暗記事項:\n${memoPoints}` : ""}
+${eventsOverview ? `・前回までに到達した主な歴史イベント・年号:\n${eventsOverview}` : ""}
+${subjectSpecificInstruction}
+【授業タイトルの指示】
+タイトルも「${prevTitle}」の続編であることがわかるように統一感を持たせてください（例: 「${prevTitle} (その2)」や直後に続く後続の単元名）。`;
+        }
+
+        // --------------------------------------------------------------
+        // 🔥 難易度ステップアップ（レベルアップ）特化コンテキスト生成エンジン
+        // --------------------------------------------------------------
+        function buildLevelUpContext(pendingLevelUp, targetSubject, targetLevel) {
+            if (!pendingLevelUp) return "";
+            const fromLevel = pendingLevelUp.fromLevel || "基礎レベル";
+            const keyTerms = (pendingLevelUp.fromKeyTerms || []).slice(0, 25).map(t => typeof t === "string" ? t : (t && t.name) ? t.name : "").filter(Boolean).join("、");
+            const noteSnippet = (pendingLevelUp.fromNote || "").replace(/<[^>]+>/g, " ").slice(0, 600);
+
+            return `
+【🔥 難易度ステップアップ（レベルアップ）特化カリキュラム設計指示】
+本授業は、前回クリアした難易度「${fromLevel}」からステップアップした、上位目標レベル「${targetLevel}」の特化授業です！
+・前回レベルで学習済みの重要概念・公式・用語:
+  ${keyTerms || "（前レベルの基礎概念・公式を完全習得済み）"}
+${noteSnippet ? `・前回ノートの要約抜粋:\n${noteSnippet}` : ""}
+
+【重要：レベルに応じた講義の差別化ルール】
+1. 【基礎講義の完全省略】：基礎的な定義の導入や公式の基本証明などの初心者向け解説は省略し、「${fromLevel}で学んだ公式・概念は完全に使いこなせる」前提でスタートしてください。
+2. 【本レベル（${targetLevel}）特化の思考プロセス】：
+   ${targetLevel.includes("典型") ? "・教科書の基本問題と入試問題のギャップを埋める「典型パターン」「頻出の定石・着眼点」「間違えやすい罠（必要条件・十分条件、定義域、符号ミスなど）」を徹底的に体系化してください。" : ""}
+   ${targetLevel.includes("応用") || targetLevel.includes("難関") ? "・複数の単元・公式が絡む「融合問題」「初見の誘導問題の読み解き方」「別解の比較（どの解法が最も計算量が少なく本質的か）」「難関大特有の思考プロセス」を徹底的に講義してください。" : ""}
+   ${targetLevel.includes("実戦") ? "・定期テストや共通テスト・入試で差がつく実戦的アプローチ、時短テクニック、減点を防ぐ答案記述の急所を伝授してください。" : ""}
+3. 【演習密度の向上】：各パートの例題や解説では、本レベル（${targetLevel}）にふさわしい、骨太で解きごたえのある入試問題レベルの思考プロセスを展開してください。`;
+        }
 
         // --------------------------------------------------------------
         // 授業プラン生成（マルチAI並列処理エンジン）
@@ -4900,7 +5035,7 @@
             const subjectGuide = SUBJECT_PROMPT_GUIDES[selectedSubject] || "";
 
             try {
-                // 🔗 直前の授業（シリーズ前話）からの引き継ぎ情報を取得（写真モード・単元名モード共通！）
+                // 🔗 直前の授業（シリーズ前話）からの引き継ぎ情報を取得（全教科対応！）
                 const continuationId = el("continuation-select") ? el("continuation-select").value : "";
                 let continuationInfoText = "";
                 let inheritedKeyTerms = [];
@@ -4911,26 +5046,15 @@
                         prevLessonData = prevSnap.val();
                         if (prevLessonData) {
                             inheritedKeyTerms = prevLessonData.accumulatedKeyTerms || prevLessonData.keyTerms || [];
-                            const partsOverview = (prevLessonData.parts || []).map((p, idx) => `  ・第${idx + 1}回: ${p.title || "無題"} (${p.summary || ""})`).join("\n");
-                            const termsOverview = inheritedKeyTerms.slice(0, 15).map(t => t.name).join("、");
-                            const eventsOverview = (prevLessonData.historicalEvents || []).slice(-6).map(ev => `  ・${ev.year || ""} ${ev.name || ""}`).join("\n");
-                            continuationInfoText = `
-【🚨 最重要：直前の授業（シリーズ前講）からの引き継ぎ・コンテキスト】
-本授業は、以前の授業「${prevLessonData.title || "無題の授業"}」の直後の続き（続編）です！
-・前回の授業でのパート構成と学習到達点:
-${partsOverview || "  （詳細なパート情報なし）"}
-${termsOverview ? `・前回までに習得済みの重要用語: ${termsOverview}` : ""}
-${eventsOverview ? `・前回までに到達した主な歴史イベント・年号:\n${eventsOverview}` : ""}
-【授業設計の指示】
-1. 生徒は前回の内容（${prevLessonData.title}）を既に完全に理解・習得している前提で構成してください。
-2. 前回の学習内容と重複する解説や導入は省略し、「前回は〜まで学習しました」とスムーズに接続した上で、直後に続く後続の時代・単元展開から新しいパート構成を設計してください。
-3. タイトルも「${prevLessonData.title}」の続編であることがわかるように統一感を持たせてください（例: 「${prevLessonData.title} (その2)」や後続の時代・単元名）。
-4. 歴史イベント（historical_events）は、前回の到達年号以降の新しい出来事を抽出してください。`;
+                            continuationInfoText = buildContinuationContext(prevLessonData, selectedSubject, "");
                         }
                     } catch (e) {
                         console.warn("⚠️ 引き継ぎ情報の事前取得に失敗しました:", e);
                     }
                 }
+
+                // 🔥 レベルアップ（難易度ステップアップ）時の引き継ぎ情報生成
+                const levelUpInfoText = pendingLevelUp ? buildLevelUpContext(pendingLevelUp, selectedSubject, pendingLevelUp.level || "") : "";
 
                 if (creationMode === "photo") {
                     // 📷 参考書写真モード
@@ -4958,6 +5082,7 @@ ${socraticAddon}
 
                     let promptText = `【教科：${selectedSubject}】\n添付した参考書・教科書のページを解析し、指定のJSONで授業プランを作成してください。\n${photoOrderInstruction}`;
                     if (continuationInfoText) promptText += `\n\n${continuationInfoText}`;
+                    if (levelUpInfoText) promptText += `\n\n${levelUpInfoText}`;
                     if (noteText) promptText += `\n\n【生徒からのメモ】\n${noteText}`;
 
                     const parts = [{ text: promptText }];
@@ -4984,6 +5109,12 @@ ${socraticAddon}
                         levelText = rawLevelText || defaultLevel;
                     }
                     const topicNoteText = el("topic-note-input").value.trim();
+
+                    // 単元名モード用の継続・レベルアッププロンプトを最新のlevelTextで再生成
+                    if (prevLessonData) {
+                        continuationInfoText = buildContinuationContext(prevLessonData, selectedSubject, levelText);
+                    }
+                    const topicLevelUpText = pendingLevelUp ? buildLevelUpContext(pendingLevelUp, selectedSubject, levelText) : "";
 
                     // Engine 1: カリキュラム・構成・タイトル・年代イベント策定AI
                     let curriculumRule = "";
@@ -5094,9 +5225,7 @@ ${subjectGuide}
                     }
                     if (topicNoteText) basePrompt += `\n【生徒からの要望】${topicNoteText}`;
                     if (continuationInfoText) basePrompt += `\n\n${continuationInfoText}`;
-                    if (pendingLevelUp) {
-                        basePrompt += `\n\n【レベルアップ授業】前回レベル（${pendingLevelUp.fromLevel}）ノート:\n${pendingLevelUp.fromNote || ""}`;
-                    }
+                    if (topicLevelUpText) basePrompt += `\n\n${topicLevelUpText}`;
 
                     // 🚀 3つのAIを完全並列 (Promise.all) で同時ディスパッチ！（キーをローテーションしつつlesson_planの設定モデルを適用）
                     const [resStructure, resLecture, resMemorize] = await Promise.all([
@@ -5407,8 +5536,11 @@ ${subjectGuide}
 
                 const newId = "LESSON_" + Date.now();
                 const now = new Date().toISOString();
-                const levelIndex = draftPlan.level ? LEVEL_ORDER.indexOf(draftPlan.level) : -1;
                 const lessonSubject = draftPlan.subject || selectedSubject || detectLessonSubject(draftPlan) || "その他";
+                const trackInfo = getLessonTrackInfo(lessonSubject, draftPlan.level);
+                const levelIndex = (trackInfo && typeof trackInfo.index === "number" && trackInfo.index >= 0)
+                    ? trackInfo.index
+                    : (draftPlan.level ? LEVEL_ORDER.indexOf(draftPlan.level) : -1);
                 const lessonObj = {
                     id: newId,
                     title: draftPlan.lesson_title,
@@ -5542,9 +5674,13 @@ ${subjectGuide}
             const map = {};
             lessons.forEach(l => {
                 if (!l.topicKey || !l.level) return;
-                if (!map[l.topicKey]) map[l.topicKey] = [null, null, null, null];
-                const idx = (typeof l.levelIndex === "number" && l.levelIndex >= 0) ? l.levelIndex : LEVEL_ORDER.indexOf(l.level);
-                if (idx < 0 || idx > 3) return;
+                const subj = detectLessonSubject(l);
+                const trackInfo = getLessonTrackInfo(subj, l.level);
+                const idx = (trackInfo && typeof trackInfo.index === "number" && trackInfo.index >= 0)
+                    ? trackInfo.index
+                    : ((typeof l.levelIndex === "number" && l.levelIndex >= 0) ? l.levelIndex : LEVEL_ORDER.indexOf(l.level));
+                if (idx < 0) return;
+                if (!map[l.topicKey]) map[l.topicKey] = [null, null, null];
                 if (!map[l.topicKey][idx] || new Date(l.updatedAt) > new Date(map[l.topicKey][idx].updatedAt)) {
                     map[l.topicKey][idx] = l;
                 }
@@ -7686,7 +7822,7 @@ ${EXPERT_TEACHER_PROMPT}
 
             const ctaWrap = el("level-up-cta-wrap");
             const ctaBtn = el("level-up-cta-btn");
-            const nxt = isCompleted && currentLesson.level ? nextLevelOf(currentLesson.level) : null;
+            const nxt = isCompleted && currentLesson.level ? nextLevelOf(currentLesson) : null;
             if (isCompleted && nxt && !currentLesson.levelUpToLessonId) {
                 ctaWrap.style.display = "block";
                 ctaBtn.textContent = `🎓 次は「${nxt}」に進む`;
@@ -8864,7 +9000,8 @@ ${EXPERT_TEACHER_PROMPT}
 
             let handoff;
             try { handoff = JSON.parse(raw); } catch (e) { return; }
-            if (!handoff || !handoff.topic) return;
+            if (!handoff) return;
+            if (!handoff.topic && !handoff.isContinuation && !handoff.continuationId && !handoff.levelUp) return;
 
             pendingSourceProblem = handoff.sourceProblemId
                 ? { id: handoff.sourceProblemId, title: handoff.sourceProblemTitle || "無題の問題" }
@@ -8893,6 +9030,9 @@ ${EXPERT_TEACHER_PROMPT}
 
             // 🔗 以前の授業の続きとして作成するハンドオフ
             if (handoff.isContinuation && handoff.continuationId) {
+                if (handoff.topic && el("topic-input")) {
+                    el("topic-input").value = handoff.topic;
+                }
                 if (typeof renderContinuationOptions === "function" && lastLessonsSnapshot) {
                     renderContinuationOptions(lastLessonsSnapshot);
                 }
@@ -8903,6 +9043,12 @@ ${EXPERT_TEACHER_PROMPT}
                 toggleNewLessonPanel(true);
                 goToWizardStep(2);
                 showToast(`🔗 「${handoff.continuationTitle || "前回の授業"}」の続きを作成します。入力方式（写真または単元名）を選んでください！`, "info", 5000);
+                return;
+            }
+
+            if (!handoff.topic) {
+                toggleNewLessonPanel(true);
+                goToWizardStep(2);
                 return;
             }
 
@@ -8928,6 +9074,7 @@ ${EXPERT_TEACHER_PROMPT}
             sessionStorage.setItem("LOLZ_LESSON_HANDOFF", JSON.stringify({
                 continuationId: lesson.id,
                 continuationTitle: lesson.title || "無題の授業",
+                topic: lesson.topicKey || lesson.topic || lesson.title || "",
                 subject: subjectToInherit,
                 teachingStyle: styleToInherit,
                 isContinuation: true
