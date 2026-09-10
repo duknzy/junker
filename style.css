@@ -156,6 +156,19 @@ html {
     font-size: 16px;
     background-color: #F8FAFC !important;
     background: #F8FAFC !important;
+    -webkit-text-size-adjust: 100%;
+}
+
+*, *::before, *::after {
+    -webkit-tap-highlight-color: transparent;
+}
+
+button, a, input, select, textarea, .subject-tab-btn, .problem-row, .qna-archive-item {
+    touch-action: manipulation;
+}
+
+.app-main, .sidebar-content, #dynamic-cards-area {
+    -webkit-overflow-scrolling: touch;
 }
 
 body {
@@ -1100,14 +1113,27 @@ mjx-container[jax="CHTML"][display="true"] {
 }
 
 /* ==========================================================================
-   🖼️ カスタム壁紙システム（ユーザー指定画像 & 透過カスタマイズ）
+   🖼️ カスタム壁紙システム（ユーザー指定画像 & 透過カスタマイズ・GPU高速化対応）
    ========================================================================== */
 body.has-custom-wallpaper {
-    background-image: var(--user-wallpaper, url('./wallpaper.jpg')) !important;
-    background-size: cover !important;
-    background-position: center center !important;
-    background-attachment: fixed !important;
-    background-repeat: no-repeat !important;
+    background-color: transparent !important;
+}
+
+body.has-custom-wallpaper::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: var(--user-wallpaper, url('./wallpaper.jpg'));
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+    z-index: -1;
+    pointer-events: none;
+    transform: translateZ(0);
+    will-change: transform;
 }
 
 body.has-custom-wallpaper .app-layout {
@@ -1151,7 +1177,6 @@ body.has-custom-wallpaper .flora-card,
 body.has-custom-wallpaper .filter-card,
 body.has-custom-wallpaper .custom-sprint-card,
 body.has-custom-wallpaper .filter-section-wrapper,
-body.has-custom-wallpaper .problem-row,
 body.has-custom-wallpaper .metric-card,
 body.has-custom-wallpaper .roadmap-tile {
     background: rgba(255, 255, 255, var(--wp-card-opacity, 0.85)) !important;
@@ -1159,6 +1184,13 @@ body.has-custom-wallpaper .roadmap-tile {
     -webkit-backdrop-filter: blur(var(--wp-blur, 8px));
     border-color: rgba(226, 232, 240, 0.7) !important;
     box-shadow: 0 4px 20px rgba(15, 23, 42, 0.08) !important;
+}
+
+/* リストカードは個別の重いblurを解除し、透過背景のみで超高速60fps描画 */
+body.has-custom-wallpaper .problem-row {
+    background: rgba(255, 255, 255, var(--wp-card-opacity, 0.92)) !important;
+    border-color: rgba(226, 232, 240, 0.8) !important;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05) !important;
 }
 
 body.has-custom-wallpaper .app-header {

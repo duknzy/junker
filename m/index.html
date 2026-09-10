@@ -71,7 +71,7 @@
             transition: width 0.5s ease;
         }
 
-        /* 高速・軽量な問題行カード */
+        /* 高速・軽量な問題行カード（ぬるぬる化・60/120fpsタッチ最適化） */
         .p-row {
             display: flex;
             align-items: center;
@@ -83,13 +83,15 @@
             margin-bottom: 0.5rem;
             cursor: pointer;
             border-left: 4px solid var(--brand-primary);
-            content-visibility: auto;
-            contain-intrinsic-size: auto 64px;
+            contain: layout style;
+            will-change: transform;
+            touch-action: manipulation;
+            transition: transform 0.16s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.15s ease;
             -webkit-tap-highlight-color: transparent;
         }
         .p-row:active {
             background: var(--bg-subtle);
-            transform: scale(0.99);
+            transform: scale(0.985);
         }
 
         /* サムネイル画像の代わりに軽量な教科アイコンバッジ */
@@ -541,15 +543,29 @@
             });
         }
 
-        // ==================== 検索（デバウンスで入力高速化） ====================
+        // ==================== 検索（IME対応＆デバウンスで入力高速化） ====================
         let searchDebounceTimer = null;
-        document.getElementById("search-input").addEventListener("input", (e) => {
-            clearTimeout(searchDebounceTimer);
-            searchDebounceTimer = setTimeout(() => {
-                currentSearchQuery = e.target.value.trim().toLowerCase();
+        let isComposingSearch = false;
+        const searchInputEl = document.getElementById("search-input");
+        if (searchInputEl) {
+            searchInputEl.addEventListener("compositionstart", () => {
+                isComposingSearch = true;
+            });
+            searchInputEl.addEventListener("compositionend", () => {
+                isComposingSearch = false;
+                clearTimeout(searchDebounceTimer);
+                currentSearchQuery = searchInputEl.value.trim().toLowerCase();
                 renderDashboard();
-            }, 180);
-        });
+            });
+            searchInputEl.addEventListener("input", (e) => {
+                if (isComposingSearch) return;
+                clearTimeout(searchDebounceTimer);
+                searchDebounceTimer = setTimeout(() => {
+                    currentSearchQuery = e.target.value.trim().toLowerCase();
+                    renderDashboard();
+                }, 120);
+            });
+        }
 
         // ==================== 復習優先度 ====================
         function getUrgency(p) {

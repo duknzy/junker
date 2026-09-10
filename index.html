@@ -204,13 +204,20 @@
             border-radius: var(--radius-lg);
             padding: 0.85rem 1.15rem;
             cursor: pointer;
-            transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+            contain: layout style;
+            will-change: transform;
+            touch-action: manipulation;
+            transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.18s ease, border-color 0.18s ease;
             box-shadow: var(--shadow-xs);
+            -webkit-tap-highlight-color: transparent;
         }
         .problem-row:hover {
             border-color: var(--brand-border);
             box-shadow: var(--shadow-md);
-            transform: translateY(-1px);
+            transform: translateY(-2px);
+        }
+        .problem-row:active {
+            transform: scale(0.992);
         }
         .row-thumb {
             position: relative;
@@ -1476,19 +1483,47 @@ async function checkAndLoadLinkedLesson(uid) {
             try { localStorage.setItem("collapsedProblemSections", JSON.stringify([...collapsedSections])); } catch (e) {}
         }
 
-        // 🔎 検索ボックスのイベントバインド（初期値復元対応）
+        // 🔎 検索ボックスのイベントバインド（初期値復元対応・IME対応＆デバウンスでぬるぬる化）
         const searchInputEl = document.getElementById("problem-search-input");
         const searchClearBtnEl = document.getElementById("problem-search-clear-btn");
+        let problemSearchDebounceTimer = null;
+        let isComposingProblemSearch = false;
+
+        function triggerDebouncedProblemSearch(immediate = false) {
+            if (isComposingProblemSearch) return; // 🇯🇵 日本語IME変換中は検索をスキップして引っ掛かりを防止
+            if (problemSearchDebounceTimer) clearTimeout(problemSearchDebounceTimer);
+            if (immediate) {
+                rebuildFilterBarAndCards();
+            } else {
+                problemSearchDebounceTimer = setTimeout(() => {
+                    rebuildFilterBarAndCards();
+                }, 120);
+            }
+        }
+
         if (searchInputEl) {
             if (currentSearchQuery) {
                 searchInputEl.value = currentSearchQuery;
                 if (searchClearBtnEl) searchClearBtnEl.style.display = "inline-block";
             }
-            searchInputEl.addEventListener("input", (e) => {
-                currentSearchQuery = e.target.value.trim();
+            // 日本語変換開始：フラグを立てて処理中断
+            searchInputEl.addEventListener("compositionstart", () => {
+                isComposingProblemSearch = true;
+            });
+            // 日本語変換確定：確定文字列で再描画
+            searchInputEl.addEventListener("compositionend", () => {
+                isComposingProblemSearch = false;
+                currentSearchQuery = searchInputEl.value.trim();
                 searchClearBtnEl.style.display = currentSearchQuery ? "inline-block" : "none";
                 syncFilterStateToStorageAndUrl();
-                rebuildFilterBarAndCards();
+                triggerDebouncedProblemSearch(false);
+            });
+            searchInputEl.addEventListener("input", () => {
+                if (isComposingProblemSearch) return;
+                currentSearchQuery = searchInputEl.value.trim();
+                searchClearBtnEl.style.display = currentSearchQuery ? "inline-block" : "none";
+                syncFilterStateToStorageAndUrl();
+                triggerDebouncedProblemSearch(false);
             });
         }
         if (searchClearBtnEl) {
@@ -1497,7 +1532,7 @@ async function checkAndLoadLinkedLesson(uid) {
                 if (searchInputEl) searchInputEl.value = "";
                 searchClearBtnEl.style.display = "none";
                 syncFilterStateToStorageAndUrl();
-                rebuildFilterBarAndCards();
+                triggerDebouncedProblemSearch(true);
             });
         }
 
@@ -1779,7 +1814,7 @@ function resolveCreatedAt(p) {
                 if (p.thumb) {
                     const imgCount = typeof p.imageCount === "number" ? p.imageCount : 1;
                     const countBadge = imgCount > 1 ? `<span class="row-thumb-count-badge">+${imgCount - 1}</span>` : "";
-                    thumbHtml = `<div class="row-thumb"><img src="${p.thumb}">${countBadge}</div>`;
+                    thumbHtml = `<div class="row-thumb"><img src="${p.thumb}" loading="lazy" decoding="async" alt="">${countBadge}</div>`;
                 } else {
                     // ⚠️ 未移行（旧形式のまま）の問題。ダッシュボード上部の「画像データを軽量化する」を実行すると解消される
                     const pImages = Array.isArray(p.images) && p.images.length > 0
@@ -1789,7 +1824,7 @@ function resolveCreatedAt(p) {
                         const countBadge = pImages.length > 1
                             ? `<span class="row-thumb-count-badge">+${pImages.length - 1}</span>`
                             : "";
-                        thumbHtml = `<div class="row-thumb"><img src="${pImages[0]}">${countBadge}</div>`;
+                        thumbHtml = `<div class="row-thumb"><img src="${pImages[0]}" loading="lazy" decoding="async" alt="">${countBadge}</div>`;
                     } else {
                        let symbol = "📝";
 let glowClass = "glow-purple";
@@ -1992,9 +2027,32 @@ thumbHtml = `<div class="row-thumb row-thumb-icon ${glowClass} tex2jax_process">
             document.getElementById("retention-bar-display").style.width = `${retentionRate}%`;
             document.getElementById("due-count-display").textContent = `本日要対応: ${criticalDueCount} 問`;
 
-            if (window.MathJax && window.MathJax.typesetPromise) {
-                window.MathJax.typesetPromise([dynamicArea]).catch((err) => console.log(err.message));
-            }
+            scheduleMathJaxTypeset(dynamicArea);
+        }
+
+        let mathjaxListDebounceTimer = null;
+        function scheduleMathJaxTypeset(targetContainer) {
+            if (!window.MathJax || !window.MathJax.typesetPromise) return;
+            if (mathjaxListDebounceTimer) clearTimeout(mathjaxListDebounceTimer);
+            mathjaxListDebounceTimer = setTimeout(() => {
+                const container = targetContainer || document.getElementById("dynamic-cards-area");
+                if (!container) return;
+                // 全体DOMを探索せず、数式マーカー（$ や \( や \[）を含むテキスト要素のみを厳選
+                const elements = container.querySelectorAll(".tex2jax_process, .row-title, .row-preview, .card-title, .latex-text");
+                const targets = [];
+                elements.forEach(el => {
+                    const text = el.textContent || "";
+                    if (text.includes("$") || text.includes("\\(") || text.includes("\\[")) {
+                        targets.push(el);
+                    }
+                });
+                if (targets.length > 0) {
+                    const idleRunner = window.requestIdleCallback || ((cb) => setTimeout(cb, 16));
+                    idleRunner(() => {
+                        window.MathJax.typesetPromise(targets).catch(err => console.log("MathJax notice:", err.message));
+                    });
+                }
+            }, 80);
         }
 
         let currentAiResult = null;
@@ -2561,9 +2619,7 @@ ${glossaryBlock}`;
                 `;
             }
 
-            if (window.MathJax && window.MathJax.typesetPromise) {
-                window.MathJax.typesetPromise([insightListContainer]).catch(err => console.log(err.message));
-            }
+            scheduleMathJaxTypeset(insightListContainer);
         }
 
         if (insightSortSelect) {
@@ -2745,17 +2801,26 @@ ${glossaryBlock}`;
                 itemEl.addEventListener("click", () => openQnaArchiveDetail(itemEl.getAttribute("data-log-id")));
             });
 
-            if (window.MathJax && window.MathJax.typesetPromise) {
-                window.MathJax.typesetPromise([qnaArchiveListContainer]).catch(err => console.log(err.message));
-            }
+            scheduleMathJaxTypeset(qnaArchiveListContainer);
         }
 
         if (qnaArchiveSortSelect) qnaArchiveSortSelect.addEventListener("change", renderQnaArchiveList);
         if (qnaArchiveSubjectSelect) qnaArchiveSubjectSelect.addEventListener("change", renderQnaArchiveList);
+        
+        let qnaSearchDebounceTimer = null;
+        let isComposingQnaSearch = false;
         if (qnaArchiveSearchInput) {
-            qnaArchiveSearchInput.addEventListener("input", () => {
+            qnaArchiveSearchInput.addEventListener("compositionstart", () => { isComposingQnaSearch = true; });
+            qnaArchiveSearchInput.addEventListener("compositionend", () => {
+                isComposingQnaSearch = false;
                 if (qnaArchiveSearchClearBtn) qnaArchiveSearchClearBtn.style.display = qnaArchiveSearchInput.value.trim() ? "inline-block" : "none";
                 renderQnaArchiveList();
+            });
+            qnaArchiveSearchInput.addEventListener("input", () => {
+                if (qnaArchiveSearchClearBtn) qnaArchiveSearchClearBtn.style.display = qnaArchiveSearchInput.value.trim() ? "inline-block" : "none";
+                if (isComposingQnaSearch) return;
+                if (qnaSearchDebounceTimer) clearTimeout(qnaSearchDebounceTimer);
+                qnaSearchDebounceTimer = setTimeout(renderQnaArchiveList, 150);
             });
         }
         if (qnaArchiveSearchClearBtn) {
