@@ -15,10 +15,16 @@
     
     <script>
         window.MathJax = {
+            loader: { load: ['[tex]/bbox', '[tex]/color'] },
             tex: {
+                packages: { '[+]': ['bbox', 'color'] },
                 inlineMath: [['$', '$'], ['\\(', '\\)']],
                 displayMath: [['$$', '$$'], ['\\[', '\\]']],
-                macros: { fbox: ["\\bbox[2px,border:1px solid]{#1}", 1] }
+                processEscapes: true,
+                macros: {
+                    fbox: ["\\bbox[2px,border:1px solid]{\\text{#1}}", 1],
+                    boxed: ["\\bbox[2px,border:1px solid]{\\text{#1}}", 1]
+                }
             },
             options: {
                 skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
@@ -2080,10 +2086,32 @@ thumbHtml = `<div class="row-thumb row-thumb-icon ${glowClass} tex2jax_process">
             const answerPreview = document.getElementById('review-answer-math-preview');
 
             if (textInput && textPreview) {
-                textPreview.innerHTML = textInput.value ? textInput.value : "問題文プレビュー";
+                const val = textInput.value;
+                if (!val) {
+                    textPreview.innerHTML = "問題文プレビュー";
+                } else {
+                    const mathBlocks = [];
+                    let placeholder = normalizeMathSyntax(val).replace(/(\$\$[\s\S]*?\$\$|\$[^\$\n]+?\$)/g, (match) => {
+                        mathBlocks.push(match);
+                        return `%%%MATH_${mathBlocks.length - 1}%%%`;
+                    });
+                    placeholder = placeholder.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\\n/g, '<br>').replace(/\n/g, '<br>');
+                    textPreview.innerHTML = placeholder.replace(/%%%MATH_(\d+)%%%/g, (_, idx) => mathBlocks[idx]);
+                }
             }
             if (answerInput && answerPreview) {
-                answerPreview.innerHTML = answerInput.value ? answerInput.value : "解答プレビュー";
+                const val = answerInput.value;
+                if (!val) {
+                    answerPreview.innerHTML = "解答プレビュー";
+                } else {
+                    const mathBlocks = [];
+                    let placeholder = normalizeMathSyntax(val).replace(/(\$\$[\s\S]*?\$\$|\$[^\$\n]+?\$)/g, (match) => {
+                        mathBlocks.push(match);
+                        return `%%%MATH_${mathBlocks.length - 1}%%%`;
+                    });
+                    placeholder = placeholder.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\\n/g, '<br>').replace(/\n/g, '<br>');
+                    answerPreview.innerHTML = placeholder.replace(/%%%MATH_(\d+)%%%/g, (_, idx) => mathBlocks[idx]);
+                }
             }
 
             if (reviewPreviewTimeout) clearTimeout(reviewPreviewTimeout);
@@ -2093,6 +2121,9 @@ thumbHtml = `<div class="row-thumb row-thumb-icon ${glowClass} tex2jax_process">
                     if (textPreview) targets.push(textPreview);
                     if (answerPreview) targets.push(answerPreview);
                     if (targets.length > 0) {
+                        if (typeof window.MathJax.typesetClear === "function") {
+                            window.MathJax.typesetClear(targets);
+                        }
                         window.MathJax.typesetPromise(targets).catch((err) => console.log(err.message));
                     }
                 }
@@ -2860,32 +2891,66 @@ ${glossaryBlock}`;
             if (!str) return "";
             let s = String(str);
 
-            s = s.replace(/\\bbox\s*\[[^\]]*\]\s*\{([^}]*)\}/g, (_, content) => {
-                let c = content.trim();
-                if (!c) c = "\\quad";
-                else c = c.replace(/^\\text\{([\s\S]*)\}$/, "$1").trim();
-                return `\\bbox[2px,border:1px solid]{\\text{${c}}}`;
-            });
-            s = s.replace(/\\bbox\s*\[[^\]]*\]\s*([0-9A-Za-zぁ-んァ-ヶー一-龠々]+)/g, (_, content) => {
-                return `\\bbox[2px,border:1px solid]{\\text{${content.trim()}}}`;
-            });
-            s = s.replace(/\\bbox\s*\[[^\]]*\]/g, `\\bbox[2px,border:1px solid]{\\text{\\quad}}`);
+            // 1. \bbox, \fbox, \boxed, \framebox の波括弧抜け・表記ゆれ・ネストを完全正規化
+            const macroRegex = /\\(?:bbox\s*\[[^\]]*\]|fbox|boxed|framebox(?:\s*\[[^\]]*\])?)/g;
+            let result = "";
+            let lastIndex = 0;
+            let match;
+            while ((match = macroRegex.exec(s)) !== null) {
+                let start = match.index;
+                let end = macroRegex.lastIndex;
+                result += s.substring(lastIndex, start);
 
-            s = s.replace(/\\(?:fbox|boxed|framebox)(?:\s*\[[^\]]*\])?\s*\{([^}]*)\}/g, (_, content) => {
-                let c = content.trim();
-                if (!c) c = "\\quad";
-                else c = c.replace(/^\\text\{([\s\S]*)\}$/, "$1").trim();
-                return `\\bbox[2px,border:1px solid]{\\text{${c}}}`;
-            });
-            s = s.replace(/\\(?:fbox|boxed|framebox)(?:\s*\[[^\]]*\])?\s+([0-9A-Za-zぁ-んァ-ヶー一-龠々]+)/g, (_, content) => {
-                return `\\bbox[2px,border:1px solid]{\\text{${content.trim()}}}`;
-            });
+                let i = end;
+                while (i < s.length && /\s/.test(s[i])) i++;
+
+                if (i < s.length && s[i] === "{") {
+                    let braceCount = 1;
+                    let contentStart = i + 1;
+                    let j = contentStart;
+                    while (j < s.length && braceCount > 0) {
+                        if (s[j] === "\\") { j += 2; continue; }
+                        if (s[j] === "{") braceCount++;
+                        else if (s[j] === "}") braceCount--;
+                        j++;
+                    }
+                    if (braceCount === 0) {
+                        let content = s.substring(contentStart, j - 1).trim();
+                        while (/^\\text\{([\s\S]*)\}$/.test(content)) {
+                            content = content.replace(/^\\text\{([\s\S]*)\}$/, "$1").trim();
+                        }
+                        if (!content) content = "\\quad";
+                        result += `\\bbox[2px,border:1px solid]{\\text{${content}}}`;
+                        lastIndex = j;
+                        macroRegex.lastIndex = j;
+                        continue;
+                    }
+                }
+
+                let wordMatch = s.substring(end).match(/^\s*([0-9A-Za-zぁ-んァ-ヶー一-龠々]+)/);
+                if (wordMatch) {
+                    let content = wordMatch[1].trim();
+                    while (/^\\text\{([\s\S]*)\}$/.test(content)) {
+                        content = content.replace(/^\\text\{([\s\S]*)\}$/, "$1").trim();
+                    }
+                    if (!content) content = "\\quad";
+                    result += `\\bbox[2px,border:1px solid]{\\text{${content}}}`;
+                    lastIndex = end + wordMatch[0].length;
+                    macroRegex.lastIndex = lastIndex;
+                    continue;
+                }
+
+                result += `\\bbox[2px,border:1px solid]{\\text{\\quad}}`;
+                lastIndex = end;
+            }
+            result += s.substring(lastIndex);
+            s = result;
 
             const parts = s.split(/(\$\$[\s\S]*?\$\$|\$[^\$\n]+?\$)/g);
             for (let i = 0; i < parts.length; i += 2) {
                 let chunk = parts[i];
                 if (!chunk) continue;
-                chunk = chunk.replace(/(\\bbox\[2px,border:1px solid\]\{\\text\{[^}]*\}\}(?:\^[0-9A-Za-z^\circ]+)?)/g, '$$$1$$');
+                chunk = chunk.replace(/(\\bbox\[2px,border:1px solid\]\{\\text\{[\s\S]*?\}\}(?:\^[0-9A-Za-z^\circ]+)?)/g, '$$$1$$');
                 chunk = chunk.replace(/(\\(?:triangle|angle|sqrt|frac|vec|alpha|beta|gamma|theta|pi|pm|mp|le|ge|leqq|geqq|neq|approx|sim|equiv|subset|supset|cap|cup|times|div|cdot|int|sum|lim|log|ln|sin|cos|tan)\b[^\s$、。,.)）]*)/g, '$$$1$$');
                 chunk = chunk.replace(/\$\s*\$/g, '');
                 parts[i] = chunk;

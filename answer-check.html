@@ -12,10 +12,16 @@
 
     <script>
         window.MathJax = {
+            loader: { load: ['[tex]/bbox', '[tex]/color'] },
             tex: {
+                packages: { '[+]': ['bbox', 'color'] },
                 inlineMath: [['$', '$'], ['\\(', '\\)']],
                 displayMath: [['$$', '$$'], ['\\[', '\\]']],
-                macros: { fbox: ["\\bbox[2px,border:1px solid]{#1}", 1] }
+                processEscapes: true,
+                macros: {
+                    fbox: ["\\bbox[2px,border:1px solid]{\\text{#1}}", 1],
+                    boxed: ["\\bbox[2px,border:1px solid]{\\text{#1}}", 1]
+                }
             },
             options: {
                 skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
@@ -420,26 +426,43 @@ ${MULTI_QUESTION_INSTRUCTION}
             if (!str) return "";
             let s = String(str);
 
-            s = s.replace(/\\bbox\s*\[[^\]]*\]\s*\{([^}]*)\}/g, (_, content) => {
+            s = s.replace(/\\bbox\s*\[[^\]]*\]\s*\{((?:[^{}]*|\{[^{}]*\})*)\}/g, (_, content) => {
                 let c = content.trim();
+                while (/^\\text\{([\s\S]*)\}$/.test(c)) {
+                    c = c.replace(/^\\text\{([\s\S]*)\}$/, "$1").trim();
+                }
                 if (!c) c = "\\quad";
-                else c = c.replace(/^\\text\{([\s\S]*)\}$/, "$1").trim();
                 return `\\bbox[2px,border:1px solid]{\\text{${c}}}`;
             });
-            s = s.replace(/\\bbox\s*\[[^\]]*\]\s*([0-9A-Za-zぁ-んァ-ヶー一-龠々]+)/g, (_, content) => {
-                return `\\bbox[2px,border:1px solid]{\\text{${content.trim()}}}`;
-            });
-            s = s.replace(/\\bbox\s*\[[^\]]*\]/g, `\\bbox[2px,border:1px solid]{\\text{\\quad}}`);
 
-            s = s.replace(/\\(?:fbox|boxed|framebox)(?:\s*\[[^\]]*\])?\s*\{([^}]*)\}/g, (_, content) => {
+            s = s.replace(/\\bbox\s*\[[^\]]*\]\s*([0-9A-Za-zぁ-んァ-ヶー一-龠々]+)/g, (_, content) => {
                 let c = content.trim();
+                while (/^\\text\{([\s\S]*)\}$/.test(c)) {
+                    c = c.replace(/^\\text\{([\s\S]*)\}$/, "$1").trim();
+                }
                 if (!c) c = "\\quad";
-                else c = c.replace(/^\\text\{([\s\S]*)\}$/, "$1").trim();
+                return `\\bbox[2px,border:1px solid]{\\text{${c}}}`;
+            });
+
+            s = s.replace(/\\bbox\s*\[[^\]]*\](?!\s*\{)/g, `\\bbox[2px,border:1px solid]{\\text{\\quad}}`);
+
+            s = s.replace(/\\(?:fbox|boxed|framebox)(?:\s*\[[^\]]*\])?\s*\{((?:[^{}]*|\{[^{}]*\})*)\}/g, (_, content) => {
+                let c = content.trim();
+                while (/^\\text\{([\s\S]*)\}$/.test(c)) {
+                    c = c.replace(/^\\text\{([\s\S]*)\}$/, "$1").trim();
+                }
+                if (!c) c = "\\quad";
                 return `\\bbox[2px,border:1px solid]{\\text{${c}}}`;
             });
             s = s.replace(/\\(?:fbox|boxed|framebox)(?:\s*\[[^\]]*\])?\s+([0-9A-Za-zぁ-んァ-ヶー一-龠々]+)/g, (_, content) => {
-                return `\\bbox[2px,border:1px solid]{\\text{${content.trim()}}}`;
+                let c = content.trim();
+                while (/^\\text\{([\s\S]*)\}$/.test(c)) {
+                    c = c.replace(/^\\text\{([\s\S]*)\}$/, "$1").trim();
+                }
+                if (!c) c = "\\quad";
+                return `\\bbox[2px,border:1px solid]{\\text{${c}}}`;
             });
+            s = s.replace(/\\(?:fbox|boxed|framebox)(?:\s*\[[^\]]*\])?(?!\s*\{)/g, `\\bbox[2px,border:1px solid]{\\text{\\quad}}`);
 
             const parts = s.split(/(\$\$[\s\S]*?\$\$|\$[^\$\n]+?\$)/g);
             for (let i = 0; i < parts.length; i += 2) {

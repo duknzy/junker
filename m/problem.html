@@ -12,15 +12,45 @@
 
     <script>
         window.MathJax = {
+            loader: { load: ['[tex]/bbox', '[tex]/color'] },
             tex: {
+                packages: { '[+]': ['bbox', 'color'] },
                 inlineMath: [['$', '$'], ['\\(', '\\)']],
                 displayMath: [['$$', '$$'], ['\\[', '\\]']],
                 processEscapes: true,
-                macros: { fbox: ["\\bbox[2px,border:1px solid]{#1}", 1] }
+                macros: {
+                    fbox: ["\\bbox[2px,border:1px solid]{\\text{#1}}", 1],
+                    boxed: ["\\bbox[2px,border:1px solid]{\\text{#1}}", 1]
+                }
             },
             options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'] },
             chtml: { displayAlign: 'left' }
         };
+
+        let typesetQueue = Promise.resolve();
+        function safeTypeset(targets) {
+            typesetQueue = typesetQueue.then(async () => {
+                if (!window.MathJax || !window.MathJax.typesetPromise) return;
+                try {
+                    let els = null;
+                    if (Array.isArray(targets)) {
+                        els = targets.filter(el => el && el.nodeType === 1);
+                    } else if (targets && targets.nodeType === 1) {
+                        els = [targets];
+                    }
+                    if (typeof MathJax.typesetClear === "function") {
+                        if (els && els.length > 0) MathJax.typesetClear(els);
+                        else if (!targets) MathJax.typesetClear();
+                    }
+                    if (els && els.length > 0) await MathJax.typesetPromise(els);
+                    else if (!targets) await MathJax.typesetPromise();
+                } catch (e) {
+                    console.warn("MathJax safeTypeset:", e);
+                }
+            }).catch(err => console.warn(err));
+            return typesetQueue;
+        }
+        window.safeTypeset = safeTypeset;
     </script>
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" async></script>
 
@@ -955,12 +985,85 @@
         });
 
         // ==================== ユーティリティ ====================
+        function normalizeMathSyntax(str) {
+            if (!str) return "";
+            let s = String(str);
+
+            // 1. \bbox, \fbox, \boxed, \framebox の波括弧抜け・表記ゆれ・ネストを完全正規化
+            const macroRegex = /\\(?:bbox\s*\[[^\]]*\]|fbox|boxed|framebox(?:\s*\[[^\]]*\])?)/g;
+            let result = "";
+            let lastIndex = 0;
+            let match;
+            while ((match = macroRegex.exec(s)) !== null) {
+                let start = match.index;
+                let end = macroRegex.lastIndex;
+                result += s.substring(lastIndex, start);
+
+                let i = end;
+                while (i < s.length && /\s/.test(s[i])) i++;
+
+                if (i < s.length && s[i] === "{") {
+                    let braceCount = 1;
+                    let contentStart = i + 1;
+                    let j = contentStart;
+                    while (j < s.length && braceCount > 0) {
+                        if (s[j] === "\\") { j += 2; continue; }
+                        if (s[j] === "{") braceCount++;
+                        else if (s[j] === "}") braceCount--;
+                        j++;
+                    }
+                    if (braceCount === 0) {
+                        let content = s.substring(contentStart, j - 1).trim();
+                        while (/^\\text\{([\s\S]*)\}$/.test(content)) {
+                            content = content.replace(/^\\text\{([\s\S]*)\}$/, "$1").trim();
+                        }
+                        if (!content) content = "\\quad";
+                        result += `\\bbox[2px,border:1px solid]{\\text{${content}}}`;
+                        lastIndex = j;
+                        macroRegex.lastIndex = j;
+                        continue;
+                    }
+                }
+
+                let wordMatch = s.substring(end).match(/^\s*([0-9A-Za-zぁ-んァ-ヶー一-龠々]+)/);
+                if (wordMatch) {
+                    let content = wordMatch[1].trim();
+                    while (/^\\text\{([\s\S]*)\}$/.test(content)) {
+                        content = content.replace(/^\\text\{([\s\S]*)\}$/, "$1").trim();
+                    }
+                    if (!content) content = "\\quad";
+                    result += `\\bbox[2px,border:1px solid]{\\text{${content}}}`;
+                    lastIndex = end + wordMatch[0].length;
+                    macroRegex.lastIndex = lastIndex;
+                    continue;
+                }
+
+                result += `\\bbox[2px,border:1px solid]{\\text{\\quad}}`;
+                lastIndex = end;
+            }
+            result += s.substring(lastIndex);
+            s = result;
+
+            const parts = s.split(/(\$\$[\s\S]*?\$\$|\$[^\$\n]+?\$)/g);
+            for (let i = 0; i < parts.length; i += 2) {
+                let chunk = parts[i];
+                if (!chunk) continue;
+                chunk = chunk.replace(/(\\bbox\[2px,border:1px solid\]\{\\text\{[\s\S]*?\}\}(?:\^[0-9A-Za-z^\circ]+)?)/g, '$$$1$$');
+                chunk = chunk.replace(/(\\(?:triangle|angle|sqrt|frac|vec|alpha|beta|gamma|theta|pi|pm|mp|le|ge|leqq|geqq|neq|approx|sim|equiv|subset|supset|cap|cup|times|div|cdot|int|sum|lim|log|ln|sin|cos|tan)\b[^\s$、。,.)）]*)/g, '$$$1$$');
+                chunk = chunk.replace(/\$\s*\$/g, '');
+                parts[i] = chunk;
+            }
+            return parts.join("");
+        }
+
         function formatText(text) {
             if (!text) return "";
 
+            let normalized = normalizeMathSyntax(text);
+
             // 数式ブロック（$ ... $ または $$ ... $$）を一時退避
             const mathBlocks = [];
-            let placeholderText = String(text).replace(/(\$\$[\s\S]*?\$\$|\$[^\$\n]+?\$)/g, (match) => {
+            let placeholderText = String(normalized).replace(/(\$\$[\s\S]*?\$\$|\$[^\$\n]+?\$)/g, (match) => {
                 mathBlocks.push(match);
                 return `%%%MATH_${mathBlocks.length - 1}%%%`;
             });
@@ -982,8 +1085,9 @@
 
         function formatMathTitle(text) {
             if (!text) return "問題演習";
+            let normalized = normalizeMathSyntax(text);
             const mathBlocks = [];
-            let placeholderText = String(text).replace(/(\$\$[\s\S]*?\$\$|\$[^\$\n]+?\$)/g, (match) => {
+            let placeholderText = String(normalized).replace(/(\$\$[\s\S]*?\$\$|\$[^\$\n]+?\$)/g, (match) => {
                 mathBlocks.push(match);
                 return `%%%MATH_${mathBlocks.length - 1}%%%`;
             });
