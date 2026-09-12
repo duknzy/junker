@@ -14,6 +14,24 @@
     <link rel="stylesheet" href="style.css?v=3.5">
     
     <script>
+        // 📱 Android APK / モバイル端末アクセス時は自動的にモバイル版 (/m/index.html) を表示
+        (function() {
+            try {
+                const isCapacitor = window.Capacitor !== undefined || /Capacitor|FloraApp/i.test(navigator.userAgent);
+                const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+                const params = new URLSearchParams(window.location.search);
+                const forcePc = params.get('force') === 'pc' || sessionStorage.getItem('flora_force_pc') === 'true';
+                if ((isCapacitor || isMobileDevice) && !forcePc) {
+                    const search = window.location.search;
+                    const hash = window.location.hash;
+                    window.location.replace('m/index.html' + search + hash);
+                }
+            } catch (e) {
+                console.warn("Mobile redirect error:", e);
+            }
+        })();
+    </script>
+    <script>
         window.MathJax = {
             loader: { load: ['[tex]/bbox', '[tex]/color'] },
             tex: {
@@ -876,7 +894,7 @@
             showToast, callGeminiJSON, generateTinyThumbnail
         } from "./api-key-manager.js?v=3.5";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getAuth, signInWithPopup, signInWithEmailAndPassword, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { getAuth, signInWithPopup, signInWithRedirect, getRedirectResult, signInWithEmailAndPassword, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
         import { getDatabase, ref, set, get, update, onValue, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
         const firebaseConfig = {
@@ -893,6 +911,10 @@
         const auth = getAuth(app);
         const database = getDatabase(app);
         const provider = new GoogleAuthProvider();
+
+        getRedirectResult(auth).catch(e => {
+            if (e.code && e.code !== "auth/null-user") console.error("Redirect login error:", e);
+        });
 
         // 🔑【複数キー対応】右下の🔑ボタンから追加/削除できる管理UIを注入。未登録なら自動で開く。
         initApiKeyManager({ needGemini: true, needDeepseek: true });
@@ -1269,7 +1291,18 @@ async function checkAndLoadLinkedLesson(uid) {
             }
         });
 
-        function doLogin() { signInWithPopup(auth, provider).catch(e => console.error(e)); }
+        async function doLogin() {
+            const isNative = window.Capacitor !== undefined || /Capacitor|FloraApp|Android/i.test(navigator.userAgent);
+            if (isNative) {
+                try {
+                    await signInWithRedirect(auth, provider);
+                    return;
+                } catch(e) {
+                    console.warn("signInWithRedirect fallback:", e);
+                }
+            }
+            signInWithPopup(auth, provider).catch(e => console.error(e));
+        }
         document.getElementById("main-login-btn").addEventListener("click", doLogin);
 
         async function doTestLogin() {
