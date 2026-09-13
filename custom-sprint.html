@@ -97,6 +97,91 @@
             margin: 0 auto;
         }
 
+        /* 📋 スプリント終了後の全問題レビューカード */
+        .sprint-review-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 1rem 1.2rem;
+            transition: all 0.2s ease;
+        }
+        .sprint-review-card.correct {
+            border-left-color: #10B981;
+        }
+        .sprint-review-card.wrong {
+            border-left-color: #EF4444;
+            background: rgba(239, 68, 68, 0.02);
+        }
+        .sprint-review-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.6rem;
+            cursor: pointer;
+            user-select: none;
+        }
+        .sprint-review-header:hover .sprint-review-title {
+            color: var(--brand-primary);
+        }
+        .sprint-review-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            transition: color 0.15s;
+        }
+        .sprint-review-badge {
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 0.2rem 0.5rem;
+            border-radius: var(--radius-sm);
+            white-space: nowrap;
+        }
+        .sprint-review-badge.correct {
+            background: #D1FAE5;
+            color: #065F46;
+        }
+        .sprint-review-badge.wrong {
+            background: #FEE2E2;
+            color: #991B1B;
+        }
+        .sprint-review-body {
+            margin-top: 0.8rem;
+            padding-top: 0.8rem;
+            border-top: 1px dashed var(--border-color);
+            display: none;
+        }
+        .sprint-review-body.open {
+            display: block;
+        }
+        .sprint-review-qtext {
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: var(--text-primary);
+            background: var(--bg-subtle);
+            padding: 0.8rem 1rem;
+            border-radius: var(--radius-sm);
+            margin-bottom: 0.6rem;
+            white-space: pre-wrap;
+        }
+        .sprint-review-answer {
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: var(--brand-primary);
+            margin-bottom: 0.5rem;
+        }
+        .sprint-review-steps {
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: var(--text-secondary);
+            white-space: pre-wrap;
+            background: #F8FAFC;
+            padding: 0.8rem 1rem;
+            border-radius: var(--radius-sm);
+            border: 1px solid #E2E8F0;
+            margin-bottom: 0.8rem;
+        }
+
         .figure-gallery {
             display: none; gap: 0.8rem; flex-wrap: wrap; margin-bottom: 1rem;
             padding: 0.9rem; border: 1px dashed var(--brand-border); border-radius: var(--radius-md); background: var(--bg-subtle);
@@ -1427,7 +1512,8 @@
                         <div style="font-size: 1rem; font-weight: 700; color: var(--text-primary);" id="kyotsu-final-percent-text">正答率: --%</div>
                         <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.35rem;" id="kyotsu-final-time-text">所要時間: 00:00</div>
                         <div style="display: flex; gap: 0.8rem; justify-content: center; margin-top: 1.2rem; flex-wrap: wrap;">
-                            <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="btn-kyotsu-save-mistakes">❌ 誤答マークを誤答ノートに記録</button>
+                            <button type="button" class="flora-btn flora-btn-primary btn-sm" id="btn-kyotsu-save-all" style="font-weight: 700;">💾 この大問を保存（全問題記録）</button>
+                            <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="btn-kyotsu-save-mistakes">❌ 誤答マークのみ保存</button>
                             <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="btn-kyotsu-retry">🔄 同じ大問をやり直す</button>
                             <button type="button" class="flora-btn flora-btn-primary btn-sm" id="btn-kyotsu-new-problem">🚀 別の共通テスト大問を作る</button>
                         </div>
@@ -1488,6 +1574,22 @@
                     <p style="color:var(--text-secondary); margin-bottom: 2rem; font-size: var(--fs-sm);" id="result-summary-text">カスタムスプリントをすべてクリアしました。</p>
                     <div style="font-size: 0.82rem; color:var(--text-secondary); margin-bottom: 0.3rem; font-weight: 700;">TOTAL TIME</div>
                     <div class="timer-display" id="final-time-display" style="font-size: 3.2rem; margin-bottom: 2.5rem;">00:00.00</div>
+                    <!-- 📋 今回解いた全問題の一覧・復習エリア -->
+                    <div id="sprint-review-area" style="width: 100%; max-width: 760px; margin: 1.5rem auto 2rem; text-align: left; display: none;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.8rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.8rem;">
+                            <div>
+                                <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary); margin: 0;">📋 今回解いた全問題の記録・復習</h3>
+                                <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.2rem;" id="sprint-review-stats">正解 0問 / 誤答 0問</div>
+                            </div>
+                            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                <button type="button" class="flora-btn flora-btn-primary btn-sm" id="btn-save-all-sprint-problems" style="font-weight: 700;">
+                                    📚 全問題を問題集に一括保存
+                                </button>
+                            </div>
+                        </div>
+                        <div id="sprint-review-items" style="display: flex; flex-direction: column; gap: 1rem;"></div>
+                    </div>
+
                     <div style="display: flex; gap: 0.8rem; flex-wrap: wrap; justify-content: center;">
                         <button type="button" class="flora-btn flora-btn-secondary btn-lg" id="btn-retry-same-condition">🔄 同じ条件でもう一周する</button>
                         <button type="button" class="flora-btn flora-btn-secondary btn-lg" id="btn-new-condition">🎛 条件を変えて作り直す</button>
@@ -1546,6 +1648,7 @@
         // ==========================================================================
         let selectedQuestions = [];
         let currentQuestionIndex = 0;
+        let sprintResultsTracker = []; // 📋 スプリント演習全問題の結果記録 [{ question, isCorrect }]
         let loginUid = null;
         let startTime = 0;
         let timerInterval = null;
@@ -3346,21 +3449,22 @@
             switchMode("kyotsu");
         });
 
-        // 誤答マークをFirebaseの復習ノートに保存
-        document.getElementById("btn-kyotsu-save-mistakes")?.addEventListener("click", async () => {
+        // 🏛️ 共通テスト大問の保存（全問記録 or 誤答のみ）
+        async function saveKyotsuSessionToNotebook(saveMode = 'all') {
             if (!loginUid || !kyotsuProblemData) return;
 
             const allMarks = getAllKyotsuMarks(kyotsuProblemData);
             const wrongMarks = allMarks.filter(m => (kyotsuUserAnswers[m.id] || "").trim().toLowerCase() !== String(m.answer || "").trim().toLowerCase());
 
-            if (wrongMarks.length === 0) {
-                showToast("全問正解です！誤答ノートへの記録はありません。素晴らしい！", "success");
+            if (saveMode === 'mistakes_only' && wrongMarks.length === 0) {
+                showToast("全問正解です！誤答はありません。「この大問を保存（全問題記録）」から保存できます。", "info", 4000);
                 return;
             }
 
             const nowIso = new Date().toISOString();
             const pid = `KYOTSU_MISTAKE_${Date.now()}`;
             const wrongLabels = wrongMarks.map(m => `[${m.id}]`).join(", ");
+            const isPerfect = wrongMarks.length === 0;
 
             // 1. 大問の完全な問題文全文（前提リード文、各小問、解答群を論理的に結合）
             let fullProblemStatement = `【大問表題】${kyotsuProblemData.title || "共通テスト実践演習"}\n\n`;
@@ -3409,22 +3513,36 @@
                 structuredAnswer += `\n【大問の総括・思考ポイント】\n${kyotsuProblemData.overall_review}\n`;
             }
 
-            // 3. ミスしたマークの着眼点・罠
-            const trapText = `【共通テスト特訓：要復習マーク】\n` +
-                wrongMarks.map(m => `・マーク [${m.id}]: あなたの解答「${kyotsuUserAnswers[m.id] || "未入力"}」 ➔ 正解「${m.answer}」`).join("\n");
+            // 3. ミスしたマークの着眼点・罠 / 全問正解サマリー
+            let trapText = "";
+            let shortTitle = "";
+            if (isPerfect) {
+                trapText = `【完全正解💮】全マーク (${totalMarksCount}個) 正解しました！大問の誘導構造を完璧に捉えられています。`;
+                shortTitle = `【共テ】${kyotsuProblemData.title || kyotsuProblemData.field}（全問正解💮）`;
+            } else if (saveMode === 'mistakes_only') {
+                trapText = `【共通テスト特訓：要復習マーク】\n` +
+                    wrongMarks.map(m => `・マーク [${m.id}]: あなたの解答「${kyotsuUserAnswers[m.id] || "未入力"}」 ➔ 正解「${m.answer}」`).join("\n");
+                shortTitle = `【共テ】${kyotsuProblemData.title || kyotsuProblemData.field}（ミス: ${wrongLabels}）`;
+            } else {
+                trapText = `【共通テスト演習記録：${correctCount}/${totalMarksCount}問正解】\n` +
+                    (wrongMarks.length > 0
+                        ? wrongMarks.map(m => `・マーク [${m.id}]: あなたの解答「${kyotsuUserAnswers[m.id] || "未入力"}」 ➔ 正解「${m.answer}」`).join("\n")
+                        : "全問正解でした！");
+                shortTitle = `【共テ】${kyotsuProblemData.title || kyotsuProblemData.field}（${correctCount}/${totalMarksCount}正解・ミス: ${wrongLabels}）`;
+            }
 
             const mistakeProblem = {
                 id: pid,
                 title: fullProblemStatement.trim(),
-                short_title: `【共テ】${kyotsuProblemData.title || kyotsuProblemData.field}（ミス: ${wrongLabels}）`,
+                short_title: shortTitle,
                 subject: kyotsuProblemData.subject || "数学",
                 field: kyotsuProblemData.field || "共通テスト特訓",
                 trap_description: trapText,
                 strategyPattern: kyotsuProblemData.overall_review || "大問全体の誘導ストーリーと前の小問の結果の活用に着目する",
-                errorCount: 1,
+                errorCount: isPerfect ? 0 : wrongMarks.length,
                 lastAttemptAt: nowIso,
                 createdAt: nowIso,
-                lastResult: false,
+                lastResult: isPerfect,
                 thumb: null,
                 imageCount: 0,
                 answerFormula: structuredAnswer.trim(),
@@ -3436,12 +3554,20 @@
 
             try {
                 await set(ref(database, `users/${loginUid}/problems/${pid}`), mistakeProblem);
-                showToast(`誤答マーク（${wrongLabels}）を大問ごと復習ノートに完全保存しました！`, "success", 4000);
+                const toastMsg = isPerfect
+                    ? "🎉 満点の大問を問題集・復習ノートに保存しました！"
+                    : (saveMode === 'all'
+                        ? `📚 共通テスト大問（全問記録：${correctCount}/${totalMarksCount}正解）を保存しました！`
+                        : `❌ 誤答マーク（${wrongLabels}）を復習ノートに保存しました！`);
+                showToast(toastMsg, "success", 4000);
             } catch (e) {
-                console.error("誤答ノート保存エラー:", e);
+                console.error("共通テスト保存エラー:", e);
                 showToast("保存に失敗しました。", "error");
             }
-        });
+        }
+
+        document.getElementById("btn-kyotsu-save-all")?.addEventListener("click", () => saveKyotsuSessionToNotebook('all'));
+        document.getElementById("btn-kyotsu-save-mistakes")?.addEventListener("click", () => saveKyotsuSessionToNotebook('mistakes_only'));
 
         
         // 1問ごとの個別生成用スキーマ
@@ -3677,6 +3803,7 @@
             document.getElementById("sprint-play-zone").style.display = "flex";
 
             currentQuestionIndex = 0;
+            sprintResultsTracker = [];
             clearInterval(timerInterval);
             document.getElementById("sprint-timer").textContent = "00:00.00";
             document.getElementById("sprint-progress").textContent = "START!";
@@ -3734,6 +3861,7 @@
             document.getElementById("sprint-play-zone").style.display = "flex";
 
             currentQuestionIndex = 0;
+            sprintResultsTracker = [];
             clearInterval(timerInterval);
             document.getElementById("sprint-timer").textContent = "00:00.00";
             document.getElementById("sprint-reveal-zone").style.display = "none";
@@ -4149,6 +4277,9 @@ selectedQuestions = shuffled.slice(0, count).map((q, idx) => ({
             if (!loginUid) return;
             const q = selectedQuestions[currentQuestionIndex];
 
+            // 📋 スプリント履歴に記録
+            sprintResultsTracker.push({ question: q, isCorrect: false });
+
             if (currentMode === "registered") {
                 // 登録済みモード：既存レコードの errorCount+1、lastAttemptAt、lastResult を更新
                 const nowIso = new Date().toISOString();
@@ -4179,8 +4310,12 @@ selectedQuestions = shuffled.slice(0, count).map((q, idx) => ({
 
         // ✅ 解けた：AIモード → DB更新なし / 登録済みモード → lastResult:true を記録
         async function handleCorrect() {
+            const q = selectedQuestions[currentQuestionIndex];
+
+            // 📋 スプリント履歴に記録
+            sprintResultsTracker.push({ question: q, isCorrect: true });
+
             if (currentMode === "registered" && loginUid) {
-                const q = selectedQuestions[currentQuestionIndex];
                 const nowIso = new Date().toISOString();
                 try {
                     await update(ref(database, `users/${loginUid}/problems/${q.id}`), {
@@ -4275,7 +4410,184 @@ selectedQuestions = shuffled.slice(0, count).map((q, idx) => ({
 
             // ボタンラベルを元に戻す
             document.getElementById("btn-sprint-wrong").textContent = "❌ ミスった（LOLZへ送る）";
+
+            // 📋 今回解いた全問題の一覧・復習を描画
+            renderSprintReviewList();
         }
+
+        // 📋 今回解いた全問題の一覧レンダリング
+        function renderSprintReviewList() {
+            const reviewArea = document.getElementById("sprint-review-area");
+            const reviewItems = document.getElementById("sprint-review-items");
+            const reviewStats = document.getElementById("sprint-review-stats");
+            if (!reviewArea || !reviewItems) return;
+
+            if (!sprintResultsTracker || sprintResultsTracker.length === 0) {
+                sprintResultsTracker = selectedQuestions.map(q => ({ question: q, isCorrect: true }));
+            }
+
+            const total = sprintResultsTracker.length;
+            const correctCount = sprintResultsTracker.filter(r => r.isCorrect).length;
+            const wrongCount = total - correctCount;
+
+            if (reviewStats) {
+                reviewStats.textContent = `正答率: ${Math.round((correctCount / total) * 100)}% (🎉 正解 ${correctCount}問 / ❌ 誤答 ${wrongCount}問)`;
+            }
+
+            reviewItems.innerHTML = sprintResultsTracker.map((r, idx) => {
+                const q = r.question;
+                const isCorrect = r.isCorrect;
+                const cardClass = isCorrect ? "correct" : "wrong";
+                const badgeClass = isCorrect ? "correct" : "wrong";
+                const badgeText = isCorrect ? "🎉 正解" : "❌ ミス";
+                const title = q.title || q.theme || `第 ${idx + 1} 問`;
+
+                return `
+                    <div class="sprint-review-card ${cardClass}" id="sprint-review-card-${idx}">
+                        <div class="sprint-review-header" onclick="toggleSprintReviewBody(${idx})">
+                            <div style="display:flex; align-items:center; gap:0.6rem; min-width:0;">
+                                <span class="sprint-review-badge ${badgeClass}">${badgeText}</span>
+                                <span class="sprint-review-title" style="text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">第 ${idx + 1} 問: ${escapeHtml(title.slice(0, 35))}${title.length > 35 ? '…' : ''}</span>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:0.5rem; flex-shrink:0;">
+                                <button type="button" class="flora-btn flora-btn-ghost btn-sm" style="font-size:0.75rem; padding:0.2rem 0.5rem;" id="btn-save-single-prob-${idx}" onclick="event.stopPropagation(); saveSingleSprintProblem(${idx});">
+                                    💾 保存
+                                </button>
+                                <span id="sprint-review-arrow-${idx}" style="font-size:0.8rem; color:var(--text-muted);">▼</span>
+                            </div>
+                        </div>
+                        <div class="sprint-review-body tex2jax_process" id="sprint-review-body-${idx}">
+                            <div class="sprint-review-qtext">${escapeHtml(q.questionText || q.title || '')}</div>
+                            <div class="sprint-review-answer">正解: ${escapeHtml(q.answer || '')}</div>
+                            <div class="sprint-review-steps"><strong>【解説・解法ステップ】</strong>\n${escapeHtml(q.steps || '解説なし')}</div>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+
+            reviewArea.style.display = "block";
+            forceTriggerMathJax();
+        }
+
+        window.toggleSprintReviewBody = function(idx) {
+            const body = document.getElementById(`sprint-review-body-${idx}`);
+            const arrow = document.getElementById(`sprint-review-arrow-${idx}`);
+            if (body) {
+                const isOpen = body.classList.toggle("open");
+                if (arrow) arrow.textContent = isOpen ? "▲" : "▼";
+            }
+        };
+
+        window.saveSingleSprintProblem = async function(idx) {
+            if (!loginUid) {
+                showToast("ログインが必要です", "error");
+                return;
+            }
+            const r = sprintResultsTracker[idx];
+            if (!r || !r.question) return;
+
+            const q = r.question;
+            const nowIso = new Date().toISOString();
+            const pid = q.id || `SPRINT_PROB_${Date.now()}_${idx}`;
+            const isCorrect = r.isCorrect;
+
+            const sprintTitle = lastCondition?.sprintTitle || "";
+            const shortTitle = sprintTitle ? `【CS】${sprintTitle.slice(0, 20)}` : `【CS】${q.field || "演習"}`;
+
+            const problemObj = {
+                id: pid,
+                title: q.questionText || q.title,
+                short_title: `${shortTitle}（${isCorrect ? '正解💮' : 'ミス'}）`,
+                subject: q.subject || "数学",
+                field: q.field || "カスタムスプリント",
+                trap_description: isCorrect ? "スプリントで解けた問題の記録です。" : "スプリントでミスした問題。解法の要点を復習してください。",
+                strategyPattern: "",
+                errorCount: isCorrect ? 0 : 1,
+                lastAttemptAt: nowIso,
+                createdAt: nowIso,
+                lastResult: isCorrect,
+                thumb: null,
+                imageCount: 0,
+                answerFormula: `${q.answer || ''}\n\n【解説】\n${q.steps || ''}`
+            };
+
+            try {
+                await set(ref(database, `users/${loginUid}/problems/${pid}`), problemObj);
+                const btn = document.getElementById(`btn-save-single-prob-${idx}`);
+                if (btn) {
+                    btn.disabled = true;
+                    btn.textContent = "✅ 保存済";
+                }
+                showToast(`第 ${idx + 1} 問を問題集に保存しました！`, "success");
+            } catch (e) {
+                console.error("個別保存エラー:", e);
+                showToast("保存に失敗しました。", "error");
+            }
+        };
+
+        // 📚 全問題一括保存ボタン
+        document.getElementById("btn-save-all-sprint-problems")?.addEventListener("click", async () => {
+            if (!loginUid) {
+                showToast("ログインが必要です", "error");
+                return;
+            }
+            if (!sprintResultsTracker || sprintResultsTracker.length === 0) {
+                showToast("保存対象の問題がありません", "info");
+                return;
+            }
+
+            const btn = document.getElementById("btn-save-all-sprint-problems");
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = "⏳ 一括保存中...";
+            }
+
+            const nowIso = new Date().toISOString();
+            const sprintTitle = lastCondition?.sprintTitle || "";
+            let savedCount = 0;
+
+            for (let i = 0; i < sprintResultsTracker.length; i++) {
+                const r = sprintResultsTracker[i];
+                const q = r.question;
+                const pid = q.id || `SPRINT_PROB_${Date.now()}_${i}`;
+                const isCorrect = r.isCorrect;
+                const shortTitle = sprintTitle ? `【CS】${sprintTitle.slice(0, 18)} #${i+1}` : `【CS】${q.field || "演習"} #${i+1}`;
+
+                const problemObj = {
+                    id: pid,
+                    title: q.questionText || q.title,
+                    short_title: `${shortTitle}（${isCorrect ? '正解💮' : 'ミス'}）`,
+                    subject: q.subject || "数学",
+                    field: q.field || "カスタムスプリント",
+                    trap_description: isCorrect ? "スプリントで解けた問題の記録です。" : "スプリントでミスした問題。解法の要点を復習してください。",
+                    strategyPattern: "",
+                    errorCount: isCorrect ? 0 : 1,
+                    lastAttemptAt: nowIso,
+                    createdAt: nowIso,
+                    lastResult: isCorrect,
+                    thumb: null,
+                    imageCount: 0,
+                    answerFormula: `${q.answer || ''}\n\n【解説】\n${q.steps || ''}`
+                };
+
+                try {
+                    await set(ref(database, `users/${loginUid}/problems/${pid}`), problemObj);
+                    savedCount++;
+                    const singleBtn = document.getElementById(`btn-save-single-prob-${i}`);
+                    if (singleBtn) {
+                        singleBtn.disabled = true;
+                        singleBtn.textContent = "✅ 保存済";
+                    }
+                } catch (e) {
+                    console.error("一括保存エラー:", e);
+                }
+            }
+
+            if (btn) {
+                btn.textContent = `✅ ${savedCount}問 一括保存完了！`;
+            }
+            showToast(`全 ${savedCount} 問（正解・誤答すべて）を問題集に一括保存しました！いつでも復習できます。`, "success", 4000);
+        });
 
 
         // ==========================================================================
