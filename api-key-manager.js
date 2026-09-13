@@ -834,9 +834,12 @@ export function extractJsonArray(text) {
 // 🧠 Gemini フォールバック実行ループ
 // --------------------------------------------------------------------------
 async function runGeminiFallbackLoop(contents, systemInstruction, options = {}) {
-    const { temperature = 0.1, arrayMode = false, silentFallback = false, responseSchema = null, featureId = null, requestTimeoutMs = null, keyOffset = 0 } = options;
+    const { temperature = 0.1, arrayMode = false, silentFallback = false, responseSchema = null, featureId = null, requestTimeoutMs = null, keyOffset = 0, preferredModel = null } = options;
     const keys = getEffectiveGeminiKeys(featureId);
-    const modelList = getEffectiveModelList(featureId);
+    let modelList = getEffectiveModelList(featureId);
+    if (preferredModel && typeof preferredModel === "string") {
+        modelList = [preferredModel, ...modelList.filter(m => m !== preferredModel)];
+    }
 
     const strictJsonReminder = "\n\n❗最重要ルール: 出力は指定されたJSON形式のみとすること。挨拶・前置き・説明文・Markdownのコードブロック(```)など、JSON以外の文字列は一切含めないこと。";
 
