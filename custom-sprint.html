@@ -1265,7 +1265,7 @@
                         </div>
 
                         <!-- 問題数設定（通常モード） -->
-                        <div style="margin-bottom: 1.5rem;" id="step2-count-container">
+                        <div style="margin-bottom: 1.2rem;" id="step2-count-container">
                             <div class="setup-label">🔢 問題数</div>
                             <div class="count-btn-group" id="count-btn-group">
                                 <div class="count-btn" data-count="3">3問</div>
@@ -1273,6 +1273,24 @@
                                 <div class="count-btn" data-count="10">10問</div>
                                 <div class="count-btn" data-count="15">15問</div>
                             </div>
+                        </div>
+
+                        <!-- AIモデル選択（通常モード） -->
+                        <div style="margin-bottom: 1.5rem;" id="step2-model-container">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                                <div class="setup-label" style="margin-bottom: 0;">🤖 使用するAIモデル</div>
+                                <a href="ai-settings.html#feature-card-custom_sprint" target="_blank" style="font-size: 0.75rem; color: var(--brand-primary); text-decoration: none; font-weight: 700;">⚙️ AI設定 ↗</a>
+                            </div>
+                            <select id="sprint-model-select" class="flora-select">
+                                <option value="" selected>✨ AI設定の優先順序（デフォルト）</option>
+                                <option value="gemini-3.6-flash">gemini-3.6-flash（最新・最高精度）</option>
+                                <option value="gemini-3.8-flash">gemini-3.8-flash</option>
+                                <option value="gemini-3.7-flash">gemini-3.7-flash</option>
+                                <option value="gemini-3.5-flash">gemini-3.5-flash</option>
+                                <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+                                <option value="gemini-2.5-pro">gemini-2.5-pro（超高度推敲）</option>
+                                <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+                            </select>
                         </div>
 
                         <!-- 🏛️ 共通テスト専用設定コンテナ -->
@@ -1301,6 +1319,23 @@
                                     <div class="count-btn" data-time="600">10分（中問ペース）</div>
                                     <div class="count-btn" data-time="900">15分（大問ペース）</div>
                                 </div>
+                            </div>
+
+                            <div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                                    <div class="setup-label" style="margin-bottom: 0;">🤖 使用するAIモデル</div>
+                                    <a href="ai-settings.html#feature-card-kyotsu_sprint" target="_blank" style="font-size: 0.75rem; color: var(--brand-primary); text-decoration: none; font-weight: 700;">⚙️ AI設定で詳細管理 ↗</a>
+                                </div>
+                                <select id="kyotsu-model-select" class="flora-select">
+                                    <option value="" selected>✨ AI設定の優先順序（デフォルト）</option>
+                                    <option value="gemini-3.6-flash">gemini-3.6-flash（最新・最高精度）</option>
+                                    <option value="gemini-3.8-flash">gemini-3.8-flash</option>
+                                    <option value="gemini-3.7-flash">gemini-3.7-flash</option>
+                                    <option value="gemini-3.5-flash">gemini-3.5-flash</option>
+                                    <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+                                    <option value="gemini-2.5-pro">gemini-2.5-pro（超高度思考・大問推敲）</option>
+                                    <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+                                </select>
                             </div>
                         </div>
 
@@ -1801,6 +1836,21 @@
             });
         });
 
+        // 🤖 使用モデル選択の初期化とローカルストレージ永続化
+        const savedKyotsuModel = localStorage.getItem("kyotsu_preferred_model") || "";
+        const savedSprintModel = localStorage.getItem("sprint_preferred_model") || "";
+        const kyotsuModelSelect = document.getElementById("kyotsu-model-select");
+        const sprintModelSelect = document.getElementById("sprint-model-select");
+        if (kyotsuModelSelect && savedKyotsuModel) kyotsuModelSelect.value = savedKyotsuModel;
+        if (sprintModelSelect && savedSprintModel) sprintModelSelect.value = savedSprintModel;
+
+        kyotsuModelSelect?.addEventListener("change", (e) => {
+            localStorage.setItem("kyotsu_preferred_model", e.target.value);
+        });
+        sprintModelSelect?.addEventListener("change", (e) => {
+            localStorage.setItem("sprint_preferred_model", e.target.value);
+        });
+
         // ==========================================================================
         // 📚 登録済みモード：Firebaseから問題を読み込み、教科タブ・分類DDを生成
         // ==========================================================================
@@ -2119,7 +2169,8 @@
                 const topic = document.getElementById("kyotsu-topic-input")?.value.trim() || kyotsuSelectedField;
                 const level = document.getElementById("kyotsu-level-select")?.value || "共通テスト標準レベル";
                 const notes = document.getElementById("kyotsu-notes-input")?.value.trim() || "";
-                startKyotsuSprint(subject, topic, level, kyotsuScale, notes);
+                const model = document.getElementById("kyotsu-model-select")?.value || "";
+                startKyotsuSprint(subject, topic, level, kyotsuScale, notes, model);
             } else {
                 goToWizardStep(3);
                 
@@ -2139,7 +2190,8 @@
                 }
 
                 const levelText = document.getElementById("level-select").value;
-                startAiSprintParallel(fieldText, levelText, selectedCount, sprintTitle, focusNotes);
+                const sprintModel = document.getElementById("sprint-model-select")?.value || "";
+                startAiSprintParallel(fieldText, levelText, selectedCount, sprintTitle, focusNotes, sprintModel);
             }
         });
 
@@ -2446,10 +2498,10 @@
                 startRegisteredSprint(lastCondition.count);
             } else if (lastCondition.mode === "kyotsu") {
                 goToWizardStep(3);
-                startKyotsuSprint(lastCondition.subject, lastCondition.topic, lastCondition.level, lastCondition.scale, lastCondition.focusNotes);
+                startKyotsuSprint(lastCondition.subject, lastCondition.topic, lastCondition.level, lastCondition.scale, lastCondition.focusNotes, lastCondition.model);
             } else {
                 goToWizardStep(3);
-                startAiSprintParallel(lastCondition.fieldText, lastCondition.levelText, lastCondition.count, lastCondition.sprintTitle, lastCondition.focusNotes);
+                startAiSprintParallel(lastCondition.fieldText, lastCondition.levelText, lastCondition.count, lastCondition.sprintTitle, lastCondition.focusNotes, lastCondition.model);
             }
         });
 
@@ -2628,8 +2680,8 @@
             }
         };
 
-        async function startKyotsuSprint(subject, topic, level, scale, focusNotes) {
-            lastCondition = { mode: "kyotsu", subject, topic, level, scale, focusNotes };
+        async function startKyotsuSprint(subject, topic, level, scale, focusNotes, preferredModel = null) {
+            lastCondition = { mode: "kyotsu", subject, topic, level, scale, focusNotes, model: preferredModel };
             clearSession();
             currentMode = "kyotsu";
             isGeneratingSprint = true;
@@ -2699,7 +2751,7 @@
                 const result = await callGeminiJSON(
                     [{ text: prompt }],
                     "あなたは優秀な大学入試共通テスト数学の作問責任者です。指定されたJSONオブジェクトのみを返してください。",
-                    { temperature: 0.35, responseSchema: KYOTSU_SPRINT_SCHEMA, featureId: "kyotsu_sprint" }
+                    { temperature: 0.35, responseSchema: KYOTSU_SPRINT_SCHEMA, featureId: "kyotsu_sprint", preferredModel }
                 );
 
                 if (!isGeneratingSprint) return;
@@ -3310,28 +3362,81 @@
             const pid = `KYOTSU_MISTAKE_${Date.now()}`;
             const wrongLabels = wrongMarks.map(m => `[${m.id}]`).join(", ");
 
+            // 1. 大問の完全な問題文全文（前提リード文、各小問、解答群を論理的に結合）
+            let fullProblemStatement = `【大問表題】${kyotsuProblemData.title || "共通テスト実践演習"}\n\n`;
+            if (kyotsuProblemData.context_text) {
+                fullProblemStatement += `【前提条件・リード文】\n${kyotsuProblemData.context_text}\n\n`;
+            }
+
+            (kyotsuProblemData.sections || []).forEach(sec => {
+                fullProblemStatement += `----------------------------------------\n`;
+                fullProblemStatement += `${sec.section_id} ${sec.section_title || ""}\n`;
+                fullProblemStatement += `${sec.section_text}\n`;
+                if (Array.isArray(sec.choices_groups) && sec.choices_groups.length > 0) {
+                    sec.choices_groups.forEach(grp => {
+                        fullProblemStatement += `\n📌 [ ${grp.target_marks} ] の解答群:\n`;
+                        (grp.options || []).forEach(opt => {
+                            fullProblemStatement += `  ${opt}\n`;
+                        });
+                    });
+                }
+                fullProblemStatement += `\n`;
+            });
+
+            // 2. 模範解答・マーク採点対比・ステップ解説の構築
+            const totalMarksCount = allMarks.length;
+            const correctCount = totalMarksCount - wrongMarks.length;
+            let structuredAnswer = `【共通テスト実践 採点結果】\n`;
+            structuredAnswer += `正答率: ${Math.round((correctCount / totalMarksCount) * 100)}% (${correctCount} / ${totalMarksCount} マーク正解)\n\n`;
+            structuredAnswer += `【全マーク正誤・あなたの解答対比】\n`;
+            allMarks.forEach(m => {
+                const userVal = kyotsuUserAnswers[m.id] || "未入力";
+                const isCorrect = (userVal).trim().toLowerCase() === String(m.answer || "").trim().toLowerCase();
+                if (isCorrect) {
+                    structuredAnswer += `  ✅ マーク [${m.id}]: 正解「${m.answer}」 (あなたの解答:「${userVal}」)\n`;
+                } else {
+                    structuredAnswer += `  ❌ マーク [${m.id}]: 不正解 ➔ 正解「${m.answer}」 (あなたの解答:「${userVal}」)\n`;
+                }
+            });
+
+            structuredAnswer += `\n【小問ごとのステップ別解説】\n`;
+            (kyotsuProblemData.sections || []).forEach(sec => {
+                structuredAnswer += `\n▼ ${sec.section_id} ${sec.section_title || ""}\n`;
+                structuredAnswer += `${sec.explanation || "解説なし"}\n`;
+            });
+
+            if (kyotsuProblemData.overall_review) {
+                structuredAnswer += `\n【大問の総括・思考ポイント】\n${kyotsuProblemData.overall_review}\n`;
+            }
+
+            // 3. ミスしたマークの着眼点・罠
+            const trapText = `【共通テスト特訓：要復習マーク】\n` +
+                wrongMarks.map(m => `・マーク [${m.id}]: あなたの解答「${kyotsuUserAnswers[m.id] || "未入力"}」 ➔ 正解「${m.answer}」`).join("\n");
+
             const mistakeProblem = {
                 id: pid,
-                title: `【共通テスト実践】${kyotsuProblemData.title}（マークミス: ${wrongLabels}）`,
-                short_title: `【共テ】${kyotsuProblemData.field} ${wrongLabels}`,
+                title: fullProblemStatement.trim(),
+                short_title: `【共テ】${kyotsuProblemData.title || kyotsuProblemData.field}（ミス: ${wrongLabels}）`,
                 subject: kyotsuProblemData.subject || "数学",
                 field: kyotsuProblemData.field || "共通テスト特訓",
-                trap_description: `共通テスト実践で間違えたマーク: ${wrongLabels}。誘導の読み解きや計算ミス、選択肢の吟味を見直してください。`,
-                strategyPattern: "共通テスト大問誘導の着眼点",
+                trap_description: trapText,
+                strategyPattern: kyotsuProblemData.overall_review || "大問全体の誘導ストーリーと前の小問の結果の活用に着目する",
                 errorCount: 1,
                 lastAttemptAt: nowIso,
                 createdAt: nowIso,
                 lastResult: false,
                 thumb: null,
                 imageCount: 0,
-                answerFormula: `【前提】\n${kyotsuProblemData.context_text}\n\n【ミスしたマーク】: ${wrongLabels}\n\n【各マークの正解】:\n` +
-                    wrongMarks.map(m => `マーク [${m.id}]: 正解=${m.answer} (あなたの解答: ${kyotsuUserAnswers[m.id] || "未入力"})`).join("\n") +
-                    `\n\n【解説】\n` + kyotsuProblemData.sections.map(s => `▼ ${s.section_id} ${s.section_title}\n${s.explanation}`).join("\n\n")
+                answerFormula: structuredAnswer.trim(),
+                isKyotsuMistake: true,
+                kyotsuData: kyotsuProblemData,
+                kyotsuUserAnswers: kyotsuUserAnswers,
+                wrongMarkIds: wrongMarks.map(m => m.id)
             };
 
             try {
                 await set(ref(database, `users/${loginUid}/problems/${pid}`), mistakeProblem);
-                showToast(`誤答マーク（${wrongLabels}）をダッシュボードの復習ノートに保存・同期しました！`, "success", 4000);
+                showToast(`誤答マーク（${wrongLabels}）を大問ごと復習ノートに完全保存しました！`, "success", 4000);
             } catch (e) {
                 console.error("誤答ノート保存エラー:", e);
                 showToast("保存に失敗しました。", "error");
@@ -3369,8 +3474,8 @@
             }
         };
 
-        async function startAiSprintParallel(fieldText, levelText, count, sprintTitle = "", focusNotes = "") {
-            lastCondition = { mode: "ai", fieldText, levelText, count, sprintTitle, focusNotes };
+        async function startAiSprintParallel(fieldText, levelText, count, sprintTitle = "", focusNotes = "", preferredModel = null) {
+            lastCondition = { mode: "ai", fieldText, levelText, count, sprintTitle, focusNotes, model: preferredModel };
             clearSession();
             currentMode = "ai";
             isGeneratingSprint = true;
@@ -3411,7 +3516,7 @@
                 const outlineResult = await callGeminiJSON(
                     [{ text: outlinePrompt }],
                     "あなたは優秀な数学教育設計者です。JSON配列のみを出力してください。",
-                    { temperature: 0.3, arrayMode: true, responseSchema: SPRINT_OUTLINE_SCHEMA, featureId: "custom_sprint_outline" }
+                    { temperature: 0.3, arrayMode: true, responseSchema: SPRINT_OUTLINE_SCHEMA, featureId: "custom_sprint_outline", preferredModel }
                 );
 
                 if (!isGeneratingSprint) return; // キャンセルされた場合
@@ -3472,7 +3577,7 @@
                         const qData = await callGeminiJSON(
                             [{ text: prompt }],
                             "あなたは優秀な数学教師です。単一のJSONオブジェクトのみを返してください。",
-                            { temperature: 0.4, responseSchema: SINGLE_QUESTION_SCHEMA, featureId: "custom_sprint_parallel" }
+                            { temperature: 0.4, responseSchema: SINGLE_QUESTION_SCHEMA, featureId: "custom_sprint_parallel", preferredModel }
                         );
 
                         completedCount++;
