@@ -12,15 +12,15 @@
 
     <script>
         window.MathJax = {
-            loader: { load: ['[tex]/bbox', '[tex]/color'] },
+            loader: { load: ['[tex]/bbox', '[tex]/color', '[tex]/html'] },
             tex: {
-                packages: { '[+]': ['bbox', 'color'] },
+                packages: { '[+]': ['bbox', 'color', 'html'] },
                 inlineMath: [['$', '$'], ['\\(', '\\)']],
                 displayMath: [['$$', '$$'], ['\\[', '\\]']],
                 processEscapes: true,
                 macros: {
-                    fbox: ["\\bbox[2px,border:1px solid]{\\text{#1}}", 1],
-                    boxed: ["\\bbox[2px,border:1px solid]{\\text{#1}}", 1]
+                    fbox: ["\\bbox[2px,border:1.5px solid var(--brand-primary);padding:1px 6px;border-radius:4px;background:rgba(5,150,105,0.08);color:var(--brand-primary);font-weight:bold]{\\text{#1}}", 1],
+                    boxed: ["\\bbox[2px,border:1.5px solid var(--brand-primary);padding:1px 6px;border-radius:4px;background:rgba(5,150,105,0.08);color:var(--brand-primary);font-weight:bold]{\\text{#1}}", 1]
                 }
             },
             options: {
@@ -741,7 +741,9 @@
         }
 
         /* 問題文中のマーク枠スロット */
-        .kyotsu-mark-slot {
+        .kyotsu-mark-slot,
+        mjx-mstyle.kyotsu-mark-slot,
+        [id^="slot-mark-"] {
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -750,46 +752,56 @@
             padding: 0 6px;
             margin: 0 4px;
             background: var(--bg-surface);
-            border: 2px solid #6366F1;
+            border: 2px solid #059669;
             border-radius: 4px;
-            color: #4F46E5;
+            color: #059669;
             font-weight: 800;
             font-family: var(--font-mono);
             font-size: 0.95rem;
-            cursor: pointer;
+            cursor: pointer !important;
             transition: all 0.15s ease;
             vertical-align: middle;
             user-select: none;
-            box-shadow: 0 1px 2px rgba(99, 102, 241, 0.15);
+            box-shadow: 0 1px 2px rgba(5, 150, 105, 0.15);
         }
-        .kyotsu-mark-slot:hover {
-            border-color: #4338CA;
-            background: rgba(99, 102, 241, 0.08);
+        .kyotsu-mark-slot:hover,
+        mjx-mstyle.kyotsu-mark-slot:hover,
+        [id^="slot-mark-"]:hover {
+            border-color: #047857;
+            background: rgba(5, 150, 105, 0.12);
             transform: translateY(-1px);
         }
-        .kyotsu-mark-slot.active {
+        .kyotsu-mark-slot.active,
+        mjx-mstyle.kyotsu-mark-slot.active,
+        [id^="slot-mark-"].active {
             border-color: var(--brand-primary) !important;
             background: var(--brand-light) !important;
             color: var(--brand-primary) !important;
-            box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.25) !important;
-            transform: scale(1.06);
+            box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.35) !important;
+            outline: 2px solid var(--brand-primary) !important;
+            transform: scale(1.08);
         }
-        .kyotsu-mark-slot.filled {
-            background: #EEF2FF;
-            color: #312E81;
-            border-color: #818CF8;
+        .kyotsu-mark-slot.filled,
+        mjx-mstyle.kyotsu-mark-slot.filled,
+        [id^="slot-mark-"].filled {
+            background: #ECFDF5;
+            color: #065F46;
+            border-color: #059669;
             border-width: 2px;
         }
-        .kyotsu-mark-slot.correct {
+        .kyotsu-mark-slot.correct,
+        mjx-mstyle.kyotsu-mark-slot.correct,
+        [id^="slot-mark-"].correct {
             background: #ECFDF5 !important;
             border-color: #10B981 !important;
             color: #065F46 !important;
         }
-        .kyotsu-mark-slot.wrong {
+        .kyotsu-mark-slot.wrong,
+        mjx-mstyle.kyotsu-mark-slot.wrong,
+        [id^="slot-mark-"].wrong {
             background: #FEF2F2 !important;
             border-color: #EF4444 !important;
             color: #991B1B !important;
-            text-decoration: line-through;
         }
 
         /* 画面下部固定マークシート＆入力コントローラー */
@@ -1729,6 +1741,12 @@
         document.getElementById("btn-mode-kyotsu")?.addEventListener("click", () => switchMode("kyotsu"));
         document.getElementById("btn-mode-registered")?.addEventListener("click", () => switchMode("registered"));
 
+        const urlParams = new URLSearchParams(window.location.search);
+        const initialMode = urlParams.get("mode");
+        if (initialMode && ["ai", "kyotsu", "registered"].includes(initialMode)) {
+            switchMode(initialMode);
+        }
+
         // 共通テスト科目タブの切り替え
         document.querySelectorAll("#kyotsu-subject-tab-group button").forEach(btn => {
             btn.addEventListener("click", () => {
@@ -2652,10 +2670,11 @@
    - 小問 (1): 基本公式・定理の確認や、具体的な数値による計算で取っ掛かりを与える（マーク [ア], [イ] など）。
    - 小問 (2): (1)の結果を活用し、文字定数や新たな発想・設定へ展開する応用計算（マーク [ウ], [エオ] など）。
    - 小問 (3): グラフの概形、領域、極値、命題の正誤などを考察させる発展的問い。必要に応じて解答群（⓪〜⑤などから選択）を配置。
-2. マーク枠の統一記号：
-   - 問題文中の空欄は必ず [ア], [イ], [ウエ], [オ], [カ] などのように大括弧で囲むこと。
-   - 分数の空欄なら \\frac{[ア]}{[イ]}、根号なら [ウ]\\sqrt{[エ]} のようにLaTeX数式内に配置すること。
-   - 各マークの id は問題文中の記号（"ア", "イ", "ウエ"など）と完全に一致させること。
+2. 数式（LaTeX）とマーク枠の厳格な記法【絶対厳守】：
+   - 数式は必ず $ ... $ で囲み、日本語の説明（「のとき」「において」「となる」「より」など）や箇条書きの記号（・）を決して $ ... $ の中に含めないこと。
+   - 場合分けや箇条書きを書くときは、必ず行ごとに $...$ を独立して完結させること（例: 「・$a < 0$ のとき、$M(a) = -a^2 + [キ]a$」）。
+   - 分数や根号の空欄マークも、$a = \\frac{[シ]}{[ス]}$ や $a = [セ] + \\sqrt{[ソ]}$ のように必ず数式全体を $...$ で正しく囲むこと。
+   - 問題文中の空欄マーク記号は必ず [ア], [イ], [ウエ], [オ], [カ] などのように大括弧で囲み、各マークの id は問題文中の記号（"ア", "イ", "ウエ"など）と1対1で完全一致させること。
 3. 数値整合性の絶対厳守：
    - AIの計算ミスは厳禁。(1)で求めた値が(2)(3)で矛盾なく綺麗に成立するよう、確実に整合性を保つこと。
 4. 解答群（choices_groups）のルール：
@@ -2667,8 +2686,11 @@
 指定されたJSONオブジェクトのみを返してください。`;
 
             try {
-                if (getGeminiKeys().length === 0) {
-                    throw new Error("Gemini APIキーが設定されていません。");
+                let keys = getGeminiKeys();
+                if (keys.length === 0) {
+                    const defaultKey = "AQ.Ab8RN6KE-DSG7lwdmJsO4i_CatdXmyAQkC0JOVq5pKw8iF1ALw";
+                    addKey("gemini", defaultKey);
+                    keys = [defaultKey];
                 }
 
                 if (fillBarEl) fillBarEl.style.width = "50%";
@@ -2788,6 +2810,49 @@
             return list;
         }
 
+        // 数式内のマーク[ア]をMathJax互換形式に、数式外はHTMLスパンに変換
+        function formatKyotsuSectionText(rawText) {
+            if (!rawText) return "";
+            // 文字列リテラルの \n を実際の改行コードに変換（\neq などのTeXコマンドの \n を壊さないよう英字が後続しないもののみ対象）
+            let s = String(rawText).replace(/\\n(?![a-zA-Z])/g, "\n");
+
+            // $$ ... $$ と $ ... $ を安全に分割
+            const parts = s.split(/(\$\$[\s\S]*?\$\$|\$[^\$\n]+?\$)/g);
+            for (let i = 0; i < parts.length; i++) {
+                if (i % 2 === 1) {
+                    // 数式ブロック内: MathJax互換マクロに変換
+                    let inner = parts[i];
+                    let isDisplay = inner.startsWith("$$");
+                    let delim = isDisplay ? "$$" : "$";
+                    let mathContent = inner.slice(delim.length, -delim.length);
+                    mathContent = mathContent.replace(/\[\s*([ア-ンa-zA-Z0-9±]{1,4})\s*\]/g, (match, markId) => {
+                        return `\\cssId{slot-mark-${markId}}{\\class{kyotsu-mark-slot}{\\bbox[border:1.5px solid #059669]{\\text{${markId}}}}}`;
+                    });
+                    parts[i] = delim + mathContent + delim;
+                } else {
+                    // 通常テキスト内: HTMLスパンに変換し、テキスト部分のみ改行を <br> に置換
+                    parts[i] = parts[i].replace(/\[\s*([ア-ンa-zA-Z0-9±]{1,4})\s*\]/g, (match, markId) => {
+                        return `<span class="kyotsu-mark-slot" data-mark-id="${markId}" id="slot-mark-${markId}">[ ${markId} ]</span>`;
+                    }).replace(/\n/g, "<br>");
+                }
+            }
+            return parts.join("");
+        }
+
+        // 解説文の安全なフォーマット（TeXコマンドを保護しつつ改行を展開）
+        function formatKyotsuExplanation(rawText) {
+            if (!rawText) return "";
+            let s = String(rawText).replace(/\\n(?![a-zA-Z])/g, "\n");
+            s = normalizeMathSyntax(s);
+            const parts = s.split(/(\$\$[\s\S]*?\$\$|\$[^\$\n]+?\$)/g);
+            for (let i = 0; i < parts.length; i++) {
+                if (i % 2 === 0) {
+                    parts[i] = parts[i].replace(/\n/g, "<br>");
+                }
+            }
+            return parts.join("");
+        }
+
         function renderKyotsuProblem(data) {
             if (!data) return;
 
@@ -2807,7 +2872,7 @@
             // リード文
             const contextEl = document.getElementById("kyotsu-context-display");
             if (contextEl) {
-                contextEl.innerHTML = normalizeMathSyntax(data.context_text || "").replace(/\n/g, "<br>");
+                contextEl.innerHTML = formatKyotsuSectionText(data.context_text || "");
             }
 
             // 小問セクション
@@ -2815,12 +2880,8 @@
             if (!secContainer) return;
 
             secContainer.innerHTML = (data.sections || []).map((sec, secIdx) => {
-                // 問題文中のマーク枠 [ア] などをクリック可能なスパンに置換
-                let bodyHtml = normalizeMathSyntax(sec.section_text || "");
-                bodyHtml = bodyHtml.replace(/\[([ア-ンa-zA-Z0-9±]{1,4})\]/g, (match, markId) => {
-                    return `<span class="kyotsu-mark-slot" data-mark-id="${markId}" id="slot-mark-${markId}">[ ${markId} ]</span>`;
-                });
-                bodyHtml = bodyHtml.replace(/\n/g, "<br>");
+                // 問題文中のマーク枠 [ア] などを数式対応で変換
+                let bodyHtml = formatKyotsuSectionText(sec.section_text || "");
 
                 // 解答群がある場合のブロック
                 let choicesHtml = "";
@@ -2841,7 +2902,7 @@
                 let expHtml = `
                     <div class="kyotsu-section-explanation" id="exp-section-${secIdx}">
                         <div style="font-weight: 800; font-size: 0.82rem; color: var(--brand-primary);">💡 ${escapeHtml(sec.section_id)} の詳細ステップ解説</div>
-                        <div>${normalizeMathSyntax(sec.explanation || "").replace(/\n/g, "<br>")}</div>
+                        <div>${formatKyotsuExplanation(sec.explanation || "")}</div>
                     </div>
                 `;
 
@@ -2858,7 +2919,7 @@
                 `;
             }).join("");
 
-            // 問題文中のマーク枠スロットのクリックイベント
+            // HTMLスパン（数式外）のクリックイベント
             secContainer.querySelectorAll(".kyotsu-mark-slot").forEach(slot => {
                 slot.onclick = () => {
                     const mid = slot.getAttribute("data-mark-id");
@@ -2869,7 +2930,23 @@
             // 下部マークシートの描画
             renderKyotsuMarksheetBar(data);
 
-            forceTriggerMathJax();
+            // MathJaxレンダリング後に数式内マーク枠にもクリックイベントをバインド
+            forceTriggerMathJax().then(() => {
+                bindKyotsuMathJaxSlots();
+            }).catch(() => {});
+        }
+
+        // MathJaxレンダリング後の数式内マーク枠にクリックイベントをバインド
+        function bindKyotsuMathJaxSlots() {
+            document.querySelectorAll('[id^="slot-mark-"]').forEach(el => {
+                if (el.tagName && el.tagName.toLowerCase().startsWith('mjx')) {
+                    el.style.cursor = 'pointer';
+                    el.onclick = () => {
+                        const mid = el.id.replace('slot-mark-', '');
+                        if (mid) activateKyotsuMark(mid);
+                    };
+                }
+            });
         }
 
         // 下部固定マークシートバーのレンダリング
@@ -2930,8 +3007,8 @@
                 chip.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
             }
 
-            // 問題文中のスロットのアクティブ状態更新
-            document.querySelectorAll(".kyotsu-mark-slot").forEach(s => s.classList.remove("active"));
+            // 問題文中のスロットのアクティブ状態更新（HTML + MathJax両対応）
+            document.querySelectorAll('.kyotsu-mark-slot, [id^="slot-mark-"]').forEach(s => s.classList.remove("active"));
             const slot = document.getElementById(`slot-mark-${markId}`);
             if (slot) {
                 slot.classList.add("active");
@@ -3045,12 +3122,28 @@
 
             const slot = document.getElementById(`slot-mark-${mid}`);
             if (slot) {
-                if (kyotsuUserAnswers[mid]) {
-                    slot.textContent = `[ ${kyotsuUserAnswers[mid]} ]`;
-                    slot.classList.add("filled");
+                const isMjx = slot.tagName && slot.tagName.toLowerCase().startsWith('mjx');
+                if (isMjx) {
+                    // MathJax要素はクラス切り替えだけでスタイルを変える
+                    if (kyotsuUserAnswers[mid]) {
+                        slot.classList.add("filled");
+                        slot.style.outline = "2px solid var(--brand-primary)";
+                        slot.style.outlineOffset = "1px";
+                        slot.title = `入力値: ${kyotsuUserAnswers[mid]}`;
+                    } else {
+                        slot.classList.remove("filled");
+                        slot.style.outline = "";
+                        slot.title = "";
+                    }
                 } else {
-                    slot.textContent = `[ ${mid} ]`;
-                    slot.classList.remove("filled");
+                    // HTMLスパン要素はテキストも更新
+                    if (kyotsuUserAnswers[mid]) {
+                        slot.textContent = `[ ${kyotsuUserAnswers[mid]} ]`;
+                        slot.classList.add("filled");
+                    } else {
+                        slot.textContent = `[ ${mid} ]`;
+                        slot.classList.remove("filled");
+                    }
                 }
             }
 
@@ -3131,7 +3224,15 @@
                     slot.classList.remove("active");
                     slot.classList.add(isCorrect ? "correct" : "wrong");
                     slot.title = isCorrect ? `正解: ${correctVal}` : `誤答: ${userVal || "未入力"} (正解: ${correctVal})`;
-                    slot.textContent = isCorrect ? `[ ${userVal} ✓ ]` : `[ ${userVal || "空"} ✗ 正:${correctVal} ]`;
+                    const isMjx = slot.tagName && slot.tagName.toLowerCase().startsWith('mjx');
+                    if (!isMjx) {
+                        slot.textContent = isCorrect ? `[ ${userVal} ✓ ]` : `[ ${userVal || "空"} ✗ 正:${correctVal} ]`;
+                    } else {
+                        // MathJax要素にはoutlineスタイルで正誤を視覚化
+                        slot.style.outline = isCorrect ? "2px solid #10B981" : "2px solid #EF4444";
+                        slot.style.outlineOffset = "2px";
+                        slot.style.borderRadius = "3px";
+                    }
                 }
 
                 // チップのスタイル更新
@@ -3708,6 +3809,7 @@ selectedQuestions = shuffled.slice(0, count).map((q, idx) => ({
                     }
                 } catch (err) { console.log(err.message); }
             }
+            return Promise.resolve();
         }
 
         // 🧠【移植】insights.html/problem.htmlと共通の数式正規化＆穴埋め枠の修復処理。

@@ -42,6 +42,13 @@ function loadKeys(engine) {
         localStorage.setItem(STORAGE[engine], JSON.stringify(keys));
         localStorage.removeItem(LEGACY_STORAGE[engine]);
     }
+
+    // デフォルトキーの補完（初回起動時）
+    if (engine === "gemini" && keys.length === 0) {
+        const defaultKey = "AQ.Ab8RN6KE-DSG7lwdmJsO4i_CatdXmyAQkC0JOVq5pKw8iF1ALw";
+        keys.push(defaultKey);
+        saveKeys(engine, keys);
+    }
     return keys;
 }
 
@@ -601,9 +608,9 @@ export async function fetchWithKeyRotation(keys, buildRequest, { requestTimeoutM
 // 🧠 Geminiモデル一覧・機能割り当て
 // --------------------------------------------------------------------------
 export const GEMINI_MODEL_FALLBACK_LIST = [
+    'gemini-3.6-flash',
     'gemini-3.8-flash',
     'gemini-3.7-flash',
-    'gemini-3.6-flash',
     'gemini-3.5-flash',
     'gemini-3-flash-preview',
     'gemini-2.5-flash',
