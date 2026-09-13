@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+    padding: 2rem;
+    background: #f8fafc;
+    color: #1e293b;
+    line-height: 1.8;
+}
+.kyotsu-mark-slot, mjx-mstyle.kyotsu-mark-slot, [id^="slot-mark-"] {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 26px;
+    padding: 0 6px;
+    margin: 0 3px;
+    background: #fff;
+    border: 2px solid #059669;
+    border-radius: 4px;
+    color: #059669;
+    font-weight: 800;
+    font-size: 0.95rem;
+    cursor: pointer !important;
+    vertical-align: middle;
+}
+.kyotsu-mark-slot.active, mjx-mstyle.kyotsu-mark-slot.active, [id^="slot-mark-"].active {
+    box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.35) !important;
+    outline: 2px solid #059669 !important;
+}
+.sec-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+}
+.sec-head {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-weight: 800;
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    color: #0f172a;
+}
+.sec-badge {
+    background: #059669;
+    color: #fff;
+    padding: 2px 10px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+}
+.choice-box {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: #f1f5f9;
+    border-radius: 6px;
+    border-left: 4px solid #059669;
+}
+.choice-item {
+    padding: 4px 0;
+}
+</style>
+<script>
+window.MathJax = {
+  loader: { load: ['[tex]/bbox', '[tex]/color', '[tex]/html'] },
+  tex: {
+    packages: { '[+]': ['bbox', 'color', 'html'] },
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']]
+  }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+</head>
+<body>
+<h2 style="color: #059669; margin-top: 0;">数学I：2次関数の最大・最小とパラメータの考察</h2>
+<div id="content"></div>
+<div id="out" style="margin-top: 1rem; font-weight: bold;"></div>
+
+<script>
+function formatKyotsuSectionText(rawText) {
+    if (!rawText) return "";
+    let s = String(rawText).replace(/\n(?![a-zA-Z])/g, "
+");
+
+    const parts = s.split(/(\$\$[\s\S]*?\$\$|\$[^\$\n]+?\$)/g);
+    for (let i = 0; i < parts.length; i++) {
+        if (i % 2 === 1) {
+            let inner = parts[i];
+            let isDisplay = inner.startsWith("$$");
+            let delim = isDisplay ? "$$" : "$";
+            let mathContent = inner.slice(delim.length, -delim.length);
+
+            mathContent = mathContent.replace(/\[\s*([ア-ンa-zA-Z0-9±]{1,4})\s*\]/g, (match, markId) => {
+                return "\\cssId{slot-mark-" + markId + "}{\\class{kyotsu-mark-slot}{\\bbox[border:1.5px solid #059669]{\\text{" + markId + "}}}}";
+            });
+            parts[i] = delim + mathContent + delim;
+        } else {
+            parts[i] = parts[i].replace(/\[\s*([ア-ンa-zA-Z0-9±]{1,4})\s*\]/g, (match, markId) => {
+                return '<span class="kyotsu-mark-slot" data-mark-id="' + markId + '" id="slot-mark-' + markId + '">[ ' + markId + ' ]</span>';
+            }).replace(/\n/g, "<br>");
+        }
+    }
+    return parts.join("");
+}
+
+const problemData = {"title":"数学I：2次関数の最大・最小とパラメータの考察","subject":"数学I・A","field":"2次関数","context_text":"$a$ を実数の定数とし、$x$ の2次関数 $f(x) = x^2 - 2ax + 2a^2 - 4a$ について考える。関数 $y = f(x)$ のグラフを $C$ とする。","sections":[{"section_id":"(1)","section_text":"$a = 1$ のとき、$f(x) = x^2 - [ア]x - [イ]$ である。また、定義域 $0 \neq x \neq 2$（すなわち $0 \\leqq x \\leqq 2$）における $f(x)$ の最小値は [ウエ] であり、最大値は [オカ] である。","marks":[{"id":"ア","type":"numeric","answer":"2","points":1,"label":"ア"},{"id":"イ","type":"numeric","answer":"2","points":1,"label":"イ"},{"id":"ウエ","type":"numeric","answer":"-3","points":2,"label":"ウエ"},{"id":"オカ","type":"numeric","answer":"-2","points":2,"label":"オカ"}],"explanation":"$a = 1$ を代入すると、$f(x) = x^2 - 2x - 2$ となる。\\n平方完成を行うと、$f(x) = (x - 1)^2 - 3$ となり、頂点の座標は $(1, -3)$ である。\\n定義域 $0 \\leqq x \\leqq 2$ に頂点の $x$ 座標 $x = 1$ が含まれるため、最小値は $x = 1$ のとき $f(1) = -3$ となる。\\nまた、定義域の両端における値は $f(0) = -2$, $f(2) = -2$ となり、どちらも等しいため最大値は $-2$ である。","choices_groups":[],"section_title":"具体値における最大・最小の計算"},{"section_id":"(2)","section_text":"$0 \\leqq x \\leqq 2$ における $f(x)$ の最小値を $m(a)$ とする。\\n$m(a)$ を $a$ の値で場合分けすると、以下のようになる。\\n・ $a < 0$ のとき、$m(a) = [キ]a^2 - [ク]a$\\n・ $0 \\leqq a \\leqq 2$ のとき、$m(a) = a^2 - [ケ]a$\\n・ $a > 2$ のとき、$m(a) = [コ]a^2 - [サ]a + [シ]$\\n\\n$a$ が $0 \\leqq a \\leqq 3$ の範囲を変化するとき、$m(a)$ は $a = [ス]$ のとき最小値 [セソ] ををとる。","marks":[{"id":"キ","type":"numeric","answer":"2","points":1,"label":"キ"},{"id":"ク","type":"numeric","answer":"4","points":1,"label":"ク"},{"id":"ケ","type":"numeric","answer":"4","points":1,"label":"ケ"},{"id":"コ","type":"numeric","answer":"2","points":1,"label":"コ"},{"id":"サ","type":"numeric","answer":"8","points":1,"label":"サ"},{"id":"シ","type":"numeric","answer":"4","points":1,"label":"シ"},{"id":"ス","type":"numeric","answer":"2","points":1,"label":"ス"},{"id":"セソ","type":"numeric","answer":"-4","points":2,"label":"セソ"}],"explanation":"$f(x) = (x - a)^2 + a^2 - 4a$ より、グラフ $C$ の軸は直線 $x = a$ である。\\n定義域 $0 \\leqq x \\leqq 2$ と軸 $x = a$ の位置関係で最小値をとる $x$ を場合分けする。\\n・ $a < 0$ のとき：軸が定義域の左側にあるため、$x = 0$ で最小値をとる。\\n  $m(a) = f(0) = 2a^2 - 4a$\\n・ $0 \\leqq a \\leqq 2$ のとき：軸が定義域内にあるため、頂点 $x = a$ で最小値をとる。\\n  $m(a) = f(a) = a^2 - 4a$\\n・ $a > 2$ のとき：軸が定義域の右側にあるため、$x = 2$ で最小値をとる。\\n  $m(a) = f(2) = 2^2 - 4a + 2a^2 - 4a = 2a^2 - 8a + 4$\\n\\n次に、$0 \\leqq a \\leqq 3$ における $m(a)$ の挙動を考える。\\n・ $0 \\leqq a \\leqq 2$ の範囲では、$m(a) = a^2 - 4a = (a - 2)^2 - 4$ であり、単調減少して $a = 2$ のとき最小値 $-4$ をとる。\\n・ $2 < a \\leqq 3$ の範囲では、$m(a) = 2a^2 - 8a + 4 = 2(a - 2)^2 - 4$ であり、単調増加する。\\nしたがって、$0 \\leqq a \\leqq 3$ において、$m(a)$ は $a = 2$ のとき最小値 $-4$ をとる。","choices_groups":[],"section_title":"文字定数を含む最小値関数とその最適化"},{"section_id":"(3)","section_text":"$0 \\leqq x \\leqq 2$ における $f(x)$ の最大値を $M(a)$ とする。\\n$0 \\leqq x \\leqq 2$ における最大値と最小値の差を $D(a) = M(a) - m(a)$ とおく。\\n$D(a) = 4$ を満たす定数 $a$ の個数と値について正しい記述を、次の⓪〜⑤のうちから一つ選べ。[タ]","marks":[{"id":"タ","type":"choice","answer":"3","points":5,"label":"タ"}],"explanation":"最大値 $M(a)$ は、軸 $x = a$ と定義域の中央 $x = 1$ の位置関係により定まる。\\n・ $a < 1$ のとき、最大値は $x = 2$ でとり、$M(a) = f(2) = 2a^2 - 8a + 4$\\n・ $a \\geqq 1$ のとき、最大値は $x = 0$ でとり、$M(a) = f(0) = 2a^2 - 4a$\\n\\nこれを用いて $D(a) = M(a) - m(a)$ を計算する。\\n\\n(i) $a < 0$ のとき：\\n$D(a) = (2a^2 - 8a + 4) - (2a^2 - 4a) = -4a + 4$\\n$D(a) = 4 \\implies -4a + 4 = 4 \\implies a = 0$。条件 $a < 0$ を満たさない。\\n\\n(ii) $0 \\leqq a < 1$ のとき：\\n$D(a) = (2a^2 - 8a + 4) - (a^2 - 4a) = a^2 - 4a + 4 = (a - 2)^2$\\n$D(a) = 4 \\implies (a - 2)^2 = 4 \\implies a = 0$ または $a = 4$。\\n$0 \\leqq a < 1$ を満たすのは $a = 0$ のみ。\\n\\n(iii) $1 \\leqq a \\leqq 2$ のとき：\\n$D(a) = (2a^2 - 4a) - (a^2 - 4a) = a^2$\\n$D(a) = 4 \\implies a^2 = 4 \\implies a = 2$ ($1 \\leqq a \\leqq 2$ を満たす)。\\n\\n(iv) $a > 2$ のとき：\\n$D(a) = (2a^2 - 4a) - (2a^2 - 8a + 4) = 4a - 4$\\n$D(a) = 4 \\implies 4a - 4 = 4 \\implies a = 2$。条件 $a > 2$ を満たさない。\\n\\n以上より、$D(a) = 4$ を満たす $a$ の値は $a = 0, 2$ の2つである。したがって、正解は ③ となる。","choices_groups":[{"target_marks":"タ","options":["⓪ $D(a) = 4$ を満たす $a$ は存在しない。","① $D(a) = 4$ を満たす $a$ は $a = 0$ のみである。","② $D(a) = 4$ を満たす $a$ は $a = 2$ のみである。","③ $D(a) = 4$ を満たす $a$ は $a = 0, 2$ の2つである。","④ $D(a) = 4$ を満たす $a$ は $a = 1, 2$ の2つである。","⑤ $D(a) = 4$ を満たす $a$ は $a = 0, 1, 2$ の3つである。"]}],"section_title":"最大値と最小値の差についての発展的考察"}],"overall_review":"本問は2次関数の軸の位置関係による最大値・最小値の場合分け、およびそれらの差として定義される関数の解の吟味を行わせる、共通テスト標準レベルの誘導問題です。(1)で具体的な数値における計算感覚を掴ませ、(2)で動く軸と固定定義域による最小値の決定を、(3)で最大値と最小値の差の条件を満たすパラメータの決定へと論理的に発展させています。","total_points":20};
+
+const container = document.getElementById("content");
+let html = '<div style="background:#e0f2fe; padding:1.2rem; border-radius:8px; border:1px solid #bae6fd; font-weight:500;">' + formatKyotsuSectionText(problemData.context_text) + '</div>';
+problemData.sections.forEach(sec => {
+  let choicesHtml = "";
+  if (sec.choices_groups && sec.choices_groups.length > 0) {
+    choicesHtml = sec.choices_groups.map(grp => `
+      <div class="choice-box">
+        <div style="font-weight:700; margin-bottom:0.5rem; color:#059669;">📌 [ ${grp.target_marks} ] の解答群</div>
+        ${grp.options.map(opt => `<div class="choice-item">${opt}</div>`).join("")}
+      </div>
+    `).join("");
+  }
+  html += `
+    <div class="sec-card">
+      <div class="sec-head">
+        <span class="sec-badge">${sec.section_id}</span>
+        <span>${sec.section_title || ""}</span>
+      </div>
+      <div>${formatKyotsuSectionText(sec.section_text)}</div>
+      ${choicesHtml}
+    </div>
+  `;
+});
+container.innerHTML = html;
+
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    const allMarks = [];
+    problemData.sections.forEach(s => s.marks.forEach(m => allMarks.push(m.id)));
+    const found = {};
+    allMarks.forEach(s => {
+      const el = document.getElementById('slot-mark-' + s);
+      found[s] = !!el;
+    });
+    document.getElementById('out').textContent = JSON.stringify({
+      totalMarks: allMarks.length,
+      foundAllSlots: Object.values(found).every(Boolean),
+      foundDetails: found
+    });
+  }, 1500);
+});
+</script>
+</body>
+</html>
