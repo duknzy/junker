@@ -620,6 +620,7 @@ export const GEMINI_FEATURES = [
     { id: "stuck_topic",      label: "前提単元の分析→授業引き継ぎ",   page: "problem.html" },
     { id: "quick_answer",     label: "解答の即時チェック",           page: "answer-check.html" },
     { id: "custom_sprint",    label: "カスタム演習の問題生成",       page: "custom-sprint.html" },
+    { id: "kyotsu_sprint",    label: "共通テスト大問マーク式の問題生成", page: "custom-sprint.html" },
     { id: "sprint_counseling", label: "カスタムスプリント：AI題名・要件ヒアリング", page: "custom-sprint.html" },
     { id: "daily",            label: "デイリー演習の問題生成",       page: "daily.html" },
     { id: "lesson_counseling", label: "授業作成：AI事前ヒアリング・要件定義", page: "lesson.html" },
@@ -633,6 +634,8 @@ export const GEMINI_FEATURES = [
 
 // サブ機能IDや旧機能IDを親の管理IDへ自動マッピングする辞書
 const FEATURE_ALIASES = {
+    "custom_sprint_parallel": "custom_sprint",
+    "custom_sprint_outline": "custom_sprint",
     "lesson_parallel_structure": "lesson_plan",
     "lesson_parallel_lecture": "lesson_plan",
     "lesson_parallel_memorize": "lesson_plan",
