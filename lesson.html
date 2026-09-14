@@ -3035,9 +3035,10 @@
                                         <div style="font-size: 0.78rem; color: var(--text-secondary); font-weight: 600;">
                                             🧠 暗記すべき公式・用語一覧
                                         </div>
-                                        <div style="display: flex; gap: 0.35rem; align-items: center;">
+                                        <div style="display: flex; gap: 0.35rem; align-items: center; flex-wrap: wrap;">
                                             <button type="button" class="flora-btn flora-btn-secondary btn-sm" onclick="toggleAddMemorizePointForm(true)" style="padding: 0.2rem 0.5rem; font-size: 0.72rem;">＋項目追加</button>
-                                            <button type="button" id="btn-regen-memorize-points" class="flora-btn flora-btn-secondary btn-sm" onclick="regenerateLessonMemorizationPoints()" style="padding: 0.2rem 0.5rem; font-size: 0.72rem; color: var(--brand-primary); font-weight: 700;" title="この授業の暗記事項をAIで新フォーマット（表面：問い／裏面：答え）で再生成します">🔄 AI再生成</button>
+                                            <button type="button" id="btn-regen-memorize-points" class="flora-btn flora-btn-secondary btn-sm" onclick="regenerateLessonMemorizationPoints()" style="padding: 0.2rem 0.5rem; font-size: 0.72rem; color: var(--brand-primary); font-weight: 700;" title="この授業の暗記事項をAIで各パートごとに分割して漏れなく再生成します（ふりがななし・網羅）">🔄 AI再生成</button>
+                                            <button type="button" id="btn-clean-furigana-points" class="flora-btn flora-btn-secondary btn-sm" onclick="cleanCurrentLessonFurigana()" style="padding: 0.2rem 0.5rem; font-size: 0.72rem; color: var(--text-secondary);" title="この授業の暗記事項から（ひらがな・ふりがな）の括弧表記を一括消去します">🧹 ふりがな消去</button>
                                             <button type="button" id="btn-clear-memorize-points" class="flora-btn flora-btn-secondary btn-sm" onclick="clearLessonMemorizationPoints()" style="padding: 0.2rem 0.5rem; font-size: 0.72rem; color: var(--error);" title="この授業の暗記事項をすべて削除します（暗記完了時のクリア用）">🗑️ 全削除</button>
                                         </div>
                                     </div>
@@ -5238,7 +5239,7 @@ ${subjectGuide}
 ${subjectGuide}
 
 指定された単元で、試験で満点を取るために絶対に暗記すべき重要公式・定理・専門用語・定義・反応式を漏れなく抽出してください。
-難しい漢字や専門用語（特に社会科・歴史・地理・公民の用語・人名・地名・制度名など）には必ず「用語（よみがな）」の形式で読み仮名を付記してください。`;
+※【絶対厳禁】漢字の後ろに括弧書きでふりがな（ひらがな）を付けることは禁止します。一般の教科書や問題集と同様に正式な漢字表記のみでスッキリと記述してください。`;
 
                     const MEMORIZE_SCHEMA = {
                         type: "OBJECT",
@@ -5337,10 +5338,35 @@ ${subjectGuide}
             required: ["memorization_points"]
         };
 
-        const MEMORIZATION_SYSTEM_INSTRUCTION = `あなたは生徒の暗記学習を支援するフラッシュカード専門AIです。
-渡された「授業ノート」を精読し、この単元の試験で満点を取るために絶対に暗記すべき重要事項を漏れなく抽出して、フラッシュカード形式（表面＝問い、裏面＝答え）で出力してください。
+        // 🧹 暗記事項からふりがな（ひらがな）の括弧表記を徹底除去する関数
+        function stripFurigana(text) {
+            if (!text || typeof text !== "string") return text || "";
+            let s = text.replace(/<ruby>(.*?)<rt>.*?<\/rt><\/ruby>/g, '$1');
+            let prev;
+            let count = 0;
+            do {
+                prev = s;
+                s = s.replace(/（[ぁ-んー\s・/、]+）/g, '');
+                s = s.replace(/\([ぁ-んー\s・/、]+\)/g, '');
+                count++;
+            } while (s !== prev && count < 5);
+            return s.trim();
+        }
 
-【最重要ルール：表面（question）と裏面（answer）の明確な分離】
+        const MEMORIZATION_SYSTEM_INSTRUCTION = `あなたは生徒の暗記学習を支援するフラッシュカード・重要用語抽出専門AIです。
+渡された「授業ノート・教科書本文」を徹底的に精読し、この単元・パートの定期テストや入試で満点を取るために絶対に暗記すべき重要事項・専門用語・定義・人名・年代・事件・制度・公式を【1つも漏らさず全て】抽出して、フラッシュカード形式（表面＝問い、裏面＝答え）で出力してください。
+
+【最重要ルール1：個数の手加減・絞り込みの完全禁止（徹底網羅）】
+- 「10個〜15個程度にまとめる」「代表的なものだけに絞る」ことは【固く禁止】します。
+- 教科書や授業ノートに登場する覚えるべき専門用語、人名、事件名、制度名、法令名、条約、地名、文化財、年号、因果関係、公式、定理、反応式、解法急所は、20個、30個、40個になろうとも【すべて】抽出してください。情報量が少なすぎると生徒が試験で失点してしまいます。
+
+【最重要ルール2：読み仮名（ひらがな・ふりがな）の括弧表記は【厳禁】】
+- 用語の直後に「（ふりがな）」「（ひらがな）」を付けることは【絶対に禁止】です。
+  × 悪い例: 「由井正雪（ゆいしょうせつ）」「慶安（けいあん）の変」「末期養子（まつごようし）の禁」
+  ○ 良い例: 「由井正雪」「慶安の変」「末期養子の禁」
+- 生徒は高校生・受験生としてすでに授業を受けているため、無駄なふりがながあると可読性が著しく低下します。一般的な教科書・参考書・用語集と同様に、正式な漢字表記のみでスッキリと記述してください。
+
+【最重要ルール3：表面（question）と裏面（answer）の明確な分離】
 1. 表面（question）：フラッシュカードの表面に表示する「問い・公式名・問いかけ・キーワード」
    - 【絶対厳禁】表面（question）の中に答えとなる結論・定義・数式・具体的操作を絶対に書かないでください！
      × 悪い例: 「事象Aが起こらない事象を余事象といい、確率は P(A)=1-P(A) となる」
@@ -5353,40 +5379,143 @@ ${subjectGuide}
    - 数式は途中で切らず、完全な LaTeX 数式として $ ... $ で記述してください（例: $P(\bar{A}) = 1 - P(A)$）。
 3. 補足・コツ（note）：
    - 覚え方のコツ、問題文での見分け方、注意点などがあれば記述してください（無ければ空文字）。
-4. 難しい漢字・用語への読み仮名（ふりがな）徹底付与：
-   - 社会科（日本史・世界史・地理・公民・公共・政治経済等）や国語をはじめとする難解な漢字、歴史上の人名、地名、制度名、寺社名、事件名、法律名などには、必ず表面・裏面ともに「漢字（よみがな）」の形式で読み仮名を徹底して付記してください（例: 墾田永年私財法（こんでんえいねんしざいほう）、租庸調（そようちょう）、壇ノ浦（だんのうら）など）。生徒が読み方が分からず暗記が滞ることを完全に防止するためです。
 
 対象にすべきもの:
-- 公式・法則・定理・等式（導出過程ではなく、覚えるべき結論の形）
-- 化学反応式・電離式・反応名・反応条件・現象（色の変化など）
-- 覚えるべき専門用語とその正確な定義
-- 覚えるべき数値・定数・単位・年代・条約・制度
-- 有効な語呂合わせや暗記のコツ
+- 歴史・公民・社会：人名、事件名、政策名、法令名、条約名、年代、制度、機関名、因果関係
+- 数学・物理：公式・法則・定理・等式（覚えるべき結論の形）
+- 化学・生物：化学反応式・電離式・反応名・反応条件・現象（色の変化など）・器官名・ホルモン名
+- 英語・国語：重要構文、文法規則、文学史、重要語句の正確な定義
 
 数式は必ず $ $ で囲み、抜け漏れなく簡潔かつ正確に出力してください。`;
 
-        // extractedText: 授業ノート/参考書書き起こし全文, lessonTitle: 授業タイトル, subjectName: 教科名
+        // 【案A：パート別分割抽出方式】
+        // extractedText: 授業ノート/参考書書き起こし全文, lessonTitle: 授業タイトル, subjectName: 教科名, lessonParts: パート配列
         // 戻り値: memorization_points の配列（失敗時は例外throw）
-        async function generateMemorizationPoints(extractedText, lessonTitle, subjectName) {
-            const promptText = `【教科】${subjectName || "指定なし"}\n【授業タイトル】\n${lessonTitle}\n\n【授業ノート本文】\n${extractedText || "（本文なし）"}`;
+        async function generateMemorizationPoints(extractedText, lessonTitle, subjectName, lessonParts = null) {
+            const parts = Array.isArray(lessonParts) && lessonParts.length > 0
+                ? lessonParts
+                : ((currentLesson && Array.isArray(currentLesson.parts) && currentLesson.parts.length > 0) ? currentLesson.parts : []);
+
+            const isMultiPart = parts.length >= 2;
+
+            if (isMultiPart) {
+                console.log(`🧠 案A: 全${parts.length}パート別の並列暗記事項抽出を開始します`);
+
+                const partTasks = parts.map(async (part, pIdx) => {
+                    const partPrompt = `【教科】${subjectName || "指定なし"}
+【授業全体タイトル】${lessonTitle}
+
+【今回抽出を担当するパート（第${pIdx + 1}回 / 全${parts.length}回）】
+パート見出し: ${part.title}
+パート要約・範囲: ${part.summary || "（なし）"}
+
+【授業ノート・参考書本文】
+${extractedText || "（本文なし）"}
+
+【抽出指令】
+上記の本文の中から、【第${pIdx + 1}回：${part.title}】（要約：${part.summary || ""}）の範囲に登場する重要事項、専門用語、人名、事件名、制度名、法令名、条約、地名、文化財、年号、因果関係、公式、定理、反応式、解法急所を【1つも漏らさず全て】抽出してください。
+※他のパートに属する事項は別の処理で抽出するため、この【第${pIdx + 1}回：${part.title}】の範囲に集中し、徹底的に網羅してください。
+※個数の上限や手加減は一切不要です（10個や15個で打ち切らず、該当する重要語句はすべて出力してください）。
+※漢字の後ろに括弧でひらがな（読み仮名）を付けることは【厳禁】です。正式な漢字表記のみでスッキリ記述してください。`;
+
+                    try {
+                        const result = await callGeminiJSON(
+                            [{ text: partPrompt }],
+                            MEMORIZATION_SYSTEM_INSTRUCTION,
+                            { responseSchema: MEMORIZATION_RESPONSE_SCHEMA, featureId: "memorization_points", silentFallback: true, keyOffset: pIdx }
+                        );
+                        const list = Array.isArray(result?.memorization_points) ? result.memorization_points : [];
+                        return list.map(item => ({
+                            ...item,
+                            partIndex: pIdx,
+                            partTitle: part.title
+                        }));
+                    } catch (err) {
+                        console.warn(`⚠️ パート${pIdx + 1}（${part.title}）の暗記事項抽出に失敗:`, err);
+                        return [];
+                    }
+                });
+
+                const settledResults = await Promise.allSettled(partTasks);
+                const allRawItems = [];
+                for (const res of settledResults) {
+                    if (res.status === "fulfilled" && Array.isArray(res.value)) {
+                        allRawItems.push(...res.value);
+                    }
+                }
+
+                // 重複排除 & ふりがなクリーンアップ
+                const seenKeys = new Set();
+                const points = [];
+                for (const item of allRawItems) {
+                    const q = stripFurigana(item.question || "").trim();
+                    const a = stripFurigana(item.answer || "").trim();
+                    const note = stripFurigana(item.note || "").trim();
+                    const cat = (item.category || "重要事項").trim();
+                    if (!q && !a) continue;
+
+                    const dedupKey = (q + "||" + a).toLowerCase().replace(/[\s\u3000]+/g, "");
+                    if (seenKeys.has(dedupKey)) continue;
+                    seenKeys.add(dedupKey);
+
+                    const content = (q && a) ? `${q}：${a}` : (a || q);
+                    points.push({
+                        category: cat,
+                        question: q,
+                        answer: a,
+                        content: content,
+                        note: note,
+                        partIndex: item.partIndex !== undefined ? item.partIndex : null,
+                        partTitle: item.partTitle || ""
+                    });
+                }
+
+                if (points.length > 0) {
+                    return points;
+                }
+            }
+
+            // 単一パートまたはパート情報なしの場合（網羅抽出プロンプト）
+            const singlePrompt = `【教科】${subjectName || "指定なし"}
+【授業タイトル】${lessonTitle}
+
+【授業ノート・参考書本文】
+${extractedText || "（本文なし）"}
+
+【抽出指令】
+上記の本文全体から、試験や入試で満点を取るために暗記すべき重要事項、専門用語、人名、事件名、制度名、法令名、条約、地名、文化財、年号、因果関係、公式、定理、反応式、解法急所を【1つも漏らさず全て】抽出してください。
+※個数を10〜15個程度に間引いたり、代表例だけに絞ったりすることは固く禁止します。本文に登場する覚えるべき語句はすべてリストアップしてください。
+※漢字の後ろに括弧でひらがな（読み仮名）を付けることは【厳禁】です。正式な漢字表記のみでスッキリ記述してください。`;
+
             const result = await callGeminiJSON(
-                [{ text: promptText }],
+                [{ text: singlePrompt }],
                 MEMORIZATION_SYSTEM_INSTRUCTION,
                 { responseSchema: MEMORIZATION_RESPONSE_SCHEMA, featureId: "memorization_points", silentFallback: true }
             );
-            const list = Array.isArray(result.memorization_points) ? result.memorization_points : [];
-            return list.map(item => {
-                const q = (item.question || "").trim();
-                const a = (item.answer || "").trim();
-                const content = (q && a) ? `${q}：${a}` : (a || q || "");
-                return {
-                    category: item.category || "重要事項",
+            const list = Array.isArray(result?.memorization_points) ? result.memorization_points : [];
+            const seenKeys = new Set();
+            const points = [];
+            for (const item of list) {
+                const q = stripFurigana(item.question || "").trim();
+                const a = stripFurigana(item.answer || "").trim();
+                const note = stripFurigana(item.note || "").trim();
+                const cat = (item.category || "重要事項").trim();
+                if (!q && !a) continue;
+
+                const dedupKey = (q + "||" + a).toLowerCase().replace(/[\s\u3000]+/g, "");
+                if (seenKeys.has(dedupKey)) continue;
+                seenKeys.add(dedupKey);
+
+                const content = (q && a) ? `${q}：${a}` : (a || q);
+                points.push({
+                    category: cat,
                     question: q,
                     answer: a,
                     content: content,
-                    note: (item.note || "").trim()
-                };
-            });
+                    note: note
+                });
+            }
+            return points;
         }
 
         // 授業画面ロード時に自動実行。すでに生成済みならスキップ。バックグラウンドで動くため
@@ -5397,10 +5526,11 @@ ${subjectGuide}
                 renderMemorizationPoints();
                 return;
             }
-            renderMemorizationPoints("loading");
+            const partsCount = Array.isArray(currentLesson.parts) ? currentLesson.parts.length : 0;
+            renderMemorizationPoints("loading", partsCount > 1 ? `🧠 全${partsCount}パートを並列スキャン中... 暗記事項を漏れなく網羅抽出しています` : "🧠 AIが暗記事項リスト（表面：問い／裏面：答え）を分析・生成中...");
             try {
                 const subject = currentLesson.subject || detectLessonSubject(currentLesson) || "その他";
-                const points = await generateMemorizationPoints(currentLesson.extractedText, currentLesson.title, subject);
+                const points = await generateMemorizationPoints(currentLesson.extractedText, currentLesson.title, subject, currentLesson.parts);
                 currentLesson.memorizationPoints = points.map((p, idx) => ({
                     id: "mp_" + Date.now() + "_" + idx,
                     category: p.category || "重要事項",
@@ -5408,6 +5538,8 @@ ${subjectGuide}
                     answer: p.answer || "",
                     content: p.content || (p.question && p.answer ? `${p.question}：${p.answer}` : (p.answer || p.question || "")),
                     note: p.note || "",
+                    partIndex: p.partIndex !== undefined ? p.partIndex : null,
+                    partTitle: p.partTitle || "",
                     subject: subject,
                     createdAt: new Date().toISOString()
                 }));
@@ -5425,7 +5557,7 @@ ${subjectGuide}
             if (!container) return;
 
             if (state === "loading") {
-                container.innerHTML = `<div class="memorize-loading">🧠 AIが暗記事項リスト（表面：問い／裏面：答え）を分析・生成中...</div>`;
+                container.innerHTML = `<div class="memorize-loading">${errorMessage || "🧠 AIが暗記事項リスト（表面：問い／裏面：答え）を分析・生成中..."}</div>`;
                 return;
             }
             if (state === "error") {
@@ -5477,8 +5609,11 @@ ${subjectGuide}
 
                 return `
                 <div class="memorize-item">
-                    <div class="memorize-item-top" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem;">
-                        <span class="memorize-item-category">${(p.category || "重要事項").replace(/</g, "&lt;")}</span>
+                    <div class="memorize-item-top" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem; gap:0.4rem;">
+                        <div style="display:flex; align-items:center; gap:0.35rem; flex-wrap:wrap;">
+                            <span class="memorize-item-category">${(p.category || "重要事項").replace(/</g, "&lt;")}</span>
+                            ${p.partTitle ? `<span style="font-size:0.68rem; color:var(--text-muted); background:var(--bg-subtle); padding:0.1rem 0.4rem; border-radius:4px; border:1px solid var(--border-color);">${(p.partTitle).replace(/</g, "&lt;")}</span>` : ''}
+                        </div>
                         <div class="lesson-memo-actions">
                             <button type="button" class="lesson-memo-edit-btn" onclick="startEditMemorizePoint('${curId}')" title="編集">✏️</button>
                             <button type="button" class="lesson-memo-del-btn" onclick="deleteMemorizePoint('${curId}')" title="削除">🗑</button>
@@ -7689,15 +7824,16 @@ ${EXPERT_TEACHER_PROMPT}
         window.regenerateLessonMemorizationPoints = async function() {
             if (!currentLesson) return;
             const currentCount = Array.isArray(currentLesson.memorizationPoints) ? currentLesson.memorizationPoints.length : 0;
+            const partsCount = Array.isArray(currentLesson.parts) ? currentLesson.parts.length : 0;
             const confirmMsg = currentCount > 0
-                ? `この授業の暗記事項（全${currentCount}件）をAIで再抽出しますか？\n（現在のリストは、表面＝問い・裏面＝答えの新フォーマットで再生成されます）`
-                : "この授業のノートからAIで暗記事項（表面＝問い／裏面＝答え）を抽出しますか？";
+                ? `この授業の暗記事項（現在${currentCount}件）を【案A：全${partsCount > 1 ? partsCount + 'パート別分割' : '網羅'}抽出】で再生成しますか？\n\n・各パートの重要語句・人名・制度・年代などを漏れなく網羅抽出します\n・ふりがな（ひらがな）の括弧表記は排除され、スッキリとした正式表記になります`
+                : `この授業のノートから暗記事項を【案A：全${partsCount > 1 ? partsCount + 'パート別分割' : '網羅'}抽出】で作成しますか？\n（ふりがなの括弧表記なし・重要語句を漏れなく網羅）`;
             if (!confirm(confirmMsg)) return;
 
-            renderMemorizationPoints("loading");
+            renderMemorizationPoints("loading", partsCount > 1 ? `🧠 全${partsCount}パートを並列スキャン中... 暗記事項を漏れなく網羅抽出しています` : "🧠 暗記事項を漏れなく網羅抽出中...");
             try {
                 const subject = currentLesson.subject || detectLessonSubject(currentLesson) || "その他";
-                const points = await generateMemorizationPoints(currentLesson.extractedText, currentLesson.title, subject);
+                const points = await generateMemorizationPoints(currentLesson.extractedText, currentLesson.title, subject, currentLesson.parts);
                 currentLesson.memorizationPoints = points.map((p, idx) => ({
                     id: "mp_" + Date.now() + "_" + idx,
                     category: p.category || "重要事項",
@@ -7705,18 +7841,56 @@ ${EXPERT_TEACHER_PROMPT}
                     answer: p.answer || "",
                     content: p.content || (p.question && p.answer ? `${p.question}：${p.answer}` : (p.answer || p.question || "")),
                     note: p.note || "",
+                    partIndex: p.partIndex !== undefined ? p.partIndex : null,
+                    partTitle: p.partTitle || "",
                     subject: subject,
                     createdAt: new Date().toISOString()
                 }));
                 renderMemorizationPoints();
                 await forceTriggerMathJax();
                 await saveLesson();
-                showToast(`✨ 暗記事項を新形式で${points.length}件再生成しました！`, "success", 3000);
+                showToast(`✨ 全${partsCount > 1 ? partsCount + 'パートから計' : ''}${points.length}件の暗記事項を網羅抽出しました！`, "success", 4000);
             } catch (err) {
                 console.error("⚠️ 暗記事項再生成エラー:", err);
                 renderMemorizationPoints("error", err.message);
                 showToast("暗記事項の再生成に失敗しました: " + err.message, "error", 5000);
             }
+        };
+
+        window.cleanCurrentLessonFurigana = async function() {
+            if (!currentLesson || !Array.isArray(currentLesson.memorizationPoints) || currentLesson.memorizationPoints.length === 0) {
+                showToast("この授業には暗記事項がありません。", "info", 2000);
+                return;
+            }
+            let cleanedCount = 0;
+            currentLesson.memorizationPoints = currentLesson.memorizationPoints.map(p => {
+                const cleanQ = stripFurigana(p.question);
+                const cleanA = stripFurigana(p.answer);
+                const cleanContent = stripFurigana(p.content);
+                const cleanNote = stripFurigana(p.note);
+                if (cleanQ !== p.question || cleanA !== p.answer || cleanContent !== p.content || cleanNote !== p.note) {
+                    cleanedCount++;
+                    return {
+                        ...p,
+                        question: cleanQ,
+                        answer: cleanA,
+                        content: (cleanQ && cleanA) ? `${cleanQ}：${cleanA}` : (cleanContent || cleanA || cleanQ),
+                        note: cleanNote,
+                        updatedAt: new Date().toISOString()
+                    };
+                }
+                return p;
+            });
+
+            if (cleanedCount === 0) {
+                showToast("この授業の暗記事項はすでにふりがなのないスッキリした表記です。", "info", 2500);
+                return;
+            }
+
+            renderMemorizationPoints();
+            await forceTriggerMathJax();
+            await saveLesson();
+            showToast(`✨ ${cleanedCount}件の暗記事項から（ふりがな）を削除しました！`, "success", 3000);
         };
 
         window.clearLessonMemorizationPoints = async function() {
