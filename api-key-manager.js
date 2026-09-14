@@ -1232,15 +1232,28 @@ function injectStylesAndModal() {
     window.__apikmOpen = openModal;
 }
 
-export function initApiKeyManager({ needGemini = false, needDeepseek = false, autoOpen = true } = {}) {
+export async function initApiKeyManager({ needGemini = false, needDeepseek = false, autoOpen = true } = {}) {
     injectStylesAndModal();
 
     // 📱 モバイル画面（/m/）または明示的な autoOpen=false の時は初回自動オープンを抑制
     const isMobile = typeof window !== 'undefined' && (window.location.pathname.includes('/m/') || window.innerWidth <= 600);
     if (!autoOpen || isMobile) return;
 
-    const missingGemini = needGemini && getGeminiKeys().length === 0;
-    const missingDeepseek = needDeepseek && getDeepseekKeys().length === 0;
+    let serverHasGemini = false;
+    let serverHasDeepseek = false;
+    try {
+        const res = await fetch('/api/ai/status');
+        if (res.ok) {
+            const data = await res.json();
+            serverHasGemini = !!data.hasGeminiKey;
+            serverHasDeepseek = !!data.hasDeepseekKey;
+        }
+    } catch {
+        // network or server offline, fall back to client check
+    }
+
+    const missingGemini = needGemini && !serverHasGemini && getGeminiKeys().length === 0;
+    const missingDeepseek = needDeepseek && !serverHasDeepseek && getDeepseekKeys().length === 0;
 
     if (missingGemini || missingDeepseek) {
         setTimeout(() => {
