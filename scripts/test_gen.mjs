@@ -1,6 +1,6 @@
 import fs from 'fs';
 
-const key = process.env.GEMINI_API_KEY || 'AQ.Ab8RN6KE-DSG7lwdmJsO4i_CatdXmyAQkC0JOVq5pKw8iF1ALw';
+const key = process.env.GEMINI_API_KEY;
 
 const KYOTSU_SPRINT_SCHEMA = {
   type: 'OBJECT',
