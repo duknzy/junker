@@ -10,10 +10,13 @@
     <title>Flora | 質問・気づきアーカイブ</title>
     <link rel="stylesheet" href="style.css?v=3.5">
 
-    <!-- MathJax 3 -->
+    <!-- MathJax 3 (High-performance SVG Renderer: No font downloads, zero latency) -->
     <script>
         window.MathJax = {
             loader: { load: ['[tex]/bbox', '[tex]/color'] },
+            startup: {
+                typeset: false // ページ全体の自動フルスキャンを停止（必要な数式ノードのみピンポイント処理）
+            },
             tex: {
                 packages: { '[+]': ['bbox', 'color'] },
                 inlineMath: [['$', '$'], ['\\(', '\\)']],
@@ -29,10 +32,13 @@
                 processHtmlClass: 'tex2jax_process',
                 skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
             },
-            chtml: { displayAlign: 'left' }
+            svg: {
+                fontCache: 'global',
+                displayAlign: 'left'
+            }
         };
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" async></script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
 
     <style>
         /* 🎛 モード切り替えタブ */
@@ -114,6 +120,8 @@
             gap: 1rem;
             box-shadow: var(--shadow-xs);
             transition: all 0.15s ease;
+            content-visibility: auto;
+            contain-intrinsic-size: 0 260px;
         }
         .insight-card.pinned {
             border-left-color: var(--warning);
@@ -237,6 +245,8 @@
             padding: 0.75rem 1rem;
             box-shadow: var(--shadow-xs);
             transition: all 0.15s ease;
+            content-visibility: auto;
+            contain-intrinsic-size: 0 54px;
         }
         .insight-compact-row.pinned { border-left: 4px solid var(--warning); }
         .insight-compact-row:hover {
@@ -247,6 +257,42 @@
         .compact-text {
             font-size: 0.92rem; font-weight: 700; color: var(--text-primary);
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+
+        /* ⚡ 段階的遅延読み込み（Progressive Chunking） UI */
+        .load-more-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            padding: 2rem 1rem 3rem 1rem;
+            width: 100%;
+        }
+        .load-more-btn {
+            background: var(--bg-surface);
+            color: var(--brand-primary);
+            border: 1.5px solid var(--brand-primary);
+            padding: 0.7rem 1.8rem;
+            border-radius: var(--radius-pill, 9999px);
+            font-size: 0.88rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            box-shadow: var(--shadow-xs);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .load-more-btn:hover {
+            background: var(--brand-primary);
+            color: #ffffff;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+        .load-more-info {
+            font-size: 0.78rem;
+            color: var(--text-muted);
         }
         .compact-sub {
             font-size: 0.74rem; color: var(--text-secondary); margin-top: 0.2rem;
@@ -1779,6 +1825,7 @@
             insightSubToolbar.style.display = tab === "insights" ? "flex" : "none";
             if (memorizeSubToolbar) memorizeSubToolbar.style.display = tab === "memorize" ? "flex" : "none";
 
+            resetDisplayLimits();
             populateSubjectFilter();
             renderActiveView();
         }
@@ -1798,33 +1845,50 @@
             insightViewMode = "card";
             btnViewCard.classList.add("active");
             btnViewCompact.classList.remove("active");
+            resetDisplayLimits();
             renderInsights();
         });
         btnViewCompact.addEventListener("click", () => {
             insightViewMode = "compact";
             btnViewCompact.classList.add("active");
             btnViewCard.classList.remove("active");
+            resetDisplayLimits();
             renderInsights();
         });
         btnToggleGroup.addEventListener("click", () => {
             isGrouped = !isGrouped;
             btnToggleGroup.classList.toggle("active", isGrouped);
+            resetDisplayLimits();
             renderInsights();
         });
         btnTogglePinned.addEventListener("click", () => {
             filterPinnedOnly = !filterPinnedOnly;
             btnTogglePinned.classList.toggle("active", filterPinnedOnly);
+            resetDisplayLimits();
             renderInsights();
         });
 
-        // フィルター＆検索
+        // フィルター＆検索（⚡ 160ms デバウンスでキーストローク時の負荷を解消）
         const searchInput = document.getElementById("search-input");
         const sortSelect = document.getElementById("sort-select");
         const subjectSelect = document.getElementById("subject-select");
 
-        searchInput.addEventListener("input", renderActiveView);
-        sortSelect.addEventListener("change", renderActiveView);
-        subjectSelect.addEventListener("change", renderActiveView);
+        let searchInputDebounceTimer = null;
+        searchInput.addEventListener("input", () => {
+            if (searchInputDebounceTimer) clearTimeout(searchInputDebounceTimer);
+            searchInputDebounceTimer = setTimeout(() => {
+                resetDisplayLimits();
+                renderActiveView();
+            }, 160);
+        });
+        sortSelect.addEventListener("change", () => {
+            resetDisplayLimits();
+            renderActiveView();
+        });
+        subjectSelect.addEventListener("change", () => {
+            resetDisplayLimits();
+            renderActiveView();
+        });
 
         const AVAILABLE_SUBJECTS = ["政治・経済", "公共", "公民", "数学", "英語", "国語", "物理", "化学", "生物", "地学", "日本史", "世界史", "地理", "情報", "その他"];
 
@@ -2672,8 +2736,100 @@
             return formatted.replace(/\n/g, '<br>');
         }
 
-        // 🧠 1. 気づきメモ描画
-        function renderInsights() {
+        // ⚡ 数式検出・超軽量局所MathJaxスケジューラ（数式を含まない9割の通常カードは完全スキップ）
+        function containsMathSyntax(text) {
+            if (!text || typeof text !== 'string') return false;
+            return /(\$|\\\(|\\\[|\\frac|\\sqrt|\\sum|\\int|\\bbox|\\boxed|\\alpha|\\beta|\\theta|\\pm|\\times|\\div|\\neq|\\leqq|\\geqq|\\triangle|\\angle)/.test(text);
+        }
+
+        let pendingMathElements = new Set();
+        let mathScheduleTimer = null;
+
+        function scheduleMathTypeset(targetOrTargets) {
+            if (!window.MathJax || !window.MathJax.typesetPromise) return;
+
+            const targets = Array.isArray(targetOrTargets) ? targetOrTargets : [targetOrTargets];
+            targets.forEach(t => {
+                if (!t) return;
+                if (typeof t === "string") {
+                    const el = document.querySelector(t);
+                    if (el) collectMathElements(el);
+                } else if (t.nodeType === Node.ELEMENT_NODE) {
+                    collectMathElements(t);
+                }
+            });
+
+            function collectMathElements(container) {
+                if (container.classList && container.classList.contains("tex2jax_process")) {
+                    if (containsMathSyntax(container.textContent)) {
+                        pendingMathElements.add(container);
+                    }
+                }
+                if (container.querySelectorAll) {
+                    const list = container.querySelectorAll(".tex2jax_process");
+                    list.forEach(node => {
+                        if (containsMathSyntax(node.textContent)) {
+                            pendingMathElements.add(node);
+                        }
+                    });
+                }
+            }
+
+            if (pendingMathElements.size === 0) return;
+
+            if (mathScheduleTimer) clearTimeout(mathScheduleTimer);
+            mathScheduleTimer = setTimeout(() => {
+                const toProcess = Array.from(pendingMathElements);
+                pendingMathElements.clear();
+                if (toProcess.length === 0) return;
+
+                const executeTypeset = () => {
+                    MathJax.typesetPromise(toProcess).catch(err => {
+                        console.debug("MathJax typeset skipped:", err);
+                    });
+                };
+
+                if ('requestIdleCallback' in window) {
+                    requestIdleCallback(executeTypeset, { timeout: 600 });
+                } else {
+                    requestAnimationFrame(executeTypeset);
+                }
+            }, 40);
+        }
+
+        // ⚡ 段階的チャンク描画用定数・状態
+        const CHUNK_SIZE = 36;
+        let insightsDisplayCount = CHUNK_SIZE;
+        let memorizeDisplayCount = CHUNK_SIZE;
+        let activeInfiniteObservers = {};
+
+        function resetDisplayLimits() {
+            insightsDisplayCount = CHUNK_SIZE;
+            memorizeDisplayCount = CHUNK_SIZE;
+        }
+
+        function setupInfiniteScroll(targetId, onIntersect) {
+            const target = document.getElementById(targetId);
+            if (!target || !('IntersectionObserver' in window)) return;
+
+            if (activeInfiniteObservers[targetId]) {
+                activeInfiniteObservers[targetId].disconnect();
+            }
+
+            const observer = new IntersectionObserver((entries) => {
+                if (entries[0] && entries[0].isIntersecting) {
+                    observer.disconnect();
+                    delete activeInfiniteObservers[targetId];
+                    onIntersect();
+                }
+            }, { rootMargin: '350px' });
+
+            observer.observe(target);
+            activeInfiniteObservers[targetId] = observer;
+        }
+
+        // 🧠 1. 気づきメモ描画（段階的読み込み & 局所数式レンダリング）
+        function renderInsights(isLoadMore = false) {
             const container = document.getElementById("view-insights");
             const query = searchInput.value.trim().toLowerCase();
             const subject = subjectSelect.value;
@@ -2753,19 +2909,51 @@
                 });
 
             } else {
-                // フラット表示
-                container.innerHTML = insightViewMode === "card"
-                    ? `<div class="insight-grid">${items.map(p => renderCardHtml(p)).join("")}</div>`
-                    : `<div class="insight-compact-list">${items.map(p => renderCompactRowHtml(p)).join("")}</div>`;
+                // フラット表示（⚡ 段階的チャンク描画）
+                const totalItems = items.length;
+                const visibleItems = items.slice(0, insightsDisplayCount);
+                const hasMore = totalItems > insightsDisplayCount;
+
+                const cardsHtml = insightViewMode === "card"
+                    ? `<div class="insight-grid">${visibleItems.map(p => renderCardHtml(p)).join("")}</div>`
+                    : `<div class="insight-compact-list">${visibleItems.map(p => renderCompactRowHtml(p)).join("")}</div>`;
+
+                let loadMoreHtml = "";
+                if (hasMore) {
+                    const remaining = totalItems - insightsDisplayCount;
+                    loadMoreHtml = `
+                        <div class="load-more-wrap" id="insights-load-more-wrap">
+                            <button type="button" class="load-more-btn" id="btn-insights-load-more">
+                                <span>▼ さらに読み込む（残り ${remaining} 件）</span>
+                            </button>
+                            <span class="load-more-info">全 ${totalItems} 件中 ${visibleItems.length} 件を表示中</span>
+                        </div>
+                    `;
+                }
+
+                container.innerHTML = cardsHtml + loadMoreHtml;
+
+                if (hasMore) {
+                    const btn = document.getElementById("btn-insights-load-more");
+                    if (btn) {
+                        btn.onclick = () => {
+                            insightsDisplayCount += CHUNK_SIZE;
+                            renderInsights(true);
+                        };
+                    }
+                    setupInfiniteScroll("insights-load-more-wrap", () => {
+                        insightsDisplayCount += CHUNK_SIZE;
+                        renderInsights(true);
+                    });
+                }
             }
 
-            if (window.MathJax && MathJax.typesetPromise) {
-                MathJax.typesetPromise([container]).catch(err => console.log('MathJax typeset error:', err));
-            }
+            // ⚡ 数式記法を含む要素だけをピンポイントで非同期レンダリング
+            scheduleMathTypeset(container);
         }
 
-        // 🧠【新設】暗記事項ビュー（授業ページで自動生成される暗記事項の一覧。気づき・極意メモとは別タブで表示）
-        function renderMemorize() {
+        // 🧠【新設】暗記事項ビュー（⚡ 段階的読み込み & 局所数式レンダリング）
+        function renderMemorize(isLoadMore = false) {
             const container = document.getElementById("view-memorize");
             const query = searchInput.value.trim().toLowerCase();
             const subject = subjectSelect.value;
@@ -2800,11 +2988,43 @@
             }
             hideEmptyNotice();
 
-            container.innerHTML = `<div class="insight-grid">${items.map(p => renderMemorizeCardHtml(p)).join("")}</div>`;
+            // ⚡ 段階的チャンク描画
+            const totalItems = items.length;
+            const visibleItems = items.slice(0, memorizeDisplayCount);
+            const hasMore = totalItems > memorizeDisplayCount;
 
-            if (window.MathJax && MathJax.typesetPromise) {
-                MathJax.typesetPromise([container]).catch(err => console.log('MathJax typeset error:', err));
+            const gridHtml = `<div class="insight-grid">${visibleItems.map(p => renderMemorizeCardHtml(p)).join("")}</div>`;
+            let loadMoreHtml = "";
+            if (hasMore) {
+                const remaining = totalItems - memorizeDisplayCount;
+                loadMoreHtml = `
+                    <div class="load-more-wrap" id="memorize-load-more-wrap">
+                        <button type="button" class="load-more-btn" id="btn-memorize-load-more">
+                            <span>▼ さらに読み込む（残り ${remaining} 件）</span>
+                        </button>
+                        <span class="load-more-info">全 ${totalItems} 件中 ${visibleItems.length} 件を表示中</span>
+                    </div>
+                `;
             }
+
+            container.innerHTML = gridHtml + loadMoreHtml;
+
+            if (hasMore) {
+                const btn = document.getElementById("btn-memorize-load-more");
+                if (btn) {
+                    btn.onclick = () => {
+                        memorizeDisplayCount += CHUNK_SIZE;
+                        renderMemorize(true);
+                    };
+                }
+                setupInfiniteScroll("memorize-load-more-wrap", () => {
+                    memorizeDisplayCount += CHUNK_SIZE;
+                    renderMemorize(true);
+                });
+            }
+
+            // ⚡ 数式記法を含む要素だけをピンポイントで非同期レンダリング
+            scheduleMathTypeset(container);
         }
 
         // リッチ対比カードのHTML
@@ -3232,9 +3452,8 @@
                 }
             }).join("");
 
-            if (window.MathJax && MathJax.typesetPromise) {
-                MathJax.typesetPromise([problemBox, stream]).catch(err => console.log('MathJax typeset error:', err));
-            }
+            // ⚡ 数式記法を含む要素だけをピンポイントで非同期レンダリング
+            scheduleMathTypeset([problemBox, stream]);
         }
 
         // 🎴 3. 語呂合わせ描画
@@ -4595,10 +4814,8 @@
                 fcBackNote.style.display = "none";
             }
 
-            // MathJax 描画
-            if (window.MathJax && window.MathJax.typesetPromise) {
-                MathJax.typesetPromise([fcCardInner]).catch(() => {});
-            }
+            // ⚡ 数式記法を含む要素だけをピンポイントで非同期レンダリング
+            scheduleMathTypeset(fcCardInner);
         }
 
         // 4択テストの選択肢生成
@@ -4698,9 +4915,8 @@
             playFcSound("flip");
             fcCardStage.classList.toggle("flipped", fcIsFlipped);
 
-            if (window.MathJax && window.MathJax.typesetPromise) {
-                MathJax.typesetPromise([fcCardInner]).catch(() => {});
-            }
+            // ⚡ 数式記法を含む要素だけをピンポイントで非同期レンダリング
+            scheduleMathTypeset(fcCardInner);
         }
 
         // 🧠 4段階SRS評価エンジン（1:もう一度, 2:難しい, 3:覚えた, 4:簡単！）
@@ -5329,28 +5545,30 @@
             }
             currentUser = user;
 
+            let firebaseSyncDebounceTimer = null;
+            function handleFirebaseSync() {
+                if (firebaseSyncDebounceTimer) clearTimeout(firebaseSyncDebounceTimer);
+                firebaseSyncDebounceTimer = setTimeout(() => {
+                    updateCounts();
+                    populateSubjectFilter();
+                    renderActiveView();
+                    updateSrsDashboardCounts();
+                }, 60);
+            }
+
             onValue(ref(database, 'users/' + user.uid + '/problems'), (snapshot) => {
                 rawProblems = snapshot.val() || {};
-                updateCounts();
-                populateSubjectFilter();
-                renderActiveView();
-                updateSrsDashboardCounts();
+                handleFirebaseSync();
             });
 
             onValue(ref(database, 'users/' + user.uid + '/qna_logs'), (snapshot) => {
                 rawQnaLogs = snapshot.val() || {};
-                updateCounts();
-                populateSubjectFilter();
-                renderActiveView();
-                updateSrsDashboardCounts();
+                handleFirebaseSync();
             });
 
             onValue(ref(database, 'users/' + user.uid + '/lessons'), (snapshot) => {
                 rawLessons = snapshot.val() || {};
-                updateCounts();
-                populateSubjectFilter();
-                renderActiveView();
-                updateSrsDashboardCounts();
+                handleFirebaseSync();
             });
 
             // 🧠 間隔反復(SRS)の進捗データをリアルタイム購読
