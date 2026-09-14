@@ -10,17 +10,29 @@
     <link rel="icon" type="image/png" sizes="192x192" href="../icons/icon-192.png">
     <link rel="stylesheet" href="style-m.css">
 
+    <!-- MathJax 3 (High-performance SVG Renderer: No font downloads, zero latency) -->
     <script>
         window.MathJax = {
+            loader: { load: ['[tex]/bbox', '[tex]/color'] },
+            startup: {
+                typeset: false // 自動走査をオフにして、必要な要素だけ局所レンダリング
+            },
             tex: {
+                packages: {'[+]': ['bbox', 'color']},
                 inlineMath: [['$', '$'], ['\\(', '\\)']],
                 displayMath: [['$$', '$$'], ['\\[', '\\]']],
                 macros: { fbox: ["\\bbox[2px,border:1px solid]{#1}", 1] }
             },
-            options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'] }
+            svg: {
+                fontCache: 'global' // SVGグリフをグローバルキャッシュして再レンダリングを爆速化
+            },
+            options: {
+                skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+                processHtmlClass: 'tex2jax_process'
+            }
         };
     </script>
-    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
 
     <style>
         .m-tab-nav {
@@ -61,6 +73,43 @@
             box-shadow: var(--shadow-xs);
             transition: all 0.15s;
             overflow: hidden;
+            content-visibility: auto;
+            contain-intrinsic-size: 0 140px;
+        }
+
+        /* ⚡ 段階的読み込み UI */
+        .load-more-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 1.5rem 1rem 3rem 1rem;
+            width: 100%;
+        }
+        .load-more-btn {
+            background: var(--bg-surface);
+            color: var(--brand-primary);
+            border: 1.5px solid var(--brand-primary);
+            padding: 0.65rem 1.6rem;
+            border-radius: 9999px;
+            font-size: 0.84rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s;
+            box-shadow: var(--shadow-xs);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .load-more-btn:active {
+            background: var(--brand-primary);
+            color: #ffffff;
+            transform: scale(0.98);
+        }
+        .load-more-info {
+            font-size: 0.76rem;
+            color: var(--text-muted);
         }
 
         .insight-text {
@@ -587,7 +636,7 @@
                             </div>
                             <div class="m-fc-front-body">
                                 <div class="m-fc-prompt-lead">Q. 定義・要点を思い出そう</div>
-                                <div id="m-fc-front-term" class="m-fc-front-term">--</div>
+                                <div id="m-fc-front-term" class="m-fc-front-term tex2jax_process">--</div>
                             </div>
                             <button type="button" class="m-fc-btn-flip" id="m-fc-btn-flip">
                                 答えを見る ▶
@@ -604,7 +653,7 @@
                                 <div class="m-fc-source-title" id="m-fc-back-source">単元名</div>
                             </div>
                             <div class="m-fc-back-body" id="m-fc-back-answer-wrap">
-                                <div id="m-fc-back-answer">--</div>
+                                <div id="m-fc-back-answer" class="tex2jax_process">--</div>
                             </div>
                             <div class="m-fc-action-row">
                                 <button type="button" id="m-fc-btn-retry" class="m-fc-btn-retry">
@@ -672,6 +721,96 @@
         let currentSubject = "ALL";
         let searchQuery = "";
 
+        // ⚡ 数式検出 & 局所 typeset スケジューラ（数式を含まない9割の通常カードは完全スキップ）
+        function containsMathSyntax(text) {
+            if (!text || typeof text !== 'string') return false;
+            return /(\$|\\\(|\\\[|\\frac|\\sqrt|\\sum|\\int|\\bbox|\\boxed|\\alpha|\\beta|\\theta|\\pm|\\times|\\div|\\neq|\\leqq|\\geqq|\\triangle|\\angle)/.test(text);
+        }
+
+        let pendingMathElements = new Set();
+        let mathScheduleTimer = null;
+
+        function scheduleMathTypeset(targetOrTargets) {
+            if (!window.MathJax || !window.MathJax.typesetPromise) return;
+
+            const targets = Array.isArray(targetOrTargets) ? targetOrTargets : [targetOrTargets];
+            targets.forEach(t => {
+                if (!t) return;
+                if (typeof t === "string") {
+                    const el = document.querySelector(t);
+                    if (el) collectMathElements(el);
+                } else if (t.nodeType === Node.ELEMENT_NODE) {
+                    collectMathElements(t);
+                }
+            });
+
+            function collectMathElements(container) {
+                if (container.classList && container.classList.contains("tex2jax_process")) {
+                    if (containsMathSyntax(container.textContent)) {
+                        pendingMathElements.add(container);
+                    }
+                }
+                if (container.querySelectorAll) {
+                    const list = container.querySelectorAll(".tex2jax_process");
+                    list.forEach(node => {
+                        if (containsMathSyntax(node.textContent)) {
+                            pendingMathElements.add(node);
+                        }
+                    });
+                }
+            }
+
+            if (pendingMathElements.size === 0) return;
+
+            if (mathScheduleTimer) clearTimeout(mathScheduleTimer);
+            mathScheduleTimer = setTimeout(() => {
+                const toProcess = Array.from(pendingMathElements);
+                pendingMathElements.clear();
+                if (toProcess.length === 0) return;
+
+                const executeTypeset = () => {
+                    MathJax.typesetPromise(toProcess).catch(err => {
+                        console.debug("MathJax typeset skipped:", err);
+                    });
+                };
+
+                if ('requestIdleCallback' in window) {
+                    requestIdleCallback(executeTypeset, { timeout: 600 });
+                } else {
+                    requestAnimationFrame(executeTypeset);
+                }
+            }, 40);
+        }
+
+        // ⚡ 段階的チャンク描画用定数・状態
+        const M_CHUNK_SIZE = 24;
+        let mDisplayCount = M_CHUNK_SIZE;
+        let mActiveInfiniteObserver = null;
+
+        function resetMDisplayLimits() {
+            mDisplayCount = M_CHUNK_SIZE;
+        }
+
+        function setupMobileInfiniteScroll(targetId, onIntersect) {
+            const target = document.getElementById(targetId);
+            if (!target || !('IntersectionObserver' in window)) return;
+
+            if (mActiveInfiniteObserver) {
+                mActiveInfiniteObserver.disconnect();
+            }
+
+            const observer = new IntersectionObserver((entries) => {
+                if (entries[0] && entries[0].isIntersecting) {
+                    observer.disconnect();
+                    mActiveInfiniteObserver = null;
+                    onIntersect();
+                }
+            }, { rootMargin: '300px' });
+
+            observer.observe(target);
+            mActiveInfiniteObserver = observer;
+        }
+
         // 編集ステート
         let editingProblemId = null;
         let editingMemorizeKey = null; // 'lessonId:mpId'
@@ -687,16 +826,25 @@
             setTimeout(() => { toast.remove(); }, 2500);
         };
 
+        // ⚡ Firebase データ受信を 60ms デバウンスで集約（初回ロード時の多重再描画を防止）
+        let firebaseSyncDebounceTimer = null;
+        function handleFirebaseSync() {
+            if (firebaseSyncDebounceTimer) clearTimeout(firebaseSyncDebounceTimer);
+            firebaseSyncDebounceTimer = setTimeout(() => {
+                renderActiveView();
+            }, 60);
+        }
+
         onAuthStateChanged(auth, (user) => {
             currentUser = user;
             if (user) {
                 onValue(ref(database, `users/${user.uid}/problems`), snap => {
                     allProblems = snap.val() || {};
-                    renderActiveView();
+                    handleFirebaseSync();
                 });
                 onValue(ref(database, `users/${user.uid}/lessons`), snap => {
                     allLessons = snap.val() || {};
-                    renderActiveView();
+                    handleFirebaseSync();
                 });
             }
         });
@@ -710,15 +858,22 @@
 
         window.switchTab = function(tab) {
             currentTab = tab;
+            resetMDisplayLimits();
             document.querySelectorAll(".m-tab-btn").forEach(btn => btn.classList.remove("active"));
             const activeBtn = document.getElementById(`tab-btn-${tab}`);
             if (activeBtn) activeBtn.classList.add("active");
             renderActiveView();
         };
 
+        // ⚡ 160ms デバウンスで入力中のプチフリを解消
+        let searchInputDebounceTimer = null;
         document.getElementById("insight-search").oninput = (e) => {
             searchQuery = e.target.value.trim().toLowerCase();
-            renderActiveView();
+            if (searchInputDebounceTimer) clearTimeout(searchInputDebounceTimer);
+            searchInputDebounceTimer = setTimeout(() => {
+                resetMDisplayLimits();
+                renderActiveView();
+            }, 160);
         };
 
         function renderActiveView() {
@@ -868,12 +1023,13 @@
             chipsEl.querySelectorAll(".m-chip").forEach(btn => {
                 btn.onclick = () => {
                     currentSubject = btn.dataset.subj;
+                    resetMDisplayLimits();
                     renderActiveView();
                 };
             });
         }
 
-        // 1. 問題の極意メモ一覧
+        // 1. 問題の極意メモ一覧（⚡ 段階的読み込み & 局所数式レンダリング）
         function renderProblemsInsights() {
             const listEl = document.getElementById("insight-list");
             let items = getActiveItems();
@@ -894,7 +1050,11 @@
                 return;
             }
 
-            listEl.innerHTML = items.map(p => {
+            const totalItems = items.length;
+            const visibleItems = items.slice(0, mDisplayCount);
+            const hasMore = totalItems > mDisplayCount;
+
+            const cardsHtml = visibleItems.map(p => {
                 const isEditing = editingProblemId === p.id;
                 const bodyHtml = isEditing ? `
                     <div class="inline-edit-box">
@@ -927,10 +1087,39 @@
                 `;
             }).join("");
 
-            triggerMathJax(listEl);
+            let loadMoreHtml = "";
+            if (hasMore) {
+                const remaining = totalItems - mDisplayCount;
+                loadMoreHtml = `
+                    <div class="load-more-wrap" id="m-prob-load-more-wrap">
+                        <button type="button" class="load-more-btn" id="m-btn-prob-load-more">
+                            <span>▼ さらに読み込む（残り ${remaining} 件）</span>
+                        </button>
+                        <span class="load-more-info">全 ${totalItems} 件中 ${visibleItems.length} 件を表示中</span>
+                    </div>
+                `;
+            }
+
+            listEl.innerHTML = cardsHtml + loadMoreHtml;
+
+            if (hasMore) {
+                const btn = document.getElementById("m-btn-prob-load-more");
+                if (btn) {
+                    btn.onclick = () => {
+                        mDisplayCount += M_CHUNK_SIZE;
+                        renderProblemsInsights();
+                    };
+                }
+                setupMobileInfiniteScroll("m-prob-load-more-wrap", () => {
+                    mDisplayCount += M_CHUNK_SIZE;
+                    renderProblemsInsights();
+                });
+            }
+
+            scheduleMathTypeset(listEl);
         }
 
-        // 2. 暗記事項一覧
+        // 2. 暗記事項一覧（⚡ 段階的読み込み & 局所数式レンダリング）
         function renderMemorizationList() {
             const listEl = document.getElementById("insight-list");
             let items = getActiveItems();
@@ -951,7 +1140,11 @@
                 return;
             }
 
-            listEl.innerHTML = items.map(p => {
+            const totalItems = items.length;
+            const visibleItems = items.slice(0, mDisplayCount);
+            const hasMore = totalItems > mDisplayCount;
+
+            const cardsHtml = visibleItems.map(p => {
                 const isEditing = editingMemorizeKey === p.id;
                 const hasQA = p.question && p.answer;
                 const bodyHtml = isEditing ? `
@@ -999,10 +1192,39 @@
                 `;
             }).join("");
 
-            triggerMathJax(listEl);
+            let loadMoreHtml = "";
+            if (hasMore) {
+                const remaining = totalItems - mDisplayCount;
+                loadMoreHtml = `
+                    <div class="load-more-wrap" id="m-memo-load-more-wrap">
+                        <button type="button" class="load-more-btn" id="m-btn-memo-load-more">
+                            <span>▼ さらに読み込む（残り ${remaining} 件）</span>
+                        </button>
+                        <span class="load-more-info">全 ${totalItems} 件中 ${visibleItems.length} 件を表示中</span>
+                    </div>
+                `;
+            }
+
+            listEl.innerHTML = cardsHtml + loadMoreHtml;
+
+            if (hasMore) {
+                const btn = document.getElementById("m-btn-memo-load-more");
+                if (btn) {
+                    btn.onclick = () => {
+                        mDisplayCount += M_CHUNK_SIZE;
+                        renderMemorizationList();
+                    };
+                }
+                setupMobileInfiniteScroll("m-memo-load-more-wrap", () => {
+                    mDisplayCount += M_CHUNK_SIZE;
+                    renderMemorizationList();
+                });
+            }
+
+            scheduleMathTypeset(listEl);
         }
 
-        // 3. 授業メモ一覧
+        // 3. 授業メモ一覧（⚡ 段階的読み込み & 局所数式レンダリング）
         function renderLessonMemosList() {
             const listEl = document.getElementById("insight-list");
             let items = getActiveItems();
@@ -1023,7 +1245,11 @@
                 return;
             }
 
-            listEl.innerHTML = items.map(p => {
+            const totalItems = items.length;
+            const visibleItems = items.slice(0, mDisplayCount);
+            const hasMore = totalItems > mDisplayCount;
+
+            const cardsHtml = visibleItems.map(p => {
                 const memoKey = `${p.lessonId}:${p.memoId}`;
                 const isEditing = editingLessonMemoKey === memoKey;
                 const bodyHtml = isEditing ? `
@@ -1057,12 +1283,41 @@
                 `;
             }).join("");
 
-            triggerMathJax(listEl);
+            let loadMoreHtml = "";
+            if (hasMore) {
+                const remaining = totalItems - mDisplayCount;
+                loadMoreHtml = `
+                    <div class="load-more-wrap" id="m-lm-load-more-wrap">
+                        <button type="button" class="load-more-btn" id="m-btn-lm-load-more">
+                            <span>▼ さらに読み込む（残り ${remaining} 件）</span>
+                        </button>
+                        <span class="load-more-info">全 ${totalItems} 件中 ${visibleItems.length} 件を表示中</span>
+                    </div>
+                `;
+            }
+
+            listEl.innerHTML = cardsHtml + loadMoreHtml;
+
+            if (hasMore) {
+                const btn = document.getElementById("m-btn-lm-load-more");
+                if (btn) {
+                    btn.onclick = () => {
+                        mDisplayCount += M_CHUNK_SIZE;
+                        renderLessonMemosList();
+                    };
+                }
+                setupMobileInfiniteScroll("m-lm-load-more-wrap", () => {
+                    mDisplayCount += M_CHUNK_SIZE;
+                    renderLessonMemosList();
+                });
+            }
+
+            scheduleMathTypeset(listEl);
         }
 
         function triggerMathJax(container) {
-            if (window.MathJax && window.MathJax.typesetPromise) {
-                window.MathJax.typesetPromise([container]).catch(() => {});
+            scheduleMathTypeset(container);
+        }
             }
         }
 
@@ -1453,9 +1708,7 @@
             const pct = Math.min(100, Math.round((mFcMasteredCount / mFcTotalInitial) * 100));
             mFcProgressBar.style.width = `${pct}%`;
 
-            if (window.MathJax && window.MathJax.typesetPromise) {
-                window.MathJax.typesetPromise([mFcStage]).catch(() => {});
-            }
+            scheduleMathTypeset(mFcStage);
         }
 
         function flipMobileFc(forceState) {
@@ -1465,9 +1718,7 @@
                 mFcIsFlipped = !mFcIsFlipped;
             }
             mFcStage.classList.toggle("flipped", mFcIsFlipped);
-            if (window.MathJax && window.MathJax.typesetPromise) {
-                window.MathJax.typesetPromise([mFcStage]).catch(() => {});
-            }
+            scheduleMathTypeset(mFcStage);
         }
 
         function markMobileFc(mastered) {
