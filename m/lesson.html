@@ -2068,7 +2068,7 @@ ${subjectGuide}
                     const [resStructure, resLecture, resMemorize] = await Promise.all([
                         callGeminiJSON([{ text: basePrompt + "\n\nカリキュラム構成をJSONで出力してください。" }], curriculumInstruction, { responseSchema: STRUCTURE_SCHEMA, featureId: "lesson_plan", keyOffset: 0 }),
                         callGeminiJSON([{ text: basePrompt + "\n\n超詳細な講義ノート全文をJSONで出力してください。数式は必ず$ $で囲むこと。\n【最重要】社会系科目等の難しい漢字や専門用語（人名・地名・制度名・重要概念等）には必ず「漢字（よみがな）」または「<ruby>漢字<rt>よみがな</rt></ruby>」を併記して読み仮名を徹底してください。" }], "あなたは難関大受験指導のプロ講師です。論理的で厳密、初学者にもわかりやすく深い講義ノート全文を執筆してください。難しい漢字には読み仮名を必ず付記してください。無駄な前置きや過度な装飾は省いてください。", { responseSchema: LECTURE_SCHEMA, featureId: "lesson_plan", keyOffset: 1 }),
-                        callGeminiJSON([{ text: basePrompt + "\n\n重要公式・用語リストをJSONで出力してください。難しい漢字や用語には「用語（よみがな）」の形式で読み仮名を添えてください。" }], "暗記すべき重要公式・用語を抽出してください。難解な用語には読み仮名を付記してください。", { responseSchema: MEMORIZE_SCHEMA, featureId: "lesson_plan", keyOffset: 2 })
+                        callGeminiJSON([{ text: basePrompt + "\n\n重要公式・用語リストをJSONで出力してください。※漢字の後ろに括弧でふりがな（ひらがな）を付けることは禁止します。正式な漢字表記のみでスッキリ出力してください。" }], "暗記すべき重要公式・用語を漏れなく抽出してください。ふりがな・ひらがなの括弧表記は一切不要です。", { responseSchema: MEMORIZE_SCHEMA, featureId: "lesson_plan", keyOffset: 2 })
                     ]);
 
                     lessonTitle = resStructure.lesson_title || `【${subject}】${topic}`;

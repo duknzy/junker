@@ -849,6 +849,15 @@
                         <button type="button" class="toggle-btn active" id="btn-toggle-group">📁 単元ごとにまとめる</button>
                         <button type="button" class="toggle-btn" id="btn-toggle-pinned">⭐ スター付きのみ</button>
                     </div>
+
+                    <!-- 暗記事項タブ専用のサブツールバー -->
+                    <div class="filter-row" id="memorize-subtoolbar" style="border-top: 1px dashed var(--border-color); padding-top:0.6rem; display:none; align-items:center; flex-wrap:wrap; gap:0.6rem;">
+                        <span class="filter-label">🧹 整理：</span>
+                        <button type="button" class="flora-btn flora-btn-secondary" id="btn-clean-all-memorize-furigana" style="font-size:0.75rem; padding:0.32rem 0.85rem; border-color:var(--border-color); color:var(--text-secondary); display:inline-flex; align-items:center; gap:0.35rem;" onclick="cleanAllMemorizeFurigana()" title="登録済みのすべての暗記事項から（ひらがな・ふりがな）の括弧表記を一括削除してスッキリさせます">
+                            🧹 ふりがな一括消去
+                        </button>
+                        <span style="font-size:0.75rem; color:var(--text-muted);">※登録済みカード内の「（けいあん）」「（ゆいしょうせつ）」等の過剰なふりがなを一括消去します</span>
+                    </div>
                 </div>
 
                 <!-- ⚠️ 未分類データの一括変更・救済バナー -->
@@ -1226,6 +1235,7 @@
         const tabBtnQna = document.getElementById("tab-btn-qna");
         const tabBtnMnemonics = document.getElementById("tab-btn-mnemonics");
         const insightSubToolbar = document.getElementById("insight-subtoolbar");
+        const memorizeSubToolbar = document.getElementById("memorize-subtoolbar");
 
         function switchTab(tab) {
             activeTab = tab;
@@ -1239,6 +1249,7 @@
             document.getElementById("view-qna").style.display = tab === "qna" ? "grid" : "none";
             document.getElementById("view-mnemonics").style.display = tab === "mnemonics" ? "grid" : "none";
             insightSubToolbar.style.display = tab === "insights" ? "flex" : "none";
+            if (memorizeSubToolbar) memorizeSubToolbar.style.display = tab === "memorize" ? "flex" : "none";
 
             populateSubjectFilter();
             renderActiveView();
@@ -1439,6 +1450,21 @@
             return items;
         }
 
+        // 🧹 暗記事項からふりがな（ひらがな）の括弧表記を徹底除去する関数
+        function stripFurigana(text) {
+            if (!text || typeof text !== "string") return text || "";
+            let s = text.replace(/<ruby>(.*?)<rt>.*?<\/rt><\/ruby>/g, '$1');
+            let prev;
+            let count = 0;
+            do {
+                prev = s;
+                s = s.replace(/（[ぁ-んー\s・/、]+）/g, '');
+                s = s.replace(/\([ぁ-んー\s・/、]+\)/g, '');
+                count++;
+            } while (s !== prev && count < 5);
+            return s.trim();
+        }
+
         // 🧠 授業ページの「暗記事項リスト」を気づき一覧アイテム形式に変換
         //    （授業ページ内だけでなく、気づき・極意メモ一覧からも横断的に見えるようにする）
         function buildMemorizationItems() {
@@ -1450,9 +1476,10 @@
                     lessonSubj = detectSubjectFromLesson(lesson);
                 }
                 lesson.memorizationPoints.forEach((mp, idx) => {
-                    const content = (mp.content || "").trim();
-                    const question = (mp.question || "").trim();
-                    const answer = (mp.answer || "").trim();
+                    const content = stripFurigana(mp.content || "").trim();
+                    const question = stripFurigana(mp.question || "").trim();
+                    const answer = stripFurigana(mp.answer || "").trim();
+                    const note = stripFurigana(mp.note || "").trim();
                     if (!content && !answer && !question) return;
                     const mpId = mp.id || `idx${idx}`;
                     let pointSubj = mp.subject;
@@ -1467,14 +1494,15 @@
                         answer: answer,
                         rawContent: content,
                         rawCategory: mp.category || "",
-                        rawNote: mp.note || "",
+                        rawNote: note,
                         insight: (question && answer) 
-                            ? `${question}\n↳ ${answer}${mp.note ? `\n💡 ${mp.note}` : ""}` 
-                            : (content + (mp.note ? `\n💡 ${mp.note}` : "")),
+                            ? `${question}\n↳ ${answer}${note ? `\n💡 ${note}` : ""}` 
+                            : (content + (note ? `\n💡 ${note}` : "")),
                         category: mp.category || "",
                         subject: pointSubj,
                         field: lesson.topicKey || lesson.title || "暗記事項",
                         short_title: lesson.title || "暗記事項",
+                        partTitle: (lesson.parts && typeof mp.partIndex === "number" && lesson.parts[mp.partIndex]) ? lesson.parts[mp.partIndex].title : (mp.partTitle || ""),
                         insightUpdatedAt: mp.updatedAt || lesson.updatedAt || lesson.createdAt,
                         createdAt: lesson.createdAt,
                         isPinned: false,
@@ -1559,6 +1587,68 @@
                 renderActiveView();
             } catch (err) {
                 showToast("保存に失敗しました。", "error");
+            }
+        };
+
+        // 🧹 登録済み全暗記事項から（ひらがな・ふりがな）の括弧表記を一括削除
+        window.cleanAllMemorizeFurigana = async function() {
+            if (!currentUser) {
+                showToast("ログインが必要です。", "error");
+                return;
+            }
+            const lessonIds = Object.keys(rawLessons || {});
+            let totalCleanedCards = 0;
+            let modifiedLessonsCount = 0;
+            const updates = {};
+            const nowIso = new Date().toISOString();
+
+            for (const lid of lessonIds) {
+                const lesson = rawLessons[lid];
+                if (!lesson || !Array.isArray(lesson.memorizationPoints) || lesson.memorizationPoints.length === 0) continue;
+                let lessonChanged = false;
+                const newPoints = lesson.memorizationPoints.map(p => {
+                    const cleanQ = stripFurigana(p.question);
+                    const cleanA = stripFurigana(p.answer);
+                    const cleanContent = stripFurigana(p.content);
+                    const cleanNote = stripFurigana(p.note);
+                    if (cleanQ !== p.question || cleanA !== p.answer || cleanContent !== p.content || cleanNote !== p.note) {
+                        lessonChanged = true;
+                        totalCleanedCards++;
+                        return {
+                            ...p,
+                            question: cleanQ,
+                            answer: cleanA,
+                            content: (cleanQ && cleanA) ? `${cleanQ}：${cleanA}` : (cleanContent || cleanA || cleanQ),
+                            note: cleanNote,
+                            updatedAt: nowIso
+                        };
+                    }
+                    return p;
+                });
+
+                if (lessonChanged) {
+                    modifiedLessonsCount++;
+                    updates[`users/${currentUser.uid}/lessons/${lid}/memorizationPoints`] = newPoints;
+                    updates[`users/${currentUser.uid}/lessons/${lid}/updatedAt`] = nowIso;
+                    lesson.memorizationPoints = newPoints;
+                }
+            }
+
+            if (totalCleanedCards === 0) {
+                showToast("すべての暗記事項はすでにふりがなのないスッキリした表記になっています。", "info", 3000);
+                return;
+            }
+
+            const ok = confirm(`登録されているすべての暗記事項から（ひらがな・ふりがな）の括弧表記を一括削除します。\n対象: ${modifiedLessonsCount}件の授業（計${totalCleanedCards}枚の暗記カード）\n\n実行しますか？`);
+            if (!ok) return;
+
+            try {
+                await update(ref(database), updates);
+                showToast(`✨ ${totalCleanedCards}枚の暗記カードからふりがなを一括消去しました！`, "success", 4000);
+                renderActiveView();
+            } catch (err) {
+                console.error("ふりがな一括削除エラー:", err);
+                showToast("一括消去に失敗しました: " + err.message, "error", 4000);
             }
         };
 
