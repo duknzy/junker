@@ -436,9 +436,12 @@
         }
         .m-fc-front-term {
             color: var(--text-primary);
-            word-break: break-word;
+            word-break: auto-phrase;
+            text-wrap: balance;
+            text-wrap: pretty;
             overflow-wrap: break-word;
             line-break: strict;
+            letter-spacing: 0.015em;
         }
         .m-fc-front-term.is-short {
             font-size: 1.25rem;
@@ -446,8 +449,14 @@
             line-height: 1.45;
             text-align: center;
         }
+        .m-fc-front-term.is-mid {
+            font-size: 1.12rem;
+            font-weight: 750;
+            line-height: 1.58;
+            text-align: center;
+        }
         .m-fc-front-term.is-long {
-            font-size: 1.05rem;
+            font-size: 0.98rem;
             font-weight: 700;
             line-height: 1.68;
             text-align: left;
@@ -1644,17 +1653,33 @@
 
             mFcCurrentCard = mFcQueue[0];
             mFcIsFlipped = false;
-            mFcStage.classList.remove("flipped");
+
+            // ⚠️ 次カードの解答チラ見えを100%防止:
+            // 1. 裏面テキストを即座に消去
+            mFcBackAnswer.innerHTML = "";
+
+            // 2. トランジション一時解除して瞬時に表面へリセット
+            const mInner = mFcStage ? mFcStage.querySelector(".m-fc-inner") : null;
+            if (mInner) mInner.style.transition = "none";
+            if (mFcStage) {
+                mFcStage.classList.remove("flipped");
+                void mFcStage.offsetHeight; // 強制リフロー
+            }
+            requestAnimationFrame(() => {
+                if (mInner) mInner.style.transition = "";
+            });
 
             mFcMetaSubject.textContent = mFcCurrentCard.subject;
             mFcFrontCat.textContent = mFcCurrentCard.category;
             mFcFrontSource.textContent = mFcCurrentCard.sourceTitle;
 
-            // 表面：文字数に応じたレイアウト調整（短文は中央に大きく、長文は左揃えで行間広め）
+            // 表面：文字数に応じたレイアウト調整（短文は中央に大きく、中長文は左揃えで行間広め）
             const termText = (mFcCurrentCard.term || "").trim();
-            mFcFrontTerm.classList.remove("is-short", "is-long");
-            if (termText.length > 40) {
+            mFcFrontTerm.classList.remove("is-short", "is-mid", "is-long");
+            if (termText.length > 50) {
                 mFcFrontTerm.classList.add("is-long");
+            } else if (termText.length > 20) {
+                mFcFrontTerm.classList.add("is-mid");
             } else {
                 mFcFrontTerm.classList.add("is-short");
             }
@@ -1721,6 +1746,7 @@
 
         function markMobileFc(mastered) {
             if (!mFcCurrentCard) return;
+            if (mFcBackAnswer) mFcBackAnswer.innerHTML = "";
             if (mastered) {
                 mFcMasteredCount++;
                 mFcQueue.shift();
