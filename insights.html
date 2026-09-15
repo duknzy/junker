@@ -948,22 +948,100 @@
             letter-spacing: 0.04em;
         }
         .fc-main-term {
-            font-size: 1.6rem;
             font-weight: 800;
             color: var(--text-primary);
-            line-height: 1.6;
-            max-width: 96%;
-            word-break: normal;
-            overflow-wrap: anywhere;
+            line-height: 1.68;
+            max-width: 92%;
+            margin: 0 auto;
+            text-wrap: balance;
+            text-wrap: pretty;
+            word-break: auto-phrase;
+            overflow-wrap: break-word;
+            line-break: strict;
+            letter-spacing: 0.02em;
+            text-align: center;
+            transition: font-size 0.15s ease, line-height 0.15s ease;
+        }
+        .fc-main-term.fc-text-xl {
+            font-size: 1.85rem;
+            line-height: 1.45;
+        }
+        .fc-main-term.fc-text-lg {
+            font-size: 1.55rem;
+            line-height: 1.58;
+        }
+        .fc-main-term.fc-text-md {
+            font-size: 1.28rem;
+            line-height: 1.68;
+        }
+        .fc-main-term.fc-text-sm {
+            font-size: 1.12rem;
+            line-height: 1.72;
+            text-align: left;
+        }
+        .fc-main-term.fc-text-xs {
+            font-size: 0.98rem;
+            line-height: 1.75;
+            text-align: left;
         }
         @media (min-width: 1024px) {
             .fc-prompt-label {
                 font-size: 1.05rem;
             }
             .fc-main-term {
-                font-size: 2.1rem;
-                line-height: 1.65;
+                max-width: 88%;
             }
+            .fc-main-term.fc-text-xl {
+                font-size: 2.15rem;
+            }
+            .fc-main-term.fc-text-lg {
+                font-size: 1.75rem;
+            }
+            .fc-main-term.fc-text-md {
+                font-size: 1.38rem;
+            }
+            .fc-main-term.fc-text-sm {
+                font-size: 1.18rem;
+            }
+            .fc-main-term.fc-text-xs {
+                font-size: 1.04rem;
+            }
+        }
+        /* ユーザー選択の文字サイズ修飾クラス */
+        .fc-stage.fc-font-small .fc-main-term {
+            font-size: 0.88em !important;
+        }
+        .fc-stage.fc-font-small .fc-main-answer {
+            font-size: 0.88em !important;
+        }
+        .fc-stage.fc-font-compact .fc-main-term {
+            font-size: 0.76em !important;
+        }
+        .fc-stage.fc-font-compact .fc-main-answer {
+            font-size: 0.76em !important;
+        }
+
+        /* 次問への切り替え時に裏面の答えチラ見えを防止し、自然な進捗感を演出するアニメーション */
+        @keyframes fcCardAdvance {
+            0% { opacity: 0.65; transform: translateY(6px) scale(0.992); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .fc-card-advance {
+            animation: fcCardAdvance 0.16s cubic-bezier(0.2, 0.9, 0.3, 1);
+        }
+
+        /* 再挑戦（復習）カード用バッジ */
+        .fc-retry-badge {
+            font-size: 0.72rem;
+            font-weight: 800;
+            color: #b91c1c;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            padding: 0.15rem 0.5rem;
+            border-radius: var(--radius-sm);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
         }
         .fc-front-hint {
             font-size: 0.88rem;
@@ -985,18 +1063,21 @@
             max-height: 52vh;
         }
         .fc-main-answer {
-            font-size: 1.25rem;
+            font-size: 1.18rem;
             font-weight: 700;
             color: var(--text-primary);
-            line-height: 1.75;
+            line-height: 1.78;
             white-space: pre-wrap;
-            word-break: normal;
-            overflow-wrap: anywhere;
+            text-wrap: pretty;
+            word-break: auto-phrase;
+            overflow-wrap: break-word;
+            line-break: strict;
+            letter-spacing: 0.015em;
         }
         @media (min-width: 1024px) {
             .fc-main-answer {
-                font-size: 1.55rem;
-                line-height: 1.8;
+                font-size: 1.38rem;
+                line-height: 1.82;
             }
         }
         .fc-back-note {
@@ -1553,6 +1634,7 @@
                     <button type="button" id="fc-btn-open-lesson-picker" class="toggle-btn" style="padding:0.25rem 0.65rem; font-size:0.75rem; font-weight:800; cursor:pointer;" title="特定の授業を選んで範囲を絞り込みます">📚 授業選択</button>
                     <button type="button" id="fc-sound-toggle" class="toggle-btn" style="padding:0.25rem 0.55rem; font-size:0.72rem; cursor:pointer;" title="効果音ON/OFF">🔊 音ON</button>
                     <button type="button" id="fc-shuffle-toggle" class="toggle-btn active" style="padding:0.25rem 0.55rem; font-size:0.72rem; cursor:pointer;" title="出題順シャッフル">🔀 シャッフル</button>
+                    <button type="button" id="fc-fontsize-toggle" class="toggle-btn" style="padding:0.25rem 0.55rem; font-size:0.72rem; cursor:pointer;" title="問題文・解答の文字サイズを変更（標準 / やや小さめ / 極小）">🔤 文字: 標準</button>
                     <button type="button" class="star-btn" id="fc-modal-close" style="font-size:1.5rem; line-height:1; color:var(--text-muted); padding:0 0.4rem; cursor:pointer;" title="閉じる [Esc]">×</button>
                 </div>
             </div>
@@ -1586,6 +1668,7 @@
                                     <span class="fc-subject-pill" id="fc-front-subject">公共</span>
                                     <span class="fc-category-pill" id="fc-front-category">用語・定義</span>
                                     <span class="fc-level-badge fc-level-0" id="fc-front-level">Lv.0 未学習</span>
+                                    <span class="fc-retry-badge" id="fc-front-retry-badge" style="display:none;">🔄 再挑戦</span>
                                 </div>
                                 <span class="fc-source-title" id="fc-front-source">単元名</span>
                             </div>
@@ -4224,11 +4307,39 @@
         let fcRetryTotal = 0;
         let fcLevelupTotal = 0;
         let fcInitialCount = 0;
+        let fcCardsAnsweredCount = 0;
         let fcIsFlipped = false;
         let fcSoundEnabled = localStorage.getItem("flora_fc_sound") !== "false";
-        let fcIsShuffle = true;
+        let fcIsShuffle = localStorage.getItem("flora_fc_shuffle") !== "false";
         let fcCurrentMode = "3d"; // "3d" | "quiz" | "reverse"
         let fcSessionWeakList = []; // セッション内で間違えたカード
+        let fcFontSizeLevel = localStorage.getItem("flora_fc_fontsize") || "normal"; // "normal" | "small" | "compact"
+
+        const fcFontSizeToggle = document.getElementById("fc-fontsize-toggle");
+        function applyFcFontSize() {
+            if (!fcCardStage) return;
+            fcCardStage.classList.remove("fc-font-small", "fc-font-compact");
+            if (fcFontSizeLevel === "small") {
+                fcCardStage.classList.add("fc-font-small");
+                if (fcFontSizeToggle) fcFontSizeToggle.textContent = "🔤 文字: やや小";
+            } else if (fcFontSizeLevel === "compact") {
+                fcCardStage.classList.add("fc-font-compact");
+                if (fcFontSizeToggle) fcFontSizeToggle.textContent = "🔤 文字: 極小";
+            } else {
+                if (fcFontSizeToggle) fcFontSizeToggle.textContent = "🔤 文字: 標準";
+            }
+        }
+        if (fcFontSizeToggle) {
+            applyFcFontSize();
+            fcFontSizeToggle.onclick = () => {
+                if (fcFontSizeLevel === "normal") fcFontSizeLevel = "small";
+                else if (fcFontSizeLevel === "small") fcFontSizeLevel = "compact";
+                else fcFontSizeLevel = "normal";
+                localStorage.setItem("flora_fc_fontsize", fcFontSizeLevel);
+                applyFcFontSize();
+                showToast(`文字サイズ: ${fcFontSizeLevel === "small" ? "やや小さめ (-12%)" : fcFontSizeLevel === "compact" ? "極小・高密度 (-24%)" : "標準サイズ"}`, "info", 1300);
+            };
+        }
 
         if (fcSoundToggle) {
             fcSoundToggle.textContent = fcSoundEnabled ? "🔊 音ON" : "🔇 音OFF";
@@ -4241,9 +4352,26 @@
         }
 
         if (fcShuffleToggle) {
+            fcShuffleToggle.classList.toggle("active", fcIsShuffle);
+            fcShuffleToggle.textContent = fcIsShuffle ? "🔀 シャッフル" : "📋 順番通り";
             fcShuffleToggle.onclick = () => {
                 fcIsShuffle = !fcIsShuffle;
+                localStorage.setItem("flora_fc_shuffle", fcIsShuffle ? "true" : "false");
                 fcShuffleToggle.classList.toggle("active", fcIsShuffle);
+                fcShuffleToggle.textContent = fcIsShuffle ? "🔀 シャッフル" : "📋 順番通り";
+                
+                // 演習中の場合、現在出題中以外の残りキューをリアルタイムに並べ替え（現在カードはそのまま）
+                if (fcQueue && fcQueue.length > 1) {
+                    const current = fcQueue[0];
+                    const rest = fcQueue.slice(1);
+                    if (fcIsShuffle) {
+                        fcQueue = [current, ...shuffleArray(rest)];
+                    } else {
+                        // 元の順番（_origIdx）で復元整列
+                        rest.sort((a, b) => (a._origIdx || 0) - (b._origIdx || 0));
+                        fcQueue = [current, ...rest];
+                    }
+                }
                 showToast(fcIsShuffle ? "出題順: シャッフルON" : "出題順: 順番通り", "info", 1500);
             };
         }
@@ -4678,16 +4806,33 @@
                 }
             }
 
+            // ドロップダウンや他のUIへのキーボード誤入力を防止するためフォーカス解除
+            if (document.activeElement && document.activeElement.blur) {
+                document.activeElement.blur();
+            }
+
+            // 各カードに元の並び順インデックスを記録＆再挑戦フラグ初期化
+            items.forEach((item, idx) => {
+                item._origIdx = idx;
+                item._isRetry = false;
+            });
+
             fcInitialCount = items.length;
             fcMasteredTotal = 0;
             fcRetryTotal = 0;
             fcLevelupTotal = 0;
+            fcCardsAnsweredCount = 0;
             fcSessionWeakList = [];
 
             if (startIndex > 0 && startIndex < items.length) {
-                const target = items[startIndex];
-                const rest = items.filter((_, i) => i !== startIndex);
-                fcQueue = fcIsShuffle ? [target, ...shuffleArray(rest)] : [target, ...rest];
+                if (fcIsShuffle) {
+                    const target = items[startIndex];
+                    const rest = items.filter((_, i) => i !== startIndex);
+                    fcQueue = [target, ...shuffleArray(rest)];
+                } else {
+                    // 順番通りの場合: 指定カードから末尾まで進み、その後先頭から指定カード前までを演習
+                    fcQueue = [...items.slice(startIndex), ...items.slice(0, startIndex)];
+                }
             } else {
                 fcQueue = fcIsShuffle ? shuffleArray(items) : [...items];
             }
@@ -4699,6 +4844,16 @@
             renderNextFcCard();
         }
 
+        // 日本語テキストの自然な句読点折り返し補助
+        function formatJapanesePhrasing(rawText) {
+            if (!rawText) return "";
+            let safe = escapeHtml(rawText);
+            // 句読点や助詞の直後に改行促進<wbr>を挿入し、変な位置での文字泣き別れを防止
+            safe = safe.replace(/([、。！？\?])/g, '$1<wbr>');
+            safe = safe.replace(/(について|における|に対して|によって|という|こと|もの)/g, '<wbr>$1');
+            return normalizeMathSyntax(safe);
+        }
+
         function renderNextFcCard() {
             if (fcQueue.length === 0) {
                 showFcFinishView();
@@ -4707,9 +4862,38 @@
 
             fcCurrentCard = fcQueue[0];
             fcIsFlipped = false;
-            fcCardStage.classList.remove("flipped");
+
+            // ⚠️ 裏面を開いた状態で次へ進んだ際、次の問題の答えが一瞬見えてしまう（チラ見え）のを100%防止する:
+            // 1. 次の裏面テキストを即座に空にする
+            if (fcBackMainAnswer) fcBackMainAnswer.innerHTML = "";
+            if (fcBackTermTitle) fcBackTermTitle.style.display = "none";
+            if (fcBackNote) fcBackNote.style.display = "none";
+
+            // 2. トランジション（アニメーション）を一時的に解除し、瞬時に表面（0度）へリセット
+            if (fcCardInner) {
+                fcCardInner.style.transition = "none";
+            }
+            if (fcCardStage) {
+                fcCardStage.classList.remove("flipped");
+                // 強制リフロー
+                void fcCardStage.offsetHeight;
+            }
+
+            // 3. 次のアニメーションフレームで本来の3Dフリップトランジションを再有効化
+            requestAnimationFrame(() => {
+                if (fcCardInner) {
+                    fcCardInner.style.transition = "";
+                }
+            });
 
             renderFcCurrentCard();
+
+            // カード切り替え時の自然な進入演出
+            if (fcCardStage) {
+                fcCardStage.classList.remove("fc-card-advance");
+                void fcCardStage.offsetWidth;
+                fcCardStage.classList.add("fc-card-advance");
+            }
         }
 
         // 現在のカード描画（モード切替時にも呼び出し可能）
@@ -4720,10 +4904,9 @@
             fcMetaSubject.textContent = fcCurrentCard.subject || "公共";
             fcMetaType.textContent = fcCurrentCard.typeName || "暗記事項";
 
-            // プログレス
+            // プログレス表示（演習問題数を連続カウントし、順番がリセットされたような錯覚を防止）
             const remaining = fcQueue.length;
-            const currentCardNum = fcInitialCount - remaining + 1;
-            fcCounterProgress.textContent = `カード ${Math.min(currentCardNum, fcInitialCount)} / ${fcInitialCount} (残りキュー: ${remaining}枚)`;
+            fcCounterProgress.textContent = `演習 ${fcCardsAnsweredCount + 1} 問目 / 全${fcInitialCount}枚 (残りキュー: ${remaining}枚)`;
             fcCountMastered.textContent = fcMasteredTotal;
             fcCountRetry.textContent = fcRetryTotal;
 
@@ -4745,6 +4928,12 @@
             // 復習期限インジケータ
             if (fcDueBadge) {
                 fcDueBadge.style.display = fcCurrentCard.isDue ? "inline-block" : "none";
+            }
+
+            // 再挑戦（もう一度）カードのバッジ表示
+            const fcFrontRetryBadge = document.getElementById("fc-front-retry-badge");
+            if (fcFrontRetryBadge) {
+                fcFrontRetryBadge.style.display = fcCurrentCard._isRetry ? "inline-flex" : "none";
             }
 
             // モードに応じた表面・裏面の出し分け
@@ -4773,7 +4962,23 @@
             }
 
             fcFrontPromptLabel.textContent = displayPrompt;
-            fcFrontMainTerm.innerHTML = normalizeMathSyntax(escapeHtml(displayFrontText));
+
+            // 文字数に応じた動的フォントサイジング＆美しい改行バランス
+            const frontLen = (displayFrontText || "").length;
+            fcFrontMainTerm.classList.remove("fc-text-xl", "fc-text-lg", "fc-text-md", "fc-text-sm", "fc-text-xs");
+            if (frontLen <= 14) {
+                fcFrontMainTerm.classList.add("fc-text-xl");
+            } else if (frontLen <= 30) {
+                fcFrontMainTerm.classList.add("fc-text-lg");
+            } else if (frontLen <= 55) {
+                fcFrontMainTerm.classList.add("fc-text-md");
+            } else if (frontLen <= 90) {
+                fcFrontMainTerm.classList.add("fc-text-sm");
+            } else {
+                fcFrontMainTerm.classList.add("fc-text-xs");
+            }
+
+            fcFrontMainTerm.innerHTML = formatJapanesePhrasing(displayFrontText);
 
             if (fcCurrentCard.frontHint && !isReverse) {
                 fcFrontHint.textContent = fcCurrentCard.frontHint;
@@ -4798,14 +5003,14 @@
 
             if (fcBackTermTitle) {
                 if (fcCurrentCard.backTermTitle && fcCurrentCard.backTermTitle !== displayBackText) {
-                    fcBackTermTitle.innerHTML = normalizeMathSyntax(escapeHtml(fcCurrentCard.backTermTitle));
+                    fcBackTermTitle.innerHTML = formatJapanesePhrasing(fcCurrentCard.backTermTitle);
                     fcBackTermTitle.style.display = "block";
                 } else {
                     fcBackTermTitle.style.display = "none";
                 }
             }
 
-            fcBackMainAnswer.innerHTML = normalizeMathSyntax(escapeHtml(displayBackText));
+            fcBackMainAnswer.innerHTML = formatJapanesePhrasing(displayBackText);
 
             if (fcCurrentCard.backNote) {
                 fcBackNote.textContent = fcCurrentCard.backNote;
@@ -4930,6 +5135,9 @@
             let reps = (card.srsReps || 0) + 1;
             let nextReviewDate = getTodayStr();
 
+            // 演習問数をカウントアップ（順番がリセットされたような錯覚を防止）
+            fcCardsAnsweredCount++;
+
             if (rating === 1) {
                 // もう一度 (Again)
                 playFcSound("retry");
@@ -4943,39 +5151,47 @@
                     fcSessionWeakList.push(card);
                 }
 
-                // キューの後ろに再配置（カードが少なければ最後、多ければ3〜4枚後に挟む）
+                // 再出題フラグを付与（UIで再挑戦カードとして表示）
+                card._isRetry = true;
+
+                // キューの後ろに再配置（数問直後に出てしまわないよう、キュー長に応じた適度な間隔を確保）
                 fcQueue.shift();
-                if (fcQueue.length <= 2) {
+                if (fcQueue.length <= 3) {
                     fcQueue.push(card);
                 } else {
-                    const insertPos = Math.min(fcQueue.length, 3);
+                    const minGap = fcQueue.length > 20 ? 6 : 4;
+                    const maxGap = Math.min(10, Math.floor(fcQueue.length * 0.25));
+                    const insertPos = Math.min(fcQueue.length, Math.max(minGap, maxGap));
                     fcQueue.splice(insertPos, 0, card);
                 }
-            } else if (rating === 2) {
-                // 難しい (Hard)
-                playFcSound("mastered");
-                fcMasteredTotal++;
-                newLevel = Math.max(1, prevLevel);
-                nextReviewDate = addDaysToDate(getTodayStr(), 1); // 1日後
-                fcQueue.shift();
-            } else if (rating === 3) {
-                // 覚えた (Good)
-                playFcSound("mastered");
-                fcMasteredTotal++;
-                newLevel = Math.min(5, prevLevel + 1);
-                const intervalDays = SRS_INTERVALS[newLevel] || 3;
-                nextReviewDate = addDaysToDate(getTodayStr(), intervalDays);
-                if (newLevel > prevLevel) fcLevelupTotal++;
-                fcQueue.shift();
-            } else if (rating === 4) {
-                // 簡単！ (Easy)
-                playFcSound("mastered");
-                fcMasteredTotal++;
-                newLevel = Math.min(5, prevLevel + 2);
-                const intervalDays = (SRS_INTERVALS[newLevel] || 7) + 3;
-                nextReviewDate = addDaysToDate(getTodayStr(), intervalDays);
-                if (newLevel > prevLevel) fcLevelupTotal++;
-                fcQueue.shift();
+            } else {
+                card._isRetry = false;
+                if (rating === 2) {
+                    // 難しい (Hard)
+                    playFcSound("mastered");
+                    fcMasteredTotal++;
+                    newLevel = Math.max(1, prevLevel);
+                    nextReviewDate = addDaysToDate(getTodayStr(), 1); // 1日後
+                    fcQueue.shift();
+                } else if (rating === 3) {
+                    // 覚えた (Good)
+                    playFcSound("mastered");
+                    fcMasteredTotal++;
+                    newLevel = Math.min(5, prevLevel + 1);
+                    const intervalDays = SRS_INTERVALS[newLevel] || 3;
+                    nextReviewDate = addDaysToDate(getTodayStr(), intervalDays);
+                    if (newLevel > prevLevel) fcLevelupTotal++;
+                    fcQueue.shift();
+                } else if (rating === 4) {
+                    // 簡単！ (Easy)
+                    playFcSound("mastered");
+                    fcMasteredTotal++;
+                    newLevel = Math.min(5, prevLevel + 2);
+                    const intervalDays = (SRS_INTERVALS[newLevel] || 7) + 3;
+                    nextReviewDate = addDaysToDate(getTodayStr(), intervalDays);
+                    if (newLevel > prevLevel) fcLevelupTotal++;
+                    fcQueue.shift();
+                }
             }
 
             // カードオブジェクトとローカルキャッシュを更新
@@ -5005,6 +5221,11 @@
 
             // ダッシュボード集計更新
             updateSrsDashboardCounts();
+
+            // 解答チラ見え防止のため裏面テキストを即座にブランク化
+            if (fcBackMainAnswer) fcBackMainAnswer.innerHTML = "";
+            if (fcBackTermTitle) fcBackTermTitle.style.display = "none";
+            if (fcBackNote) fcBackNote.style.display = "none";
 
             // 次のカードへ進む
             renderNextFcCard();
@@ -5088,6 +5309,7 @@
                     showToast("選択された範囲のカードが0件です。", "warning");
                     return;
                 }
+                fcScopeSelect.blur();
                 openFlashcardModal(items, 0);
             };
         }
