@@ -4951,6 +4951,25 @@
 2. 前回の学習内容と重複する解説や導入は省略し、「前回は〜まで学習しました」とスムーズに接続した上で、直後に続く後続単元から新しいパート構成を設計してください。`;
             }
 
+            // 🔗 タイトルが雪だるま式に長くなる（「その3〜...〜（その2）...」）のを防ぐため、基本シリーズ名と次の連番を自動算出
+            const continuationTitleInfo = (() => {
+                const titleStr = prevTitle || "";
+                const matches = [...titleStr.matchAll(/[（(]その(\d+)[）)]/g)];
+                let maxNum = 1;
+                if (matches.length > 0) {
+                    matches.forEach(m => {
+                        const n = parseInt(m[1], 10);
+                        if (!isNaN(n) && n > maxNum) maxNum = n;
+                    });
+                }
+                let base = titleStr.replace(/[（(]その\d+[）)].*$/, "")
+                                   .replace(/〜.*$/, "")
+                                   .replace(/：.*$/, "")
+                                   .trim();
+                if (!base) base = titleStr.slice(0, 28).trim();
+                return { baseTitle: base, nextNum: maxNum + 1 };
+            })();
+
             return `
 【🚨 最重要：直前の授業（シリーズ前講）からの引き継ぎ・コンテキスト】
 本授業は、以前の授業「${prevTitle}」の直後の続き（続編）です！
@@ -4960,8 +4979,9 @@ ${termsOverview ? `・前回までに習得済みの重要用語・公式: ${ter
 ${memoPoints ? `・前回抽出した重要暗記事項:\n${memoPoints}` : ""}
 ${eventsOverview ? `・前回までに到達した主な歴史イベント・年号:\n${eventsOverview}` : ""}
 ${subjectSpecificInstruction}
-【授業タイトルの指示】
-タイトルも「${prevTitle}」の続編であることがわかるように統一感を持たせてください（例: 「${prevTitle} (その2)」や直後に続く後続の単元名）。`;
+【授業タイトルの指示（⚠️ タイトル多重連鎖の防止）】
+・前講のタイトルが『（その○）〜...〜』を含んでいる場合でも、それらを雪だるま式に連結せず、タイトルを簡潔に保ってください。
+・タイトル命名形式: 『${continuationTitleInfo.baseTitle}（その${continuationTitleInfo.nextNum}）〜今回の具体的テーマ・単元名〜』としてください。`;
         }
 
         // --------------------------------------------------------------
