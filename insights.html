@@ -1307,20 +1307,38 @@
             gap: 1.25rem;
             margin-bottom: 2rem;
         }
-        .dict-unit-card {
-            background: var(--bg-surface);
+        .dict-subject-divider {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.5rem 1.2rem;
+            background: rgba(255, 255, 255, 0.96) !important;
+            border: 1px solid var(--border-color);
+            border-radius: 9999px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            margin: 1.5rem 0 0.8rem;
+            font-size: 0.95rem;
+            font-weight: 800;
+            color: #0f172a !important;
+            align-self: flex-start;
+        }
+        .dict-unit-card,
+        .dict-unit-item {
+            background: #ffffff !important;
             border: 1px solid var(--border-color);
             border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-xs);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.06);
             overflow: hidden;
             transition: border-color 0.2s ease, box-shadow 0.2s ease;
         }
-        .dict-unit-card:hover {
+        .dict-unit-card:hover,
+        .dict-unit-item:hover {
             border-color: rgba(5, 150, 105, 0.4);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.08);
         }
         .dict-unit-header {
             padding: 0.9rem 1.2rem;
-            background: var(--bg-surface);
+            background: #f8fafc !important;
             border-bottom: 1px solid var(--border-color);
             display: flex;
             align-items: center;
@@ -1332,8 +1350,13 @@
             transition: background 0.15s ease;
         }
         .dict-unit-header:hover {
-            background: rgba(0, 243, 255, 0.02);
+            background: #f1f5f9 !important;
         }
+        .dict-unit-item.collapsed .dict-unit-header,
+        .dict-unit-card.collapsed .dict-unit-header {
+            border-bottom: none;
+        }
+        .dict-unit-title-row,
         .dict-unit-title-wrap {
             display: flex;
             align-items: center;
@@ -1344,8 +1367,17 @@
         .dict-unit-title {
             font-size: 0.98rem;
             font-weight: 800;
-            color: var(--text-primary);
+            color: #0f172a !important;
         }
+        .dict-unit-badge {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--brand-primary);
+            background: var(--brand-light);
+            padding: 0.2rem 0.5rem;
+            border-radius: 9999px;
+        }
+        .dict-unit-stats,
         .dict-unit-meta {
             display: flex;
             align-items: center;
@@ -1362,7 +1394,7 @@
         .dict-progress-bar-bg {
             flex: 1;
             height: 7px;
-            background: var(--bg-subtle);
+            background: #e2e8f0;
             border-radius: 9999px;
             overflow: hidden;
             border: 1px solid var(--border-color);
@@ -1376,7 +1408,7 @@
         .dict-progress-text {
             font-size: 0.74rem;
             font-weight: 700;
-            color: var(--text-secondary);
+            color: #475569 !important;
             white-space: nowrap;
         }
         .dict-unit-actions {
@@ -1400,28 +1432,40 @@
         .dict-word-list {
             display: flex;
             flex-direction: column;
-            divide-y: 1px solid var(--border-color);
+            background: #ffffff !important;
         }
-        .dict-word-item {
+        .dict-word-item,
+        .dict-word-row {
             padding: 0.9rem 1.2rem;
             display: grid;
             grid-template-columns: 140px 1fr 1fr auto;
             gap: 1rem;
             align-items: center;
-            border-bottom: 1px solid var(--border-color);
+            background: #ffffff !important;
+            border-bottom: 1px solid #f1f5f9;
             transition: background 0.12s ease;
         }
-        .dict-word-item:last-child {
+        .dict-word-item:last-child,
+        .dict-word-row:last-child {
             border-bottom: none;
         }
-        .dict-word-item:hover {
-            background: var(--bg-subtle);
+        .dict-word-item:hover,
+        .dict-word-row:hover {
+            background: #f8fafc !important;
         }
         @media (max-width: 860px) {
-            .dict-word-item {
+            .dict-word-item,
+            .dict-word-row {
                 grid-template-columns: 1fr;
                 gap: 0.5rem;
             }
+        }
+        .dict-row-actions,
+        .dict-item-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            justify-content: flex-end;
         }
         /* ステータスバッジ & ワンクリック覚えたトグルボタン */
         .dict-status-btn {
@@ -2565,7 +2609,6 @@
         // 🧠 暗記事項サブツールバーのトグル＆操作
         let memorizeViewMode = localStorage.getItem("fc_memorize_view_mode") || "grouped"; // "grouped" | "grid"
         let memorizeStatusFilter = "all"; // "all" | "unlearned" | "mastered" | "weak"
-        let collapsedDictUnits = new Set();
 
         const btnMemorizeViewGrouped = document.getElementById("btn-memorize-view-grouped");
         const btnMemorizeViewGrid = document.getElementById("btn-memorize-view-grid");
@@ -4021,9 +4064,15 @@
             scheduleMathTypeset(container);
         }
 
-        // 🧠 単元・教科別の辞書・単語帳ビューのレンダリング
+        // 🧠 単元・教科別の辞書・単語帳ビュー（オンデマンド遅延描画で3000件超も爆速描画）
+        let dictUnitItemsDataMap = {};
+        let expandedDictUnits = new Set();
+
         function renderMemorizeGrouped(container, items) {
+            dictUnitItemsDataMap = {};
+            const query = searchInput.value.trim().toLowerCase();
             const groupedBySubject = {};
+
             items.forEach(item => {
                 const subj = item.subject || "未分類";
                 if (!groupedBySubject[subj]) groupedBySubject[subj] = {};
@@ -4032,20 +4081,50 @@
                 groupedBySubject[subj][lid].push(item);
             });
 
-            let html = `<div class="dict-units-container">`;
+            const totalUnitsCount = Object.values(groupedBySubject).reduce((acc, lMap) => acc + Object.keys(lMap).length, 0);
+            const totalWordsCount = items.length;
+
+            // 検索実行時はマッチした単元を自動展開、それ以外は以前開いた単元、または単元数が1個の時だけ展開
+            const autoExpandAll = query.length > 0;
+
+            let html = `
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.6rem; margin-bottom:1rem; padding:0.6rem 1rem; background:rgba(255,255,255,0.95); border:1px solid var(--border-color); border-radius:var(--radius-md); box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                    <div style="font-size:0.84rem; font-weight:700; color:#0f172a; display:flex; align-items:center; gap:0.5rem;">
+                        <span>📚 単元・分類別辞書</span>
+                        <span style="font-size:0.75rem; color:var(--text-muted); font-weight:normal;">（全 ${totalUnitsCount} 単元 ｜ ${totalWordsCount} 語）</span>
+                    </div>
+                    <div style="display:flex; gap:0.4rem;">
+                        <button type="button" class="flora-btn flora-btn-secondary" style="font-size:0.74rem; font-weight:700; padding:0.25rem 0.65rem;" onclick="expandAllDictUnits()">
+                            ▼ すべて展開
+                        </button>
+                        <button type="button" class="flora-btn flora-btn-secondary" style="font-size:0.74rem; font-weight:700; padding:0.25rem 0.65rem;" onclick="collapseAllDictUnits()">
+                            ▲ すべて折りたたむ
+                        </button>
+                    </div>
+                </div>
+                <div class="dict-units-container">
+            `;
+
+            let isFirstUnit = true;
 
             Object.entries(groupedBySubject).forEach(([subj, lessonMap]) => {
                 const subjectTotalWords = Object.values(lessonMap).reduce((sum, list) => sum + list.length, 0);
                 html += `
                     <div class="dict-subject-divider">
                         <span>📚 ${escapeHtml(subj)}</span>
-                        <span style="font-size:0.75rem; font-weight:normal; opacity:0.8;">(${subjectTotalWords} 語)</span>
+                        <span style="font-size:0.75rem; font-weight:normal; opacity:0.85;">(${subjectTotalWords} 語)</span>
                     </div>
                 `;
 
                 Object.entries(lessonMap).forEach(([lid, unitItems]) => {
                     const unitId = `${subj}_${lid}`;
-                    const isCollapsed = collapsedDictUnits.has(unitId);
+                    dictUnitItemsDataMap[unitId] = unitItems;
+
+                    // 初期展開フラグ：検索時は全開、または以前開いた単元、または最初の1単元のみ開く
+                    const isExpanded = autoExpandAll || expandedDictUnits.has(unitId) || (isFirstUnit && totalUnitsCount <= 3);
+                    if (isExpanded) expandedDictUnits.add(unitId);
+                    isFirstUnit = false;
+
                     const lessonTitle = (unitItems[0] && unitItems[0].short_title) || "暗記単元";
                     const totalCount = unitItems.length;
                     const masteredCount = unitItems.filter(p => p.status === "mastered").length;
@@ -4053,8 +4132,11 @@
                     const weakCount = unitItems.filter(p => p.status === "weak").length;
                     const pct = totalCount > 0 ? Math.round((masteredCount / totalCount) * 100) : 0;
 
+                    // ⚡ 遅延描画（Lazy Render）：展開されている単元のみ初期HTMLを生成、折りたたみ単元は開いた時にオンデマンド生成
+                    const wordsHtml = isExpanded ? unitItems.map(p => renderDictWordRow(p)).join("") : "";
+
                     html += `
-                        <div class="dict-unit-item ${isCollapsed ? 'collapsed' : ''}" id="dict-unit-${unitId}">
+                        <div class="dict-unit-item ${isExpanded ? '' : 'collapsed'}" id="dict-unit-${unitId}" data-unit-id="${unitId}">
                             <div class="dict-unit-header" onclick="toggleDictUnitCollapse('${unitId}', event)">
                                 <div class="dict-unit-title-row">
                                     <span class="badge badge-physics" style="font-size:0.74rem;">${escapeHtml(subj)}</span>
@@ -4075,14 +4157,14 @@
                                         <button type="button" class="flora-btn flora-btn-secondary" style="font-size:0.75rem; font-weight:700; padding:0.28rem 0.65rem;" onclick="openAddWordModal('${lid}', '${escapeHtml(subj)}', event)" title="この単元に新しい単語を追加">
                                             ＋ 単語追加
                                         </button>
-                                        <button type="button" class="dict-unit-collapse-btn ${isCollapsed ? 'collapsed' : ''}" onclick="toggleDictUnitCollapse('${unitId}', event)" title="開閉">
+                                        <button type="button" class="dict-unit-collapse-btn ${isExpanded ? '' : 'collapsed'}" onclick="toggleDictUnitCollapse('${unitId}', event)" title="開閉">
                                             ▼
                                         </button>
                                     </div>
                                 </div>
                             </div>
-                            <div class="dict-word-list" style="display: ${isCollapsed ? 'none' : 'flex'};">
-                                ${unitItems.map(p => renderDictWordRow(p)).join("")}
+                            <div class="dict-word-list" style="display: ${isExpanded ? 'flex' : 'none'};" data-loaded="${isExpanded ? 'true' : 'false'}">
+                                ${wordsHtml}
                             </div>
                         </div>
                     `;
@@ -4091,6 +4173,12 @@
 
             html += `</div>`;
             container.innerHTML = html;
+
+            // 初期展開されている単元のみ数式をピンポイント処理
+            const activeLists = container.querySelectorAll('.dict-word-list[data-loaded="true"]');
+            if (activeLists.length > 0) {
+                activeLists.forEach(list => scheduleMathTypeset(list));
+            }
         }
 
         // 🧠 単語帳ビューの1行アイテム
@@ -4115,17 +4203,22 @@
             const cleanQ = (p.question || "").trim().replace(/^(?:Q[.:：]|問題[.:：]?)\s*/i, "") || p.rawContent || "";
             const cleanA = (p.answer || "").trim().replace(/^(?:A[.:：]|答え[.:：]?|解答[.:：]?)\s*/i, "") || p.rawContent || "";
 
+            const cardMemoKey = `${p.lessonId}_${p.memoId}`;
+            const userMemoObj = (typeof rawCardUserMemos !== "undefined" && rawCardUserMemos) ? (rawCardUserMemos[cardMemoKey] || rawCardUserMemos[`memorize_${p.lessonId}_${p.memoId}`]) : null;
+            const userMemoText = userMemoObj?.memo ? userMemoObj.memo.trim() : '';
+
             return `
                 <div class="dict-word-row">
                     <button type="button" class="dict-status-btn ${statusClass}" onclick="toggleMemorizeMastered('${p.lessonId}', '${p.memoId}', event)" title="${statusTitle}">
                         ${statusLabel}
                     </button>
                     <div class="dict-q-box tex2jax_process" onclick="startEditMemorizeFromInsights('${p.lessonId}', '${p.memoId}', event)" title="クリックして編集">
-                        <span style="font-weight:800; color:var(--text-muted); font-size:0.75rem; margin-right:0.35rem;">Q.</span>${normalizeMathSyntax(cleanQ)}
+                        <span style="font-weight:800; color:#4338ca; font-size:0.75rem; margin-right:0.35rem; background:rgba(99,102,241,0.1); padding:0.15rem 0.35rem; border-radius:4px;">Q.</span>${normalizeMathSyntax(cleanQ)}
                     </div>
                     <div class="dict-a-box tex2jax_process" onclick="startEditMemorizeFromInsights('${p.lessonId}', '${p.memoId}', event)" title="クリックして編集">
-                        <span style="font-weight:800; color:#059669; font-size:0.75rem; margin-right:0.35rem;">A.</span>${normalizeMathSyntax(cleanA)}
-                        ${p.rawNote ? `<div style="font-size:0.74rem; color:var(--text-muted); margin-top:0.25rem;">💡 ${normalizeMathSyntax(p.rawNote)}</div>` : ''}
+                        <span style="font-weight:800; color:#059669; font-size:0.75rem; margin-right:0.35rem; background:rgba(16,185,129,0.12); padding:0.15rem 0.35rem; border-radius:4px;">A.</span>${normalizeMathSyntax(cleanA)}
+                        ${p.rawNote ? `<div style="font-size:0.75rem; color:#d97706; margin-top:0.3rem; background:rgba(245,158,11,0.08); padding:0.25rem 0.5rem; border-radius:4px;">💡 ${normalizeMathSyntax(p.rawNote)}</div>` : ''}
+                        ${userMemoText ? `<div style="font-size:0.75rem; color:#059669; margin-top:0.3rem; background:rgba(16,185,129,0.08); padding:0.25rem 0.5rem; border-radius:4px; border-left:3px solid #10B981;">📝 <strong>自分用メモ:</strong> ${escapeHtml(userMemoText)}</div>` : ''}
                     </div>
                     ${p.rawCategory ? `<span style="font-size:0.72rem; color:var(--text-muted); background:var(--bg-subtle); padding:0.18rem 0.5rem; border-radius:var(--radius-sm); border:1px solid var(--border-color); white-space:nowrap; flex-shrink:0;">🏷️ ${escapeHtml(p.rawCategory)}</span>` : ''}
                     <div class="dict-row-actions">
@@ -4137,22 +4230,80 @@
             `;
         }
 
+        // 🧠 単元の開閉トグル（オンデマンドで単語リストを描画）
         window.toggleDictUnitCollapse = function(unitId, e) {
             if (e) e.stopPropagation();
-            if (collapsedDictUnits.has(unitId)) {
-                collapsedDictUnits.delete(unitId);
-            } else {
-                collapsedDictUnits.add(unitId);
-            }
             const unitEl = document.getElementById(`dict-unit-${unitId}`);
-            if (unitEl) {
-                const isCollapsed = collapsedDictUnits.has(unitId);
-                unitEl.classList.toggle("collapsed", isCollapsed);
-                const listEl = unitEl.querySelector(".dict-word-list");
-                const btnEl = unitEl.querySelector(".dict-unit-collapse-btn");
-                if (listEl) listEl.style.display = isCollapsed ? "none" : "flex";
-                if (btnEl) btnEl.classList.toggle("collapsed", isCollapsed);
+            if (!unitEl) return;
+
+            const listEl = unitEl.querySelector(".dict-word-list");
+            const btnEl = unitEl.querySelector(".dict-unit-collapse-btn");
+
+            const willExpand = unitEl.classList.contains("collapsed");
+
+            if (willExpand) {
+                expandedDictUnits.add(unitId);
+                unitEl.classList.remove("collapsed");
+                if (btnEl) btnEl.classList.remove("collapsed");
+
+                // まだ単語HTMLが未生成の場合はオンデマンド生成
+                if (listEl) {
+                    if (listEl.getAttribute("data-loaded") !== "true") {
+                        const items = dictUnitItemsDataMap[unitId] || [];
+                        listEl.innerHTML = items.map(p => renderDictWordRow(p)).join("");
+                        listEl.setAttribute("data-loaded", "true");
+                    }
+                    listEl.style.display = "flex";
+                    scheduleMathTypeset(listEl);
+                }
+            } else {
+                expandedDictUnits.delete(unitId);
+                unitEl.classList.add("collapsed");
+                if (btnEl) btnEl.classList.add("collapsed");
+                if (listEl) {
+                    listEl.style.display = "none";
+                }
             }
+        };
+
+        // 🧠 すべての単元を展開
+        window.expandAllDictUnits = function() {
+            Object.keys(dictUnitItemsDataMap).forEach(unitId => {
+                expandedDictUnits.add(unitId);
+                const unitEl = document.getElementById(`dict-unit-${unitId}`);
+                if (unitEl) {
+                    unitEl.classList.remove("collapsed");
+                    const btnEl = unitEl.querySelector(".dict-unit-collapse-btn");
+                    if (btnEl) btnEl.classList.remove("collapsed");
+                    const listEl = unitEl.querySelector(".dict-word-list");
+                    if (listEl) {
+                        if (listEl.getAttribute("data-loaded") !== "true") {
+                            const items = dictUnitItemsDataMap[unitId] || [];
+                            listEl.innerHTML = items.map(p => renderDictWordRow(p)).join("");
+                            listEl.setAttribute("data-loaded", "true");
+                        }
+                        listEl.style.display = "flex";
+                        scheduleMathTypeset(listEl);
+                    }
+                }
+            });
+        };
+
+        // 🧠 すべての単元を折りたたむ
+        window.collapseAllDictUnits = function() {
+            expandedDictUnits.clear();
+            Object.keys(dictUnitItemsDataMap).forEach(unitId => {
+                const unitEl = document.getElementById(`dict-unit-${unitId}`);
+                if (unitEl) {
+                    unitEl.classList.add("collapsed");
+                    const btnEl = unitEl.querySelector(".dict-unit-collapse-btn");
+                    if (btnEl) btnEl.classList.add("collapsed");
+                    const listEl = unitEl.querySelector(".dict-word-list");
+                    if (listEl) {
+                        listEl.style.display = "none";
+                    }
+                }
+            });
         };
 
         window.openCustomTestForLesson = function(lessonId, e) {
