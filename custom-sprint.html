@@ -2841,13 +2841,6 @@
 指定されたJSONオブジェクトのみを返してください。`;
 
             try {
-                let keys = getGeminiKeys();
-                if (keys.length === 0) {
-                    const defaultKey = "AQ.Ab8RN6KE-DSG7lwdmJsO4i_CatdXmyAQkC0JOVq5pKw8iF1ALw";
-                    addKey("gemini", defaultKey);
-                    keys = [defaultKey];
-                }
-
                 if (fillBarEl) fillBarEl.style.width = "50%";
                 if (percentTextEl) percentTextEl.textContent = "50%";
 
@@ -3621,7 +3614,7 @@
             if (statusGridEl) statusGridEl.innerHTML = "";
 
             try {
-                if (getGeminiKeys().length === 0) {
+                if (getGeminiKeys().length === 0 && !window.__serverHasGeminiKey) {
                     throw new Error("GeminiのAPIキーがブラウザに設定されていません。右下の🔑ボタンから登録してください。");
                 }
 
@@ -3952,7 +3945,7 @@ ${focusInstruction}
 `;
 
             try {
-                if (getGeminiKeys().length === 0) {
+                if (getGeminiKeys().length === 0 && !window.__serverHasGeminiKey) {
                     throw new Error("GeminiのAPIキーがブラウザに設定されていません。右下の🔑ボタンから登録してください。");
                 }
 

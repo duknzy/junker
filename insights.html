@@ -1590,6 +1590,7 @@
             color: #047857;
             font-weight: 800;
         }
+    </style>
 </head>
 <body>
 
@@ -1607,8 +1608,13 @@
                         <h1 class="page-title">💡 ナレッジ＆質問アーカイブ</h1>
                         <p class="page-subtitle">これまでの演習で記録した「気づき・極意」「AI質問ログ」「暗記事項」の統合ナレッジベース</p>
                     </div>
-                    <div class="page-actions" style="font-size: var(--fs-xs); color: var(--text-secondary);" id="stat-summary-text">
-                        読み込み中...
+                    <div class="page-actions" style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                        <button type="button" class="flora-btn flora-btn-primary btn-sm" id="btn-open-ai-term-ask" style="font-weight: 700; display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.45rem 0.9rem; box-shadow: 0 2px 8px rgba(16,185,129,0.25);">
+                            💬 教科書・単語 AI質問
+                        </button>
+                        <div style="font-size: var(--fs-xs); color: var(--text-secondary);" id="stat-summary-text">
+                            読み込み中...
+                        </div>
                     </div>
                 </div>
 
@@ -1626,6 +1632,18 @@
                     <button type="button" class="main-tab-btn" id="tab-btn-mnemonics">
                         🎴 世界史 語呂合わせ (<span id="count-mnemonics">0</span>)
                     </button>
+                </div>
+
+                <!-- 🔑 ログイン案内バナー（未ログイン時のみ表示） -->
+                <div id="login-required-notice" style="display: none; text-align: center; padding: 2rem 1.5rem; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); margin-bottom: 1.2rem; box-shadow: var(--shadow-sm);">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">🔒</div>
+                    <h2 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.4rem; color: var(--text-primary);">Googleアカウントでサインインしてください</h2>
+                    <p style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 1.1rem; max-width: 480px; margin-left: auto; margin-right: auto;">
+                        演習データや暗記進捗、AI質問ログはクラウドで安全に同期されます。
+                    </p>
+                    <a href="index.html" class="flora-btn flora-btn-primary" style="display: inline-flex; align-items: center; gap: 0.4rem; text-decoration: none; padding: 0.5rem 1.3rem; font-weight: 700; border-radius: var(--radius-md);">
+                        🏠 ダッシュボードでサインインする
+                    </a>
                 </div>
 
                 <!-- ツールバー -->
@@ -1950,6 +1968,7 @@
                     <button type="button" id="fc-sound-toggle" class="toggle-btn" style="padding:0.25rem 0.55rem; font-size:0.72rem; cursor:pointer;" title="効果音ON/OFF">🔊 音ON</button>
                     <button type="button" id="fc-shuffle-toggle" class="toggle-btn active" style="padding:0.25rem 0.55rem; font-size:0.72rem; cursor:pointer;" title="出題順シャッフル">🔀 シャッフル</button>
                     <button type="button" id="fc-fontsize-toggle" class="toggle-btn" style="padding:0.25rem 0.55rem; font-size:0.72rem; cursor:pointer;" title="問題文・解答の文字サイズを変更（標準 / やや小さめ / 極小）">🔤 文字: 標準</button>
+                    <button type="button" id="fc-autoplay-toggle" class="toggle-btn" style="padding:0.25rem 0.65rem; font-size:0.72rem; font-weight:800; cursor:pointer; color:#d97706; border-color:rgba(217,119,6,0.4);" title="オートプレイモード（表面読み上げ ➔ 3秒後 ➔ 裏面めくり＆読み上げ ➔ 次のカード）">🎧 オートプレイ (OFF)</button>
                     <button type="button" class="star-btn" id="fc-modal-close" style="font-size:1.5rem; line-height:1; color:var(--text-muted); padding:0 0.4rem; cursor:pointer;" title="閉じる [Esc]">×</button>
                 </div>
             </div>
@@ -1962,6 +1981,7 @@
                         <div style="display:flex; align-items:center; gap:0.5rem;">
                             <span id="fc-counter-progress">カード 1 / 10</span>
                             <span id="fc-due-badge" class="fc-due-indicator" style="display:none;">🔥 復習期限</span>
+                            <span id="fc-autoplay-indicator" class="fc-due-indicator" style="display:none; background:rgba(217,119,6,0.15); color:#b45309; border-color:rgba(217,119,6,0.4);">🎧 自動再生中...</span>
                         </div>
                         <div style="display:flex; gap:0.8rem; align-items:center;">
                             <span style="color:#059669;">✅ 正解/習得: <strong id="fc-count-mastered">0</strong></span>
@@ -1985,7 +2005,10 @@
                                     <span class="fc-level-badge fc-level-0" id="fc-front-level">Lv.0 未学習</span>
                                     <span class="fc-retry-badge" id="fc-front-retry-badge" style="display:none;">🔄 再挑戦</span>
                                 </div>
-                                <span class="fc-source-title" id="fc-front-source">単元名</span>
+                                <div style="display:flex; align-items:center; gap:0.4rem;">
+                                    <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="fc-front-speaker-btn" style="padding:0.15rem 0.45rem; font-size:0.72rem;" title="表面の単語・問いを読み上げ">🔊 読み上げ</button>
+                                    <span class="fc-source-title" id="fc-front-source">単元名</span>
+                                </div>
                             </div>
                             <div class="fc-prompt-body">
                                 <div class="fc-prompt-label" id="fc-front-prompt-label">Q. この重要事項の定義・急所を思い出そう</div>
@@ -2012,6 +2035,7 @@
                                     <span class="fc-level-badge fc-level-0" id="fc-back-level">Lv.0</span>
                                 </div>
                                 <div style="display:flex; align-items:center; gap:0.5rem;">
+                                    <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="fc-back-speaker-btn" style="padding:0.15rem 0.45rem; font-size:0.72rem;" title="答え・解説を読み上げ">🔊 読み上げ</button>
                                     <button type="button" class="fc-flip-btn" id="fc-btn-flip-back" style="background:var(--bg-subtle); color:var(--text-secondary); border:1px solid var(--border-color); font-size:0.72rem; padding:0.22rem 0.65rem; border-radius:var(--radius-sm); cursor:pointer; display:inline-flex; align-items:center; gap:0.25rem;" title="問題面に戻る [Space / カードクリック]">
                                         <span>◀</span><span>問題に戻る</span>
                                     </button>
@@ -2022,6 +2046,28 @@
                                 <div class="fc-back-term-title" id="fc-back-term-title" style="display:none; font-size:1.18rem; font-weight:800; color:#059669; margin-bottom:0.6rem; padding-bottom:0.4rem; border-bottom:1px dashed var(--border-color);"></div>
                                 <div class="fc-main-answer" id="fc-back-main-answer">解答内容</div>
                                 <div class="fc-back-note" id="fc-back-note" style="display:none;"></div>
+
+                                <!-- 📝 ユーザー追加メモ表示＆編集エリア -->
+                                <div class="fc-user-memo-box" id="fc-back-user-memo-box" style="margin-top:0.75rem; background:rgba(245,158,11,0.06); border:1px dashed rgba(217,119,6,0.35); border-radius:var(--radius-md); padding:0.6rem 0.8rem; text-align:left;">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.3rem;">
+                                        <span style="font-size:0.75rem; font-weight:800; color:#b45309; display:inline-flex; align-items:center; gap:0.3rem;">
+                                            📝 あなたの追加メモ (自分用)
+                                        </span>
+                                        <button type="button" id="fc-btn-edit-memo" style="background:none; border:none; color:var(--brand-primary); font-size:0.72rem; cursor:pointer; font-weight:700;">
+                                            ✏️ 編集
+                                        </button>
+                                    </div>
+                                    <div id="fc-back-user-memo-text" style="font-size:0.86rem; color:var(--text-primary); line-height:1.5; white-space:pre-wrap;">
+                                        <span style="color:var(--text-muted); font-style:italic;">（メモはまだありません。「✏️ 編集」から語呂合わせや自分だけの覚え方をメモできます）</span>
+                                    </div>
+                                    <div id="fc-back-user-memo-editor" style="display:none; margin-top:0.4rem;">
+                                        <textarea id="fc-back-user-memo-input" class="flora-textarea" rows="2" style="font-size:0.82rem; width:100%; box-sizing:border-box;" placeholder="語呂合わせや注意点、自分だけのメモを入力..."></textarea>
+                                        <div style="display:flex; justify-content:flex-end; gap:0.4rem; margin-top:0.35rem;">
+                                            <button type="button" id="fc-btn-save-memo" class="flora-btn flora-btn-primary btn-sm" style="font-size:0.72rem; padding:0.2rem 0.65rem;">💾 保存</button>
+                                            <button type="button" id="fc-btn-cancel-memo" class="flora-btn flora-btn-ghost btn-sm" style="font-size:0.72rem; padding:0.2rem 0.5rem;">✕ 取消</button>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                             <div class="fc-face-footer" style="padding-top:0.65rem;">
                                 <!-- 4段階SRS評価アクションボタン -->
@@ -2087,6 +2133,72 @@
                     <button type="button" class="flora-btn flora-btn-primary" id="fc-btn-finish-restart" style="background:linear-gradient(135deg, #10B981, #059669); color:#fff; border:none; padding:0.5rem 1.4rem; font-weight:800; border-radius:var(--radius-md); box-shadow:0 2px 6px rgba(16,185,129,0.3);">
                         🔄 もう一度復習する
                     </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 💬 教科書・単語 AI質問モーダル -->
+    <div id="ai-ask-modal" class="modal-overlay" style="display:none; z-index:100060;">
+        <div class="modal-content" style="max-width: 680px; width: 92%; max-height: 88vh; display: flex; flex-direction: column; padding: 1.25rem; border-radius: var(--radius-lg); background: var(--bg-surface); border: 1px solid var(--border-color); box-shadow: var(--shadow-xl);">
+            <!-- ヘッダー -->
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 0.9rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span style="font-size: 1.25rem;">💬</span>
+                    <div>
+                        <div style="font-weight: 800; font-size: 1rem; color: var(--text-primary);">教科書・単語 AI質問メンター</div>
+                        <div style="font-size: 0.72rem; color: var(--text-secondary);">教科書で分からない単語・概念をその場で質問＆質問ログ・暗記カードへ即時保存</div>
+                    </div>
+                </div>
+                <button type="button" class="star-btn" id="ai-ask-modal-close" style="font-size: 1.4rem; line-height: 1; color: var(--text-muted); padding: 0 0.4rem; cursor: pointer;">×</button>
+            </div>
+
+            <!-- チャット履歴エリア -->
+            <div id="ai-ask-transcript" style="flex: 1; min-height: 240px; max-height: 48vh; overflow-y: auto; padding: 0.8rem; background: var(--bg-subtle); border-radius: var(--radius-md); border: 1px solid var(--border-color); margin-bottom: 0.8rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                <div id="ai-ask-welcome" style="text-align: center; padding: 2rem 1rem; color: var(--text-secondary); font-size: 0.85rem; line-height: 1.6;">
+                    💡 「世界史のアダム・スミス『見えざる手』の意味は？」「化学の酸化数の求め方」「数学の相加相乗平均の使い所」など、教科書で疑問に思った用語や数式・概念を質問してください。
+                </div>
+            </div>
+
+            <!-- 入力フォームエリア -->
+            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    <select id="ai-ask-subject-select" class="flora-select" style="padding: 0.3rem 0.6rem; font-size: 0.76rem; width: auto; font-weight: 700;">
+                        <option value="英語">🔤 英語</option>
+                        <option value="数学">📐 数学</option>
+                        <option value="物理">⚡ 物理</option>
+                        <option value="化学">🧪 化学</option>
+                        <option value="生物">🧬 生物</option>
+                        <option value="世界史" selected>🏛️ 世界史</option>
+                        <option value="日本史">🏯 日本史</option>
+                        <option value="地理">🌍 地理</option>
+                        <option value="公共">⚖️ 公共・倫理・政経</option>
+                        <option value="国語">📖 現代文・古文・漢文</option>
+                        <option value="情報">💻 情報</option>
+                        <option value="その他">📝 その他</option>
+                    </select>
+                    <select id="ai-ask-style-select" class="flora-select" style="padding: 0.3rem 0.6rem; font-size: 0.76rem; width: auto;">
+                        <option value="explain">💡 用語・概念を本質から解説</option>
+                        <option value="analogy">🍎 身近な例えで超わかりやすく</option>
+                        <option value="mnemonic">🎴 暗記のコツ・語呂合わせを教えて</option>
+                        <option value="exam">🎯 入試・共通テストでの狙われ方</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <textarea id="ai-ask-input" class="flora-textarea" rows="2" style="flex: 1; font-size: 0.86rem; resize: none;" placeholder="分からない単語や教科書の文、疑問点を入力... (Ctrl+Enterで送信)"></textarea>
+                    <button type="button" class="flora-btn flora-btn-primary" id="ai-ask-send-btn" style="padding: 0 1.2rem; font-weight: 700; white-space: nowrap;">質問する ➔</button>
+                </div>
+                <!-- 保存アクションバー（質問完了後に活性化） -->
+                <div id="ai-ask-action-bar" style="display: flex; justify-content: space-between; align-items: center; padding-top: 0.4rem; border-top: 1px solid var(--border-color); font-size: 0.76rem;">
+                    <span id="ai-ask-status-text" style="color: var(--text-secondary);"></span>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="ai-ask-btn-save-log" style="display: none; font-size: 0.75rem; font-weight: 700;">
+                            💾 AI質問ログに保存
+                        </button>
+                        <button type="button" class="flora-btn flora-btn-primary btn-sm" id="ai-ask-btn-create-card" style="display: none; font-size: 0.75rem; font-weight: 700;">
+                            📌 暗記カードに登録
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -4202,6 +4314,9 @@
         // 🧠 暗記事項（lesson.html）カードのHTML（編集・削除対応）
         function renderMemorizeCardHtml(p) {
             const memoKey = `${p.lessonId}:${p.memoId}`;
+            const cardMemoKey = `${p.lessonId}_${p.memoId}`;
+            const userMemoObj = (typeof rawCardUserMemos !== "undefined" && rawCardUserMemos) ? (rawCardUserMemos[cardMemoKey] || rawCardUserMemos[`memorize_${p.lessonId}_${p.memoId}`]) : null;
+            const userMemoText = userMemoObj?.memo ? userMemoObj.memo.trim() : '';
             const isEditing = editingMemorizeKey === memoKey;
             const safeLessonTitle = (p.short_title || "暗記事項").replace(/'/g, "\\'");
 
@@ -4261,9 +4376,11 @@
                 <div class="insight-memorize-q tex2jax_process" onclick="startEditMemorizeFromInsights('${p.lessonId}', '${p.memoId}', event)" title="クリックしてその場で編集"><span class="insight-memorize-q-badge">Q.</span><span class="insight-memorize-q-text">${normalizeMathSyntax(cleanQ || p.question)}</span></div>
                 <div class="insight-memorize-a tex2jax_process" onclick="startEditMemorizeFromInsights('${p.lessonId}', '${p.memoId}', event)" title="クリックしてその場で編集"><span class="insight-memorize-a-badge">A.</span><span class="insight-memorize-a-text">${normalizeMathSyntax(cleanA || p.answer)}</span></div>
                 ${p.rawNote ? `<div class="tex2jax_process" style="font-size:0.82rem; color:var(--accent-yellow); margin-top:0.45rem; padding-top:0.45rem; border-top:1px dashed rgba(255,255,255,0.08); word-break:break-word; line-height:1.5;">💡 ${normalizeMathSyntax(p.rawNote).trim()}</div>` : ''}
+                ${userMemoText ? `<div style="font-size:0.8rem; color:var(--accent-green, #10B981); margin-top:0.45rem; padding:0.35rem 0.6rem; background:rgba(16,185,129,0.08); border-radius:6px; border-left:3px solid #10B981; word-break:break-word; line-height:1.4;"><span style="font-weight:700;">📝 自分用メモ:</span> ${escapeHtml(userMemoText)}</div>` : ''}
             ` : `
                 <div class="insight-text tex2jax_process" onclick="startEditMemorizeFromInsights('${p.lessonId}', '${p.memoId}', event)" title="クリックしてその場で編集">${normalizeMathSyntax(p.rawContent || p.insight).trim()}</div>
                 ${p.rawNote ? `<div class="tex2jax_process" style="font-size:0.82rem; color:var(--accent-yellow); margin-top:0.45rem; padding-top:0.45rem; border-top:1px dashed rgba(255,255,255,0.08); word-break:break-word; line-height:1.5;">💡 ${normalizeMathSyntax(p.rawNote).trim()}</div>` : ''}
+                ${userMemoText ? `<div style="font-size:0.8rem; color:var(--accent-green, #10B981); margin-top:0.45rem; padding:0.35rem 0.6rem; background:rgba(16,185,129,0.08); border-radius:6px; border-left:3px solid #10B981; word-break:break-word; line-height:1.4;"><span style="font-weight:700;">📝 自分用メモ:</span> ${escapeHtml(userMemoText)}</div>` : ''}
             `;
 
             return `
@@ -5828,6 +5945,15 @@
                 void fcCardStage.offsetWidth;
                 fcCardStage.classList.add("fc-card-advance");
             }
+
+            // オートプレイ実行中の場合は次のカードサイクルを開始
+            if (typeof fcAutoplayActive !== "undefined" && fcAutoplayActive) {
+                setTimeout(() => {
+                    if (fcAutoplayActive && typeof runAutoplayCycle === "function") {
+                        runAutoplayCycle();
+                    }
+                }, 350);
+            }
         }
 
         // 現在のカード描画（モード切替時にも呼び出し可能）
@@ -5951,6 +6077,11 @@
                 fcBackNote.style.display = "block";
             } else {
                 fcBackNote.style.display = "none";
+            }
+
+            // 📝 ユーザーメモの表示反映
+            if (typeof updateFcUserMemoDisplay === "function") {
+                updateFcUserMemoDisplay();
             }
 
             // ⚡ 数式記法を含む要素だけをピンポイントで非同期レンダリング
@@ -6190,9 +6321,436 @@
         }
 
         function closeFcModal() {
+            setFcAutoplayState(false);
+            stopSpeech();
             fcModal.style.display = "none";
             fcCardStage.classList.remove("flipped");
             fcIsFlipped = false;
+        }
+
+        // ==========================================
+        // 📝 単語追加メモ（自分用メモ）ロジック
+        // ==========================================
+        let rawCardUserMemos = {};
+        try {
+            const savedMemos = localStorage.getItem("local_card_user_memos");
+            if (savedMemos) rawCardUserMemos = JSON.parse(savedMemos);
+        } catch(e) {}
+
+        function getCardMemoKey(card) {
+            if (!card) return "";
+            return card.progressKey || (card.lessonId ? `${card.lessonId}_${card.id || card.memoId || 0}` : `${card.type || 'card'}_${card.id || 0}`);
+        }
+
+        function updateFcUserMemoDisplay() {
+            const memoTextEl = document.getElementById("fc-back-user-memo-text");
+            const memoEditor = document.getElementById("fc-back-user-memo-editor");
+            const memoInput = document.getElementById("fc-back-user-memo-input");
+            if (!memoTextEl) return;
+
+            if (memoEditor) memoEditor.style.display = "none";
+            memoTextEl.style.display = "block";
+
+            if (!fcCurrentCard) {
+                memoTextEl.innerHTML = '<span style="color:var(--text-muted); font-style:italic;">（カードが読み込まれていません）</span>';
+                return;
+            }
+
+            const cardKey = getCardMemoKey(fcCurrentCard);
+            const memoEntry = rawCardUserMemos[cardKey];
+            const memoContent = (memoEntry && memoEntry.memo) ? memoEntry.memo.trim() : (fcCurrentCard.userMemo || "").trim();
+
+            if (memoContent) {
+                memoTextEl.textContent = memoContent;
+                memoTextEl.style.color = "var(--text-primary)";
+                memoTextEl.style.fontStyle = "normal";
+            } else {
+                memoTextEl.innerHTML = '<span style="color:var(--text-muted); font-style:italic;">（メモはまだありません。「✏️ 編集」から語呂合わせや自分だけの覚え方をメモできます）</span>';
+            }
+            if (memoInput) memoInput.value = memoContent;
+        }
+
+        async function saveCurrentCardUserMemo(text) {
+            if (!fcCurrentCard) return;
+            const cardKey = getCardMemoKey(fcCurrentCard);
+            const trimmed = (text || "").trim();
+            if (!rawCardUserMemos) rawCardUserMemos = {};
+
+            if (trimmed) {
+                rawCardUserMemos[cardKey] = {
+                    memo: trimmed,
+                    updatedAt: new Date().toISOString(),
+                    subject: fcCurrentCard.subject || "",
+                    term: fcCurrentCard.frontMain || ""
+                };
+            } else {
+                delete rawCardUserMemos[cardKey];
+            }
+
+            try {
+                localStorage.setItem("local_card_user_memos", JSON.stringify(rawCardUserMemos));
+            } catch(e) {}
+
+            if (currentUser) {
+                try {
+                    const safeKey = cardKey.replace(/[\/.$#[\]]/g, "_");
+                    await set(ref(database, 'users/' + currentUser.uid + '/card_memos/' + safeKey), rawCardUserMemos[cardKey] || null);
+                } catch(err) {
+                    console.warn("Firebase memo sync error:", err);
+                }
+            }
+
+            updateFcUserMemoDisplay();
+            showToast(trimmed ? "単語メモを保存しました！" : "単語メモを消去しました", "success");
+        }
+
+        // ==========================================
+        // 🔊 TTS（音声合成）読み上げ & オートプレイロジック
+        // ==========================================
+        let activeSpeechUtterance = null;
+        function speakText(text, lang = "ja-JP") {
+            if (!('speechSynthesis' in window)) {
+                showToast("ブラウザの音声合成機能に対応していません", "warning");
+                return Promise.resolve();
+            }
+            window.speechSynthesis.cancel();
+            if (!text || !text.trim()) return Promise.resolve();
+
+            const clean = text
+                .replace(/`{1,3}[^`]+`{1,3}/g, "")
+                .replace(/\$[^$]+\$/g, "")
+                .replace(/[#*_\-\[\]()>~|]/g, " ")
+                .replace(/[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}]/gu, "")
+                .replace(/\s+/g, " ")
+                .trim();
+
+            if (!clean) return Promise.resolve();
+
+            return new Promise((resolve) => {
+                const utter = new SpeechSynthesisUtterance(clean);
+                utter.lang = lang;
+                utter.rate = 1.0;
+                utter.pitch = 1.0;
+                utter.onend = () => {
+                    activeSpeechUtterance = null;
+                    resolve();
+                };
+                utter.onerror = () => {
+                    activeSpeechUtterance = null;
+                    resolve();
+                };
+                activeSpeechUtterance = utter;
+                window.speechSynthesis.speak(utter);
+            });
+        }
+
+        function stopSpeech() {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+            activeSpeechUtterance = null;
+        }
+
+        function detectTextLang(text) {
+            if (!text) return "ja-JP";
+            const latin = (text.match(/[A-Za-z]/g) || []).length;
+            const total = text.replace(/[\s\d\p{P}]/gu, "").length;
+            if (total > 0 && (latin / total) > 0.5) return "en-US";
+            return "ja-JP";
+        }
+
+        let fcAutoplayActive = false;
+        let fcAutoplayTimer = null;
+
+        function setFcAutoplayState(active) {
+            fcAutoplayActive = active;
+            const btn = document.getElementById("fc-autoplay-toggle");
+            const indicator = document.getElementById("fc-autoplay-indicator");
+
+            if (active) {
+                if (btn) {
+                    btn.classList.add("active");
+                    btn.style.background = "linear-gradient(135deg, #10B981, #059669)";
+                    btn.style.color = "#fff";
+                    btn.textContent = "⏸ オートプレイ停止";
+                }
+                if (indicator) indicator.style.display = "inline-flex";
+                showToast("▶ オートプレイ開始: 表裏の自動読み上げ＆自動めくり", "info");
+                runAutoplayCycle();
+            } else {
+                if (btn) {
+                    btn.classList.remove("active");
+                    btn.style.background = "";
+                    btn.style.color = "";
+                    btn.textContent = "▶ オートプレイ";
+                }
+                if (indicator) indicator.style.display = "none";
+                if (fcAutoplayTimer) {
+                    clearTimeout(fcAutoplayTimer);
+                    fcAutoplayTimer = null;
+                }
+                stopSpeech();
+            }
+        }
+
+        async function runAutoplayCycle() {
+            if (!fcAutoplayActive || !fcCurrentCard) return;
+            if (fcAutoplayTimer) clearTimeout(fcAutoplayTimer);
+
+            // 1. 表面に戻す
+            if (fcIsFlipped) {
+                flipFcCard(false);
+                await new Promise(r => setTimeout(r, 450));
+                if (!fcAutoplayActive) return;
+            }
+
+            // 2. 表面を読み上げ
+            const frontText = fcCurrentCard.frontMain || "";
+            await speakText(frontText, detectTextLang(frontText));
+            if (!fcAutoplayActive) return;
+
+            // 3. 3秒待機 ➔ 裏面へめくり＆読み上げ
+            fcAutoplayTimer = setTimeout(async () => {
+                if (!fcAutoplayActive) return;
+
+                flipFcCard(true);
+                await new Promise(r => setTimeout(r, 500));
+                if (!fcAutoplayActive) return;
+
+                const backText = fcCurrentCard.backAnswer || "";
+                const cardKey = getCardMemoKey(fcCurrentCard);
+                const memoEntry = rawCardUserMemos[cardKey];
+                const memoText = (memoEntry && memoEntry.memo) ? `。メモ、${memoEntry.memo}` : "";
+                const fullBack = backText + memoText;
+
+                await speakText(fullBack, detectTextLang(fullBack));
+                if (!fcAutoplayActive) return;
+
+                // 4. 読み上げ終了後、3秒待って次のカードへ
+                fcAutoplayTimer = setTimeout(() => {
+                    if (!fcAutoplayActive) return;
+                    rateFcCard(3); // 「普通 (Good)」で自動送り
+                }, 3000);
+            }, 3000);
+        }
+
+        // ==========================================
+        // 💬 教科書・単語 AI質問メンター ロジック
+        // ==========================================
+        let lastAiAskResult = null;
+
+        function openAiAskModal(initialTerm = "", initialSubject = "") {
+            const modal = document.getElementById("ai-ask-modal");
+            if (!modal) return;
+            modal.style.display = "flex";
+
+            const termInput = document.getElementById("ai-ask-input");
+            const subSelect = document.getElementById("ai-ask-subject-select");
+            if (initialTerm && termInput) termInput.value = initialTerm;
+            if (initialSubject && subSelect) subSelect.value = initialSubject;
+
+            const btnSaveLog = document.getElementById("ai-ask-btn-save-log");
+            const btnCreateCard = document.getElementById("ai-ask-btn-create-card");
+            if (btnSaveLog) btnSaveLog.style.display = lastAiAskResult ? "inline-flex" : "none";
+            if (btnCreateCard) btnCreateCard.style.display = lastAiAskResult ? "inline-flex" : "none";
+
+            if (termInput) {
+                termInput.focus();
+            }
+        }
+
+        function closeAiAskModal() {
+            const modal = document.getElementById("ai-ask-modal");
+            if (modal) modal.style.display = "none";
+        }
+
+        async function submitAiAskQuestion() {
+            const input = document.getElementById("ai-ask-input");
+            const subSelect = document.getElementById("ai-ask-subject-select");
+            const styleSelect = document.getElementById("ai-ask-style-select");
+            const sendBtn = document.getElementById("ai-ask-send-btn");
+            const transcript = document.getElementById("ai-ask-transcript");
+            const welcome = document.getElementById("ai-ask-welcome");
+            const statusText = document.getElementById("ai-ask-status-text");
+            const btnSaveLog = document.getElementById("ai-ask-btn-save-log");
+            const btnCreateCard = document.getElementById("ai-ask-btn-create-card");
+
+            if (!input) return;
+            const query = input.value.trim();
+            if (!query) {
+                showToast("質問内容や分からない単語を入力してください", "warning");
+                return;
+            }
+
+            const subject = subSelect ? subSelect.value : "世界史";
+            const style = styleSelect ? styleSelect.value : "explain";
+
+            if (welcome) welcome.style.display = "none";
+
+            // ユーザー発言を追加
+            const userBubble = document.createElement("div");
+            userBubble.style.cssText = "align-self: flex-end; max-width: 85%; background: var(--brand-primary); color: #fff; padding: 0.6rem 0.9rem; border-radius: 12px 12px 2px 12px; font-size: 0.86rem; line-height: 1.5;";
+            userBubble.textContent = query;
+            transcript.appendChild(userBubble);
+            transcript.scrollTop = transcript.scrollHeight;
+
+            // ローディング表示
+            const aiLoadingBubble = document.createElement("div");
+            aiLoadingBubble.style.cssText = "align-self: flex-start; max-width: 90%; background: var(--bg-surface); border: 1px solid var(--border-color); padding: 0.75rem 1rem; border-radius: 12px 12px 12px 2px; font-size: 0.86rem; line-height: 1.6; color: var(--text-secondary);";
+            aiLoadingBubble.innerHTML = "<span>🤖 AIメンターが教科書知識を分析・解説中...</span>";
+            transcript.appendChild(aiLoadingBubble);
+            transcript.scrollTop = transcript.scrollHeight;
+
+            input.value = "";
+            input.disabled = true;
+            if (sendBtn) sendBtn.disabled = true;
+            if (statusText) statusText.textContent = "AIが回答を生成中...";
+
+            try {
+                let styleInstruction = "用語や概念の本質を、前提知識がなくても直感的にわかるように解説してください。重要キーワードや結論を太字にしてください。";
+                if (style === "analogy") styleInstruction = "中学生や高校生でもスッとイメージが湧く身近な日常の例え（比喩）を交えて解説してください。";
+                if (style === "mnemonic") styleInstruction = "覚えるためのキャッチーな語呂合わせ、漢字やスペルの分解、連想ストーリーなどの暗記テクニックを伝授してください。";
+                if (style === "exam") styleInstruction = "大学入試や共通テスト・定期試験でどのように狙われるか、正誤問題や記述での出題パターンと急所を教えてください。";
+
+                const systemInstruction = `あなたは親切で超優秀な教科書特化型AI個別指導メンターです。
+科目: 【${subject}】
+指導スタイル方針: ${styleInstruction}
+数式が必要な場合は $x$ や $$...$$ の標準LaTeX記法を用いてください。
+マークダウン記法で見やすく整理して回答してください。`;
+
+                const res = await fetch("/api/gemini/generate", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        model: "gemini-2.5-flash",
+                        contents: [{ role: "user", parts: [{ text: query }] }],
+                        systemInstruction: { parts: [{ text: systemInstruction }] }
+                    })
+                });
+
+                if (!res.ok) {
+                    const errJson = await res.json().catch(() => ({}));
+                    throw new Error(errJson.error?.message || `APIエラー (${res.status})`);
+                }
+
+                const data = await res.json();
+                const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "（回答の取得に失敗しました）";
+
+                aiLoadingBubble.style.color = "var(--text-primary)";
+                aiLoadingBubble.innerHTML = `<div class="tex2jax_process">${renderFormattedMarkdown(aiText)}</div>`;
+                transcript.scrollTop = transcript.scrollHeight;
+                scheduleMathTypeset(aiLoadingBubble);
+
+                lastAiAskResult = {
+                    query,
+                    answer: aiText,
+                    subject,
+                    style,
+                    createdAt: new Date().toISOString()
+                };
+
+                if (btnSaveLog) {
+                    btnSaveLog.style.display = "inline-flex";
+                    btnSaveLog.disabled = false;
+                    btnSaveLog.textContent = "💾 AI質問ログに保存";
+                }
+                if (btnCreateCard) {
+                    btnCreateCard.style.display = "inline-flex";
+                    btnCreateCard.disabled = false;
+                    btnCreateCard.textContent = "📌 暗記カードに登録";
+                }
+                if (statusText) statusText.textContent = "✅ 回答が完了しました。ログ保存や暗記カード化が可能です。";
+            } catch(err) {
+                console.error("AI Ask error:", err);
+                aiLoadingBubble.style.color = "var(--error)";
+                aiLoadingBubble.textContent = `⚠️ エラーが発生しました: ${err.message}`;
+                if (statusText) statusText.textContent = "エラーが発生しました";
+            } finally {
+                input.disabled = false;
+                if (sendBtn) sendBtn.disabled = false;
+                input.focus();
+            }
+        }
+
+        async function saveAiAskToQnaLog() {
+            if (!lastAiAskResult) return;
+            const logId = "ai_qna_" + Date.now();
+            const logItem = {
+                id: logId,
+                subject: lastAiAskResult.subject,
+                question: lastAiAskResult.query,
+                answer: lastAiAskResult.answer,
+                source: "教科書AI質問",
+                createdAt: lastAiAskResult.createdAt || new Date().toISOString(),
+                isAiGenerated: true
+            };
+
+            if (!rawQnaLogs) rawQnaLogs = {};
+            rawQnaLogs[logId] = logItem;
+
+            if (currentUser) {
+                try {
+                    await set(ref(database, 'users/' + currentUser.uid + '/qna_logs/' + logId), logItem);
+                } catch(err) {
+                    console.warn("Firebase save QnA log error:", err);
+                }
+            }
+
+            updateCounts();
+            showToast("Q&Aログに保存しました！「質問履歴」タブからいつでも見返せます。", "success");
+            const btnSaveLog = document.getElementById("ai-ask-btn-save-log");
+            if (btnSaveLog) {
+                btnSaveLog.textContent = "✅ 保存済み";
+                btnSaveLog.disabled = true;
+            }
+        }
+
+        async function createCardFromAiAsk() {
+            if (!lastAiAskResult) return;
+            const cleanQuery = lastAiAskResult.query.trim().slice(0, 50);
+            const firstParagraph = lastAiAskResult.answer.split("\n\n")[0].slice(0, 200);
+
+            const cardId = "card_ai_" + Date.now();
+            const lessonId = "L_AI_ASK";
+
+            if (!rawLessons) rawLessons = {};
+            if (!rawLessons[lessonId]) {
+                rawLessons[lessonId] = {
+                    title: "教科書AI質問・特訓デッキ",
+                    subject: lastAiAskResult.subject,
+                    memorizationPoints: [],
+                    createdAt: new Date().toISOString()
+                };
+            }
+            if (!Array.isArray(rawLessons[lessonId].memorizationPoints)) {
+                rawLessons[lessonId].memorizationPoints = [];
+            }
+
+            rawLessons[lessonId].memorizationPoints.push({
+                memoId: cardId,
+                question: cleanQuery,
+                answer: firstParagraph,
+                rawContent: lastAiAskResult.answer,
+                category: "教科書AI質問",
+                subject: lastAiAskResult.subject,
+                createdAt: new Date().toISOString()
+            });
+
+            if (currentUser) {
+                try {
+                    await set(ref(database, 'users/' + currentUser.uid + '/lessons/' + lessonId), rawLessons[lessonId]);
+                } catch(err) {
+                    console.warn("Firebase save card error:", err);
+                }
+            }
+
+            updateCounts();
+            showToast("暗記カードに追加しました！「暗記事項」タブやフラッシュカードですぐ学習できます。", "success");
+            const btnCreateCard = document.getElementById("ai-ask-btn-create-card");
+            if (btnCreateCard) {
+                btnCreateCard.textContent = "✅ カード登録済み";
+                btnCreateCard.disabled = true;
+            }
         }
 
         // イベントバインド
@@ -6217,6 +6775,118 @@
                 e.stopPropagation();
                 flipFcCard(false);
             };
+        }
+
+        // 🔊 音声読み上げボタン
+        const fcFrontSpeakerBtn = document.getElementById("fc-front-speaker-btn");
+        if (fcFrontSpeakerBtn) {
+            fcFrontSpeakerBtn.onclick = (e) => {
+                e.stopPropagation();
+                if (!fcCurrentCard) return;
+                const text = fcCurrentCard.frontMain || "";
+                speakText(text, detectTextLang(text));
+            };
+        }
+
+        const fcBackSpeakerBtn = document.getElementById("fc-back-speaker-btn");
+        if (fcBackSpeakerBtn) {
+            fcBackSpeakerBtn.onclick = (e) => {
+                e.stopPropagation();
+                if (!fcCurrentCard) return;
+                const backText = fcCurrentCard.backAnswer || "";
+                const cardKey = getCardMemoKey(fcCurrentCard);
+                const memoEntry = rawCardUserMemos[cardKey];
+                const memoText = (memoEntry && memoEntry.memo) ? `。メモ、${memoEntry.memo}` : "";
+                speakText(backText + memoText, detectTextLang(backText));
+            };
+        }
+
+        // ▶ オートプレイ切り替えボタン
+        const fcAutoplayToggle = document.getElementById("fc-autoplay-toggle");
+        if (fcAutoplayToggle) {
+            fcAutoplayToggle.onclick = (e) => {
+                e.stopPropagation();
+                setFcAutoplayState(!fcAutoplayActive);
+            };
+        }
+
+        // 📝 ユーザーメモの編集・保存・キャンセル
+        const fcBtnEditMemo = document.getElementById("fc-btn-edit-memo");
+        const fcBtnSaveMemo = document.getElementById("fc-btn-save-memo");
+        const fcBtnCancelMemo = document.getElementById("fc-btn-cancel-memo");
+        const fcBackUserMemoEditor = document.getElementById("fc-back-user-memo-editor");
+        const fcBackUserMemoText = document.getElementById("fc-back-user-memo-text");
+        const fcBackUserMemoInput = document.getElementById("fc-back-user-memo-input");
+
+        if (fcBtnEditMemo) {
+            fcBtnEditMemo.onclick = (e) => {
+                e.stopPropagation();
+                if (fcBackUserMemoEditor) fcBackUserMemoEditor.style.display = "block";
+                if (fcBackUserMemoText) fcBackUserMemoText.style.display = "none";
+                if (fcBackUserMemoInput) {
+                    const cardKey = getCardMemoKey(fcCurrentCard);
+                    const memoEntry = rawCardUserMemos[cardKey];
+                    fcBackUserMemoInput.value = (memoEntry && memoEntry.memo) ? memoEntry.memo : (fcCurrentCard?.userMemo || "");
+                    fcBackUserMemoInput.focus();
+                }
+            };
+        }
+
+        if (fcBtnCancelMemo) {
+            fcBtnCancelMemo.onclick = (e) => {
+                e.stopPropagation();
+                if (fcBackUserMemoEditor) fcBackUserMemoEditor.style.display = "none";
+                if (fcBackUserMemoText) fcBackUserMemoText.style.display = "block";
+            };
+        }
+
+        if (fcBtnSaveMemo) {
+            fcBtnSaveMemo.onclick = async (e) => {
+                e.stopPropagation();
+                const val = fcBackUserMemoInput ? fcBackUserMemoInput.value : "";
+                await saveCurrentCardUserMemo(val);
+                if (fcBackUserMemoEditor) fcBackUserMemoEditor.style.display = "none";
+                if (fcBackUserMemoText) fcBackUserMemoText.style.display = "block";
+            };
+        }
+
+        // 💬 教科書AI質問モーダルのイベントバインド
+        const btnOpenAiTermAsk = document.getElementById("btn-open-ai-term-ask");
+        if (btnOpenAiTermAsk) {
+            btnOpenAiTermAsk.onclick = () => {
+                const curSubject = currentFilterSubject !== "all" ? currentFilterSubject : "世界史";
+                openAiAskModal("", curSubject);
+            };
+        }
+
+        const aiAskModalClose = document.getElementById("ai-ask-modal-close");
+        if (aiAskModalClose) {
+            aiAskModalClose.onclick = closeAiAskModal;
+        }
+
+        const aiAskSendBtn = document.getElementById("ai-ask-send-btn");
+        if (aiAskSendBtn) {
+            aiAskSendBtn.onclick = submitAiAskQuestion;
+        }
+
+        const aiAskInput = document.getElementById("ai-ask-input");
+        if (aiAskInput) {
+            aiAskInput.addEventListener("keydown", (e) => {
+                if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    submitAiAskQuestion();
+                }
+            });
+        }
+
+        const aiAskBtnSaveLog = document.getElementById("ai-ask-btn-save-log");
+        if (aiAskBtnSaveLog) {
+            aiAskBtnSaveLog.onclick = saveAiAskToQnaLog;
+        }
+
+        const aiAskBtnCreateCard = document.getElementById("ai-ask-btn-create-card");
+        if (aiAskBtnCreateCard) {
+            aiAskBtnCreateCard.onclick = createCardFromAiAsk;
         }
 
         // 4段階SRS評価ボタン
@@ -6834,6 +7504,17 @@
                 updateSrsDashboardCounts();
                 if (activeTab === "memorize") {
                     renderMemorize();
+                }
+            });
+
+            // 📝 単語・カードのユーザー追加メモをリアルタイム購読
+            onValue(ref(database, 'users/' + user.uid + '/card_memos'), (snapshot) => {
+                rawCardUserMemos = snapshot.val() || {};
+                try {
+                    localStorage.setItem("local_card_user_memos", JSON.stringify(rawCardUserMemos));
+                } catch(e) {}
+                if (typeof updateFcUserMemoDisplay === "function") {
+                    updateFcUserMemoDisplay();
                 }
             });
         });

@@ -2990,9 +2990,10 @@
                                 </div>
 
                                 <div style="display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.6rem; justify-content: space-between;">
-                                    <div style="display: flex; gap: 0.4rem;">
+                                    <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
                                         <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="request-diagram-btn" style="padding: 0.3rem 0.6rem; font-size: 0.74rem;">🖼️ 図で説明してほしい</button>
                                         <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="trigger-drill-btn" style="color: var(--brand-primary); padding: 0.3rem 0.6rem; font-size: 0.74rem;">⚡ 類題で即時アウトプット</button>
+                                        <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="add-custom-event-btn" style="color: #b45309; padding: 0.3rem 0.6rem; font-size: 0.74rem;" title="授業に補足出来事や自分用のメモを追記">📝 出来事・メモを追記</button>
                                     </div>
                                     <button type="button" class="flora-btn flora-btn-primary btn-sm" id="next-part-btn" style="padding: 0.3rem 0.8rem; font-size: 0.76rem;">▶ 次のパートへ進む</button>
                                 </div>
@@ -6941,6 +6942,7 @@ ${socraticInstructionBlock}
         }
 
         let regeneratingMsgIndex = null;
+        let editingMsgIndex = null;
 
         function renderChatTranscript() {
             const wrap = el("chat-transcript");
@@ -6950,11 +6952,40 @@ ${socraticInstructionBlock}
 
             wrap.innerHTML = history.map((m, idx) => {
                 if (m.role === "divider") return `<div class="bubble-divider">──── ${m.content} ────</div>`;
+
+                const isEditing = editingMsgIndex === idx;
+
+                if (isEditing) {
+                    return `
+                        <div class="chat-bubble ${m.role === 'user' ? 'bubble-user' : 'bubble-ai'}" style="width: 96%; max-width: 840px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); border: 2px solid var(--brand-primary);">
+                            <div style="font-size: 0.76rem; font-weight: 800; color: var(--brand-primary); margin-bottom: 0.45rem; display: flex; justify-content: space-between; align-items: center;">
+                                <span>✏️ 授業内容の直接編集（AIの誤り修正や出来事・補足の追加）</span>
+                                <span style="font-size: 0.7rem; color: var(--text-muted);">Markdown / LaTeX 対応</span>
+                            </div>
+                            <textarea id="bubble-edit-input-${idx}" class="flora-textarea" rows="8" style="width: 100%; box-sizing: border-box; font-family: inherit; font-size: 0.88rem; line-height: 1.6; resize: vertical; border: 1px solid var(--border-color);">${escapeHtml(m.content || "")}</textarea>
+                            <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.5rem;">
+                                <button type="button" class="flora-btn flora-btn-secondary btn-sm" onclick="cancelEditLessonMsg()">✕ キャンセル</button>
+                                <button type="button" class="flora-btn flora-btn-primary btn-sm" onclick="saveEditLessonMsg(${idx})" style="font-weight: 700;">💾 保存して更新</button>
+                            </div>
+                        </div>
+                    `;
+                }
+
                 if (m.role === "user") {
                     const imagesHtml = (Array.isArray(m.images) && m.images.length > 0)
                         ? `<div class="bubble-user-images">${m.images.map(img => `<img src="data:${img.mimeType};base64,${img.data}" onclick="window.open(this.src, '_blank')">`).join("")}</div>`
                         : "";
-                    return `<div class="chat-bubble bubble-user">${imagesHtml}${m.content}</div>`;
+                    return `
+                        <div class="chat-bubble bubble-user">
+                            ${imagesHtml}
+                            <div>${escapeHtml(m.content)}</div>
+                            <div class="bubble-actions" style="justify-content: flex-end; margin-top: 0.35rem;">
+                                <button type="button" class="bubble-action-btn edit-btn" data-edit-msg="${idx}" title="この発言を編集">
+                                    ✏️ 編集
+                                </button>
+                            </div>
+                        </div>
+                    `;
                 }
 
                 // AIメッセージ
@@ -6988,6 +7019,9 @@ ${socraticInstructionBlock}
                     ? ""
                     : `
                         <div class="bubble-actions">
+                            <button type="button" class="bubble-action-btn edit-btn" data-edit-msg="${idx}" title="この授業内容を自分で直接編集・追記する">
+                                ✏️ 編集
+                            </button>
                             <button type="button" class="bubble-action-btn regen-btn" data-regenerate-msg="${idx}" title="この返信だけを再生成する">
                                 🔄 再生成
                             </button>
@@ -7199,11 +7233,70 @@ ${socraticInstructionBlock}
             }
         }
 
-        // チャット吹き出しのアクション（再生成・コピー）イベント委譲
+        // チャット吹き出しのアクション（編集・再生成・コピー）イベント委譲
+        window.startEditLessonMsg = function(idx) {
+            editingMsgIndex = idx;
+            renderChatTranscript();
+            setTimeout(() => {
+                const input = document.getElementById(`bubble-edit-input-${idx}`);
+                if (input) {
+                    input.focus();
+                    input.scrollIntoView({ behavior: "smooth", block: "center" });
+                }
+            }, 80);
+        };
+
+        window.cancelEditLessonMsg = function() {
+            editingMsgIndex = null;
+            renderChatTranscript();
+        };
+
+        window.saveEditLessonMsg = async function(idx) {
+            const input = document.getElementById(`bubble-edit-input-${idx}`);
+            if (!input || !currentLesson || !currentLesson.chatHistory || !currentLesson.chatHistory[idx]) return;
+            const val = input.value.trim();
+            if (!val) {
+                showToast("内容を入力してください", "warning");
+                return;
+            }
+            currentLesson.chatHistory[idx].content = val;
+            currentLesson.chatHistory[idx].isEditedByUser = true;
+            currentLesson.chatHistory[idx].editedAt = new Date().toISOString();
+            editingMsgIndex = null;
+            await saveLesson();
+            renderChatTranscript();
+            renderVscodeMode();
+            showToast("授業内容を更新・保存しました！", "success");
+        };
+
+        window.addNewLessonEventOrNote = async function() {
+            if (!currentLesson) return;
+            const text = prompt("授業に追加したい出来事や自分用の補足ノートを入力してください：");
+            if (!text || !text.trim()) return;
+            if (!currentLesson.chatHistory) currentLesson.chatHistory = [];
+            const newEntry = {
+                role: "assistant",
+                content: `📝 **【追加ノート・出来事】**\n\n${text.trim()}`,
+                isUserAdded: true,
+                createdAt: new Date().toISOString()
+            };
+            currentLesson.chatHistory.push(newEntry);
+            await saveLesson();
+            renderChatTranscript();
+            renderVscodeMode();
+            showToast("出来事・補足ノートを授業に追加しました！", "success");
+        };
+
         (function bindChatBubbleActions() {
             const wrap = el("chat-transcript");
             if (!wrap) return;
             wrap.addEventListener("click", (e) => {
+                const editBtn = e.target.closest("[data-edit-msg]");
+                if (editBtn) {
+                    const msgIdx = parseInt(editBtn.getAttribute("data-edit-msg"), 10);
+                    if (!isNaN(msgIdx)) startEditLessonMsg(msgIdx);
+                    return;
+                }
                 const regenBtn = e.target.closest("[data-regenerate-msg]");
                 if (regenBtn) {
                     const msgIdx = parseInt(regenBtn.getAttribute("data-regenerate-msg"), 10);
@@ -7217,6 +7310,11 @@ ${socraticInstructionBlock}
                     return;
                 }
             });
+
+            const addEventBtn = el("add-custom-event-btn");
+            if (addEventBtn) {
+                addEventBtn.addEventListener("click", () => addNewLessonEventOrNote());
+            }
         })();
 
         // --------------------------------------------------------------
