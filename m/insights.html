@@ -519,51 +519,228 @@
             color: var(--text-primary);
             word-break: break-word;
         }
-        .m-fc-action-row {
+        .m-fc-scope-pill {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            font-size: 0.72rem;
+            font-weight: 750;
+            padding: 0.22rem 0.55rem;
+            border-radius: 9999px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            transition: all 0.15s;
+            max-width: 140px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .m-fc-scope-pill:active {
+            background: rgba(16, 185, 129, 0.12);
+            border-color: var(--brand-primary);
+            transform: scale(0.96);
+        }
+        .m-fc-level-badge {
+            font-size: 0.68rem;
+            font-weight: 800;
+            padding: 0.12rem 0.4rem;
+            border-radius: 4px;
+            background: rgba(99, 102, 241, 0.12);
+            color: #4f46e5;
+            border: 1px solid rgba(99, 102, 241, 0.25);
+            display: inline-flex;
+            align-items: center;
+        }
+
+        /* 表面ヒント演出 */
+        .m-fc-hint-pulse {
+            font-size: 0.73rem;
+            color: var(--text-muted);
+            text-align: center;
+            margin-top: 0.45rem;
             display: flex;
-            gap: 0.65rem;
-            margin-top: 0.6rem;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
+            opacity: 0.85;
+            animation: mFcHintPulse 2s infinite ease-in-out;
+        }
+        @keyframes mFcHintPulse {
+            0%, 100% { opacity: 0.65; transform: translateY(0); }
+            50% { opacity: 1; transform: translateY(-1.5px); }
+        }
+
+        /* 裏面スマートアシストツールバー */
+        .m-fc-assist-toolbar {
+            display: flex;
+            gap: 0.35rem;
+            margin-top: 0.5rem;
+            margin-bottom: 0.2rem;
+            flex-shrink: 0;
+            border-top: 1px dashed var(--border-color);
+            padding-top: 0.45rem;
+        }
+        .m-fc-assist-btn {
+            flex: 1;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 0.32rem 0.2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.22rem;
+            white-space: nowrap;
+            transition: all 0.15s;
+        }
+        .m-fc-assist-btn:active {
+            background: var(--bg-subtle);
+            color: var(--text-primary);
+            transform: scale(0.96);
+        }
+
+        /* 🧠 4段階SRS評価ボタングリッド */
+        .m-fc-rating-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.35rem;
+            margin-top: 0.5rem;
             flex-shrink: 0;
         }
-        .m-fc-btn-retry {
-            flex: 1;
-            background: rgba(217, 119, 6, 0.1);
-            color: #b45309;
-            border: 1.5px solid rgba(217, 119, 6, 0.35);
-            font-weight: 800;
-            font-size: 0.92rem;
-            padding: 0.75rem 0.5rem;
-            border-radius: 14px;
-            cursor: pointer;
+        .m-fc-rate-btn {
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
+            padding: 0.45rem 0.2rem;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.12s ease;
+            border: 1.5px solid transparent;
+            text-align: center;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .m-fc-rate-btn:active {
+            transform: scale(0.94);
+        }
+        .m-fc-rate-main {
+            font-size: 0.82rem;
+            font-weight: 850;
+            line-height: 1.2;
+            display: flex;
+            align-items: center;
+            gap: 0.15rem;
+        }
+        .m-fc-rate-sub {
+            font-size: 0.65rem;
+            font-weight: 700;
+            opacity: 0.85;
+            margin-top: 0.15rem;
+            line-height: 1;
+        }
+
+        /* 1. もう一度 (Again) - 赤 */
+        .m-fc-rate-again {
+            background: rgba(239, 68, 68, 0.1);
+            color: #dc2626;
+            border-color: rgba(239, 68, 68, 0.35);
+        }
+        .m-fc-rate-again:active {
+            background: rgba(239, 68, 68, 0.22);
+        }
+
+        /* 2. 難しい (Hard) - 橙 */
+        .m-fc-rate-hard {
+            background: rgba(245, 158, 11, 0.12);
+            color: #d97706;
+            border-color: rgba(245, 158, 11, 0.38);
+        }
+        .m-fc-rate-hard:active {
+            background: rgba(245, 158, 11, 0.24);
+        }
+
+        /* 3. 覚えた (Good) - 緑 */
+        .m-fc-rate-good {
+            background: rgba(16, 185, 129, 0.14);
+            color: #059669;
+            border-color: rgba(16, 185, 129, 0.45);
+        }
+        .m-fc-rate-good:active {
+            background: rgba(16, 185, 129, 0.26);
+        }
+
+        /* 4. かんたん (Easy) - 青 */
+        .m-fc-rate-easy {
+            background: rgba(59, 130, 246, 0.14);
+            color: #2563eb;
+            border-color: rgba(59, 130, 246, 0.45);
+        }
+        .m-fc-rate-easy:active {
+            background: rgba(59, 130, 246, 0.26);
+        }
+
+        /* 📚 単元選択モーダル用拡張スタイル */
+        .m-picker-subject-tabs {
+            display: flex;
             gap: 0.35rem;
-            transition: transform 0.12s;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            padding-bottom: 0.4rem;
+            margin-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
         }
-        .m-fc-btn-retry:active {
-            transform: scale(0.97);
-            background: rgba(217, 119, 6, 0.18);
+        .m-picker-subject-tabs::-webkit-scrollbar { display: none; }
+        .m-picker-subj-btn {
+            padding: 0.3rem 0.65rem;
+            font-size: 0.76rem;
+            font-weight: 750;
+            border-radius: 9999px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-surface);
+            color: var(--text-secondary);
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.15s;
         }
-        .m-fc-btn-mastered {
-            flex: 1;
-            background: linear-gradient(135deg, #10B981, #059669);
+        .m-picker-subj-btn.active {
+            background: var(--brand-primary);
             color: #fff;
-            border: none;
-            font-weight: 800;
-            font-size: 0.92rem;
-            padding: 0.75rem 0.5rem;
-            border-radius: 14px;
-            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.28);
-            cursor: pointer;
+            border-color: var(--brand-primary);
+            box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
+        }
+        .m-picker-lesson-item {
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 0.35rem;
-            transition: transform 0.12s;
+            justify-content: space-between;
+            padding: 0.55rem 0.65rem;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 0.4rem;
+            background: var(--bg-surface);
+            cursor: pointer;
+            transition: all 0.12s;
         }
-        .m-fc-btn-mastered:active {
-            transform: scale(0.97);
+        .m-picker-lesson-item.selected {
+            border-color: rgba(16, 185, 129, 0.6);
+            background: rgba(16, 185, 129, 0.05);
+        }
+        .m-picker-lesson-title {
+            font-size: 0.82rem;
+            font-weight: 750;
+            color: var(--text-primary);
+            line-height: 1.35;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
         }
 
         /* 🚀 モバイル用クイックアクションバー */
@@ -1074,18 +1251,26 @@
         <div class="m-fc-content">
             <!-- モーダル上部バー -->
             <div class="m-fc-top-bar">
-                <div style="display:flex; align-items:center; gap:0.45rem;">
-                    <span style="background:rgba(16,185,129,0.15); color:#047857; font-size:0.75rem; font-weight:800; padding:0.2rem 0.55rem; border-radius:9999px; border:1px solid rgba(16,185,129,0.3);">🎴 カード特訓</span>
-                    <span id="m-fc-meta-subject" style="font-size:0.84rem; font-weight:800; color:var(--text-primary);">公共</span>
+                <div style="display:flex; align-items:center; gap:0.4rem; overflow:hidden;">
+                    <span style="background:rgba(16,185,129,0.15); color:#047857; font-size:0.75rem; font-weight:800; padding:0.2rem 0.5rem; border-radius:9999px; border:1px solid rgba(16,185,129,0.3); white-space:nowrap;">🎴 カード特訓</span>
+                    <span id="m-fc-meta-subject" style="font-size:0.82rem; font-weight:800; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">公共</span>
                 </div>
-                <button type="button" id="m-fc-modal-close" class="m-fc-modal-close-btn" title="閉じる">×</button>
+                <div style="display:flex; align-items:center; gap:0.35rem; flex-shrink:0;">
+                    <button type="button" id="m-fc-btn-open-picker" class="m-fc-scope-pill" title="単元を選択・変更する">
+                        <span>📚 単元選択</span>
+                    </button>
+                    <button type="button" id="m-fc-modal-close" class="m-fc-modal-close-btn" title="閉じる">×</button>
+                </div>
             </div>
 
             <!-- 出題エリア -->
             <div id="m-fc-active-area" class="m-fc-active-area">
                 <!-- プログレスバー & カウンター -->
                 <div class="m-fc-progress-header">
-                    <span id="m-fc-progress-text">1 / 10</span>
+                    <div style="display:flex; align-items:center; gap:0.45rem;">
+                        <span id="m-fc-progress-text">1 / 10</span>
+                        <span id="m-fc-card-level" class="m-fc-level-badge">Lv.1</span>
+                    </div>
                     <div style="display:flex; gap:0.6rem;">
                         <span style="color:#059669; font-weight:800;">✅ <span id="m-fc-count-mastered">0</span></span>
                         <span style="color:#D97706; font-weight:800;">🔄 <span id="m-fc-count-retry">0</span></span>
@@ -1113,6 +1298,9 @@
                             <button type="button" class="m-fc-btn-flip" id="m-fc-btn-flip">
                                 答えを見る ▶
                             </button>
+                            <div class="m-fc-hint-pulse">
+                                <span>👆</span><span>カードをタップして答えを表示</span>
+                            </div>
                         </div>
 
                         <!-- 裏面 -->
@@ -1127,12 +1315,37 @@
                             <div class="m-fc-back-body" id="m-fc-back-answer-wrap">
                                 <div id="m-fc-back-answer" class="tex2jax_process">--</div>
                             </div>
-                            <div class="m-fc-action-row">
-                                <button type="button" id="m-fc-btn-retry" class="m-fc-btn-retry">
-                                    🔄 もう一度
+
+                            <!-- 🛠️ スマート学習アシストツールバー -->
+                            <div class="m-fc-assist-toolbar">
+                                <button type="button" class="m-fc-assist-btn" id="m-fc-btn-ask-ai" title="AIに詳しく解説を聞く">
+                                    🤖 <span>AI解説</span>
                                 </button>
-                                <button type="button" id="m-fc-btn-mastered" class="m-fc-btn-mastered">
-                                    ✅ 覚えた！
+                                <button type="button" class="m-fc-assist-btn" id="m-fc-btn-typing" title="このカードを写経タイピング">
+                                    ⌨️ <span>写経</span>
+                                </button>
+                                <button type="button" class="m-fc-assist-btn" id="m-fc-btn-speak" title="音声で読み上げ">
+                                    🔊 <span>音声</span>
+                                </button>
+                            </div>
+
+                            <!-- 🧠 4段階SRS評価ボタングリッド -->
+                            <div class="m-fc-rating-grid">
+                                <button type="button" class="m-fc-rate-btn m-fc-rate-again" id="m-fc-btn-rate-1" title="もう一度 (すぐ再出題)">
+                                    <div class="m-fc-rate-main">🔄 もう一度</div>
+                                    <div class="m-fc-rate-sub">すぐ</div>
+                                </button>
+                                <button type="button" class="m-fc-rate-btn m-fc-rate-hard" id="m-fc-btn-rate-2" title="難しい (あとで再復習)">
+                                    <div class="m-fc-rate-main">⚠️ 難しい</div>
+                                    <div class="m-fc-rate-sub">あとで</div>
+                                </button>
+                                <button type="button" class="m-fc-rate-btn m-fc-rate-good" id="m-fc-btn-rate-3" title="覚えた！ (順調に進捗)">
+                                    <div class="m-fc-rate-main">✅ 覚えた</div>
+                                    <div class="m-fc-rate-sub">順調</div>
+                                </button>
+                                <button type="button" class="m-fc-rate-btn m-fc-rate-easy" id="m-fc-btn-rate-4" title="かんたん (一気に定着)">
+                                    <div class="m-fc-rate-main">⚡ かんたん</div>
+                                    <div class="m-fc-rate-sub">完璧！</div>
                                 </button>
                             </div>
                         </div>
@@ -1291,51 +1504,65 @@
         </div>
     </div>
 
-    <!-- 🎯 モバイル用カスタムテスト範囲セレクター -->
+    <!-- 🎯 モバイル用カスタムテスト・単元選択セレクター -->
     <div id="m-lesson-picker-modal" class="m-fullscreen-modal" style="display:none;">
-        <div class="m-modal-sheet" style="height:88vh;">
+        <div class="m-modal-sheet" style="height:90vh;">
             <div class="m-sheet-header">
                 <div class="m-sheet-title">
-                    <span>🎯</span><span>カスタムテスト・範囲指定</span>
+                    <span>📚</span><span>単元を選んでカード特訓</span>
                 </div>
                 <button type="button" id="m-picker-modal-close" class="m-sheet-close">×</button>
             </div>
             <div class="m-sheet-body">
-                <!-- 検索 & 一括ボタン -->
-                <div style="margin-bottom:0.6rem;">
-                    <input type="text" id="m-picker-search" placeholder="授業・単元を絞り込み..." style="width:100%; padding:0.45rem 0.75rem; border:1px solid var(--border-color); border-radius:8px; font-size:0.82rem; margin-bottom:0.4rem;">
-                    <div style="display:flex; gap:0.35rem;">
-                        <button type="button" id="m-picker-btn-all" class="tactile-btn tactile-btn-secondary" style="font-size:0.72rem; padding:0.25rem 0.55rem;">すべて選択</button>
-                        <button type="button" id="m-picker-btn-clear" class="tactile-btn tactile-btn-secondary" style="font-size:0.72rem; padding:0.25rem 0.55rem;">全解除</button>
+                <!-- 🏷️ 教科切り替えタブ（横スクロール） -->
+                <div id="m-picker-subject-tabs" class="m-picker-subject-tabs">
+                    <!-- JSで動的生成 -->
+                </div>
+
+                <!-- 検索 & 一括選択ツールバー -->
+                <div style="margin-bottom:0.55rem;">
+                    <input type="text" id="m-picker-search" placeholder="単元名・キーワードで検索..." style="width:100%; padding:0.45rem 0.75rem; border:1px solid var(--border-color); border-radius:8px; font-size:0.82rem; margin-bottom:0.4rem; background:var(--bg-subtle);">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div style="display:flex; gap:0.35rem;">
+                            <button type="button" id="m-picker-btn-all" class="tactile-btn tactile-btn-secondary" style="font-size:0.72rem; padding:0.25rem 0.55rem;">☑️ 全選択</button>
+                            <button type="button" id="m-picker-btn-clear" class="tactile-btn tactile-btn-secondary" style="font-size:0.72rem; padding:0.25rem 0.55rem;">⏹️ 全解除</button>
+                        </div>
+                        <span id="m-picker-selected-summary" style="font-size:0.75rem; font-weight:800; color:var(--brand-primary);">選択中: 0単元 (0問)</span>
                     </div>
                 </div>
 
-                <!-- 授業リスト -->
-                <div id="m-picker-lesson-list" style="max-height:36vh; overflow-y:auto; border:1px solid var(--border-color); border-radius:10px; padding:0.4rem; margin-bottom:0.75rem;">
+                <!-- 単元一覧（複数チェックボックス） -->
+                <div id="m-picker-lesson-list" style="max-height:34vh; overflow-y:auto; -webkit-overflow-scrolling:touch; border:1px solid var(--border-color); border-radius:10px; padding:0.45rem; margin-bottom:0.65rem; background:var(--bg-subtle);">
                     <!-- JSで動的生成 -->
                 </div>
 
                 <!-- 条件指定 -->
-                <div style="background:var(--bg-subtle); border-radius:10px; padding:0.65rem; margin-bottom:0.75rem;">
-                    <div style="font-size:0.76rem; font-weight:800; color:var(--text-secondary); margin-bottom:0.35rem;">出題条件</div>
-                    <div style="display:flex; gap:0.4rem; margin-bottom:0.5rem;">
-                        <button type="button" class="tactile-btn m-picker-cond-btn active" data-cond="all" style="flex:1; font-size:0.74rem; padding:0.35rem; border-radius:6px; background:#fff; border:1px solid var(--border-color);">全カード</button>
-                        <button type="button" class="tactile-btn m-picker-cond-btn" data-cond="unlearned" style="flex:1; font-size:0.74rem; padding:0.35rem; border-radius:6px; background:#fff; border:1px solid var(--border-color);">未習得</button>
-                        <button type="button" class="tactile-btn m-picker-cond-btn" data-cond="weak" style="flex:1; font-size:0.74rem; padding:0.35rem; border-radius:6px; background:#fff; border:1px solid var(--border-color);">要復習</button>
+                <div style="background:var(--bg-subtle); border-radius:10px; padding:0.55rem 0.75rem; margin-bottom:0.65rem; border:1px solid var(--border-color);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem;">
+                        <div style="font-size:0.76rem; font-weight:800; color:var(--text-secondary);">出題条件</div>
+                        <div style="display:flex; align-items:center; gap:0.4rem;">
+                            <span style="font-size:0.74rem; font-weight:700; color:var(--text-muted);">上限:</span>
+                            <select id="m-picker-limit" style="font-size:0.78rem; font-weight:750; padding:0.2rem 0.45rem; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-surface);">
+                                <option value="10">10 問</option>
+                                <option value="20" selected>20 問</option>
+                                <option value="30">30 問</option>
+                                <option value="50">50 問</option>
+                                <option value="9999">全問</option>
+                            </select>
+                        </div>
                     </div>
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <span style="font-size:0.76rem; font-weight:700; color:var(--text-secondary);">出題上限:</span>
-                        <select id="m-picker-limit" style="font-size:0.8rem; font-weight:700; padding:0.25rem 0.5rem; border-radius:6px; border:1px solid var(--border-color);">
-                            <option value="10">10 問</option>
-                            <option value="20" selected>20 問</option>
-                            <option value="30">30 問</option>
-                            <option value="999">全問</option>
-                        </select>
+                    <div style="display:flex; gap:0.35rem;">
+                        <button type="button" class="tactile-btn m-picker-cond-btn active" data-cond="all" style="flex:1; font-size:0.73rem; padding:0.32rem; border-radius:6px; background:#fff; border:1px solid var(--border-color);">全カード</button>
+                        <button type="button" class="tactile-btn m-picker-cond-btn" data-cond="unlearned" style="flex:1; font-size:0.73rem; padding:0.32rem; border-radius:6px; background:#fff; border:1px solid var(--border-color);">🌱 未習得</button>
+                        <button type="button" class="tactile-btn m-picker-cond-btn" data-cond="weak" style="flex:1; font-size:0.73rem; padding:0.32rem; border-radius:6px; background:#fff; border:1px solid var(--border-color);">🔄 要復習</button>
                     </div>
                 </div>
 
-                <button type="button" id="m-picker-start-btn" class="tactile-btn" style="width:100%; background:linear-gradient(135deg, #10B981, #059669); color:#fff; font-size:0.92rem; font-weight:800; padding:0.75rem; border-radius:12px; border:none; box-shadow:0 4px 12px rgba(16,185,129,0.25);">
-                    🚀 この範囲でテスト開始 ➔
+                <button type="button" id="m-picker-start-btn" class="tactile-btn" style="width:100%; background:linear-gradient(135deg, #10B981, #059669); color:#fff; font-size:0.92rem; font-weight:800; padding:0.72rem; border-radius:12px; border:none; box-shadow:0 4px 12px rgba(16,185,129,0.28);">
+                    🚀 選択した単元で特訓開始 ➔
+                </button>
+                <button type="button" id="m-picker-start-all-btn" class="tactile-btn tactile-btn-secondary" style="width:100%; margin-top:0.35rem; font-size:0.78rem; font-weight:750; padding:0.45rem; border-radius:10px;">
+                    ⚡ この教科の全単元で即スタート
                 </button>
             </div>
         </div>
@@ -1389,6 +1616,9 @@
             </div>
         </div>
     </div>
+
+    <!-- トースト通知コンテナ -->
+    <div id="m-toast-container"></div>
 
     <!-- ボトムナビ -->
     <script src="bottom-nav.js"></script>
@@ -2820,16 +3050,18 @@
         };
 
         /* ==========================================================
-           🎴 モバイル用フラッシュカード復習
+           🎴 モバイル用フラッシュカード復習 (Anki/SRS 4段階評価・学習アシスト対応)
            ========================================================== */
         const mStartFlashcardBtn = document.getElementById("m-start-flashcard-btn");
         const mFcModal = document.getElementById("m-flashcard-modal");
         const mFcModalClose = document.getElementById("m-fc-modal-close");
+        const mFcBtnOpenPicker = document.getElementById("m-fc-btn-open-picker");
         const mFcActiveArea = document.getElementById("m-fc-active-area");
         const mFcFinishArea = document.getElementById("m-fc-finish-area");
         const mFcStage = document.getElementById("m-fc-stage");
         const mFcProgressText = document.getElementById("m-fc-progress-text");
         const mFcProgressBar = document.getElementById("m-fc-progress-bar");
+        const mFcCardLevel = document.getElementById("m-fc-card-level");
         const mFcCountMastered = document.getElementById("m-fc-count-mastered");
         const mFcCountRetry = document.getElementById("m-fc-count-retry");
         const mFcMetaSubject = document.getElementById("m-fc-meta-subject");
@@ -2839,11 +3071,20 @@
         const mFcBtnFlip = document.getElementById("m-fc-btn-flip");
         const mFcBackSource = document.getElementById("m-fc-back-source");
         const mFcBackAnswer = document.getElementById("m-fc-back-answer");
-        const mFcBtnRetry = document.getElementById("m-fc-btn-retry");
-        const mFcBtnMastered = document.getElementById("m-fc-btn-mastered");
         const mFcBtnFinishClose = document.getElementById("m-fc-btn-finish-close");
         const mFcStatTotal = document.getElementById("m-fc-stat-total");
         const mFcStatRetries = document.getElementById("m-fc-stat-retries");
+
+        // 🧠 4段階評価ボタン
+        const mFcBtnRate1 = document.getElementById("m-fc-btn-rate-1"); // もう一度 (Again)
+        const mFcBtnRate2 = document.getElementById("m-fc-btn-rate-2"); // 難しい (Hard)
+        const mFcBtnRate3 = document.getElementById("m-fc-btn-rate-3"); // 覚えた (Good)
+        const mFcBtnRate4 = document.getElementById("m-fc-btn-rate-4"); // かんたん (Easy)
+
+        // 🛠️ スマート学習アシストボタン
+        const mFcBtnAskAi = document.getElementById("m-fc-btn-ask-ai");
+        const mFcBtnTyping = document.getElementById("m-fc-btn-typing");
+        const mFcBtnSpeak = document.getElementById("m-fc-btn-speak");
 
         let mFcQueue = [];
         let mFcCurrentCard = null;
@@ -2851,6 +3092,7 @@
         let mFcRetryCount = 0;
         let mFcTotalInitial = 0;
         let mFcIsFlipped = false;
+        let mFcActiveScopeInfo = null;
 
         function getMobileFlashcardPool() {
             let items = getActiveItems();
@@ -2943,16 +3185,18 @@
             }).filter(Boolean);
         }
 
-        function openMobileFlashcards(customCards) {
+        function openMobileFlashcards(customCards, scopeTitle) {
             const pool = (Array.isArray(customCards) && customCards.length > 0) ? customCards : getMobileFlashcardPool();
             if (!pool || pool.length === 0) {
-                showMToast("対象のカードが0件です");
+                showMToast("対象のカードが0件です。単元を選択してください");
+                if (typeof openLessonPickerModal === "function") openLessonPickerModal();
                 return;
             }
             mFcTotalInitial = pool.length;
             mFcMasteredCount = 0;
             mFcRetryCount = 0;
             mFcQueue = [...pool].sort(() => Math.random() - 0.5);
+            mFcActiveScopeInfo = scopeTitle || null;
 
             mFcActiveArea.style.display = "flex";
             mFcFinishArea.style.display = "none";
@@ -2975,11 +3219,10 @@
             mFcCurrentCard = mFcQueue[0];
             mFcIsFlipped = false;
 
-            // ⚠️ 次カードの解答チラ見えを100%防止:
-            // 1. 裏面テキストを即座に消去
+            // ⚠️ 次カードの解答チラ見えを100%防止
             mFcBackAnswer.innerHTML = "";
 
-            // 2. トランジション一時解除して瞬時に表面へリセット
+            // トランジション一時解除して瞬時に表面へリセット
             const mInner = mFcStage ? mFcStage.querySelector(".m-fc-inner") : null;
             if (mInner) mInner.style.transition = "none";
             if (mFcStage) {
@@ -2990,11 +3233,42 @@
                 if (mInner) mInner.style.transition = "";
             });
 
-            mFcMetaSubject.textContent = mFcCurrentCard.subject;
-            mFcFrontCat.textContent = mFcCurrentCard.category;
-            mFcFrontSource.textContent = mFcCurrentCard.sourceTitle;
+            // 教科・単元・カテゴリのバッジ更新
+            mFcMetaSubject.textContent = mFcCurrentCard.subject || "暗記特訓";
+            mFcFrontCat.textContent = mFcCurrentCard.category || "重要事項";
+            mFcFrontSource.textContent = mFcCurrentCard.sourceTitle || "授業";
 
-            // 表面：文字数に応じたレイアウト調整（短文は中央に大きく、中長文は左揃えで行間広め）
+            // 単元選択ボタンのテキストを現在の状態に合わせて更新
+            if (mFcBtnOpenPicker) {
+                if (mFcActiveScopeInfo) {
+                    mFcBtnOpenPicker.innerHTML = `<span>📚 ${escapeHtml(mFcActiveScopeInfo)}</span>`;
+                } else {
+                    mFcBtnOpenPicker.innerHTML = `<span>📚 単元選択</span>`;
+                }
+            }
+
+            // カードの習熟度レベル表示 (Leitner Box Lv.1〜5)
+            if (mFcCardLevel) {
+                const prog = (mFcCurrentCard.rawId && allMemorizeProgress[mFcCurrentCard.rawId]) || {};
+                const box = prog.box || 1;
+                const mastered = prog.mastered;
+                mFcCardLevel.textContent = mastered ? `Lv.${box} 🏆` : `Lv.${box}`;
+                if (box >= 4) {
+                    mFcCardLevel.style.background = "rgba(16, 185, 129, 0.15)";
+                    mFcCardLevel.style.color = "#047857";
+                    mFcCardLevel.style.borderColor = "rgba(16, 185, 129, 0.3)";
+                } else if (box >= 2) {
+                    mFcCardLevel.style.background = "rgba(99, 102, 241, 0.12)";
+                    mFcCardLevel.style.color = "#4f46e5";
+                    mFcCardLevel.style.borderColor = "rgba(99, 102, 241, 0.25)";
+                } else {
+                    mFcCardLevel.style.background = "rgba(245, 158, 11, 0.12)";
+                    mFcCardLevel.style.color = "#d97706";
+                    mFcCardLevel.style.borderColor = "rgba(245, 158, 11, 0.25)";
+                }
+            }
+
+            // 表面：文字数に応じたレイアウト調整
             const termText = (mFcCurrentCard.term || "").trim();
             mFcFrontTerm.classList.remove("is-short", "is-mid", "is-long");
             if (termText.length > 50) {
@@ -3007,12 +3281,11 @@
             mFcFrontTerm.innerHTML = escapeHtml(termText);
 
             // 裏面：解答と補足のスマートフォーマット
-            mFcBackSource.textContent = mFcCurrentCard.sourceTitle;
+            mFcBackSource.textContent = mFcCurrentCard.sourceTitle || "授業";
 
             let mainAnswer = (mFcCurrentCard.answer || "").trim();
             let noteText = (mFcCurrentCard.note || "").trim();
 
-            // もし answer の中に "(💡 ...)" や "（💡 ...）" が埋め込まれている場合の救済抽出
             if (!noteText && (mainAnswer.includes("💡") || mainAnswer.includes("（💡") || mainAnswer.includes("(💡"))) {
                 const noteMatch = mainAnswer.match(/[（(]?\s*💡\s*([^）)]+)[）)]?/);
                 if (noteMatch) {
@@ -3021,7 +3294,6 @@
                 }
             }
 
-            // HTML組み立て
             let backHtml = "";
             if (mainAnswer) {
                 if (mainAnswer.length <= 40 && !mainAnswer.includes("\n")) {
@@ -3065,35 +3337,105 @@
             scheduleMathTypeset(mFcStage);
         }
 
-        function markMobileFc(mastered) {
+        /* 🧠 4段階SRS評価判定ロジック (Anki/SM-2/Leitner Box 準拠) */
+        function markMobileFc(rating) {
             if (!mFcCurrentCard) return;
             const card = mFcCurrentCard;
             if (mFcBackAnswer) mFcBackAnswer.innerHTML = "";
 
+            let isPassed = false;
+            let reinsertOffset = 0;
+
             if (currentUser && card.rawId) {
                 const prev = allMemorizeProgress[card.rawId] || {};
                 const prevBox = prev.box || 0;
-                const newBox = mastered ? Math.min(5, prevBox + 1) : 1;
+                let newBox = 1;
+
+                if (rating === 'again') {
+                    // 1. もう一度: Box 1にリセット、キューのすぐ後（2〜3枚後）に再挿入
+                    newBox = 1;
+                    isPassed = false;
+                    reinsertOffset = Math.min(3, mFcQueue.length);
+                } else if (rating === 'hard') {
+                    // 2. 難しい: Box維持、キューの中盤（5〜6枚後）に再挿入
+                    newBox = Math.max(1, prevBox);
+                    isPassed = false;
+                    reinsertOffset = Math.min(6, mFcQueue.length);
+                } else if (rating === 'good') {
+                    // 3. 覚えた: Box + 1、キューから卒業
+                    newBox = Math.min(5, prevBox + 1);
+                    isPassed = true;
+                } else if (rating === 'easy') {
+                    // 4. かんたん: Box + 2、即座に高レベル定着
+                    newBox = Math.min(5, Math.max(prevBox + 2, 3));
+                    isPassed = true;
+                }
+
                 const newProgress = {
-                    mastered: mastered && newBox >= 3,
+                    mastered: newBox >= 3,
                     box: newBox,
                     lastReviewedAt: Date.now(),
-                    lastRating: mastered ? 'good' : 'again',
-                    retryCount: (prev.retryCount || 0) + (mastered ? 0 : 1)
+                    lastRating: rating,
+                    retryCount: (prev.retryCount || 0) + (isPassed ? 0 : 1)
                 };
                 allMemorizeProgress[card.rawId] = newProgress;
                 update(ref(database, `users/${currentUser.uid}/memorizeProgress/${card.rawId}`), newProgress).catch(() => {});
+            } else {
+                isPassed = (rating === 'good' || rating === 'easy');
+                reinsertOffset = rating === 'again' ? 2 : 5;
             }
 
-            if (mastered) {
+            if (isPassed) {
                 mFcMasteredCount++;
                 mFcQueue.shift();
             } else {
                 mFcRetryCount++;
                 const c = mFcQueue.shift();
-                mFcQueue.push(c);
+                if (reinsertOffset >= mFcQueue.length) {
+                    mFcQueue.push(c);
+                } else {
+                    mFcQueue.splice(reinsertOffset, 0, c);
+                }
             }
             renderNextMobileFc();
+        }
+
+        /* 🔊 音声読み上げ */
+        function speakFcCurrentCard() {
+            if (!mFcCurrentCard) return;
+            if (!('speechSynthesis' in window)) {
+                showMToast("お使いの端末は音声読み上げに対応していません");
+                return;
+            }
+            window.speechSynthesis.cancel();
+            const textToSpeak = mFcIsFlipped 
+                ? `${mFcCurrentCard.term}。答え。${mFcCurrentCard.answer}` 
+                : mFcCurrentCard.term;
+            const utter = new SpeechSynthesisUtterance(textToSpeak);
+            utter.lang = "ja-JP";
+            utter.rate = 1.0;
+            window.speechSynthesis.speak(utter);
+            showMToast("🔊 読み上げ中...");
+        }
+
+        /* 🤖 AI解説質問連携 */
+        function askAiFromFcCurrentCard() {
+            if (!mFcCurrentCard) return;
+            const q = mFcCurrentCard.term || "";
+            const a = mFcCurrentCard.answer || "";
+            const fullPrompt = `${q}（解答: ${a}）について、重要な背景や入試で問われるポイントをわかりやすく解説してください。`;
+            openAiAskModal(fullPrompt, mFcCurrentCard.subject || "全般");
+        }
+
+        /* ⌨️ 写経タイピング連携 */
+        function typeFromFcCurrentCard() {
+            if (!mFcCurrentCard) return;
+            const targetText = mFcCurrentCard.answer || mFcCurrentCard.term || "";
+            openTypingDrillModal({
+                title: mFcCurrentCard.sourceTitle || "カード写経",
+                subject: mFcCurrentCard.subject || "全般",
+                text: targetText
+            });
         }
 
         function closeMobileFc() {
@@ -3103,9 +3445,23 @@
             updateSrsBanner();
         }
 
-        if (mStartFlashcardBtn) mStartFlashcardBtn.onclick = () => openMobileFlashcards();
+        // トップ画面「🎴 フラッシュカード演習」ボタン：単元選択モーダルを起動！
+        if (mStartFlashcardBtn) {
+            mStartFlashcardBtn.onclick = () => {
+                if (typeof openLessonPickerModal === "function") {
+                    openLessonPickerModal();
+                } else {
+                    openMobileFlashcards();
+                }
+            };
+        }
         if (mFcModalClose) mFcModalClose.onclick = closeMobileFc;
         if (mFcBtnFinishClose) mFcBtnFinishClose.onclick = closeMobileFc;
+        if (mFcBtnOpenPicker) {
+            mFcBtnOpenPicker.onclick = () => {
+                if (typeof openLessonPickerModal === "function") openLessonPickerModal();
+            };
+        }
 
         if (mFcStage) {
             mFcStage.onclick = (e) => {
@@ -3116,8 +3472,33 @@
         if (mFcBtnFlip) mFcBtnFlip.onclick = (e) => { e.stopPropagation(); flipMobileFc(true); };
         const mFcBtnFlipBack = document.getElementById("m-fc-btn-flip-back");
         if (mFcBtnFlipBack) mFcBtnFlipBack.onclick = (e) => { e.stopPropagation(); flipMobileFc(false); };
-        if (mFcBtnRetry) mFcBtnRetry.onclick = (e) => { e.stopPropagation(); markMobileFc(false); };
-        if (mFcBtnMastered) mFcBtnMastered.onclick = (e) => { e.stopPropagation(); markMobileFc(true); };
+
+        // 4段階評価ボタンイベント
+        if (mFcBtnRate1) mFcBtnRate1.onclick = (e) => { e.stopPropagation(); markMobileFc('again'); };
+        if (mFcBtnRate2) mFcBtnRate2.onclick = (e) => { e.stopPropagation(); markMobileFc('hard'); };
+        if (mFcBtnRate3) mFcBtnRate3.onclick = (e) => { e.stopPropagation(); markMobileFc('good'); };
+        if (mFcBtnRate4) mFcBtnRate4.onclick = (e) => { e.stopPropagation(); markMobileFc('easy'); };
+
+        // スマートアシストツールバー
+        if (mFcBtnAskAi) mFcBtnAskAi.onclick = (e) => { e.stopPropagation(); askAiFromFcCurrentCard(); };
+        if (mFcBtnTyping) mFcBtnTyping.onclick = (e) => { e.stopPropagation(); typeFromFcCurrentCard(); };
+        if (mFcBtnSpeak) mFcBtnSpeak.onclick = (e) => { e.stopPropagation(); speakFcCurrentCard(); };
+
+        // キーボード操作対応（1: もう一度, 2: 難しい, 3: 覚えた, 4: かんたん, Space: めくり）
+        window.addEventListener("keydown", (e) => {
+            if (mFcModal && mFcModal.style.display !== "none") {
+                if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+                if (e.code === "Space" || e.key === "Enter") {
+                    e.preventDefault();
+                    flipMobileFc();
+                } else if (mFcIsFlipped) {
+                    if (e.key === "1") markMobileFc('again');
+                    else if (e.key === "2") markMobileFc('hard');
+                    else if (e.key === "3") markMobileFc('good');
+                    else if (e.key === "4") markMobileFc('easy');
+                }
+            }
+        });
 
         // ==========================================
         // ⌨️ 1. 写経タイピングドリル（SushidaEngine 連携）
@@ -3391,28 +3772,40 @@
             }
         });
 
-        document.getElementById("m-typing-modal-close").onclick = closeTypingDrillModal;
-        document.getElementById("m-typing-btn-reset").onclick = () => loadTypingCard(currentTypingIndex);
-        document.getElementById("m-typing-btn-prev").onclick = () => {
-            if (currentTypingIndex > 0) loadTypingCard(currentTypingIndex - 1);
-        };
-        document.getElementById("m-typing-btn-next").onclick = () => {
-            if (currentTypingIndex < currentTypingQueue.length - 1) loadTypingCard(currentTypingIndex + 1);
-        };
-        mTypingNextBannerBtn.onclick = () => {
-            if (currentTypingIndex < currentTypingQueue.length - 1) {
-                loadTypingCard(currentTypingIndex + 1);
-            } else {
-                closeTypingDrillModal();
-                showMToast("🎉 すべての写経を完了しました！");
-            }
-        };
-        mTypingSoundToggle.onclick = () => {
-            soundEnabled = !soundEnabled;
-            localStorage.setItem("flora_typing_sound", soundEnabled ? "true" : "false");
-            mTypingSoundToggle.textContent = soundEnabled ? "🔊 ON" : "🔇 OFF";
-            showMToast(soundEnabled ? "音声をONにしました" : "音声をOFFにしました");
-        };
+        const mTypingModalClose = document.getElementById("m-typing-modal-close");
+        if (mTypingModalClose) mTypingModalClose.onclick = closeTypingDrillModal;
+        const mTypingBtnReset = document.getElementById("m-typing-btn-reset");
+        if (mTypingBtnReset) mTypingBtnReset.onclick = () => loadTypingCard(currentTypingIndex);
+        const mTypingBtnPrev = document.getElementById("m-typing-btn-prev");
+        if (mTypingBtnPrev) {
+            mTypingBtnPrev.onclick = () => {
+                if (currentTypingIndex > 0) loadTypingCard(currentTypingIndex - 1);
+            };
+        }
+        const mTypingBtnNext = document.getElementById("m-typing-btn-next");
+        if (mTypingBtnNext) {
+            mTypingBtnNext.onclick = () => {
+                if (currentTypingIndex < currentTypingQueue.length - 1) loadTypingCard(currentTypingIndex + 1);
+            };
+        }
+        if (mTypingNextBannerBtn) {
+            mTypingNextBannerBtn.onclick = () => {
+                if (currentTypingIndex < currentTypingQueue.length - 1) {
+                    loadTypingCard(currentTypingIndex + 1);
+                } else {
+                    closeTypingDrillModal();
+                    showMToast("🎉 すべての写経を完了しました！");
+                }
+            };
+        }
+        if (mTypingSoundToggle) {
+            mTypingSoundToggle.onclick = () => {
+                soundEnabled = !soundEnabled;
+                localStorage.setItem("flora_typing_sound", soundEnabled ? "true" : "false");
+                mTypingSoundToggle.textContent = soundEnabled ? "🔊 ON" : "🔇 OFF";
+                showMToast(soundEnabled ? "音声をONにしました" : "音声をOFFにしました");
+            };
+        }
 
         // ==========================================
         // 💬 2. 教科書AI質問モーダル
@@ -3557,83 +3950,299 @@
             });
         }
 
-        document.getElementById("m-btn-ai-ask").onclick = () => openAiAskModal();
-        document.getElementById("m-ai-modal-close").onclick = closeAiAskModal;
-        mAiSendBtn.onclick = submitAiAskQuestion;
-        mAiInputText.addEventListener("keydown", (e) => {
-            if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-                e.preventDefault();
-                submitAiAskQuestion();
-            }
-        });
-        mAiBtnSaveLog.onclick = saveAiAskToQnaLog;
-        mAiBtnAddCard.onclick = createCardFromAiAsk;
+        const mBtnAiAsk = document.getElementById("m-btn-open-ai-ask") || document.getElementById("m-btn-ai-ask");
+        if (mBtnAiAsk) mBtnAiAsk.onclick = () => openAiAskModal();
+        const mAiModalClose = document.getElementById("m-ai-modal-close");
+        if (mAiModalClose) mAiModalClose.onclick = closeAiAskModal;
+        if (mAiSendBtn) mAiSendBtn.onclick = submitAiAskQuestion;
+        if (mAiInputText) {
+            mAiInputText.addEventListener("keydown", (e) => {
+                if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    submitAiAskQuestion();
+                }
+            });
+        }
+        if (mAiBtnSaveLog) mAiBtnSaveLog.onclick = saveAiAskToQnaLog;
+        if (mAiBtnAddCard) mAiBtnAddCard.onclick = createCardFromAiAsk;
 
         // ==========================================
-        // 🎯 3. カスタムテスト・範囲指定モーダル
+        // 🎯 3. 教科別・単元選択（複数可能）カード特訓セレクター
         // ==========================================
         const mPickerModal = document.getElementById("m-lesson-picker-modal");
+        const mPickerSubjectTabs = document.getElementById("m-picker-subject-tabs");
         const mPickerSearch = document.getElementById("m-picker-search");
         const mPickerList = document.getElementById("m-picker-lesson-list");
         const mPickerLimit = document.getElementById("m-picker-limit");
+        const mPickerSelectedSummary = document.getElementById("m-picker-selected-summary");
+        const mPickerStartBtn = document.getElementById("m-picker-start-btn");
+        const mPickerStartAllBtn = document.getElementById("m-picker-start-all-btn");
+
         let selectedLessonIds = new Set();
+        let pickerCurrentSubject = "政治・経済";
         let currentPickerCondition = "all";
+
+        // 利用可能な全教科を抽出
+        function getAvailablePickerSubjects() {
+            const subjectCounts = {};
+            Object.values(allLessons).forEach(l => {
+                if (!l) return;
+                let subj = l.subject;
+                if (!subj || subj === "未分類" || subj === "その他") subj = detectSubjectFromLesson(l);
+                if (!subjectCounts[subj]) subjectCounts[subj] = 0;
+                subjectCounts[subj] += (l.memorizationPoints || []).length;
+            });
+
+            // 定番教科の優先順位
+            const order = ["政治・経済", "公共", "倫理", "数学", "世界史", "日本史", "地理", "英語", "国語", "物理", "化学", "生物", "地学", "情報"];
+            const sortedSubjects = Object.keys(subjectCounts).sort((a, b) => {
+                const idxA = order.indexOf(a);
+                const idxB = order.indexOf(b);
+                if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+                if (idxA !== -1) return -1;
+                if (idxB !== -1) return 1;
+                return (subjectCounts[b] || 0) - (subjectCounts[a] || 0);
+            });
+            return sortedSubjects;
+        }
 
         window.openLessonPickerModal = function() {
             mPickerModal.style.display = "flex";
+            const subjects = getAvailablePickerSubjects();
+            if (subjects.length > 0) {
+                if (currentSubject !== "ALL" && subjects.includes(currentSubject)) {
+                    pickerCurrentSubject = currentSubject;
+                } else if (!subjects.includes(pickerCurrentSubject)) {
+                    pickerCurrentSubject = subjects[0];
+                }
+            }
+            renderPickerSubjectTabs();
             renderPickerLessonList();
+            updatePickerSummary();
         };
 
         function closeLessonPickerModal() {
             mPickerModal.style.display = "none";
         }
 
-        function renderPickerLessonList() {
-            const query = (mPickerSearch.value || "").trim().toLowerCase();
-            const lessons = Object.entries(allLessons).filter(([id, l]) => {
-                if (!l) return false;
-                const matchText = [l.title, l.subject, id].join(" ").toLowerCase();
-                return query ? matchText.includes(query) : true;
-            });
-
-            if (lessons.length === 0) {
-                mPickerList.innerHTML = `<div style="text-align:center; padding:1rem; color:var(--text-muted); font-size:0.8rem;">授業が見つかりません</div>`;
+        // 教科タブ描画
+        function renderPickerSubjectTabs() {
+            if (!mPickerSubjectTabs) return;
+            const subjects = getAvailablePickerSubjects();
+            if (subjects.length === 0) {
+                mPickerSubjectTabs.innerHTML = `<span style="font-size:0.75rem; color:var(--text-muted);">教科データがありません</span>`;
                 return;
             }
 
-            mPickerList.innerHTML = lessons.map(([id, l]) => {
-                const count = (l.memorizationPoints || []).length;
-                const isSelected = selectedLessonIds.has(id);
+            mPickerSubjectTabs.innerHTML = subjects.map(s => {
+                const count = Object.values(allLessons).filter(l => {
+                    let subj = l.subject;
+                    if (!subj || subj === "未分類" || subj === "その他") subj = detectSubjectFromLesson(l);
+                    return subj === s;
+                }).length;
+                const isActive = (s === pickerCurrentSubject);
                 return `
-                    <label style="display:flex; align-items:center; justify-content:space-between; padding:0.45rem 0.6rem; border-bottom:1px solid var(--border-color); font-size:0.82rem; cursor:pointer;">
-                        <div style="display:flex; align-items:center; gap:0.4rem; overflow:hidden;">
-                            <input type="checkbox" class="m-picker-chk" data-id="${id}" ${isSelected ? 'checked' : ''} style="accent-color:var(--brand-primary);">
-                            <span style="font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">[${escapeHtml(l.subject || '未分類')}] ${escapeHtml(l.title || '無題の授業')}</span>
-                        </div>
-                        <span style="font-size:0.72rem; color:var(--text-muted); font-weight:700; white-space:nowrap;">${count}問</span>
-                    </label>
+                    <button type="button" class="m-picker-subj-btn ${isActive ? 'active' : ''}" data-subject="${escapeHtml(s)}">
+                        ${escapeHtml(s)} (${count})
+                    </button>
                 `;
             }).join("");
 
-            mPickerList.querySelectorAll(".m-picker-chk").forEach(chk => {
-                chk.onchange = () => {
-                    const lid = chk.getAttribute("data-id");
-                    if (chk.checked) selectedLessonIds.add(lid);
-                    else selectedLessonIds.delete(lid);
+            mPickerSubjectTabs.querySelectorAll(".m-picker-subj-btn").forEach(btn => {
+                btn.onclick = () => {
+                    pickerCurrentSubject = btn.getAttribute("data-subject");
+                    renderPickerSubjectTabs();
+                    renderPickerLessonList();
                 };
             });
         }
 
-        mPickerSearch.oninput = renderPickerLessonList;
-        document.getElementById("m-picker-btn-all").onclick = () => {
-            Object.keys(allLessons).forEach(id => selectedLessonIds.add(id));
-            renderPickerLessonList();
-        };
-        document.getElementById("m-picker-btn-clear").onclick = () => {
-            selectedLessonIds.clear();
-            renderPickerLessonList();
-        };
+        // 単元一覧描画（選択中の教科のみ）
+        function renderPickerLessonList() {
+            const query = (mPickerSearch.value || "").trim().toLowerCase();
+            const lessons = Object.entries(allLessons).filter(([id, l]) => {
+                if (!l) return false;
+                let subj = l.subject;
+                if (!subj || subj === "未分類" || subj === "その他") subj = detectSubjectFromLesson(l);
+                if (subj !== pickerCurrentSubject) return false;
 
+                const matchText = [l.title, subj, id].join(" ").toLowerCase();
+                return query ? matchText.includes(query) : true;
+            });
+
+            if (lessons.length === 0) {
+                mPickerList.innerHTML = `<div style="text-align:center; padding:1.2rem; color:var(--text-muted); font-size:0.8rem;">【${escapeHtml(pickerCurrentSubject)}】の単元が見つかりません</div>`;
+                return;
+            }
+
+            mPickerList.innerHTML = lessons.map(([id, l]) => {
+                const mps = l.memorizationPoints || [];
+                const count = mps.length;
+                const isSelected = selectedLessonIds.has(id);
+
+                // 各単元の習得進捗計算
+                let masteredCount = 0;
+                let retryCount = 0;
+                mps.forEach((mp, idx) => {
+                    const rawId = `${id}:${mp.id || `mp_${idx}`}`;
+                    const prog = allMemorizeProgress[rawId];
+                    if (prog?.mastered) masteredCount++;
+                    else if (prog?.retryCount > 0 || prog?.lastRating === 'again') retryCount++;
+                });
+
+                return `
+                    <div class="m-picker-lesson-item ${isSelected ? 'selected' : ''}" data-id="${id}">
+                        <div style="display:flex; align-items:center; gap:0.5rem; overflow:hidden; flex:1;">
+                            <input type="checkbox" class="m-picker-chk" data-id="${id}" ${isSelected ? 'checked' : ''} style="accent-color:var(--brand-primary); transform:scale(1.15); flex-shrink:0;">
+                            <div style="overflow:hidden; flex:1;">
+                                <div class="m-picker-lesson-title">${escapeHtml(l.title || '無題の単元')}</div>
+                                <div style="display:flex; gap:0.4rem; font-size:0.68rem; margin-top:0.2rem; font-weight:700;">
+                                    <span style="color:#059669;">✅ ${masteredCount}</span>
+                                    <span style="color:#d97706;">🔄 ${retryCount}</span>
+                                    <span style="color:var(--text-muted);">🌱 ${count - masteredCount - retryCount}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <span style="font-size:0.75rem; color:var(--brand-primary); font-weight:800; background:rgba(16,185,129,0.1); padding:0.15rem 0.45rem; border-radius:6px; white-space:nowrap; margin-left:0.4rem;">${count}問</span>
+                    </div>
+                `;
+            }).join("");
+
+            // チェックボックスおよび行クリックイベント
+            mPickerList.querySelectorAll(".m-picker-lesson-item").forEach(item => {
+                item.onclick = (e) => {
+                    const chk = item.querySelector(".m-picker-chk");
+                    const lid = item.getAttribute("data-id");
+                    if (e.target !== chk) {
+                        chk.checked = !chk.checked;
+                    }
+                    if (chk.checked) {
+                        selectedLessonIds.add(lid);
+                        item.classList.add("selected");
+                    } else {
+                        selectedLessonIds.delete(lid);
+                        item.classList.remove("selected");
+                    }
+                    updatePickerSummary();
+                };
+            });
+        }
+
+        // 選択状況サマリー更新
+        function updatePickerSummary() {
+            let totalCards = 0;
+            selectedLessonIds.forEach(lid => {
+                const l = allLessons[lid];
+                if (l && Array.isArray(l.memorizationPoints)) {
+                    totalCards += l.memorizationPoints.length;
+                }
+            });
+            if (mPickerSelectedSummary) {
+                mPickerSelectedSummary.textContent = `選択中: ${selectedLessonIds.size}単元 (${totalCards}問)`;
+            }
+            if (mPickerStartBtn) {
+                mPickerStartBtn.textContent = selectedLessonIds.size > 0 
+                    ? `🚀 選択した${selectedLessonIds.size}単元で特訓開始（計${totalCards}問） ➔` 
+                    : `🚀 単元を選択して特訓開始 ➔`;
+            }
+        }
+
+        // 単元からカードプールを構築するヘルパー
+        function getCardsFromLessonIds(lessonIds, condition) {
+            let cards = [];
+            lessonIds.forEach(lid => {
+                const l = allLessons[lid];
+                if (!l || !Array.isArray(l.memorizationPoints)) return;
+                let subj = l.subject;
+                if (!subj || subj === "未分類" || subj === "その他") subj = detectSubjectFromLesson(l);
+
+                l.memorizationPoints.forEach((mp, idx) => {
+                    const mpId = mp.id || `mp_${idx}`;
+                    const rawId = `${lid}:${mpId}`;
+
+                    let term = (mp.question || "").trim();
+                    let answer = (mp.answer || "").trim();
+                    let note = (mp.note || "").trim();
+                    const content = (mp.content || "").trim();
+
+                    if (!term || !answer) {
+                        if (content.includes("：") || content.includes(":")) {
+                            const colonIdx = content.includes("：") ? content.indexOf("：") : content.indexOf(":");
+                            if (colonIdx > 0 && colonIdx < 50) {
+                                term = content.slice(0, colonIdx).trim();
+                                answer = content.slice(colonIdx + 1).trim();
+                            } else {
+                                term = content;
+                                answer = note || content;
+                            }
+                        } else if (note) {
+                            term = content;
+                            answer = note;
+                        } else {
+                            term = content;
+                            answer = content;
+                        }
+                    }
+
+                    // フィルター条件判定
+                    const prog = allMemorizeProgress[rawId] || {};
+                    if (condition === "unlearned" && prog.mastered) return;
+                    if (condition === "weak" && !(prog.retryCount > 0 || prog.lastRating === "again")) return;
+
+                    cards.push({
+                        rawId: rawId,
+                        lessonId: lid,
+                        subject: mp.subject || subj,
+                        category: mp.category || "重要事項",
+                        sourceTitle: l.title || "授業暗記",
+                        term: term,
+                        answer: answer,
+                        note: note
+                    });
+                });
+            });
+            return cards;
+        }
+
+        // 検索インプット
+        if (mPickerSearch) mPickerSearch.oninput = renderPickerLessonList;
+
+        // 全選択（現在の教科の全単元をON）
+        const mPickerBtnAll = document.getElementById("m-picker-btn-all");
+        if (mPickerBtnAll) {
+            mPickerBtnAll.onclick = () => {
+                Object.entries(allLessons).forEach(([id, l]) => {
+                    if (!l) return;
+                    let subj = l.subject;
+                    if (!subj || subj === "未分類" || subj === "その他") subj = detectSubjectFromLesson(l);
+                    if (subj === pickerCurrentSubject) {
+                        selectedLessonIds.add(id);
+                    }
+                });
+                renderPickerLessonList();
+                updatePickerSummary();
+                showMToast(`【${pickerCurrentSubject}】の全単元を選択しました`);
+            };
+        }
+
+        // 全解除（現在の教科の単元をOFF）
+        const mPickerBtnClear = document.getElementById("m-picker-btn-clear");
+        if (mPickerBtnClear) {
+            mPickerBtnClear.onclick = () => {
+                Object.entries(allLessons).forEach(([id, l]) => {
+                    if (!l) return;
+                    let subj = l.subject;
+                    if (!subj || subj === "未分類" || subj === "その他") subj = detectSubjectFromLesson(l);
+                    if (subj === pickerCurrentSubject) {
+                        selectedLessonIds.delete(id);
+                    }
+                });
+                renderPickerLessonList();
+                updatePickerSummary();
+            };
+        }
+
+        // 条件切り替え（全カード / 未習得 / 要復習）
         document.querySelectorAll(".m-picker-cond-btn").forEach(btn => {
             btn.onclick = () => {
                 document.querySelectorAll(".m-picker-cond-btn").forEach(b => b.classList.remove("active"));
@@ -3642,41 +4251,61 @@
             };
         });
 
-        document.getElementById("m-picker-start-btn").onclick = () => {
-            let pool = getMobileFlashcardPool();
-            if (selectedLessonIds.size > 0) {
-                pool = pool.filter(c => {
-                    if (c.rawId && c.rawId.includes(":")) {
-                        const [lid] = c.rawId.split(":");
-                        return selectedLessonIds.has(lid);
-                    }
-                    return false;
-                });
-            }
+        // 🚀 選択した単元で特訓開始ボタン
+        if (mPickerStartBtn) {
+            mPickerStartBtn.onclick = () => {
+                if (selectedLessonIds.size === 0) {
+                    showMToast("単元を1つ以上チェックしてください");
+                    return;
+                }
 
-            if (currentPickerCondition === "unlearned") {
-                pool = pool.filter(c => !allMemorizeProgress[c.rawId]?.mastered);
-            } else if (currentPickerCondition === "weak") {
-                pool = pool.filter(c => {
-                    const prog = allMemorizeProgress[c.rawId] || {};
-                    return prog.retryCount > 0 || prog.lastRating === "again";
-                });
-            }
+                const limit = parseInt(mPickerLimit?.value, 10) || 9999;
+                let cards = getCardsFromLessonIds(Array.from(selectedLessonIds), currentPickerCondition);
 
-            const limit = parseInt(mPickerLimit.value, 10) || 20;
-            const finalCards = pool.sort(() => Math.random() - 0.5).slice(0, limit);
+                if (cards.length === 0) {
+                    showMToast("選択した単元・条件に合致するカードが0件でした");
+                    return;
+                }
 
-            if (finalCards.length === 0) {
-                showMToast("条件に合致するカードが0件でした");
-                return;
-            }
+                const finalCards = cards.sort(() => Math.random() - 0.5).slice(0, limit);
+                closeLessonPickerModal();
+                openMobileFlashcards(finalCards, `${selectedLessonIds.size}単元 (${finalCards.length}問)`);
+            };
+        }
 
-            closeLessonPickerModal();
-            openMobileFlashcards(finalCards);
-        };
+        // ⚡ この教科の全単元で即スタートボタン
+        if (mPickerStartAllBtn) {
+            mPickerStartAllBtn.onclick = () => {
+                const currentSubjLessons = Object.entries(allLessons).filter(([id, l]) => {
+                    if (!l) return false;
+                    let subj = l.subject;
+                    if (!subj || subj === "未分類" || subj === "その他") subj = detectSubjectFromLesson(l);
+                    return subj === pickerCurrentSubject;
+                }).map(([id]) => id);
 
-        document.getElementById("m-btn-custom-test").onclick = openLessonPickerModal;
-        document.getElementById("m-picker-modal-close").onclick = closeLessonPickerModal;
+                if (currentSubjLessons.length === 0) {
+                    showMToast(`【${pickerCurrentSubject}】の単元がありません`);
+                    return;
+                }
+
+                const limit = parseInt(mPickerLimit?.value, 10) || 9999;
+                let cards = getCardsFromLessonIds(currentSubjLessons, currentPickerCondition);
+
+                if (cards.length === 0) {
+                    showMToast("条件に合致するカードが0件でした");
+                    return;
+                }
+
+                const finalCards = cards.sort(() => Math.random() - 0.5).slice(0, limit);
+                closeLessonPickerModal();
+                openMobileFlashcards(finalCards, `${pickerCurrentSubject}全単元 (${finalCards.length}問)`);
+            };
+        }
+
+        const mBtnCustomTest = document.getElementById("m-btn-open-picker") || document.getElementById("m-btn-custom-test");
+        if (mBtnCustomTest) mBtnCustomTest.onclick = openLessonPickerModal;
+        const mPickerModalClose = document.getElementById("m-picker-modal-close");
+        if (mPickerModalClose) mPickerModalClose.onclick = closeLessonPickerModal;
 
         // ==========================================
         // ➕ 4. 暗記事項・単語追加モーダル
@@ -3774,9 +4403,11 @@
             }
         }
 
-        document.getElementById("m-btn-add-memorize").onclick = () => openAddMemorizeModal();
-        document.getElementById("m-add-modal-close").onclick = closeAddMemorizeModal;
-        mAddSubmitBtn.onclick = submitAddMemorizeItem;
+        const mBtnAddMemorize = document.getElementById("m-btn-open-add-memorize") || document.getElementById("m-btn-add-memorize");
+        if (mBtnAddMemorize) mBtnAddMemorize.onclick = () => openAddMemorizeModal();
+        const mAddModalClose = document.getElementById("m-add-modal-close");
+        if (mAddModalClose) mAddModalClose.onclick = closeAddMemorizeModal;
+        if (mAddSubmitBtn) mAddSubmitBtn.onclick = submitAddMemorizeItem;
     </script>
 
 </body>
