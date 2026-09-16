@@ -20,6 +20,19 @@ const LABEL = {
     deepseek: "🐋 DeepSeek",
 };
 
+// サーバー側の環境変数キー設定状態を事前取得
+if (typeof window !== "undefined") {
+    fetch('/api/ai/status')
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+            if (data) {
+                window.__serverHasGeminiKey = !!data.hasGeminiKey;
+                window.__serverHasDeepseekKey = !!data.hasDeepseekKey;
+            }
+        })
+        .catch(() => {});
+}
+
 // --------------------------------------------------------------------------
 // キーの読み書き（配列形式）＋ 旧形式からの自動移行
 // --------------------------------------------------------------------------
@@ -43,10 +56,9 @@ function loadKeys(engine) {
         localStorage.removeItem(LEGACY_STORAGE[engine]);
     }
 
-    // デフォルトキーの補完（初回起動時）
-    if (engine === "gemini" && keys.length === 0) {
-        const defaultKey = "AQ.Ab8RN6KE-DSG7lwdmJsO4i_CatdXmyAQkC0JOVq5pKw8iF1ALw";
-        keys.push(defaultKey);
+    // 過去の無効なダミーキーの自動クリーンアップ
+    if (engine === "gemini" && keys.some(k => k.startsWith("AQ.Ab8RN"))) {
+        keys = keys.filter(k => !k.startsWith("AQ.Ab8RN"));
         saveKeys(engine, keys);
     }
     return keys;
@@ -58,6 +70,12 @@ function saveKeys(engine, keys) {
 
 export function getGeminiKeys() { return loadKeys("gemini"); }
 export function getDeepseekKeys() { return loadKeys("deepseek"); }
+export function hasAvailableGeminiKey() {
+    return getGeminiKeys().length > 0 || (typeof window !== "undefined" && !!window.__serverHasGeminiKey);
+}
+export function hasAvailableDeepseekKey() {
+    return getDeepseekKeys().length > 0 || (typeof window !== "undefined" && !!window.__serverHasDeepseekKey);
+}
 
 export function addKey(engine, key) {
     const trimmed = (key || "").trim();
@@ -869,8 +887,13 @@ async function runGeminiFallbackLoop(contents, systemInstruction, options = {}) 
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ model: modelName, ...JSON.parse(requestBody) })
                 });
-                if (!response.ok && response.status === 401) {
-                    throw new Error("APIキーが未登録です。右下の🔑ボタンから登録するか、環境変数GEMINI_API_KEYを設定してください。");
+                if (!response.ok) {
+                    const errData = await response.json().catch(() => ({}));
+                    const errMsg = errData.error?.message || `HTTP ${response.status}`;
+                    if (response.status === 401) {
+                        throw new Error("APIキーが未登録です。右下の🔑ボタンから登録するか、環境変数GEMINI_API_KEYを設定してください。");
+                    }
+                    throw new Error(`Gemini APIエラー (${response.status}): ${errMsg}`);
                 }
             }
         } catch (err) {
@@ -1247,6 +1270,8 @@ export async function initApiKeyManager({ needGemini = false, needDeepseek = fal
             const data = await res.json();
             serverHasGemini = !!data.hasGeminiKey;
             serverHasDeepseek = !!data.hasDeepseekKey;
+            window.__serverHasGeminiKey = serverHasGemini;
+            window.__serverHasDeepseekKey = serverHasDeepseek;
         }
     } catch {
         // network or server offline, fall back to client check
