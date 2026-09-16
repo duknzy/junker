@@ -23,8 +23,8 @@
                 displayMath: [['$$', '$$'], ['\\[', '\\]']],
                 macros: { fbox: ["\\bbox[2px,border:1px solid]{#1}", 1] }
             },
-            svg: {
-                fontCache: 'global' // SVGグリフをグローバルキャッシュして再レンダリングを爆速化
+            chtml: {
+                displayAlign: 'left'
             },
             options: {
                 skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
@@ -32,7 +32,7 @@
             }
         };
     </script>
-    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
 
     <style>
         .m-tab-nav {
@@ -753,16 +753,24 @@
                 }
             });
 
+            function isElementVisible(node) {
+                if (!node || !node.isConnected) return false;
+                if (node.closest && node.closest('[style*="display: none"], [style*="display:none"], .collapsed')) {
+                    return false;
+                }
+                return true;
+            }
+
             function collectMathElements(container) {
                 if (container.classList && container.classList.contains("tex2jax_process")) {
-                    if (containsMathSyntax(container.textContent)) {
+                    if (containsMathSyntax(container.textContent) && isElementVisible(container)) {
                         pendingMathElements.add(container);
                     }
                 }
                 if (container.querySelectorAll) {
                     const list = container.querySelectorAll(".tex2jax_process");
                     list.forEach(node => {
-                        if (containsMathSyntax(node.textContent)) {
+                        if (containsMathSyntax(node.textContent) && isElementVisible(node)) {
                             pendingMathElements.add(node);
                         }
                     });
@@ -778,6 +786,9 @@
                 if (toProcess.length === 0) return;
 
                 const executeTypeset = () => {
+                    if (typeof MathJax.typesetClear === "function") {
+                        try { MathJax.typesetClear(toProcess); } catch (e) {}
+                    }
                     MathJax.typesetPromise(toProcess).catch(err => {
                         console.debug("MathJax typeset skipped:", err);
                     });
