@@ -1575,6 +1575,129 @@
         .dict-a-box:hover {
             background: rgba(5, 150, 105, 0.1);
         }
+        .dict-a-box .red-sheet-cover {
+            display: none;
+        }
+
+        /* 📕 赤シート（暗記シート）スタイル */
+        .red-sheet-active .dict-a-box.is-covered {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.08), rgba(220, 38, 38, 0.14)) !important;
+            border-left-color: #ef4444 !important;
+            position: relative;
+            min-height: 38px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .red-sheet-active .dict-a-box.is-covered .dict-a-content {
+            filter: blur(12px);
+            opacity: 0;
+            pointer-events: none;
+            user-select: none;
+        }
+        .red-sheet-active .dict-a-box.is-covered .red-sheet-cover {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            position: absolute;
+            inset: 0;
+            background: rgba(220, 38, 38, 0.10);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-radius: var(--radius-sm);
+            color: #dc2626;
+            font-size: 0.78rem;
+            font-weight: 800;
+            letter-spacing: 0.03em;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        [data-theme="dark"] .red-sheet-active .dict-a-box.is-covered .red-sheet-cover {
+            background: rgba(220, 38, 38, 0.22);
+            color: #fca5a5;
+        }
+        .red-sheet-active .dict-a-box.is-covered:hover .red-sheet-cover {
+            background: rgba(220, 38, 38, 0.18);
+            color: #b91c1c;
+        }
+        [data-theme="dark"] .red-sheet-active .dict-a-box.is-covered:hover .red-sheet-cover {
+            background: rgba(220, 38, 38, 0.35);
+            color: #ffffff;
+        }
+        .red-sheet-active .dict-a-box.is-revealed {
+            background: rgba(5, 150, 105, 0.08) !important;
+            border-left-color: #10b981 !important;
+            position: relative;
+            cursor: pointer;
+        }
+        .red-sheet-active .dict-a-box.is-revealed .dict-a-content {
+            filter: none;
+            opacity: 1;
+            transition: opacity 0.2s ease;
+        }
+        .red-sheet-active .dict-a-box.is-revealed .red-sheet-cover {
+            display: none;
+        }
+        .red-sheet-peek-indicator {
+            position: absolute;
+            top: 4px;
+            right: 6px;
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        .red-sheet-active .dict-a-box.is-revealed:hover .red-sheet-peek-indicator {
+            opacity: 1;
+        }
+
+        /* 気づきタブでの赤シート対応 */
+        .red-sheet-active .insight-memorize-a,
+        .red-sheet-active .insight-compact-row .compact-text {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .red-sheet-active .insight-memorize-a:not(.is-revealed),
+        .red-sheet-active .insight-compact-row.covered .compact-text {
+            filter: blur(9px);
+            opacity: 0.25;
+            user-select: none;
+        }
+        .red-sheet-active .insight-memorize-a.is-revealed,
+        .red-sheet-active .insight-compact-row:not(.covered) .compact-text {
+            filter: none;
+            opacity: 1;
+        }
+
+        /* 授業並べ替えボタン */
+        .dict-lesson-order-btn {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 0.22rem 0.48rem;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+            transition: all 0.12s ease;
+            user-select: none;
+        }
+        .dict-lesson-order-btn:hover:not(:disabled) {
+            background: var(--brand-light);
+            color: var(--brand-primary);
+            border-color: var(--brand-border);
+            transform: translateY(-1px);
+        }
+        .dict-lesson-order-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
         .dict-item-actions {
             display: flex;
             align-items: center;
@@ -1782,10 +1905,16 @@
                         </select>
 
                         <span class="filter-label" style="margin-left:0.4rem;">🔀 並べ替え：</span>
-                        <select class="flora-select" id="sort-select" style="width: auto; padding: 0.4rem 0.8rem; font-size: var(--fs-xs);">
-                            <option value="newest">更新が新しい順</option>
-                            <option value="oldest">更新が古い順</option>
-                            <option value="subject">教科・単元順</option>
+                        <select class="flora-select" id="sort-select" style="width: auto; padding: 0.4rem 0.8rem; font-size: var(--fs-xs);" title="授業・カードの並び順を選択">
+                            <option value="custom">📌 授業の並び順（自由並べ替え・受講順）</option>
+                            <option value="lesson_desc">📅 授業の受講日（新しい順）</option>
+                            <option value="lesson_asc">📅 授業の受講日（古い順）</option>
+                            <option value="lesson_title">🔤 授業タイトル順</option>
+                            <option value="newest">⚡ カード更新が新しい順</option>
+                            <option value="oldest">⚡ カード更新が古い順</option>
+                            <option value="words_desc">🔢 暗記事項・単語数が多い順</option>
+                            <option value="mastery_asc">🎯 習得率が低い順（要復習優先）</option>
+                            <option value="subject">📚 教科・単元順</option>
                         </select>
 
                         <button type="button" id="btn-open-lesson-filter-toolbar" class="flora-btn flora-btn-secondary" style="margin-left:auto; font-size:0.8rem; font-weight:800; padding:0.42rem 0.9rem; border-radius:var(--radius-md); cursor:pointer; display:inline-flex; align-items:center; gap:0.4rem; border-color:var(--border-color); background:var(--bg-surface);" title="演習したい特定の授業をチェックボックスで複数選択してカード演習を開始します">
@@ -1800,13 +1929,17 @@
                     </div>
 
                     <!-- 気づきメモタブ専用のサブツールバー -->
-                    <div class="filter-row" id="insight-subtoolbar" style="border-top: 1px dashed var(--border-color); padding-top:0.6rem;">
+                    <div class="filter-row" id="insight-subtoolbar" style="border-top: 1px dashed var(--border-color); padding-top:0.6rem; flex-wrap:wrap; gap:0.45rem;">
                         <span class="filter-label">🎛 表示：</span>
                         <button type="button" class="toggle-btn active" id="btn-view-card">🎴 対比カード</button>
                         <button type="button" class="toggle-btn" id="btn-view-compact">📋 爆速リスト</button>
                         <span style="color: var(--border-color); margin: 0 0.2rem;">|</span>
                         <button type="button" class="toggle-btn active" id="btn-toggle-group">📁 単元ごとにまとめる</button>
                         <button type="button" class="toggle-btn" id="btn-toggle-pinned">⭐ スター付きのみ</button>
+                        <span style="color: var(--border-color); margin: 0 0.2rem;">|</span>
+                        <button type="button" class="toggle-btn" id="btn-toggle-red-sheet-insights" title="赤シートのように気づき・極意を隠し、タップした項目だけめくって確認できます">
+                            📕 赤シート（隠す）
+                        </button>
                     </div>
 
                     <!-- 暗記事項タブ専用のサブツールバー -->
@@ -1819,6 +1952,10 @@
                             </button>
                             <button type="button" class="toggle-btn" id="btn-memorize-view-grid" title="カードグリッドで一覧表示します">
                                 🃏 カード表示
+                            </button>
+                            <span style="color: var(--border-color); margin: 0 0.15rem;">|</span>
+                            <button type="button" class="toggle-btn" id="btn-toggle-red-sheet" title="赤シートのように解答・解説を隠し、タップした項目だけめくって答えを確認できます">
+                                📕 赤シート（解答を隠す）
                             </button>
                             <span style="color: var(--border-color); margin: 0 0.15rem;">|</span>
                             <span class="filter-label">🎯 状態：</span>
@@ -2688,6 +2825,175 @@
             });
         }
 
+        // 📕 赤シート（暗記シート）状態管理＆切り替え
+        let isRedSheetActive = localStorage.getItem("fc_red_sheet_mode") === "true";
+        let revealedWordKeys = new Set(); // 赤シートモード下で一時的にめくった単語 ("lessonId:memoId")
+
+        const btnToggleRedSheet = document.getElementById("btn-toggle-red-sheet");
+        const btnToggleRedSheetInsights = document.getElementById("btn-toggle-red-sheet-insights");
+
+        function updateRedSheetUI() {
+            if (btnToggleRedSheet) {
+                btnToggleRedSheet.classList.toggle("active", isRedSheetActive);
+                btnToggleRedSheet.innerHTML = isRedSheetActive ? "👁️ 赤シート中（解除）" : "📕 赤シート（解答を隠す）";
+            }
+            if (btnToggleRedSheetInsights) {
+                btnToggleRedSheetInsights.classList.toggle("active", isRedSheetActive);
+                btnToggleRedSheetInsights.innerHTML = isRedSheetActive ? "👁️ 赤シート中（解除）" : "📕 赤シート（隠す）";
+            }
+            const dictRedSheetBtn = document.getElementById("dict-red-sheet-btn");
+            if (dictRedSheetBtn) {
+                dictRedSheetBtn.className = `flora-btn ${isRedSheetActive ? 'flora-btn-primary' : 'flora-btn-secondary'}`;
+                dictRedSheetBtn.innerHTML = isRedSheetActive ? "👁️ 解答をすべて表示" : "📕 赤シート（解答を隠す）";
+            }
+            const memorizeView = document.getElementById("view-memorize");
+            if (memorizeView) {
+                memorizeView.classList.toggle("red-sheet-active", isRedSheetActive);
+            }
+            const insightsView = document.getElementById("view-insights");
+            if (insightsView) {
+                insightsView.classList.toggle("red-sheet-active", isRedSheetActive);
+            }
+        }
+
+        window.toggleRedSheetMode = function(force) {
+            if (typeof force === "boolean") {
+                isRedSheetActive = force;
+            } else {
+                isRedSheetActive = !isRedSheetActive;
+            }
+            localStorage.setItem("fc_red_sheet_mode", isRedSheetActive ? "true" : "false");
+            revealedWordKeys.clear();
+            updateRedSheetUI();
+
+            // 既存のDOM上の単語行の状態を一括反映
+            document.querySelectorAll(".dict-a-box").forEach(box => {
+                const lid = box.getAttribute("data-lesson-id");
+                const mid = box.getAttribute("data-memo-id");
+                const key = `${lid}:${mid}`;
+                const isRevealed = revealedWordKeys.has(key);
+                if (isRedSheetActive && !isRevealed) {
+                    box.classList.add("is-covered");
+                    box.classList.remove("is-revealed");
+                    const ind = box.querySelector(".red-sheet-peek-indicator");
+                    if (ind) ind.remove();
+                } else {
+                    box.classList.remove("is-covered");
+                    box.classList.add("is-revealed");
+                }
+            });
+
+            if (isRedSheetActive) {
+                showToast("📕 赤シートモードON：タップで解答・極意をめくって確認できます", "info");
+            } else {
+                showToast("👁️ 赤シートモードOFF：すべての解答・極意を表示中", "info");
+            }
+        };
+
+        if (btnToggleRedSheet) {
+            btnToggleRedSheet.addEventListener("click", () => toggleRedSheetMode());
+        }
+        if (btnToggleRedSheetInsights) {
+            btnToggleRedSheetInsights.addEventListener("click", () => toggleRedSheetMode());
+        }
+        updateRedSheetUI();
+
+        // 📕 解答ボックスのタップ・クリックハンドラ（赤シート時はめくり、OFF時は編集）
+        window.handleDictAnswerClick = function(lessonId, memoId, event) {
+            if (event) event.stopPropagation();
+            if (isRedSheetActive) {
+                const key = `${lessonId}:${memoId}`;
+                const box = event.currentTarget.closest(".dict-a-box") || event.currentTarget;
+                if (revealedWordKeys.has(key)) {
+                    revealedWordKeys.delete(key);
+                    box.classList.add("is-covered");
+                    box.classList.remove("is-revealed");
+                    box.setAttribute("title", "クリックで解答を表示（赤シート）");
+                    const ind = box.querySelector(".red-sheet-peek-indicator");
+                    if (ind) ind.remove();
+                } else {
+                    revealedWordKeys.add(key);
+                    box.classList.remove("is-covered");
+                    box.classList.add("is-revealed");
+                    box.setAttribute("title", "クリックで隠す（赤シート）");
+                    if (!box.querySelector(".red-sheet-peek-indicator")) {
+                        const span = document.createElement("span");
+                        span.className = "red-sheet-peek-indicator";
+                        span.innerText = "👁️ 表示中";
+                        box.appendChild(span);
+                    }
+                }
+            } else {
+                startEditMemorizeFromInsights(lessonId, memoId, event);
+            }
+        };
+
+        // 📚 授業（単元）の並べ替え関数（▲上へ / ▼下へ）
+        window.moveDictLessonOrder = async function(subj, lessonId, dir, event) {
+            if (event) event.stopPropagation();
+            if (!currentUser) {
+                showToast("授業の並び順を保存するにはログインが必要です", "warning");
+                return;
+            }
+
+            // 同一教科の授業一覧を取得
+            const lessonEntries = Object.entries(rawLessons).filter(([id, l]) => {
+                const s = l.subject || detectSubjectFromLesson(l) || "未分類";
+                return s === subj;
+            });
+
+            if (lessonEntries.length <= 1) return;
+
+            // orderIndex（未設定は受講日順）でソート
+            lessonEntries.sort((a, b) => {
+                const ordA = typeof a[1].orderIndex === "number" ? a[1].orderIndex : 999999;
+                const ordB = typeof b[1].orderIndex === "number" ? b[1].orderIndex : 999999;
+                if (ordA !== ordB) return ordA - ordB;
+                return (a[1].createdAt || 0) - (b[1].createdAt || 0);
+            });
+
+            const currentIndex = lessonEntries.findIndex(([id]) => id === lessonId);
+            if (currentIndex === -1) return;
+            const targetIndex = currentIndex + dir;
+            if (targetIndex < 0 || targetIndex >= lessonEntries.length) return;
+
+            // スワップ
+            const temp = lessonEntries[currentIndex];
+            lessonEntries[currentIndex] = lessonEntries[targetIndex];
+            lessonEntries[targetIndex] = temp;
+
+            // orderIndexを再割り当てして一括保存
+            const updates = {};
+            lessonEntries.forEach(([id, l], idx) => {
+                l.orderIndex = idx;
+                updates[`lessons/${id}/orderIndex`] = idx;
+                if (rawLessons[id]) {
+                    rawLessons[id].orderIndex = idx;
+                }
+            });
+
+            // 並べ替えたら自動的に custom（授業の並び順）モードに切り替え
+            if (sortSelect) {
+                sortSelect.value = "custom";
+                localStorage.setItem("fc_insights_sort_mode", "custom");
+            }
+
+            try {
+                await update(ref(database, 'users/' + currentUser.uid), updates);
+                showToast(`📌 授業「${lessonEntries[targetIndex][1].title || '授業'}」の順序を変更しました`, "success");
+            } catch (err) {
+                console.error("Failed to persist lesson order:", err);
+                showToast("並び替えの保存に失敗しました", "error");
+            }
+
+            // 即時再描画
+            if (activeTab === "memorize") {
+                renderMemorize();
+            } else if (activeTab === "insights") {
+                renderInsights();
+            }
+        };
+
         const btnOpenAddWordModal = document.getElementById("btn-open-add-word-modal");
         const btnOpenCustomTestModal = document.getElementById("btn-open-custom-test-modal");
         if (btnOpenAddWordModal) {
@@ -2702,6 +3008,12 @@
         const sortSelect = document.getElementById("sort-select");
         const subjectSelect = document.getElementById("subject-select");
 
+        // 保存されたソート順を復元（デフォルトは custom）
+        const savedSortMode = localStorage.getItem("fc_insights_sort_mode") || "custom";
+        if (sortSelect) {
+            sortSelect.value = savedSortMode;
+        }
+
         let searchInputDebounceTimer = null;
         searchInput.addEventListener("input", () => {
             if (searchInputDebounceTimer) clearTimeout(searchInputDebounceTimer);
@@ -2711,6 +3023,7 @@
             }, 160);
         });
         sortSelect.addEventListener("change", () => {
+            localStorage.setItem("fc_insights_sort_mode", sortSelect.value);
             resetDisplayLimits();
             renderActiveView();
         });
@@ -3886,6 +4199,47 @@
             activeInfiniteObservers[targetId] = observer;
         }
 
+        // 🧠 授業・単元・暗記事項の統一ソート関数
+        function compareLessonItems(a, b, sortMode) {
+            const lessonA = a.lessonId ? rawLessons[a.lessonId] : null;
+            const lessonB = b.lessonId ? rawLessons[b.lessonId] : null;
+
+            if (sortMode === "custom") {
+                const ordA = lessonA && typeof lessonA.orderIndex === "number" ? lessonA.orderIndex : 999999;
+                const ordB = lessonB && typeof lessonB.orderIndex === "number" ? lessonB.orderIndex : 999999;
+                if (ordA !== ordB) return ordA - ordB;
+                const timeA = lessonA ? (lessonA.createdAt || 0) : new Date(a.createdAt || 0).getTime();
+                const timeB = lessonB ? (lessonB.createdAt || 0) : new Date(b.createdAt || 0).getTime();
+                if (timeA !== timeB) return timeA - timeB;
+                return (a.orderIndex || 0) - (b.orderIndex || 0);
+            }
+            if (sortMode === "lesson_desc") {
+                const timeA = lessonA ? (lessonA.createdAt || 0) : new Date(a.createdAt || 0).getTime();
+                const timeB = lessonB ? (lessonB.createdAt || 0) : new Date(b.createdAt || 0).getTime();
+                return timeB - timeA;
+            }
+            if (sortMode === "lesson_asc") {
+                const timeA = lessonA ? (lessonA.createdAt || 0) : new Date(a.createdAt || 0).getTime();
+                const timeB = lessonB ? (lessonB.createdAt || 0) : new Date(b.createdAt || 0).getTime();
+                return timeA - timeB;
+            }
+            if (sortMode === "lesson_title") {
+                const titleA = (lessonA && lessonA.title) || a.short_title || a.field || "";
+                const titleB = (lessonB && lessonB.title) || b.short_title || b.field || "";
+                return titleA.localeCompare(titleB, "ja");
+            }
+            if (sortMode === "oldest") {
+                return new Date(a.insightUpdatedAt || a.createdAt || 0) - new Date(b.insightUpdatedAt || b.createdAt || 0);
+            }
+            if (sortMode === "subject") {
+                const subA = (a.subject || "") + (a.field || "");
+                const subB = (b.subject || "") + (b.field || "");
+                return subA.localeCompare(subB, "ja");
+            }
+            // newest (デフォルト)
+            return new Date(b.insightUpdatedAt || b.createdAt || 0) - new Date(a.insightUpdatedAt || a.createdAt || 0);
+        }
+
         // 🧠 1. 気づきメモ描画（段階的読み込み & 局所数式レンダリング）
         function renderInsights(isLoadMore = false) {
             const container = document.getElementById("view-insights");
@@ -3912,13 +4266,7 @@
             // ソート（スター付きは常に最優先）
             items.sort((a, b) => {
                 if (a.isPinned !== b.isPinned) return a.isPinned ? -1 : 1;
-                if (sort === "oldest") return new Date(a.insightUpdatedAt || a.createdAt || 0) - new Date(b.insightUpdatedAt || b.createdAt || 0);
-                if (sort === "subject") {
-                    const subA = (a.subject || "") + (a.field || "");
-                    const subB = (b.subject || "") + (b.field || "");
-                    return subA.localeCompare(subB, "ja");
-                }
-                return new Date(b.insightUpdatedAt || b.createdAt || 0) - new Date(a.insightUpdatedAt || a.createdAt || 0);
+                return compareLessonItems(a, b, sort);
             });
 
             if (items.length === 0) {
@@ -4040,15 +4388,7 @@
                 items = items.filter(p => p.status === "weak");
             }
 
-            items.sort((a, b) => {
-                if (sort === "oldest") return new Date(a.insightUpdatedAt || a.createdAt || 0) - new Date(b.insightUpdatedAt || b.createdAt || 0);
-                if (sort === "subject") {
-                    const subA = (a.subject || "") + (a.field || "");
-                    const subB = (b.subject || "") + (b.field || "");
-                    return subA.localeCompare(subB, "ja");
-                }
-                return new Date(b.insightUpdatedAt || b.createdAt || 0) - new Date(a.insightUpdatedAt || a.createdAt || 0);
-            });
+            items.sort((a, b) => compareLessonItems(a, b, sort));
 
             if (items.length === 0) {
                 container.innerHTML = "";
@@ -4128,11 +4468,14 @@
 
             let html = `
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.6rem; margin-bottom:1rem; padding:0.6rem 1rem; background:var(--bg-surface); border:1px solid var(--border-color); border-radius:var(--radius-md); box-shadow:var(--shadow-xs);">
-                    <div style="font-size:0.84rem; font-weight:700; color:var(--text-primary); display:flex; align-items:center; gap:0.5rem;">
+                    <div style="font-size:0.84rem; font-weight:700; color:var(--text-primary); display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
                         <span>📚 単元・分類別辞書</span>
                         <span style="font-size:0.75rem; color:var(--text-muted); font-weight:normal;">（全 ${totalUnitsCount} 単元 ｜ ${totalWordsCount} 語）</span>
                     </div>
-                    <div style="display:flex; gap:0.4rem;">
+                    <div style="display:flex; align-items:center; gap:0.45rem; flex-wrap:wrap;">
+                        <button type="button" class="flora-btn ${isRedSheetActive ? 'flora-btn-primary' : 'flora-btn-secondary'}" id="dict-red-sheet-btn" style="font-size:0.74rem; font-weight:700; padding:0.25rem 0.65rem;" onclick="toggleRedSheetMode()" title="赤シートのように解答・解説を隠し、タップした項目だけめくって答え合わせができます">
+                            ${isRedSheetActive ? '👁️ 解答をすべて表示' : '📕 赤シート（解答を隠す）'}
+                        </button>
                         <button type="button" class="flora-btn flora-btn-secondary" style="font-size:0.74rem; font-weight:700; padding:0.25rem 0.65rem;" onclick="expandAllDictUnits()">
                             ▼ すべて展開
                         </button>
@@ -4145,6 +4488,7 @@
             `;
 
             let isFirstUnit = true;
+            const currentSort = sortSelect ? sortSelect.value : "custom";
 
             Object.entries(groupedBySubject).forEach(([subj, lessonMap]) => {
                 const subjectTotalWords = Object.values(lessonMap).reduce((sum, list) => sum + list.length, 0);
@@ -4155,7 +4499,51 @@
                     </div>
                 `;
 
-                Object.entries(lessonMap).forEach(([lid, unitItems]) => {
+                // 📚 教科内での授業リストをソート
+                const lessonEntries = Object.entries(lessonMap);
+                lessonEntries.sort(([lidA, itemsA], [lidB, itemsB]) => {
+                    const lessonA = rawLessons[lidA] || {};
+                    const lessonB = rawLessons[lidB] || {};
+
+                    if (currentSort === "custom") {
+                        const ordA = typeof lessonA.orderIndex === "number" ? lessonA.orderIndex : 999999;
+                        const ordB = typeof lessonB.orderIndex === "number" ? lessonB.orderIndex : 999999;
+                        if (ordA !== ordB) return ordA - ordB;
+                        return (lessonA.createdAt || 0) - (lessonB.createdAt || 0);
+                    }
+                    if (currentSort === "lesson_desc") {
+                        return (lessonB.createdAt || 0) - (lessonA.createdAt || 0);
+                    }
+                    if (currentSort === "lesson_asc") {
+                        return (lessonA.createdAt || 0) - (lessonB.createdAt || 0);
+                    }
+                    if (currentSort === "lesson_title") {
+                        const titleA = lessonA.title || (itemsA[0] && itemsA[0].short_title) || "";
+                        const titleB = lessonB.title || (itemsB[0] && itemsB[0].short_title) || "";
+                        return titleA.localeCompare(titleB, "ja");
+                    }
+                    if (currentSort === "words_desc") {
+                        return itemsB.length - itemsA.length;
+                    }
+                    if (currentSort === "mastery_asc") {
+                        const mastA = itemsA.filter(p => p.status === "mastered").length / (itemsA.length || 1);
+                        const mastB = itemsB.filter(p => p.status === "mastered").length / (itemsB.length || 1);
+                        return mastA - mastB;
+                    }
+                    if (currentSort === "oldest") {
+                        const timeA = Math.min(...itemsA.map(p => new Date(p.insightUpdatedAt || p.createdAt || 0).getTime()));
+                        const timeB = Math.min(...itemsB.map(p => new Date(p.insightUpdatedAt || p.createdAt || 0).getTime()));
+                        return timeA - timeB;
+                    }
+                    // newest
+                    const timeA = Math.max(...itemsA.map(p => new Date(p.insightUpdatedAt || p.createdAt || 0).getTime()));
+                    const timeB = Math.max(...itemsB.map(p => new Date(p.insightUpdatedAt || p.createdAt || 0).getTime()));
+                    return timeB - timeA;
+                });
+
+                const totalLessonsInSubj = lessonEntries.length;
+
+                lessonEntries.forEach(([lid, unitItems], lessonIdx) => {
                     const unitId = `${subj}_${lid}`;
                     dictUnitItemsDataMap[unitId] = unitItems;
 
@@ -4170,6 +4558,9 @@
                     const unlearnedCount = unitItems.filter(p => p.status === "unlearned").length;
                     const weakCount = unitItems.filter(p => p.status === "weak").length;
                     const pct = totalCount > 0 ? Math.round((masteredCount / totalCount) * 100) : 0;
+
+                    const canMoveUp = lessonIdx > 0;
+                    const canMoveDown = lessonIdx < totalLessonsInSubj - 1;
 
                     // ⚡ 遅延描画（Lazy Render）：展開されている単元のみ初期HTMLを生成、折りたたみ単元は開いた時にオンデマンド生成
                     const wordsHtml = isExpanded ? unitItems.map(p => renderDictWordRow(p)).join("") : "";
@@ -4190,6 +4581,11 @@
                                         <span class="dict-progress-text">✅ ${masteredCount}/${totalCount} 習得 (${pct}%) ｜ 🌱 未習得 ${unlearnedCount}${weakCount > 0 ? ` ｜ 🔄 要復習 ${weakCount}` : ''}</span>
                                     </div>
                                     <div style="display:flex; align-items:center; gap:0.4rem;" onclick="event.stopPropagation();">
+                                        <!-- 📚 授業並べ替え操作ボタン -->
+                                        <div style="display:inline-flex; align-items:center; gap:0.2rem; background:var(--bg-subtle); padding:0.15rem 0.25rem; border-radius:var(--radius-sm); border:1px solid var(--border-color);" title="同一教科内での授業の表示順を並べ替え">
+                                            <button type="button" class="dict-lesson-order-btn" onclick="moveDictLessonOrder('${escapeHtml(subj)}', '${lid}', -1, event)" ${canMoveUp ? '' : 'disabled'} title="この授業を1つ上に移動">▲</button>
+                                            <button type="button" class="dict-lesson-order-btn" onclick="moveDictLessonOrder('${escapeHtml(subj)}', '${lid}', 1, event)" ${canMoveDown ? '' : 'disabled'} title="この授業を1つ下に移動">▼</button>
+                                        </div>
                                         <button type="button" class="flora-btn flora-btn-secondary" style="font-size:0.75rem; font-weight:700; padding:0.28rem 0.65rem; color:#059669; border-color:rgba(16,185,129,0.4);" onclick="openCustomTestForLesson('${lid}', event)" title="この単元だけで絞り込みテストを開始">
                                             🎯 この単元をテスト
                                         </button>
@@ -4246,6 +4642,14 @@
             const userMemoObj = (typeof rawCardUserMemos !== "undefined" && rawCardUserMemos) ? (rawCardUserMemos[cardMemoKey] || rawCardUserMemos[`memorize_${p.lessonId}_${p.memoId}`]) : null;
             const userMemoText = userMemoObj?.memo ? userMemoObj.memo.trim() : '';
 
+            // 📕 赤シート状態の判定
+            const wordKey = `${p.lessonId}:${p.memoId}`;
+            const isRevealed = revealedWordKeys.has(wordKey);
+            const isCovered = isRedSheetActive && !isRevealed;
+            const aTitle = isRedSheetActive
+                ? (isRevealed ? "クリックで解答を再び隠す（赤シート）" : "クリックで解答を表示（赤シート）")
+                : "クリックして編集";
+
             return `
                 <div class="dict-word-row">
                     <button type="button" class="dict-status-btn ${statusClass}" onclick="toggleMemorizeMastered('${p.lessonId}', '${p.memoId}', event)" title="${statusTitle}">
@@ -4254,14 +4658,25 @@
                     <div class="dict-q-box tex2jax_process" onclick="startEditMemorizeFromInsights('${p.lessonId}', '${p.memoId}', event)" title="クリックして編集">
                         <span style="font-weight:800; color:#4338ca; font-size:0.75rem; margin-right:0.35rem; background:rgba(99,102,241,0.1); padding:0.15rem 0.35rem; border-radius:4px;">Q.</span>${normalizeMathSyntax(cleanQ)}
                     </div>
-                    <div class="dict-a-box tex2jax_process" onclick="startEditMemorizeFromInsights('${p.lessonId}', '${p.memoId}', event)" title="クリックして編集">
-                        <span style="font-weight:800; color:#059669; font-size:0.75rem; margin-right:0.35rem; background:rgba(16,185,129,0.12); padding:0.15rem 0.35rem; border-radius:4px;">A.</span>${normalizeMathSyntax(cleanA)}
-                        ${p.rawNote ? `<div style="font-size:0.75rem; color:#d97706; margin-top:0.3rem; background:rgba(245,158,11,0.08); padding:0.25rem 0.5rem; border-radius:4px;">💡 ${normalizeMathSyntax(p.rawNote)}</div>` : ''}
-                        ${userMemoText ? `<div style="font-size:0.75rem; color:#059669; margin-top:0.3rem; background:rgba(16,185,129,0.08); padding:0.25rem 0.5rem; border-radius:4px; border-left:3px solid #10B981;">📝 <strong>自分用メモ:</strong> ${escapeHtml(userMemoText)}</div>` : ''}
+                    <div class="dict-a-box tex2jax_process ${isCovered ? 'is-covered' : 'is-revealed'}" data-lesson-id="${p.lessonId}" data-memo-id="${p.memoId}" onclick="handleDictAnswerClick('${p.lessonId}', '${p.memoId}', event)" title="${aTitle}">
+                        <div class="red-sheet-cover">
+                            <span>📕 タップして解答を表示</span>
+                        </div>
+                        <div class="dict-a-content">
+                            <span style="font-weight:800; color:#059669; font-size:0.75rem; margin-right:0.35rem; background:rgba(16,185,129,0.12); padding:0.15rem 0.35rem; border-radius:4px;">A.</span>${normalizeMathSyntax(cleanA)}
+                            ${p.rawNote ? `<div style="font-size:0.75rem; color:#d97706; margin-top:0.3rem; background:rgba(245,158,11,0.08); padding:0.25rem 0.5rem; border-radius:4px;">💡 ${normalizeMathSyntax(p.rawNote)}</div>` : ''}
+                            ${userMemoText ? `<div style="font-size:0.75rem; color:#059669; margin-top:0.3rem; background:rgba(16,185,129,0.08); padding:0.25rem 0.5rem; border-radius:4px; border-left:3px solid #10B981;">📝 <strong>自分用メモ:</strong> ${escapeHtml(userMemoText)}</div>` : ''}
+                        </div>
+                        ${isRedSheetActive && isRevealed ? `<span class="red-sheet-peek-indicator" title="クリックで隠す">👁️ 表示中</span>` : ''}
                     </div>
                     <div class="dict-meta-actions-wrap">
                         ${p.rawCategory ? `<span class="dict-cat-tag">🏷️ ${escapeHtml(p.rawCategory)}</span>` : ''}
                         <div class="dict-row-actions">
+                            ${isRedSheetActive ? `
+                                <button type="button" class="dict-row-btn" style="color:${isCovered ? '#ef4444' : 'var(--accent-cyan)'}; font-weight:700;" onclick="handleDictAnswerClick('${p.lessonId}', '${p.memoId}', event)" title="${isCovered ? '解答を表示' : '解答を隠す'}">
+                                    ${isCovered ? '📕 めくる' : '👁️ 隠す'}
+                                </button>
+                            ` : ''}
                             <button type="button" class="dict-row-btn" style="color:#059669; border-color:rgba(16,185,129,0.35); font-weight:700;" onclick="startFlashcardForCard('memorize', '${p.lessonId}', '${p.memoId}', event)" title="このカードから演習">🎴 テスト</button>
                             <button type="button" class="dict-row-btn" style="color:var(--accent-cyan);" onclick="startEditMemorizeFromInsights('${p.lessonId}', '${p.memoId}', event)" title="編集">✏️</button>
                             <button type="button" class="dict-row-btn" style="color:var(--error);" onclick="deleteMemorizeFromInsights('${p.lessonId}', '${p.memoId}', event)" title="削除">🗑</button>
