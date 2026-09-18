@@ -230,7 +230,7 @@
                             📷 壁紙画像ファイルを選択
                         </button>
                         <input type="file" id="ai-set-wp-input" accept="image/*" style="display:none;">
-                        <button type="button" class="flora-btn flora-btn-ghost btn-sm" style="color: var(--error);" onclick="if(confirm('壁紙を解除しますか？')){localStorage.removeItem('flora_wallpaper'); document.body.classList.remove('has-custom-wallpaper'); document.body.style.removeProperty('--user-wallpaper');}">
+                        <button type="button" class="flora-btn flora-btn-ghost btn-sm" style="color: var(--error);" onclick="if(confirm('壁紙を解除しますか？')){ if(window.floraWallpaperDB){window.floraWallpaperDB.remove();} try{localStorage.removeItem('flora_wallpaper');}catch(e){} document.body.classList.remove('has-custom-wallpaper'); document.body.style.removeProperty('--user-wallpaper');}">
                             🗑️ デフォルトの背景に戻す
                         </button>
                     </div>
@@ -750,9 +750,14 @@ document.getElementById("io-import-file").addEventListener("change", async (e) =
             const reader = new FileReader();
             reader.onload = (ev) => {
                 const dataUrl = ev.target.result;
-                try {
-                    localStorage.setItem('flora_wallpaper', dataUrl);
-                } catch(err) {}
+                if (window.floraWallpaperDB) {
+                    window.floraWallpaperDB.save(dataUrl).catch(err => console.warn("IndexedDB wallpaper save error:", err));
+                    try { localStorage.removeItem('flora_wallpaper'); } catch(e) {}
+                } else {
+                    try {
+                        localStorage.setItem('flora_wallpaper', dataUrl);
+                    } catch(err) {}
+                }
                 document.body.style.setProperty('--user-wallpaper', `url("${dataUrl}")`);
                 document.body.classList.add('has-custom-wallpaper');
                 showToast("🖼️ 壁紙を設定しました", "success");

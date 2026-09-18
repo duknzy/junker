@@ -5902,6 +5902,54 @@
         // SRS 間隔テーブル（日数）: Box 1=1日, Box 2=3日, Box 3=7日, Box 4=16日, Box 5=35日
         const SRS_INTERVALS = [0, 1, 3, 7, 16, 35];
 
+        // ==========================================================
+        // 🚀 SRS進捗のバッチ書き込み＆デバウンス（Firebase書き込み肥大化防止）
+        // 毎問の個別writeを抑制し、メモリ上に一時キューイングして一括更新
+        // ==========================================================
+        let pendingSrsUpdates = {};
+        let srsFlushTimer = null;
+
+        async function flushPendingSrsUpdates() {
+            if (!currentUser || !currentUser.uid) return;
+            if (srsFlushTimer) {
+                clearTimeout(srsFlushTimer);
+                srsFlushTimer = null;
+            }
+            const keys = Object.keys(pendingSrsUpdates);
+            if (keys.length === 0) return;
+
+            const payload = {};
+            for (const k of keys) {
+                payload[`users/${currentUser.uid}/memorizeProgress/${k}`] = pendingSrsUpdates[k];
+            }
+            pendingSrsUpdates = {};
+
+            try {
+                // Firebase Realtime Database のマルチパス更新：1リクエストで一括書き込み
+                await update(ref(database), payload);
+            } catch (err) {
+                console.warn("[Flora SRS] Batch progress save failed:", err);
+            }
+        }
+
+        function queueSrsUpdate(pKey, progressData) {
+            pendingSrsUpdates[pKey] = progressData;
+            // 3秒間操作が途切れたら自動で一括書き込み
+            if (srsFlushTimer) clearTimeout(srsFlushTimer);
+            srsFlushTimer = setTimeout(() => {
+                flushPendingSrsUpdates();
+            }, 3000);
+        }
+
+        window.addEventListener("beforeunload", () => {
+            flushPendingSrsUpdates();
+        });
+        document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState === "hidden") {
+                flushPendingSrsUpdates();
+            }
+        });
+
         const btnStartFlashcardSession = document.getElementById("btn-start-flashcard-session");
         const btnStartSrsDue = document.getElementById("btn-start-srs-due");
         const btnStartWeakDeck = document.getElementById("btn-start-weak-deck");
@@ -6884,12 +6932,8 @@
             };
             rawMemorizeProgress[pKey] = progressData;
 
-            // Firebase Realtime Databaseへ非同期永続化
-            if (currentUser && currentUser.uid) {
-                update(ref(database, `users/${currentUser.uid}/memorizeProgress/${pKey}`), progressData).catch(err => {
-                    console.warn("SRS progress save failed:", err);
-                });
-            }
+            // Firebaseへバッチキューイング（毎問の個別writeを抑制し、通信数・書き込み数を激減）
+            queueSrsUpdate(pKey, progressData);
 
             // ダッシュボード集計更新
             updateSrsDashboardCounts();
@@ -6904,6 +6948,7 @@
         }
 
         function showFcFinishView() {
+            flushPendingSrsUpdates();
             playFcSound("finish");
             fcActiveContainer.style.display = "none";
             fcFinishView.style.display = "block";
@@ -6928,11 +6973,16 @@
         }
 
         function closeFcModal() {
+            flushPendingSrsUpdates();
             setFcAutoplayState(false);
             stopSpeech();
             fcModal.style.display = "none";
             fcCardStage.classList.remove("flipped");
             fcIsFlipped = false;
+            updateSrsDashboardCounts();
+            if (activeTab === "memorize") {
+                renderMemorize();
+            }
         }
 
         // ==========================================
@@ -8108,9 +8158,13 @@
             // 🧠 間隔反復(SRS)の進捗データをリアルタイム購読
             onValue(ref(database, 'users/' + user.uid + '/memorizeProgress'), (snapshot) => {
                 rawMemorizeProgress = snapshot.val() || {};
-                updateSrsDashboardCounts();
-                if (activeTab === "memorize") {
-                    renderMemorize();
+                // モーダル演習中はバックグラウンドの不要な再描画を抑制してCPUとUI負荷を低減
+                const isFcModalOpen = fcModal && fcModal.style.display !== "none";
+                if (!isFcModalOpen) {
+                    updateSrsDashboardCounts();
+                    if (activeTab === "memorize") {
+                        renderMemorize();
+                    }
                 }
             });
 

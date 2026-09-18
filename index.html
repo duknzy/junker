@@ -894,7 +894,7 @@
             showToast, callGeminiJSON, generateTinyThumbnail
         } from "./api-key-manager.js?v=3.5";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getAuth, signInWithPopup, signInWithRedirect, getRedirectResult, signInWithEmailAndPassword, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { getAuth, signInWithPopup, signInWithRedirect, getRedirectResult, signInWithEmailAndPassword, GoogleAuthProvider, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
         import { getDatabase, ref, set, get, update, onValue, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
         const firebaseConfig = {
@@ -909,6 +909,9 @@
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
+        setPersistence(auth, browserLocalPersistence).catch(err => {
+            console.warn("[Flora] Auth persistence setup error:", err);
+        });
         const database = getDatabase(app);
         const provider = new GoogleAuthProvider();
 
@@ -1264,6 +1267,15 @@ async function checkAndLoadLinkedLesson(uid) {
 
             if (user) {
                 currentUser = user;
+                try {
+                    localStorage.setItem('flora_user', JSON.stringify({
+                        uid: user.uid,
+                        name: user.displayName || user.email?.split('@')[0] || "Flora Student",
+                        email: user.email || "",
+                        avatar: user.photoURL || ""
+                    }));
+                } catch(e) {}
+                if (window.updateFloraSidebarUser) window.updateFloraSidebarUser();
                 authPanel.innerHTML = "";
                 
                 registerBtn.style.display = "block";
@@ -1279,6 +1291,8 @@ async function checkAndLoadLinkedLesson(uid) {
                 checkAndLoadLinkedLesson(user.uid);
             } else {
                 currentUser = null;
+                try { localStorage.removeItem('flora_user'); } catch(e) {}
+                if (window.updateFloraSidebarUser) window.updateFloraSidebarUser();
                 authPanel.innerHTML = "";
                 
                 registerBtn.style.display = "none";
@@ -1290,6 +1304,16 @@ async function checkAndLoadLinkedLesson(uid) {
                 filterBar.style.display = "none";
             }
         });
+
+        window.handleFloraLogout = async () => {
+            try {
+                await signOut(auth);
+            } catch(e) {
+                console.warn("[Flora] signOut error:", e);
+            }
+            try { localStorage.removeItem('flora_user'); } catch(e) {}
+            location.reload();
+        };
 
         async function doLogin() {
             const isNative = window.Capacitor !== undefined || /Capacitor|FloraApp|Android/i.test(navigator.userAgent);
@@ -2522,6 +2546,9 @@ ${glossaryBlock}`;
 
         if (clearKeysBtn) {
             clearKeysBtn.addEventListener("click", () => {
+                if (!confirm("⚠️ 全てのAPIキー（Gemini / DeepSeek）を消去しますか？\n消去すると再度登録するまでAI機能が使えなくなります。")) {
+                    return;
+                }
                 clearAllKeys();
                 showToast("ブラウザに保存されていたGeminiとDeepSeekのAPIキーを全件消去しました。再読み込み後に🔑ボタンから新しいAPIキーを登録してください。", "success", 2500);
                 setTimeout(() => { location.reload(); }, 1500);
