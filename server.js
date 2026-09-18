@@ -4,8 +4,8 @@ import { fileURLToPath } from 'url';
 import kuroshiroPkg from 'kuroshiro';
 import analyzerPkg from 'kuroshiro-analyzer-kuromoji';
 
-const Kuroshiro = kuroshiroPkg.default;
-const Analyzer = analyzerPkg;
+const Kuroshiro = kuroshiroPkg.default?.default || kuroshiroPkg.default || kuroshiroPkg;
+const Analyzer = analyzerPkg.default || analyzerPkg;
 
 let kuroshiroInstance = null;
 let kuroshiroInitPromise = null;

@@ -28,8 +28,7 @@ export function isStaticHostingEnvironment() {
         window.location.protocol === "capacitor:" ||
         window.location.hostname.endsWith("github.io") ||
         window.location.hostname.includes("web.app") ||
-        window.location.hostname.includes("firebaseapp.com") ||
-        (window.location.port !== "" && window.location.port !== "3000")
+        window.location.hostname.includes("firebaseapp.com")
     );
 }
 
