@@ -2658,8 +2658,8 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
         import { getDatabase, ref, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-        import { showToast, initApiKeyManager, callGeminiChat } from "./api-key-manager.js?v=3.5";
-        import { SushidaGame } from "./sushida-engine.js";
+        import { showToast, initApiKeyManager, callGeminiChat, hasAvailableGeminiKey, isStaticHostingEnvironment } from "./api-key-manager.js?v=3.5";
+        import { SushidaGame, katakanaToHiragana } from "./sushida-engine.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB55MdhpjJizQaLEdRu-XhBVJ4PqrHsAyY",
@@ -5402,24 +5402,58 @@
 
         async function fetchFurigana(text) {
             if (!text) return "";
-            if (furiganaCache.has(text)) return furiganaCache.get(text);
-            try {
-                const res = await fetch("/api/typing/furigana", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ text })
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data && data.furigana) {
-                        furiganaCache.set(text, data.furigana);
-                        return data.furigana;
-                    }
-                }
-            } catch (e) {
-                console.warn("Furigana fetch warning:", e);
+            const cleanText = text.trim();
+            if (furiganaCache.has(cleanText)) return furiganaCache.get(cleanText);
+
+            // 1. 漢字を含まない（ひらがな・カタカナ・英数字・記号のみ）場合は即時変換
+            if (!/[\u4E00-\u9FFF\u3400-\u4DBF]/.test(cleanText)) {
+                const converted = katakanaToHiragana ? katakanaToHiragana(cleanText) : cleanText;
+                furiganaCache.set(cleanText, converted);
+                return converted;
             }
-            return text;
+
+            // 2. サーバー環境（Express等）が存在する場合は高速な Kuromoji API を利用
+            if (!isStaticHostingEnvironment()) {
+                try {
+                    const res = await fetch("/api/typing/furigana", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ text: cleanText })
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        const hira = data?.hiragana || data?.furigana;
+                        if (hira) {
+                            furiganaCache.set(cleanText, hira);
+                            return hira;
+                        }
+                    }
+                } catch {
+                    // silent fallback
+                }
+            }
+
+            // 3. 静的ホスティング（GitHub Pages等）またはサーバー不在時: GeminiキーがあればGeminiでふりがな取得
+            if (hasAvailableGeminiKey && hasAvailableGeminiKey()) {
+                try {
+                    const hira = await callGeminiChat(
+                        [{ text: `次の日本語の【すべてひらがな】の読み（ふりがな）だけを返してください。解説や記号、句読点は含めず、ひらがなのみ1行で出力してください。\n\n対象: ${cleanText}` }],
+                        "あなたは日本語の読み仮名（すべてひらがな）抽出器です。入力された文字列のふりがな（すべてひらがな）のみを返してください。",
+                        { silentFallback: true, temperature: 0.0 }
+                    );
+                    if (hira && typeof hira === "string") {
+                        const cleanHira = hira.trim().replace(/[^\u3040-\u309F\sー0-9a-zA-Z]/g, "");
+                        if (cleanHira) {
+                            furiganaCache.set(cleanText, cleanHira);
+                            return cleanHira;
+                        }
+                    }
+                } catch {
+                    // silent fallback
+                }
+            }
+
+            return cleanText;
         }
 
         const typingModal = document.getElementById("typing-drill-modal");

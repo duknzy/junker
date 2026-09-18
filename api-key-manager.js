@@ -20,16 +20,22 @@ const LABEL = {
     deepseek: "🐋 DeepSeek",
 };
 
-// サーバー側の環境変数キー設定状態を事前取得（静的ホスティングやfile:、Live Server等では404回避のためスキップ）
-if (typeof window !== "undefined") {
-    const isStaticHost = 
+// 静的ホスティング環境（GitHub Pages、Capacitor、file: 等）の判定
+export function isStaticHostingEnvironment() {
+    if (typeof window === "undefined") return false;
+    return (
         window.location.protocol === "file:" || 
         window.location.protocol === "capacitor:" ||
         window.location.hostname.endsWith("github.io") ||
         window.location.hostname.includes("web.app") ||
         window.location.hostname.includes("firebaseapp.com") ||
-        (window.location.port && window.location.port !== "3000");
-    if (!isStaticHost) {
+        (window.location.port !== "" && window.location.port !== "3000")
+    );
+}
+
+// サーバー側の環境変数キー設定状態を事前取得（GitHub Pages等の静的ホスティングでは404回避のためスキップ）
+if (typeof window !== "undefined") {
+    if (!isStaticHostingEnvironment()) {
         fetch('/api/ai/status')
             .then(res => res.ok ? res.json() : null)
             .then(data => {
@@ -900,6 +906,12 @@ async function runGeminiFallbackLoop(contents, systemInstruction, options = {}) 
 
     const strictJsonReminder = "\n\n❗最重要ルール: 出力は指定されたJSON形式のみとすること。挨拶・前置き・説明文・Markdownのコードブロック(```)など、JSON以外の文字列は一切含めないこと。";
 
+    // 💡 静的ホスティング（GitHub Pages等）またはサーバーキー未提供環境で、ローカルキーが未登録の場合はループを回さず即時案内
+    if ((!keys || keys.length === 0) && (isStaticHostingEnvironment() || (typeof window !== "undefined" && window.__serverHasGeminiKey === false))) {
+        setTimeout(() => { if (window.__apikmOpen) window.__apikmOpen(); }, 150);
+        throw new Error("Gemini APIキーが未登録です。GitHub Pages等の静的Web公開環境ではサーバープロキシが利用できないため、右下の🔑ボタン（または設定画面）からGemini APIキーを登録してください。");
+    }
+
     let lastError = null;
     const fallbackAttempts = [];
 
@@ -932,9 +944,14 @@ async function runGeminiFallbackLoop(contents, systemInstruction, options = {}) 
                     body: JSON.stringify({ model: modelName, ...JSON.parse(requestBody) })
                 });
                 if (!response.ok) {
+                    if (response.status === 404) {
+                        setTimeout(() => { if (window.__apikmOpen) window.__apikmOpen(); }, 150);
+                        throw new Error("サーバーAPIプロキシが見つかりません（GitHub Pages等の静的Web公開環境ではAPIキーの直接登録が必要です）。右下の🔑ボタンからGemini APIキーを登録してください。");
+                    }
                     const errData = await response.json().catch(() => ({}));
                     const errMsg = errData.error?.message || `HTTP ${response.status}`;
                     if (response.status === 401) {
+                        setTimeout(() => { if (window.__apikmOpen) window.__apikmOpen(); }, 150);
                         throw new Error("APIキーが未登録です。右下の🔑ボタンから登録するか、環境変数GEMINI_API_KEYを設定してください。");
                     }
                     throw new Error(`Gemini APIエラー (${response.status}): ${errMsg}`);
@@ -1314,14 +1331,7 @@ export async function initApiKeyManager({ needGemini = false, needDeepseek = fal
 
     let serverHasGemini = false;
     let serverHasDeepseek = false;
-    const isStaticHost = typeof window !== 'undefined' && (
-        window.location.protocol === "file:" || 
-        window.location.protocol === "capacitor:" ||
-        window.location.hostname.endsWith("github.io") ||
-        window.location.hostname.includes("web.app") ||
-        window.location.hostname.includes("firebaseapp.com") ||
-        (window.location.port && window.location.port !== "3000")
-    );
+    const isStaticHost = isStaticHostingEnvironment();
     const hasLocalGemini = getGeminiKeys().length > 0;
     const hasLocalDeepseek = getDeepseekKeys().length > 0;
     if (!isStaticHost && (!hasLocalGemini || !hasLocalDeepseek)) {

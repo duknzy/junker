@@ -1098,7 +1098,8 @@
         import {
             getDeepseekKeys, fetchWithKeyRotation, initApiKeyManager,
             stripCodeFence, fixJsonEscapes, extractJsonObject,
-            showToast, callGeminiJSON, callGeminiChat
+            showToast, callGeminiJSON, callGeminiChat,
+            isStaticHostingEnvironment, openApiKeyManager
         } from "./api-key-manager.js?v=3.5";
 
         const proto = "https" + "://";
@@ -2667,13 +2668,19 @@ ${glossaryBlock}`;
                     "max_tokens": 8192 // 💡 未指定だとthinkingで使い切ってcontentが空のまま打ち切られることがあるため明示
                 });
 
+                const dsKeys = getDeepseekKeys();
+                if ((!dsKeys || dsKeys.length === 0) && (isStaticHostingEnvironment() || (typeof window !== "undefined" && window.__serverHasDeepseekKey === false))) {
+                    setTimeout(() => { if (window.__apikmOpen) window.__apikmOpen(); }, 150);
+                    throw new Error("DeepSeek APIキーが未登録です。GitHub Pages等の静的Web環境ではサーバープロキシが利用できないため、右下の🔑ボタン（または設定画面）からDeepSeek APIキーを登録するか、✨Geminiに切り替えてご利用ください。");
+                }
+
                 const MAX_DEEPSEEK_ATTEMPTS = 3;
                 let deepseekLastError = null;
 
                 for (let attempt = 1; attempt <= MAX_DEEPSEEK_ATTEMPTS; attempt++) {
-                    const dsKeys = getDeepseekKeys();
-                    const response = (dsKeys && dsKeys.length > 0)
-                        ? await fetchWithKeyRotation(dsKeys, (key) => ({
+                    const currentKeys = getDeepseekKeys();
+                    const response = (currentKeys && currentKeys.length > 0)
+                        ? await fetchWithKeyRotation(currentKeys, (key) => ({
                             url: DEEPSEEK_API_URL,
                             options: {
                                 method: "POST",
@@ -2689,6 +2696,15 @@ ${glossaryBlock}`;
                             headers: { "Content-Type": "application/json" },
                             body: deepseekBody
                         });
+
+                    if (!response.ok) {
+                        if (response.status === 404) {
+                            setTimeout(() => { if (window.__apikmOpen) window.__apikmOpen(); }, 150);
+                            throw new Error("サーバーAPIプロキシが見つかりません（GitHub Pages等の静的Web環境ではAPIキーの直接登録が必要です）。右下の🔑ボタンからDeepSeek APIキーを登録するか、✨Geminiに切り替えてください。");
+                        }
+                        const errData = await response.json().catch(() => ({}));
+                        throw new Error(errData?.error?.message || `DeepSeek APIエラー (HTTP ${response.status})`);
+                    }
 
                     const data = await response.json();
                     const message = data?.choices?.[0]?.message || {};
@@ -2923,13 +2939,19 @@ ${EXPERT_TEACHER_PROMPT}
                     // 💡 DeepSeekはthinking+json_object併用時に稀にcontentが空で返ってくる
                     //   既知の仕様上の癖があるため（公式ドキュメントにも明記）、その場合は
                     //   自動リトライする（Geminiのモデル・フォールバックに相当する対策）
+                    const dsKeys = getDeepseekKeys();
+                    if ((!dsKeys || dsKeys.length === 0) && (isStaticHostingEnvironment() || (typeof window !== "undefined" && window.__serverHasDeepseekKey === false))) {
+                        setTimeout(() => { if (window.__apikmOpen) window.__apikmOpen(); }, 150);
+                        throw new Error("DeepSeek APIキーが未登録です。GitHub Pages等の静的Web環境ではサーバープロキシが利用できないため、右下の🔑ボタン（または設定画面）からDeepSeek APIキーを登録するか、✨Geminiに切り替えてご利用ください。");
+                    }
+
                     const MAX_DEEPSEEK_ATTEMPTS = 3;
                     let deepseekLastError = null;
 
                     for (let attempt = 1; attempt <= MAX_DEEPSEEK_ATTEMPTS; attempt++) {
-                        const dsKeys = getDeepseekKeys();
-                        const response = (dsKeys && dsKeys.length > 0)
-                            ? await fetchWithKeyRotation(dsKeys, (key) => ({
+                        const currentKeys = getDeepseekKeys();
+                        const response = (currentKeys && currentKeys.length > 0)
+                            ? await fetchWithKeyRotation(currentKeys, (key) => ({
                                 url: DEEPSEEK_API_URL,
                                 options: {
                                     method: "POST",
@@ -2945,6 +2967,15 @@ ${EXPERT_TEACHER_PROMPT}
                                 headers: { "Content-Type": "application/json" },
                                 body: tutorDeepseekBody
                             });
+
+                        if (!response.ok) {
+                            if (response.status === 404) {
+                                setTimeout(() => { if (window.__apikmOpen) window.__apikmOpen(); }, 150);
+                                throw new Error("サーバーAPIプロキシが見つかりません（GitHub Pages等の静的Web環境ではAPIキーの直接登録が必要です）。右下の🔑ボタンからDeepSeek APIキーを登録するか、✨Geminiに切り替えてください。");
+                            }
+                            const errData = await response.json().catch(() => ({}));
+                            throw new Error(errData?.error?.message || `DeepSeek APIエラー (HTTP ${response.status})`);
+                        }
 
                         const data = await response.json();
                         const message = data?.choices?.[0]?.message || {};

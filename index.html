@@ -24,7 +24,12 @@
                 if ((isCapacitor || isMobileDevice) && !forcePc) {
                     const search = window.location.search;
                     const hash = window.location.hash;
-                    window.location.replace('m/index.html' + search + hash);
+                    // GitHub Pagesのリポジトリルート (例: /junker や /junker/) の末尾スラッシュ有無に依存しない安全な遷移
+                    let target = 'm/index.html';
+                    if (!window.location.pathname.endsWith('/') && !window.location.pathname.endsWith('.html')) {
+                        target = window.location.pathname + '/m/index.html';
+                    }
+                    window.location.replace(target + search + hash);
                 }
             } catch (e) {
                 console.warn("Mobile redirect error:", e);
