@@ -629,6 +629,21 @@
                 <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">学びたい単元・テーマ</label>
                 <input type="text" id="create-topic-input" class="m-input" placeholder="例：3次関数の微分と極値、v-tグラフと等加速度運動 など">
 
+                <!-- 📐 数学（知的好奇心＆本質理解）クイック選択バブル（モバイル用） -->
+                <div id="math-quick-presets-m" style="display:none; margin-top:0.5rem; background:rgba(99, 102, 241, 0.08); border:1px solid rgba(99, 102, 241, 0.3); border-radius:var(--radius-md); padding:0.5rem 0.65rem;">
+                    <div style="font-size:0.7rem; font-weight:700; color:var(--text-primary); margin-bottom:0.35rem;">
+                        📐 <span style="color:#6366f1;">数学（初学者歓迎・本質理解）</span>単元選択：
+                    </div>
+                    <div style="display:flex; flex-wrap:wrap; gap:0.3rem;" id="math-preset-buttons-m">
+                        <button type="button" class="math-preset-btn-m" data-topic="データの分析：分散・標準偏差・相関係数と偏差値のカラクリ" data-level="基礎・概念理解" data-note="記号（x̄, s², s, r）の英単語や由来から丁寧に解説し、「なぜ平均値だけではダメなのか」「なぜ分散は2乗するのか」「なぜ標準偏差はルートをつけるのか」を日常のたとえ話と身近な具体例で直感的に理解したい" style="font-size:0.68rem; padding:0.25rem 0.5rem; border-radius:12px; background:var(--bg-surface); border:1px solid var(--border-color); color:var(--text-primary); font-weight:600;">📊 データの分析・分散・偏差値</button>
+                        <button type="button" class="math-preset-btn-m" data-topic="微分積分：瞬間速度・接線の傾きと関数の増減" data-level="基礎・概念理解" data-note="車のスピードメーターや曲線の虫眼鏡拡大という直感的イメージから入り、微分記号の意味や由来、なぜ増減表でグラフの形がわかるのかを実社会での応用とともに理解したい" style="font-size:0.68rem; padding:0.25rem 0.5rem; border-radius:12px; background:var(--bg-surface); border:1px solid var(--border-color); color:var(--text-primary); font-weight:600;">📈 微分積分・瞬間の速度</button>
+                        <button type="button" class="math-preset-btn-m" data-topic="確率・条件付き確率：モンティ・ホール問題とPCR陽性トラップ" data-level="基礎・概念理解" data-note="記号の意味や由来を日常言葉で解き明かし、「直感と計算のズレ」を体験しながら、なぜ条件付き確率を計算するのか・どう使うのかを腑に落ちるように学びたい" style="font-size:0.68rem; padding:0.25rem 0.5rem; border-radius:12px; background:var(--bg-surface); border:1px solid var(--border-color); color:var(--text-primary); font-weight:600;">🥧 確率・条件付き確率の罠</button>
+                        <button type="button" class="math-preset-btn-m" data-topic="平面ベクトル：矢印の正体・成分表示と内積の意味" data-level="基礎・概念理解" data-note="ゲームのキャラクター移動や物理の力という身近な例から、矢印の便利さ、成分表示の仕組み、そして「なぜ内積は掛け算の足し算になるのか」を直感的に理解したい" style="font-size:0.68rem; padding:0.25rem 0.5rem; border-radius:12px; background:var(--bg-surface); border:1px solid var(--border-color); color:var(--text-primary); font-weight:600;">📐 平面ベクトルと内積の直感</button>
+                        <button type="button" class="math-preset-btn-m" data-topic="二次関数：放物線・平方完成の必然性と最大最小" data-level="基礎・概念理解" data-note="なぜ平方完成するのかという必然性や、頂点・軸の直感、日常の放物線（物の投げ上げや利益最大化）への応用を、文字の記号説明とともに分かりやすく学びたい" style="font-size:0.68rem; padding:0.25rem 0.5rem; border-radius:12px; background:var(--bg-surface); border:1px solid var(--border-color); color:var(--text-primary); font-weight:600;">🏹 二次関数・平方完成の理由</button>
+                        <button type="button" class="math-preset-btn-m" data-topic="数列：等差・等比数列とシグマ記号（Σ）の正体" data-level="基礎・概念理解" data-note="初心者が苦手な「Σ（シグマ）」の記号の由来（Sum）や読み解き方を丁寧にほぐし、なぜ和の公式が作れるのかを直感的に理解したい" style="font-size:0.68rem; padding:0.25rem 0.5rem; border-radius:12px; background:var(--bg-surface); border:1px solid var(--border-color); color:var(--text-primary); font-weight:600;">🔢 数列とシグマ記号（Σ）の正体</button>
+                    </div>
+                </div>
+
                 <!-- ⚡ 物理基礎（共テ超頻出）クイック選択バブル（モバイル用） -->
                 <div id="phys-quick-presets-m" style="display:none; margin-top:0.5rem; background:rgba(245, 158, 11, 0.08); border:1px solid rgba(245, 158, 11, 0.3); border-radius:var(--radius-md); padding:0.5rem 0.65rem;">
                     <div style="font-size:0.7rem; font-weight:700; color:var(--text-primary); margin-bottom:0.35rem;">
@@ -1899,11 +1914,37 @@ ${subjectGuide}
 
         // ==================== 全教科対応プロンプト体系 ====================
         const SUBJECT_PROMPT_GUIDES = {
-            "数学": `【数学専門の授業構築ガイドライン】
-・概念の本質・定義から出発し、なぜその公式が成り立つのかという「必然性の証明・導出」を妥協なく解説すること。
-・数式は必ず $...$（インライン）または $$...$$（ブロック）で囲み、変数の意味・定義域・成立条件を明記すること。
-・【典型解法の定石化】生徒が自力で答案を作成できるよう、「方針の立て方（なぜその解法を選ぶのか）」と「記述答案の標準スタイル」をセットで伝授すること。
-・【よくある落とし穴】同値変形、ゼロ除算、範囲の確認（相加相乗平均の等号成立条件、判別式、真数条件など）の注意点を明確に注意喚起すること。`,
+            "数学": `【📐 数学科専任指導ルール：知的好奇心を点火する本質＆初学者寄り添い講義】
+※【絶対厳守の指導理念】：生徒は何も知らない初心者である可能性があります。唐突に複数のアルファベット文字を無説明で登場させたり、当たり前のように公式に当てはめるだけの無味乾燥な授業は【絶対厳禁】です。「何のためにこれを学ぶのか」「文字や記号の正体は何なのか」「なぜその式変形をするのか」を、日常のたとえ話と身近な応用ストーリーで解き明かし、人が興味・面白みを持てる授業を構築してください。
+
+1. 【文字・記号の身元証明ルール（記号アレルギーの完全解消）】：
+   ・新しい文字や記号（$x_i, \\bar{x}, s^2, s, \\sigma, \\mu, r, n, k, \\sum, \\vec{a}, \\int, dx, f'(x)$ など）が登場するときは、いきなり数式に組み込まず、必ず以下の3点を丁寧に解説して「身元証明」を行うこと：
+     ①【英単語・由来】：なぜそのアルファベットや記号を使うのか（例: $\\bar{x}$ は $x$ の上に帽子（バー）で全体の平均、$s^2$ はデータの散らばり Spread / 分散 Variance、$s$ は基準のズレ Standard deviation、$r$ は関係性 Relationship、$\\sum$ は合計 Summation のギリシャ文字、$d$ は微小な差 Difference）。
+     ②【日本語での直感的な言い換え】：日常会話の言葉で言うと結局何を表しているのか。
+     ③【身近な数字を入れた具体例】：抽象的な文字のままにせず、「例えばクラス5人のテストの点数が…」と身近な数字を当てはめて手触り感を持たせる。
+
+2. 【「何のために学ぶのか？」実社会・日常への応用ストーリーから始める】：
+   ・単元や各パートの冒頭では、いきなり定義や計算に入らず、必ず「この数学の道具があると、現実世界のどんな謎が解けるのか」「社会や日常でどう使われているのか」という知的好奇心を刺激するストーリーから導入すること：
+     ・【データの分析・統計】：『テストの平均点が70点』と言われても、全員が68〜72点の平和なクラスなのか、0点と100点に二極化した大荒れクラスなのかは見抜けない。その「格差・散らばり」を数字1つで見破る魔法の道具が「分散・標準偏差」。実は受験生が気にする「偏差値」や、AmazonのレコメンドAI、画像認識もすべてこの理屈で動いている。
+     ・【微分積分】：車のスピードメーターが指しているのは「今この瞬間の速度」。カーブする曲線を虫眼鏡で極限まで拡大すると真っ直ぐな直線に見える。その「一瞬の変化」を捉えてロケットを月に飛ばしたり、人工知能の学習（勾配降下法）を行うのが微分。
+     ・【確率・条件付き確率】：直感が狂う「モンティ・ホール問題」や、検査で陽性が出たのに本当に病気である確率は数％しかないという「PCR陽性トラップ」など、人間の直感を裏切る数学の面白さを体験させる。
+     ・【ベクトル】：ゲームのキャラクターが走る向きと速さ、敵を追尾する誘導ミサイル、物理の力の合成。矢印という「向きと大きさ」を同時に扱う道具の便利さを実感させる。
+     ・【二次関数】：物を投げ上げたときの放物線、噴水のアーチ、そして「商品をいくらで売れば売上・利益が最大になるか」を決定するビジネスでの最適化。
+
+3. 【「なぜこの式変形・計算をするのか？」公式の必然性をたとえ話で腑に落ちさせる】：
+   ・公式を丸暗記させることを禁止し、「なぜその計算手順を踏むのか」を直感的な言葉で解き明かすこと：
+     ・例（なぜ分散は2乗するのか？）：平均とのズレをそのまま足すと、プラスとマイナスが綺麗に打ち消し合って合計が絶対に「0」になってしまう。だから全員を無理やりプラスにするために「2乗」してから平均を取る。
+     ・例（なぜ標準偏差はルートをつけるのか？）：2乗したせいで、単位が「点数²」という現実離れした異次元の単位になってしまった。そこで最後にルート（$\\sqrt{\\phantom{a}}$）を被せて、元の「点数」という日常の単位に戻してあげたのが標準偏差。
+     ・例（なぜ二次関数で平方完成するのか？）：$ax^2+bx+c$ のままだと $x$ が2箇所にあって変化が追えない。「$(x - p)^2$」の形にまとめると、2乗の中身が0になる瞬間が最小（最大）だと一目でわかるから。
+
+4. 【ソクラテス対話の問答ルール（直感を問いかける思考実験）】：
+   ・単なる「公式の知識当てクイズ」は厳禁。「もし君が〜ならどうする？」という思考実験や直感を問いかけること：
+     ・例：「A君とB君、2人とも小テストの平均点は同じ50点。でもA君は毎回50点、B君は0点と100点の連続。もし君が塾の先生なら、この2人の『散らばり（バラつき）』をどうやって数字で区別して評価する？」
+
+5. 【答案作成・数式ルールと減点防止トラップ】：
+   ・数式や変数はすべて必ず $ または $$ で囲むLaTeX形式で記述すること。
+   ・途中計算の飛躍をなくし、定義域・値域の確認、分母≠0、真数条件、場合分けの網羅性、判別式と実数解条件など、受験生が減点・失点しやすい落とし穴を漏れなく指摘すること。
+   ・典型パターンにおける「定石の思考フロー」と、別解（初等幾何、ベクトル、微積分など別視点のアプローチ）がある場合は比較検討を提示すること。`,
 
             "物理": `【⚡ 物理基礎（共通テスト特化）専任指導ルール】
 ※【絶対厳守スコープ】：生徒は大学入学共通テスト「物理基礎」を受験します。文系生・共テ選択者にとって最大の毒となる「発展物理（理系個別入試範囲）」は【絶対に出題・解説しない】こと。
@@ -2198,6 +2239,11 @@ ${subjectGuide}
             const topicInput = document.getElementById("create-topic-input");
             const physPresetsM = document.getElementById("phys-quick-presets-m");
             const chemPresetsM = document.getElementById("chem-quick-presets-m");
+            const mathPresetsM = document.getElementById("math-quick-presets-m");
+
+            if (mathPresetsM) {
+                mathPresetsM.style.display = (sub === "数学") ? "block" : "none";
+            }
 
             if (physPresetsM) {
                 physPresetsM.style.display = (track === "phys-base" || sub === "物理") ? "block" : "none";
@@ -2247,6 +2293,37 @@ ${subjectGuide}
                 topicInput.placeholder = examples[sub];
             }
         }
+
+        // モバイル数学プリセットボタンのリスナー設定
+        document.querySelectorAll(".math-preset-btn-m").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const topic = btn.getAttribute("data-topic") || "";
+                const note = btn.getAttribute("data-note") || "";
+                const level = btn.getAttribute("data-level") || "";
+                const topicInput = document.getElementById("create-topic-input");
+                const noteInput = document.getElementById("create-note-input");
+                const levelSelect = document.getElementById("create-level-select");
+                if (topicInput) {
+                    topicInput.value = topic;
+                    topicInput.focus();
+                }
+                if (noteInput && note) {
+                    noteInput.value = note;
+                }
+                if (levelSelect && level) {
+                    levelSelect.value = level;
+                }
+                // 視覚フィードバック
+                document.querySelectorAll(".math-preset-btn-m").forEach(b => {
+                    b.style.background = "var(--bg-surface)";
+                    b.style.borderColor = "var(--border-color)";
+                    b.style.color = "var(--text-primary)";
+                });
+                btn.style.background = "var(--brand-primary)";
+                btn.style.borderColor = "var(--brand-primary)";
+                btn.style.color = "#ffffff";
+            });
+        });
 
         // モバイル物理プリセットボタンのリスナー設定
         document.querySelectorAll(".phys-preset-btn-m").forEach(btn => {
@@ -2518,6 +2595,8 @@ ${subjectGuide}
                         basePrompt += `\n【⚡ 共通テスト物理基礎特化の特別指示】現在の目標レベル（${level}）に焦点を当て、共通テスト「物理基礎」で満点を狙うためのエッセンスを凝縮してください。発展物理の範囲（剛体のつり合い・モーメント、円運動、単振動、気体の状態方程式PV=nRT・熱力学第1法則計算、光波全般、ドップラー効果、コンデンサー過渡現象、キルヒホッフ、電磁気発展、原子物理等）の出題・解説は絶対禁止。v-tグラフの傾きと面積、つり合いと作用反作用の峻別、摩擦力（静止摩擦力と最大摩擦力）、浮力F=ρVgと台秤実験考察、力学的エネルギー保存、熱量保存と比熱・潜熱、波動グラフ(y-x/y-t)と縦波の疎密、気柱共鳴（開口端補正）、オームの法則と消費電力P=VI=I²Rの急所を徹底してください。数式は必ず $ $ または $$ $$ で記述し、難しい漢字や専門用語には必ず読み仮名（ふりがな）を添えてください。`;
                     } else if (track === "chem-base") {
                         basePrompt += `\n【🧪 共通テスト化学基礎特化の特別指示】現在の目標レベル（${level}）に焦点を当て、共通テスト「化学基礎」で満点を狙うためのエッセンスを凝縮してください。発展化学（気体状態方程式、化学平衡、熱化学、有機化学など）の出題・解説は絶対禁止。mol計算の単位変換マップ、実験器具の扱い（共洗い等の理由）、正誤判定トラップ（同位体・同素体、酸の価数と強弱など）を徹底してください。数式・化学式は $ $ や $$ $$ で記述し、化学式には \\ce{...} 記法を活用してください。難しい漢字や専門用語には必ず読み仮名（ふりがな）を添えてください。`;
+                    } else if (subject === "数学") {
+                        basePrompt += `\n【📐 数学科特化の特別指示】現在の目標レベル（${level}）に焦点を当て、初学者でも興味・面白みを持って夢中で学べる極上の講義を執筆してください。文字や記号（$x_i, \\bar{x}, s^2, r, \\sum$ 等）を無説明で唐突に登場させることや、公式を丸暗記させて代入させるだけの授業は【絶対厳禁】です。「この道具があると現実世界のどんな謎が解けるのか」「文字や記号の英単語・由来・日本語での意味」「なぜその式変形・2乗やルートの操作をするのか（たとえ話）」を徹底的に解き明かしてください。数式はすべて必ず $ $ または $$ $$ で記述してください。`;
                     } else if (track === "two-step") {
                         basePrompt += `\n【2段階スマート型の特別指示】現在の目標レベル（${level}）に焦点を当て、要点の理解と実践的な解法を濃縮して解説してください。難しい漢字や専門用語には必ず読み仮名（ふりがな）を添えてください。`;
                     } else {
@@ -2553,6 +2632,8 @@ ${subjectGuide}
                         curriculumInstruction += `【発展物理の範囲は絶対禁止】目標レベル「${level}」に焦点を当て、共通テスト物理基礎（30〜50点満点）の試験範囲（運動とエネルギー、熱、波、電気）に100%特化した2〜3パートのカリキュラムを設計してください。`;
                     } else if (track === "chem-base") {
                         curriculumInstruction += `【発展化学の範囲は絶対禁止】目標レベル「${level}」に焦点を当て、共通テスト化学基礎（30〜50点満点）の頻出分野に100%特化した2〜3パートのカリキュラムを設計してください。`;
+                    } else if (subject === "数学") {
+                        curriculumInstruction += `目標レベル「${level}」に沿って、初心者が記号や文字の羅列に圧倒されないよう「第1パート：日常応用と文字・記号の正体」「第2パート：公式の必然性と定石アルゴリズム」「第3パート：入試・実戦の盲点と落とし穴」というストーリー重視の2〜3パートで論理的カリキュラムを設計してください。`;
                     } else if (track === "two-step") {
                         curriculumInstruction += `目標レベル「${level}」に焦点を当て、2〜3パートで要点を濃縮マスターできるカリキュラムを設計してください。`;
                     } else {
