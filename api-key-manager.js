@@ -65,11 +65,6 @@ function loadKeys(engine) {
         localStorage.removeItem(LEGACY_STORAGE[engine]);
     }
 
-    // 過去の無効なダミーキーの自動クリーンアップ
-    if (engine === "gemini" && keys.some(k => k.startsWith("AQ.Ab8RN"))) {
-        keys = keys.filter(k => !k.startsWith("AQ.Ab8RN"));
-        saveKeys(engine, keys);
-    }
     return keys;
 }
 
@@ -924,7 +919,11 @@ async function runGeminiFallbackLoop(contents, systemInstruction, options = {}) 
             if (keys && keys.length > 0) {
                 response = await fetchWithKeyRotation(keys, (key) => ({
                     url: buildGeminiUrl(modelName, key),
-                    options: { method: "POST", headers: { "Content-Type": "application/json" }, body: requestBody }
+                    options: {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+                        body: requestBody
+                    }
                 }), { requestTimeoutMs, startIndex: keyOffset, modelName, featureId });
             } else {
                 response = await fetch("/api/gemini/generate", {
@@ -1233,6 +1232,7 @@ function injectStylesAndModal() {
                 addKey(engine, input.value);
                 input.value = "";
                 renderAll();
+                showToast(`${LABEL[engine]}のキーを追加しました`, "success");
             }
             return;
         }
@@ -1286,6 +1286,7 @@ function injectStylesAndModal() {
                     addKey(engine, input.value);
                     input.value = "";
                     renderAll();
+                    showToast(`${LABEL[engine]}のキーを追加しました`, "success");
                 }
             }
         });
