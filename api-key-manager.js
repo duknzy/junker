@@ -20,17 +20,26 @@ const LABEL = {
     deepseek: "🐋 DeepSeek",
 };
 
-// サーバー側の環境変数キー設定状態を事前取得
+// サーバー側の環境変数キー設定状態を事前取得（静的ホスティングやfile:、Live Server等では404回避のためスキップ）
 if (typeof window !== "undefined") {
-    fetch('/api/ai/status')
-        .then(res => res.ok ? res.json() : null)
-        .then(data => {
-            if (data) {
-                window.__serverHasGeminiKey = !!data.hasGeminiKey;
-                window.__serverHasDeepseekKey = !!data.hasDeepseekKey;
-            }
-        })
-        .catch(() => {});
+    const isStaticHost = 
+        window.location.protocol === "file:" || 
+        window.location.protocol === "capacitor:" ||
+        window.location.hostname.endsWith("github.io") ||
+        window.location.hostname.includes("web.app") ||
+        window.location.hostname.includes("firebaseapp.com") ||
+        (window.location.port && window.location.port !== "3000");
+    if (!isStaticHost) {
+        fetch('/api/ai/status')
+            .then(res => res.ok ? res.json() : null)
+            .then(data => {
+                if (data) {
+                    window.__serverHasGeminiKey = !!data.hasGeminiKey;
+                    window.__serverHasDeepseekKey = !!data.hasDeepseekKey;
+                }
+            })
+            .catch(() => {});
+    }
 }
 
 // --------------------------------------------------------------------------
@@ -876,7 +885,18 @@ export function extractJsonArray(text) {
 // 🧠 Gemini フォールバック実行ループ
 // --------------------------------------------------------------------------
 async function runGeminiFallbackLoop(contents, systemInstruction, options = {}) {
-    const { temperature = 0.1, arrayMode = false, silentFallback = false, responseSchema = null, featureId = null, requestTimeoutMs = null, keyOffset = 0, preferredModel = null } = options;
+    const {
+        temperature = 0.1,
+        arrayMode = false,
+        silentFallback = false,
+        responseSchema = null,
+        featureId = null,
+        requestTimeoutMs = null,
+        keyOffset = 0,
+        preferredModel = null,
+        rawText = false,
+        responseMimeType = (rawText ? "text/plain" : "application/json")
+    } = options;
     const keys = getEffectiveGeminiKeys(featureId);
     let modelList = getEffectiveModelList(featureId);
     if (preferredModel && typeof preferredModel === "string") {
@@ -889,8 +909,9 @@ async function runGeminiFallbackLoop(contents, systemInstruction, options = {}) 
     const fallbackAttempts = [];
 
     async function attemptOnce(modelName, systemInstructionText) {
-        const generationConfig = { "responseMimeType": "application/json", "temperature": temperature };
-        if (responseSchema) generationConfig.responseSchema = responseSchema;
+        const generationConfig = { "temperature": temperature };
+        if (responseMimeType) generationConfig.responseMimeType = responseMimeType;
+        if (responseSchema && responseMimeType === "application/json") generationConfig.responseSchema = responseSchema;
 
         const requestBody = JSON.stringify({
             "contents": contents,
@@ -931,6 +952,10 @@ async function runGeminiFallbackLoop(contents, systemInstruction, options = {}) 
             return { ok: false, isFormatError: false, reason: "空応答（finishReason等が原因の可能性）", error: new Error(`Empty response: ${modelName}`) };
         }
 
+        if (rawText || responseMimeType === "text/plain") {
+            return { ok: true, parsed: candidateText };
+        }
+
         try {
             const extractor = arrayMode ? extractJsonArray : extractJsonObject;
             const parsed = JSON.parse(fixJsonEscapes(extractor(stripCodeFence(candidateText.trim()))));
@@ -967,7 +992,7 @@ export async function callGeminiJSON(parts, systemInstruction, options = {}) {
 }
 
 export async function callGeminiChat(contents, systemInstruction, options = {}) {
-    return runGeminiFallbackLoop(contents, systemInstruction, options);
+    return runGeminiFallbackLoop(contents, systemInstruction, { rawText: true, ...options });
 }
 
 // --------------------------------------------------------------------------
@@ -1288,17 +1313,29 @@ export async function initApiKeyManager({ needGemini = false, needDeepseek = fal
 
     let serverHasGemini = false;
     let serverHasDeepseek = false;
-    try {
-        const res = await fetch('/api/ai/status');
-        if (res.ok) {
-            const data = await res.json();
-            serverHasGemini = !!data.hasGeminiKey;
-            serverHasDeepseek = !!data.hasDeepseekKey;
-            window.__serverHasGeminiKey = serverHasGemini;
-            window.__serverHasDeepseekKey = serverHasDeepseek;
+    const isStaticHost = typeof window !== 'undefined' && (
+        window.location.protocol === "file:" || 
+        window.location.protocol === "capacitor:" ||
+        window.location.hostname.endsWith("github.io") ||
+        window.location.hostname.includes("web.app") ||
+        window.location.hostname.includes("firebaseapp.com") ||
+        (window.location.port && window.location.port !== "3000")
+    );
+    const hasLocalGemini = getGeminiKeys().length > 0;
+    const hasLocalDeepseek = getDeepseekKeys().length > 0;
+    if (!isStaticHost && (!hasLocalGemini || !hasLocalDeepseek)) {
+        try {
+            const res = await fetch('/api/ai/status');
+            if (res.ok) {
+                const data = await res.json();
+                serverHasGemini = !!data.hasGeminiKey;
+                serverHasDeepseek = !!data.hasDeepseekKey;
+                window.__serverHasGeminiKey = serverHasGemini;
+                window.__serverHasDeepseekKey = serverHasDeepseek;
+            }
+        } catch {
+            // network or server offline, fall back to client check
         }
-    } catch {
-        // network or server offline, fall back to client check
     }
 
     const missingGemini = needGemini && !serverHasGemini && getGeminiKeys().length === 0;

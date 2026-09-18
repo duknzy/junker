@@ -1628,6 +1628,7 @@
         import { getAuth, onAuthStateChanged, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
         import { getDatabase, ref, onValue, update, set, remove, push } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
         import { SushidaGame } from "../sushida-engine.js";
+        import { callGeminiChat } from "../api-key-manager.js?v=3.5";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB55MdhpjJizQaLEdRu-XhBVJ4PqrHsAyY",
@@ -3960,19 +3961,11 @@
 数式が必要な場合は標準LaTeX記法（$x$ や $$...$$）を用いてください。
 マークダウン記法で分かりやすく回答してください。`;
 
-                const res = await fetch("/api/gemini/generate", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        model: "gemini-2.5-flash",
-                        contents: [{ role: "user", parts: [{ text: query }] }],
-                        systemInstruction: { parts: [{ text: systemInstruction }] }
-                    })
-                });
-
-                if (!res.ok) throw new Error(`APIエラー (${res.status})`);
-                const data = await res.json();
-                const aiAnswer = data.candidates?.[0]?.content?.parts?.[0]?.text || "回答を取得できませんでした。";
+                const aiAnswer = await callGeminiChat(
+                    [{ role: "user", parts: [{ text: query }] }],
+                    systemInstruction,
+                    { featureId: "chat", preferredModel: "gemini-2.5-flash" }
+                );
 
                 aiDiv.innerHTML = renderFormattedMarkdown(aiAnswer);
                 mAiChatStream.scrollTop = mAiChatStream.scrollHeight;

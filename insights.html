@@ -2658,7 +2658,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
         import { getDatabase, ref, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-        import { showToast } from "./api-key-manager.js?v=3.5";
+        import { showToast, initApiKeyManager, callGeminiChat } from "./api-key-manager.js?v=3.5";
         import { SushidaGame } from "./sushida-engine.js";
 
         const firebaseConfig = {
@@ -2674,6 +2674,7 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const database = getDatabase(app);
+        initApiKeyManager({ needGemini: true, needDeepseek: false, autoOpen: false });
 
         let currentUser = null;
         let activeTab = "insights"; // "insights" | "qna" | "mnemonics"
@@ -7275,23 +7276,11 @@
 数式が必要な場合は $x$ や $$...$$ の標準LaTeX記法を用いてください。
 マークダウン記法で見やすく整理して回答してください。`;
 
-                const res = await fetch("/api/gemini/generate", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        model: "gemini-2.5-flash",
-                        contents: [{ role: "user", parts: [{ text: query }] }],
-                        systemInstruction: { parts: [{ text: systemInstruction }] }
-                    })
-                });
-
-                if (!res.ok) {
-                    const errJson = await res.json().catch(() => ({}));
-                    throw new Error(errJson.error?.message || `APIエラー (${res.status})`);
-                }
-
-                const data = await res.json();
-                const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "（回答の取得に失敗しました）";
+                const aiText = await callGeminiChat(
+                    [{ role: "user", parts: [{ text: query }] }],
+                    systemInstruction,
+                    { featureId: "chat", preferredModel: "gemini-2.5-flash" }
+                );
 
                 aiLoadingBubble.style.color = "var(--text-primary)";
                 aiLoadingBubble.innerHTML = `<div class="tex2jax_process">${renderFormattedMarkdown(aiText)}</div>`;
@@ -7511,7 +7500,7 @@
         const btnOpenAiTermAsk = document.getElementById("btn-open-ai-term-ask");
         if (btnOpenAiTermAsk) {
             btnOpenAiTermAsk.onclick = () => {
-                const curSubject = currentFilterSubject !== "all" ? currentFilterSubject : "世界史";
+                const curSubject = (subjectSelect && subjectSelect.value && subjectSelect.value !== "ALL") ? subjectSelect.value : "世界史";
                 openAiAskModal("", curSubject);
             };
         }
