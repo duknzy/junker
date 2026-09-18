@@ -65,7 +65,17 @@ function loadKeys(engine) {
 }
 
 function saveKeys(engine, keys) {
-    localStorage.setItem(STORAGE[engine], JSON.stringify(keys));
+    try {
+        localStorage.setItem(STORAGE[engine], JSON.stringify(keys));
+    } catch (e) {
+        console.error(`[APIKeyManager] Failed to save keys for ${engine}:`, e);
+        if (e && (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED' || e.code === 22)) {
+            showToast("⚠️ ストレージ容量不足のためAPIキーを保存できませんでした。壁紙を解除するかブラウザの不要なデータを削除してください。", "error", 8000);
+        } else {
+            showToast("⚠️ APIキーの保存中にエラーが発生しました: " + (e?.message || e), "error", 6000);
+        }
+        throw e;
+    }
 }
 
 export function getGeminiKeys() { return loadKeys("gemini"); }
@@ -116,7 +126,14 @@ function loadKeyLabels() {
 }
 
 function saveKeyLabels(labels) {
-    localStorage.setItem(KEY_LABELS_STORAGE, JSON.stringify(labels));
+    try {
+        localStorage.setItem(KEY_LABELS_STORAGE, JSON.stringify(labels));
+    } catch (e) {
+        console.error("[APIKeyManager] Failed to save key labels:", e);
+        if (e && (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED' || e.code === 22)) {
+            showToast("⚠️ ストレージ容量不足のためキーニックネームを保存できませんでした。", "error", 6000);
+        }
+    }
 }
 
 export function getKeyLabel(engine, key) {
@@ -691,7 +708,14 @@ function loadFeatureConfig() {
 }
 
 function saveFeatureConfig(cfg) {
-    localStorage.setItem(FEATURE_CONFIG_STORAGE, JSON.stringify(cfg));
+    try {
+        localStorage.setItem(FEATURE_CONFIG_STORAGE, JSON.stringify(cfg));
+    } catch (e) {
+        console.error("[APIKeyManager] Failed to save feature config:", e);
+        if (e && (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED' || e.code === 22)) {
+            showToast("⚠️ ストレージ容量不足のため機能割り当て設定を保存できませんでした。", "error", 6000);
+        }
+    }
 }
 
 const AI_SETTINGS_EXPORT_TYPE = "lolz-ai-settings-export";
@@ -1441,4 +1465,55 @@ export function showToast(message, type = "info", duration = 6000) {
     toast.querySelector(".apikm-toast-x").addEventListener("click", remove);
     if (duration > 0) setTimeout(remove, duration);
     return remove;
+}
+
+// --------------------------------------------------------------------------
+// 📊 localStorage 使用量診断ツール（P2）
+// ブラウザの開発者コンソールから `getFloraStorageUsage()` または
+// `printFloraStorageDiagnostics()` を実行して容量消費の内訳を確認可能
+// --------------------------------------------------------------------------
+export function getLocalStorageUsage() {
+    let totalChars = 0;
+    const items = [];
+    if (typeof localStorage !== "undefined") {
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            const val = localStorage.getItem(key) || "";
+            const bytes = (key.length + val.length) * 2; // UTF-16
+            totalChars += (key.length + val.length);
+            items.push({
+                key,
+                chars: key.length + val.length,
+                bytes,
+                kb: (bytes / 1024).toFixed(1),
+                mb: (bytes / (1024 * 1024)).toFixed(3)
+            });
+        }
+    }
+    items.sort((a, b) => b.bytes - a.bytes);
+    const totalBytes = totalChars * 2;
+    return {
+        totalBytes,
+        totalKB: (totalBytes / 1024).toFixed(1),
+        totalMB: (totalBytes / (1024 * 1024)).toFixed(2),
+        itemCount: items.length,
+        items
+    };
+}
+
+export function printStorageDiagnostics() {
+    const usage = getLocalStorageUsage();
+    console.group(`📊 Flora Storage Diagnostics (Total: ${usage.totalMB} MB / ${usage.totalKB} KB)`);
+    console.table(usage.items.map(item => ({
+        "キー名": item.key,
+        "サイズ (KB)": `${item.kb} KB`,
+        "サイズ (MB)": `${item.mb} MB`
+    })));
+    console.groupEnd();
+    return usage;
+}
+
+if (typeof window !== "undefined") {
+    window.getFloraStorageUsage = getLocalStorageUsage;
+    window.printFloraStorageDiagnostics = printStorageDiagnostics;
 }

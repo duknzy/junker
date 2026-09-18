@@ -236,6 +236,11 @@
             <span style="font-size:1.35rem;">🌱</span>
             <span class="m-header-title">Flora 誤答ノート</span>
         </div>
+        <div id="m-header-user-actions" style="display:flex;align-items:center;gap:0.5rem;">
+            <button type="button" id="m-logout-btn" title="ログアウト" style="display:none; background:transparent; border:1px solid var(--border-color); border-radius:var(--radius-md); padding:0.25rem 0.55rem; font-size:0.75rem; color:var(--text-secondary); cursor:pointer;">
+                🚪 ログアウト
+            </button>
+        </div>
     </header>
 
     <!-- ログイン案内（未ログイン時のみ） -->
@@ -488,7 +493,7 @@
     <script type="module">
         import { initApiKeyManager, showToast, getGeminiKeys, callGeminiJSON, generateTinyThumbnail } from "../api-key-manager.js?v=3.5";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getAuth, signInWithPopup, signInWithRedirect, getRedirectResult, signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { getAuth, signInWithPopup, signInWithRedirect, getRedirectResult, signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
         import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
         const firebaseConfig = {
@@ -503,6 +508,9 @@
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
+        setPersistence(auth, browserLocalPersistence).catch(err => {
+            console.warn("[Flora Mobile] Auth persistence setup error:", err);
+        });
         const database = getDatabase(app);
         const provider = new GoogleAuthProvider();
 
@@ -546,18 +554,46 @@
             const loginNotice = document.getElementById("login-notice");
             const mainContent = document.getElementById("main-content");
             const fab = document.getElementById("fab-add");
+            const logoutBtn = document.getElementById("m-logout-btn");
 
             if (user) {
                 currentUser = user;
+                try {
+                    localStorage.setItem('flora_user', JSON.stringify({
+                        uid: user.uid,
+                        name: user.displayName || user.email?.split('@')[0] || "Flora Student",
+                        email: user.email || "",
+                        avatar: user.photoURL || ""
+                    }));
+                } catch(e) {}
                 loginNotice.style.display = "none";
                 mainContent.style.display = "block";
                 fab.style.display = "flex";
+                if (logoutBtn) logoutBtn.style.display = "inline-flex";
                 listenToProblems(user.uid);
             } else {
                 currentUser = null;
+                try { localStorage.removeItem('flora_user'); } catch(e) {}
                 loginNotice.style.display = "block";
                 mainContent.style.display = "none";
                 fab.style.display = "none";
+                if (logoutBtn) logoutBtn.style.display = "none";
+            }
+        });
+
+        window.handleFloraLogout = async () => {
+            try {
+                await signOut(auth);
+            } catch(e) {
+                console.warn("[Flora Mobile] signOut error:", e);
+            }
+            try { localStorage.removeItem('flora_user'); } catch(e) {}
+            location.reload();
+        };
+
+        document.getElementById("m-logout-btn")?.addEventListener("click", () => {
+            if (confirm("ログアウトしますか？")) {
+                window.handleFloraLogout();
             }
         });
 

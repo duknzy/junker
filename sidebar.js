@@ -1,8 +1,99 @@
 /**
  * Flora Desktop Sidebar Navigation (PC専用・共通左側サイドバー)
  * Clean, Modern, Notion/Linear Style
+ *
+ * 壁紙画像は IndexedDB に保存（localStorage 容量圧迫を防ぐ）
  */
 (function() {
+    // ==========================================================================
+    // 🗄️ IndexedDB 壁紙ストレージ（localStorage の容量枯渇対策）
+    // localStorageは5〜10MB上限だが、IndexedDBは数百MB〜GB利用可能。
+    // 壁紙DataURL(数MB)をlocalStorageに保存すると他のデータ(APIキー等)が
+    // QuotaExceededErrorで保存できなくなるため、IndexedDBに移行した。
+    // ==========================================================================
+    const WP_DB_NAME = 'flora_wallpaper_db';
+    const WP_DB_VERSION = 1;
+    const WP_STORE_NAME = 'wallpaper';
+    const WP_KEY = 'current';
+
+    function openWallpaperDB() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(WP_DB_NAME, WP_DB_VERSION);
+            request.onupgradeneeded = (event) => {
+                const db = event.target.result;
+                if (!db.objectStoreNames.contains(WP_STORE_NAME)) {
+                    db.createObjectStore(WP_STORE_NAME);
+                }
+            };
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    function saveWallpaperToDB(dataUrl) {
+        return openWallpaperDB().then(db => {
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(WP_STORE_NAME, 'readwrite');
+                const store = tx.objectStore(WP_STORE_NAME);
+                store.put(dataUrl, WP_KEY);
+                tx.oncomplete = () => { db.close(); resolve(); };
+                tx.onerror = () => { db.close(); reject(tx.error); };
+            });
+        });
+    }
+
+    function loadWallpaperFromDB() {
+        return openWallpaperDB().then(db => {
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(WP_STORE_NAME, 'readonly');
+                const store = tx.objectStore(WP_STORE_NAME);
+                const req = store.get(WP_KEY);
+                req.onsuccess = () => { db.close(); resolve(req.result || null); };
+                req.onerror = () => { db.close(); reject(req.error); };
+            });
+        });
+    }
+
+    function removeWallpaperFromDB() {
+        return openWallpaperDB().then(db => {
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(WP_STORE_NAME, 'readwrite');
+                const store = tx.objectStore(WP_STORE_NAME);
+                store.delete(WP_KEY);
+                tx.oncomplete = () => { db.close(); resolve(); };
+                tx.onerror = () => { db.close(); reject(tx.error); };
+            });
+        });
+    }
+
+    // グローバルAPIとして公開（ai-settings.html 等からも利用可能にする）
+    window.floraWallpaperDB = {
+        save: saveWallpaperToDB,
+        load: loadWallpaperFromDB,
+        remove: removeWallpaperFromDB
+    };
+
+    // 🚪 共通ログアウト関数（未定義のページでも Firebase Auth & localStorage を確実に同期クリーンアップ）
+    if (!window.handleFloraLogout) {
+        window.handleFloraLogout = async function() {
+            try {
+                const { getApps } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js");
+                const apps = getApps();
+                if (apps && apps.length > 0) {
+                    const { getAuth, signOut } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js");
+                    const auth = getAuth(apps[0]);
+                    await signOut(auth);
+                }
+            } catch(e) {
+                console.warn("[Flora] Sidebar dynamic signOut fallback warning:", e);
+            }
+            try { localStorage.removeItem('flora_user'); } catch(e) {}
+            location.reload();
+        };
+    }
+
+    // ==========================================================================
+
     function renderSidebar() {
         const sidebarMount = document.getElementById('flora-sidebar');
         if (!sidebarMount) return;
@@ -116,11 +207,10 @@
             const reader = new FileReader();
             reader.onload = (ev) => {
                 const dataUrl = ev.target.result;
-                try {
-                    localStorage.setItem('flora_wallpaper', dataUrl);
-                } catch(err) {
-                    console.warn("Storage quota exceeded, applying session only");
-                }
+                // IndexedDB に保存（容量制限が大きいため安全）
+                saveWallpaperToDB(dataUrl).catch(err => {
+                    console.warn("IndexedDB wallpaper save failed:", err);
+                });
                 applyWallpaper(dataUrl);
                 updateCustomizerPreview();
             };
@@ -237,7 +327,10 @@
 
         removeBtn.onclick = () => {
             if (confirm("壁紙を解除してデフォルトの背景に戻しますか？")) {
-                localStorage.removeItem('flora_wallpaper');
+                // IndexedDB から削除
+                removeWallpaperFromDB().catch(err => console.warn("IndexedDB wallpaper remove failed:", err));
+                // 旧 localStorage の残骸もクリーンアップ
+                try { localStorage.removeItem('flora_wallpaper'); } catch(e) {}
                 document.body.classList.remove('has-custom-wallpaper');
                 document.body.style.removeProperty('--user-wallpaper');
                 closeModal();
@@ -292,27 +385,53 @@
     function initWallpaper() {
         applyTransparencySettings();
 
-        const saved = localStorage.getItem('flora_wallpaper');
-        if (saved) {
-            applyWallpaper(saved);
-            return;
-        }
+        // IndexedDB から壁紙を読み込む（非同期）
+        loadWallpaperFromDB().then(saved => {
+            if (saved) {
+                applyWallpaper(saved);
+                return;
+            }
 
-        // フォルダ内の wallpaper.jpg を自動プローブ
-        const probeImg = new Image();
-        probeImg.onload = () => {
-            applyWallpaper('./wallpaper.jpg');
-        };
-        probeImg.src = './wallpaper.jpg';
+            // 旧 localStorage に壁紙が残っていれば IndexedDB に移行し、localStorage から削除する
+            const legacyWallpaper = localStorage.getItem('flora_wallpaper');
+            if (legacyWallpaper) {
+                applyWallpaper(legacyWallpaper);
+                saveWallpaperToDB(legacyWallpaper).then(() => {
+                    localStorage.removeItem('flora_wallpaper');
+                    console.info('[Flora] 壁紙を localStorage → IndexedDB に移行しました（容量節約）');
+                }).catch(err => {
+                    console.warn('[Flora] IndexedDB 移行失敗（localStorage を維持）:', err);
+                });
+                return;
+            }
+
+            // フォルダ内の wallpaper.jpg を自動プローブ
+            const probeImg = new Image();
+            probeImg.onload = () => {
+                applyWallpaper('./wallpaper.jpg');
+            };
+            probeImg.src = './wallpaper.jpg';
+        }).catch(err => {
+            console.warn('[Flora] IndexedDB wallpaper load failed, trying localStorage fallback:', err);
+            // IndexedDB が使えない場合は localStorage を試す
+            const fallback = localStorage.getItem('flora_wallpaper');
+            if (fallback) {
+                applyWallpaper(fallback);
+            } else {
+                const probeImg = new Image();
+                probeImg.onload = () => { applyWallpaper('./wallpaper.jpg'); };
+                probeImg.src = './wallpaper.jpg';
+            }
+        });
     }
 
     function updateSidebarUser() {
         try {
             const userJson = localStorage.getItem('flora_user') || localStorage.getItem('lolz_user');
+            const nameEl = document.getElementById('sidebar-user-name');
+            const avatarEl = document.getElementById('sidebar-user-avatar');
             if (userJson) {
                 const user = JSON.parse(userJson);
-                const nameEl = document.getElementById('sidebar-user-name');
-                const avatarEl = document.getElementById('sidebar-user-avatar');
                 if (nameEl && user.name) nameEl.textContent = user.name;
                 if (avatarEl) {
                     if (user.avatar) {
@@ -321,12 +440,67 @@
                         avatarEl.textContent = user.name.charAt(0).toUpperCase();
                     }
                 }
+            } else {
+                if (nameEl) nameEl.textContent = '未ログイン';
+                if (avatarEl) avatarEl.textContent = '👤';
             }
         } catch(e) {}
     }
 
+    window.updateFloraSidebarUser = updateSidebarUser;
+    window.addEventListener('storage', (e) => {
+        if (e.key === 'flora_user') updateSidebarUser();
+    });
+
     // 壁紙の即時適用
     initWallpaper();
+
+    // Firebase Auth 状態の自動検知と同期（全ページ共通）
+    async function initAuthSync() {
+        try {
+            const { getApps } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js");
+            let attached = false;
+            const attach = async () => {
+                if (attached) return true;
+                const apps = getApps();
+                if (apps && apps.length > 0) {
+                    try {
+                        const { getAuth, onAuthStateChanged } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js");
+                        const auth = getAuth(apps[0]);
+                        onAuthStateChanged(auth, (user) => {
+                            if (user) {
+                                try {
+                                    localStorage.setItem('flora_user', JSON.stringify({
+                                        uid: user.uid,
+                                        name: user.displayName || user.email?.split('@')[0] || "Flora Student",
+                                        email: user.email || "",
+                                        avatar: user.photoURL || ""
+                                    }));
+                                } catch(e) {}
+                            } else {
+                                try { localStorage.removeItem('flora_user'); } catch(e) {}
+                            }
+                            updateSidebarUser();
+                        });
+                        attached = true;
+                        return true;
+                    } catch(e) {
+                        return false;
+                    }
+                }
+                return false;
+            };
+
+            if (!await attach()) {
+                let attempts = 0;
+                const timer = setInterval(async () => {
+                    attempts++;
+                    if (await attach() || attempts > 20) clearInterval(timer);
+                }, 500);
+            }
+        } catch(e) {}
+    }
+    initAuthSync();
 
     // DOM読み込み完了時に実行
     if (document.readyState === 'loading') {
