@@ -1,7 +1,7 @@
-// ⚡ 軽量 Service Worker（Flora v3.5 キャッシュ完全更新）
-const CACHE_NAME = 'flora-pwa-v3.5'; // ← バージョンを上げて古いキャッシュを完全破棄
+// ⚡ 軽量 Service Worker（Flora v3.6 キャッシュ肥大化防止・完全更新）
+const CACHE_NAME = 'flora-pwa-v3.6'; // ← バージョン更新で旧94MBキャッシュを完全自動削除
 
-// 最低限、オフライン時に救いたい主要ページだけ事前キャッシュ
+// 最低限、オフライン時に救いたい主要シェルだけ事前キャッシュ
 const PRECACHE_URLS = [
     './',
     './index.html',
@@ -23,7 +23,6 @@ const PRECACHE_URLS = [
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME).then((cache) => {
-            // 個々のURLが404等でもinstall全体を失敗させない
             return Promise.all(
                 PRECACHE_URLS.map((url) =>
                     cache.add(url).catch((err) => {
@@ -42,7 +41,10 @@ self.addEventListener('activate', (event) => {
             Promise.all(
                 keys
                     .filter((key) => key !== CACHE_NAME)
-                    .map((key) => caches.delete(key))
+                    .map((key) => {
+                        console.log('[SW] Deleting old bloated cache:', key);
+                        return caches.delete(key);
+                    })
             )
         ).then(() => clients.claim())
     );
@@ -54,12 +56,33 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
+    const url = new URL(event.request.url);
+
+    // 1. 同一オリジン（自サイト）以外の外部リクエスト（Firebase Storage、Google Fonts、CDN等）はCache Storageに溜めない
+    // ※ Chromeのセキュリティ仕様により、クロスオリジンの不透明レスポンス（opaque response）は1件あたり約7MBのパディングが加算され、
+    //    10件程度画像やCDNを読み込むだけで90MB超に激増するため。
+    if (url.origin !== self.location.origin) {
+        return;
+    }
+
+    // 2. APKや大容量バイナリ、壁紙画像等はキャッシュ除外
+    if (url.pathname.endsWith('.apk') || url.pathname.endsWith('.zip') || url.pathname.includes('wallpaper.jpg')) {
+        return;
+    }
+
+    // 3. APIリクエストはキャッシュしない
+    if (url.pathname.startsWith('/api/')) {
+        return;
+    }
+
     event.respondWith(
         fetch(event.request)
             .then((networkResponse) => {
-                // 成功したレスポンスはキャッシュを更新しておく（オフライン精度向上）
-                const clone = networkResponse.clone();
-                caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+                // 成功した同一オリジンのレスポンスのみキャッシュを更新（オフライン精度維持）
+                if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+                    const clone = networkResponse.clone();
+                    caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+                }
                 return networkResponse;
             })
             .catch(async () => {
@@ -67,7 +90,6 @@ self.addEventListener('fetch', (event) => {
                 if (cached) {
                     return cached;
                 }
-                // キャッシュにも無い場合は必ずResponseを返す（undefinedを渡さない）
                 return new Response('オフラインのため読み込めませんでした。', {
                     status: 503,
                     statusText: 'Service Unavailable',
@@ -76,3 +98,4 @@ self.addEventListener('fetch', (event) => {
             })
     );
 });
+
