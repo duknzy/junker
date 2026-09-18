@@ -12,9 +12,9 @@
 
     <script>
         window.MathJax = {
-            loader: { load: ['[tex]/bbox', '[tex]/color'] },
+            loader: { load: ['[tex]/bbox', '[tex]/color', '[tex]/mhchem'] },
             tex: {
-                packages: { '[+]': ['bbox', 'color'] },
+                packages: { '[+]': ['bbox', 'color', 'mhchem'] },
                 inlineMath: [['$', '$'], ['\\(', '\\)']],
                 displayMath: [['$$', '$$'], ['\\[', '\\]']],
                 processEscapes: true,
@@ -2629,8 +2629,8 @@
                                     </div>
                                     <div class="subject-select-card" data-subject="化学">
                                         <div class="subject-card-icon">🧪</div>
-                                        <div class="subject-card-name">化学</div>
-                                        <div class="subject-card-tag">理論・無機・有機</div>
+                                        <div class="subject-card-name">化学基礎（共テ）</div>
+                                        <div class="subject-card-tag">原子・結合・mol・酸塩基・酸化還元</div>
                                     </div>
                                     <div class="subject-select-card" data-subject="生物">
                                         <div class="subject-card-icon">🧬</div>
@@ -2839,6 +2839,24 @@
                                         📝 学びたい単元名（例：<span id="topic-placeholder-example">二次関数の最大最小</span>）
                                     </label>
                                     <input type="text" id="topic-input" class="flora-input" placeholder="例：微分方程式の解法 / 物理 コンデンサー回路 / 情報I アルゴリズムと計算量 など" style="margin-bottom:0.6rem;">
+                                    
+                                    <!-- 🧪 化学基礎（共通テスト特化）クイック単元選択バブル -->
+                                    <div id="chem-quick-presets" style="display:none; margin-bottom:0.75rem; background:rgba(14, 165, 233, 0.07); border:1px solid rgba(14, 165, 233, 0.28); border-radius:var(--radius-md); padding:0.65rem 0.85rem;">
+                                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.45rem; flex-wrap:wrap; gap:0.2rem;">
+                                            <span style="font-size:0.76rem; font-weight:750; color:var(--text-primary); display:flex; align-items:center; gap:0.35rem;">
+                                                🧪 <span style="color:var(--brand-primary);">化学基礎（共テ超頻出）</span>おすすめ単元：
+                                            </span>
+                                            <span style="font-size:0.68rem; color:var(--text-secondary);">※ タップで自動セット</span>
+                                        </div>
+                                        <div style="display:flex; flex-wrap:wrap; gap:0.35rem;" id="chem-preset-buttons">
+                                            <button type="button" class="tactile-btn chem-preset-btn" data-topic="物質量(mol)の計算と量的関係" data-note="個数・質量(g)・気体積(22.4L)・モル濃度の相互変換マップを徹底し、反応前後の物質量表を使った共テ計算の筋道をマスターしたい" style="font-size:0.72rem; padding:0.3rem 0.6rem; border-radius:var(--radius-full); background:var(--bg-surface); border:1px solid var(--border-color); color:var(--text-primary); font-weight:600;">⚖️ 物質量(mol)と量的関係</button>
+                                            <button type="button" class="tactile-btn chem-preset-btn" data-topic="中和滴定と実験器具・pH計算" data-note="ビュレット・ホールピペット等の共洗い理由、メニスカス読み取り、指示薬（フェノールフタレイン／メチルオレンジ）の変色域と滴定曲線の急所を網羅したい" style="font-size:0.72rem; padding:0.3rem 0.6rem; border-radius:var(--radius-full); background:var(--bg-surface); border:1px solid var(--border-color); color:var(--text-primary); font-weight:600;">🧪 中和滴定と実験器具</button>
+                                            <button type="button" class="tactile-btn chem-preset-btn" data-topic="酸化還元反応と酸化数の決定・イオン化傾向" data-note="酸化数の決定規則と例外、半反応式のつくり方、金属のイオン化傾向と気体発生・沈殿反応の正誤判定トラップを網羅したい" style="font-size:0.72rem; padding:0.3rem 0.6rem; border-radius:var(--radius-full); background:var(--bg-surface); border:1px solid var(--border-color); color:var(--text-primary); font-weight:600;">⚡ 酸化還元と酸化数</button>
+                                            <button type="button" class="tactile-btn chem-preset-btn" data-topic="化学結合の種類と結晶の性質比較" data-note="イオン結合・共有結合・分子間力・金属結合の比較（融点、電気伝導性、延性展性）と結晶の分類・性質を整理したい" style="font-size:0.72rem; padding:0.3rem 0.6rem; border-radius:var(--radius-full); background:var(--bg-surface); border:1px solid var(--border-color); color:var(--text-primary); font-weight:600;">💎 化学結合と結晶の性質</button>
+                                            <button type="button" class="tactile-btn chem-preset-btn" data-topic="原子の構造・同位体・電子配置" data-note="陽子・中性子・電子の数、質量数、同位体と同素体の混同トラップ、価電子と最外殻電子、周期表の典型・希ガスの性質を徹底したい" style="font-size:0.72rem; padding:0.3rem 0.6rem; border-radius:var(--radius-full); background:var(--bg-surface); border:1px solid var(--border-color); color:var(--text-primary); font-weight:600;">⚛️ 原子の構造・同位体</button>
+                                            <button type="button" class="tactile-btn chem-preset-btn" data-topic="酸と塩基の強弱・価数と中和反応" data-note="アレニウス・ブレンステッドの定義、電離度と強酸強塩基、酸の価数と強さの混同トラップ、塩の分類（正塩・酸性塩・塩基性塩）と液性を整理したい" style="font-size:0.72rem; padding:0.3rem 0.6rem; border-radius:var(--radius-full); background:var(--bg-surface); border:1px solid var(--border-color); color:var(--text-primary); font-weight:600;">🧫 酸・塩基の強弱と塩</button>
+                                        </div>
+                                    </div>
                                     
                                     <div id="topic-level-wrap">
                                         <label style="font-size:0.8rem; color:var(--text-secondary); display:block; margin-bottom:0.3rem; font-weight:600;">
@@ -3496,7 +3514,8 @@
         // 📚 教科ごとの学習トラック設計
         // 1. single: 1回完結型（社会全般・国語）
         // 2. two-step: 2段階スマート型（英語・生物・地学・情報）
-        // 3. three-step: 3段階ステップ型（数学・物理・化学など）
+        // 3. chem-base: 共通テスト化学基礎特化型（化学）
+        // 4. three-step: 3段階ステップ型（数学・物理・その他）
         // ==========================================
         function getSubjectLearningTrack(subject) {
             if (!subject) return "single";
@@ -3505,11 +3524,14 @@
             const singleTargets = ["地理", "日本史", "世界史", "歴史", "公共", "公民", "倫政", "倫理", "政治・経済", "現代社会", "社会", "地歴公民", "国語", "現代文", "古文", "漢文"];
             if (singleTargets.some(t => s.includes(t))) return "single";
 
+            // S: 化学基礎・共通テスト特化型 (化学)
+            if (s.includes("化学")) return "chem-base";
+
             // B: 2段階スマート型 (英語、生物、地学、情報)
             const twoStepTargets = ["英語", "生物", "地学", "情報"];
             if (twoStepTargets.some(t => s.includes(t))) return "two-step";
 
-            // C: 3段階ステップ型 (数学、物理、化学、その他)
+            // C: 3段階ステップ型 (数学、物理、その他)
             return "three-step";
         }
 
@@ -3520,6 +3542,26 @@
                     short: "完全網羅",
                     label: "🏆 完全網羅マスター（基礎・因果関係・入試頻出を1回で習得）",
                     badge: "🏆 完全網羅"
+                }
+            ],
+            "chem-base": [
+                {
+                    value: "共テ基礎・概念理解",
+                    short: "共テ基礎",
+                    label: "🌱 共通テスト基礎・概念理解（教科書・基本原理・原子と結合）",
+                    badge: "🌱 共テ基礎"
+                },
+                {
+                    value: "共テ頻出・解法定石",
+                    short: "共テ頻出",
+                    label: "🎯 共通テスト典型・頻出（mol計算・中和滴定・酸化還元・実験手順）",
+                    badge: "🎯 共テ頻出"
+                },
+                {
+                    value: "共テ満点・盲点攻略",
+                    short: "共テ満点",
+                    label: "🔥 共通テスト満点対策（実験考察・グラフ読解・正誤トラップ盲点）",
+                    badge: "🔥 共テ満点"
                 }
             ],
             "two-step": [
@@ -3566,7 +3608,7 @@
                 lvl = lessonOrSubject.level || "";
             } else if (typeof lessonOrSubject === "string") {
                 // 引数がレベル文字列単体で呼ばれた場合の救済処理
-                if (!rawLevel && (lessonOrSubject.includes("基礎") || lessonOrSubject.includes("典型") || lessonOrSubject.includes("応用") || lessonOrSubject.includes("入試") || lessonOrSubject.includes("完全網羅"))) {
+                if (!rawLevel && (lessonOrSubject.includes("基礎") || lessonOrSubject.includes("典型") || lessonOrSubject.includes("応用") || lessonOrSubject.includes("入試") || lessonOrSubject.includes("完全網羅") || lessonOrSubject.includes("共テ"))) {
                     subj = (typeof currentLesson !== "undefined" && currentLesson) ? (currentLesson.subject || detectLessonSubject(currentLesson)) : (typeof selectedSubject !== "undefined" ? selectedSubject : "数学");
                     lvl = lessonOrSubject;
                 } else {
@@ -3592,12 +3634,12 @@
                     } else if (lvl.includes("実戦") || lvl.includes("演習") || lvl.includes("応用") || lvl.includes("入試")) {
                         idx = 1;
                     }
-                } else if (track === "three-step") {
-                    if (lvl.includes("教科書") || lvl === "基礎・概念理解" || (lvl.includes("基礎") && !lvl.includes("典型") && !lvl.includes("入試"))) {
+                } else if (track === "chem-base" || track === "three-step") {
+                    if (lvl.includes("教科書") || lvl.includes("基礎・概念理解") || lvl.includes("共テ基礎") || (lvl.includes("基礎") && !lvl.includes("典型") && !lvl.includes("入試") && !lvl.includes("頻出"))) {
                         idx = 0;
-                    } else if (lvl.includes("定期テスト") || lvl.includes("入試基礎") || lvl === "入試典型パターン" || lvl.includes("典型")) {
+                    } else if (lvl.includes("定期テスト") || lvl.includes("入試基礎") || lvl.includes("入試典型") || lvl.includes("典型") || lvl.includes("頻出") || lvl.includes("定石")) {
                         idx = 1;
-                    } else if (lvl.includes("応用") || lvl.includes("難関") || lvl === "難関・融合応用") {
+                    } else if (lvl.includes("応用") || lvl.includes("難関") || lvl.includes("満点") || lvl.includes("盲点")) {
                         idx = 2;
                     }
                 }
@@ -3623,6 +3665,12 @@
             const levelWrap = el("topic-level-wrap");
             const socialNote = el("topic-social-note");
             const selectEl = el("topic-level-select");
+            const chemPresets = el("chem-quick-presets");
+
+            // 🧪 化学基礎クイック単元バブルの表示切り替え
+            if (chemPresets) {
+                chemPresets.style.display = (track === "chem-base" || selectedSubject === "化学") ? "block" : "none";
+            }
 
             if (track === "single") {
                 if (levelWrap) levelWrap.style.display = "none";
@@ -3642,7 +3690,7 @@
                     if (match) {
                         selectEl.value = match.value;
                     } else {
-                        selectEl.value = track === "three-step" ? (levels[1]?.value || levels[0].value) : levels[0].value;
+                        selectEl.value = (track === "three-step" || track === "chem-base") ? (levels[1]?.value || levels[0].value) : levels[0].value;
                     }
                 }
             }
@@ -3670,7 +3718,7 @@
                     const examples = {
                         "数学": "二次関数の最大最小 / 微分積分 / ベクトル",
                         "物理": "コンデンサー回路 / 力学的エネルギー保存 / ドップラー効果",
-                        "化学": "酸・塩基の中和滴定 / 酸化還元 / 有機化合物の構造決定",
+                        "化学": "物質量(mol)の計算と量的関係 / 中和滴定と実験器具 / 酸化還元と酸化数",
                         "生物": "転写・翻訳と遺伝暗号 / 光合成の明反応・暗反応",
                         "情報": "情報I アルゴリズムと計算量 / 二進数表現 / ネットワークと暗号化",
                         "地理": "ケッペンの気候区分 / 東南アジアの地誌・産業 / 貿易構造",
@@ -3702,6 +3750,30 @@
             [1, 2, 3].forEach(s => {
                 const nav = el(`step-nav-${s}`);
                 if (nav) nav.onclick = () => goToWizardStep(s);
+            });
+
+            // 🧪 化学基礎クイック単元プリセットボタンのクリック連動
+            document.querySelectorAll(".chem-preset-btn").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    const topic = btn.getAttribute("data-topic") || "";
+                    const note = btn.getAttribute("data-note") || "";
+                    if (el("topic-input")) {
+                        el("topic-input").value = topic;
+                        el("topic-input").focus();
+                    }
+                    if (el("topic-note-input") && note) {
+                        el("topic-note-input").value = note;
+                    }
+                    // 視覚的フィードバック
+                    document.querySelectorAll(".chem-preset-btn").forEach(b => {
+                        b.style.background = "var(--bg-surface)";
+                        b.style.borderColor = "var(--border-color)";
+                        b.style.color = "var(--text-primary)";
+                    });
+                    btn.style.background = "var(--brand-primary)";
+                    btn.style.borderColor = "var(--brand-primary)";
+                    btn.style.color = "#ffffff";
+                });
             });
         }
         setupSubjectCardSelection();
@@ -4186,8 +4258,8 @@
             if (/公共/i.test(text)) return "公共";
             if (/公民|倫理/i.test(text)) return "公民";
 
-            // 2. 化学
-            if (/化学|周期表|周期律|元素|構成粒子|三態|熱運動|結合|イオン|分子|原子|mol|モル|酸化|還元|酸|塩基|中和|沈殿|溶液|濃度|気体|無機|有機|結晶/i.test(text)) return "化学";
+            // 2. 化学（化学基礎・共通テスト含む）
+            if (/化学|化学基礎|周期表|周期律|元素|構成粒子|三態|熱運動|結合|イオン|分子|原子|mol|モル|物質量|モル濃度|酸化|還元|酸化数|半反応式|イオン化傾向|酸|塩基|中和|中和滴定|ビュレット|ホールピペット|メスフラスコ|コニカルビーカー|指示薬|フェノールフタレイン|メチルオレンジ|同位体|同素体|価電子|最外殻|沈殿|溶液|濃度|気体|無機|有機|結晶/i.test(text)) return "化学";
 
             // 3. 物理
             if (/物理|力学|電磁気|波動|運動方程式|単振動|熱力学|オーム|クーロン|落体|摩擦|浮力/i.test(text)) return "物理";
@@ -4783,13 +4855,32 @@
 ・公式の単なる丸暗記を排し、定義式からの導出や極限・境界値（t→∞、質量比の極限など）での妥当性吟味を解説に盛り込むこと。
 ・保存則（力学的エネルギー保存則、運動量保存則、角運動量保存則、電荷保存則）が「なぜその状況で成立するのか（外力や非保存力の有無）」を論理的に明示すること。`,
             "化学": `
-【化学科特化ルール】
-・現象をミクロな原子・電子・分子の視点（電子配置、結合性、電気陰性度、エネルギー準位、平衡論）から論理的に説明すること。
-・化学反応式・イオン反応式・熱化学関係式の係数と状態（気・液・固）を正確に記述すること。
-・理論化学：物質量（mol）計算の立式根拠、気体の状態方程式、平衡移動（ルシャトリエの原理）、酸塩基中和・緩衝液、酸化還元反応の半反応式合成、溶解度積の定量計算定石を明示すること。
-・無機化学：各族・金属/非金属の性質、気体発生法、沈殿生成と錯イオン形成、系統分離の論理フローを整理すること。
-・有機化学：元素分析から分子式決定、不飽和度、官能基識別テスト、異性体（構造・幾何・光学）、反応系統図の解法プロセスを解説すること。
-・実験手順の「操作理由（なぜ加熱するのか、なぜ急冷・弱酸性にするのか）」を確実に網羅すること。`,
+【🧪 化学基礎（共通テスト特化）専任指導ルール】
+※【絶対厳守スコープ】：生徒は大学入学共通テスト「化学基礎」を受験します。発展化学（理系個別入試）の範囲（気体の状態方程式 PV=nRT、蒸気圧・コロイド・浸透圧、化学平衡・ルシャトリエの原理、緩衝液・電離平衡・溶解度積、熱化学方程式・反応エンタルピー、無機の各族各論・錯イオン・金属イオン系統分離、有機化学全般・高分子化合物など）は【絶対に出題・解説しない】こと。化学基礎の学習範囲（①物質の構成と化学結合、②物質の変化・酸と塩基・酸化還元）に100%集中してください。
+
+1. 【物質量（mol）計算の絶対迷子防止・単位変換マップ】：
+   ・すべての計算問題において、「粒子の個数」「質量 (g)」「気体の体積 (標準状態 0℃, 1.013×10^5 Pa で 22.4 L/mol)」「モル濃度 (mol/L)」を、【必ず mol を仲介駅とする単位変換マップ】として視覚的・段階的に示してください。
+   ・公式の丸暗記を排し、「なぜこの数値を掛け算・割り算するのか（単位の約分）」を日本語で丁寧に言語化すること。
+   ・化学反応式の量的関係では、必ず「反応前・変化量・反応後」の表（mol基準）を明示して計算の筋道を立てること。
+
+2. 【共通テスト頻出：実験器具の扱いと操作理由（最頻出テーマ）】：
+   ・中和滴定や気体捕集・分離などの実験手順では、必ず以下の共テ頻出急所を網羅すること：
+     ①【実験器具の洗浄法（共洗い vs 水濡れOK）とその理由】：
+        - ビュレット、ホールピペット：濃度変化（薄まり）を防ぐため、滴定液・採取液で「共洗い」してそのまま使う。
+        - メスフラスコ、コニカルビーカー：含まれる溶質の物質量（mol）が変わらなければ良いため、「純水で濡れたまま」使用する。
+     ②【液面の読み取りルール】：メニスカスの最下部を水平な目線で、最小目盛りの1/10まで目分量で読み取る。
+     ③【中和指示薬と滴定曲線】：メチルオレンジ（赤→黄、変色域 pH 3.1〜4.4：強酸＋弱塩基の中和向け）、フェノールフタレイン（無→赤、変色域 pH 8.0〜9.8：弱酸＋強塩基の中和向け）の選択理由と変色を正確に解説すること。
+
+3. 【共通テスト頻出：定性理解＆正誤判定トラップ盲点攻略】：
+   ・共通テストは単純な知識暗記ではなく「文章の○×正誤判定」が合否を分けます。講義内では受験生が引っかかりやすい【共テ頻出トラップ】を必ず明確に注意喚起すること：
+     - 同位体（原子番号・陽子数は同じで中性子数・質量数が異なる）と 同素体（SCOP：同一元素の単体で性質が異なる）の混同
+     - 電解質と非電解質の区別、強電離（電離度 α≒1）と弱電離（α≪1）の区別
+     - 酸の「価数（出せるH+の数）」と「強弱（電離度）」の混同（例：酢酸CH3COOHは1価の弱酸、硫酸H2SO4は2価の強酸）
+     - 酸化数の決定規則（単体は0、化合物中のHは+1, Oは-2、化合物全体で0）と頻出例外（過酸化水素H2O2中のOは-1）
+     - 結合の種類（イオン結合・共有結合・金属結合・配位結合・分子間力）と、融点・硬さ・電気伝導性（固体時・液体時・水溶液時）の対比を整理すること。
+
+4. 【暗記ポイント（一問一答）の最適化】：
+   ・単元の暗記ポイントを抽出する際は、単なる用語の名称だけでなく、「なぜその現象が起きるのか（理由）」「共通テストで狙われる誤文パターン」を問いと答えに落とし込むこと。`,
             "生物": `
 【生物科特化ルール】
 ・生命現象のメカニズム（分子生物学、代謝経路、遺伝情報の発現・調節、細胞分裂、発生、受容と応答、恒常性維持、免疫系、生態系）を図解的に言語化すること。
@@ -5184,6 +5275,10 @@ ${socraticAddon}
                     if (track === "single") {
                         curriculumRule = `・【1回完結型】数学のような「基礎→典型→応用」といった難易度分断は厳禁です。
 ・単元の規模に応じ、1〜3パート程度（標準は2パート、コンパクトなら1〜2パート）で、背景・原因から重要展開、入試頻出ポイント・重要用語まで因果関係や論理の流れに沿って一気に網羅してください。`;
+                    } else if (track === "chem-base") {
+                        curriculumRule = `・【🧪 共通テスト化学基礎特化型：現在「${levelText}」】
+・【絶対厳守】：発展化学（理系個別入試：気体状態方程式、化学平衡・ルシャトリエ、緩衝液、溶解度積、熱化学、有機化学、錯イオン等）の出題・解説は絶対禁止。化学基礎の共通テスト（30〜50点満点）の試験範囲に100%特化した2〜3パートに分割してください。
+・基礎・概念理解なら原子構造・結合・周期表の原理、頻出ならmol計算・中和・酸化還元の定石と量的関係、満点対策なら実験器具（共洗い理由等）や正誤判定トラップの盲点攻略を各パートの主眼にしてください。`;
                     } else if (track === "two-step") {
                         curriculumRule = `・【2段階スマート型：現在「${levelText}」】
 ・本レベルに焦点を当て、2〜3パートで過不足なくマスターできる構成にしてください。
@@ -5283,6 +5378,8 @@ ${subjectGuide}
                     let basePrompt = `【教科：${selectedSubject}】\n【単元名】${topicText}\n【レベル】${levelText}`;
                     if (track === "single") {
                         basePrompt += `\n【1回完結型の特別指示】歴史・地理・公民・国語の因果関係、時代の流れ、重要専門用語、共通テスト・入試頻出ポイントを初学者にも極めて分かりやすく論理的・体系的に網羅してください。難易度分断ではなく、基礎〜頻出要点を一貫してマスターできる講義にしてください。難しい漢字や専門用語には必ず「漢字（よみがな）」を添えてください。`;
+                    } else if (track === "chem-base") {
+                        basePrompt += `\n【🧪 共通テスト化学基礎特化の特別指示】指定された「${levelText}」に焦点を当て、共通テスト「化学基礎」で満点を狙うためのエッセンスを凝縮してください。発展化学の範囲（気体状態方程式、化学平衡、熱化学、有機化学など）は扱わず、mol計算の単位変換マップ、実験器具の扱い（共洗い等の理由）、正誤判定トラップ（同位体・同素体、酸の価数と強弱など）を徹底してください。数式・化学式は $ $ や $$ $$ で記述し、化学式には \\ce{...} 記法を積極的に活用してください。難しい漢字や専門用語には必ず「漢字（よみがな）」を添えてください。`;
                     } else if (track === "two-step") {
                         basePrompt += `\n【2段階スマート型の特別指示】指定された「${levelText}」に焦点を当て、要点の理解と実践的な解法を濃縮して解説してください。難しい漢字や専門用語には必ず「漢字（よみがな）」を添えてください。`;
                     } else {
@@ -7343,10 +7440,14 @@ ${socraticInstructionBlock}
             btn.textContent = "⚡ 類題を生成中...";
 
             const currentPart = currentLesson.parts[currentLesson.currentPartIndex] || { title: currentLesson.title, summary: "" };
+            const lessonSubject = currentLesson.subject || detectLessonSubject(currentLesson) || "";
+            const subjectGuide = SUBJECT_PROMPT_GUIDES[lessonSubject] || "";
 
             const DRILL_SYSTEM_PROMPT = `${customPolicyPrompt}
 
 ${EXPERT_TEACHER_PROMPT}
+【対象教科：${lessonSubject}】
+${subjectGuide}
 
 あなたは生徒が今学んだ授業内容の定着度を測るテスト作成者です。
 生徒が今終えたばかりの【第${currentLesson.currentPartIndex + 1}回: ${currentPart.title}（${currentPart.summary}）】の急所・罠・別解の活用をピンポイントで試すオリジナル類題を1問作成してください。
