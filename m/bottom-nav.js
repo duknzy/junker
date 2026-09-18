@@ -11,6 +11,9 @@
         if (mIdx !== -1) {
             return pathname.slice(0, mIdx + 3); // ".../m/"
         }
+        if (pathname.endsWith('/m')) {
+            return pathname + '/';
+        }
         return './';
     }
 
