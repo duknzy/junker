@@ -12,9 +12,9 @@
 
     <script>
         window.MathJax = {
-            loader: { load: ['[tex]/bbox', '[tex]/color'] },
+            loader: { load: ['[tex]/bbox', '[tex]/color', '[tex]/mhchem'] },
             tex: {
-                packages: {'[+]': ['bbox', 'color']},
+                packages: {'[+]': ['bbox', 'color', 'mhchem']},
                 inlineMath: [['$', '$'], ['\\(', '\\)']],
                 displayMath: [['$$', '$$'], ['\\[', '\\]']],
                 processEscapes: true,
@@ -596,7 +596,7 @@
                 <select id="create-subject-select" class="m-input" style="padding:0.4rem 0.6rem;">
                     <option value="数学">📐 数学</option>
                     <option value="物理">⚡ 物理</option>
-                    <option value="化学">🧪 化学</option>
+                    <option value="化学">🧪 化学基礎（共テ特化）</option>
                     <option value="生物">🧬 生物</option>
                     <option value="情報">💻 情報</option>
                     <option value="地理">🗺️ 地理</option>
@@ -628,6 +628,21 @@
             <div id="field-topic-wrap" style="margin-bottom:0.75rem;">
                 <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:0.3rem;">学びたい単元・テーマ</label>
                 <input type="text" id="create-topic-input" class="m-input" placeholder="例：3次関数の微分と極値、酸化還元反応 など">
+
+                <!-- 🧪 化学基礎（共テ超頻出）クイック選択バブル（モバイル用） -->
+                <div id="chem-quick-presets-m" style="display:none; margin-top:0.5rem; background:rgba(14, 165, 233, 0.08); border:1px solid rgba(14, 165, 233, 0.25); border-radius:var(--radius-md); padding:0.5rem 0.65rem;">
+                    <div style="font-size:0.7rem; font-weight:700; color:var(--text-primary); margin-bottom:0.35rem;">
+                        🧪 <span style="color:var(--brand-primary);">化学基礎（共テ超頻出）</span>単元選択：
+                    </div>
+                    <div style="display:flex; flex-wrap:wrap; gap:0.3rem;" id="chem-preset-buttons-m">
+                        <button type="button" class="chem-preset-btn-m" data-topic="物質量(mol)の計算と量的関係" data-note="個数・質量(g)・気体積(22.4L)・モル濃度の相互変換マップを徹底し、反応前後の物質量表を使った共テ計算の筋道をマスターしたい" style="font-size:0.68rem; padding:0.25rem 0.5rem; border-radius:12px; background:var(--bg-surface); border:1px solid var(--border-color); color:var(--text-primary); font-weight:600;">⚖️ 物質量(mol)と量的関係</button>
+                        <button type="button" class="chem-preset-btn-m" data-topic="中和滴定と実験器具・pH計算" data-note="ビュレット・ホールピペット等の共洗い理由、メニスカス読み取り、指示薬の変色域と滴定曲線の急所を網羅したい" style="font-size:0.68rem; padding:0.25rem 0.5rem; border-radius:12px; background:var(--bg-surface); border:1px solid var(--border-color); color:var(--text-primary); font-weight:600;">🧪 中和滴定と実験器具</button>
+                        <button type="button" class="chem-preset-btn-m" data-topic="酸化還元反応と酸化数の決定・イオン化傾向" data-note="酸化数の決定規則と例外、半反応式のつくり方、金属のイオン化傾向と気体発生・沈殿反応の正誤判定トラップを網羅したい" style="font-size:0.68rem; padding:0.25rem 0.5rem; border-radius:12px; background:var(--bg-surface); border:1px solid var(--border-color); color:var(--text-primary); font-weight:600;">⚡ 酸化還元と酸化数</button>
+                        <button type="button" class="chem-preset-btn-m" data-topic="化学結合の種類と結晶の性質比較" data-note="イオン結合・共有結合・分子間力・金属結合の比較と結晶の分類・性質を整理したい" style="font-size:0.68rem; padding:0.25rem 0.5rem; border-radius:12px; background:var(--bg-surface); border:1px solid var(--border-color); color:var(--text-primary); font-weight:600;">💎 化学結合と結晶</button>
+                        <button type="button" class="chem-preset-btn-m" data-topic="原子の構造・同位体・電子配置" data-note="陽子・中性子・電子の数、質量数、同位体と同素体の混同トラップ、価電子と最外殻電子、周期表の性質を徹底したい" style="font-size:0.68rem; padding:0.25rem 0.5rem; border-radius:12px; background:var(--bg-surface); border:1px solid var(--border-color); color:var(--text-primary); font-weight:600;">⚛️ 原子の構造・同位体</button>
+                        <button type="button" class="chem-preset-btn-m" data-topic="酸と塩基の強弱・価数と中和反応" data-note="定義、電離度と強酸強塩基、酸の価数と強さの混同トラップ、塩の分類と液性を整理したい" style="font-size:0.68rem; padding:0.25rem 0.5rem; border-radius:12px; background:var(--bg-surface); border:1px solid var(--border-color); color:var(--text-primary); font-weight:600;">🧫 酸・塩基の強弱と塩</button>
+                    </div>
+                </div>
             </div>
 
             <!-- 写真選択欄（写真モード時） -->
@@ -1755,6 +1770,7 @@ ${subjectGuide}
             const s = String(subject).trim();
             const singleTargets = ["地理", "日本史", "世界史", "歴史", "公共", "公民", "倫政", "倫理", "政治・経済", "現代社会", "社会", "地歴公民", "国語", "現代文", "古文", "漢文"];
             if (singleTargets.some(t => s.includes(t))) return "single";
+            if (s.includes("化学")) return "chem-base";
             const twoStepTargets = ["英語", "生物", "地学", "情報"];
             if (twoStepTargets.some(t => s.includes(t))) return "two-step";
             return "three-step";
@@ -1763,6 +1779,11 @@ ${subjectGuide}
         const TRACK_LEVELS = {
             "single": [
                 { value: "完全網羅マスター", label: "🏆 完全網羅マスター（1回で網羅習得）" }
+            ],
+            "chem-base": [
+                { value: "共テ基礎・概念理解", short: "共テ基礎", label: "🌱 共通テスト基礎・概念理解（教科書・基本原理）", badge: "🌱 共テ基礎" },
+                { value: "共テ頻出・解法定石", short: "共テ頻出", label: "🎯 共通テスト典型・頻出（mol計算・中和・酸化還元）", badge: "🎯 共テ頻出" },
+                { value: "共テ満点・盲点攻略", short: "共テ満点", label: "🔥 共通テスト満点対策（実験考察・正誤トラップ）", badge: "🔥 共テ満点" }
             ],
             "two-step": [
                 { value: "基礎・本質理解", label: "🌱 基礎・本質理解（仕組み・ルール）" },
@@ -1785,7 +1806,7 @@ ${subjectGuide}
             const text = `${lesson.title || ""} ${lesson.topic || ""} ${lesson.lectureNote || lesson.extractedText || ""}`.toLowerCase();
             if (/微分|積分|数列|ベクトル|三角関数|二次関数|複素数|極限|確率|場合の数|方程式|不等式|整数|幾何|対数|指数|マトリクス/.test(text)) return "数学";
             if (/力学|運動方程式|電磁気|波動|熱力学|屈折|干渉|クーロン|コンデンサー|コイル|光電効果|ドップラー/.test(text)) return "物理";
-            if (/モル|mol|酸化|還元|中和|有機化学|無機化学|平衡|熱化学|電池|気体|結晶|アルケン|ベンゼン|滴定/.test(text)) return "化学";
+            if (/化学|化学基礎|モル|mol|物質量|酸化|還元|酸化数|半反応式|イオン化傾向|中和|中和滴定|ビュレット|ホールピペット|メスフラスコ|コニカルビーカー|指示薬|フェノールフタレイン|メチルオレンジ|同位体|同素体|価電子|最外殻|沈殿|溶液|濃度|気体|有機化学|無機化学|平衡|熱化学|電池|結晶|アルケン|ベンゼン|滴定/.test(text)) return "化学";
             if (/dna|遺伝|光合成|呼吸|免疫|神経|細胞|ホルモン|発生|進化|生態系|転写|翻訳|減数分裂/.test(text)) return "生物";
             if (/アルゴリズム|二進数|2進数|ネットワーク|暗号|情報セキュリティ|論理回路|フローチャート|データベース|sql|プログラミング/.test(text)) return "情報";
             if (/気候|ケッペン|扇状地|三角州|プレート|資源|農業|貿易|人口|地誌|地形図|モノカルチャー/.test(text)) return "地理";
@@ -1804,7 +1825,7 @@ ${subjectGuide}
                 subj = lessonOrSubject.subject || detectLessonSubject(lessonOrSubject) || "その他";
                 lvl = lessonOrSubject.level || "";
             } else if (typeof lessonOrSubject === "string") {
-                if (!rawLevel && (lessonOrSubject.includes("基礎") || lessonOrSubject.includes("典型") || lessonOrSubject.includes("応用") || lessonOrSubject.includes("入試") || lessonOrSubject.includes("完全網羅"))) {
+                if (!rawLevel && (lessonOrSubject.includes("基礎") || lessonOrSubject.includes("典型") || lessonOrSubject.includes("応用") || lessonOrSubject.includes("入試") || lessonOrSubject.includes("完全網羅") || lessonOrSubject.includes("共テ"))) {
                     subj = (activeLessonId && lessonsCache[activeLessonId]) ? (lessonsCache[activeLessonId].subject || detectLessonSubject(lessonsCache[activeLessonId])) : "数学";
                     lvl = lessonOrSubject;
                 } else {
@@ -1830,12 +1851,12 @@ ${subjectGuide}
                     } else if (lvl.includes("実戦") || lvl.includes("演習") || lvl.includes("応用") || lvl.includes("入試")) {
                         idx = 1;
                     }
-                } else if (track === "three-step") {
-                    if (lvl.includes("教科書") || lvl === "基礎・概念理解" || (lvl.includes("基礎") && !lvl.includes("典型") && !lvl.includes("入試"))) {
+                } else if (track === "chem-base" || track === "three-step") {
+                    if (lvl.includes("教科書") || lvl.includes("基礎・概念理解") || lvl.includes("共テ基礎") || (lvl.includes("基礎") && !lvl.includes("典型") && !lvl.includes("入試") && !lvl.includes("頻出"))) {
                         idx = 0;
-                    } else if (lvl.includes("定期テスト") || lvl.includes("入試基礎") || lvl === "入試典型パターン" || lvl.includes("典型")) {
+                    } else if (lvl.includes("定期テスト") || lvl.includes("入試基礎") || lvl.includes("入試典型") || lvl.includes("典型") || lvl.includes("頻出") || lvl.includes("定石")) {
                         idx = 1;
-                    } else if (lvl.includes("応用") || lvl.includes("難関") || lvl === "難関・融合応用") {
+                    } else if (lvl.includes("応用") || lvl.includes("難関") || lvl.includes("満点") || lvl.includes("盲点")) {
                         idx = 2;
                     }
                 }
@@ -1866,10 +1887,11 @@ ${subjectGuide}
 ・【思考のステップ】現象の図解的イメージ化（物体の受ける力や回路の電流・電位）→ 座標軸と正の向きの設定 → 法則の立式 → 数学的処理という「物理の普遍的解法アルゴリズム」を定着させること。
 ・極限的考察（$t \\to \\infty, m \\to 0$ など）による検算手法も盛り込むこと。`,
 
-            "化学": `【化学専門の授業構築ガイドライン】
-・物質の性質や反応をバラバラに暗記させるのではなく、電子配置・結合様式・電気陰性度・周期表の位置関係から「なぜそう反応するのか」を論理的に説明すること。
-・化学反応式・熱化学方程式・イオン反応式は正確に表記し、量的関係（モル計算・平衡定数・化学量論）の計算プロセスを段階的に示すこと。
-・【実験と現象】実験操作の目的、指示薬の変色理由、安全上の注意点、沈殿・気体発生の条件を明確に対比・体系化すること。`,
+            "化学": `【🧪 化学基礎（共通テスト特化）専任指導ルール】
+※【絶対厳守スコープ】：生徒は大学入学共通テスト「化学基礎」を受験します。発展化学の範囲（気体の状態方程式、蒸気圧、化学平衡・ルシャトリエ、緩衝液、熱化学方程式、錯イオン・系統分離、有機化学全般など）は絶対に出題・解説せず、化学基礎の範囲（物質の構成・結合、酸塩基・中和滴定、酸化還元）に100%集中すること。
+・物質量(mol)計算：個数・質量(g)・体積(22.4L)・モル濃度(mol/L)の単位変換マップと言語化による立式、反応前後の物質量表を必ず提示すること。
+・実験器具と操作理由：ビュレット/ホールピペットの共洗い理由、メスフラスコ/コニカルビーカーの水濡れOK理由、メニスカス読取、指示薬選択と変色域を徹底すること。
+・共テ頻出トラップ：同位体と同素体の区別、酸の価数と強弱の区別、酸化数の決定例外、結合種別と融点・硬さ・電気伝導性の対比を網羅すること。`,
 
             "生物": `【生物専門の授業構築ガイドライン】
 ・生命現象の「メカニズム（機構）」と「その進化的・恒常性維持における意義」を因果関係の鎖として解説すること。
@@ -2136,6 +2158,11 @@ ${subjectGuide}
             const socialNote = document.getElementById("create-social-note");
             const levelSelect = document.getElementById("create-level-select");
             const topicInput = document.getElementById("create-topic-input");
+            const chemPresetsM = document.getElementById("chem-quick-presets-m");
+
+            if (chemPresetsM) {
+                chemPresetsM.style.display = (track === "chem-base" || sub === "化学") ? "block" : "none";
+            }
 
             if (track === "single") {
                 if (levelWrap) levelWrap.style.display = "none";
@@ -2154,7 +2181,7 @@ ${subjectGuide}
                     if (match) {
                         levelSelect.value = match.value;
                     } else {
-                        levelSelect.value = track === "three-step" ? (levels[1]?.value || levels[0].value) : levels[0].value;
+                        levelSelect.value = (track === "three-step" || track === "chem-base") ? (levels[1]?.value || levels[0].value) : levels[0].value;
                     }
                 }
             }
@@ -2162,7 +2189,7 @@ ${subjectGuide}
             const examples = {
                 "数学": "例：3次関数の微分と極値、確率と漸化式 など",
                 "物理": "例：コンデンサー回路の過渡現象、力学的エネルギー保存 など",
-                "化学": "例：酸・塩基の中和滴定、有機化合物の構造決定 など",
+                "化学": "例：物質量(mol)の計算と量的関係、中和滴定と実験器具 など",
                 "生物": "例：DNAの転写と翻訳、光合成の反応経路 など",
                 "情報": "例：情報I アルゴリズムと計算量、2進数と論理回路 など",
                 "地理": "例：ケッペンの気候区分、東南アジアの産業と貿易 など",
@@ -2177,6 +2204,31 @@ ${subjectGuide}
                 topicInput.placeholder = examples[sub];
             }
         }
+
+        // モバイル化学プリセットボタンのリスナー設定
+        document.querySelectorAll(".chem-preset-btn-m").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const topic = btn.getAttribute("data-topic") || "";
+                const note = btn.getAttribute("data-note") || "";
+                const topicInput = document.getElementById("create-topic-input");
+                const noteInput = document.getElementById("create-note-input");
+                if (topicInput) {
+                    topicInput.value = topic;
+                    topicInput.focus();
+                }
+                if (noteInput && note) {
+                    noteInput.value = note;
+                }
+                document.querySelectorAll(".chem-preset-btn-m").forEach(b => {
+                    b.style.background = "var(--bg-surface)";
+                    b.style.borderColor = "var(--border-color)";
+                    b.style.color = "var(--text-primary)";
+                });
+                btn.style.background = "var(--brand-primary)";
+                btn.style.borderColor = "var(--brand-primary)";
+                btn.style.color = "#ffffff";
+            });
+        });
 
         const createModal = document.getElementById("create-modal");
         document.getElementById("open-create-modal-btn")?.addEventListener("click", () => {
@@ -2388,6 +2440,8 @@ ${subjectGuide}
                     let basePrompt = `【教科：${subject}】\n【単元名】${topic}\n【目標レベル】${level}`;
                     if (track === "single") {
                         basePrompt += `\n【1回完結型の特別指示】歴史・地理・公民・国語の因果関係、背景、重要専門用語、共通テスト・入試頻出ポイントを初学者にも極めて分かりやすく論理的・体系的に網羅してください。数学や理科のような難易度分断ではなく、基礎〜頻出要点を一貫してマスターできる講義にしてください。難しい漢字や専門用語には必ず読み仮名（ふりがな）を添えてください。`;
+                    } else if (track === "chem-base") {
+                        basePrompt += `\n【🧪 共通テスト化学基礎特化の特別指示】現在の目標レベル（${level}）に焦点を当て、共通テスト「化学基礎」で満点を狙うためのエッセンスを凝縮してください。発展化学（気体状態方程式、化学平衡、熱化学、有機化学など）の出題・解説は絶対禁止。mol計算の単位変換マップ、実験器具の扱い（共洗い等の理由）、正誤判定トラップ（同位体・同素体、酸の価数と強弱など）を徹底してください。数式・化学式は $ $ や $$ $$ で記述し、化学式には \\ce{...} 記法を活用してください。難しい漢字や専門用語には必ず読み仮名（ふりがな）を添えてください。`;
                     } else if (track === "two-step") {
                         basePrompt += `\n【2段階スマート型の特別指示】現在の目標レベル（${level}）に焦点を当て、要点の理解と実践的な解法を濃縮して解説してください。難しい漢字や専門用語には必ず読み仮名（ふりがな）を添えてください。`;
                     } else {
@@ -2419,6 +2473,8 @@ ${subjectGuide}
                     let curriculumInstruction = "あなたは予備校のカリキュラム設計AIです。各パートのタイトルや要約で難しい漢字や専門用語があれば「漢字（よみがな）」を付記してください。";
                     if (track === "single") {
                         curriculumInstruction += "単元全体（原因・展開・入試頻出要点）を因果関係に沿って網羅する1〜3パートの1回完結カリキュラムを設計してください。難易度分断は行わないでください。";
+                    } else if (track === "chem-base") {
+                        curriculumInstruction += `【発展化学の範囲は絶対禁止】目標レベル「${level}」に焦点を当て、共通テスト化学基礎（30〜50点満点）の頻出分野に100%特化した2〜3パートのカリキュラムを設計してください。`;
                     } else if (track === "two-step") {
                         curriculumInstruction += `目標レベル「${level}」に焦点を当て、2〜3パートで要点を濃縮マスターできるカリキュラムを設計してください。`;
                     } else {
