@@ -5200,6 +5200,69 @@
         };
 
         // --------------------------------------------------------------
+        // ⛩️ 歴史年表（出来事）の高精度マージ・重複排除・年代順ソートエンジン
+        // --------------------------------------------------------------
+        function mergeAndDeduplicateHistoricalEvents(prevEvents, newEvents) {
+            const listPrev = Array.isArray(prevEvents) ? prevEvents : [];
+            const listNew = Array.isArray(newEvents) ? newEvents : [];
+            
+            // 年号や出来事名の揺れ（スペース、全角半角、かっこ内の注記など）を正規化するヘルパー
+            const cleanName = (n) => {
+                if (!n) return "";
+                return String(n)
+                    .replace(/[\s\u3000]+/g, "")
+                    .replace(/[\(（].*?[\)）]/g, "") // ふりがなや補足を標準化
+                    .replace(/[「」『』・]/g, "")
+                    .toLowerCase();
+            };
+
+            const cleanYear = (y, ySort) => {
+                if (typeof ySort === "number" && !isNaN(ySort) && ySort !== 0) return String(ySort);
+                if (!y) return "";
+                const m = String(y).match(/\d+/);
+                return m ? m[0] : String(y).replace(/[\s\u3000年]/g, "");
+            };
+
+            const seenKeys = new Set();
+            const merged = [];
+
+            [...listPrev, ...listNew].forEach(ev => {
+                if (!ev || !ev.name) return;
+                const cName = cleanName(ev.name);
+                const cYear = cleanYear(ev.year, ev.year_sort);
+                if (!cName) return;
+
+                // 同一年号かつ同一名（または年号が一致し名称の主要部分が重複）の場合に名寄せ
+                const dedupeKey = `${cYear}___${cName}`;
+                if (seenKeys.has(dedupeKey)) return;
+
+                // 年号未指定の場合の名称単体重複チェック
+                if (!cYear && seenKeys.has(`noyear___${cName}`)) return;
+
+                seenKeys.add(dedupeKey);
+                if (!cYear) seenKeys.add(`noyear___${cName}`);
+
+                // year_sort の補正（未設定または数値でない場合パース）
+                let sortVal = typeof ev.year_sort === "number" && !isNaN(ev.year_sort) ? ev.year_sort : 0;
+                if (!sortVal && ev.year) {
+                    const parsed = parseInt(String(ev.year).replace(/[^\d-]/g, ""), 10);
+                    if (!isNaN(parsed)) sortVal = parsed;
+                }
+
+                merged.push({
+                    name: String(ev.name).trim(),
+                    year: String(ev.year || "年代未詳").trim(),
+                    year_sort: sortVal,
+                    region: ev.region || "日本"
+                });
+            });
+
+            // 年代順にソート（昇順）
+            merged.sort((a, b) => (a.year_sort || 0) - (b.year_sort || 0));
+            return merged;
+        }
+
+        // --------------------------------------------------------------
         // 🔗 全教科対応：前講からの引き継ぎコンテキスト生成エンジン
         // --------------------------------------------------------------
         function buildContinuationContext(prevLessonData, targetSubject, targetLevel) {
@@ -6068,18 +6131,7 @@ ${extractedText || "（本文なし）"}
 
                 // ⛩️ 日本史・世界史などの歴史イベント（年表）のマージ・重複排除・年代順ソート
                 const thisLessonHistoricalEvents = Array.isArray(draftPlan.historical_events) ? draftPlan.historical_events : [];
-                const seenEvents = new Set();
-                const mergedHistoricalEvents = [];
-                [...inheritedHistoricalEvents, ...thisLessonHistoricalEvents].forEach(ev => {
-                    if (ev && ev.name) {
-                        const k = `${(ev.year || '').trim()}___${(ev.name || '').trim()}`;
-                        if (!seenEvents.has(k)) {
-                            seenEvents.add(k);
-                            mergedHistoricalEvents.push(ev);
-                        }
-                    }
-                });
-                mergedHistoricalEvents.sort((a, b) => (a.year_sort || 0) - (b.year_sort || 0));
+                const mergedHistoricalEvents = mergeAndDeduplicateHistoricalEvents(inheritedHistoricalEvents, thisLessonHistoricalEvents);
 
                 const newId = "LESSON_" + Date.now();
                 const now = new Date().toISOString();
@@ -8534,7 +8586,7 @@ ${socraticAddon}
 2. 各パートのタイトルと要約（summary）を、学習の因果関係・論理展開に沿ってわかりやすく設計すること。
 3. 原本テキストは一字一句省略せずそのまま extracted_text として出力すること。
 4. この範囲の中で、参考書オリジナルの名前がついた法則・定理・原則・手順があれば抽出すること。
-5. 歴史科目または年号を伴う内容の場合、出来事をhistorical_eventsとして抽出すること。
+5. 歴史科目（日本史・世界史）または年号を伴う内容の場合、原本テキスト中に出てくる年号（西暦・元号）および重要な歴史的事件・出来事・体制成立・法令・条約・開港などを【1つも漏らさず全て】historical_eventsとして抽出すること。表記揺れ（例: 前講や他ページとの重複）に配慮し、年号(year)と出来事名(name)は正式名称で抽出すること。
 6. 【重要：読み仮名の徹底】社会系科目（日本史・世界史・地理・公共・政治経済・公民）をはじめ、高校生がつまずきやすい難しい漢字、歴史用語、人名、地名、制度名、事件名、法律名などには、必ず「漢字（よみがな）」または「<ruby>漢字<rt>よみがな</rt></ruby>」で読み仮名を徹底して付記すること。
 
 出力は必ず指定のJSON形式のみで返してください。`;
@@ -8553,10 +8605,14 @@ ${socraticAddon}
                     } catch (err) {
                         console.warn("⚠️ 直前の授業の引き継ぎ情報取得に失敗:", err);
                     }
+                } else if (Array.isArray(currentLesson.historicalEvents) && currentLesson.historicalEvents.length > 0) {
+                    // 直前の授業IDが明示されていない場合でも、現在の授業に既に登録されている年表があれば退避して漏れを防止
+                    prevLessonHistoricalEvents = currentLesson.historicalEvents;
                 }
 
                 let promptText = `【教科：${subject}】
 以下の原本テキスト（参考書・教科書の文字起こし全文）を解析し、全パートの構成（Part 1〜N）と重要用語リストを再構成して指定のJSONで授業プランを作成してください。
+また、原本テキスト中に登場する歴史的出来事・年代・事件は漏れなくすべて historical_events 配列に抽出してください。
 
 【原本テキスト全文】
 ${sourceText}`;
@@ -8588,18 +8644,7 @@ ${sourceText}`;
 
                 // ⛩️ 日本史・世界史などの歴史イベント（年表）のマージ・重複排除・年代順ソート
                 const thisLessonHistoricalEvents = Array.isArray(result.historical_events) ? result.historical_events : [];
-                const seenEvents = new Set();
-                const mergedHistoricalEvents = [];
-                [...prevLessonHistoricalEvents, ...thisLessonHistoricalEvents].forEach(ev => {
-                    if (ev && ev.name) {
-                        const k = `${(ev.year || '').trim()}___${(ev.name || '').trim()}`;
-                        if (!seenEvents.has(k)) {
-                            seenEvents.add(k);
-                            mergedHistoricalEvents.push(ev);
-                        }
-                    }
-                });
-                mergedHistoricalEvents.sort((a, b) => (a.year_sort || 0) - (b.year_sort || 0));
+                const mergedHistoricalEvents = mergeAndDeduplicateHistoricalEvents(prevLessonHistoricalEvents, thisLessonHistoricalEvents);
                 currentLesson.historicalEvents = mergedHistoricalEvents;
 
                 currentLesson.currentPartIndex = 0;
