@@ -8539,11 +8539,30 @@ ${socraticAddon}
 
 出力は必ず指定のJSON形式のみで返してください。`;
 
-                const promptText = `【教科：${subject}】
+                // 🔗 直前の授業（シリーズ前話）からの引き継ぎ情報を考慮（元の授業が続き物だった場合）
+                let continuationPromptAddon = "";
+                let prevLessonHistoricalEvents = [];
+                if (currentLesson.previousLessonId && loginUid) {
+                    try {
+                        const prevSnap = await get(ref(database, 'users/' + loginUid + '/lessons/' + currentLesson.previousLessonId));
+                        const prevLessonData = prevSnap.val();
+                        if (prevLessonData) {
+                            continuationPromptAddon = buildContinuationContext(prevLessonData, subject, currentLesson.level || "");
+                            prevLessonHistoricalEvents = prevLessonData.historicalEvents || [];
+                        }
+                    } catch (err) {
+                        console.warn("⚠️ 直前の授業の引き継ぎ情報取得に失敗:", err);
+                    }
+                }
+
+                let promptText = `【教科：${subject}】
 以下の原本テキスト（参考書・教科書の文字起こし全文）を解析し、全パートの構成（Part 1〜N）と重要用語リストを再構成して指定のJSONで授業プランを作成してください。
 
 【原本テキスト全文】
 ${sourceText}`;
+                if (continuationPromptAddon) {
+                    promptText += `\n\n${continuationPromptAddon}`;
+                }
 
                 const result = await callGeminiJSON(
                     [{ text: promptText }],
@@ -8566,7 +8585,23 @@ ${sourceText}`;
                     ...inherited,
                     ...newKeyTerms.filter(t => t && t.name && !existingNames.has(t.name))
                 ];
-                currentLesson.historicalEvents = Array.isArray(result.historical_events) ? result.historical_events : [];
+
+                // ⛩️ 日本史・世界史などの歴史イベント（年表）のマージ・重複排除・年代順ソート
+                const thisLessonHistoricalEvents = Array.isArray(result.historical_events) ? result.historical_events : [];
+                const seenEvents = new Set();
+                const mergedHistoricalEvents = [];
+                [...prevLessonHistoricalEvents, ...thisLessonHistoricalEvents].forEach(ev => {
+                    if (ev && ev.name) {
+                        const k = `${(ev.year || '').trim()}___${(ev.name || '').trim()}`;
+                        if (!seenEvents.has(k)) {
+                            seenEvents.add(k);
+                            mergedHistoricalEvents.push(ev);
+                        }
+                    }
+                });
+                mergedHistoricalEvents.sort((a, b) => (a.year_sort || 0) - (b.year_sort || 0));
+                currentLesson.historicalEvents = mergedHistoricalEvents;
+
                 currentLesson.currentPartIndex = 0;
                 currentLesson.status = "teaching";
                 currentLesson.chatHistory = [];
