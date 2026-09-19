@@ -2849,6 +2849,18 @@
                                     </div>
                                 </div>
 
+                                <!-- 🔀 STEP 3 内でも入力方式を即座に切り替えられるタブバー -->
+                                <div style="margin-bottom: 1rem; background: var(--bg-surface); padding: 0.6rem 0.8rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+                                    <div style="font-size: 0.82rem; font-weight: 750; color: var(--text-primary); display: flex; align-items: center; gap: 0.35rem;">
+                                        <span>🛠️ 入力方式の切り替え:</span>
+                                    </div>
+                                    <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                                        <button type="button" class="flora-btn flora-btn-primary btn-xs mode-tab-btn active" id="mode-tab-photo-s3" style="padding: 0.35rem 0.75rem;">📷 写真から</button>
+                                        <button type="button" class="flora-btn flora-btn-secondary btn-xs mode-tab-btn" id="mode-tab-text-s3" style="padding: 0.35rem 0.75rem;">📋 テキスト直接入力（Web Gemini文字起こし）</button>
+                                        <button type="button" class="flora-btn flora-btn-secondary btn-xs mode-tab-btn" id="mode-tab-topic-s3" style="padding: 0.35rem 0.75rem;">✏️ 単元名だけで</button>
+                                    </div>
+                                </div>
+
                                 <div id="mode-group-photo">
                                     <label class="file-drop-label" id="file-drop-label" for="image-input">
                                         📷 教科書・参考書のページ写真をアップロード（複数枚OK）
@@ -2887,7 +2899,13 @@
                                                     📋 プロンプトをコピー
                                                 </button>
                                             </div>
-                                            <div id="byot-prompt-text" style="font-size:0.73rem; color:var(--text-secondary); font-family:monospace; background:rgba(243,244,246,0.6); padding:0.4rem 0.55rem; border-radius:4px; white-space:pre-wrap; word-break:break-all; user-select:all;">添付した参考書・教科書の画像を読み取り、書かれている文章を省略せず全文文字起こししてください。見出しや箇条書きの構造を保ち、数式は $ $ で囲んでください。解説や要約は不要で、純粋な本文テキストのみを出力してください。</div>
+                                            <div id="byot-prompt-text" style="font-size:0.73rem; color:var(--text-secondary); font-family:monospace; background:rgba(243,244,246,0.6); padding:0.4rem 0.55rem; border-radius:4px; white-space:pre-wrap; word-break:break-all; user-select:all;">添付した参考書・教科書の画像を読み取り、書かれている文章を1文字も省略せず全文そのまま忠実に文字起こし（OCR）してください。
+
+【厳格な遵守ルール】
+1. 見出し、大問番号、箇条書き、注釈などの階層構造・改行を完全に維持すること。
+2. 表や図内の文字・キャプション・脚注記号も漏れなく書き出すこと。
+3. 数式・記号・物理量単位・化学式はすべて $ $ （インライン）または $$ $$ （別行立て）のLaTeX形式で記述すること。
+4. 挨拶・前置き・解説・要約・「以下が文字起こしです」などの付言は一切不要。純粋な本文テキストのみを出力してください。</div>
                                         </div>
                                         <div style="margin-top:0.6rem; display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
                                             <button type="button" id="byot-switch-to-text-mode-btn" class="flora-btn flora-btn-primary btn-xs" style="font-size:0.75rem; padding:0.35rem 0.75rem; font-weight:700; background:#4338CA; border-color:#4338CA;">
@@ -4046,15 +4064,15 @@
 
         function setCreationMode(mode) {
             creationMode = mode;
-            const photoBtn = el("mode-tab-photo");
-            const textBtn = el("mode-tab-text");
-            const topicBtn = el("mode-tab-topic");
+            const photoBtns = [el("mode-tab-photo"), el("mode-tab-photo-s3")];
+            const textBtns = [el("mode-tab-text"), el("mode-tab-text-s3")];
+            const topicBtns = [el("mode-tab-topic"), el("mode-tab-topic-s3")];
             const photoGroup = el("mode-group-photo");
             const textGroup = el("mode-group-text");
             const topicGroup = el("mode-group-topic");
 
             // 全ボタンのリセット
-            [photoBtn, textBtn, topicBtn].forEach(b => {
+            [...photoBtns, ...textBtns, ...topicBtns].forEach(b => {
                 if (b) {
                     b.classList.remove("flora-btn-primary", "active");
                     b.classList.add("flora-btn-secondary");
@@ -4066,29 +4084,38 @@
             if (topicGroup) topicGroup.style.display = "none";
 
             if (mode === "topic") {
-                if (topicBtn) {
-                    topicBtn.classList.remove("flora-btn-secondary");
-                    topicBtn.classList.add("flora-btn-primary", "active");
-                }
+                topicBtns.forEach(b => {
+                    if (b) {
+                        b.classList.remove("flora-btn-secondary");
+                        b.classList.add("flora-btn-primary", "active");
+                    }
+                });
                 if (topicGroup) topicGroup.style.display = "block";
                 updateTopicSubjectUI();
             } else if (mode === "text") {
-                if (textBtn) {
-                    textBtn.classList.remove("flora-btn-secondary");
-                    textBtn.classList.add("flora-btn-primary", "active");
-                }
+                textBtns.forEach(b => {
+                    if (b) {
+                        b.classList.remove("flora-btn-secondary");
+                        b.classList.add("flora-btn-primary", "active");
+                    }
+                });
                 if (textGroup) textGroup.style.display = "block";
             } else {
-                if (photoBtn) {
-                    photoBtn.classList.remove("flora-btn-secondary");
-                    photoBtn.classList.add("flora-btn-primary", "active");
-                }
+                photoBtns.forEach(b => {
+                    if (b) {
+                        b.classList.remove("flora-btn-secondary");
+                        b.classList.add("flora-btn-primary", "active");
+                    }
+                });
                 if (photoGroup) photoGroup.style.display = "block";
             }
         }
         if (el("mode-tab-photo")) el("mode-tab-photo").addEventListener("click", () => setCreationMode("photo"));
         if (el("mode-tab-text")) el("mode-tab-text").addEventListener("click", () => setCreationMode("text"));
         if (el("mode-tab-topic")) el("mode-tab-topic").addEventListener("click", () => setCreationMode("topic"));
+        if (el("mode-tab-photo-s3")) el("mode-tab-photo-s3").addEventListener("click", () => setCreationMode("photo"));
+        if (el("mode-tab-text-s3")) el("mode-tab-text-s3").addEventListener("click", () => setCreationMode("text"));
+        if (el("mode-tab-topic-s3")) el("mode-tab-topic-s3").addEventListener("click", () => setCreationMode("topic"));
 
         // 案内カードから「テキスト直接入力」へのワンクリック誘導
         const byotSwitchBtn = el("byot-switch-to-text-mode-btn");
@@ -4140,7 +4167,13 @@
             if (!btn) return;
             btn.addEventListener("click", async () => {
                 const promptEl = el("byot-prompt-text");
-                const text = promptEl ? promptEl.textContent : "添付した参考書・教科書の画像を読み取り、書かれている文章を省略せず全文文字起こししてください。見出しや箇条書きの構造を保ち、数式は $ $ で囲んでください。解説や要約は不要で、純粋な本文テキストのみを出力してください。";
+                const text = promptEl ? promptEl.textContent : `添付した参考書・教科書の画像を読み取り、書かれている文章を1文字も省略せず全文そのまま忠実に文字起こし（OCR）してください。
+
+【厳格な遵守ルール】
+1. 見出し、大問番号、箇条書き、注釈などの階層構造・改行を完全に維持すること。
+2. 表や図内の文字・キャプション・脚注記号も漏れなく書き出すこと。
+3. 数式・記号・物理量単位・化学式はすべて $ $ （インライン）または $$ $$ （別行立て）のLaTeX形式で記述すること。
+4. 挨拶・前置き・解説・要約・「以下が文字起こしです」などの付言は一切不要。純粋な本文テキストのみを出力してください。`;
                 try {
                     await navigator.clipboard.writeText(text);
                     const origHtml = btn.innerHTML;
@@ -6279,7 +6312,8 @@ ${extractedText || "（本文なし）"}
             el("plan-preview-title").textContent = `📘 ${draftPlan.lesson_title}（全${draftPlan.parts.length}回）`;
             const styleBadge = el("plan-preview-style-badge");
             const isSocratic = draftPlan.teachingStyle === "socratic";
-            styleBadge.textContent = isSocratic ? "🧠 ソクラテス対話ゼミ" : "📖 標準講義";
+            const modeLabel = draftPlan.sourceMode === "text" ? "📋 Web Gemini文字起こし" : (draftPlan.sourceMode === "topic" ? "✏️ 単元名生成" : "📷 写真解析");
+            styleBadge.textContent = `${modeLabel} ｜ ${isSocratic ? "🧠 ソクラテス対話ゼミ" : "📖 標準講義"}`;
             styleBadge.className = `lesson-style-badge ${isSocratic ? 'badge-style-socratic' : 'badge-style-standard'}`;
 
             const sourceNoticeId = "plan-preview-source-problem-notice";
