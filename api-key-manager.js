@@ -885,6 +885,7 @@ export function extractJsonArray(text) {
 // 🧠 Gemini フォールバック実行ループ
 // --------------------------------------------------------------------------
 async function runGeminiFallbackLoop(contents, systemInstruction, options = {}) {
+    const wantsJson = !!(options.responseSchema || options.responseMimeType === "application/json" || options.rawText === false);
     const {
         temperature = 0.1,
         arrayMode = false,
@@ -894,8 +895,8 @@ async function runGeminiFallbackLoop(contents, systemInstruction, options = {}) 
         requestTimeoutMs = null,
         keyOffset = 0,
         preferredModel = null,
-        rawText = false,
-        responseMimeType = (rawText ? "text/plain" : "application/json")
+        rawText = !wantsJson,
+        responseMimeType = (wantsJson ? "application/json" : (options.rawText ? "text/plain" : (options.responseMimeType || "text/plain")))
     } = options;
     const keys = getEffectiveGeminiKeys(featureId);
     let modelList = getEffectiveModelList(featureId);
@@ -916,8 +917,9 @@ async function runGeminiFallbackLoop(contents, systemInstruction, options = {}) 
 
     async function attemptOnce(modelName, systemInstructionText) {
         const generationConfig = { "temperature": temperature };
-        if (responseMimeType) generationConfig.responseMimeType = responseMimeType;
-        if (responseSchema && responseMimeType === "application/json") generationConfig.responseSchema = responseSchema;
+        const effectiveResponseMimeType = responseSchema ? "application/json" : responseMimeType;
+        if (effectiveResponseMimeType) generationConfig.responseMimeType = effectiveResponseMimeType;
+        if (responseSchema) generationConfig.responseSchema = responseSchema;
 
         const requestBody = JSON.stringify({
             "contents": contents,
@@ -961,19 +963,54 @@ async function runGeminiFallbackLoop(contents, systemInstruction, options = {}) 
         }
 
         const candidateJson = await response.json();
-        const candidateText = candidateJson?.candidates?.[0]?.content?.parts?.[0]?.text;
+        const candidateParts = candidateJson?.candidates?.[0]?.content?.parts;
+        let candidateText = "";
+        if (Array.isArray(candidateParts)) {
+            const contentParts = candidateParts.filter(p => typeof p?.text === "string" && !p.thought);
+            const targetParts = contentParts.length > 0 ? contentParts : candidateParts.filter(p => typeof p?.text === "string");
+            candidateText = targetParts.map(p => p.text).join("");
+        } else if (typeof candidateParts?.[0]?.text === "string") {
+            candidateText = candidateParts[0].text;
+        } else if (typeof candidateJson?.candidates?.[0]?.text === "string") {
+            candidateText = candidateJson.candidates[0].text;
+        } else if (typeof candidateJson?.text === "string") {
+            candidateText = candidateJson.text;
+        }
 
         if (!candidateText) {
             return { ok: false, isFormatError: false, reason: "空応答（finishReason等が原因の可能性）", error: new Error(`Empty response: ${modelName}`) };
         }
 
-        if (rawText || responseMimeType === "text/plain") {
+        if (!responseSchema && (rawText || responseMimeType === "text/plain")) {
             return { ok: true, parsed: candidateText };
         }
 
         try {
-            const extractor = arrayMode ? extractJsonArray : extractJsonObject;
-            const parsed = JSON.parse(fixJsonEscapes(extractor(stripCodeFence(candidateText.trim()))));
+            const cleaned = stripCodeFence(candidateText.trim());
+            let parsed;
+            try {
+                parsed = JSON.parse(cleaned);
+            } catch (e1) {
+                const extractor = arrayMode ? extractJsonArray : extractJsonObject;
+                const extracted = extractor(cleaned);
+                try {
+                    parsed = JSON.parse(extracted);
+                } catch (e2) {
+                    try {
+                        parsed = JSON.parse(fixJsonEscapes(extracted));
+                    } catch (e3) {
+                        const startChar = arrayMode ? '[' : '{';
+                        const endChar = arrayMode ? ']' : '}';
+                        const s = cleaned.indexOf(startChar);
+                        const e = cleaned.lastIndexOf(endChar);
+                        if (s !== -1 && e > s) {
+                            parsed = JSON.parse(cleaned.substring(s, e + 1));
+                        } else {
+                            throw e3;
+                        }
+                    }
+                }
+            }
             return { ok: true, parsed };
         } catch (parseErr) {
             return { ok: false, isFormatError: true, reason: "JSON解析エラー（応答の形式が崩れていた）", error: parseErr, rawText: candidateText };
@@ -1007,7 +1044,12 @@ export async function callGeminiJSON(parts, systemInstruction, options = {}) {
 }
 
 export async function callGeminiChat(contents, systemInstruction, options = {}) {
-    return runGeminiFallbackLoop(contents, systemInstruction, { rawText: true, ...options });
+    const wantsJson = !!(options.responseSchema || options.responseMimeType === "application/json" || options.rawText === false);
+    return runGeminiFallbackLoop(contents, systemInstruction, {
+        rawText: !wantsJson,
+        responseMimeType: wantsJson ? "application/json" : "text/plain",
+        ...options
+    });
 }
 
 // --------------------------------------------------------------------------

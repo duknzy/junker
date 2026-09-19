@@ -1100,7 +1100,7 @@
             stripCodeFence, fixJsonEscapes, extractJsonObject,
             showToast, callGeminiJSON, callGeminiChat,
             isStaticHostingEnvironment, openApiKeyManager
-        } from "./api-key-manager.js?v=3.5";
+        } from "./api-key-manager.js?v=3.6";
 
         const proto = "https" + "://";
         const d = ".";
@@ -3055,6 +3055,12 @@ ${EXPERT_TEACHER_PROMPT}
             const chatHistoryArea = document.querySelector(".chat-history");
             const stepLabel = document.getElementById("current-step");
             
+            let data = aiJson;
+            if (typeof data === "string") {
+                try { data = JSON.parse(data); } catch (e) { data = { ai_response: data }; }
+            }
+            if (!data || typeof data !== "object") data = { ai_response: String(data || "") };
+
             const uBubble = document.createElement("div"); 
             uBubble.className = "chat-bubble bubble-user"; 
             uBubble.textContent = userText; 
@@ -3062,7 +3068,7 @@ ${EXPERT_TEACHER_PROMPT}
 
             const aBubble = document.createElement("div"); 
             aBubble.className = "chat-bubble bubble-ai"; 
-            const cleanedSvg = sanitizeDiagramSvg(aiJson.diagram_svg);
+            const cleanedSvg = sanitizeDiagramSvg(data.diagram_svg);
             const diagramId = `prob-diagram-${Date.now()}`;
             const diagramHtml = cleanedSvg
                 ? `

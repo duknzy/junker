@@ -3448,7 +3448,7 @@
         import {
             initApiKeyManager,
             showToast, callGeminiJSON, callGeminiChat, normalizeImageFile
-        } from "./api-key-manager.js?v=3.5";
+        } from "./api-key-manager.js?v=3.6";
 
         const proto = "https" + "://";
         const d = ".";
@@ -7029,6 +7029,75 @@ ${extractedText || "（本文なし）"}
             required: ["ai_response", "current_step_label", "diagram_svg"]
         };
 
+        function extractAiResponsePayload(resp) {
+            if (!resp) return { ai_response: "", diagram_svg: "", current_step_label: "" };
+            if (typeof resp === "object") {
+                return {
+                    ai_response: resp.ai_response || resp.content || resp.text || resp.message || "",
+                    diagram_svg: resp.diagram_svg || "",
+                    current_step_label: resp.current_step_label || ""
+                };
+            }
+            if (typeof resp === "string") {
+                let trimmed = resp.trim();
+                trimmed = stripCodeFence(trimmed);
+                if (trimmed.startsWith("{") || trimmed.includes('"ai_response"')) {
+                    try {
+                        const parsed = JSON.parse(trimmed);
+                        if (parsed && typeof parsed === "object") {
+                            return {
+                                ai_response: parsed.ai_response || parsed.content || parsed.text || "",
+                                diagram_svg: parsed.diagram_svg || "",
+                                current_step_label: parsed.current_step_label || ""
+                            };
+                        }
+                    } catch (e) {
+                        const start = trimmed.indexOf("{");
+                        const end = trimmed.lastIndexOf("}");
+                        if (start !== -1 && end > start) {
+                            const sub = trimmed.substring(start, end + 1);
+                            try {
+                                const parsed = JSON.parse(sub);
+                                if (parsed && typeof parsed === "object") {
+                                    return {
+                                        ai_response: parsed.ai_response || parsed.content || parsed.text || "",
+                                        diagram_svg: parsed.diagram_svg || "",
+                                        current_step_label: parsed.current_step_label || ""
+                                    };
+                                }
+                            } catch (e2) {
+                                try {
+                                    const parsed = JSON.parse(fixJsonEscapes(sub));
+                                    if (parsed && typeof parsed === "object") {
+                                        return {
+                                            ai_response: parsed.ai_response || parsed.content || parsed.text || "",
+                                            diagram_svg: parsed.diagram_svg || "",
+                                            current_step_label: parsed.current_step_label || ""
+                                        };
+                                    }
+                                } catch (e3) {}
+                            }
+                        }
+                        // 正規表現での ai_response 救出試行
+                        const m = trimmed.match(/"ai_response"\s*:\s*"((?:[^"\\]|\\.)*)"/s);
+                        if (m && m[1]) {
+                            try {
+                                return {
+                                    ai_response: JSON.parse(`"${m[1]}"`),
+                                    diagram_svg: "",
+                                    current_step_label: ""
+                                };
+                            } catch (e4) {
+                                return { ai_response: m[1], diagram_svg: "", current_step_label: "" };
+                            }
+                        }
+                    }
+                }
+                return { ai_response: trimmed, diagram_svg: "", current_step_label: "" };
+            }
+            return { ai_response: String(resp), diagram_svg: "", current_step_label: "" };
+        }
+
         function buildTeachSystemInstruction(idxOverride) {
             const parts = currentLesson.parts;
             const idx = (idxOverride !== undefined && idxOverride !== null) ? idxOverride : currentLesson.currentPartIndex;
@@ -7542,8 +7611,9 @@ ${socraticInstructionBlock}
                     }
                 );
 
-                const newContent = aiJson.ai_response || "（応答の取得に失敗しました）";
-                const newDiagram = sanitizeDiagramSvg(aiJson.diagram_svg);
+                const aiPayload = extractAiResponsePayload(aiJson);
+                const newContent = aiPayload.ai_response || "（応答の取得に失敗しました）";
+                const newDiagram = sanitizeDiagramSvg(aiPayload.diagram_svg);
 
                 currentLesson.chatHistory[msgIndex] = {
                     role: "assistant",
@@ -7939,11 +8009,12 @@ ${subjectGuide}
                     }
                 );
 
+                const aiPayload = extractAiResponsePayload(aiJson);
                 const newAssistantMsg = {
                     role: "assistant",
-                    content: aiJson.ai_response || "（応答の取得に失敗しました）"
+                    content: aiPayload.ai_response || "（応答の取得に失敗しました）"
                 };
-                const cleanedSvg = sanitizeDiagramSvg(aiJson.diagram_svg);
+                const cleanedSvg = sanitizeDiagramSvg(aiPayload.diagram_svg);
                 if (cleanedSvg) newAssistantMsg.diagramSvg = cleanedSvg;
 
                 if (willResetSubsequent) {
@@ -8603,6 +8674,7 @@ ${subjectGuide}
                 responseSchema: TEACH_TURN_RESPONSE_SCHEMA, featureId: "lesson_teach"
             });
 
+            const aiPayload = extractAiResponsePayload(aiJson);
             if (userDisplayText) {
                 const userEntry = { role: "user", content: userDisplayText };
                 if (Array.isArray(turnImages) && turnImages.length > 0) {
@@ -8610,8 +8682,8 @@ ${subjectGuide}
                 }
                 currentLesson.chatHistory.push(userEntry);
             }
-            const assistantEntry = { role: "assistant", content: aiJson.ai_response || "（応答の取得に失敗しました）" };
-            const cleanedSvg = sanitizeDiagramSvg(aiJson.diagram_svg);
+            const assistantEntry = { role: "assistant", content: aiPayload.ai_response || "（応答の取得に失敗しました）" };
+            const cleanedSvg = sanitizeDiagramSvg(aiPayload.diagram_svg);
             if (cleanedSvg) assistantEntry.diagramSvg = cleanedSvg;
             currentLesson.chatHistory.push(assistantEntry);
 
