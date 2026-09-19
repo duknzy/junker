@@ -1538,6 +1538,40 @@
             transform: none;
         }
 
+        .recreate-all-lesson-btn {
+            width: 100%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            padding: 0.55rem 0.8rem;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: #ffffff;
+            background: linear-gradient(135deg, var(--brand-primary), #6366f1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+            transition: all 0.2s ease;
+            box-sizing: border-box;
+        }
+        .recreate-all-lesson-btn:hover {
+            filter: brightness(1.08);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(99, 102, 241, 0.25);
+        }
+        .recreate-all-lesson-btn:active {
+            transform: translateY(0);
+        }
+        .recreate-all-lesson-btn:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+            transform: none;
+            filter: grayscale(0.5);
+            box-shadow: none;
+        }
+
         .source-text-box {
             background: var(--bg-subtle);
             border: 1px solid var(--border-color);
@@ -3120,8 +3154,13 @@
 
                                 <!-- パネル4: 原本テキスト -->
                                 <div class="sidebar-panel" id="tab-source">
-                                    <div style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 0.6rem; font-weight: 600;" id="source-panel-label">
+                                    <div style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 600;" id="source-panel-label">
                                         🔍 参考書の文字起こし全文
+                                    </div>
+                                    <div style="margin-bottom: 0.65rem;">
+                                        <button type="button" id="recreate-lesson-from-source-btn" class="recreate-all-lesson-btn" title="保存された原本テキストを元に、全パートのカリキュラムと授業を一から作り直します">
+                                            🔄 授業を一から作り直す（全パート再生成）
+                                        </button>
                                     </div>
                                     <div id="lesson-extracted-source-text" class="source-text-box tex2jax_process"></div>
                                 </div>
@@ -8435,10 +8474,160 @@ ${subjectGuide}
         function renderSourceText() {
             const container = el("lesson-extracted-source-text");
             const label = el("source-panel-label");
+            const btn = el("recreate-lesson-from-source-btn");
             if (!container || !currentLesson) return;
             const isTopicMode = currentLesson.sourceMode === "topic";
             if (label) label.textContent = isTopicMode ? "🔍 AIが作成した授業ノート全文" : "🔍 参考書の文字起こし全文";
-            container.textContent = currentLesson.extractedText || (isTopicMode ? "（授業ノートが見つかりません）" : "（原本テキストが見つかりません）");
+            const sourceText = (currentLesson.extractedText || "").trim();
+            container.textContent = sourceText || (isTopicMode ? "（授業ノートが見つかりません）" : "（原本テキストが見つかりません）");
+            if (btn) {
+                btn.disabled = !sourceText;
+                btn.title = sourceText
+                    ? (isTopicMode ? "この授業ノートをもとに全パートの授業カリキュラムを一から作り直します" : "保存された原本テキストをもとに全パートの授業カリキュラムを一から作り直します")
+                    : "原本テキストが存在しないため再作成できません";
+            }
+        }
+
+        async function recreateLessonFromSourceText() {
+            if (!currentLesson || !currentLessonId) {
+                showToast("授業データが見つかりません。", "error");
+                return;
+            }
+            const sourceText = (currentLesson.extractedText || "").trim();
+            if (!sourceText) {
+                showToast("原本テキストが保存されていないため、授業を再作成できません。", "error");
+                return;
+            }
+
+            const isTopic = currentLesson.sourceMode === "topic";
+            const confirmMsg = "【確認】授業を丸ごと作り直しますか？\n\n" +
+                "・現在のチャット会話履歴や進行状況はすべてリセットされます。\n" +
+                "・保存されている" + (isTopic ? "授業ノート" : "原本テキスト") + "をもとに、Part 1〜N のカリキュラム構成、タイトル、重要用語を一から再構築し、第1回の授業をスタートします。\n\n" +
+                "本当によろしいですか？";
+            if (!confirm(confirmMsg)) return;
+
+            const btn = el("recreate-lesson-from-source-btn");
+            const origBtnText = btn ? btn.innerHTML : "";
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = `⏳ カリキュラム再構築中...`;
+            }
+
+            try {
+                showToast("原本テキストからカリキュラムを再構築しています...", "info", 6000);
+
+                const subject = currentLesson.subject || detectLessonSubject(currentLesson) || "その他";
+                const subjectGuide = SUBJECT_PROMPT_GUIDES[subject] || "";
+                const isSocratic = currentLesson.teachingStyle === "socratic";
+                const socraticAddon = isSocratic ? `
+【特記事項：ソクラテス対話ゼミ】
+この授業は「多角的アプローチ（別解比較）」「あえて間違える落とし穴の見破り」「対話式問答」を重視するスタイルです。
+各パートの要約(summary)には、単なる解説範囲だけでなく「生徒に投げかけるべき核心の問いや、比較検討すべき別解の視点」を盛り込んで計画してください。` : "";
+
+                const PLAN_SYSTEM_INSTRUCTION = `${customPolicyPrompt}
+【対象教科：${subject}】
+${subjectGuide}
+${socraticAddon}
+
+今回はまだ授業本編ではなく、授業の準備（カリキュラム再設計）をしてください。
+1. 提供された原本テキストの内容を正確に踏まえ、内容量に応じた最適な区切りの「大まかな授業プラン」を作成すること（目安は2〜6パート程度）。
+2. 各パートのタイトルと要約（summary）を、学習の因果関係・論理展開に沿ってわかりやすく設計すること。
+3. 原本テキストは一字一句省略せずそのまま extracted_text として出力すること。
+4. この範囲の中で、参考書オリジナルの名前がついた法則・定理・原則・手順があれば抽出すること。
+5. 歴史科目または年号を伴う内容の場合、出来事をhistorical_eventsとして抽出すること。
+6. 【重要：読み仮名の徹底】社会系科目（日本史・世界史・地理・公共・政治経済・公民）をはじめ、高校生がつまずきやすい難しい漢字、歴史用語、人名、地名、制度名、事件名、法律名などには、必ず「漢字（よみがな）」または「<ruby>漢字<rt>よみがな</rt></ruby>」で読み仮名を徹底して付記すること。
+
+出力は必ず指定のJSON形式のみで返してください。`;
+
+                const promptText = `【教科：${subject}】
+以下の原本テキスト（参考書・教科書の文字起こし全文）を解析し、全パートの構成（Part 1〜N）と重要用語リストを再構成して指定のJSONで授業プランを作成してください。
+
+【原本テキスト全文】
+${sourceText}`;
+
+                const result = await callGeminiJSON(
+                    [{ text: promptText }],
+                    PLAN_SYSTEM_INSTRUCTION,
+                    { responseSchema: LESSON_PLAN_RESPONSE_SCHEMA, featureId: "lesson_plan" }
+                );
+
+                if (!result || !Array.isArray(result.parts) || result.parts.length === 0) {
+                    throw new Error("カリキュラムの生成に失敗しました（パート情報が取得できませんでした）。");
+                }
+
+                // 授業データを上書き更新（続き元の継承用語・年表があれば引き継ぐ）
+                currentLesson.title = result.lesson_title || currentLesson.title;
+                currentLesson.parts = result.parts;
+                const newKeyTerms = Array.isArray(result.key_terms) ? result.key_terms : [];
+                currentLesson.keyTerms = newKeyTerms;
+                const inherited = Array.isArray(currentLesson.inheritedKeyTerms) ? currentLesson.inheritedKeyTerms : [];
+                const existingNames = new Set(inherited.map(t => t.name));
+                currentLesson.accumulatedKeyTerms = [
+                    ...inherited,
+                    ...newKeyTerms.filter(t => t && t.name && !existingNames.has(t.name))
+                ];
+                currentLesson.historicalEvents = Array.isArray(result.historical_events) ? result.historical_events : [];
+                currentLesson.currentPartIndex = 0;
+                currentLesson.status = "teaching";
+                currentLesson.chatHistory = [];
+                currentLesson.memorizationPoints = null; // 暗記項目リセット（新パートに合わせて再生成）
+                currentLesson.updatedAt = new Date().toISOString();
+
+                // 演習エリアや完了表示のクリーンアップ
+                const drillContainer = el("drill-container-area");
+                if (drillContainer) drillContainer.innerHTML = "";
+                currentActiveDrill = null;
+
+                // Firebase に保存
+                await set(ref(database, 'users/' + loginUid + '/lessons/' + currentLessonId), currentLesson);
+
+                // UI 各種更新
+                updateProgressStrip();
+                updateCompletionUI();
+                renderPartsTOC();
+                initLessonTitleEditor();
+                renderSourceText();
+                ensureMemorizationPoints();
+
+                // 原本タブから「パート目次」タブへ自動で切り替えて、新しく作られた目次がすぐ見えるようにする
+                document.querySelectorAll(".sidebar-tab-btn").forEach(b => b.classList.remove("active"));
+                document.querySelectorAll(".sidebar-panel").forEach(p => p.classList.remove("active"));
+                const tocTabBtn = document.querySelector('.sidebar-tab-btn[data-tab="tab-parts"]');
+                const tocPanel = el("tab-parts");
+                if (tocTabBtn) tocTabBtn.classList.add("active");
+                if (tocPanel) tocPanel.classList.add("active");
+
+                // 第1回の会話を開始
+                currentLesson.chatHistory.push({ role: "divider", content: `第1回: ${currentLesson.parts[0].title}` });
+                renderChatTranscript();
+                renderVscodeMode();
+
+                showToast("カリキュラムを再構築しました！第1回の授業を開始します。", "success", 3000);
+
+                try {
+                    const firstPart = currentLesson.parts[0];
+                    await sendTurn(
+                        null,
+                        `【指令】第1回「${firstPart.title}」（${firstPart.summary}）の講義を、初回1通目としてわかりやすく始めてください。絶対に前パートのまとめやお礼を言わず、第1回の本題から始めてください。`
+                    );
+                } catch (turnErr) {
+                    console.error("第1回授業開始エラー:", turnErr);
+                    showToast("第1回の授業生成でエラーが発生しました: " + turnErr.message, "error", 7000);
+                }
+
+            } catch (err) {
+                console.error("授業再構築エラー:", err);
+                showToast("授業の再構築に失敗しました: " + err.message, "error", 7000);
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = origBtnText;
+                }
+            }
+        }
+
+        if (el("recreate-lesson-from-source-btn")) {
+            el("recreate-lesson-from-source-btn").addEventListener("click", recreateLessonFromSourceText);
         }
 
         document.querySelectorAll(".sidebar-tab-btn").forEach(btn => {
