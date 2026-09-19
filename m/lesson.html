@@ -720,7 +720,7 @@
     <script src="bottom-nav.js"></script>
 
     <script type="module">
-        import { initApiKeyManager, showToast, callGeminiJSON, callGeminiChat } from "../api-key-manager.js?v=3.5";
+        import { initApiKeyManager, showToast, callGeminiJSON, callGeminiChat } from "../api-key-manager.js?v=3.6";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import { getAuth, signInWithPopup, signInWithEmailAndPassword, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
         import { getDatabase, ref, set, get, update, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
@@ -1640,8 +1640,12 @@ ${subjectGuide}
                         { responseSchema: DIAGRAM_RESPONSE_SCHEMA, featureId: "lesson_teach" }
                     );
 
-                    const replyText = (aiJson && aiJson.ai_response) ? aiJson.ai_response : "図解を作成しました。";
-                    const rawSvg = (aiJson && aiJson.diagram_svg) ? aiJson.diagram_svg : "";
+                    let parsedAiJson = aiJson;
+                    if (typeof parsedAiJson === "string") {
+                        try { parsedAiJson = JSON.parse(parsedAiJson); } catch (e) { parsedAiJson = { ai_response: parsedAiJson }; }
+                    }
+                    const replyText = (parsedAiJson && parsedAiJson.ai_response) ? parsedAiJson.ai_response : (typeof aiJson === "string" ? aiJson : "図解を作成しました。");
+                    const rawSvg = (parsedAiJson && parsedAiJson.diagram_svg) ? parsedAiJson.diagram_svg : "";
                     const cleanedSvg = sanitizeDiagramSvg(rawSvg);
 
                     if (!Array.isArray(lesson.chatHistory)) lesson.chatHistory = [];
