@@ -2899,13 +2899,17 @@
                                                     📋 プロンプトをコピー
                                                 </button>
                                             </div>
-                                            <div id="byot-prompt-text" style="font-size:0.73rem; color:var(--text-secondary); font-family:monospace; background:rgba(243,244,246,0.6); padding:0.4rem 0.55rem; border-radius:4px; white-space:pre-wrap; word-break:break-all; user-select:all;">添付した参考書・教科書の画像を読み取り、書かれている文章を1文字も省略せず全文そのまま忠実に文字起こし（OCR）してください。
+                                            <div id="byot-prompt-text" style="font-size:0.73rem; color:var(--text-secondary); font-family:monospace; background:rgba(243,244,246,0.6); padding:0.4rem 0.55rem; border-radius:4px; white-space:pre-wrap; word-break:break-all; user-select:all;">【改良版・厳格な遵守ルール】
 
-【厳格な遵守ルール】
-1. 見出し、大問番号、箇条書き、注釈などの階層構造・改行を完全に維持すること。
-2. 表や図内の文字・キャプション・脚注記号も漏れなく書き出すこと。
-3. 数式・記号・物理量単位・化学式はすべて $ $ （インライン）または $$ $$ （別行立て）のLaTeX形式で記述すること。
-4. 挨拶・前置き・解説・要約・「以下が文字起こしです」などの付言は一切不要。純粋な本文テキストのみを出力してください。</div>
+本文・注釈・史料テキストのみを抽出すること。
+
+ページ番号、ヘッダー/フッター、画像の寸法・所蔵地などのメタデータは除外すること。
+
+地図や図中のテキストで、単語の羅列にしかならないものは除外すること。
+
+文頭や文末で途切れている不完全な文章は除外し、意味が通る完全な節・段落のみを出力すること。
+
+階層構造（見出し・注釈番号）と改行は維持すること。</div>
                                         </div>
                                         <div style="margin-top:0.6rem; display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
                                             <button type="button" id="byot-switch-to-text-mode-btn" class="flora-btn flora-btn-primary btn-xs" style="font-size:0.75rem; padding:0.35rem 0.75rem; font-weight:700; background:#4338CA; border-color:#4338CA;">
@@ -4167,13 +4171,17 @@
             if (!btn) return;
             btn.addEventListener("click", async () => {
                 const promptEl = el("byot-prompt-text");
-                const text = promptEl ? promptEl.textContent : `添付した参考書・教科書の画像を読み取り、書かれている文章を1文字も省略せず全文そのまま忠実に文字起こし（OCR）してください。
+                const text = promptEl ? promptEl.textContent : `【改良版・厳格な遵守ルール】
 
-【厳格な遵守ルール】
-1. 見出し、大問番号、箇条書き、注釈などの階層構造・改行を完全に維持すること。
-2. 表や図内の文字・キャプション・脚注記号も漏れなく書き出すこと。
-3. 数式・記号・物理量単位・化学式はすべて $ $ （インライン）または $$ $$ （別行立て）のLaTeX形式で記述すること。
-4. 挨拶・前置き・解説・要約・「以下が文字起こしです」などの付言は一切不要。純粋な本文テキストのみを出力してください。`;
+本文・注釈・史料テキストのみを抽出すること。
+
+ページ番号、ヘッダー/フッター、画像の寸法・所蔵地などのメタデータは除外すること。
+
+地図や図中のテキストで、単語の羅列にしかならないものは除外すること。
+
+文頭や文末で途切れている不完全な文章は除外し、意味が通る完全な節・段落のみを出力すること。
+
+階層構造（見出し・注釈番号）と改行は維持すること。`;
                 try {
                     await navigator.clipboard.writeText(text);
                     const origHtml = btn.innerHTML;
