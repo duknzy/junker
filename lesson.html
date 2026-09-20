@@ -5954,7 +5954,9 @@ ${subjectGuide}
                     };
 
                     let basePrompt = `【教科：${selectedSubject}】\n【単元名】${topicText}\n【レベル】${levelText}`;
-                    if (track === "single") {
+                    if (selectedSubject === "日本史") {
+                        basePrompt += `\n【⛩️ 共通テスト日本史特化＆全編現代翻訳講義の特別指示】生徒は共通テスト「日本史」を受験します。難関私大や個別入試のマニアックな重箱知識や長文記述は完全排除し、全編にわたって教科書の硬い言葉を「現代のビジネス・会社・SNS・炎上・推し活・日常」に徹底翻訳した超詳細で面白い講義ノート全文を執筆してください。時代の前後関係、正誤判定トラップの見抜き方、社会経済の因果関係を分かりやすく解説し、難しい漢字には必ず「漢字（よみがな）」を添えてください。`;
+                    } else if (track === "single") {
                         basePrompt += `\n【1回完結型の特別指示】歴史・地理・公民・国語の因果関係、時代の流れ、重要専門用語、共通テスト・入試頻出ポイントを初学者にも極めて分かりやすく論理的・体系的に網羅してください。難易度分断ではなく、基礎〜頻出要点を一貫してマスターできる講義にしてください。難しい漢字や専門用語には必ず「漢字（よみがな）」を添えてください。`;
                     } else if (track === "phys-base") {
                         basePrompt += `\n【⚡ 共通テスト物理基礎特化の特別指示】指定された「${levelText}」に焦点を当て、共通テスト「物理基礎」で満点を狙うためのエッセンスを凝縮してください。発展物理の範囲（剛体のつり合い・モーメント、円運動、単振動、気体の状態方程式PV=nRT・熱力学第1法則計算、光波全般、ドップラー効果、コンデンサー過渡現象、キルヒホッフ、電磁気発展、原子物理等）の出題・解説は絶対禁止。v-tグラフの傾きと面積、つり合いと作用反作用の峻別、摩擦力（静止摩擦力と最大摩擦力）、浮力F=ρVgと台秤実験考察、力学的エネルギー保存、熱量保存と比熱・潜熱、波動グラフ(y-x/y-t)と縦波の疎密、気柱共鳴（開口端補正）、オームの法則と消費電力P=VI=I²Rの急所を徹底してください。数式は必ず $ $ または $$ $$ で記述し、難しい漢字や専門用語には必ず「漢字（よみがな）」を添えてください。`;
@@ -7516,9 +7518,19 @@ ${extractedText || "（本文なし）"}
 （例: 墾田永年私財法（こんでんえいねんしざいほう）、租庸調（そようちょう）、惣村（そうそん）、壇ノ浦（だんのうら）、科挙（かきょ）、節度使（せつどし）、氾濫原（はんらんげん）、違憲審査権（いけんしんさけん）など）
 「読み仮名のない難しい漢字」のせいで生徒の理解や思考が止まる事態を絶対に防ぐこと。`;
 
+            const isHistorySpecial = /日本史/.test(lessonSubject);
+            const teacherPersonaPrompt = isHistorySpecial ? `━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⛩️【指導方針：共通テスト特化・全編現代翻訳講義の神講師】（最重要ルール）
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+あなたは大学入学共通テスト「日本史」で生徒を確実に9割以上へ導く、予備校の伝説的人気神講師AIです。
+教科書の退屈で無味乾燥な説明を一切禁止し、現代のビジネス・会社・SNS・炎上・推し活・日常の人間関係にたとえて「要するにこういうこと！」と直感的に本質を納得させるライブ講義を展開してください。
+無機質なプロ講師トーン（装飾排除）ではなく、テンポが良くユーモアあふれる親しみやすい語り口で生徒を歴史の世界に引き込んでください。
+ただし、歴史的事実・年代・因果関係は高校学習指導要領（共通テスト）に100%忠実とし、直感で理解させた後は必ず共通テスト選択肢に登場する教科書正式用語（ふりがな付き）に着地させてください。
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━` : EXPERT_TEACHER_PROMPT;
+
             return `${customPolicyPrompt}
 
-${EXPERT_TEACHER_PROMPT}
+${teacherPersonaPrompt}
 
 【教科：${lessonSubject}】
 ${subjectGuide}
@@ -7953,9 +7965,13 @@ ${socraticInstructionBlock}
                 // 直前の非dividerメッセージが user でない場合の補正
                 const prevNonDivider = history.slice(startFromIdx, msgIndex).reverse().find(m => m.role !== "divider");
                 if (!prevNonDivider || prevNonDivider.role !== "user") {
+                    const isNihonshi = /日本史/.test(currentLesson.subject || detectLessonSubject(currentLesson) || "");
+                    const fallbackPrompt = isNihonshi
+                        ? `第${partIndex + 1}回「${part.title}」について、前回とは別の身近なたとえ話（会社・SNS・日常）や共通テスト頻出の急所を用いて、最高にわかりやすく解説してください。難しい漢字には必ず読み仮名を添えてください。`
+                        : `第${partIndex + 1}回「${part.title}」について、前回とは別の切り口・解説でわかりやすく回答してください。`;
                     contextHistory.push({
                         role: "user",
-                        parts: [{ text: `第${partIndex + 1}回「${part.title}」について、前回とは別の切り口・解説でわかりやすく回答してください。` }]
+                        parts: [{ text: fallbackPrompt }]
                     });
                 }
             }
@@ -8357,11 +8373,16 @@ ${subjectGuide}
 
             try {
                 // 1通目の講義リクエスト（過去パートの会話に引っ張られないよう独立したプロンプトを構築）
+                const isNihonshi = /日本史/.test(currentLesson.subject || detectLessonSubject(currentLesson) || "");
+                const regenPromptText = isNihonshi
+                    ? `【指令】第${partIndex + 1}回「${part.title}」（${part.summary}）の講義を、初回1通目として最初から【共通テスト完全特化＆全編現代風ぶっちゃけ翻訳講義スタイル】で始めてください。現代の会社組織・SNS・日常にたとえて本質を面白く直感的に解説し、共通テストで狙われる罠（正誤判定・時代の前後関係）を先回り指導してください。難しい漢字や歴史用語には必ず読み仮名（ふりがな）を添え、正式用語に着地させてください。絶対に前パートのまとめやお礼を言わず、第${partIndex + 1}回の本題から始めてください。`
+                    : `【指令】第${partIndex + 1}回「${part.title}」（${part.summary}）の講義を、初回1通目として最初からわかりやすく始めてください。難しい漢字や専門用語には必ず読み仮名（ふりがな）を添えてください。前回の説明とは別の例えや切り口を用いてください。絶対に前パートのまとめやお礼を言わず、第${partIndex + 1}回の本題から始めてください。`;
+
                 const aiJson = await callGeminiChat(
                     [{
                         role: "user",
                         parts: [{
-                            text: `【指令】第${partIndex + 1}回「${part.title}」（${part.summary}）の講義を、初回1通目として最初からわかりやすく始めてください。難しい漢字や専門用語には必ず読み仮名（ふりがな）を添えてください。前回の説明とは別の例えや切り口を用いてください。絶対に前パートのまとめやお礼を言わず、第${partIndex + 1}回の本題から始めてください。`
+                            text: regenPromptText
                         }]
                     }],
                     buildTeachSystemInstruction(partIndex),
