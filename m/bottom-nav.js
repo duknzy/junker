@@ -28,7 +28,7 @@
             { file: 'index.html',       icon: '🧠', label: '誤答ノート', match: ['index.html', ''] },
             { file: 'lesson.html',      icon: '📖', label: '授業',       match: ['lesson.html'] },
             { file: 'refbook.html',     icon: '📚', label: '参考書',     match: ['refbook.html'] },
-            { file: 'insights.html',    icon: '💡', label: '気づき',     match: ['insights.html', 'answer-check.html', 'timeline.html'] },
+            { file: 'insights.html',    icon: '🎴', label: '暗記',       match: ['insights.html', 'answer-check.html', 'timeline.html'] },
             { file: 'ai-settings.html', icon: '⚙️', label: '設定',       match: ['ai-settings.html'] },
         ];
 
