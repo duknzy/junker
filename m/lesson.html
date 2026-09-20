@@ -1157,7 +1157,14 @@
             try {
                 let contextHistory = [];
                 const subjectGuide = SUBJECT_PROMPT_GUIDES[lesson.subject] || "";
-                const systemInstruction = `あなたは高校・大学受験指導の専任プロ講師AIです。
+                const isNihonshi = /日本史/.test(lesson.subject || "");
+                const systemInstruction = isNihonshi
+                    ? `あなたは共通テスト日本史特化・全編現代翻訳講義の超人気神講師AIです。
+教科書の退屈な説明を現代のビジネス・会社・SNS・炎上・推し活・日常にたとえて、「要するにこういうこと！」と直感的に本質を納得させるライブ講義スタイルで回答してください。
+ただし歴史的事実・年代・因果関係は共通テストの史実に100%忠実とし、正式用語（ふりがな付き）に着地させてください。
+${subjectGuide}
+難しい漢字や歴史用語には必ず「漢字（よみがな）」を添えてください。前置きや挨拶は省き、本題から直接解説してください。`
+                    : `あなたは高校・大学受験指導の専任プロ講師AIです。
 論理と公式・解法の厳密性を最優先に教えてください。
 ${subjectGuide}
 【🚨 読み仮名（ふりがな）の徹底（最重要ルール）】：
@@ -1166,18 +1173,20 @@ ${subjectGuide}
 前置きや挨拶は省き、本題から直接わかりやすく解説してください。`;
 
                 if (prevUserMsg) {
+                    const userRegenText = isNihonshi
+                        ? `【授業テーマ】${lesson.title}\n【教科】日本史（共通テスト特化）\n【第${partIndex + 1}回】${part.title}\n【生徒の質問】${prevUserMsg}\n\n【指示】生徒の質問に対して、前回の回答とは別の身近なたとえ話（会社・SNS・日常）を用いて「要するにこういうこと！」と直感的にわかりやすく再回答してください。共通テストの急所も明示し、難しい漢字や歴史用語には必ず読み仮名を添えてください。`
+                        : `【授業テーマ】${lesson.title}\n【教科】${lesson.subject || ''}\n【第${partIndex + 1}回】${part.title}\n【生徒の質問】${prevUserMsg}\n\n【指示】生徒の質問に対して、前回の回答とは別の切り口や具体的でわかりやすい例え、解法ステップを用いて丁寧に再回答してください。難しい漢字や歴史用語・専門用語には必ず読み仮名を添えてください。論理と厳密性を大切にしてください。`;
                     contextHistory = [{
                         role: "user",
-                        parts: [{
-                            text: `【授業テーマ】${lesson.title}\n【教科】${lesson.subject || ''}\n【第${partIndex + 1}回】${part.title}\n【生徒の質問】${prevUserMsg}\n\n【指示】生徒の質問に対して、前回の回答とは別の切り口や具体的でわかりやすい例え、解法ステップを用いて丁寧に再回答してください。難しい漢字や歴史用語・専門用語には必ず読み仮名を添えてください。論理と厳密性を大切にしてください。`
-                        }]
+                        parts: [{ text: userRegenText }]
                     }];
                 } else {
+                    const introRegenText = isNihonshi
+                        ? `【授業テーマ】${lesson.title}\n【教科】日本史（共通テスト特化）\n【第${partIndex + 1}回】${part.title}（${part.summary || ''}）\n\n【指示】第${partIndex + 1}回の導入講義を、初回1通目として【共通テスト完全特化＆全編現代風ぶっちゃけ翻訳講義スタイル】で始めてください。現代の会社・SNS・日常にたとえて面白く直感的に解説し、共通テストの急所を示してください。難しい漢字には必ず読み仮名を添えてください。前置きは省いて本題から始めてください。`
+                        : `【授業テーマ】${lesson.title}\n【教科】${lesson.subject || ''}\n【第${partIndex + 1}回】${part.title}（${part.summary || ''}）\n\n【指示】第${partIndex + 1}回の導入講義を、初回1通目として最初からわかりやすく解説してください。難しい漢字や歴史用語・専門用語には必ず読み仮名（ふりがな）を添えてください。前回の説明とは別の例えや切り口を用いてください。前置きは省いて本題から始めてください。`;
                     contextHistory = [{
                         role: "user",
-                        parts: [{
-                            text: `【授業テーマ】${lesson.title}\n【教科】${lesson.subject || ''}\n【第${partIndex + 1}回】${part.title}（${part.summary || ''}）\n\n【指示】第${partIndex + 1}回の導入講義を、初回1通目として最初からわかりやすく解説してください。難しい漢字や歴史用語・専門用語には必ず読み仮名（ふりがな）を添えてください。前回の説明とは別の例えや切り口を用いてください。前置きは省いて本題から始めてください。`
-                        }]
+                        parts: [{ text: introRegenText }]
                     }];
                 }
 
@@ -1230,7 +1239,18 @@ ${subjectGuide}
 
             try {
                 const subjectGuide = SUBJECT_PROMPT_GUIDES[lesson.subject] || "";
-                const prompt = `【教科：${lesson.subject || "高校学習"}】
+                const isNihonshi = /日本史/.test(lesson.subject || "");
+                const prompt = isNihonshi
+                    ? `【教科：日本史（共通テスト特化）】
+【授業テーマ】${lesson.title}
+【目標レベル】共通テスト対策
+【単元・要望】${lesson.topic || lesson.title}
+
+【指示】
+この単元についての超詳細な講義ノート全文を最初から執筆してください。
+生徒は共通テスト「日本史」を受験するため、私大・二次のマニアックな知識や長文記述は完全排除し、全編にわたり「現代風ぶっちゃけ翻訳講義スタイル（現代の会社・SNS・炎上・日常のアナロジー）」で因果関係や時代の流れを最高に面白く解説してください。
+共通テスト頻出の正誤判定トラップや時代の前後関係の急所を明示し、難しい漢字や歴史用語には必ず「漢字（よみがな）」を付記してください。`
+                    : `【教科：${lesson.subject || "高校学習"}】
 【授業テーマ】${lesson.title}
 【目標レベル】${lesson.level || "高校標準"}
 【単元・要望】${lesson.topic || lesson.title}
@@ -1241,7 +1261,11 @@ ${subjectGuide}
 【🚨 難しい漢字の読み仮名徹底】社会系科目（日本史・世界史・地理・公民・公共・政治経済等）の歴史用語、人名、地名、制度名、重要概念や、初見で読みにくい漢字には、必ず「漢字（よみがな）」または「<ruby>漢字<rt>よみがな</rt></ruby>」で読み仮名を徹底して付記してください。
 数式は必ず $ $ または $$ $$ で囲んでください。`;
 
-                const systemInstruction = `あなたは予備校の専任プロ講師です。論理的で厳密、初学者にもわかりやすく深い講義ノート全文を執筆してください。
+                const systemInstruction = isNihonshi
+                    ? `あなたは共通テスト日本史特化・全編現代翻訳講義の超人気神講師AIです。教科書の言葉を現代の身近なたとえ話に翻訳し、生徒が夢中で理解できる講義ノート全文を執筆してください。
+${subjectGuide}
+難しい漢字や歴史用語には必ず「漢字（よみがな）」を併記してください。`
+                    : `あなたは予備校の専任プロ講師です。論理的で厳密、初学者にもわかりやすく深い講義ノート全文を執筆してください。
 ${subjectGuide}
 難しい漢字や専門用語（特に歴史・社会・地歴公民の用語・人名・地名・制度名など）には必ず「漢字（よみがな）」を併記して読み仮名を徹底してください。無駄な前置きや過度な装飾は省いてください。`;
 
@@ -1300,7 +1324,21 @@ ${subjectGuide}
 
             try {
                 const subjectGuide = SUBJECT_PROMPT_GUIDES[lesson.subject] || "";
-                const prompt = `【教科：${lesson.subject || "高校学習"}】
+                const isNihonshi = /日本史/.test(lesson.subject || "");
+                const prompt = isNihonshi
+                    ? `【教科：日本史（共通テスト特化・現代翻訳講義）】
+【授業テーマ】${lesson.title}
+【単元目標】${lesson.topic || lesson.title}
+【第${partIndex + 1}回タイトル】${part.title}
+【第${partIndex + 1}回要点】${part.summary || ""}
+【全体の講義ノート】${lesson.lectureNote || ""}
+
+【指示】
+第${partIndex + 1}回「${part.title}」の講義を、初回1通目として【共通テスト完全特化＆全編現代風ぶっちゃけ翻訳講義スタイル】で始めてください。
+現代の会社組織・SNS・日常にたとえて本質を面白く直感的に解説し、共通テストで狙われる罠（正誤判定・時代の前後関係）を先回り指導してください。
+難しい漢字や歴史用語には必ず読み仮名（ふりがな）を添え、正式用語に着地させてください。
+前置きやお礼は省き、第${partIndex + 1}回の本題から始めてください。`
+                    : `【教科：${lesson.subject || "高校学習"}】
 【授業テーマ】${lesson.title}
 【単元目標】${lesson.topic || lesson.title}
 【第${partIndex + 1}回タイトル】${part.title}
@@ -1313,7 +1351,11 @@ ${subjectGuide}
 前回の説明とは別の例えや直感的なアプローチを交え、初学者がつまずきやすい急所を明確に示してください。
 数式は必ず $ $ または $$ $$ で囲むこと。前置きやお礼は省き、第${partIndex + 1}回の本題から始めてください。`;
 
-                const systemInstruction = `あなたは高校・難関大受験指導のプロ講師AIです。わかりやすく明快、論理的で厳密な講義を行ってください。
+                const systemInstruction = isNihonshi
+                    ? `あなたは共通テスト日本史特化・全編現代翻訳講義の超人気神講師AIです。教科書の退屈な説明を現代のビジネス・SNS・日常にたとえて最高にわかりやすく講義してください。
+${subjectGuide}
+難しい漢字や歴史用語には必ず「漢字（よみがな）」を付記してください。`
+                    : `あなたは高校・難関大受験指導のプロ講師AIです。わかりやすく明快、論理的で厳密な講義を行ってください。
 ${subjectGuide}
 【最重要ルール】難しい漢字、歴史用語、人名、地名、制度名、法令名などには必ず「漢字（よみがな）」または「<ruby>漢字<rt>よみがな</rt></ruby>」を付記して読み仮名を徹底してください。`;
 
