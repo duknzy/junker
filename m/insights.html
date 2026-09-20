@@ -901,43 +901,46 @@
         }
         .rate-btn-good:active { transform: scale(0.96); }
 
-        /* サブの2ボタン（Hard / Easy）+ AIアシスト */
+        /* サブのボタン行（問題に戻る / Hard / Easy / AI解説） */
         .rating-sub-row {
-            display: flex;
-            align-items: center;
-            gap: 0.45rem;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.35rem;
         }
         .rate-btn-sub {
-            flex: 1;
             background: rgba(255, 255, 255, 0.12);
             color: #E2E8F0;
             border: 1px solid rgba(255, 255, 255, 0.15);
             border-radius: 10px;
-            padding: 0.45rem 0.35rem;
-            font-size: 0.75rem;
+            padding: 0.5rem 0.15rem;
+            font-size: clamp(0.68rem, 2.5vw, 0.75rem);
             font-weight: 700;
             cursor: pointer;
             text-align: center;
             white-space: nowrap;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             transition: background 0.12s;
         }
         .rate-btn-sub:active { background: rgba(255, 255, 255, 0.25); }
 
         .rate-btn-ai {
-            background: rgba(99, 102, 241, 0.2);
-            border: 1px solid rgba(99, 102, 241, 0.4);
-            color: #A5B4FC;
+            background: rgba(99, 102, 241, 0.25);
+            border: 1px solid rgba(99, 102, 241, 0.45);
+            color: #C7D2FE;
             border-radius: 10px;
-            padding: 0.45rem 0.65rem;
-            font-size: 0.75rem;
+            padding: 0.5rem 0.15rem;
+            font-size: clamp(0.68rem, 2.5vw, 0.75rem);
             font-weight: 800;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 0.25rem;
+            justify-content: center;
+            gap: 0.2rem;
             white-space: nowrap;
         }
-        .rate-btn-ai:active { background: rgba(99, 102, 241, 0.35); }
+        .rate-btn-ai:active { background: rgba(99, 102, 241, 0.45); }
 
         /* 🤖 AI解説ボトムシート */
         .ai-sheet-overlay {
@@ -1392,7 +1395,7 @@
                         <div class="card-note-box tex2jax_process" id="card-back-note" style="display:none;"></div>
                     </div>
                     <div class="card-tap-hint">
-                        <span>💡 自己評価を選択して次へ進もう</span>
+                        <span>👆 カードをタップ または 「🔄 問題に戻る」で問題を表示</span>
                     </div>
                 </div>
             </div>
@@ -1418,10 +1421,11 @@
                         <span class="sub" id="rate-good-interval-sub">3日後復習</span>
                     </button>
                 </div>
-                <!-- サブの2ボタン（Hard/Easy）+ AIワンポイント解説 -->
+                <!-- サブボタン（問題に戻る / Hard / Easy / AI解説） -->
                 <div class="rating-sub-row">
+                    <button type="button" class="rate-btn-sub" id="btn-unflip-card" style="background:#334155; color:#F8FAFC; border-color:#475569;">🔄 問題に戻る</button>
                     <button type="button" class="rate-btn-sub" id="btn-rate-hard">⚡ 難しい (明日)</button>
-                    <button type="button" class="rate-btn-sub" id="btn-rate-easy">🌟 かんたん (7日後)</button>
+                    <button type="button" class="rate-btn-sub" id="btn-rate-easy">🌟 かんたん (19日後)</button>
                     <button type="button" class="rate-btn-ai" id="btn-session-ai-explain">🤖 AI解説</button>
                 </div>
             </div>
@@ -1658,13 +1662,16 @@
             }
         }
 
-        // 安全なFirebaseキーサニタイズ（. # $ / [ ] の禁止文字を除去）
+        // 安全なFirebaseキーサニタイズ（PC版 insights.html と完全統一: . # $ [ ] / を安全化）
+        function sanitizeDbKey(key) {
+            return String(key || "").replace(/[.#$\[\]\/]/g, "_");
+        }
         function sanitizeKey(str) {
-            return String(str || "").replace(/[.#$/\[\]]/g, "_");
+            return sanitizeDbKey(str);
         }
 
-        // SRS 間隔テーブル（日数）
-        const SRS_INTERVALS = [0, 1, 3, 7, 14, 30];
+        // SRS 間隔テーブル（日数: PC版 insights.html と完全統一: Box 1=1日, Box 2=3日, Box 3=7日, Box 4=16日, Box 5=35日）
+        const SRS_INTERVALS = [0, 1, 3, 7, 16, 35];
 
         function getTodayStr() {
             const d = new Date();
@@ -1742,17 +1749,22 @@
             return "公共";
         }
 
-        // 🧠 全カードプールの抽出（授業暗記事項をコアに問題の極意も含める）
+        // 🧠 全カードプールの抽出（PC版 insights.html と完全統一されたキー構造とデータ形式）
         function getAllCards() {
             const cards = [];
             const today = getTodayStr();
 
-            // 1. 授業の暗記事項 (Core)
+            // 1. 授業の暗記事項 (Core: PC版 buildMemorizationItems と完全同期)
             Object.entries(allLessons).forEach(([lid, l]) => {
                 if (!l || !Array.isArray(l.memorizationPoints)) return;
                 const subj = detectSubjectFromLesson(l);
                 l.memorizationPoints.forEach((mp, idx) => {
-                    const cardId = `${lid}:${mp.id || `mp_${idx}`}`;
+                    const mpId = mp.id || `idx${idx}`;
+                    // PC版の正規 progressKey (mem_${lid}_${mpId})
+                    const progressKey = sanitizeDbKey(`mem_${lid}_${mpId}`);
+                    const legacyKey1 = sanitizeDbKey(`${lid}:${mp.id || `mp_${idx}`}`);
+                    const legacyKey2 = `${lid}:${mp.id || `mp_${idx}`}`;
+
                     let q = (mp.question || "").trim();
                     let a = (mp.answer || mp.content || "").trim();
                     let note = (mp.note || "").trim();
@@ -1770,47 +1782,59 @@
                         q = mp.category || "重要事項";
                     }
 
-                    const safeId = sanitizeKey(cardId);
-                    const prog = allMemorizeProgress[safeId] || allMemorizeProgress[cardId] || {};
-                    const box = prog.boxLevel || prog.box || 1;
+                    // PC版の保存先から最優先で取得
+                    const prog = allMemorizeProgress[progressKey] || allMemorizeProgress[legacyKey1] || allMemorizeProgress[legacyKey2] || {};
+                    const boxLevel = typeof prog.boxLevel === 'number' ? prog.boxLevel : (typeof prog.box === 'number' ? prog.box : 0);
+                    const lapses = prog.lapses || 0;
+                    const reps = prog.reps || 0;
                     const nextDate = prog.nextReviewDate || null;
-                    const isDue = !nextDate || nextDate <= today;
-                    const isMastered = prog.mastered || box >= 4;
+                    
+                    // PC版と同等の期日・習得判定
+                    const isDue = (boxLevel === 0) || (!nextDate || nextDate <= today);
+                    const isMastered = boxLevel >= 4;
 
                     cards.push({
-                        id: cardId,
-                        safeId: safeId,
+                        id: `memorize_${lid}_${mpId}`,
+                        progressKey: progressKey,
+                        safeId: progressKey,
                         lessonId: lid,
+                        memoId: mpId,
                         subject: mp.subject || subj,
                         category: mp.category || "重要事項",
                         sourceTitle: l.title || "授業暗記",
                         question: q,
                         answer: a,
                         note: note,
-                        box: box,
+                        box: boxLevel,
+                        boxLevel: boxLevel,
+                        reps: reps,
+                        lapses: lapses,
                         nextReviewDate: nextDate,
                         isDue: isDue,
                         isMastered: isMastered,
-                        retryCount: prog.retryCount || 0,
+                        retryCount: lapses || prog.retryCount || 0,
                         lastRating: prog.lastRating || null
                     });
                 });
             });
 
-            // 2. 問題の解法の極意メモ (オプション補完)
+            // 2. 問題の解法の極意メモ (PC版 prob_${pid} と完全同期)
             Object.entries(allProblems).forEach(([pid, p]) => {
                 if (!p || !p.insight || !p.insight.trim()) return;
-                const cardId = `prob:${pid}`;
-                const safeId = sanitizeKey(cardId);
-                const prog = allMemorizeProgress[safeId] || allMemorizeProgress[cardId] || {};
-                const box = prog.boxLevel || prog.box || 1;
+                const progressKey = sanitizeDbKey(`prob_${pid}`);
+                const legacyKey = sanitizeDbKey(`prob:${pid}`);
+                const prog = allMemorizeProgress[progressKey] || allMemorizeProgress[legacyKey] || allMemorizeProgress[`prob:${pid}`] || {};
+                const boxLevel = typeof prog.boxLevel === 'number' ? prog.boxLevel : (typeof prog.box === 'number' ? prog.box : 0);
+                const lapses = prog.lapses || 0;
+                const reps = prog.reps || 0;
                 const nextDate = prog.nextReviewDate || null;
-                const isDue = !nextDate || nextDate <= today;
-                const isMastered = prog.mastered || box >= 4;
+                const isDue = (boxLevel === 0) || (!nextDate || nextDate <= today);
+                const isMastered = boxLevel >= 4;
 
                 cards.push({
-                    id: cardId,
-                    safeId: safeId,
+                    id: `prob_${pid}`,
+                    progressKey: progressKey,
+                    safeId: progressKey,
                     problemId: pid,
                     subject: p.subject || "数学",
                     category: p.field || "解法の極意",
@@ -1818,11 +1842,14 @@
                     question: `${p.short_title || '問題'} のポイント・極意は？`,
                     answer: p.insight.trim(),
                     note: "",
-                    box: box,
+                    box: boxLevel,
+                    boxLevel: boxLevel,
+                    reps: reps,
+                    lapses: lapses,
                     nextReviewDate: nextDate,
                     isDue: isDue,
                     isMastered: isMastered,
-                    retryCount: prog.retryCount || 0,
+                    retryCount: lapses || prog.retryCount || 0,
                     lastRating: prog.lastRating || null
                 });
             });
@@ -1830,28 +1857,30 @@
             return cards;
         }
 
-        // 📊 ダッシュボードの集計 & 描画
+        // 📊 ダッシュボードの集計 & 描画（PC版 updateSrsDashboardCounts と同期）
         function renderDashboard() {
             const allCards = getAllCards();
+            const today = getTodayStr();
 
-            // 1. デイリー統計集計
             let dueCount = 0;
             let newCount = 0;
             let masteredCount = 0;
             let weakCount = 0;
 
             allCards.forEach(c => {
-                if (c.isMastered) {
+                const level = c.boxLevel || 0;
+                if (level === 0) {
+                    newCount++;
+                    dueCount++; // 未学習も本日の復習タスクに含める（PC版準拠）
+                } else if (level >= 4) {
                     masteredCount++;
-                } else if (c.isDue) {
-                    if (c.retryCount > 0 || c.lastRating === "again") {
-                        weakCount++;
-                    }
-                    if (!c.nextReviewDate) {
-                        newCount++;
-                    } else {
-                        dueCount++;
-                    }
+                    if (c.nextReviewDate && c.nextReviewDate <= today) dueCount++;
+                } else {
+                    if (!c.nextReviewDate || c.nextReviewDate <= today) dueCount++;
+                }
+
+                if (c.retryCount > 0 || c.lastRating === "again" || c.lapses > 0) {
+                    weakCount++;
                 }
             });
 
@@ -1865,7 +1894,7 @@
             if (statMasteredEl) statMasteredEl.textContent = masteredCount;
 
             // 今日の推奨セッション枚数（期日分 + 新規最大10問、最大25問）
-            const dailyPoolCount = Math.min(25, dueCount + Math.min(newCount, 10));
+            const dailyPoolCount = Math.min(25, dueCount > 0 ? dueCount : allCards.length);
             if (ctaBadge) ctaBadge.textContent = `${dailyPoolCount > 0 ? dailyPoolCount : allCards.length}問`;
 
             // 2. 教科別デッキ描画
@@ -2130,10 +2159,11 @@
             // 内容セット
             const s = sessionCurrentCard.subject || "公共";
             const icon = SUBJECT_ICONS[s] || "📚";
+            const curLevel = sessionCurrentCard.boxLevel || sessionCurrentCard.box || 0;
             if (frontSubj) frontSubj.textContent = `${icon} ${s}`;
             if (backSubj) backSubj.textContent = `${icon} ${s}`;
-            if (frontLevel) frontLevel.textContent = `Lv.${sessionCurrentCard.box}`;
-            if (backLevel) backLevel.textContent = `Lv.${sessionCurrentCard.box}`;
+            if (frontLevel) frontLevel.textContent = curLevel === 0 ? "Lv.0 未学習" : `Lv.${curLevel}`;
+            if (backLevel) backLevel.textContent = curLevel === 0 ? "Lv.0 未学習" : `Lv.${curLevel}`;
             if (frontSource) frontSource.textContent = sessionCurrentCard.sourceTitle || "授業";
             if (backSource) backSource.textContent = sessionCurrentCard.sourceTitle || "授業";
 
@@ -2157,10 +2187,10 @@
                 }
             }
 
-            // 次の期日プレビュー
+            // 次の期日プレビュー（PC版 SRS_INTERVALS に完全連動）
             const goodIntervalSub = document.getElementById("rate-good-interval-sub");
             if (goodIntervalSub) {
-                const nextDays = SRS_INTERVALS[Math.min(5, sessionCurrentCard.box + 1)] || 3;
+                const nextDays = SRS_INTERVALS[Math.min(5, curLevel + 1)] || 3;
                 goodIntervalSub.textContent = `${nextDays}日後復習`;
             }
 
@@ -2178,73 +2208,109 @@
             if (stage) triggerMathTypeset(stage);
         }
 
-        function flipCard() {
-            if (isCardFlipped) return;
-            isCardFlipped = true;
+        // 🔄 カードの表裏トグル反転（一度めくった後も何度でも問題・解答を行き来可能）
+        function toggleCardFlip(forceState = null) {
+            if (forceState !== null) {
+                isCardFlipped = forceState;
+            } else {
+                isCardFlipped = !isCardFlipped;
+            }
             playSound("flip");
             const stage = document.getElementById("session-card-stage");
             const flipBtn = document.getElementById("session-btn-flip");
             const ratingTray = document.getElementById("session-rating-tray");
 
-            if (stage) stage.classList.add("flipped");
-            if (flipBtn) flipBtn.style.display = "none";
-            if (ratingTray) ratingTray.classList.add("active");
-            if (stage) triggerMathTypeset(stage);
+            if (stage) {
+                stage.classList.toggle("flipped", isCardFlipped);
+                triggerMathTypeset(stage);
+            }
+            if (isCardFlipped) {
+                if (flipBtn) flipBtn.style.display = "none";
+                if (ratingTray) ratingTray.classList.add("active");
+            } else {
+                if (flipBtn) flipBtn.style.display = "flex";
+                if (ratingTray) ratingTray.classList.remove("active");
+            }
         }
 
-        // 🧠 SRS 評価ボタンアクション (Again / Good / Hard / Easy)
+        function flipCard() {
+            toggleCardFlip(true);
+        }
+
+        function unflipCard() {
+            toggleCardFlip(false);
+        }
+
+        // 🧠 SRS 評価ボタンアクション (Again / Hard / Good / Easy: PC版 rateFcCard と完全統一)
         async function rateCard(rating) {
             if (!sessionCurrentCard) return;
             const card = sessionCurrentCard;
-            const prevBox = card.box || 1;
-            let newBox = 1;
-            let intervalDays = 0;
+            const prevLevel = typeof card.boxLevel === 'number' ? card.boxLevel : (card.box || 0);
+            let newLevel = prevLevel;
+            let lapses = card.lapses || 0;
+            let reps = (card.reps || 0) + 1;
+            let nextReviewDate = getTodayStr();
             let isPassed = false;
             let reinsertOffset = 0;
 
             if (rating === "again") {
+                // もう一度 (Again) -> Lv.1降格、本日中に再復習
                 playSound("wrong");
-                newBox = 1;
-                intervalDays = 0;
+                lapses += 1;
+                newLevel = 1;
+                nextReviewDate = getTodayStr();
                 isPassed = false;
-                reinsertOffset = Math.min(3, sessionQueue.length); // 3問後に再出題！
+                reinsertOffset = Math.min(3, sessionQueue.length); // 3問後に再出題
                 sessionFailedCards.push(card);
             } else if (rating === "hard") {
+                // 難しい (Hard) -> レベル維持 (最低1)、1日後復習
                 playSound("flip");
-                newBox = Math.max(1, prevBox);
-                intervalDays = 1;
-                isPassed = false;
-                reinsertOffset = Math.min(5, sessionQueue.length);
+                newLevel = Math.max(1, prevLevel);
+                nextReviewDate = addDaysToDate(getTodayStr(), 1);
+                isPassed = true;
             } else if (rating === "good") {
+                // 覚えた (Good) -> レベル+1 (最大5)、SRSインターバル間隔
                 playSound("correct");
-                newBox = Math.min(5, prevBox + 1);
-                intervalDays = SRS_INTERVALS[newBox] || 3;
+                newLevel = Math.min(5, prevLevel + 1);
+                const intervalDays = SRS_INTERVALS[newLevel] || 3;
+                nextReviewDate = addDaysToDate(getTodayStr(), intervalDays);
                 isPassed = true;
             } else if (rating === "easy") {
+                // かんたん (Easy) -> レベル+2 (最大5)、余裕のある間隔
                 playSound("correct");
-                newBox = Math.min(5, Math.max(prevBox + 2, 3));
-                intervalDays = (SRS_INTERVALS[newBox] || 7) + 3;
+                newLevel = Math.min(5, prevLevel + 2);
+                const intervalDays = (SRS_INTERVALS[newLevel] || 7) + 3;
+                nextReviewDate = addDaysToDate(getTodayStr(), intervalDays);
                 isPassed = true;
             }
 
-            // Firebase 進捗更新 (サニタイズされた安全なキーで保存)
-            if (currentUser && card.id) {
-                const safeKey = card.safeId || sanitizeKey(card.id);
-                const nextReviewDate = addDaysToDate(getTodayStr(), intervalDays);
-                const progressData = {
-                    boxLevel: newBox,
-                    box: newBox,
-                    mastered: newBox >= 4,
-                    nextReviewDate: nextReviewDate,
-                    lastReviewedAt: Date.now(),
-                    lastRating: rating,
-                    retryCount: (card.retryCount || 0) + (isPassed ? 0 : 1),
-                    updatedAt: Date.now()
-                };
-                allMemorizeProgress[safeKey] = progressData;
-                allMemorizeProgress[card.id] = progressData;
-                // 非同期でFirebaseに安全保存
-                update(ref(database, `users/${currentUser.uid}/memorizeProgress/${safeKey}`), progressData).catch(e => console.debug(e));
+            // カードオブジェクトとローカル状態の更新
+            card.boxLevel = newLevel;
+            card.box = newLevel;
+            card.nextReviewDate = nextReviewDate;
+            card.lapses = lapses;
+            card.reps = reps;
+            card.isDue = nextReviewDate <= getTodayStr();
+            card.isMastered = newLevel >= 4;
+
+            // PC版 insights.html と100%同一の progressData 構造
+            const progressKey = card.progressKey || sanitizeDbKey(card.id);
+            const progressData = {
+                boxLevel: newLevel,
+                nextReviewDate: nextReviewDate,
+                lastReviewedAt: Date.now(),
+                reps: reps,
+                lapses: lapses,
+                updatedAt: Date.now()
+            };
+
+            allMemorizeProgress[progressKey] = progressData;
+            if (card.safeId) allMemorizeProgress[card.safeId] = progressData;
+            if (card.id) allMemorizeProgress[card.id] = progressData;
+
+            // Firebase users/${currentUser.uid}/memorizeProgress/${progressKey} へ保存
+            if (currentUser) {
+                update(ref(database, `users/${currentUser.uid}/memorizeProgress/${progressKey}`), progressData).catch(e => console.debug("SRS save err:", e));
             }
 
             if (isPassed) {
@@ -2465,14 +2531,18 @@
             startSession(deckCards, `📚 ${subject} 暗記特訓`);
         }
 
-        // 5. フラッシュカードめくり & 評価
+        // 5. フラッシュカードめくり（何度でもトグル可能） & 評価
         const stageEl = document.getElementById("session-card-stage");
         if (stageEl) {
-            stageEl.onclick = () => flipCard();
+            stageEl.onclick = () => toggleCardFlip();
         }
         const flipBtn = document.getElementById("session-btn-flip");
         if (flipBtn) {
             flipBtn.onclick = () => flipCard();
+        }
+        const unflipBtn = document.getElementById("btn-unflip-card");
+        if (unflipBtn) {
+            unflipBtn.onclick = () => unflipCard();
         }
 
         // 4段階評価
