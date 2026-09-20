@@ -139,12 +139,17 @@ app.post('/api/deepseek/chat', async (req, res) => {
 });
 
 // Serve static assets from project root and handle /junker base prefix
-app.use('/junker', express.static(__dirname));
-app.use(express.static(__dirname));
+app.use('/junker', express.static(__dirname, { extensions: ['html'] }));
+app.use(express.static(__dirname, { extensions: ['html'] }));
 
-// Serve index.html for root path or fallback
+// Serve index.html for root path
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// Fallback to 404.html
+app.use((req, res) => {
+  res.status(404).sendFile(path.join(__dirname, '404.html'));
 });
 
 app.listen(PORT, '0.0.0.0', () => {
