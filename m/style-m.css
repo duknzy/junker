@@ -1,11 +1,11 @@
 /* ==========================================================================
-   FLORA MOBILE DESIGN SYSTEM — Clean, Modern & Touch-First
-   PC版 style.css のデザイントークンを完全継承し、
-   モバイル専用のレイアウト・コンポーネントを追加
+   FLORA MOBILE DESIGN SYSTEM — Artistic Editorial & Modern Craft
+   高校生・受験生向け学習ワークスペース「Flora」モバイル版
+   洗練されたエディトリアル・マガジン調の美学と直感的なタッチUXの融合
    ========================================================================== */
 
-/* Google Fonts: 同一フォントスタックを使用 */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap');
+/* Google Fonts: Inter + Plus Jakarta Sans + Noto Sans JP + Playfair Display + Shippori Mincho */
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700;800;900&family=Noto+Serif+JP:wght@500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@600;700;800&family=Shippori+Mincho:wght@500;600;700&display=swap');
 
 *, *::before, *::after {
     box-sizing: border-box;
@@ -14,30 +14,36 @@
 }
 
 /* ==========================================================================
-   デザイントークン（PC版と100%同一）
+   デザイントークン / CSS変数（アート性・知性・品格を高めたパレット）
    ========================================================================== */
 :root {
-    /* 🎨 背景 & サーフェス */
-    --bg-app: #F8FAFC;
+    /* 🎨 背景 & サーフェス（知的好奇心を刺激する上質なエディトリアル・キャンバス） */
+    --bg-app: #F7F9F8;
     --bg-surface: #FFFFFF;
     --bg-surface-raised: #FFFFFF;
-    --bg-subtle: #F1F5F9;
+    --bg-subtle: #F0F4F2;
+    --bg-subtle-glass: rgba(240, 244, 242, 0.7);
     --bg-sidebar: #FFFFFF;
-    --bg-card-glass: rgba(255, 255, 255, 0.85);
+    --bg-card-glass: rgba(255, 255, 255, 0.88);
+    --bg-card-paper: #FCFDFD;
 
-    /* 🖋️ テキスト */
+    /* 🖋️ テキスト（高いコントラストと深みのあるスレートインク） */
     --text-primary: #0F172A;
-    --text-secondary: #475569;
-    --text-muted: #94A3B8;
+    --text-secondary: #334155;
+    --text-muted: #64748B;
+    --text-subtle: #94A3B8;
     --text-on-primary: #FFFFFF;
     --text-main: var(--text-primary);
     --text-bright-muted: var(--text-secondary);
 
-    /* 🌱 ブランド */
+    /* 🌱 ブランド・アイデンティティ（深みのある知性・エメラルド＆フォレスト） */
     --brand-primary: #059669;
+    --brand-dark: #064E3B;
     --brand-hover: #047857;
     --brand-light: #ECFDF5;
     --brand-border: #A7F3D0;
+    --brand-gradient: linear-gradient(135deg, #059669 0%, #10B981 100%);
+    --brand-glow: rgba(5, 150, 105, 0.18);
 
     /* アクセント */
     --accent-green: var(--brand-primary);
@@ -47,7 +53,7 @@
     --accent-terracotta: #EA580C;
     --accent-sage: #10B981;
 
-    /* 📚 教科別カラー */
+    /* 📚 教科別カラー（学術的かつ上質なインク＆パステルトーン） */
     --subj-math: #059669;       --subj-math-bg: #ECFDF5;       --subj-math-border: #A7F3D0;
     --subj-physics: #0284C7;    --subj-physics-bg: #F0F9FF;    --subj-physics-border: #BAE6FD;
     --subj-chemistry: #7C3AED;  --subj-chemistry-bg: #F5F3FF;  --subj-chemistry-border: #DDD6FE;
@@ -67,26 +73,28 @@
     --warning: #F59E0B;   --warning-bg: #FFFBEB;
     --info: #3B82F6;      --info-bg: #EFF6FF;
 
-    /* 🔲 ボーダー & シャドウ */
-    --border-color: #E2E8F0;
-    --border-subtle: #F1F5F9;
+    /* 🔲 ボーダー & シャドウ（マットな手漉き紙の質感と微細な拡散光） */
+    --border-color: rgba(226, 232, 240, 0.85);
+    --border-subtle: rgba(241, 245, 249, 0.9);
     --border-focus: #059669;
     --border-glow: #CBD5E1;
 
-    --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
-    --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.05), 0 1px 2px rgba(15, 23, 42, 0.03);
-    --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.06), 0 2px 4px -2px rgba(15, 23, 42, 0.03);
-    --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.06), 0 4px 6px -4px rgba(15, 23, 42, 0.02);
-    --shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.03);
-    --shadow-modal: 0 25px 50px -12px rgba(15, 23, 42, 0.18);
+    --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.03);
+    --shadow-sm: 0 2px 4px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.02);
+    --shadow-md: 0 4px 8px -1px rgba(15, 23, 42, 0.05), 0 2px 4px -2px rgba(15, 23, 42, 0.03), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+    --shadow-lg: 0 12px 24px -4px rgba(15, 23, 42, 0.06), 0 4px 8px -2px rgba(15, 23, 42, 0.03), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+    --shadow-xl: 0 24px 38px -8px rgba(15, 23, 42, 0.08), 0 8px 16px -4px rgba(15, 23, 42, 0.03);
+    --shadow-card: 0 2px 6px rgba(15, 23, 42, 0.03), 0 12px 28px -6px rgba(15, 23, 42, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    --shadow-modal: 0 25px 60px -15px rgba(15, 23, 42, 0.22);
 
-    /* 🔤 タイポグラフィ */
+    /* 🔤 タイポグラフィ（幾何学サンセリフ × 格調高いセリフのハイブリッド） */
     --font-sans: 'Inter', 'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     --font-heading: 'Plus Jakarta Sans', 'Noto Sans JP', sans-serif;
+    --font-serif: 'Playfair Display', 'Shippori Mincho', 'Noto Serif JP', Georgia, serif;
     --font-mono: 'JetBrains Mono', 'Fira Code', Menlo, Monaco, Consolas, monospace;
     --font-base: var(--font-sans);
 
-    /* モバイル用フォントサイズ（少し大きめ） */
+    /* モバイル用フォントサイズ */
     --fs-xs: 0.75rem;
     --fs-sm: 0.8125rem;
     --fs-base: 0.9375rem;
@@ -95,12 +103,12 @@
     --fs-xl: 1.5rem;
     --fs-2xl: 1.875rem;
 
-    /* 📐 角丸 */
+    /* 📐 角丸（有機的で心地よい黄金カーブ） */
     --radius-sm: 8px;
-    --radius-md: 12px;
-    --radius-lg: 16px;
-    --radius-xl: 20px;
-    --radius-2xl: 24px;
+    --radius-md: 14px;
+    --radius-lg: 18px;
+    --radius-xl: 22px;
+    --radius-2xl: 28px;
     --radius-full: 9999px;
 
     /* 📏 モバイル固有レイアウト */
@@ -111,7 +119,7 @@
 }
 
 /* ==========================================================================
-   ベーススタイル
+   ベーススタイル（心地よい紙の温もりと静寂のテクスチャ）
    ========================================================================== */
 html {
     scroll-behavior: smooth;
@@ -130,24 +138,28 @@ button, a, input, select, textarea, .m-chip, .p-row, .m-nav-item, .m-fab {
 
 body {
     background-color: var(--bg-app) !important;
+    background-image: 
+        radial-gradient(at 0% 0%, rgba(5, 150, 105, 0.035) 0px, transparent 55%),
+        radial-gradient(at 100% 0%, rgba(2, 132, 199, 0.03) 0px, transparent 50%),
+        radial-gradient(at 50% 100%, rgba(217, 119, 6, 0.025) 0px, transparent 60%);
+    background-attachment: fixed;
     color: var(--text-primary);
     font-family: var(--font-base);
     font-size: var(--fs-base);
-    line-height: 1.6;
+    line-height: 1.65;
     min-height: 100vh;
     min-height: 100dvh;
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     -webkit-tap-highlight-color: transparent;
-    /* ボトムナビの分だけ下にパディング */
-    padding-bottom: calc(var(--bottom-nav-height) + var(--safe-area-bottom) + 8px);
+    padding-bottom: calc(var(--bottom-nav-height) + var(--safe-area-bottom) + 12px);
 }
 
 .hidden { display: none !important; }
 
 /* ==========================================================================
-   モバイルヘッダー（上部固定バー）
+   モバイルヘッダー（上部固定バー — 洗練されたフロストガラス）
    ========================================================================== */
 .m-header {
     position: sticky;
@@ -158,35 +170,39 @@ body {
     gap: 0.75rem;
     height: var(--header-height);
     padding: 0 var(--content-padding);
-    background: rgba(248, 250, 252, 0.88);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border-bottom: 1px solid var(--border-subtle);
+    background: rgba(247, 249, 248, 0.85);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.02);
 }
 
 .m-header-back {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
-    height: 36px;
-    border: none;
-    background: none;
+    width: 38px;
+    height: 38px;
+    border: 1px solid transparent;
+    background: transparent;
     color: var(--brand-primary);
     font-size: 1.25rem;
     cursor: pointer;
-    border-radius: var(--radius-sm);
-    transition: background 0.15s;
+    border-radius: var(--radius-full);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     flex-shrink: 0;
 }
 .m-header-back:active {
     background: var(--brand-light);
+    border-color: var(--brand-border);
+    transform: scale(0.92);
 }
 
 .m-header-title {
     font-family: var(--font-heading);
-    font-size: var(--fs-md);
-    font-weight: 700;
+    font-size: 1.05rem;
+    font-weight: 800;
+    letter-spacing: -0.015em;
     color: var(--text-primary);
     white-space: nowrap;
     overflow: hidden;
@@ -198,19 +214,21 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 40px;
-    height: 40px;
-    min-width: 40px;
-    border: none;
-    background: none;
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    border: 1px solid var(--border-subtle);
+    background: var(--bg-surface);
     color: var(--text-secondary);
-    font-size: 1.25rem;
+    font-size: 1.15rem;
     cursor: pointer;
-    border-radius: var(--radius-sm);
-    transition: background 0.15s;
+    border-radius: var(--radius-full);
+    box-shadow: var(--shadow-xs);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .m-header-action:active {
     background: var(--bg-subtle);
+    transform: scale(0.92);
 }
 
 /* ==========================================================================
@@ -223,29 +241,32 @@ body {
 }
 
 /* ==========================================================================
-   カードコンポーネント
+   カードコンポーネント（ファイン・ペーパークラフト調）
    ========================================================================== */
 .m-card {
     background: var(--bg-surface);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
-    padding: 1rem;
-    margin-bottom: 0.75rem;
-    box-shadow: var(--shadow-xs);
-    transition: box-shadow 0.2s, transform 0.15s;
+    padding: 1.1rem;
+    margin-bottom: 0.85rem;
+    box-shadow: var(--shadow-card);
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+    position: relative;
+    overflow: hidden;
 }
 .m-card:active {
-    transform: scale(0.985);
+    transform: scale(0.985) translateY(1px);
     box-shadow: var(--shadow-sm);
 }
 
 .m-card-title {
     font-family: var(--font-heading);
-    font-weight: 700;
+    font-weight: 800;
     font-size: var(--fs-base);
     color: var(--text-primary);
-    line-height: 1.35;
-    margin-bottom: 0.35rem;
+    line-height: 1.4;
+    margin-bottom: 0.4rem;
+    letter-spacing: -0.01em;
 }
 
 .m-card-meta {
@@ -258,25 +279,26 @@ body {
 }
 
 .m-card-body {
-    margin-top: 0.5rem;
+    margin-top: 0.55rem;
     font-size: var(--fs-sm);
     color: var(--text-secondary);
-    line-height: 1.5;
+    line-height: 1.6;
 }
 
 /* ==========================================================================
-   教科バッジ（チップ）
+   教科バッジ（知的なインク調ピルバッジ）
    ========================================================================== */
 .m-subject-badge {
     display: inline-flex;
     align-items: center;
-    gap: 0.25rem;
-    padding: 0.2rem 0.55rem;
-    font-size: 0.7rem;
-    font-weight: 700;
+    gap: 0.3rem;
+    padding: 0.22rem 0.65rem;
+    font-size: 0.72rem;
+    font-weight: 800;
     border-radius: var(--radius-full);
     white-space: nowrap;
-    line-height: 1.4;
+    line-height: 1.35;
+    letter-spacing: 0.01em;
 }
 
 /* 教科カラー適用ユーティリティ */
@@ -293,13 +315,13 @@ body {
 .subj-生物, .subj-biology    { background: var(--subj-biology-bg); color: var(--subj-biology); border: 1px solid var(--subj-biology-border); }
 
 /* ==========================================================================
-   フィルターチップ（横スクロール）
+   フィルターチップ（横スクロール — 洗練されたカプセル型）
    ========================================================================== */
 .m-filter-chips {
     display: flex;
     gap: 0.5rem;
     overflow-x: auto;
-    padding: 0.25rem 0;
+    padding: 0.35rem 0;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
 }
@@ -308,98 +330,102 @@ body {
 .m-chip {
     display: inline-flex;
     align-items: center;
-    gap: 0.25rem;
-    padding: 0.4rem 0.85rem;
+    gap: 0.3rem;
+    padding: 0.42rem 0.95rem;
     font-size: var(--fs-xs);
-    font-weight: 600;
+    font-weight: 700;
     border-radius: var(--radius-full);
     border: 1px solid var(--border-color);
     background: var(--bg-surface);
     color: var(--text-secondary);
     white-space: nowrap;
     cursor: pointer;
-    transition: all 0.15s ease;
-    min-height: 34px;
+    box-shadow: var(--shadow-xs);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    min-height: 36px;
 }
 .m-chip:active {
-    transform: scale(0.95);
+    transform: scale(0.94);
 }
 .m-chip.active {
-    background: var(--brand-primary);
-    color: var(--text-on-primary);
+    background: var(--brand-gradient);
+    color: #ffffff;
     border-color: var(--brand-primary);
-    box-shadow: 0 2px 8px rgba(5, 150, 105, 0.25);
+    box-shadow: 0 3px 12px rgba(5, 150, 105, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
 
 /* ==========================================================================
-   FAB（フローティングアクションボタン）
+   FAB（フローティングアクションボタン — 芸術的なグラデーションと光沢）
    ========================================================================== */
 .m-fab {
     position: fixed;
     right: 1.25rem;
     bottom: calc(var(--bottom-nav-height) + var(--safe-area-bottom) + 1rem);
-    width: 56px;
-    height: 56px;
+    width: 58px;
+    height: 58px;
     border-radius: 50%;
     border: none;
-    background: var(--brand-primary);
-    color: var(--text-on-primary);
-    font-size: 1.5rem;
+    background: var(--brand-gradient);
+    color: #ffffff;
+    font-size: 1.55rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35);
+    box-shadow: 0 8px 24px -2px rgba(5, 150, 105, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.4);
     cursor: pointer;
     z-index: 90;
-    transition: transform 0.2s, box-shadow 0.2s;
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease;
 }
 .m-fab:active {
     transform: scale(0.9);
-    box-shadow: 0 2px 8px rgba(5, 150, 105, 0.4);
+    box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35);
 }
 
 /* ==========================================================================
-   ボタンスタイル
+   ボタンスタイル（触感の良いラウンド＆グラデーション）
    ========================================================================== */
 .m-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.4rem;
-    padding: 0.65rem 1.25rem;
+    gap: 0.45rem;
+    padding: 0.65rem 1.35rem;
     font-size: var(--fs-sm);
-    font-weight: 600;
-    font-family: var(--font-base);
-    border-radius: var(--radius-md);
+    font-weight: 750;
+    font-family: var(--font-heading);
+    border-radius: var(--radius-full);
     border: 1px solid var(--border-color);
     background: var(--bg-surface);
     color: var(--text-primary);
     cursor: pointer;
-    transition: all 0.15s ease;
+    box-shadow: var(--shadow-xs);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     min-height: 44px;
     -webkit-tap-highlight-color: transparent;
 }
-.m-btn:active { transform: scale(0.97); }
+.m-btn:active { transform: scale(0.96); }
 
 .m-btn-primary {
-    background: var(--brand-primary);
-    color: var(--text-on-primary);
+    background: var(--brand-gradient);
+    color: #ffffff;
     border-color: var(--brand-primary);
+    box-shadow: 0 4px 14px rgba(5, 150, 105, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
 .m-btn-primary:active {
-    background: var(--brand-hover);
+    box-shadow: 0 2px 6px rgba(5, 150, 105, 0.2);
 }
 
 .m-btn-danger {
-    background: var(--error);
-    color: var(--text-on-primary);
-    border-color: var(--error);
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: #ffffff;
+    border-color: #dc2626;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
 }
 
 .m-btn-success {
-    background: var(--success);
-    color: var(--text-on-primary);
-    border-color: var(--success);
+    background: var(--brand-gradient);
+    color: #ffffff;
+    border-color: var(--brand-primary);
 }
 
 .m-btn-full {
@@ -407,11 +433,11 @@ body {
 }
 
 /* ==========================================================================
-   入力フィールド
+   入力フィールド（上質でフォーカス時の光が美しい）
    ========================================================================== */
 .m-input {
     width: 100%;
-    padding: 0.65rem 0.9rem;
+    padding: 0.7rem 0.95rem;
     font-size: var(--fs-base);
     font-family: var(--font-base);
     border: 1px solid var(--border-color);
@@ -419,20 +445,22 @@ body {
     background: var(--bg-surface);
     color: var(--text-primary);
     outline: none;
-    min-height: 44px;
+    min-height: 46px;
+    box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.02);
     transition: border-color 0.2s, box-shadow 0.2s;
 }
 .m-input:focus {
     border-color: var(--brand-primary);
-    box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.12);
+    box-shadow: 0 0 0 3.5px rgba(5, 150, 105, 0.15);
 }
 .m-input::placeholder {
-    color: var(--text-muted);
+    color: var(--text-subtle);
 }
 
 .m-textarea {
     resize: vertical;
-    min-height: 80px;
+    min-height: 85px;
+    line-height: 1.6;
 }
 
 /* ==========================================================================
