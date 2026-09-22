@@ -652,15 +652,37 @@ export async function fetchWithKeyRotation(keys, buildRequest, { requestTimeoutM
 // 🧠 Geminiモデル一覧・機能割り当て
 // --------------------------------------------------------------------------
 export const GEMINI_MODEL_FALLBACK_LIST = [
-    'gemini-3.6-flash',
     'gemini-3.8-flash',
     'gemini-3.7-flash',
+    'gemini-3.6-flash',
     'gemini-3.5-flash',
-    'gemini-3-flash-preview',
-    'gemini-2.5-flash',
     'gemini-3.5-flash-lite',
     'gemini-3.1-flash-lite',
-    'gemini-2.5-flash-lite'
+    'gemini-3-flash-preview'
+];
+
+export const DEEPSEEK_MODELS = [
+    'deepseek-v4-flash',
+    'deepseek-v4-pro'
+];
+
+export const ALL_AVAILABLE_MODELS = [
+    ...GEMINI_MODEL_FALLBACK_LIST,
+    ...DEEPSEEK_MODELS
+];
+
+export const GEMINI_THINKING_LEVELS = [
+    { id: 'minimal', label: 'minimal（超高速・思考ほぼなし）' },
+    { id: 'low',     label: 'low（低思考・要約/基本）' },
+    { id: 'medium',  label: 'medium（標準バランス）' },
+    { id: 'high',    label: 'high（高思考・深層推論）' }
+];
+
+export const DEEPSEEK_REASONING_EFFORTS = [
+    { id: 'none', label: 'none（無効）' },
+    { id: 'low',  label: 'low（低推論）' },
+    { id: 'high', label: 'high（高推論）' },
+    { id: 'max',  label: 'max（最大推論 128K）' }
 ];
 
 export const GEMINI_FEATURES = [
@@ -779,7 +801,7 @@ function getFeatureEntry(featureId) {
     if (featureId && cfg[featureId]) return cfg[featureId];
     const resolvedId = resolveFeatureId(featureId);
     if (resolvedId && cfg[resolvedId]) return cfg[resolvedId];
-    return { models: null, keys: null };
+    return { models: null, keys: null, thinkingLevel: null };
 }
 
 function setFeatureEntry(featureId, entry) {
@@ -789,14 +811,27 @@ function setFeatureEntry(featureId, entry) {
 }
 
 export function getFeatureAssignment(featureId) { return getFeatureEntry(featureId); }
-export function setFeatureAssignment(featureId, { models, keys }) {
+export function setFeatureAssignment(featureId, { models, keys, thinkingLevel }) {
+    const prev = getFeatureEntry(featureId);
     setFeatureEntry(featureId, {
         models: (models && models.length > 0) ? models : null,
         keys: (keys && keys.length > 0) ? keys : null,
+        thinkingLevel: thinkingLevel !== undefined ? thinkingLevel : (prev.thinkingLevel || null)
     });
 }
 export function resetFeatureAssignment(featureId) {
-    setFeatureEntry(featureId, { models: null, keys: null });
+    setFeatureEntry(featureId, { models: null, keys: null, thinkingLevel: null });
+}
+
+export function getEffectiveThinkingLevel(featureId, defaultLevel = "high") {
+    if (!featureId) return defaultLevel;
+    const entry = getFeatureEntry(featureId);
+    return entry.thinkingLevel || defaultLevel;
+}
+
+export function isDeepseekModel(modelName) {
+    if (!modelName || typeof modelName !== "string") return false;
+    return modelName.startsWith("deepseek") || DEEPSEEK_MODELS.includes(modelName);
 }
 
 export function getEffectiveModelList(featureId) {
@@ -804,7 +839,7 @@ export function getEffectiveModelList(featureId) {
     const entry = getFeatureEntry(featureId);
     if (!entry.models || entry.models.length === 0) return GEMINI_MODEL_FALLBACK_LIST;
     // 💡 ユーザーが設定した配列の順序（優先順位）をそのまま採用する
-    const validModels = entry.models.filter(m => GEMINI_MODEL_FALLBACK_LIST.includes(m));
+    const validModels = entry.models.filter(m => ALL_AVAILABLE_MODELS.includes(m));
     return validModels.length > 0 ? validModels : GEMINI_MODEL_FALLBACK_LIST;
 }
 
@@ -882,12 +917,157 @@ export function extractJsonArray(text) {
 }
 
 // --------------------------------------------------------------------------
+// 🐋 DeepSeek フォールバック実行ループ
+// --------------------------------------------------------------------------
+function convertGeminiContentsToOpenAIMessages(contents, systemInstructionText) {
+    const messages = [];
+    if (systemInstructionText) {
+        messages.push({ role: "system", content: systemInstructionText });
+    }
+    for (const c of contents) {
+        const role = (c.role === "model" || c.role === "assistant") ? "assistant" : "user";
+        let textParts = [];
+        if (Array.isArray(c.parts)) {
+            for (const p of c.parts) {
+                if (typeof p?.text === "string") textParts.push(p.text);
+            }
+        } else if (typeof c.text === "string") {
+            textParts.push(c.text);
+        } else if (typeof c.content === "string") {
+            textParts.push(c.content);
+        }
+        if (textParts.length > 0) {
+            messages.push({ role, content: textParts.join("\n") });
+        }
+    }
+    return messages;
+}
+
+function mapThinkingLevelToDeepseekReasoning(level) {
+    if (!level) return "high";
+    if (level === "minimal") return "none";
+    if (level === "low") return "low";
+    if (level === "medium") return "high";
+    if (level === "high") return "high";
+    if (["none", "low", "high", "max"].includes(level)) return level;
+    return "high";
+}
+
+async function runDeepseekFallbackLoop(contents, systemInstruction, options = {}) {
+    const wantsJson = !!(options.responseSchema || options.responseMimeType === "application/json" || options.rawText === false);
+    const {
+        arrayMode = false,
+        silentFallback = false,
+        featureId = null,
+        requestTimeoutMs = null,
+        preferredModel = "deepseek-v4-flash",
+        rawText = !wantsJson
+    } = options;
+
+    const deepseekKeys = getDeepseekKeys();
+    const effectiveThinking = options.thinkingLevel || getEffectiveThinkingLevel(featureId, "high");
+    const reasoningEffort = mapThinkingLevelToDeepseekReasoning(effectiveThinking);
+    const baseMessages = convertGeminiContentsToOpenAIMessages(contents, systemInstruction);
+
+    let modelList = [preferredModel, ...DEEPSEEK_MODELS.filter(m => m !== preferredModel)];
+    const strictJsonReminder = "\n\n❗最重要ルール: 出力は指定されたJSON形式のみとすること。挨拶・前置き・説明文・Markdownのコードブロック(```)など、JSON以外の文字列は一切含めないこと。";
+    let lastError = null;
+    const fallbackAttempts = [];
+
+    async function attemptDeepseekOnce(modelName, extraInstruction = "") {
+        const messages = [...baseMessages];
+        if (extraInstruction) {
+            messages.push({ role: "user", content: extraInstruction });
+        }
+        const requestPayload = {
+            model: modelName,
+            messages: messages,
+            reasoning_effort: reasoningEffort
+        };
+
+        let response;
+        try {
+            if (deepseekKeys && deepseekKeys.length > 0) {
+                response = await fetchWithKeyRotation(deepseekKeys, (key) => ({
+                    url: "https://api.deepseek.com/chat/completions",
+                    options: {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${key}` },
+                        body: JSON.stringify(requestPayload)
+                    }
+                }), { requestTimeoutMs, modelName, featureId });
+            } else {
+                response = await fetch("/api/deepseek/chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(requestPayload)
+                });
+                if (!response.ok) {
+                    const errData = await response.json().catch(() => ({}));
+                    const errMsg = errData.error?.message || `HTTP ${response.status}`;
+                    throw new Error(`DeepSeek APIエラー (${response.status}): ${errMsg}`);
+                }
+            }
+        } catch (err) {
+            return { ok: false, isFormatError: false, reason: err?.message || "通信エラー", error: err };
+        }
+
+        let resData;
+        try {
+            resData = await response.json();
+        } catch (jsonErr) {
+            return { ok: false, isFormatError: false, reason: "JSON応答パースエラー", error: jsonErr };
+        }
+
+        const candidateText = resData?.choices?.[0]?.message?.content || "";
+        if (!candidateText) {
+            return { ok: false, isFormatError: false, reason: "空応答", error: new Error(`Empty response from ${modelName}`) };
+        }
+
+        if (rawText) {
+            return { ok: true, parsed: candidateText };
+        }
+
+        try {
+            const cleaned = stripCodeFence(candidateText.trim());
+            let parsed;
+            try {
+                parsed = JSON.parse(cleaned);
+            } catch (e1) {
+                const extractor = arrayMode ? extractJsonArray : extractJsonObject;
+                const extracted = extractor(cleaned);
+                parsed = JSON.parse(extracted);
+            }
+            return { ok: true, parsed };
+        } catch (parseErr) {
+            return { ok: false, isFormatError: true, reason: "JSON解析エラー", error: parseErr, rawText: candidateText };
+        }
+    }
+
+    for (const modelName of modelList) {
+        let result = await attemptDeepseekOnce(modelName);
+        if (!result.ok && result.isFormatError) {
+            result = await attemptDeepseekOnce(modelName, strictJsonReminder);
+        }
+        if (result.ok) {
+            if (!silentFallback) notifyModelFallback(fallbackAttempts, modelName);
+            return result.parsed;
+        }
+        lastError = result.error;
+        fallbackAttempts.push({ model: modelName, reason: result.reason });
+    }
+
+    console.warn("⚠️ DeepSeekの全リクエストが失敗 → Geminiへフォールバックします", lastError);
+    return runGeminiFallbackLoop(contents, systemInstruction, { ...options, preferredModel: null });
+}
+
+// --------------------------------------------------------------------------
 // 🧠 Gemini フォールバック実行ループ
 // --------------------------------------------------------------------------
 async function runGeminiFallbackLoop(contents, systemInstruction, options = {}) {
     const wantsJson = !!(options.responseSchema || options.responseMimeType === "application/json" || options.rawText === false);
     const {
-        temperature = 0.1,
+        temperature = 1.0,
         arrayMode = false,
         silentFallback = false,
         responseSchema = null,
@@ -898,12 +1078,25 @@ async function runGeminiFallbackLoop(contents, systemInstruction, options = {}) 
         rawText = !wantsJson,
         responseMimeType = (wantsJson ? "application/json" : (options.rawText ? "text/plain" : (options.responseMimeType || "text/plain")))
     } = options;
-    const keys = getEffectiveGeminiKeys(featureId);
+
     let modelList = getEffectiveModelList(featureId);
     if (preferredModel && typeof preferredModel === "string") {
         modelList = [preferredModel, ...modelList.filter(m => m !== preferredModel)];
     }
 
+    // 🐋 もし優先モデルがDeepSeek、あるいはモデルリストの先頭がDeepSeekならDeepSeekループへ移譲
+    if ((preferredModel && isDeepseekModel(preferredModel)) || (modelList.length > 0 && isDeepseekModel(modelList[0]))) {
+        return runDeepseekFallbackLoop(contents, systemInstruction, {
+            ...options,
+            preferredModel: preferredModel || modelList[0]
+        });
+    }
+
+    // Gemini用モデルリストに絞り込み
+    const geminiModels = modelList.filter(m => !isDeepseekModel(m));
+    const effectiveGeminiModels = geminiModels.length > 0 ? geminiModels : GEMINI_MODEL_FALLBACK_LIST;
+
+    const keys = getEffectiveGeminiKeys(featureId);
     const strictJsonReminder = "\n\n❗最重要ルール: 出力は指定されたJSON形式のみとすること。挨拶・前置き・説明文・Markdownのコードブロック(```)など、JSON以外の文字列は一切含めないこと。";
 
     // 💡 静的ホスティング（GitHub Pages等）またはサーバーキー未提供環境で、ローカルキーが未登録の場合はループを回さず即時案内
@@ -915,17 +1108,32 @@ async function runGeminiFallbackLoop(contents, systemInstruction, options = {}) 
     let lastError = null;
     const fallbackAttempts = [];
 
+    // 🧠 思考レベル（thinking_level）の決定
+    const effectiveThinkingLevel = options.thinkingLevel || getEffectiveThinkingLevel(featureId, "high");
+
     async function attemptOnce(modelName, systemInstructionText) {
-        const generationConfig = { "temperature": temperature };
+        const generationConfig = {};
+        if (effectiveThinkingLevel) {
+            generationConfig.thinking_config = {
+                thinking_level: effectiveThinkingLevel,
+                include_thoughts: true
+            };
+            generationConfig.thinkingConfig = {
+                thinkingLevel: effectiveThinkingLevel,
+                includeThoughts: true
+            };
+        }
         const effectiveResponseMimeType = responseSchema ? "application/json" : responseMimeType;
         if (effectiveResponseMimeType) generationConfig.responseMimeType = effectiveResponseMimeType;
         if (responseSchema) generationConfig.responseSchema = responseSchema;
 
-        const requestBody = JSON.stringify({
+        const requestBodyObj = {
             "contents": contents,
             "systemInstruction": { "parts": [{ "text": systemInstructionText }] },
-            "generationConfig": generationConfig
-        });
+            "generationConfig": generationConfig,
+            "generation_config": generationConfig
+        };
+        const requestBody = JSON.stringify(requestBodyObj);
 
         let response;
         try {
@@ -942,7 +1150,7 @@ async function runGeminiFallbackLoop(contents, systemInstruction, options = {}) 
                 response = await fetch("/api/gemini/generate", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ model: modelName, ...JSON.parse(requestBody) })
+                    body: JSON.stringify({ model: modelName, ...requestBodyObj })
                 });
                 if (!response.ok) {
                     if (response.status === 404) {
@@ -1017,7 +1225,7 @@ async function runGeminiFallbackLoop(contents, systemInstruction, options = {}) 
         }
     }
 
-    for (const modelName of modelList) {
+    for (const modelName of effectiveGeminiModels) {
         let result = await attemptOnce(modelName, systemInstruction);
 
         if (!result.ok && result.isFormatError) {
