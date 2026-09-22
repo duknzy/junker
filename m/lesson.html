@@ -29,133 +29,655 @@
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
 
     <style>
-        /* 授業カード */
-        .m-lesson-card {
+        /* 🎨 授業ツールバー（検索＆並び替え） */
+        .lesson-toolbar {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+            margin-bottom: 0.75rem;
+        }
+        .lesson-search-sort-row {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        .lesson-search-box {
+            flex: 1;
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .lesson-search-box input {
+            width: 100%;
+            padding: 0.55rem 0.8rem 0.55rem 2.2rem;
+            border: 1px solid var(--border-color);
+            background: var(--bg-surface);
+            border-radius: var(--radius-full);
+            font-size: var(--fs-sm);
+            color: var(--text-primary);
+            box-shadow: var(--shadow-xs);
+            outline: none;
+            transition: border-color 0.15s ease;
+        }
+        .lesson-search-box input:focus {
+            border-color: var(--brand-primary);
+        }
+        .lesson-search-icon {
+            position: absolute;
+            left: 0.8rem;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+        .lesson-sort-dropdown-wrap {
+            position: relative;
+            flex-shrink: 0;
+        }
+        .lesson-sort-select {
+            appearance: none;
+            -webkit-appearance: none;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-full);
+            padding: 0.55rem 1.8rem 0.55rem 0.85rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            cursor: pointer;
+            box-shadow: var(--shadow-xs);
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.65rem center;
+        }
+
+        /* 🚀 最近受講した授業（クイック再開カード） */
+        .recent-resume-card {
+            background: linear-gradient(135deg, rgba(5, 150, 105, 0.08) 0%, rgba(14, 165, 233, 0.08) 100%);
+            border: 1.5px solid var(--brand-border);
+            border-radius: var(--radius-lg);
+            padding: 0.85rem 1rem;
+            margin-bottom: 0.9rem;
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            box-shadow: var(--shadow-xs);
+        }
+        .recent-resume-card:active {
+            transform: scale(0.985);
+        }
+        .recent-resume-label {
+            font-size: 0.68rem;
+            font-weight: 800;
+            color: var(--brand-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            margin-bottom: 0.25rem;
+            letter-spacing: 0.02em;
+        }
+        .recent-resume-title {
+            font-family: var(--font-heading);
+            font-size: 0.95rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            line-height: 1.35;
+        }
+
+        /* 📂 教科別グループ（アコーディオン） */
+        .subject-group-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .subject-group-card {
             background: var(--bg-surface);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-lg);
-            padding: 1rem;
-            margin-bottom: 0.65rem;
+            overflow: hidden;
             box-shadow: var(--shadow-xs);
+            transition: border-color 0.15s ease;
+        }
+        .subject-group-card.has-active {
+            border-color: var(--brand-primary);
+        }
+        .subject-group-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.85rem 1rem;
+            background: var(--bg-surface);
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.15s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .subject-group-header:active {
+            background: var(--bg-subtle);
+        }
+        .subject-group-header-left {
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+            flex: 1;
+            min-width: 0;
+        }
+        .subject-icon-box {
+            width: 34px;
+            height: 34px;
+            min-width: 34px;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.15rem;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+        }
+        .subject-group-name {
+            font-family: var(--font-heading);
+            font-size: 0.95rem;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+        .subject-group-badge {
+            font-size: 0.68rem;
+            font-weight: 700;
+            padding: 0.12rem 0.5rem;
+            border-radius: var(--radius-full);
+            background: var(--bg-subtle);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-subtle);
+        }
+        .subject-group-header-right {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .subject-group-chevron {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .subject-group-card.collapsed .subject-group-chevron {
+            transform: rotate(-90deg);
+        }
+        .subject-group-items {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            padding: 0 0.85rem 0.85rem 0.85rem;
+            border-top: 1px solid var(--border-subtle);
+            background: rgba(248, 250, 252, 0.4);
+        }
+        .subject-group-card.collapsed .subject-group-items {
+            display: none;
+        }
+
+        /* 授業カード（新・モバイル洗練版） */
+        .m-lesson-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 0.85rem 0.95rem;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
             cursor: pointer;
             transition: all 0.15s ease;
             -webkit-tap-highlight-color: transparent;
+            margin-top: 0.5rem;
         }
         .m-lesson-card:active {
             transform: scale(0.985);
-            box-shadow: var(--shadow-sm);
+            background: var(--bg-subtle);
         }
-
         .m-lesson-top {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 0.35rem;
+            gap: 0.4rem;
         }
-
         .m-lesson-title {
             font-family: var(--font-heading);
-            font-size: var(--fs-base);
+            font-size: 0.92rem;
             font-weight: 700;
             color: var(--text-primary);
-            line-height: 1.35;
+            line-height: 1.38;
+            margin-bottom: 0.4rem;
         }
-
-        .m-lesson-meta {
+        .m-lesson-progress-wrap {
             display: flex;
             align-items: center;
-            gap: 0.4rem;
-            margin-top: 0.5rem;
-            font-size: 0.72rem;
-            color: var(--text-muted);
-            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.45rem;
+            padding-top: 0.45rem;
+            border-top: 1px dashed var(--border-subtle);
+        }
+        .m-lesson-progress-bar-bg {
+            flex: 1;
+            height: 4px;
+            background: var(--bg-subtle);
+            border-radius: var(--radius-full);
+            overflow: hidden;
+        }
+        .m-lesson-progress-bar-fill {
+            height: 100%;
+            background: var(--brand-primary);
+            border-radius: var(--radius-full);
+        }
+        .m-lesson-progress-text {
+            font-size: 0.68rem;
+            font-weight: 800;
+            color: var(--brand-primary);
+            flex-shrink: 0;
         }
 
         .badge-status {
-            padding: 0.15rem 0.55rem;
+            padding: 0.12rem 0.5rem;
             border-radius: var(--radius-full);
-            font-size: 0.68rem;
+            font-size: 0.65rem;
             font-weight: 700;
         }
         .status-teaching { background: var(--brand-light); color: var(--brand-primary); border: 1px solid var(--brand-border); }
-        .status-completed { background: var(--warning-bg); color: var(--warning); border: 1px solid #FDE68A; }
+        .status-completed { background: #FEF3C7; color: #B45309; border: 1px solid #FDE68A; }
 
-        /* 受講画面 */
+        /* ========================================================
+           📖 新・受講画面（講義ノート＆ステップ型マスター画面）
+           ======================================================== */
         #lesson-active-view {
             display: none;
             flex-direction: column;
             gap: 0.75rem;
+            padding-bottom: 5.5rem; /* 下部アクションバー用の余白 */
         }
 
-        .lesson-progress-header {
+        /* 🗺️ スティッキートップバー＆ステップバー */
+        .lecture-nav-sticky {
+            position: sticky;
+            top: var(--header-height);
+            z-index: 25;
+            background: rgba(255, 255, 255, 0.96);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-color);
+            margin: -0.85rem -1rem 0.5rem -1rem;
+            padding: 0.65rem 1rem 0.6rem 1rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+        }
+        .lecture-nav-top-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            margin-bottom: 0.45rem;
+        }
+        .lecture-nav-left {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            min-width: 0;
+            flex: 1;
+        }
+        .lecture-back-btn {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.25rem 0.55rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.72rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.2rem;
+            flex-shrink: 0;
+        }
+        .lecture-topic-badge {
+            font-size: 0.72rem;
+            font-weight: 800;
+            color: var(--brand-primary);
+            background: var(--brand-light);
+            padding: 0.15rem 0.5rem;
+            border-radius: var(--radius-full);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .lecture-nav-right {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            flex-shrink: 0;
+        }
+
+        /* ステップバー（Part 1 ➔ Part 2 ➔ Part 3） */
+        .lecture-stepper-row {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            overflow-x: auto;
+            scrollbar-width: none;
+            padding: 0.1rem 0;
+        }
+        .lecture-stepper-row::-webkit-scrollbar { display: none; }
+        .lecture-step-item {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.25rem 0.6rem;
+            border-radius: var(--radius-full);
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .lecture-step-item.active {
+            background: var(--brand-primary);
+            border-color: var(--brand-primary);
+            color: #ffffff;
+            box-shadow: 0 1px 4px rgba(5, 150, 105, 0.25);
+        }
+        .lecture-step-item.completed {
+            background: var(--brand-light);
+            border-color: var(--brand-border);
+            color: var(--brand-primary);
+        }
+
+        /* 📘 レクチャーステージ（フル幅の学習ペーパーカード群） */
+        .lecture-stage {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        /* 講義ノート / 本日の解説カード */
+        .lecture-paper-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-xl);
+            padding: 1.15rem 1.15rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+            position: relative;
+        }
+        .lecture-paper-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.85rem;
+            padding-bottom: 0.65rem;
+            border-bottom: 1.5px solid var(--border-subtle);
+            gap: 0.5rem;
+        }
+        .lecture-paper-title-wrap {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+        }
+        .lecture-paper-tag {
+            font-size: 0.72rem;
+            font-weight: 800;
+            color: var(--brand-primary);
+            background: var(--brand-light);
+            padding: 0.18rem 0.55rem;
+            border-radius: var(--radius-full);
+            border: 1px solid var(--brand-border);
+        }
+        .lecture-paper-title {
+            font-family: var(--font-heading);
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            line-height: 1.35;
+        }
+        .lecture-paper-content {
+            font-size: 0.94rem;
+            line-height: 1.85;
+            color: var(--text-primary);
+            word-break: break-word;
+            overflow-wrap: anywhere;
+        }
+        .lecture-paper-content p {
+            margin-bottom: 0.85rem;
+        }
+        .lecture-paper-content h2, 
+        .lecture-paper-content h3 {
+            font-family: var(--font-heading);
+            font-weight: 800;
+            margin: 1.1rem 0 0.5rem 0;
+            color: var(--text-primary);
+            line-height: 1.35;
+        }
+        .lecture-paper-content h2 {
+            font-size: 1.1rem;
+            border-left: 4px solid var(--brand-primary);
+            padding-left: 0.5rem;
+        }
+        .lecture-paper-content h3 {
+            font-size: 1rem;
+            color: var(--brand-dark);
+        }
+        .lecture-paper-content ul, 
+        .lecture-paper-content ol {
+            padding-left: 1.3rem;
+            margin: 0.5rem 0 0.85rem 0;
+        }
+        .lecture-paper-content li {
+            margin-bottom: 0.35rem;
+        }
+        .lecture-paper-content blockquote {
+            margin: 0.75rem 0;
+            padding: 0.75rem 0.95rem;
+            background: var(--bg-subtle);
+            border-left: 4px solid var(--brand-primary);
+            border-radius: 0 var(--radius-md) var(--radius-md) 0;
+            font-size: 0.9rem;
+        }
+        .lecture-paper-content code {
+            background: var(--bg-subtle);
+            padding: 0.15rem 0.35rem;
+            border-radius: 4px;
+            font-size: 0.85em;
+            color: var(--brand-dark);
+        }
+
+        /* 💬 Q & A スレッドカード（生徒の質問と先生の回答） */
+        .qa-thread-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+            margin-top: 0.5rem;
+        }
+        .qa-card {
             background: var(--bg-surface);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-lg);
-            padding: 0.75rem 1rem;
-            position: sticky;
-            top: var(--header-height);
-            z-index: 10;
+            overflow: hidden;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
         }
-
-        .chat-flow {
+        .qa-card-question {
+            background: rgba(14, 165, 233, 0.06);
+            border-bottom: 1px solid rgba(14, 165, 233, 0.18);
+            padding: 0.75rem 0.95rem;
             display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-            padding: 0.5rem 0;
-            min-height: 200px;
+            align-items: flex-start;
+            gap: 0.5rem;
         }
-
-        .lesson-bubble {
-            padding: 0.85rem 1.1rem;
-            font-size: var(--fs-base);
-            line-height: 1.75;
-            max-width: 88%;
-            width: fit-content;
-            word-break: break-word;
-            overflow-wrap: anywhere;
-            box-sizing: border-box;
-            transition: all 0.15s ease;
+        .qa-q-badge {
+            background: #0284c7;
+            color: #fff;
+            font-size: 0.68rem;
+            font-weight: 800;
+            padding: 0.12rem 0.42rem;
+            border-radius: 6px;
+            flex-shrink: 0;
+            margin-top: 0.1rem;
         }
-        .lesson-bubble.teacher {
-            align-self: flex-start;
-            background: var(--bg-surface);
-            border: 1px solid var(--border-color);
-            border-left: 4px solid var(--brand-primary);
+        .qa-q-text {
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: #0f172a;
+            line-height: 1.45;
+            flex: 1;
+        }
+        .qa-card-answer {
+            padding: 0.95rem 1rem;
+            font-size: 0.92rem;
+            line-height: 1.8;
             color: var(--text-primary);
-            border-radius: 4px 16px 16px 16px;
-            box-shadow: var(--shadow-xs);
         }
-        .lesson-bubble.student {
-            align-self: flex-end;
+        .qa-a-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+        .qa-a-badge {
             background: var(--brand-primary);
             color: #fff;
-            border-radius: 16px 4px 16px 16px;
-            max-width: 82%;
-            box-shadow: 0 1px 4px rgba(16, 185, 129, 0.15);
-        }
-        .m-bubble-divider {
-            align-self: center;
-            font-size: 0.72rem;
-            color: var(--brand-primary);
-            font-weight: 700;
-            margin: 0.5rem 0;
-            background: var(--brand-light);
-            border: 1px solid var(--brand-border);
-            padding: 0.25rem 0.85rem;
-            border-radius: var(--radius-full);
-            width: fit-content;
-            max-width: 95%;
-            box-sizing: border-box;
+            font-size: 0.68rem;
+            font-weight: 800;
+            padding: 0.12rem 0.45rem;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
         }
 
-        /* 💬 吹き出しアクション（再作成・コピー） */
+        /* 📱 画面下部の片手操作・親指フレンドリーアクションバー */
+        .lecture-sticky-bottom-bar {
+            position: fixed;
+            bottom: calc(var(--bottom-nav-height) + var(--safe-area-bottom));
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(16px);
+            border-top: 1px solid var(--border-color);
+            padding: 0.55rem 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            z-index: 80;
+            box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.05);
+        }
+        .lecture-bottom-sub-btn {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            font-size: 0.78rem;
+            font-weight: 750;
+            padding: 0.55rem 0.75rem;
+            border-radius: var(--radius-full);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            cursor: pointer;
+            flex-shrink: 0;
+            box-shadow: var(--shadow-xs);
+            transition: all 0.15s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .lecture-bottom-sub-btn:active {
+            background: var(--bg-subtle);
+            transform: scale(0.96);
+        }
+        .lecture-bottom-main-btn {
+            flex: 1;
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            color: #ffffff;
+            border: none;
+            font-family: var(--font-heading);
+            font-size: 0.92rem;
+            font-weight: 800;
+            padding: 0.65rem 1rem;
+            border-radius: var(--radius-full);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            cursor: pointer;
+            box-shadow: 0 3px 12px rgba(16, 185, 129, 0.35);
+            transition: all 0.15s ease;
+            -webkit-tap-highlight-color: transparent;
+            min-height: 44px;
+        }
+        .lecture-bottom-main-btn:active {
+            transform: scale(0.98);
+            box-shadow: 0 2px 6px rgba(16, 185, 129, 0.2);
+        }
+
+        /* 💬 質問入力シート（ボトムポップアップ） */
+        .question-drawer-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+            z-index: 100080;
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+            backdrop-filter: blur(2px);
+        }
+        .question-drawer-overlay.active {
+            display: flex;
+        }
+        .question-drawer-sheet {
+            background: var(--bg-surface);
+            width: 100%;
+            max-width: 600px;
+            border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+            padding: 1.1rem 1.1rem calc(1rem + env(safe-area-inset-bottom, 16px)) 1.1rem;
+            box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.15);
+            animation: slideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .question-drawer-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+        }
+        .question-drawer-title {
+            font-family: var(--font-heading);
+            font-size: 1rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .quick-question-chips {
+            display: flex;
+            gap: 0.35rem;
+            overflow-x: auto;
+            scrollbar-width: none;
+            padding-bottom: 0.5rem;
+            margin-bottom: 0.6rem;
+        }
+        .quick-question-chips::-webkit-scrollbar { display: none; }
+        .quick-q-chip {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 0.25rem 0.6rem;
+            border-radius: var(--radius-full);
+            white-space: nowrap;
+            cursor: pointer;
+        }
+        .quick-q-chip:active {
+            background: var(--brand-light);
+            border-color: var(--brand-border);
+            color: var(--brand-primary);
+        }
+
+        /* 💬 吹き出し・カード内アクション（再作成・コピー） */
         .m-bubble-actions {
             display: flex;
             align-items: center;
             justify-content: flex-end;
             gap: 0.4rem;
-            margin-top: 0.45rem;
-            padding-top: 0.4rem;
+            margin-top: 0.65rem;
+            padding-top: 0.5rem;
             border-top: 1px dashed var(--border-subtle);
         }
         .m-bubble-action-btn {
@@ -196,12 +718,12 @@
             display: inline-flex;
             align-items: center;
             gap: 0.35rem;
-            font-size: 0.72rem;
+            font-size: 0.75rem;
             color: var(--brand-primary);
-            font-weight: 700;
+            font-weight: 750;
             background: var(--brand-light);
             border: 1px solid var(--brand-border);
-            padding: 0.25rem 0.65rem;
+            padding: 0.35rem 0.75rem;
             border-radius: var(--radius-full);
             margin-top: 0.45rem;
             animation: mPulse 1.4s infinite;
@@ -211,12 +733,12 @@
             50% { opacity: 0.5; transform: scale(0.98); }
         }
 
-        /* 各回リスト（モーダル内カード） */
+        /* 各回リスト（目次モーダル内カード） */
         .part-select-card {
             background: var(--bg-surface);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-md);
-            padding: 0.75rem 0.9rem;
+            padding: 0.85rem 0.95rem;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -226,40 +748,17 @@
         .part-select-card.active {
             border-color: var(--brand-primary);
             background: rgba(5, 150, 105, 0.04);
+            box-shadow: 0 1px 4px rgba(5, 150, 105, 0.1);
         }
 
-        .lecture-note-box {
-            background: var(--bg-subtle);
-            border-left: 4px solid var(--brand-primary);
-            border-radius: 0 var(--radius-md) var(--radius-md) 0;
-            padding: 0.9rem 1rem;
-            font-size: var(--fs-sm);
-            line-height: 1.75;
-            margin: 0.5rem 0;
-        }
-
-        /* 画面下部のアクションバー */
-        .lesson-input-bar {
-            position: sticky;
-            bottom: calc(var(--bottom-nav-height) + var(--safe-area-bottom));
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(16px);
-            padding: 0.5rem 0;
-            border-top: 1px solid var(--border-subtle);
-            display: flex;
-            gap: 0.4rem;
-            align-items: center;
-            z-index: 20;
-        }
-
-        /* 🖼️ 図で説明クイックパネル */
+        /* 🖼️ 図で説明クイックパネル（ドロワー風） */
         .diagram-quick-panel {
             background: var(--bg-surface);
-            border: 1px solid var(--border-color);
+            border: 1.5px solid var(--brand-border);
             border-radius: var(--radius-lg);
-            padding: 0.65rem 0.8rem;
-            margin-bottom: 0.45rem;
-            box-shadow: var(--shadow-sm);
+            padding: 0.75rem 0.9rem;
+            margin-bottom: 0.6rem;
+            box-shadow: var(--shadow-md);
             display: none;
             animation: mSlideUp 0.18s ease-out;
         }
@@ -472,47 +971,71 @@
 
         <!-- 授業一覧ビュー -->
         <div id="lessons-list-view">
-            <div class="m-search-bar">
-                <span class="search-icon">🔍</span>
-                <input type="text" id="lesson-search-input" placeholder="授業を検索...">
+            <!-- 🔍 ツールバー（検索＆並び替え） -->
+            <div class="lesson-toolbar">
+                <div class="lesson-search-sort-row">
+                    <div class="lesson-search-box">
+                        <span class="lesson-search-icon">🔍</span>
+                        <input type="text" id="lesson-search-input" placeholder="授業名・テーマを検索...">
+                    </div>
+                    <div class="lesson-sort-dropdown-wrap">
+                        <select id="lesson-sort-select" class="lesson-sort-select" aria-label="授業の並び替え">
+                            <option value="recent">🕒 最近開いた順</option>
+                            <option value="newest">🆕 新しい順</option>
+                            <option value="oldest">⏳ 古い順</option>
+                            <option value="active">📖 進行中を優先</option>
+                            <option value="completed">✅ 完了を優先</option>
+                            <option value="title">🔤 五十音順</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 教科フィルターチップ -->
+                <div class="m-filter-chips" id="lesson-subject-chips"></div>
             </div>
 
-            <!-- 教科フィルター -->
-            <div class="m-filter-chips" id="lesson-subject-chips"></div>
+            <!-- 🚀 続きから再開するクイックカード（ある場合表示） -->
+            <div id="lesson-resume-container"></div>
 
-            <!-- 授業一覧リスト -->
-            <div id="lesson-list-container" style="margin-top:0.6rem;"></div>
+            <!-- 📂 教科別グループ・授業一覧リスト -->
+            <div id="lesson-list-container"></div>
         </div>
 
-        <!-- 授業受講画面ビュー -->
+        <!-- 📖 授業受講画面ビュー（講義ノート＆ステップ型マスター画面） -->
         <div id="lesson-active-view">
-            <!-- 進捗バー & 回アクション -->
-            <div class="lesson-progress-header">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.45rem; flex-wrap:wrap; gap:0.4rem;">
-                    <button class="m-btn" id="leave-lesson-btn" style="padding:0.25rem 0.6rem; font-size:0.7rem; min-height:28px;">
-                        ← 授業一覧へ
-                    </button>
-                    <div style="display:flex; align-items:center; gap:0.35rem;">
-                        <span style="font-size:0.75rem; font-weight:700; color:var(--text-secondary);" id="lesson-part-indicator">
-                            Part 1 / 1
-                        </span>
-                        <button type="button" class="m-bubble-action-btn m-bubble-regen-btn" id="m-btn-regen-current-part" title="現在の回を作り直す">
-                            🔄 この回を再作成
+            <!-- 🗺️ スティッキートップバー＆ステップバー -->
+            <div class="lecture-nav-sticky">
+                <div class="lecture-nav-top-row">
+                    <div class="lecture-nav-left">
+                        <button class="lecture-back-btn" id="leave-lesson-btn" title="授業一覧へ戻る">
+                            ← 一覧
                         </button>
-                        <button type="button" class="m-bubble-action-btn" id="m-btn-open-parts-modal" title="各回一覧・目次">
-                            📑 各回一覧
+                        <span class="lecture-topic-badge" id="lesson-header-subject-badge">教科</span>
+                        <span style="font-size:0.85rem; font-weight:800; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" id="lesson-header-title-text">
+                            授業タイトル
+                        </span>
+                    </div>
+                    <div class="lecture-nav-right">
+                        <button type="button" class="m-bubble-action-btn m-bubble-regen-btn" id="m-btn-regen-current-part" title="現在の回を作り直す">
+                            🔄
+                        </button>
+                        <button type="button" class="m-bubble-action-btn" id="m-btn-open-parts-modal" title="目次・回切り替え">
+                            📑 <span id="lesson-part-indicator">Part 1/1</span>
                         </button>
                     </div>
                 </div>
-                <div class="m-progress">
-                    <div class="m-progress-bar" id="lesson-progress-bar" style="width:100%;"></div>
-                </div>
+
+                <!-- ステッププログレス（Part 1 ➔ Part 2 ➔ Part 3） -->
+                <div class="lecture-stepper-row" id="lecture-stepper-container"></div>
             </div>
 
-            <!-- 講義チャットストリーム -->
-            <div class="chat-flow" id="lesson-chat-flow"></div>
+            <!-- 📘 講義ペーパーステージ（フル幅の学習ペーパーカード群） -->
+            <div class="lecture-stage" id="lesson-lecture-stage">
+                <!-- 互換用コンテナ（内部で動的にレンダリング） -->
+                <div class="chat-flow" id="lesson-chat-flow" style="display:none;"></div>
+            </div>
 
-            <!-- 🖼️ 図で説明クイックパネル -->
+            <!-- 🖼️ 図で説明クイックパネル（下部からポップアップ） -->
             <div class="diagram-quick-panel" id="diagram-quick-panel">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem;">
                     <span style="font-size:0.75rem; font-weight:800; color:var(--brand-primary); display:flex; align-items:center; gap:0.3rem;">
@@ -532,14 +1055,44 @@
                 </div>
             </div>
 
-            <!-- アクション入力バー -->
-            <div class="lesson-input-bar">
-                <button type="button" class="m-btn" id="lesson-diagram-toggle-btn" title="図で説明してほしい" style="padding:0.4rem 0.6rem; font-size:0.85rem; flex-shrink:0; background:var(--bg-subtle); border-color:var(--border-color);" aria-label="図で説明">
-                    🖼️
+            <!-- 📱 片手操作・親指フレンドリー下部固定バー -->
+            <div class="lecture-sticky-bottom-bar" id="lecture-sticky-bottom-bar">
+                <button type="button" class="lecture-bottom-sub-btn" id="lesson-diagram-toggle-btn" title="図で説明">
+                    <span>🖼️</span><span>図解</span>
                 </button>
-                <input type="text" class="m-input" id="lesson-student-input" placeholder="質問・「図で説明して」・「次へ」..." style="font-size:var(--fs-sm); flex:1;">
-                <button class="m-btn m-btn-primary" id="lesson-send-btn" style="flex-shrink:0;">送信</button>
+                <button type="button" class="lecture-bottom-sub-btn" id="btn-open-question-drawer" title="先生に質問">
+                    <span>💬</span><span>質問</span>
+                </button>
+                <button type="button" class="lecture-bottom-main-btn" id="lecture-main-advance-btn">
+                    <span>次の回へ進む</span> <span>▶</span>
+                </button>
             </div>
+
+            <!-- 💬 質問入力シート（ボトムスライドアップ） -->
+            <div class="question-drawer-overlay" id="question-drawer-overlay">
+                <div class="question-drawer-sheet">
+                    <div class="question-drawer-header">
+                        <div class="question-drawer-title">
+                            <span>💬</span><span>先生に質問する</span>
+                        </div>
+                        <button type="button" id="question-drawer-close-btn" style="background:none; border:none; font-size:1.1rem; color:var(--text-muted); cursor:pointer; padding:0.2rem 0.4rem;">✕</button>
+                    </div>
+
+                    <!-- よくある質問チップ -->
+                    <div class="quick-question-chips">
+                        <button type="button" class="quick-q-chip" data-q="もっとわかりやすく具体例でたとえて教えて">💡 具体例でたとえて</button>
+                        <button type="button" class="quick-q-chip" data-q="この公式・解法の証明や導出を教えて">📐 公式の導出</button>
+                        <button type="button" class="quick-q-chip" data-q="共通テストや入試でどう狙われるか教えて">🎯 入試での出題ポイント</button>
+                        <button type="button" class="quick-q-chip" data-q="よくある勘違いや落とし穴は何ですか？">⚠️ よくあるミス・落とし穴</button>
+                    </div>
+
+                    <div style="display:flex; gap:0.4rem; align-items:center;">
+                        <input type="text" class="m-input" id="lesson-student-input" placeholder="質問内容を入力..." style="font-size:0.85rem; flex:1;">
+                        <button class="m-btn m-btn-primary" id="lesson-send-btn" style="flex-shrink:0; padding:0.5rem 0.9rem; font-weight:800;">送信</button>
+                    </div>
+                </div>
+            </div>
+
         </div>
 
     </main>
@@ -812,57 +1365,127 @@
             });
         }
 
-        // ==================== 検索 & フィルター ====================
+        // ==================== 検索 & フィルター & 並び替え ====================
+        let currentSortOrder = "recent";
+        const collapsedSubjectMap = {}; // 教科ごとの折りたたみ状態
+
         document.getElementById("lesson-search-input")?.addEventListener("input", (e) => {
             currentSearchQuery = e.target.value.trim().toLowerCase();
             renderLessonList();
         });
 
+        document.getElementById("lesson-sort-select")?.addEventListener("change", (e) => {
+            currentSortOrder = e.target.value || "recent";
+            renderLessonList();
+        });
+
+        const SUBJECT_ICONS = {
+            "数学": "📐",
+            "物理": "⚡",
+            "化学": "🧪",
+            "生物": "🧬",
+            "英語": "🔤",
+            "国語": "📜",
+            "現代文": "📖",
+            "古文": "🎋",
+            "漢文": "🏯",
+            "日本史": "🏛️",
+            "世界史": "🌍",
+            "地理": "🗺️",
+            "公民": "⚖️",
+            "公共": "🏛️",
+            "倫理": "💡",
+            "政治・経済": "📊",
+            "情報": "💻",
+            "その他": "📚",
+            "未分類": "📖"
+        };
+
+        function getLessonSubject(l) {
+            if (l.subject) return l.subject;
+            const text = ((l.title || "") + " " + (l.topic || "")).toLowerCase();
+            if (/公共/i.test(text)) return "公共";
+            if (/情報|プログラミング|python/i.test(text)) return "情報";
+            if (/地理|気候/i.test(text)) return "地理";
+            if (/日本史/i.test(text)) return "日本史";
+            if (/世界史|歴史/i.test(text)) return "世界史";
+            if (/生物|遺伝|細胞/i.test(text)) return "生物";
+            if (/数学|微分|積分|ベクトル|数列|確率/i.test(text)) return "数学";
+            if (/物理|力学|電磁気|波動/i.test(text)) return "物理";
+            if (/化学|mol|酸化|還元/i.test(text)) return "化学";
+            if (/英語|文法/i.test(text)) return "英語";
+            if (/現代文|古文|漢文|国語/i.test(text)) return "国語";
+            if (/公民|政治|経済|憲法|倫理/i.test(text)) return "公民";
+            return "その他";
+        }
+
         function renderLessonList() {
             const container = document.getElementById("lesson-list-container");
+            const resumeContainer = document.getElementById("lesson-resume-container");
             const chipsEl = document.getElementById("lesson-subject-chips");
 
-            function getLessonSubject(l) {
-                if (l.subject) return l.subject;
-                const text = ((l.title || "") + " " + (l.topic || "")).toLowerCase();
-                if (/公共/i.test(text)) return "公共";
-                if (/情報|プログラミング|python/i.test(text)) return "情報";
-                if (/地理|気候/i.test(text)) return "地理";
-                if (/日本史/i.test(text)) return "日本史";
-                if (/世界史|歴史/i.test(text)) return "世界史";
-                if (/生物|遺伝|細胞/i.test(text)) return "生物";
-                if (/数学|微分|積分|ベクトル|数列|確率/i.test(text)) return "数学";
-                if (/物理|力学|電磁気|波動/i.test(text)) return "物理";
-                if (/化学|mol|酸化|還元/i.test(text)) return "化学";
-                if (/英語|文法/i.test(text)) return "英語";
-                if (/現代文|古文|漢文|国語/i.test(text)) return "国語";
-                if (/公民|政治|経済|憲法|倫理/i.test(text)) return "公民";
-                return "未分類";
-            }
+            if (!container) return;
 
+            // 教科リストの収集
             const subjects = new Set();
             Object.values(lessonsCache).forEach(l => {
                 if (l) {
                     const s = getLessonSubject(l);
-                    if (s && s !== "未分類") subjects.add(s);
+                    if (s) subjects.add(s);
                 }
             });
 
-            let chipsHtml = `<button class="m-chip ${currentSubjectFilter === 'ALL' ? 'active' : ''}" data-subj="ALL">✨ すべて</button>`;
-            subjects.forEach(s => {
-                chipsHtml += `<button class="m-chip ${currentSubjectFilter === s ? 'active' : ''}" data-subj="${s}">${s}</button>`;
-            });
-            chipsEl.innerHTML = chipsHtml;
-            chipsEl.querySelectorAll(".m-chip").forEach(btn => {
-                btn.addEventListener("click", () => {
-                    currentSubjectFilter = btn.dataset.subj;
-                    renderLessonList();
+            // 教科フィルターチップ描画
+            if (chipsEl) {
+                let chipsHtml = `<button class="m-chip ${currentSubjectFilter === 'ALL' ? 'active' : ''}" data-subj="ALL">✨ すべて</button>`;
+                Array.from(subjects).sort().forEach(s => {
+                    const icon = SUBJECT_ICONS[s] || "📖";
+                    chipsHtml += `<button class="m-chip ${currentSubjectFilter === s ? 'active' : ''}" data-subj="${s}">${icon} ${s}</button>`;
                 });
+                chipsEl.innerHTML = chipsHtml;
+                chipsEl.querySelectorAll(".m-chip").forEach(btn => {
+                    btn.addEventListener("click", () => {
+                        currentSubjectFilter = btn.dataset.subj;
+                        renderLessonList();
+                    });
+                });
+            }
+
+            // ソート処理
+            const entries = Object.entries(lessonsCache).filter(([, l]) => Boolean(l));
+
+            entries.sort((a, b) => {
+                const lA = a[1];
+                const lB = b[1];
+                const timeA = new Date(lA.updatedAt || lA.createdAt || 0).getTime();
+                const timeB = new Date(lB.updatedAt || lB.createdAt || 0).getTime();
+                const createdA = new Date(lA.createdAt || 0).getTime();
+                const createdB = new Date(lB.createdAt || 0).getTime();
+
+                switch (currentSortOrder) {
+                    case "recent":
+                        return timeB - timeA;
+                    case "newest":
+                        return createdB - createdA;
+                    case "oldest":
+                        return createdA - createdB;
+                    case "active":
+                        if (lA.status !== "completed" && lB.status === "completed") return -1;
+                        if (lA.status === "completed" && lB.status !== "completed") return 1;
+                        return timeB - timeA;
+                    case "completed":
+                        if (lA.status === "completed" && lB.status !== "completed") return -1;
+                        if (lA.status !== "completed" && lB.status === "completed") return 1;
+                        return timeB - timeA;
+                    case "title":
+                        return (lA.title || "").localeCompare(lB.title || "", "ja");
+                    default:
+                        return timeB - timeA;
+                }
             });
 
-            const entries = Object.entries(lessonsCache).sort((a, b) => new Date(b[1].createdAt || 0) - new Date(a[1].createdAt || 0));
+            // 検索 & 教科フィルター
             const filtered = entries.filter(([, l]) => {
-                if (!l) return false;
                 const subj = getLessonSubject(l);
                 if (currentSubjectFilter !== "ALL" && subj !== currentSubjectFilter) return false;
                 if (currentSearchQuery) {
@@ -872,39 +1495,150 @@
                 return true;
             });
 
+            // 🚀 続きから再開するクイックカード（直近の進行中授業がある場合）
+            if (resumeContainer) {
+                const activeLessonCandidate = entries.find(([, l]) => l.status !== "completed");
+                if (activeLessonCandidate && !currentSearchQuery && currentSubjectFilter === "ALL") {
+                    const [resId, resLesson] = activeLessonCandidate;
+                    const resSubj = getLessonSubject(resLesson);
+                    const resIcon = SUBJECT_ICONS[resSubj] || "📖";
+                    const parts = Array.isArray(resLesson.parts) && resLesson.parts.length > 0 ? resLesson.parts : [{ title: resLesson.title }];
+                    const partIdx = Math.min(Math.max(0, resLesson.currentPartIndex || 0), parts.length - 1);
+
+                    resumeContainer.innerHTML = `
+                        <div class="recent-resume-card" data-lesson-id="${resId}">
+                            <div class="recent-resume-label">
+                                <span>🚀</span>
+                                <span>続きから学ぶ（Part ${partIdx + 1} / ${parts.length}）</span>
+                            </div>
+                            <div class="recent-resume-title">
+                                <span>${resIcon}</span> <span>${escapeHtml(resLesson.title || '無題の授業')}</span>
+                            </div>
+                            <div style="font-size:0.75rem; color:var(--text-secondary); margin-top:0.25rem;">
+                                ${escapeHtml(parts[partIdx]?.title || '講義を再開')} ➔
+                            </div>
+                        </div>
+                    `;
+                    resumeContainer.querySelector(".recent-resume-card")?.addEventListener("click", () => openLesson(resId));
+                } else {
+                    resumeContainer.innerHTML = "";
+                }
+            }
+
             if (filtered.length === 0) {
-                container.innerHTML = `<div class="m-empty-state"><div class="m-empty-state-icon">📖</div><div class="m-empty-state-title">授業がありません</div><div class="m-empty-state-text">上の「＋ 新規作成」ボタンから<br>新しいAI授業を作ってみましょう！</div></div>`;
+                container.innerHTML = `
+                    <div class="m-empty-state">
+                        <div class="m-empty-state-icon">📖</div>
+                        <div class="m-empty-state-title">該当する授業がありません</div>
+                        <div class="m-empty-state-text">検索条件を変えるか、右上の「＋ 作成」から<br>新しいAI授業を作ってみましょう！</div>
+                    </div>
+                `;
                 return;
             }
 
-            container.innerHTML = filtered.map(([id, l]) => {
-                const isCompleted = l.status === "completed";
-                const statusClass = isCompleted ? "status-completed" : "status-teaching";
-                const statusText = isCompleted ? "✅ 完了" : "📖 進行中";
-                const cardSubj = getLessonSubject(l);
+            // 📂 教科別にグループ分け
+            const grouped = {};
+            filtered.forEach(([id, l]) => {
+                const subj = getLessonSubject(l);
+                if (!grouped[subj]) grouped[subj] = [];
+                grouped[subj].push([id, l]);
+            });
 
-                return `
-                    <div class="m-lesson-card" data-lesson-id="${id}">
-                        <div class="m-lesson-top">
-                            <span class="m-subject-badge subj-${cardSubj}">${escapeHtml(cardSubj)}</span>
-                            <div style="display:flex; align-items:center; gap:0.4rem;">
-                                <span class="badge-status ${statusClass}">${statusText}</span>
-                                <button type="button" class="m-card-delete-btn" data-delete-m-lesson="${id}" title="削除" style="background:transparent; border:1px solid #FECACA; color:var(--error); border-radius:var(--radius-sm); padding:0.1rem 0.4rem; font-size:0.7rem; cursor:pointer;">🗑️</button>
+            // 教科順に並べ替え
+            const sortedGroupKeys = Object.keys(grouped).sort((a, b) => {
+                // 登録件数が多い教科を上に
+                return grouped[b].length - grouped[a].length;
+            });
+
+            let html = `<div class="subject-group-list">`;
+
+            sortedGroupKeys.forEach(subj => {
+                const list = grouped[subj];
+                const icon = SUBJECT_ICONS[subj] || "📖";
+                const isCollapsed = Boolean(collapsedSubjectMap[subj]);
+                const completedCount = list.filter(([, l]) => l.status === "completed").length;
+                const hasActive = list.some(([, l]) => l.status !== "completed");
+
+                html += `
+                    <div class="subject-group-card ${isCollapsed ? 'collapsed' : ''} ${hasActive ? 'has-active' : ''}" data-subject-group="${subj}">
+                        <div class="subject-group-header" data-toggle-subject="${subj}">
+                            <div class="subject-group-header-left">
+                                <div class="subject-icon-box">${icon}</div>
+                                <div>
+                                    <div class="subject-group-name">${escapeHtml(subj)}</div>
+                                </div>
+                                <span class="subject-group-badge">${list.length}講座 (${completedCount}完了)</span>
+                            </div>
+                            <div class="subject-group-header-right">
+                                <span class="subject-group-chevron">▼</span>
                             </div>
                         </div>
-                        <div class="m-lesson-title">${escapeHtml(l.title || l.topic || '無題の授業')}</div>
-                        <div class="m-lesson-meta">
-                            <span>🪜 ${escapeHtml(l.level || '高校基礎')}</span>
-                            <span>⏱️ ${l.createdAt ? new Date(l.createdAt).toLocaleDateString('ja-JP') : ''}</span>
+                        <div class="subject-group-items">
+                `;
+
+                list.forEach(([id, l]) => {
+                    const isCompleted = l.status === "completed";
+                    const statusClass = isCompleted ? "status-completed" : "status-teaching";
+                    const statusText = isCompleted ? "✅ 完了" : "📖 進行中";
+                    const parts = Array.isArray(l.parts) && l.parts.length > 0 ? l.parts : [{ title: l.title }];
+                    const curPart = Math.min(Math.max(0, l.currentPartIndex || 0), parts.length - 1);
+                    const progressPct = Math.round(((curPart + 1) / parts.length) * 100);
+
+                    html += `
+                        <div class="m-lesson-card" data-lesson-id="${id}">
+                            <div class="m-lesson-top">
+                                <span class="badge-status ${statusClass}">${statusText}</span>
+                                <div style="display:flex; align-items:center; gap:0.4rem;">
+                                    <span style="font-size:0.7rem; color:var(--text-muted);">
+                                        ${l.createdAt ? new Date(l.createdAt).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' }) : ''}
+                                    </span>
+                                    <button type="button" class="m-card-delete-btn" data-delete-m-lesson="${id}" title="削除" style="background:transparent; border:1px solid #FECACA; color:var(--error); border-radius:var(--radius-sm); padding:0.1rem 0.35rem; font-size:0.68rem; cursor:pointer;">🗑️</button>
+                                </div>
+                            </div>
+                            <div class="m-lesson-title">${escapeHtml(l.title || l.topic || '無題の授業')}</div>
+                            <div style="font-size:0.75rem; color:var(--text-secondary); display:flex; align-items:center; gap:0.4rem;">
+                                <span>第${curPart + 1}回: ${escapeHtml(parts[curPart]?.title || '講義')}</span>
+                            </div>
+                            <div class="m-lesson-progress-wrap">
+                                <div class="m-lesson-progress-bar-bg">
+                                    <div class="m-lesson-progress-bar-fill" style="width:${progressPct}%;"></div>
+                                </div>
+                                <span class="m-lesson-progress-text">Part ${curPart + 1}/${parts.length}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += `
                         </div>
                     </div>
                 `;
-            }).join("");
-
-            container.querySelectorAll(".m-lesson-card").forEach(card => {
-                card.addEventListener("click", () => openLesson(card.dataset.lessonId));
             });
 
+            html += `</div>`;
+            container.innerHTML = html;
+
+            // アコーディオン開閉イベント
+            container.querySelectorAll("[data-toggle-subject]").forEach(hdr => {
+                hdr.addEventListener("click", (e) => {
+                    const subj = hdr.getAttribute("data-toggle-subject");
+                    const card = container.querySelector(`[data-subject-group="${subj}"]`);
+                    if (card) {
+                        card.classList.toggle("collapsed");
+                        collapsedSubjectMap[subj] = card.classList.contains("collapsed");
+                    }
+                });
+            });
+
+            // 授業カードクリックイベント
+            container.querySelectorAll(".m-lesson-card").forEach(card => {
+                card.addEventListener("click", (e) => {
+                    if (e.target.closest("[data-delete-m-lesson]")) return;
+                    openLesson(card.dataset.lessonId);
+                });
+            });
+
+            // 削除ボタン
             container.querySelectorAll("[data-delete-m-lesson]").forEach(btn => {
                 btn.addEventListener("click", async (e) => {
                     e.stopPropagation();
@@ -914,6 +1648,7 @@
                     if (!confirm(`「${title}」を削除します。よろしいですか？`)) return;
                     try {
                         await set(ref(database, `users/${currentUser.uid}/lessons/${lessonId}`), null);
+                        if (window.mToast) mToast("🗑️ 授業を削除しました");
                     } catch (err) {
                         alert("削除に失敗しました: " + err.message);
                     }
@@ -934,7 +1669,14 @@
             document.getElementById("lessons-list-view").style.display = "none";
             document.getElementById("open-create-modal-btn").style.display = "none";
             document.getElementById("lesson-active-view").style.display = "flex";
-            document.getElementById("header-title").textContent = lesson.title || "授業受講";
+
+            // タイトルと教科バッジの更新
+            const subj = getLessonSubject(lesson);
+            const icon = SUBJECT_ICONS[subj] || "📖";
+            const badgeEl = document.getElementById("lesson-header-subject-badge");
+            const titleEl = document.getElementById("lesson-header-title-text");
+            if (badgeEl) badgeEl.textContent = `${icon} ${subj}`;
+            if (titleEl) titleEl.textContent = lesson.title || "授業受講";
 
             // URLパラメータを同期（リロード時にも該当授業が開くようにする）
             try {
@@ -951,169 +1693,318 @@
             const lesson = lessonsCache[activeLessonId];
             if (!lesson) return;
 
-            const chatFlow = document.getElementById("lesson-chat-flow");
-            chatFlow.innerHTML = "";
+            const stage = document.getElementById("lesson-lecture-stage");
+            if (!stage) return;
+            stage.innerHTML = "";
 
             // パート情報の取得
             const parts = Array.isArray(lesson.parts) && lesson.parts.length > 0 ? lesson.parts : [{ title: lesson.title, summary: lesson.topic || "" }];
             const currentPartIdx = Math.min(Math.max(0, lesson.currentPartIndex || 0), parts.length - 1);
+            const currentPart = parts[currentPartIdx] || { title: lesson.title };
 
-            // 進捗バーとインジケータ更新
+            // ヘッダー情報の更新
+            const subj = getLessonSubject(lesson);
+            const icon = SUBJECT_ICONS[subj] || "📖";
+            const badgeEl = document.getElementById("lesson-header-subject-badge");
+            const titleEl = document.getElementById("lesson-header-title-text");
             const partIndicator = document.getElementById("lesson-part-indicator");
             const progressBar = document.getElementById("lesson-progress-bar");
-            if (partIndicator) {
-                partIndicator.textContent = `Part ${currentPartIdx + 1} / ${parts.length}`;
-            }
+
+            if (badgeEl) badgeEl.textContent = `${icon} ${subj}`;
+            if (titleEl) titleEl.textContent = lesson.title || "授業受講";
+            if (partIndicator) partIndicator.textContent = `Part ${currentPartIdx + 1} / ${parts.length}`;
             if (progressBar) {
                 const pct = Math.min(100, Math.round(((currentPartIdx + 1) / parts.length) * 100));
                 progressBar.style.width = `${pct}%`;
             }
 
-            // 1. プロ講師の講義ノート（単一ノート型または基礎ノート）
-            if (lesson.lectureNote) {
-                const isRegenNote = isRegeneratingLectureNote;
-                chatFlow.innerHTML += `
-                    <div class="lesson-bubble teacher ${isRegenNote ? 'm-bubble-regenerating' : ''}" id="lecture-note-bubble">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <strong>👨‍🏫 プロ講師の講義ノート</strong>
-                            <span style="font-size:0.68rem; color:var(--text-muted);">基礎解説</span>
+            // ステッパー（Part 1 ➔ Part 2 ➔ Part 3）の描画
+            const stepperEl = document.getElementById("lecture-stepper-container");
+            if (stepperEl) {
+                let stepperHtml = "";
+                parts.forEach((p, idx) => {
+                    let stepClass = "future";
+                    let stateIcon = `○`;
+                    if (idx < currentPartIdx) {
+                        stepClass = "completed";
+                        stateIcon = `✓`;
+                    } else if (idx === currentPartIdx) {
+                        stepClass = "active";
+                        stateIcon = `●`;
+                    }
+                    stepperHtml += `
+                        <button type="button" class="lecture-step-pill ${stepClass}" data-step-idx="${idx}">
+                            <span>${stateIcon}</span>
+                            <span>第${idx + 1}回: ${escapeHtml(p.title || `Part ${idx + 1}`)}</span>
+                        </button>
+                    `;
+                });
+                stepperEl.innerHTML = stepperHtml;
+
+                stepperEl.querySelectorAll(".lecture-step-pill").forEach(pill => {
+                    pill.addEventListener("click", () => {
+                        const targetIdx = parseInt(pill.getAttribute("data-step-idx"), 10);
+                        if (!isNaN(targetIdx) && targetIdx !== currentPartIdx) {
+                            lesson.currentPartIndex = targetIdx;
+                            renderActiveLessonUI(false);
+                        }
+                    });
+                });
+            }
+
+            // 1. 📖 本日の講義ペーパーカード
+            // 講義本文、または該当Partの最新解説を取得
+            let mainLectureContent = lesson.lectureNote || lesson.plan || "";
+            let mainLectureTitle = `第${currentPartIdx + 1}回講義: ${escapeHtml(currentPart.title || lesson.title)}`;
+            let mainLectureSubtitle = currentPart.summary ? escapeHtml(currentPart.summary) : "重要ポイント解説";
+
+            // チャット履歴から現在のPartに属するアシスタントの講義メッセージと図解、Q&Aを分類
+            const history = Array.isArray(lesson.chatHistory) ? lesson.chatHistory : [];
+            let currentDividerCount = -1;
+            let currentPartMessages = [];
+            let partDividerIndices = [];
+
+            history.forEach((m, idx) => {
+                if (m.role === "divider") {
+                    currentDividerCount++;
+                    partDividerIndices.push(idx);
+                }
+                if (currentDividerCount === currentPartIdx || (currentDividerCount === -1 && currentPartIdx === 0)) {
+                    currentPartMessages.push({ msg: m, originalIdx: idx });
+                }
+            });
+
+            // 如果チャット履歴内に講義メッセージがある場合、最初のassistantメッセージを主講義として採用可能
+            const firstAssistantMsgObj = currentPartMessages.find(item => item.msg.role === "assistant");
+            let activeLectureText = mainLectureContent;
+            let activeLectureMsgIdx = null;
+            let activeDiagramSvg = null;
+
+            if (firstAssistantMsgObj) {
+                activeLectureText = firstAssistantMsgObj.msg.text || firstAssistantMsgObj.msg.content || mainLectureContent;
+                activeLectureMsgIdx = firstAssistantMsgObj.originalIdx;
+                if (firstAssistantMsgObj.msg.diagramSvg) {
+                    activeDiagramSvg = firstAssistantMsgObj.msg.diagramSvg;
+                }
+            }
+
+            // 講義ノート再作成中フラグ
+            const isRegenNote = isRegeneratingLectureNote || (activeLectureMsgIdx !== null && regeneratingMsgIndex === activeLectureMsgIdx);
+
+            let diagramBoxHtml = "";
+            if (activeDiagramSvg) {
+                const diagramId = `m-diagram-main`;
+                diagramBoxHtml = `
+                    <div class="ai-diagram-box theme-dark" id="${diagramId}">
+                        <div class="ai-diagram-box-header">
+                            <span class="diagram-tag">📊 AI図解・概念マップ</span>
+                            <div class="ai-diagram-btn-group">
+                                <button type="button" class="diagram-tool-btn m-diagram-theme-btn" data-diagram-id="${diagramId}" title="白板/黒板の切り替え">
+                                    ☀️ 白板
+                                </button>
+                                <button type="button" class="diagram-tool-btn m-diagram-zoom-btn" data-diagram-target="${diagramId}" title="全画面で拡大">
+                                    🔍 拡大
+                                </button>
+                            </div>
                         </div>
-                        ${isRegenNote ? `<div class="m-bubble-loading-badge">⚙️ 講義ノートを再作成中...</div>` : `<div class="lecture-note-box tex2jax_process">${formatText(lesson.lectureNote)}</div>`}
-                        <div style="font-size:0.75rem; color:var(--text-secondary); margin-top:0.35rem;">
-                            疑問点があれば下の入力欄から自由に質問できます。
+                        <div class="ai-diagram-svg-wrap" data-diagram-target="${diagramId}" style="cursor:pointer;" title="タップして拡大">
+                            ${activeDiagramSvg}
                         </div>
-                        <div class="m-bubble-actions">
-                            <button type="button" class="m-bubble-action-btn m-bubble-regen-btn" id="btn-regen-lecture-note" title="講義ノートを最初から再作成">
-                                🔄 講義ノートを再作成
+                    </div>
+                `;
+            }
+
+            // メイン講義カードのHTML構築
+            stage.innerHTML += `
+                <div class="lecture-paper-card ${isRegenNote ? 'm-bubble-regenerating' : ''}" id="main-lecture-card">
+                    <div class="lecture-paper-header">
+                        <div>
+                            <div class="lecture-paper-badge">👨‍🏫 本日の講義・公式解説</div>
+                            <div class="lecture-paper-title">${mainLectureTitle}</div>
+                            <div class="lecture-paper-meta">${mainLectureSubtitle}</div>
+                        </div>
+                        <div class="lecture-paper-actions">
+                            <button type="button" class="paper-action-btn" id="btn-regen-active-lecture" title="この講義を再作成">
+                                🔄 作り直す
                             </button>
-                            <button type="button" class="m-bubble-action-btn" id="btn-copy-lecture-note" title="講義ノートをコピー">
+                            <button type="button" class="paper-action-btn" id="btn-copy-active-lecture" title="講義内容をコピー">
                                 📋 コピー
                             </button>
                         </div>
                     </div>
-                `;
-            } else if (lesson.plan) {
-                chatFlow.innerHTML += `
-                    <div class="lesson-bubble teacher">
-                        <strong>👨‍🏫 今日の講義テーマ: ${escapeHtml(lesson.title || '')}</strong>
-                        <div class="lecture-note-box tex2jax_process">${formatText(lesson.plan)}</div>
+                    <div class="lecture-paper-content tex2jax_process">
+                        ${isRegenNote ? `<div class="m-bubble-loading-badge">⚙️ 講義を再作成中...</div>` : formatText(activeLectureText || "講義データを準備中...")}
                     </div>
+                    ${diagramBoxHtml}
+                </div>
+            `;
+
+            // 2. 💬 質疑応答スレッド（生徒の質問と追加解説）
+            // 最初の講義メッセージ以降のQ&Aペアを抽出
+            const qaPairs = [];
+            let currentQ = null;
+
+            currentPartMessages.forEach(item => {
+                if (item === firstAssistantMsgObj) return; // 最初の講義本文はメインカードに表示済み
+                if (item.msg.role === "user") {
+                    currentQ = { qText: item.msg.text || item.msg.content, answers: [], qIdx: item.originalIdx };
+                    qaPairs.push(currentQ);
+                } else if (item.msg.role === "assistant") {
+                    if (currentQ) {
+                        currentQ.answers.push(item);
+                    } else {
+                        // 質問なしの追加解説
+                        qaPairs.push({ qText: null, answers: [item], qIdx: null });
+                    }
+                }
+            });
+
+            if (qaPairs.length > 0) {
+                let qaHtml = `
+                    <div class="qa-thread-container">
+                        <div class="qa-thread-header">
+                            <span>💬</span>
+                            <span>質疑応答・深掘り解説 (${qaPairs.length}件)</span>
+                        </div>
                 `;
-            }
 
-            // 2. チャット履歴（講義メッセージ・生徒質問・ディバイダー）
-            if (Array.isArray(lesson.chatHistory)) {
-                // dividerの出現回数からパート番号を特定
-                let currentDividerPartIdx = -1;
+                qaPairs.forEach((qa, qaIdx) => {
+                    qaHtml += `<div class="qa-card" data-qa-idx="${qaIdx}">`;
 
-                lesson.chatHistory.forEach((msg, idx) => {
-                    if (msg.role === "divider") {
-                        currentDividerPartIdx++;
-                        const partIdx = currentDividerPartIdx;
-                        chatFlow.innerHTML += `
-                            <div class="m-bubble-divider" style="display:flex; align-items:center; justify-content:space-between; gap:0.5rem;">
-                                <span style="font-weight:700;">${escapeHtml(msg.content || `第${partIdx + 1}回`)}</span>
-                                <button type="button" class="m-bubble-action-btn m-bubble-regen-btn" data-regen-part-idx="${partIdx}" style="padding:0.12rem 0.45rem; font-size:0.65rem; background:#fff; flex-shrink:0;">
-                                    🔄 この回を再作成
-                                </button>
+                    if (qa.qText) {
+                        qaHtml += `
+                            <div class="qa-card-question tex2jax_process">
+                                <strong>Q.</strong> ${escapeHtml(qa.qText)}
                             </div>
                         `;
-                        return;
                     }
 
-                    if (msg.role === "user") {
-                        chatFlow.innerHTML += `
-                            <div class="lesson-bubble student tex2jax_process">
-                                ${formatText(msg.text || msg.content || "")}
-                            </div>
-                        `;
-                        return;
-                    }
-
-                    // アシスタント（講師AI）の吹き出し
-                    const isMsgRegenerating = (regeneratingMsgIndex === idx);
-                    let diagramHtml = "";
-                    if (msg.diagramSvg) {
-                        const diagramId = `m-diagram-${idx}`;
-                        diagramHtml = `
-                            <div class="ai-diagram-box theme-dark" id="${diagramId}" style="margin-top:0.6rem;">
-                                <div class="ai-diagram-box-header">
-                                    <span class="diagram-tag">📊 AI図解・概念マップ</span>
-                                    <div class="ai-diagram-btn-group">
-                                        <button type="button" class="diagram-tool-btn m-diagram-theme-btn" data-diagram-id="${diagramId}" title="白板/黒板の切り替え">
-                                            ☀️ 白板
-                                        </button>
-                                        <button type="button" class="diagram-tool-btn m-diagram-zoom-btn" data-msg-idx="${idx}" title="全画面で拡大">
-                                            🔍 拡大
-                                        </button>
+                    qa.answers.forEach(ansItem => {
+                        const ansIdx = ansItem.originalIdx;
+                        const isAnsRegen = (regeneratingMsgIndex === ansIdx);
+                        let ansDiagram = "";
+                        if (ansItem.msg.diagramSvg) {
+                            const dId = `m-diagram-qa-${ansIdx}`;
+                            ansDiagram = `
+                                <div class="ai-diagram-box theme-dark" id="${dId}" style="margin-top:0.6rem;">
+                                    <div class="ai-diagram-box-header">
+                                        <span class="diagram-tag">📊 AI図解</span>
+                                        <div class="ai-diagram-btn-group">
+                                            <button type="button" class="diagram-tool-btn m-diagram-theme-btn" data-diagram-id="${dId}">☀️ 白板</button>
+                                            <button type="button" class="diagram-tool-btn m-diagram-zoom-btn" data-msg-idx="${ansIdx}">🔍 拡大</button>
+                                        </div>
+                                    </div>
+                                    <div class="ai-diagram-svg-wrap" data-msg-idx="${ansIdx}" style="cursor:pointer;">
+                                        ${ansItem.msg.diagramSvg}
                                     </div>
                                 </div>
-                                <div class="ai-diagram-svg-wrap" data-msg-idx="${idx}" style="cursor:pointer;" title="タップして拡大">
-                                    ${msg.diagramSvg}
-                                </div>
+                            `;
+                        }
+
+                        qaHtml += `
+                            <div class="qa-card-answer tex2jax_process ${isAnsRegen ? 'm-bubble-regenerating' : ''}">
+                                ${isAnsRegen ? `<div class="m-bubble-loading-badge">⚙️ 再作成中...</div>` : `
+                                    <div>${formatText(ansItem.msg.text || ansItem.msg.content || "")}</div>
+                                    ${ansDiagram}
+                                    <div class="qa-card-actions">
+                                        <button type="button" class="qa-action-btn" data-regen-msg="${ansIdx}">🔄 返答を再作成</button>
+                                        <button type="button" class="qa-action-btn" data-copy-msg="${ansIdx}">📋 コピー</button>
+                                    </div>
+                                `}
                             </div>
                         `;
-                    }
+                    });
 
-                    let bodyHtml = "";
-                    if (isMsgRegenerating) {
-                        bodyHtml = `<div class="m-bubble-loading-badge">⚙️ この返答を再作成中...</div>`;
-                    } else {
-                        bodyHtml = `
-                            <div>${formatText(msg.text || msg.content || "")}</div>
-                            ${diagramHtml}
-                            <div class="m-bubble-actions">
-                                <button type="button" class="m-bubble-action-btn m-bubble-regen-btn" data-regen-msg="${idx}" title="この返答だけを再作成">
-                                    🔄 返答を再作成
-                                </button>
-                                <button type="button" class="m-bubble-action-btn" data-copy-msg="${idx}" title="テキストをコピー">
-                                    📋 コピー
-                                </button>
-                            </div>
-                        `;
-                    }
-
-                    chatFlow.innerHTML += `
-                        <div class="lesson-bubble teacher tex2jax_process ${isMsgRegenerating ? 'm-bubble-regenerating' : ''}" data-bubble-idx="${idx}">
-                            ${bodyHtml}
-                        </div>
-                    `;
+                    qaHtml += `</div>`;
                 });
+
+                qaHtml += `</div>`;
+                stage.innerHTML += qaHtml;
             }
 
-            // 🎓 レベルアップ & 続きの授業 CTA カード（全パート完了時）
-            const isCompleted = lesson.status === "completed" || (currentPartIdx >= parts.length - 1 && (lesson.chatHistory || []).length > 0);
+            // 3. 🎓 レベルアップ & 完了カード
+            const isCompleted = lesson.status === "completed" || (currentPartIdx >= parts.length - 1 && history.length > 0);
             const nxt = lesson.level ? nextLevelOf(lesson) : null;
             if (isCompleted) {
                 let ctaHtml = `
-                    <div style="background:var(--bg-subtle); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:0.85rem; margin-top:1rem; text-align:center;">
-                        <div style="font-size:0.9rem; font-weight:800; color:var(--text-primary); margin-bottom:0.3rem;">🎉 この授業の全パートを修了しました！</div>
-                        <div style="font-size:0.75rem; color:var(--text-secondary); margin-bottom:0.7rem;">習得した知識を定着させるため、次のステップへ進みましょう。</div>
-                        <div style="display:flex; flex-direction:column; gap:0.45rem;">
+                    <div style="background:var(--bg-surface); border:1.5px solid var(--primary); border-radius:var(--radius-lg); padding:1.2rem; margin-top:1.5rem; text-align:center; box-shadow:var(--shadow-sm);">
+                        <div style="font-size:1.1rem; font-weight:800; color:var(--text-primary); margin-bottom:0.4rem;">🎉 全パートの講義を修了しました！</div>
+                        <div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:1rem; line-height:1.6;">本単元の基本事項と解法ステップをマスターしました。次のレベルや続きの単元に挑戦して定着させましょう！</div>
+                        <div style="display:flex; flex-direction:column; gap:0.55rem;">
                 `;
                 if (nxt && !lesson.levelUpToLessonId) {
-                    ctaHtml += `<button type="button" class="m-btn m-btn-primary" id="m-btn-levelup-cta" style="font-size:0.82rem; min-height:40px; justify-content:center;">🎓 次は「${nxt}」に進む</button>`;
+                    ctaHtml += `<button type="button" class="m-btn m-btn-primary" id="m-btn-levelup-cta" style="font-size:0.85rem; min-height:44px; justify-content:center;">🎓 次のレベル「${nxt}」に進む</button>`;
                 }
                 ctaHtml += `
-                            <button type="button" class="m-btn" id="m-btn-continuation-cta" style="font-size:0.82rem; min-height:40px; justify-content:center; background:var(--bg-surface); border:1px solid var(--border-subtle); color:var(--text-primary);">🔗 続きの単元の授業を作成</button>
+                            <button type="button" class="m-btn" id="m-btn-continuation-cta" style="font-size:0.85rem; min-height:44px; justify-content:center; background:var(--bg-subtle); border:1px solid var(--border-subtle); color:var(--text-primary);">🔗 続きの単元を作成して進める</button>
                         </div>
                     </div>
                 `;
-                chatFlow.innerHTML += ctaHtml;
+                stage.innerHTML += ctaHtml;
                 setTimeout(() => {
                     document.getElementById("m-btn-levelup-cta")?.addEventListener("click", () => startLevelUp(lesson));
                     document.getElementById("m-btn-continuation-cta")?.addEventListener("click", () => startContinuationLesson(lesson));
                 }, 0);
             }
 
+            // 4. 下部メイン進行ボタンの表示更新
+            const advanceBtn = document.getElementById("lecture-main-advance-btn");
+            if (advanceBtn) {
+                if (currentPartIdx < parts.length - 1) {
+                    advanceBtn.innerHTML = `
+                        <span>第${currentPartIdx + 2}回へ進む</span>
+                        <span style="font-size:1.1rem; font-weight:bold;">▶</span>
+                    `;
+                    advanceBtn.classList.remove("completed");
+                } else {
+                    advanceBtn.innerHTML = `
+                        <span>🎉 この授業を修了する</span>
+                    `;
+                    advanceBtn.classList.add("completed");
+                }
+            }
+
+            // メイン講義カードの再作成/コピーイベント
+            document.getElementById("btn-regen-active-lecture")?.addEventListener("click", () => {
+                if (activeLectureMsgIdx !== null) {
+                    regenerateMobileMessage(activeLectureMsgIdx);
+                } else {
+                    regenerateMobileLectureNote();
+                }
+            });
+
+            document.getElementById("btn-copy-active-lecture")?.addEventListener("click", async () => {
+                try {
+                    await navigator.clipboard.writeText(activeLectureText);
+                    if (window.mToast) mToast("📋 講義テキストをコピーしました");
+                } catch(e) {
+                    if (window.mToast) mToast("⚠️ コピーに失敗しました");
+                }
+            });
+
+            // Q&A内の再作成・コピー
+            stage.querySelectorAll("[data-regen-msg]").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    const idx = parseInt(btn.getAttribute("data-regen-msg"), 10);
+                    if (!isNaN(idx)) regenerateMobileMessage(idx);
+                });
+            });
+
+            stage.querySelectorAll("[data-copy-msg]").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    const idx = parseInt(btn.getAttribute("data-copy-msg"), 10);
+                    if (!isNaN(idx)) copyMobileMessage(idx);
+                });
+            });
+
             // MathJax レンダリング
             if (window.MathJax && window.MathJax.typesetPromise) {
-                window.MathJax.typesetPromise([chatFlow]).catch(() => {});
+                window.MathJax.typesetPromise([stage]).catch(() => {});
             }
 
             if (shouldScrollToBottom) {
                 setTimeout(() => {
-                    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
                 }, 100);
             }
         }
@@ -1594,16 +2485,29 @@ ${subjectGuide}
             // 図解クイックパネルが開いていれば閉じる
             document.getElementById("diagram-quick-panel")?.classList.remove("active");
 
-            const chatFlow = document.getElementById("lesson-chat-flow");
-            chatFlow.insertAdjacentHTML("beforeend", `<div class="lesson-bubble student tex2jax_process">${escapeHtml(text)}</div>`);
-
+            const stage = document.getElementById("lesson-lecture-stage") || document.getElementById("lesson-chat-flow");
+            const isAdvanceCommand = /^(次へ|次|進む|次の回|次のパート|next)$/i.test(text.replace(/\s+/g, ''));
             const isDiagram = forceDiagram || /図で|図解|図にして|概念図|相関図|フロー図|マップ|イメージ|グラフ|svg|イラスト|視覚化|図解リクエスト/i.test(text);
 
-            const thinkingEl = document.createElement("div");
-            thinkingEl.className = "lesson-bubble teacher";
-            thinkingEl.innerHTML = `<div class="m-bubble-loading-badge">${isDiagram ? "📊 先生が図解・解説を作成中..." : "先生が返答を作成中..."}</div>`;
-            chatFlow.appendChild(thinkingEl);
-            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+            let thinkingEl = null;
+            if (stage && !isAdvanceCommand) {
+                stage.insertAdjacentHTML("beforeend", `
+                    <div class="qa-thread-container" id="temp-pending-qa">
+                        <div class="qa-card">
+                            <div class="qa-card-question tex2jax_process">
+                                <strong>Q.</strong> ${escapeHtml(text)}
+                            </div>
+                            <div class="qa-card-answer">
+                                <div class="m-bubble-loading-badge">${isDiagram ? "📊 先生が図解・解説を作成中..." : "先生が解説を作成中..."}</div>
+                            </div>
+                        </div>
+                    </div>
+                `);
+                window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+            } else if (stage && isAdvanceCommand) {
+                const advanceBtn = document.getElementById("lecture-main-advance-btn");
+                if (advanceBtn) advanceBtn.innerHTML = `<span>⚙️ 次の回を準備中...</span>`;
+            }
 
             try {
                 const lesson = lessonsCache[activeLessonId];
@@ -1737,15 +2641,102 @@ ${subjectGuide}
 
                 renderActiveLessonUI(true);
             } catch(e) {
-                thinkingEl.textContent = "⚠️ エラー: " + e.message;
+                console.error("授業メッセージ生成エラー:", e);
+                if (window.mToast) mToast("⚠️ メッセージ作成に失敗しました: " + e.message);
             }
         }
 
-        document.getElementById("lesson-send-btn")?.addEventListener("click", () => sendLessonMessage());
+        // ==================== 次の回へ進む / 完了 ====================
+        async function handleAdvancePart() {
+            if (!activeLessonId || !currentUser) return;
+            const lesson = lessonsCache[activeLessonId];
+            if (!lesson) return;
+            const parts = Array.isArray(lesson.parts) && lesson.parts.length > 0 ? lesson.parts : [{ title: lesson.title, summary: "" }];
+            const currentPartIdx = Math.min(Math.max(0, lesson.currentPartIndex || 0), parts.length - 1);
+
+            if (currentPartIdx < parts.length - 1) {
+                // 次の回へ進む
+                await sendLessonMessage("次へ");
+            } else {
+                // 修了処理
+                try {
+                    await update(ref(database, `users/${currentUser.uid}/lessons/${activeLessonId}`), {
+                        status: "completed"
+                    });
+                    lesson.status = "completed";
+                    renderActiveLessonUI(false);
+                    if (window.mToast) mToast("🎉 この授業の全パートを修了しました！お疲れ様でした！");
+                } catch(e) {
+                    console.error("修了ステータス更新エラー:", e);
+                }
+            }
+        }
+
+        // 下部アクションバーのメインボタンイベント
+        document.getElementById("lecture-main-advance-btn")?.addEventListener("click", handleAdvancePart);
+
+        // 💬 質問ドロワーの制御
+        (function initQuestionDrawer() {
+            const openBtn = document.getElementById("btn-open-question-drawer");
+            const overlay = document.getElementById("question-drawer-overlay");
+            const closeBtn = document.getElementById("question-drawer-close-btn");
+            const drawerInput = document.getElementById("question-drawer-input");
+            const drawerSendBtn = document.getElementById("question-drawer-send-btn");
+            const studentInput = document.getElementById("lesson-student-input");
+
+            function openDrawer() {
+                if (overlay) {
+                    overlay.classList.add("active");
+                    setTimeout(() => drawerInput?.focus(), 150);
+                }
+            }
+
+            function closeDrawer() {
+                if (overlay) overlay.classList.remove("active");
+            }
+
+            openBtn?.addEventListener("click", openDrawer);
+            closeBtn?.addEventListener("click", closeDrawer);
+            overlay?.addEventListener("click", (e) => {
+                if (e.target === overlay) closeDrawer();
+            });
+
+            function sendDrawerQuestion(val) {
+                const text = (val !== undefined && val !== null ? val : (drawerInput ? drawerInput.value : "")).trim();
+                if (!text) return;
+                if (drawerInput) drawerInput.value = "";
+                if (studentInput) studentInput.value = "";
+                closeDrawer();
+                sendLessonMessage(text);
+            }
+
+            drawerSendBtn?.addEventListener("click", () => sendDrawerQuestion());
+            drawerInput?.addEventListener("keydown", (e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    sendDrawerQuestion();
+                }
+            });
+
+            // よくある質問チップのタップ
+            document.querySelectorAll(".quick-q-chip").forEach(chip => {
+                chip.addEventListener("click", () => {
+                    const qText = chip.getAttribute("data-quick-q") || chip.textContent.replace(/^[✨💡⚠️🎯🔍]\s*/, "");
+                    sendDrawerQuestion(qText);
+                });
+            });
+        })();
+
+        // チャット入力欄の送信
+        document.getElementById("lesson-send-btn")?.addEventListener("click", () => {
+            const input = document.getElementById("lesson-student-input");
+            if (input && input.value.trim()) sendLessonMessage(input.value.trim());
+        });
         document.getElementById("lesson-student-input")?.addEventListener("keydown", (e) => {
             if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
-                sendLessonMessage();
+                const input = document.getElementById("lesson-student-input");
+                if (input && input.value.trim()) sendLessonMessage(input.value.trim());
             }
         });
 
@@ -1776,6 +2767,7 @@ ${subjectGuide}
                 const req = (val || (quickInput ? quickInput.value : "")).trim();
                 if (!req) return;
                 if (quickInput) quickInput.value = "";
+                panel?.classList.remove("active");
                 sendLessonMessage(`【図解リクエスト】${req}`, true);
             }
 
@@ -1794,9 +2786,8 @@ ${subjectGuide}
                 });
             });
 
-            // チャット内の図解操作（白板/黒板切り替え & 拡大モーダル表示）
-            const chatFlow = document.getElementById("lesson-chat-flow");
-            chatFlow?.addEventListener("click", (e) => {
+            // 講義ステージ内の図解操作（白板/黒板切り替え & 拡大モーダル表示）
+            document.addEventListener("click", (e) => {
                 // 白板/黒板切り替え
                 const themeBtn = e.target.closest(".m-diagram-theme-btn");
                 if (themeBtn) {
@@ -1815,11 +2806,20 @@ ${subjectGuide}
                 const svgWrap = e.target.closest(".ai-diagram-svg-wrap");
                 const target = zoomBtn || svgWrap;
                 if (target && lightbox && lightboxBody) {
-                    const msgIdx = target.getAttribute("data-msg-idx");
-                    const lesson = lessonsCache[activeLessonId];
-                    const msg = lesson?.chatHistory?.[msgIdx];
-                    if (msg && msg.diagramSvg) {
-                        lightboxBody.innerHTML = msg.diagramSvg;
+                    let svgContent = "";
+                    const targetDiagramId = target.getAttribute("data-diagram-target");
+                    if (targetDiagramId) {
+                        const box = document.getElementById(targetDiagramId);
+                        svgContent = box?.querySelector(".ai-diagram-svg-wrap")?.innerHTML || "";
+                    } else {
+                        const msgIdx = target.getAttribute("data-msg-idx");
+                        const lesson = lessonsCache[activeLessonId];
+                        const msg = lesson?.chatHistory?.[msgIdx];
+                        svgContent = msg?.diagramSvg || "";
+                    }
+
+                    if (svgContent) {
+                        lightboxBody.innerHTML = svgContent;
                         lightbox.classList.add("active");
                     }
                 }
