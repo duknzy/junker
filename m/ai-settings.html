@@ -324,7 +324,7 @@
         import {
             getGeminiKeys, getDeepseekKeys, addKey, removeKey, getKeyLabel, setKeyLabel,
             GEMINI_FEATURES, GEMINI_MODEL_FALLBACK_LIST, ALL_AVAILABLE_MODELS, DEEPSEEK_MODELS,
-            GEMINI_THINKING_LEVELS, isDeepseekModel,
+            GEMINI_THINKING_LEVELS, DEEPSEEK_REASONING_EFFORTS, isDeepseekModel,
             getFeatureAssignment, setFeatureAssignment, resetFeatureAssignment,
             initApiKeyManager, exportAISettings, importAISettings
         } from "../api-key-manager.js?v=3.8";
@@ -545,7 +545,9 @@
                 }
 
                 // 思考レベルチップ
-                const thinkingChipsHtml = GEMINI_THINKING_LEVELS.map(tl => {
+                const isDsPrimary = isDeepseekModel(activeModels[0] || "gemini-3.8-flash");
+                const thinkingList = isDsPrimary ? DEEPSEEK_REASONING_EFFORTS : GEMINI_THINKING_LEVELS;
+                const thinkingChipsHtml = thinkingList.map(tl => {
                     const active = currentThinking === tl.id;
                     return `<button type="button" class="chip-toggle ${active ? 'active' : ''}" data-thinking-chip="${f.id}" data-level="${tl.id}">${active ? '⚡ ' : ''}${tl.label}</button>`;
                 }).join("");

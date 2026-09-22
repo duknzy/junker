@@ -370,7 +370,7 @@
 import {
     getGeminiKeys, getDeepseekKeys, addKey, removeKey, getKeyLabel, setKeyLabel,
     GEMINI_FEATURES, GEMINI_MODEL_FALLBACK_LIST, DEEPSEEK_MODELS, ALL_AVAILABLE_MODELS,
-    GEMINI_THINKING_LEVELS, isDeepseekModel,
+    GEMINI_THINKING_LEVELS, DEEPSEEK_REASONING_EFFORTS, isDeepseekModel,
     getFeatureAssignment, setFeatureAssignment, resetFeatureAssignment,
     showToast, exportAISettings, importAISettings
 } from "./api-key-manager.js?v=3.8";
@@ -547,7 +547,10 @@ function renderFeatureCards() {
                 </div>
             `;
 
-        const thinkingChips = GEMINI_THINKING_LEVELS.map(tl => `
+        const primaryModel = selectedModelList[0] || "gemini-3.8-flash";
+        const isDsPrimary = isDeepseekModel(primaryModel);
+        const thinkingList = isDsPrimary ? DEEPSEEK_REASONING_EFFORTS : GEMINI_THINKING_LEVELS;
+        const thinkingChips = thinkingList.map(tl => `
             <button type="button" class="chip-toggle thinking-chip ${currentThinking === tl.id ? 'active' : ''}" data-chip-thinking="${f.id}:${tl.id}">
                 ${currentThinking === tl.id ? '⚡ ' : ''}${tl.label}
             </button>

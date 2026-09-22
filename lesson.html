@@ -4026,9 +4026,9 @@
         };
 
         const DEEPSEEK_EFFORT_DISPLAY_LABELS = {
-            "none": "none (推論なし)",
+            "none": "none (推論なし / 通常速度)",
             "low": "low (低推論)",
-            "high": "high (高推論)",
+            "high": "high (高推論・深層)",
             "max": "max (最大推論 128K)"
         };
 
@@ -4055,17 +4055,54 @@
             if (!selectEl) return;
             selectEl.innerHTML = "";
             const isDs = isDeepseekModel(selectedModel);
-            const options = isDs ? DEEPSEEK_REASONING_EFFORTS : GEMINI_THINKING_LEVELS;
-            options.forEach(lvl => {
+            const rawOptions = isDs ? DEEPSEEK_REASONING_EFFORTS : GEMINI_THINKING_LEVELS;
+
+            // [object Object] 汚染文字列や無効値をクリーンアップ
+            let cleanThinking = (currentThinking && currentThinking !== "[object Object]" && typeof currentThinking === "string") ? currentThinking : null;
+
+            // 各オプションを { id, label } に正規化
+            const options = rawOptions.map(opt => {
+                if (typeof opt === "object" && opt !== null) {
+                    const id = opt.id;
+                    const label = isDs
+                        ? (DEEPSEEK_EFFORT_DISPLAY_LABELS[id] || opt.label || id)
+                        : (GEMINI_THINKING_DISPLAY_LABELS[id] || opt.label || id);
+                    return { id, label };
+                }
+                const id = String(opt);
+                const label = isDs
+                    ? (DEEPSEEK_EFFORT_DISPLAY_LABELS[id] || id)
+                    : (GEMINI_THINKING_DISPLAY_LABELS[id] || id);
+                return { id, label };
+            });
+
+            const validIds = options.map(o => o.id);
+
+            // モデル切り替え時（Gemini ⇄ DeepSeek）の思考レベルマッピングとフォールバック
+            if (!cleanThinking || !validIds.includes(cleanThinking)) {
+                if (isDs) {
+                    if (cleanThinking === "minimal") cleanThinking = "none";
+                    else if (cleanThinking === "medium") cleanThinking = "high";
+                    else cleanThinking = "high";
+                } else {
+                    if (cleanThinking === "none") cleanThinking = "minimal";
+                    else if (cleanThinking === "max") cleanThinking = "high";
+                    else cleanThinking = "high";
+                }
+                if (!validIds.includes(cleanThinking)) {
+                    cleanThinking = validIds[0];
+                }
+            }
+
+            options.forEach(item => {
                 const opt = document.createElement("option");
-                opt.value = lvl;
-                opt.textContent = isDs ? (DEEPSEEK_EFFORT_DISPLAY_LABELS[lvl] || lvl) : (GEMINI_THINKING_DISPLAY_LABELS[lvl] || lvl);
-                if (lvl === currentThinking) opt.selected = true;
+                opt.value = item.id;
+                opt.textContent = item.label;
+                if (item.id === cleanThinking) opt.selected = true;
                 selectEl.appendChild(opt);
             });
-            if (!selectEl.value) {
-                selectEl.value = isDs ? "high" : "high";
-            }
+
+            selectEl.value = cleanThinking;
         }
 
         function getPrimaryModelForFeature(featureId) {
@@ -4076,17 +4113,21 @@
         function getThinkingForFeature(featureId) {
             const model = getPrimaryModelForFeature(featureId);
             const defaultLevel = isDeepseekModel(model) ? "high" : "high";
-            return getEffectiveThinkingLevel(featureId, defaultLevel);
+            const val = getEffectiveThinkingLevel(featureId, defaultLevel);
+            if (!val || val === "[object Object]" || typeof val !== "string") return defaultLevel;
+            return val;
         }
 
         function setFeatureModelAndThinking(featureId, newModel, newThinking, showFeedback = true) {
+            const isDs = isDeepseekModel(newModel);
+            let cleanThinking = (newThinking && newThinking !== "[object Object]" && typeof newThinking === "string") ? newThinking : (isDs ? "high" : "high");
             const reordered = [newModel, ...ALL_AVAILABLE_MODELS.filter(m => m !== newModel)];
-            setFeatureAssignment(featureId, { models: reordered, thinkingLevel: newThinking });
+            setFeatureAssignment(featureId, { models: reordered, thinkingLevel: cleanThinking });
             syncAllLessonAiSelectors();
             if (showFeedback) {
                 const featureTitle = LESSON_FEATURE_TITLES[featureId] || featureId;
                 const modelShort = (newModel || "").replace("gemini-", "Gemini ").replace("deepseek-", "DeepSeek ");
-                showToast(`🤖 ${featureTitle}のAIを【${modelShort} (思考:${newThinking})】に設定しました`, "info", 2000);
+                showToast(`🤖 ${featureTitle}のAIを【${modelShort} (思考:${cleanThinking})】に設定しました`, "info", 2000);
             }
         }
 

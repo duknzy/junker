@@ -732,7 +732,18 @@ function loadFeatureConfig() {
         const raw = localStorage.getItem(FEATURE_CONFIG_STORAGE);
         if (!raw) return {};
         const parsed = JSON.parse(raw);
-        return (parsed && typeof parsed === "object") ? parsed : {};
+        if (!parsed || typeof parsed !== "object") return {};
+        let modified = false;
+        Object.keys(parsed).forEach(k => {
+            if (parsed[k] && (parsed[k].thinkingLevel === "[object Object]" || typeof parsed[k].thinkingLevel === "object")) {
+                parsed[k].thinkingLevel = "high";
+                modified = true;
+            }
+        });
+        if (modified) {
+            saveFeatureConfig(parsed);
+        }
+        return parsed;
     } catch (e) {
         return {};
     }
@@ -813,10 +824,14 @@ function setFeatureEntry(featureId, entry) {
 export function getFeatureAssignment(featureId) { return getFeatureEntry(featureId); }
 export function setFeatureAssignment(featureId, { models, keys, thinkingLevel }) {
     const prev = getFeatureEntry(featureId);
+    let cleanThinking = thinkingLevel;
+    if (cleanThinking === "[object Object]" || (cleanThinking && typeof cleanThinking !== "string")) {
+        cleanThinking = null;
+    }
     setFeatureEntry(featureId, {
         models: (models && models.length > 0) ? models : null,
         keys: (keys && keys.length > 0) ? keys : null,
-        thinkingLevel: thinkingLevel !== undefined ? thinkingLevel : (prev.thinkingLevel || null)
+        thinkingLevel: cleanThinking !== undefined ? cleanThinking : (prev.thinkingLevel || null)
     });
 }
 export function resetFeatureAssignment(featureId) {
@@ -826,7 +841,9 @@ export function resetFeatureAssignment(featureId) {
 export function getEffectiveThinkingLevel(featureId, defaultLevel = "high") {
     if (!featureId) return defaultLevel;
     const entry = getFeatureEntry(featureId);
-    return entry.thinkingLevel || defaultLevel;
+    const val = entry.thinkingLevel;
+    if (!val || val === "[object Object]" || typeof val !== "string") return defaultLevel;
+    return val;
 }
 
 export function isDeepseekModel(modelName) {
