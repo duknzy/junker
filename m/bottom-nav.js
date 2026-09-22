@@ -50,11 +50,11 @@
                 align-items: stretch;
                 height: var(--bottom-nav-height, 64px);
                 padding-bottom: env(safe-area-inset-bottom, 0px);
-                background: rgba(255, 255, 255, 0.95);
-                backdrop-filter: blur(20px);
-                -webkit-backdrop-filter: blur(20px);
-                border-top: 1px solid var(--border-subtle, #E2E8F0);
-                box-shadow: 0 -4px 16px rgba(15, 23, 42, 0.06);
+                background: rgba(255, 255, 255, 0.88);
+                backdrop-filter: blur(24px) saturate(180%);
+                -webkit-backdrop-filter: blur(24px) saturate(180%);
+                border-top: 1px solid rgba(226, 232, 240, 0.85);
+                box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.05);
             }
 
             .bnav-tab {
@@ -63,22 +63,22 @@
                 flex-direction: column;
                 align-items: center;
                 justify-content: center;
-                gap: 0.15rem;
+                gap: 0.2rem;
                 text-decoration: none;
                 color: #64748B;
-                font-size: 0.65rem;
+                font-size: 0.68rem;
                 font-weight: 700;
-                font-family: var(--font-base, -apple-system, sans-serif);
-                transition: all 0.15s ease;
+                font-family: var(--font-heading, -apple-system, sans-serif);
+                transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
                 -webkit-tap-highlight-color: transparent;
-                padding: 0.3rem 0;
+                padding: 0.35rem 0;
                 min-height: 48px;
                 position: relative;
             }
 
             .bnav-tab:active {
                 transform: scale(0.92);
-                opacity: 0.7;
+                opacity: 0.8;
             }
 
             .bnav-tab.active {
@@ -91,20 +91,27 @@
                 top: 0;
                 left: 50%;
                 transform: translateX(-50%);
-                width: 28px;
-                height: 3px;
-                background: var(--brand-primary, #059669);
-                border-radius: 0 0 4px 4px;
+                width: 22px;
+                height: 3.5px;
+                background: var(--brand-gradient, linear-gradient(135deg, #059669 0%, #10B981 100%));
+                border-radius: 9999px;
+                box-shadow: 0 1px 6px rgba(5, 150, 105, 0.45);
             }
 
             .bnav-icon {
                 font-size: 1.35rem;
                 line-height: 1;
+                transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            }
+
+            .bnav-tab.active .bnav-icon {
+                transform: translateY(-1.5px) scale(1.05);
             }
 
             .bnav-label {
                 line-height: 1;
                 white-space: nowrap;
+                letter-spacing: 0.01em;
             }
 
             /* モバイルでは右下に被るAPIキーのフローティング黒丸ボタンを非表示にし、設定タブに集約 */
