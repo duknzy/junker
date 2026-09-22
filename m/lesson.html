@@ -409,53 +409,67 @@
             flex-shrink: 0;
         }
 
-        /* ステップバー（Part 1 ➔ Part 2 ➔ Part 3 — 芸術的なインデックス） */
+        /* ステップバー（Part 1 ➔ Part 2 ➔ Part 3 — 横スクロール対応の芸術的ピル） */
         .lecture-stepper-row {
             display: flex;
             align-items: center;
-            gap: 0.35rem;
+            gap: 0.45rem;
             overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
             scrollbar-width: none;
-            padding: 0.15rem 0;
+            padding: 0.45rem 0.85rem;
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border-color);
         }
         .lecture-stepper-row::-webkit-scrollbar { display: none; }
         .lecture-step-item {
-            display: flex;
+            display: inline-flex;
             align-items: center;
             gap: 0.35rem;
-            padding: 0.32rem 0.75rem;
+            padding: 0.35rem 0.75rem;
             border-radius: var(--radius-full);
             background: var(--bg-surface);
             border: 1px solid var(--border-color);
-            font-size: 0.72rem;
+            font-size: 0.74rem;
             font-weight: 750;
             font-family: var(--font-heading);
             color: var(--text-secondary);
             white-space: nowrap;
             cursor: pointer;
+            flex-shrink: 0;
             box-shadow: var(--shadow-xs);
             transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            -webkit-tap-highlight-color: transparent;
         }
         .lecture-step-item:active {
-            transform: scale(0.95);
+            transform: scale(0.96);
         }
         .lecture-step-item.active {
             background: var(--brand-gradient);
             border-color: var(--brand-primary);
             color: #ffffff;
-            box-shadow: 0 3px 12px rgba(5, 150, 105, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+            box-shadow: 0 2px 8px rgba(5, 150, 105, 0.32);
         }
         .lecture-step-item.completed {
             background: var(--brand-light);
             border-color: var(--brand-border);
             color: var(--brand-primary);
         }
+        .lecture-step-item .step-title-clip {
+            max-width: 140px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-weight: 500;
+            opacity: 0.92;
+        }
 
-        /* 📘 レクチャーステージ（フル幅の学習ペーパーカード群） */
+        /* 📘 レクチャーステージ（下部固定バーで最後の行が隠れないセーフパディング付き） */
         .lecture-stage {
             display: flex;
             flex-direction: column;
             gap: 1.15rem;
+            padding: 0.85rem 0.85rem calc(var(--bottom-nav-height) + 85px) 0.85rem;
         }
 
         /* 講義ノート / 本日の解説カード（至高の手漉き紙・エディトリアル） */
@@ -463,26 +477,23 @@
             background: var(--bg-surface);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-xl);
-            padding: 1.35rem 1.25rem;
+            padding: 1.15rem 1rem;
             box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05), inset 0 1px 0 rgba(255, 255, 255, 1);
             position: relative;
         }
         .lecture-paper-header {
+            margin-bottom: 1.1rem;
+            padding-bottom: 0.9rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .lecture-paper-top-row {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 1rem;
-            padding-bottom: 0.8rem;
-            border-bottom: 1px solid var(--border-color);
             gap: 0.5rem;
+            margin-bottom: 0.65rem;
         }
-        .lecture-paper-title-wrap {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-        }
-        .lecture-paper-tag {
+        .lecture-paper-badge {
             font-size: 0.72rem;
             font-weight: 800;
             font-family: var(--font-heading);
@@ -491,25 +502,88 @@
             padding: 0.2rem 0.65rem;
             border-radius: var(--radius-full);
             border: 1px solid var(--brand-border);
-            letter-spacing: 0.02em;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            white-space: nowrap;
+        }
+        .lecture-paper-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+        .paper-action-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-full);
+            padding: 0.25rem 0.6rem;
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .paper-action-btn:active {
+            transform: scale(0.94);
+            background: var(--border-color);
         }
         .lecture-paper-title {
             font-family: var(--font-heading);
             font-size: 1.15rem;
             font-weight: 800;
             color: var(--text-primary);
-            line-height: 1.4;
+            line-height: 1.45;
             letter-spacing: -0.015em;
+            margin-bottom: 0.55rem;
+            word-break: normal;
+            overflow-wrap: break-word;
+            line-break: strict;
+        }
+        .lecture-paper-summary-card {
+            background: linear-gradient(135deg, rgba(5, 150, 105, 0.05) 0%, rgba(2, 132, 199, 0.03) 100%);
+            border: 1px solid var(--brand-border);
+            border-left: 3.5px solid var(--brand-primary);
+            border-radius: var(--radius-md);
+            padding: 0.65rem 0.85rem;
+            margin-top: 0.55rem;
+        }
+        .lecture-summary-label {
+            font-size: 0.68rem;
+            font-weight: 800;
+            font-family: var(--font-heading);
+            color: var(--brand-primary);
+            letter-spacing: 0.03em;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            margin-bottom: 0.25rem;
+        }
+        .lecture-summary-text {
+            font-size: 0.85rem;
+            line-height: 1.65;
+            color: var(--text-secondary);
+            word-break: normal;
+            overflow-wrap: break-word;
+            line-break: strict;
         }
         .lecture-paper-content {
-            font-size: 0.96rem;
-            line-height: 1.9;
+            font-size: 0.98rem;
+            line-height: 1.95;
             color: var(--text-primary);
-            word-break: break-word;
-            overflow-wrap: anywhere;
+            word-break: normal;
+            overflow-wrap: break-word;
+            line-break: strict;
+            letter-spacing: 0.015em;
         }
         .lecture-paper-content p {
-            margin-bottom: 0.95rem;
+            margin-bottom: 1.05rem;
         }
         .lecture-paper-content h2, 
         .lecture-paper-content h3 {
@@ -2291,16 +2365,22 @@
                     if (idx === viewingIdx && idx !== latestPartIdx) {
                         stepClass = "active";
                     }
+
+                    // タイトルから【第1回】や第1回などの重複部分を除去
+                    const rawPartTitle = String(p.title || `Part ${idx + 1}`).trim();
+                    const cleanPartSubTitle = rawPartTitle.replace(/^(【第\s*\d+\s*回】|第\s*\d+\s*回[：:\s]*)/g, "").trim();
+
                     stepperHtml += `
-                        <button type="button" class="lecture-step-pill ${stepClass}" data-step-idx="${idx}">
+                        <button type="button" class="lecture-step-item ${stepClass}" data-step-idx="${idx}" title="${escapeHtml(rawPartTitle)}">
                             <span>${stateIcon}</span>
-                            <span>第${idx + 1}回: ${escapeHtml(p.title || `Part ${idx + 1}`)}</span>
+                            <span style="font-weight:800;">第${idx + 1}回</span>
+                            ${cleanPartSubTitle ? `<span class="step-title-clip">${escapeHtml(cleanPartSubTitle)}</span>` : ''}
                         </button>
                     `;
                 });
                 stepperEl.innerHTML = stepperHtml;
 
-                stepperEl.querySelectorAll(".lecture-step-pill").forEach(pill => {
+                stepperEl.querySelectorAll(".lecture-step-item").forEach(pill => {
                     pill.addEventListener("click", () => {
                         const targetIdx = parseInt(pill.getAttribute("data-step-idx"), 10);
                         if (!isNaN(targetIdx)) {
@@ -2312,8 +2392,10 @@
             }
 
             // 1. 📖 本日の講義ペーパーカード
-            let mainLectureTitle = `第${viewingIdx + 1}回講義: ${escapeHtml(viewingPart.title || lesson.title)}`;
-            let mainLectureSubtitle = viewingPart.summary ? escapeHtml(viewingPart.summary) : "重要ポイント解説";
+            const rawPartTitle = String(viewingPart.title || lesson.title || "").trim();
+            const cleanPartTitle = rawPartTitle.replace(/^(【第\s*\d+\s*回】|第\s*\d+\s*回[：:\s]*)/g, "").trim();
+            const displayLectureTitle = cleanPartTitle ? `第${viewingIdx + 1}回: ${escapeHtml(cleanPartTitle)}` : `第${viewingIdx + 1}回 講義`;
+            const summaryText = viewingPart.summary ? String(viewingPart.summary).trim() : "";
 
             // チャット履歴から該当パートに属するメッセージを抽出
             const history = Array.isArray(lesson.chatHistory) ? lesson.chatHistory : [];
@@ -2373,19 +2455,24 @@
             stage.innerHTML += `
                 <div class="lecture-paper-card ${isRegenNote ? 'm-bubble-regenerating' : ''}" id="main-lecture-card">
                     <div class="lecture-paper-header">
-                        <div>
-                            <div class="lecture-paper-badge">👨‍🏫 本日の講義・公式解説</div>
-                            <div class="lecture-paper-title">${mainLectureTitle}</div>
-                            <div class="lecture-paper-meta">${mainLectureSubtitle}</div>
+                        <div class="lecture-paper-top-row">
+                            <span class="lecture-paper-badge">👨‍🏫 本日の講義・公式解説</span>
+                            <div class="lecture-paper-actions">
+                                <button type="button" class="paper-action-btn" id="btn-regen-active-lecture" title="この講義を再作成">
+                                    <span>🔄</span><span>作り直す</span>
+                                </button>
+                                <button type="button" class="paper-action-btn" id="btn-copy-active-lecture" title="講義内容をコピー">
+                                    <span>📋</span><span>コピー</span>
+                                </button>
+                            </div>
                         </div>
-                        <div class="lecture-paper-actions">
-                            <button type="button" class="paper-action-btn" id="btn-regen-active-lecture" title="この講義を再作成">
-                                🔄 作り直す
-                            </button>
-                            <button type="button" class="paper-action-btn" id="btn-copy-active-lecture" title="講義内容をコピー">
-                                📋 コピー
-                            </button>
-                        </div>
+                        <h2 class="lecture-paper-title">${displayLectureTitle}</h2>
+                        ${summaryText ? `
+                            <div class="lecture-paper-summary-card">
+                                <div class="lecture-summary-label">🎯 この回の重要ポイント・ねらい</div>
+                                <div class="lecture-summary-text">${escapeHtml(summaryText)}</div>
+                            </div>
+                        ` : ''}
                     </div>
                     <div class="lecture-paper-content tex2jax_process">
                         ${isRegenNote ? `<div class="m-bubble-loading-badge">⚙️ 講義を再作成中...</div>` : formatText(activeLectureText || "講義データを準備中...")}
@@ -5339,26 +5426,44 @@ ${extractedText || "（本文なし）"}
             // 1. 青空文庫ルビ記法: ｜漢字《よみ》 または 漢字《よみ》 を <ruby>漢字<rt>よみ</rt></ruby> に変換
             text = text.replace(/[｜|]?([一-龠々〆ヵヶA-Za-z0-9]+)《([^》]+)》/g, '<ruby>$1<rt>$2</rt></ruby>');
 
-            // 2. <ruby>...</ruby> タグを一時プレースホルダーに退避（XSS防止しつつrubyタグのみ保持）
+            // 2. 数式ブロックの退避 ($$...$$ または $...$)
+            const mathBlocks = [];
+            text = text.replace(/(\$\$[\s\S]*?\$\$|\$[^\$\n]+?\$)/g, (match) => {
+                mathBlocks.push(match);
+                return `%%%M_MATH_${mathBlocks.length - 1}%%%`;
+            });
+
+            // 3. <ruby>...</ruby> タグを一時プレースホルダーに退避（XSS防止しつつrubyタグのみ保持）
             const rubyBlocks = [];
             let placeholderText = text.replace(/<ruby\b[^>]*>[\s\S]*?<\/ruby>/gi, (match) => {
-                // ruby, rt, rp 以外の危険なタグを除去
                 const safeRuby = match.replace(/<(?!\/?(ruby|rt|rp)\b)[^>]+>/gi, '');
                 rubyBlocks.push(safeRuby);
                 return `%%%M_RUBY_${rubyBlocks.length - 1}%%%`;
             });
 
-            // 3. 基本のHTMLエスケープ
+            // 4. 基本のHTMLエスケープ
             let formatted = placeholderText
-                .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-                .replace(/\\n/g, "<br>").replace(/\n/g, "<br>");
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;");
 
-            // 4. マークダウンの太字・見出し装飾
-            formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-            formatted = formatted.replace(/【(.*?)】/g, '<strong style="color:var(--brand-primary, #059669);">【$1】</strong>');
+            // 5. マークダウンの見出し・装飾・リスト
+            formatted = formatted.replace(/^#{3,4}\s*(.+)$/gm, '<h3 style="font-size:1.05rem; font-weight:800; color:var(--text-primary); margin:1.2rem 0 0.5rem 0; border-left:3.5px solid var(--brand-primary); padding-left:0.5rem;">$1</h3>');
+            formatted = formatted.replace(/^---\s*$/gm, '<hr style="border:none; border-top:1px dashed var(--border-color); margin:1rem 0;">');
+            formatted = formatted.replace(/【(.*?)】/g, '<strong style="color:var(--brand-primary, #059669); font-weight:800;">【$1】</strong>');
+            formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong style="font-weight:750; color:var(--text-primary);">$1</strong>');
+            formatted = formatted.replace(/^-\s+(.+)$/gm, '<div style="margin-left:0.8rem; text-indent:-0.8rem; margin-top:0.25rem;">• $1</div>');
+            formatted = formatted.replace(/^(\d+\.)\s*/gm, '<span style="color:var(--brand-primary); font-weight:800; margin-right:0.3rem;">$1</span>');
 
-            // 5. ルビブロックの復元
+            // 6. ルビと数式の復元
             formatted = formatted.replace(/%%%M_RUBY_(\d+)%%%/g, (_, idx) => rubyBlocks[idx]);
+            formatted = formatted.replace(/%%%M_MATH_(\d+)%%%/g, (_, idx) => mathBlocks[idx]);
+
+            // 7. 改行コードの変換（ブロックタグ前後の重複改行を除去）
+            formatted = formatted.replace(/\\n/g, "\n");
+            formatted = formatted.replace(/\n{3,}/g, '\n\n');
+            formatted = formatted.replace(/\n/g, '<br>');
+            formatted = formatted.replace(/(<\/h3>|<\/div>|<hr[^>]*>)\s*<br>/gi, '$1');
 
             return formatted;
         }
