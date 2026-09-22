@@ -103,6 +103,12 @@
     .chip-toggle.active {
         background: var(--brand-primary); color: #fff; border-color: var(--brand-primary);
     }
+    .chip-toggle.deepseek-chip.active {
+        background: #0284c7; border-color: #0284c7; color: #fff;
+    }
+    .chip-toggle.thinking-chip.active {
+        background: #7c3aed; border-color: #7c3aed; color: #fff;
+    }
     .chip-empty-note { font-size: var(--fs-xs); color: var(--text-secondary); padding: 0.3rem 0; }
 
     /* --- モデル優先順位リスト --- */
@@ -318,7 +324,7 @@
                 <div class="assign-table-wrap">
                     <table class="assign-table">
                         <thead>
-                            <tr><th>機能</th><th>使用モデル</th><th>使用キー</th></tr>
+                            <tr><th>機能</th><th>使用モデル</th><th>思考レベル</th><th>使用キー</th></tr>
                         </thead>
                         <tbody data-assign-table-body></tbody>
                     </table>
@@ -363,10 +369,11 @@
 <script type="module">
 import {
     getGeminiKeys, getDeepseekKeys, addKey, removeKey, getKeyLabel, setKeyLabel,
-    GEMINI_FEATURES, GEMINI_MODEL_FALLBACK_LIST,
+    GEMINI_FEATURES, GEMINI_MODEL_FALLBACK_LIST, DEEPSEEK_MODELS, ALL_AVAILABLE_MODELS,
+    GEMINI_THINKING_LEVELS, isDeepseekModel,
     getFeatureAssignment, setFeatureAssignment, resetFeatureAssignment,
     showToast, exportAISettings, importAISettings
-} from "./api-key-manager.js?v=3.5";
+} from "./api-key-manager.js?v=3.8";
 
 const ENGINE_LABEL = { gemini: "✨ Gemini", deepseek: "🐋 DeepSeek" };
 
@@ -480,6 +487,8 @@ function renderAssignTable() {
     tbody.innerHTML = GEMINI_FEATURES.map(f => {
         const entry = getFeatureAssignment(f.id);
         const modelBadges = badgesHtml(entry.models, "デフォルト（全モデル）", true);
+        const thinkingLevel = entry.thinkingLevel || "high";
+        const thinkingBadge = `<span class="badge-pill is-custom" style="background:var(--brand-light, #eff6ff); color:var(--brand-primary, #2563eb); border-color:var(--brand-border, #bfdbfe); font-weight:700;">⚡ ${thinkingLevel}</span>`;
         const keyBadges = badgesHtml((entry.keys || []).map(keyDisplayLabel), "デフォルト（全キー）");
         return `
             <tr class="assign-row" data-jump-to="${f.id}">
@@ -488,6 +497,7 @@ function renderAssignTable() {
                     <div class="assign-feature-page">${f.page}</div>
                 </td>
                 <td>${modelBadges}</td>
+                <td>${thinkingBadge}</td>
                 <td>${keyBadges}</td>
             </tr>
         `;
@@ -503,12 +513,20 @@ function renderFeatureCards() {
         const selectedModelList = entry.models || [];
         const selectedModelsSet = new Set(selectedModelList);
         const selectedKeys = new Set(entry.keys || []);
+        const currentThinking = entry.thinkingLevel || "high";
 
-        const modelChips = GEMINI_MODEL_FALLBACK_LIST.map(m => `
-            <button type="button" class="chip-toggle ${selectedModelsSet.has(m) ? "active" : ""}" data-chip-model="${f.id}:${m}">
-                ${selectedModelsSet.has(m) ? `✓ ${m}` : `+ ${m}`}
-            </button>
-        `).join("");
+        const modelChips = ALL_AVAILABLE_MODELS.map(m => {
+            const isDeepseek = isDeepseekModel(m);
+            const isSelected = selectedModelsSet.has(m);
+            const chipClass = `chip-toggle ${isDeepseek ? "deepseek-chip" : ""} ${isSelected ? "active" : ""}`;
+            const labelPrefix = isSelected ? "✓ " : "+ ";
+            const icon = isDeepseek ? "🐋 " : "✨ ";
+            return `
+                <button type="button" class="${chipClass}" data-chip-model="${f.id}:${m}">
+                    ${labelPrefix}${icon}${m}
+                </button>
+            `;
+        }).join("");
 
         // 優先順位リストの生成
         const priorityListHtml = selectedModelList.length === 0
@@ -518,7 +536,7 @@ function renderFeatureCards() {
                     ${selectedModelList.map((m, idx) => `
                         <div class="model-priority-item">
                             <span class="priority-rank-badge">第 ${idx + 1} 候補</span>
-                            <span class="priority-model-name">${m}</span>
+                            <span class="priority-model-name">${isDeepseekModel(m) ? "🐋 " : "✨ "}${m}</span>
                             <div class="priority-actions">
                                 <button type="button" class="priority-btn" data-priority-move="${f.id}:${idx}:up" title="優先度を上げる" ${idx === 0 ? 'disabled style="opacity:0.3; cursor:default;"' : ''}>▲</button>
                                 <button type="button" class="priority-btn" data-priority-move="${f.id}:${idx}:down" title="優先度を下げる" ${idx === selectedModelList.length - 1 ? 'disabled style="opacity:0.3; cursor:default;"' : ''}>▼</button>
@@ -528,6 +546,12 @@ function renderFeatureCards() {
                     `).join("")}
                 </div>
             `;
+
+        const thinkingChips = GEMINI_THINKING_LEVELS.map(tl => `
+            <button type="button" class="chip-toggle thinking-chip ${currentThinking === tl.id ? 'active' : ''}" data-chip-thinking="${f.id}:${tl.id}">
+                ${currentThinking === tl.id ? '⚡ ' : ''}${tl.label}
+            </button>
+        `).join("");
 
         const keyChips = allGeminiKeys.length === 0
             ? `<div class="chip-empty-note">Geminiキーが未登録です。上のセクションで先に登録してください。</div>`
@@ -552,6 +576,9 @@ function renderFeatureCards() {
                     <div class="model-priority-title">🎯 モデル優先順位（フォールバック実行順）</div>
                     ${priorityListHtml}
                 </div>
+
+                <div class="chip-group-label" style="margin-top: 1rem;">⚡ 思考レベル（Thinking Level / Reasoning Effort）</div>
+                <div class="chip-row">${thinkingChips}</div>
 
                 <div class="chip-group-label" style="margin-top: 1rem;">🔑 使用キー（未選択＝全キー対象）</div>
                 <div class="chip-row">${keyChips}</div>
@@ -585,7 +612,17 @@ document.addEventListener("click", (e) => {
         } else {
             models.push(modelName);
         }
-        setFeatureAssignment(featureId, { models: models.length > 0 ? models : null, keys: entry.keys });
+        setFeatureAssignment(featureId, { models: models.length > 0 ? models : null, keys: entry.keys, thinkingLevel: entry.thinkingLevel });
+        renderFeatureUI();
+        return;
+    }
+
+    // 思考レベルチップクリック
+    const thinkingChip = e.target.closest("[data-chip-thinking]");
+    if (thinkingChip) {
+        const [featureId, level] = thinkingChip.getAttribute("data-chip-thinking").split(":");
+        const entry = getFeatureAssignment(featureId);
+        setFeatureAssignment(featureId, { models: entry.models, keys: entry.keys, thinkingLevel: level });
         renderFeatureUI();
         return;
     }
@@ -606,7 +643,7 @@ document.addEventListener("click", (e) => {
             models[idx] = models[idx + 1];
             models[idx + 1] = temp;
         }
-        setFeatureAssignment(featureId, { models, keys: entry.keys });
+        setFeatureAssignment(featureId, { models, keys: entry.keys, thinkingLevel: entry.thinkingLevel });
         renderFeatureUI();
         return;
     }
@@ -619,7 +656,7 @@ document.addEventListener("click", (e) => {
         const entry = getFeatureAssignment(featureId);
         let models = [...(entry.models || [])];
         models.splice(idx, 1);
-        setFeatureAssignment(featureId, { models: models.length > 0 ? models : null, keys: entry.keys });
+        setFeatureAssignment(featureId, { models: models.length > 0 ? models : null, keys: entry.keys, thinkingLevel: entry.thinkingLevel });
         renderFeatureUI();
         return;
     }
@@ -634,7 +671,7 @@ document.addEventListener("click", (e) => {
         const entry = getFeatureAssignment(featureId);
         const keys = new Set(entry.keys || []);
         keys.has(keyValue) ? keys.delete(keyValue) : keys.add(keyValue);
-        setFeatureAssignment(featureId, { models: entry.models, keys: Array.from(keys) });
+        setFeatureAssignment(featureId, { models: entry.models, keys: Array.from(keys), thinkingLevel: entry.thinkingLevel });
         renderFeatureUI();
         return;
     }
