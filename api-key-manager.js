@@ -672,6 +672,7 @@ export const ALL_AVAILABLE_MODELS = [
 ];
 
 export const GEMINI_THINKING_LEVELS = [
+    { id: 'default', label: 'default（モデル標準・自動思考）' },
     { id: 'minimal', label: 'minimal（超高速・思考ほぼなし）' },
     { id: 'low',     label: 'low（低思考・要約/基本）' },
     { id: 'medium',  label: 'medium（標準バランス）' },
@@ -679,6 +680,7 @@ export const GEMINI_THINKING_LEVELS = [
 ];
 
 export const DEEPSEEK_REASONING_EFFORTS = [
+    { id: 'default', label: 'default（モデル標準・自動）' },
     { id: 'none', label: 'none（無効）' },
     { id: 'low',  label: 'low（低推論）' },
     { id: 'high', label: 'high（高推論）' },
@@ -736,7 +738,7 @@ function loadFeatureConfig() {
         let modified = false;
         Object.keys(parsed).forEach(k => {
             if (parsed[k] && (parsed[k].thinkingLevel === "[object Object]" || typeof parsed[k].thinkingLevel === "object")) {
-                parsed[k].thinkingLevel = "high";
+                parsed[k].thinkingLevel = "default";
                 modified = true;
             }
         });
@@ -838,7 +840,7 @@ export function resetFeatureAssignment(featureId) {
     setFeatureEntry(featureId, { models: null, keys: null, thinkingLevel: null });
 }
 
-export function getEffectiveThinkingLevel(featureId, defaultLevel = "high") {
+export function getEffectiveThinkingLevel(featureId, defaultLevel = "default") {
     if (!featureId) return defaultLevel;
     const entry = getFeatureEntry(featureId);
     const val = entry.thinkingLevel;
@@ -961,13 +963,21 @@ function convertGeminiContentsToOpenAIMessages(contents, systemInstructionText) 
 }
 
 function mapThinkingLevelToDeepseekReasoning(level) {
-    if (!level) return "high";
+    if (!level || level === "default" || level === "auto") return null;
     if (level === "minimal") return "none";
     if (level === "low") return "low";
     if (level === "medium") return "high";
     if (level === "high") return "high";
     if (["none", "low", "high", "max"].includes(level)) return level;
-    return "high";
+    return null;
+}
+
+function normalizeGeminiThinkingLevel(level) {
+    if (!level || level === "default" || level === "auto") return null;
+    if (["minimal", "low", "medium", "high"].includes(level)) return level;
+    if (level === "none") return "minimal";
+    if (level === "max") return "high";
+    return null;
 }
 
 async function runDeepseekFallbackLoop(contents, systemInstruction, options = {}) {
@@ -982,7 +992,7 @@ async function runDeepseekFallbackLoop(contents, systemInstruction, options = {}
     } = options;
 
     const deepseekKeys = getDeepseekKeys();
-    const effectiveThinking = options.thinkingLevel || getEffectiveThinkingLevel(featureId, "high");
+    const effectiveThinking = options.thinkingLevel || getEffectiveThinkingLevel(featureId, "default");
     const reasoningEffort = mapThinkingLevelToDeepseekReasoning(effectiveThinking);
     const baseMessages = convertGeminiContentsToOpenAIMessages(contents, systemInstruction);
 
@@ -998,9 +1008,11 @@ async function runDeepseekFallbackLoop(contents, systemInstruction, options = {}
         }
         const requestPayload = {
             model: modelName,
-            messages: messages,
-            reasoning_effort: reasoningEffort
+            messages: messages
         };
+        if (reasoningEffort) {
+            requestPayload.reasoning_effort = reasoningEffort;
+        }
 
         let response;
         try {
@@ -1126,18 +1138,14 @@ async function runGeminiFallbackLoop(contents, systemInstruction, options = {}) 
     const fallbackAttempts = [];
 
     // 🧠 思考レベル（thinking_level）の決定
-    const effectiveThinkingLevel = options.thinkingLevel || getEffectiveThinkingLevel(featureId, "high");
+    const effectiveThinkingLevel = options.thinkingLevel || getEffectiveThinkingLevel(featureId, "default");
+    const normalizedGeminiThinking = normalizeGeminiThinkingLevel(effectiveThinkingLevel);
 
     async function attemptOnce(modelName, systemInstructionText) {
         const generationConfig = {};
-        if (effectiveThinkingLevel) {
-            generationConfig.thinking_config = {
-                thinking_level: effectiveThinkingLevel,
-                include_thoughts: true
-            };
+        if (normalizedGeminiThinking) {
             generationConfig.thinkingConfig = {
-                thinkingLevel: effectiveThinkingLevel,
-                includeThoughts: true
+                thinkingLevel: normalizedGeminiThinking
             };
         }
         const effectiveResponseMimeType = responseSchema ? "application/json" : responseMimeType;
@@ -1145,10 +1153,9 @@ async function runGeminiFallbackLoop(contents, systemInstruction, options = {}) 
         if (responseSchema) generationConfig.responseSchema = responseSchema;
 
         const requestBodyObj = {
-            "contents": contents,
-            "systemInstruction": { "parts": [{ "text": systemInstructionText }] },
-            "generationConfig": generationConfig,
-            "generation_config": generationConfig
+            contents: contents,
+            systemInstruction: { parts: [{ text: systemInstructionText }] },
+            generationConfig: generationConfig
         };
         const requestBody = JSON.stringify(requestBodyObj);
 

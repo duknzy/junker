@@ -3969,7 +3969,7 @@
             getEffectiveModelList, getEffectiveThinkingLevel,
             ALL_AVAILABLE_MODELS, GEMINI_MODEL_FALLBACK_LIST, DEEPSEEK_MODELS,
             GEMINI_THINKING_LEVELS, DEEPSEEK_REASONING_EFFORTS, isDeepseekModel
-        } from "./api-key-manager.js?v=3.6";
+        } from "./api-key-manager.js?v=4.0";
 
         const proto = "https" + "://";
         const d = ".";
@@ -4019,6 +4019,7 @@
         };
 
         const GEMINI_THINKING_DISPLAY_LABELS = {
+            "default": "default (モデル標準・自動思考)",
             "minimal": "minimal (最小・超高速)",
             "low": "low (低・要約/基本)",
             "medium": "medium (中・標準バランス)",
@@ -4026,6 +4027,7 @@
         };
 
         const DEEPSEEK_EFFORT_DISPLAY_LABELS = {
+            "default": "default (モデル標準・自動)",
             "none": "none (推論なし / 通常速度)",
             "low": "low (低推論)",
             "high": "high (高推論・深層)",
@@ -4080,14 +4082,16 @@
 
             // モデル切り替え時（Gemini ⇄ DeepSeek）の思考レベルマッピングとフォールバック
             if (!cleanThinking || !validIds.includes(cleanThinking)) {
-                if (isDs) {
+                if (cleanThinking === "default") {
+                    cleanThinking = "default";
+                } else if (isDs) {
                     if (cleanThinking === "minimal") cleanThinking = "none";
                     else if (cleanThinking === "medium") cleanThinking = "high";
-                    else cleanThinking = "high";
+                    else cleanThinking = "default";
                 } else {
                     if (cleanThinking === "none") cleanThinking = "minimal";
                     else if (cleanThinking === "max") cleanThinking = "high";
-                    else cleanThinking = "high";
+                    else cleanThinking = "default";
                 }
                 if (!validIds.includes(cleanThinking)) {
                     cleanThinking = validIds[0];
@@ -4111,16 +4115,13 @@
         }
 
         function getThinkingForFeature(featureId) {
-            const model = getPrimaryModelForFeature(featureId);
-            const defaultLevel = isDeepseekModel(model) ? "high" : "high";
-            const val = getEffectiveThinkingLevel(featureId, defaultLevel);
-            if (!val || val === "[object Object]" || typeof val !== "string") return defaultLevel;
+            const val = getEffectiveThinkingLevel(featureId, "default");
+            if (!val || val === "[object Object]" || typeof val !== "string") return "default";
             return val;
         }
 
         function setFeatureModelAndThinking(featureId, newModel, newThinking, showFeedback = true) {
-            const isDs = isDeepseekModel(newModel);
-            let cleanThinking = (newThinking && newThinking !== "[object Object]" && typeof newThinking === "string") ? newThinking : (isDs ? "high" : "high");
+            let cleanThinking = (newThinking && newThinking !== "[object Object]" && typeof newThinking === "string") ? newThinking : "default";
             const reordered = [newModel, ...ALL_AVAILABLE_MODELS.filter(m => m !== newModel)];
             setFeatureAssignment(featureId, { models: reordered, thinkingLevel: cleanThinking });
             syncAllLessonAiSelectors();
