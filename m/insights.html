@@ -459,7 +459,7 @@
             position: relative;
             contain: content;
             content-visibility: auto;
-            contain-intrinsic-size: 0 115px;
+            contain-intrinsic-size: 0 165px;
         }
         .item-card-header {
             display: flex;
@@ -541,6 +541,112 @@
             cursor: pointer;
             color: var(--memo-text-sub);
             border-radius: 4px;
+        }
+
+        /* 📱 モバイル版 カード一覧用 直接SRS評価バー */
+        .m-card-srs-bar {
+            margin-top: 0.65rem;
+            padding-top: 0.55rem;
+            border-top: 1px dashed var(--memo-border);
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+        .m-card-srs-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.72rem;
+        }
+        .m-card-srs-title {
+            font-weight: 700;
+            color: var(--memo-text-sub);
+        }
+        .m-card-srs-due-badge {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--memo-text-sub);
+            background: var(--bg-subtle);
+            padding: 0.12rem 0.45rem;
+            border-radius: 6px;
+            border: 1px solid var(--memo-border);
+        }
+        .m-card-srs-due-badge.due-urgent {
+            color: #DC2626;
+            background: #FEF2F2;
+            border-color: #FECACA;
+        }
+        .m-card-srs-btns {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.35rem;
+        }
+        .m-srs-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 0.42rem 0.2rem;
+            border-radius: 8px;
+            border: 1px solid var(--memo-border);
+            background: #FAFAFA;
+            color: var(--memo-text-sub);
+            cursor: pointer;
+            touch-action: manipulation;
+            user-select: none;
+            transition: all 0.12s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .m-srs-btn:active {
+            transform: scale(0.95);
+        }
+        .m-srs-btn .srs-ico {
+            font-size: 0.88rem;
+            line-height: 1;
+            margin-bottom: 0.18rem;
+        }
+        .m-srs-btn .srs-lbl {
+            font-size: 0.7rem;
+            font-weight: 800;
+            line-height: 1;
+            white-space: nowrap;
+        }
+        .m-srs-btn.srs-again:active, .m-srs-btn.srs-again.btn-pulsed {
+            background: #FEE2E2;
+            border-color: #EF4444;
+            color: #DC2626;
+        }
+        .m-srs-btn.srs-hard {
+            border-color: #BFDBFE;
+            background: #EFF6FF;
+            color: #1D4ED8;
+        }
+        .m-srs-btn.srs-hard:active, .m-srs-btn.srs-hard.btn-pulsed {
+            background: #DBEAFE;
+            border-color: #3B82F6;
+        }
+        .m-srs-btn.srs-good {
+            border-color: #A7F3D0;
+            background: #ECFDF5;
+            color: #047857;
+        }
+        .m-srs-btn.srs-good:active, .m-srs-btn.srs-good.btn-pulsed {
+            background: #059669;
+            border-color: #059669;
+            color: #FFFFFF;
+        }
+        .m-srs-btn.srs-easy:active, .m-srs-btn.srs-easy.btn-pulsed {
+            background: #FEF3C7;
+            border-color: #F59E0B;
+            color: #D97706;
+        }
+        @keyframes srsPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+            100% { transform: scale(1); }
+        }
+        .m-srs-btn.btn-pulsed {
+            animation: srsPulse 0.35s ease;
         }
 
         /* ==========================================================
@@ -3422,9 +3528,31 @@
                         <div class="item-q tex2jax_process"><strong style="color:var(--text-secondary); margin-right:0.25rem;">Q.</strong>${formatJapanesePhrasing(c.question)}</div>
                         ${answerHtml}
                         ${c.note ? `<div class="item-note tex2jax_process ${isRedSheetActive && !isRevealed ? 'red-sheet-note-hidden' : ''}"><span style="font-weight:700; color:#B45309;">💡 ポイント:</span> ${formatJapanesePhrasing(c.note)}</div>` : ''}
+
+                        <div class="m-card-srs-bar" data-card-id="${c.id}">
+                            <div class="m-card-srs-meta">
+                                <span class="m-card-srs-title">⏱️ 復習間隔を設定:</span>
+                                <span class="m-card-srs-due-badge ${c.isDue ? 'due-urgent' : ''}">${getMobileDueText(c.nextReviewDate, c.box)}</span>
+                            </div>
+                            <div class="m-card-srs-btns">
+                                <button type="button" class="m-srs-btn srs-again ${c.box === 1 ? 'is-current' : ''}" data-card-id="${c.id}" data-rating="again" title="今日再学習 (Lv.1降格)">
+                                    <span class="srs-ico">❌</span><span class="srs-lbl">今日</span>
+                                </button>
+                                <button type="button" class="m-srs-btn srs-hard" data-card-id="${c.id}" data-rating="hard" title="1日後に復習 (明日)">
+                                    <span class="srs-ico">⚡</span><span class="srs-lbl">1日後</span>
+                                </button>
+                                <button type="button" class="m-srs-btn srs-good ${c.box >= 2 && c.box < 5 ? 'is-current' : ''}" data-card-id="${c.id}" data-rating="good" title="覚えた！(次回3〜7日後 / Lv+1)">
+                                    <span class="srs-ico">👌</span><span class="srs-lbl">覚えた</span>
+                                </button>
+                                <button type="button" class="m-srs-btn srs-easy ${c.box >= 5 ? 'is-current' : ''}" data-card-id="${c.id}" data-rating="easy" title="簡単！長期記憶へ (Lv+2)">
+                                    <span class="srs-ico">🌟</span><span class="srs-lbl">簡単</span>
+                                </button>
+                            </div>
+                        </div>
+
                         <div class="item-footer">
                             <span>📘 ${escapeHtml(c.sourceTitle)}</span>
-                            <span>${c.nextReviewDate ? `復習期日: ${c.nextReviewDate}` : '未復習'}</span>
+                            <span class="item-footer-date">${c.nextReviewDate ? `復習期日: ${c.nextReviewDate}` : '未復習'}</span>
                         </div>
                     </div>
                 `;
@@ -3503,7 +3631,127 @@
                 };
             });
 
+            // 🧠 リスト上での直接SRS評価ボタンクリック
+            listEl.querySelectorAll(".m-srs-btn").forEach(btn => {
+                btn.onclick = async (e) => {
+                    e.stopPropagation();
+                    const cardId = btn.getAttribute("data-card-id");
+                    const rating = btn.getAttribute("data-rating");
+                    if (!cardId || !rating) return;
+                    await handleCardListDirectRating(cardId, rating, btn);
+                };
+            });
+
             triggerMathTypeset(listEl);
+        }
+
+        // 🧠 モバイル用 期日表示テキスト生成
+        function getMobileDueText(nextReviewDate, box) {
+            if (!nextReviewDate) return `未復習 (Lv.${box || 0})`;
+            const today = getTodayStr();
+            if (nextReviewDate === today) return `🔥 今日復習 (Lv.${box || 0})`;
+            const tomorrow = addDaysToDate(today, 1);
+            if (nextReviewDate === tomorrow) return `⚡ 明日復習 (1日後 / Lv.${box || 0})`;
+            if (nextReviewDate > today) {
+                const diff = Math.max(1, Math.round((new Date(nextReviewDate) - new Date(today)) / (1000 * 60 * 60 * 24)));
+                return `🗓️ ${diff}日後 (${nextReviewDate})`;
+            }
+            return `⚠️ 期日超過 (${nextReviewDate})`;
+        }
+
+        // 🧠 モバイル用 カード一覧からの直接SRS評価ハンドラ
+        async function handleCardListDirectRating(cardId, rating, btnEl) {
+            const all = getAllCards();
+            const card = all.find(c => c.id === cardId);
+            if (!card) return;
+
+            if (rating === "again") {
+                playSound("wrong");
+            } else if (rating === "hard") {
+                playSound("flip");
+            } else if (rating === "easy") {
+                playSound("fanfare");
+            } else {
+                playSound("correct");
+            }
+
+            const res = saveCardSrsRating(card, rating);
+            invalidateCardCache();
+
+            // ボタンのタップフィードバックアニメーション
+            if (btnEl) {
+                btnEl.classList.add("btn-pulsed");
+                setTimeout(() => btnEl.classList.remove("btn-pulsed"), 400);
+            }
+
+            // トースト通知
+            if (rating === "hard") {
+                showToast("⚡「1日後」に復習予約しました (明日)");
+            } else if (rating === "good") {
+                const nextDays = Math.max(1, Math.round((new Date(res.nextReviewDate) - new Date(getTodayStr())) / (1000 * 60 * 60 * 24)));
+                showToast(`🎉「覚えた！」に登録しました (Lv.${res.newLevel} / ${nextDays}日後)`);
+            } else if (rating === "again") {
+                showToast("❌「今日もう一度復習」に設定しました");
+            } else if (rating === "easy") {
+                showToast(`🌟「簡単！」長期記憶へ登録しました (Lv.${res.newLevel})`);
+            }
+
+            // カード要素のDOMを直接更新（スクロール位置や赤シート状態を崩さず爆速反映）
+            const cardEl = btnEl ? btnEl.closest(".item-card") : document.querySelector(`.item-card[data-card-id="${cardId}"]`);
+            if (cardEl) {
+                const lvlTag = cardEl.querySelector(".box-lvl-tag");
+                if (lvlTag) {
+                    lvlTag.className = `box-lvl-tag ${card.isMastered ? 'lvl-master' : ''}`;
+                    lvlTag.textContent = card.isMastered ? `🏆 習得済 (Lv.${card.box})` : `Lv.${card.box}`;
+                }
+                const dueTextEl = cardEl.querySelector(".m-card-srs-due-badge");
+                if (dueTextEl) {
+                    dueTextEl.className = `m-card-srs-due-badge ${card.isDue ? 'due-urgent' : ''}`;
+                    dueTextEl.textContent = getMobileDueText(card.nextReviewDate, card.box);
+                }
+                const footerDateEl = cardEl.querySelector(".item-footer-date");
+                if (footerDateEl) {
+                    footerDateEl.textContent = card.nextReviewDate ? `復習期日: ${card.nextReviewDate}` : '未復習';
+                }
+            }
+
+            // ダッシュボード上部のサマリー数値を更新
+            updateHeroStatsOnly();
+        }
+
+        // 🧠 ダッシュボード統計の軽量直接更新
+        function updateHeroStatsOnly() {
+            const allCards = getAllCards();
+            const today = getTodayStr();
+
+            let dueCount = 0;
+            let newCount = 0;
+            let masteredCount = 0;
+
+            allCards.forEach(c => {
+                const level = c.boxLevel || 0;
+                if (level === 0) {
+                    newCount++;
+                    dueCount++;
+                } else if (level >= 4) {
+                    masteredCount++;
+                    if (c.nextReviewDate && c.nextReviewDate <= today) dueCount++;
+                } else {
+                    if (!c.nextReviewDate || c.nextReviewDate <= today) dueCount++;
+                }
+            });
+
+            const statDueEl = document.getElementById("stat-due-count");
+            const statNewEl = document.getElementById("stat-new-count");
+            const statMasteredEl = document.getElementById("stat-mastered-count");
+            const ctaBadge = document.getElementById("daily-session-count-badge");
+
+            if (statDueEl) statDueEl.textContent = dueCount;
+            if (statNewEl) statNewEl.textContent = newCount;
+            if (statMasteredEl) statMasteredEl.textContent = masteredCount;
+
+            const dailyPoolCount = Math.min(25, dueCount > 0 ? dueCount : allCards.length);
+            if (ctaBadge) ctaBadge.textContent = `${dailyPoolCount > 0 ? dailyPoolCount : allCards.length}問`;
         }
 
         // ==========================================================
