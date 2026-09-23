@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#059669">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Flora 暗記マスター | SRS暗記アプリ</title>
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" sizes="180x180" href="../icons/apple-touch-icon.png">
@@ -657,7 +659,14 @@
            ========================================================== */
         .memo-session-overlay {
             position: fixed;
-            inset: 0;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
+            height: -webkit-fill-available;
             z-index: 10000;
             background: radial-gradient(circle at 50% 5%, rgba(16, 185, 129, 0.16) 0%, transparent 45%),
                         radial-gradient(circle at 85% 85%, rgba(59, 130, 246, 0.12) 0%, transparent 45%),
@@ -669,14 +678,27 @@
             overflow: hidden;
             user-select: none;
             -webkit-tap-highlight-color: transparent;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
         .memo-session-overlay.active {
             display: flex;
         }
 
-        /* セッション上部バー (グラスモーフィズム) */
+        /* セッション起動時のボディ固定（iOSの白帯バウンス防止） */
+        body.fc-session-active {
+            overflow: hidden !important;
+            height: 100% !important;
+            overscroll-behavior: none !important;
+        }
+
+        /* セッション上部バー (グラスモーフィズム & ステータスバー完全統合) */
         .session-top-bar {
-            padding: max(env(safe-area-inset-top, 0.75rem), 0.75rem) 1.1rem 0.65rem 1.1rem;
+            padding-top: max(env(safe-area-inset-top, 0px), 12px);
+            padding-left: 1.1rem;
+            padding-right: 1.1rem;
+            padding-bottom: 0.65rem;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -686,6 +708,97 @@
             -webkit-backdrop-filter: blur(20px);
             border-bottom: 1px solid rgba(255, 255, 255, 0.08);
             z-index: 10;
+        }
+
+        /* ==========================================================
+           🖼️ フラッシュカード壁紙 & グラスモーフィズム透過システム
+           ========================================================== */
+        body.has-custom-wallpaper .memo-session-overlay,
+        body.has-custom-wallpaper .quiz-overlay {
+            background: transparent !important;
+        }
+
+        body.has-custom-wallpaper .session-top-bar {
+            background: rgba(247, 249, 248, calc(var(--wp-card-opacity, 0.85) * 0.94)) !important;
+            backdrop-filter: blur(var(--wp-blur, 8px));
+            -webkit-backdrop-filter: blur(var(--wp-blur, 8px));
+            border-bottom: 1px solid rgba(226, 232, 240, 0.8) !important;
+            color: var(--text-primary) !important;
+        }
+
+        body.has-custom-wallpaper .session-top-bar .session-close-btn,
+        body.has-custom-wallpaper .session-top-bar .session-tool-btn,
+        body.has-custom-wallpaper .session-top-bar .session-sound-btn,
+        body.has-custom-wallpaper .session-top-bar .session-wp-btn {
+            background: rgba(255, 255, 255, calc(var(--wp-card-opacity, 0.85) * 0.9)) !important;
+            border: 1px solid rgba(226, 232, 240, 0.85) !important;
+            color: var(--text-primary) !important;
+        }
+
+        body.has-custom-wallpaper #session-progress-text,
+        body.has-custom-wallpaper #quiz-progress-text {
+            color: var(--text-primary) !important;
+        }
+
+        body.has-custom-wallpaper .session-progress-track {
+            background: rgba(0, 0, 0, 0.08) !important;
+        }
+
+        body.has-custom-wallpaper .card-face {
+            background: rgba(255, 255, 255, var(--wp-card-opacity, 0.85)) !important;
+            backdrop-filter: blur(var(--wp-blur, 8px));
+            -webkit-backdrop-filter: blur(var(--wp-blur, 8px));
+            border: 2px solid rgba(16, 185, 129, 0.35) !important;
+            box-shadow: 0 20px 45px -10px rgba(15, 23, 42, 0.12), 0 0 0 1px rgba(255, 255, 255, 0.6) !important;
+        }
+
+        body.has-custom-wallpaper .card-back {
+            background: rgba(255, 255, 255, var(--wp-card-opacity, 0.85)) !important;
+            border-color: rgba(5, 150, 105, 0.45) !important;
+        }
+
+        body.has-custom-wallpaper .card-a-text {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(5, 150, 105, 0.06) 100%) !important;
+            border: 1px solid rgba(16, 185, 129, 0.3) !important;
+        }
+
+        body.has-custom-wallpaper .card-note-box {
+            background: linear-gradient(135deg, rgba(254, 243, 199, 0.85) 0%, rgba(253, 230, 138, 0.55) 100%) !important;
+            border: 1px solid rgba(245, 158, 11, 0.4) !important;
+        }
+
+        body.has-custom-wallpaper .session-controls-area {
+            background: rgba(247, 249, 248, calc(var(--wp-card-opacity, 0.85) * 0.94)) !important;
+            backdrop-filter: blur(var(--wp-blur, 8px));
+            -webkit-backdrop-filter: blur(var(--wp-blur, 8px));
+            border-top: 1px solid rgba(226, 232, 240, 0.8) !important;
+        }
+
+        body.has-custom-wallpaper .quiz-q-card,
+        body.has-custom-wallpaper .quiz-choice-btn {
+            background: rgba(255, 255, 255, var(--wp-card-opacity, 0.85)) !important;
+            backdrop-filter: blur(var(--wp-blur, 8px));
+            -webkit-backdrop-filter: blur(var(--wp-blur, 8px));
+            border-color: rgba(226, 232, 240, 0.85) !important;
+            color: var(--text-primary) !important;
+        }
+
+        body.has-custom-wallpaper .session-finish-wrap {
+            background: rgba(255, 255, 255, var(--wp-card-opacity, 0.85)) !important;
+            backdrop-filter: blur(var(--wp-blur, 8px));
+            -webkit-backdrop-filter: blur(var(--wp-blur, 8px));
+            border: 1px solid rgba(226, 232, 240, 0.8) !important;
+            color: var(--text-primary) !important;
+        }
+        body.has-custom-wallpaper .finish-title {
+            color: var(--text-primary) !important;
+        }
+        body.has-custom-wallpaper .finish-desc {
+            color: var(--text-secondary) !important;
+        }
+        body.has-custom-wallpaper .finish-stats-box {
+            background: rgba(241, 245, 249, 0.7) !important;
+            border-color: rgba(226, 232, 240, 0.85) !important;
         }
         .session-close-btn {
             width: 38px;
@@ -2432,6 +2545,7 @@
                 </div>
             </div>
             <div class="session-actions-cluster">
+                <button type="button" class="session-tool-btn session-wp-btn" id="session-btn-wallpaper" title="壁紙 & 透過設定">🖼️</button>
                 <button type="button" class="session-tool-btn" id="session-btn-shuffle" title="出題順シャッフル切替">🔀</button>
                 <button type="button" class="session-sound-btn" id="session-btn-sound" title="音声読み上げ">🔊</button>
             </div>
@@ -2708,7 +2822,9 @@
                     <div class="session-progress-fill" id="quiz-progress-bar"></div>
                 </div>
             </div>
-            <div style="width:38px;"></div>
+            <div class="session-actions-cluster">
+                <button type="button" class="session-tool-btn session-wp-btn" id="quiz-btn-wallpaper" title="壁紙 & 透過設定">🖼️</button>
+            </div>
         </div>
 
         <div class="quiz-body">
@@ -3835,7 +3951,11 @@
             const overlay = document.getElementById("session-overlay");
             const titleEl = document.getElementById("session-scope-title");
             if (titleEl) titleEl.textContent = title || (mode === "reverse" ? "🔄 リバース想起" : "暗記セッション");
-            if (overlay) overlay.classList.add("active");
+            document.body.classList.add("fc-session-active");
+            if (overlay) {
+                overlay.classList.add("active");
+                overlay.scrollTop = 0;
+            }
 
             renderNextSessionCard();
         }
@@ -4094,7 +4214,10 @@
             const retryBtn = document.getElementById("finish-btn-retry-failed");
 
             if (sessionOverlay) sessionOverlay.classList.remove("active");
-            if (finishOverlay) finishOverlay.classList.add("active");
+            if (finishOverlay) {
+                finishOverlay.classList.add("active");
+                finishOverlay.scrollTop = 0;
+            }
 
             if (finishCount) finishCount.textContent = sessionInitialCount;
             if (finishMastered) finishMastered.textContent = sessionMasteredCount;
@@ -4116,6 +4239,7 @@
         }
 
         function closeSession() {
+            document.body.classList.remove("fc-session-active");
             const overlay = document.getElementById("session-overlay");
             if (overlay) overlay.classList.remove("active");
             renderDashboard();
@@ -4171,7 +4295,11 @@
             const overlay = document.getElementById("quiz-overlay");
             const titleEl = document.getElementById("quiz-header-title");
             if (titleEl) titleEl.textContent = title;
-            if (overlay) overlay.classList.add("active");
+            document.body.classList.add("fc-session-active");
+            if (overlay) {
+                overlay.classList.add("active");
+                overlay.scrollTop = 0;
+            }
             renderNextQuizQuestion();
         }
 
@@ -4179,6 +4307,7 @@
             if (quizCurrentIndex >= quizQueue.length) {
                 // クイズ終了
                 playSound("fanfare");
+                document.body.classList.remove("fc-session-active");
                 const overlay = document.getElementById("quiz-overlay");
                 if (overlay) overlay.classList.remove("active");
                 showToast("🎉 4択テスト完了！進捗を記録しました");
@@ -5121,12 +5250,13 @@
         const btnAi = document.getElementById("btn-session-ai-explain");
         if (btnAi) btnAi.onclick = () => explainWithAi();
 
-        // 閉じる
+        // 閉じる & 壁紙設定
         const btnCloseSession = document.getElementById("session-btn-close");
         if (btnCloseSession) btnCloseSession.onclick = () => closeSession();
         const btnCloseFinish = document.getElementById("finish-btn-close");
         if (btnCloseFinish) {
             btnCloseFinish.onclick = () => {
+                document.body.classList.remove("fc-session-active");
                 const finishOverlay = document.getElementById("finish-overlay");
                 if (finishOverlay) finishOverlay.classList.remove("active");
                 renderDashboard();
@@ -5135,8 +5265,21 @@
         const btnCloseQuiz = document.getElementById("quiz-btn-close");
         if (btnCloseQuiz) {
             btnCloseQuiz.onclick = () => {
+                document.body.classList.remove("fc-session-active");
                 const overlay = document.getElementById("quiz-overlay");
                 if (overlay) overlay.classList.remove("active");
+            };
+        }
+        const btnSessionWp = document.getElementById("session-btn-wallpaper");
+        if (btnSessionWp) {
+            btnSessionWp.onclick = () => {
+                if (window.openFloraWallpaperModal) window.openFloraWallpaperModal();
+            };
+        }
+        const btnQuizWp = document.getElementById("quiz-btn-wallpaper");
+        if (btnQuizWp) {
+            btnQuizWp.onclick = () => {
+                if (window.openFloraWallpaperModal) window.openFloraWallpaperModal();
             };
         }
 
