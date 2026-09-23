@@ -1796,6 +1796,150 @@
             color: #047857;
             font-weight: 800;
         }
+
+        /* 🎯 選択問題（共通テスト形式）スタイル */
+        .choice-drill-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 1.1rem 1.25rem;
+            margin-bottom: 1rem;
+            box-shadow: var(--shadow-xs);
+            transition: all 0.15s ease;
+        }
+        .choice-drill-card.status-correct {
+            border-left-color: #10b981;
+            background: linear-gradient(180deg, rgba(16,185,129,0.02) 0%, var(--bg-surface) 100%);
+        }
+        .choice-drill-card.status-wrong {
+            border-left-color: #ef4444;
+            background: linear-gradient(180deg, rgba(239,68,68,0.02) 0%, var(--bg-surface) 100%);
+        }
+        .choice-drill-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.6rem;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .choice-drill-lead {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.55;
+            margin-bottom: 0.6rem;
+        }
+        .choice-drill-statements {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 0.75rem 0.9rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.45rem;
+        }
+        .choice-drill-statement-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+            font-size: 0.84rem;
+            line-height: 1.5;
+            color: var(--text-primary);
+        }
+        .choice-drill-statement-tag {
+            background: rgba(0, 243, 255, 0.12);
+            color: var(--accent-cyan);
+            border: 1px solid rgba(0, 243, 255, 0.3);
+            font-weight: 800;
+            font-size: 0.72rem;
+            padding: 0.1rem 0.4rem;
+            border-radius: 4px;
+            flex-shrink: 0;
+            margin-top: 0.1rem;
+        }
+        .choice-drill-options-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 0.45rem;
+            margin-bottom: 0.75rem;
+        }
+        .choice-drill-option-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            padding: 0.65rem 0.9rem;
+            border-radius: var(--radius-md);
+            border: 1.5px solid var(--border-color);
+            background: var(--bg-surface);
+            color: var(--text-primary);
+            font-size: 0.84rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.15s ease;
+            box-sizing: border-box;
+            width: 100%;
+        }
+        .choice-drill-option-btn:hover:not(:disabled) {
+            border-color: var(--brand-primary);
+            background: var(--bg-subtle);
+            transform: translateX(2px);
+        }
+        .choice-drill-option-btn.opt-correct {
+            border-color: #10b981 !important;
+            background: rgba(16, 185, 129, 0.12) !important;
+            color: #047857 !important;
+            font-weight: 700;
+        }
+        .choice-drill-option-btn.opt-wrong {
+            border-color: #ef4444 !important;
+            background: rgba(239, 68, 68, 0.12) !important;
+            color: #b91c1c !important;
+            font-weight: 700;
+        }
+        .choice-drill-option-btn.opt-faded {
+            opacity: 0.45;
+        }
+        .choice-drill-option-num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            font-size: 0.74rem;
+            font-weight: 800;
+            flex-shrink: 0;
+        }
+        .choice-drill-trap-box {
+            background: rgba(245, 158, 11, 0.08);
+            border: 1px solid rgba(245, 158, 11, 0.35);
+            border-left: 3.5px solid #d97706;
+            border-radius: var(--radius-md);
+            padding: 0.7rem 0.9rem;
+            margin-top: 0.75rem;
+            font-size: 0.82rem;
+            line-height: 1.55;
+            color: var(--text-primary);
+        }
+        .choice-drill-explanation-box {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 0.75rem 0.9rem;
+            margin-top: 0.6rem;
+            font-size: 0.82rem;
+            line-height: 1.6;
+        }
+        .pill-type-combination { background: #EEF2FF; border: 1px solid #C7D2FE; color: #4338CA; }
+        .pill-type-chronological { background: #FEF3C7; border: 1px solid #FDE68A; color: #B45309; }
+        .pill-type-true_false { background: #ECFDF5; border: 1px solid #A7F3D0; color: #047857; }
+        .pill-type-single_choice { background: #F3E8FF; border: 1px solid #E9D5FF; color: #6B21A8; }
     </style>
 </head>
 <body>
@@ -1831,6 +1975,9 @@
                     </button>
                     <button type="button" class="main-tab-btn" id="tab-btn-memorize">
                         📌 暗記事項 (<span id="count-memorize">0</span>)
+                    </button>
+                    <button type="button" class="main-tab-btn" id="tab-btn-drills">
+                        🎯 授業 選択問題 (<span id="count-drills">0</span>)
                     </button>
                     <button type="button" class="main-tab-btn" id="tab-btn-qna">
                         💬 AI質問ログ (<span id="count-qna">0</span>)
@@ -1992,6 +2139,38 @@
                     </div>
                 </div>
 
+                <!-- 🎯 選択問題専用サブツールバー -->
+                <div id="drills-subtoolbar" style="display:none; margin-bottom:1rem;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-surface); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:0.65rem 0.9rem; flex-wrap:wrap; gap:0.65rem; box-shadow:var(--shadow-xs);">
+                        <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+                            <span class="filter-label" style="font-weight:700; font-size:0.78rem; color:var(--text-secondary);">🎯 解答状況:</span>
+                            <div style="display:inline-flex; gap:0.3rem; flex-wrap:wrap;" id="drills-status-filters">
+                                <button type="button" class="status-chip-btn active" data-drill-status="all">すべて</button>
+                                <button type="button" class="status-chip-btn" data-drill-status="unanswered" title="まだ解答していない問題のみ表示">🌱 未解答のみ</button>
+                                <button type="button" class="status-chip-btn" data-drill-status="wrong" title="間違えた問題のみ表示">❌ 要復習（不正解）</button>
+                                <button type="button" class="status-chip-btn" data-drill-status="correct" title="正解した問題のみ表示">✅ 正解済み</button>
+                            </div>
+                            <span style="color: var(--border-color); margin: 0 0.15rem;">|</span>
+                            <span class="filter-label" style="font-weight:700; font-size:0.78rem; color:var(--text-secondary);">形式:</span>
+                            <div style="display:inline-flex; gap:0.3rem; flex-wrap:wrap;" id="drills-type-filters">
+                                <button type="button" class="status-chip-btn active" data-drill-type="all">全形式</button>
+                                <button type="button" class="status-chip-btn" data-drill-type="combination">2文正誤</button>
+                                <button type="button" class="status-chip-btn" data-drill-type="chronological">年代整序</button>
+                                <button type="button" class="status-chip-btn" data-drill-type="true_false">正誤判定</button>
+                                <button type="button" class="status-chip-btn" data-drill-type="single_choice">4択</button>
+                            </div>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;">
+                            <div id="drills-stats-badge" style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); background:var(--bg-subtle); padding:0.3rem 0.65rem; border-radius:var(--radius-sm); border:1px solid var(--border-color);">
+                                全 0 問
+                            </div>
+                            <button type="button" class="flora-btn flora-btn-secondary" id="btn-reset-all-drills" style="font-size:0.72rem; padding:0.32rem 0.65rem; border-color:var(--border-color); color:var(--text-secondary); display:inline-flex; align-items:center; gap:0.3rem;" onclick="resetAllInsightDrills()" title="現在の絞り込み対象の選択問題の回答状況を未解答にリセットします">
+                                🔄 解答リセット
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- ⚠️ 未分類データの一括変更・救済バナー -->
                 <div id="unclassified-banner" style="display:none; background:rgba(245, 158, 11, 0.08); border:1px solid rgba(245, 158, 11, 0.3); border-radius:var(--radius-md); padding:0.65rem 1rem; margin-bottom:1rem; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.6rem;">
                     <div style="display:flex; align-items:center; gap:0.5rem; font-size:0.84rem; color:var(--text-primary);">
@@ -2034,6 +2213,9 @@
 
                     <!-- 1.5. 暗記事項ビュー -->
                     <div id="view-memorize" style="display: none;"></div>
+
+                    <!-- 1.7. 選択問題ビュー -->
+                    <div id="view-drills" style="display: none;"></div>
 
                     <!-- 2. AI質問ログビュー（2カラム） -->
                     <div id="view-qna" class="qna-layout" style="display: none;">
@@ -2731,24 +2913,30 @@
         // 🎛 タブ切り替え
         const tabBtnInsights = document.getElementById("tab-btn-insights");
         const tabBtnMemorize = document.getElementById("tab-btn-memorize");
+        const tabBtnDrills = document.getElementById("tab-btn-drills");
         const tabBtnQna = document.getElementById("tab-btn-qna");
         const tabBtnMnemonics = document.getElementById("tab-btn-mnemonics");
         const insightSubToolbar = document.getElementById("insight-subtoolbar");
         const memorizeSubToolbar = document.getElementById("memorize-subtoolbar");
+        const drillsSubToolbar = document.getElementById("drills-subtoolbar");
 
         function switchTab(tab) {
             activeTab = tab;
             tabBtnInsights.classList.toggle("active", tab === "insights");
             tabBtnMemorize.classList.toggle("active", tab === "memorize");
+            if (tabBtnDrills) tabBtnDrills.classList.toggle("active", tab === "drills");
             tabBtnQna.classList.toggle("active", tab === "qna");
             tabBtnMnemonics.classList.toggle("active", tab === "mnemonics");
 
             document.getElementById("view-insights").style.display = tab === "insights" ? "block" : "none";
             document.getElementById("view-memorize").style.display = tab === "memorize" ? "block" : "none";
+            const viewDrills = document.getElementById("view-drills");
+            if (viewDrills) viewDrills.style.display = tab === "drills" ? "block" : "none";
             document.getElementById("view-qna").style.display = tab === "qna" ? "grid" : "none";
             document.getElementById("view-mnemonics").style.display = tab === "mnemonics" ? "grid" : "none";
             insightSubToolbar.style.display = tab === "insights" ? "flex" : "none";
             if (memorizeSubToolbar) memorizeSubToolbar.style.display = tab === "memorize" ? "flex" : "none";
+            if (drillsSubToolbar) drillsSubToolbar.style.display = tab === "drills" ? "block" : "none";
 
             resetDisplayLimits();
             populateSubjectFilter();
@@ -2757,6 +2945,7 @@
 
         tabBtnInsights.addEventListener("click", () => switchTab("insights"));
         tabBtnMemorize.addEventListener("click", () => switchTab("memorize"));
+        if (tabBtnDrills) tabBtnDrills.addEventListener("click", () => switchTab("drills"));
         tabBtnQna.addEventListener("click", () => switchTab("qna"));
         tabBtnMnemonics.addEventListener("click", () => switchTab("mnemonics"));
 
@@ -2846,6 +3035,35 @@
                     memorizeStatusFilter = btn.dataset.status || "all";
                     resetDisplayLimits();
                     renderMemorize();
+                });
+            });
+        }
+
+        let drillStatusFilter = "all"; // all, unanswered, wrong, correct
+        let drillTypeFilter = "all";   // all, combination, chronological, true_false, single_choice
+
+        const drillsStatusFilters = document.getElementById("drills-status-filters");
+        if (drillsStatusFilters) {
+            drillsStatusFilters.querySelectorAll(".status-chip-btn").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    drillsStatusFilters.querySelectorAll(".status-chip-btn").forEach(b => b.classList.remove("active"));
+                    btn.classList.add("active");
+                    drillStatusFilter = btn.dataset.drillStatus || "all";
+                    resetDisplayLimits();
+                    renderDrills();
+                });
+            });
+        }
+
+        const drillsTypeFilters = document.getElementById("drills-type-filters");
+        if (drillsTypeFilters) {
+            drillsTypeFilters.querySelectorAll(".status-chip-btn").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    drillsTypeFilters.querySelectorAll(".status-chip-btn").forEach(b => b.classList.remove("active"));
+                    btn.classList.add("active");
+                    drillTypeFilter = btn.dataset.drillType || "all";
+                    resetDisplayLimits();
+                    renderDrills();
                 });
             });
         }
@@ -3089,6 +3307,18 @@
                         }
                     }
                 });
+            } else if (activeTab === "drills") {
+                const items = buildChoiceDrillItems();
+                items.forEach(item => {
+                    const itemSubj = item.subject || "未分類";
+                    if (selectedSubject === "ALL" || itemSubj === selectedSubject) {
+                        const lid = item.lessonId;
+                        const title = item.lessonTitle || (rawLessons[lid] && rawLessons[lid].title) || "授業";
+                        if (!lessonsMap.has(lid)) {
+                            lessonsMap.set(lid, { id: lid, title: `🎯 ${title}`, subject: itemSubj });
+                        }
+                    }
+                });
             } else if (activeTab === "insights") {
                 const probItems = Object.values(rawProblems).filter(p => p && p.insight && p.insight.trim() !== "");
                 probItems.forEach(p => {
@@ -3155,6 +3385,12 @@
                 });
             } else if (activeTab === "memorize") {
                 buildMemorizationItems().forEach(item => {
+                    const s = item.subject || "未分類";
+                    subjects.add(s);
+                    if (s === "未分類" || s === "その他") unclassifiedCount++;
+                });
+            } else if (activeTab === "drills") {
+                buildChoiceDrillItems().forEach(item => {
                     const s = item.subject || "未分類";
                     subjects.add(s);
                     if (s === "未分類" || s === "その他") unclassifiedCount++;
@@ -3364,6 +3600,51 @@
                         createdAt: lesson.createdAt,
                         isPinned: false,
                         sourceType: "memorize"
+                    });
+                });
+            });
+            return items;
+        }
+
+        // 🎯 授業ごとの「選択問題（共通テスト形式）」を一覧アイテム形式に抽出・正規化
+        function buildChoiceDrillItems() {
+            const items = [];
+            Object.entries(rawLessons).forEach(([lessonId, lesson]) => {
+                if (!lesson || !Array.isArray(lesson.choiceDrills)) return;
+                let lessonSubj = lesson.subject;
+                if (!lessonSubj || lessonSubj === "未分類" || lessonSubj === "その他") {
+                    lessonSubj = detectSubjectFromLesson(lesson);
+                }
+
+                lesson.choiceDrills.forEach((drill, idx) => {
+                    if (!drill || !drill.lead) return;
+                    const drillId = drill.id || `drill_${idx}`;
+                    const partIndex = typeof drill.partIndex === "number" ? drill.partIndex : 0;
+                    const partTitle = (lesson.parts && lesson.parts[partIndex])
+                        ? lesson.parts[partIndex].title
+                        : `第${partIndex + 1}回`;
+
+                    const isAnswered = drill.userAnswer !== null && drill.userAnswer !== undefined;
+                    const isCorrect = drill.isCorrect === true;
+                    let answerStatus = "unanswered";
+                    if (isAnswered) {
+                        answerStatus = isCorrect ? "correct" : "wrong";
+                    }
+
+                    items.push({
+                        ...drill,
+                        id: drillId,
+                        drillId,
+                        lessonId,
+                        lessonTitle: lesson.title || "無題の授業",
+                        subject: lessonSubj || "その他",
+                        partTitle: partTitle,
+                        partIndex: partIndex,
+                        answerStatus,
+                        isAnswered,
+                        isCorrect,
+                        drillUpdatedAt: drill.answeredAt || drill.updatedAt || lesson.updatedAt || lesson.createdAt,
+                        createdAt: lesson.createdAt
                     });
                 });
             });
@@ -5471,9 +5752,422 @@
             `).join("");
         }
 
+        // 🎯 教科ごとの視認性カラーバッジ生成
+        function getSubjectColorBadge(subject) {
+            const s = subject || "未分類";
+            let bg = "rgba(107, 114, 128, 0.12)";
+            let color = "var(--text-secondary)";
+            let border = "rgba(107, 114, 128, 0.3)";
+            if (s.includes("日本史") || s.includes("歴史")) {
+                bg = "rgba(239, 68, 68, 0.12)"; color = "#ef4444"; border = "rgba(239, 68, 68, 0.3)";
+            } else if (s.includes("世界史")) {
+                bg = "rgba(245, 158, 11, 0.12)"; color = "#d97706"; border = "rgba(245, 158, 11, 0.3)";
+            } else if (s.includes("政経") || s.includes("公共") || s.includes("公民") || s.includes("倫理")) {
+                bg = "rgba(16, 185, 129, 0.12)"; color = "#059669"; border = "rgba(16, 185, 129, 0.3)";
+            } else if (s.includes("地理")) {
+                bg = "rgba(20, 184, 166, 0.12)"; color = "#0d9488"; border = "rgba(20, 184, 166, 0.3)";
+            } else if (s.includes("英語")) {
+                bg = "rgba(59, 130, 246, 0.12)"; color = "#2563eb"; border = "rgba(59, 130, 246, 0.3)";
+            } else if (s.includes("国語")) {
+                bg = "rgba(236, 72, 153, 0.12)"; color = "#db2777"; border = "rgba(236, 72, 153, 0.3)";
+            } else if (s.includes("数学")) {
+                bg = "rgba(139, 92, 246, 0.12)"; color = "#7c3aed"; border = "rgba(139, 92, 246, 0.3)";
+            } else if (s.includes("物理") || s.includes("化学") || s.includes("生物") || s.includes("地学")) {
+                bg = "rgba(6, 182, 212, 0.12)"; color = "#0891b2"; border = "rgba(6, 182, 212, 0.3)";
+            } else if (s.includes("情報")) {
+                bg = "rgba(99, 102, 241, 0.12)"; color = "#4f46e5"; border = "rgba(99, 102, 241, 0.3)";
+            }
+            return `<span style="display:inline-flex; align-items:center; font-size:0.72rem; font-weight:800; padding:0.18rem 0.55rem; border-radius:4px; background:${bg}; color:${color}; border:1px solid ${border};">${escapeHtml(s)}</span>`;
+        }
+
+        // 🎯 1.7 授業 選択問題（共通テスト形式）描画エンジン
+        function renderDrills() {
+            const container = document.getElementById("view-drills");
+            if (!container) return;
+
+            const query = searchInput.value.trim().toLowerCase();
+            const selectedSubject = subjectSelect.value;
+            const sort = sortSelect.value;
+            const selectedLesson = lessonFilterSelect ? lessonFilterSelect.value : "ALL";
+
+            const allDrills = buildChoiceDrillItems();
+
+            // 統計情報集計（教科・授業絞り込みベース）
+            let filteredDrills = allDrills;
+
+            if (selectedSubject !== "ALL") {
+                filteredDrills = filteredDrills.filter(d => (d.subject || "未分類") === selectedSubject);
+            }
+            if (selectedLesson !== "ALL") {
+                filteredDrills = filteredDrills.filter(d => d.lessonId === selectedLesson);
+            }
+
+            const totalInScope = filteredDrills.length;
+            const answeredInScope = filteredDrills.filter(d => d.isAnswered).length;
+            const correctInScope = filteredDrills.filter(d => d.isCorrect).length;
+            const wrongInScope = answeredInScope - correctInScope;
+            const accuracyRate = answeredInScope > 0 ? Math.round((correctInScope / answeredInScope) * 100) : 0;
+
+            const statsBadge = document.getElementById("drills-stats-badge");
+            if (statsBadge) {
+                statsBadge.innerHTML = `全 <b>${totalInScope}</b> 問 | 解答済: <b>${answeredInScope}</b> 問 (正解: <span style="color:#059669; font-weight:800;">${correctInScope}</span> / 誤答: <span style="color:#dc2626; font-weight:800;">${wrongInScope}</span>) | 正答率: <b>${accuracyRate}%</b>`;
+            }
+
+            // 検索クエリ適用
+            if (query) {
+                filteredDrills = filteredDrills.filter(d =>
+                    (d.lead || "").toLowerCase().includes(query) ||
+                    (d.lessonTitle || "").toLowerCase().includes(query) ||
+                    (d.partTitle || "").toLowerCase().includes(query) ||
+                    (d.trap_type || "").toLowerCase().includes(query) ||
+                    (d.trap_explanation || "").toLowerCase().includes(query) ||
+                    (d.explanation || "").toLowerCase().includes(query) ||
+                    (d.statement_a || "").toLowerCase().includes(query) ||
+                    (d.statement_b || "").toLowerCase().includes(query) ||
+                    (d.options || []).some(opt => (opt.text || "").toLowerCase().includes(query))
+                );
+            }
+
+            // 状態フィルター適用
+            if (drillStatusFilter === "unanswered") {
+                filteredDrills = filteredDrills.filter(d => !d.isAnswered);
+            } else if (drillStatusFilter === "wrong") {
+                filteredDrills = filteredDrills.filter(d => d.isAnswered && !d.isCorrect);
+            } else if (drillStatusFilter === "correct") {
+                filteredDrills = filteredDrills.filter(d => d.isCorrect);
+            }
+
+            // 形式フィルター適用
+            if (drillTypeFilter !== "all") {
+                filteredDrills = filteredDrills.filter(d => d.type === drillTypeFilter);
+            }
+
+            // ソート適用
+            filteredDrills.sort((a, b) => {
+                if (sort === "lesson_asc") {
+                    const timeA = new Date(rawLessons[a.lessonId]?.createdAt || a.createdAt || 0).getTime();
+                    const timeB = new Date(rawLessons[b.lessonId]?.createdAt || b.createdAt || 0).getTime();
+                    if (timeA !== timeB) return timeA - timeB;
+                    return (a.partIndex - b.partIndex);
+                } else if (sort === "lesson_desc") {
+                    const timeA = new Date(rawLessons[a.lessonId]?.createdAt || a.createdAt || 0).getTime();
+                    const timeB = new Date(rawLessons[b.lessonId]?.createdAt || b.createdAt || 0).getTime();
+                    if (timeA !== timeB) return timeB - timeA;
+                    return (a.partIndex - b.partIndex);
+                } else if (sort === "lesson_title") {
+                    const tA = a.lessonTitle || "";
+                    const tB = b.lessonTitle || "";
+                    return tA.localeCompare(tB, "ja");
+                } else if (sort === "oldest") {
+                    return new Date(a.drillUpdatedAt || 0) - new Date(b.drillUpdatedAt || 0);
+                } else {
+                    // デフォルト最新順
+                    return new Date(b.drillUpdatedAt || b.createdAt || 0) - new Date(a.drillUpdatedAt || a.createdAt || 0);
+                }
+            });
+
+            if (filteredDrills.length === 0) {
+                container.innerHTML = "";
+                if (allDrills.length === 0) {
+                    showEmptyNotice("選択問題が登録されている授業がまだありません。「授業一覧」から一括生成を実行してください。");
+                } else {
+                    showEmptyNotice("該当する条件の選択問題が見つかりませんでした。");
+                }
+                return;
+            }
+            hideEmptyNotice();
+
+            const TYPE_LABELS = {
+                combination: { label: "2文正誤組み合わせ", class: "pill-type-combination" },
+                chronological: { label: "年代・順序整序", class: "pill-type-chronological" },
+                true_false: { label: "正誤判定", class: "pill-type-true_false" },
+                single_choice: { label: "4択問題", class: "pill-type-single_choice" }
+            };
+
+            const cardsHtml = filteredDrills.map((d, index) => {
+                const isAnswered = d.isAnswered;
+                const isCorrect = d.isCorrect === true;
+                const cardStatusClass = isAnswered ? (isCorrect ? "status-correct" : "status-wrong") : "";
+                const typeInfo = TYPE_LABELS[d.type] || { label: "選択問題", class: "pill-type-single_choice" };
+                const subjBadge = getSubjectColorBadge(d.subject || "その他");
+
+                // 文A/文B または 整序文
+                let statementsHtml = "";
+                if (d.statement_a || d.statement_b) {
+                    statementsHtml = `
+                        <div class="choice-drill-statements">
+                            ${d.statement_a ? `<div class="choice-drill-statement-item"><span class="choice-drill-statement-tag">文 A</span><div style="flex:1;">${renderFormattedMarkdown(d.statement_a)}</div></div>` : ''}
+                            ${d.statement_b ? `<div class="choice-drill-statement-item"><span class="choice-drill-statement-tag">文 B</span><div style="flex:1;">${renderFormattedMarkdown(d.statement_b)}</div></div>` : ''}
+                        </div>
+                    `;
+                } else if (Array.isArray(d.statements) && d.statements.length > 0) {
+                    const tagLabels = ["ア", "イ", "ウ", "エ", "オ", "カ"];
+                    statementsHtml = `
+                        <div class="choice-drill-statements">
+                            ${d.statements.map((st, sIdx) => `
+                                <div class="choice-drill-statement-item">
+                                    <span class="choice-drill-statement-tag">${tagLabels[sIdx] || String(sIdx + 1)}</span>
+                                    <div style="flex:1;">${renderFormattedMarkdown(st)}</div>
+                                </div>
+                            `).join("")}
+                        </div>
+                    `;
+                }
+
+                // 選択肢
+                const optionsHtml = (d.options || []).map(opt => {
+                    let optClass = "";
+                    if (isAnswered) {
+                        if (opt.number === d.correct_option) {
+                            optClass = "opt-correct";
+                        } else if (opt.number === d.userAnswer) {
+                            optClass = "opt-wrong";
+                        } else {
+                            optClass = "opt-faded";
+                        }
+                    }
+                    const optNumLabel = ["①", "②", "③", "④", "⑤", "⑥"][opt.number - 1] || `(${opt.number})`;
+
+                    return `
+                        <button type="button" class="choice-drill-option-btn ${optClass}" onclick="selectInsightChoiceDrillOption('${escapeHtml(d.lessonId)}', '${escapeHtml(d.id)}', ${opt.number})">
+                            <span class="choice-drill-option-num">${optNumLabel}</span>
+                            <span style="flex:1; min-width:0; word-break:break-word;">${renderFormattedMarkdown(opt.text)}</span>
+                            ${isAnswered && opt.number === d.correct_option ? '<span style="color:#059669; font-weight:800; font-size:0.85rem; margin-left:auto;">✓ 正解</span>' : ''}
+                            ${isAnswered && opt.number === d.userAnswer && !isCorrect ? '<span style="color:#dc2626; font-weight:800; font-size:0.85rem; margin-left:auto;">✕ あなたの選択</span>' : ''}
+                        </button>
+                    `;
+                }).join("");
+
+                // 解答後の解説・出題者の罠
+                let resultBoxHtml = "";
+                if (isAnswered) {
+                    const resultBadge = isCorrect
+                        ? `<div style="font-size:0.88rem; font-weight:800; color:#059669; display:flex; align-items:center; gap:0.35rem;">🎉 正解！ [正解: ${["①", "②", "③", "④", "⑤"][d.correct_option - 1] || d.correct_option}]</div>`
+                        : `<div style="font-size:0.88rem; font-weight:800; color:#dc2626; display:flex; align-items:center; gap:0.35rem;">❌ 不正解（要復習） [あなたの選択: ${["①", "②", "③", "④", "⑤"][d.userAnswer - 1] || d.userAnswer} / 正解: ${["①", "②", "③", "④", "⑤"][d.correct_option - 1] || d.correct_option}]</div>`;
+
+                    resultBoxHtml = `
+                        <div style="margin-top:0.85rem; padding-top:0.75rem; border-top:1px dashed var(--border-color);">
+                            ${resultBadge}
+
+                            ${(d.trap_type || d.trap_explanation) ? `
+                                <div class="choice-drill-trap-box">
+                                    <div style="font-weight:800; color:#d97706; font-size:0.8rem; margin-bottom:0.3rem; display:flex; align-items:center; gap:0.35rem;">
+                                        <span>⚠️ 共通テストの罠：${escapeHtml(d.trap_type || "引っかけの急所")}</span>
+                                    </div>
+                                    <div style="color:var(--text-primary); font-size:0.82rem; line-height:1.55;">
+                                        ${renderFormattedMarkdown(d.trap_explanation || "")}
+                                    </div>
+                                </div>
+                            ` : ''}
+
+                            <div class="choice-drill-explanation-box">
+                                <div style="font-weight:800; color:var(--text-secondary); font-size:0.8rem; margin-bottom:0.3rem;">
+                                    💡 設問・選択肢の詳細解説
+                                </div>
+                                <div style="line-height:1.6; font-size:0.82rem;">
+                                    ${renderFormattedMarkdown(d.explanation || "")}
+                                </div>
+                            </div>
+
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:0.75rem; flex-wrap:wrap; gap:0.5rem;">
+                                <a href="lesson.html?id=${encodeURIComponent(d.lessonId)}" class="goto-btn" style="font-size:0.74rem;">
+                                    📖 授業ノートを開く ➔
+                                </a>
+                                <div style="display:flex; gap:0.45rem;">
+                                    <button type="button" class="flora-btn flora-btn-secondary btn-sm" onclick="retryInsightChoiceDrill('${escapeHtml(d.lessonId)}', '${escapeHtml(d.id)}')" style="font-size:0.74rem; padding:0.3rem 0.65rem;">
+                                        🔄 もう一度解く
+                                    </button>
+                                    <button type="button" class="flora-btn btn-sm" onclick="saveInsightChoiceDrillToMistakeBook('${escapeHtml(d.lessonId)}', '${escapeHtml(d.id)}')" style="background:var(--accent-yellow); color:#000; font-weight:800; font-size:0.74rem; padding:0.3rem 0.75rem; border:none; border-radius:var(--radius-sm); cursor:pointer;">
+                                        📥 誤答ノートに保存
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="choice-drill-card ${cardStatusClass}" id="insight-drill-card-${escapeHtml(d.lessonId)}_${escapeHtml(d.id)}">
+                        <div class="choice-drill-header">
+                            <div style="display:flex; align-items:center; gap:0.45rem; flex-wrap:wrap;">
+                                ${subjBadge}
+                                <span style="font-size:0.82rem; font-weight:700; color:var(--text-primary);">
+                                    📘 ${escapeHtml(d.lessonTitle)}
+                                </span>
+                                <span style="font-size:0.75rem; color:var(--text-muted);">
+                                    (${escapeHtml(d.partTitle)})
+                                </span>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:0.45rem;">
+                                <span class="flora-badge ${typeInfo.class}" style="font-size:0.72rem; padding:0.15rem 0.5rem;">${typeInfo.label}</span>
+                                <span style="font-size:0.74rem; font-weight:700; color:var(--text-secondary);">問${index + 1}</span>
+                            </div>
+                        </div>
+
+                        <div class="choice-drill-lead">${renderFormattedMarkdown(d.lead)}</div>
+                        ${statementsHtml}
+                        <div class="choice-drill-options-grid">${optionsHtml}</div>
+                        ${resultBoxHtml}
+                    </div>
+                `;
+            }).join("");
+
+            container.innerHTML = cardsHtml;
+            scheduleMathTypeset([container]);
+        }
+
+        // 🎯 選択問題の選択肢をクリックして回答
+        window.selectInsightChoiceDrillOption = async function(lessonId, drillId, optNumber) {
+            if (!currentUser) {
+                showToast("解答を記録するにはGoogleサインインが必要です。", "error");
+                return;
+            }
+            const lesson = rawLessons[lessonId];
+            if (!lesson || !Array.isArray(lesson.choiceDrills)) return;
+
+            const drill = lesson.choiceDrills.find(d => (d.id || "") === drillId);
+            if (!drill) return;
+
+            drill.userAnswer = optNumber;
+            drill.isCorrect = (optNumber === drill.correct_option);
+            drill.answeredAt = new Date().toISOString();
+
+            try {
+                await update(ref(database, `users/${currentUser.uid}/lessons/${lessonId}`), {
+                    choiceDrills: lesson.choiceDrills,
+                    updatedAt: new Date().toISOString()
+                });
+
+                if (drill.isCorrect) {
+                    playTypingSound("correct");
+                    showToast("🎉 正解です！", "success", 1500);
+                } else {
+                    playTypingSound("miss");
+                    showToast("❌ 不正解です。解説と罠を確認しましょう！", "error", 2000);
+                }
+                renderDrills();
+                updateCounts();
+            } catch (err) {
+                console.error("Save drill answer error:", err);
+                showToast("解答の保存に失敗しました。", "error");
+            }
+        };
+
+        // 🎯 選択問題をもう一度解く（未解答に戻す）
+        window.retryInsightChoiceDrill = async function(lessonId, drillId) {
+            if (!currentUser) return;
+            const lesson = rawLessons[lessonId];
+            if (!lesson || !Array.isArray(lesson.choiceDrills)) return;
+
+            const drill = lesson.choiceDrills.find(d => (d.id || "") === drillId);
+            if (!drill) return;
+
+            drill.userAnswer = null;
+            drill.isCorrect = null;
+
+            try {
+                await update(ref(database, `users/${currentUser.uid}/lessons/${lessonId}`), {
+                    choiceDrills: lesson.choiceDrills,
+                    updatedAt: new Date().toISOString()
+                });
+                showToast("未解答にリセットしました。もう一度解いてみましょう！", "info", 1500);
+                renderDrills();
+                updateCounts();
+            } catch (err) {
+                showToast("リセットに失敗しました。", "error");
+            }
+        };
+
+        // 🎯 選択問題を誤答ノートに保存
+        window.saveInsightChoiceDrillToMistakeBook = async function(lessonId, drillId) {
+            if (!currentUser) {
+                showToast("ログインが必要です。", "error");
+                return;
+            }
+            const lesson = rawLessons[lessonId];
+            if (!lesson || !Array.isArray(lesson.choiceDrills)) return;
+            const d = lesson.choiceDrills.find(dr => (dr.id || "") === drillId);
+            if (!d) return;
+
+            try {
+                const mistakeRef = push(ref(database, `users/${currentUser.uid}/mistakes`));
+                const mistakeData = {
+                    id: mistakeRef.key,
+                    lessonId,
+                    lessonTitle: lesson.title || "無題の授業",
+                    subject: lesson.subject || detectSubjectFromLesson(lesson) || "その他",
+                    type: "choice_drill",
+                    drillType: d.type || "single_choice",
+                    lead: d.lead || "",
+                    statement_a: d.statement_a || null,
+                    statement_b: d.statement_b || null,
+                    statements: d.statements || null,
+                    options: d.options || [],
+                    correct_option: d.correct_option,
+                    userAnswer: d.userAnswer || null,
+                    trap_type: d.trap_type || "",
+                    trap_explanation: d.trap_explanation || "",
+                    explanation: d.explanation || "",
+                    createdAt: new Date().toISOString()
+                };
+                await set(mistakeRef, mistakeData);
+                showToast("📥 誤答ノートに保存しました！", "success", 2500);
+            } catch (err) {
+                console.error("Save to mistake book error:", err);
+                showToast("誤答ノートへの保存に失敗しました。", "error");
+            }
+        };
+
+        // 🎯 全ての選択問題解答状況を一括リセット
+        window.resetAllInsightDrills = async function() {
+            if (!currentUser) {
+                showToast("ログインが必要です。", "error");
+                return;
+            }
+            const ok = confirm("表示中の選択問題の解答状況をすべてリセット（未解答）にしますか？\n（問題自体は削除されません）");
+            if (!ok) return;
+
+            try {
+                const updates = {};
+                const now = new Date().toISOString();
+                let count = 0;
+
+                Object.entries(rawLessons).forEach(([lid, lesson]) => {
+                    if (!lesson || !Array.isArray(lesson.choiceDrills)) return;
+                    let changed = false;
+                    lesson.choiceDrills.forEach(d => {
+                        if (d.userAnswer !== null && d.userAnswer !== undefined) {
+                            d.userAnswer = null;
+                            d.isCorrect = null;
+                            changed = true;
+                            count++;
+                        }
+                    });
+                    if (changed) {
+                        updates[`lessons/${lid}/choiceDrills`] = lesson.choiceDrills;
+                        updates[`lessons/${lid}/updatedAt`] = now;
+                    }
+                });
+
+                if (count === 0) {
+                    showToast("解答済みの選択問題はありませんでした。", "info", 2000);
+                    return;
+                }
+
+                await update(ref(database, `users/${currentUser.uid}`), updates);
+                showToast(`🔄 ${count}問の解答をリセットしました！`, "success", 2500);
+                renderDrills();
+                updateCounts();
+            } catch (err) {
+                console.error("Reset drills error:", err);
+                showToast("リセットに失敗しました。", "error");
+            }
+        };
+
         function renderActiveView() {
             if (activeTab === "insights") renderInsights();
             else if (activeTab === "memorize") renderMemorize();
+            else if (activeTab === "drills") renderDrills();
             else if (activeTab === "qna") renderQna();
             else if (activeTab === "mnemonics") renderMnemonics();
         }
@@ -5491,14 +6185,17 @@
             const insightCount = Object.values(rawProblems).filter(p => p && p.insight && p.insight.trim() !== "").length
                 + buildLessonMemoItems().length;
             const memorizeCount = buildMemorizationItems().length;
+            const drillsCount = buildChoiceDrillItems().length;
             const qnaCount = Object.keys(rawQnaLogs).length;
             const mnemonicCount = Object.values(rawProblems).filter(p => p && p.subject === "世界史" && p.mnemonic && p.mnemonic.trim() !== "").length;
 
             document.getElementById("count-insights").textContent = insightCount;
             document.getElementById("count-memorize").textContent = memorizeCount;
+            const countDrillsEl = document.getElementById("count-drills");
+            if (countDrillsEl) countDrillsEl.textContent = drillsCount;
             document.getElementById("count-qna").textContent = qnaCount;
             document.getElementById("count-mnemonics").textContent = mnemonicCount;
-            document.getElementById("stat-summary-text").textContent = `総蓄積ナレッジ: ${insightCount + memorizeCount + qnaCount + mnemonicCount} 件`;
+            document.getElementById("stat-summary-text").textContent = `総蓄積ナレッジ: ${insightCount + memorizeCount + drillsCount + qnaCount + mnemonicCount} 件`;
         }
 
         /* ==========================================================
