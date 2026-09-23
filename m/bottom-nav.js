@@ -230,7 +230,9 @@
 
     function applyWallpaper(urlOrData) {
         document.body.style.setProperty('--user-wallpaper', `url("${urlOrData}")`);
+        document.documentElement.style.setProperty('--user-wallpaper', `url("${urlOrData}")`);
         document.body.classList.add('has-custom-wallpaper');
+        document.documentElement.classList.add('has-custom-wallpaper');
         applyTransparencySettings();
     }
 
@@ -238,7 +240,9 @@
         removeWallpaperFromDB().catch(err => console.warn('[Flora Mobile] DB remove error:', err));
         try { localStorage.removeItem('flora_wallpaper'); } catch(e) {}
         document.body.classList.remove('has-custom-wallpaper');
+        document.documentElement.classList.remove('has-custom-wallpaper');
         document.body.style.removeProperty('--user-wallpaper');
+        document.documentElement.style.removeProperty('--user-wallpaper');
     }
 
     window.applyFloraWallpaper = applyWallpaper;
