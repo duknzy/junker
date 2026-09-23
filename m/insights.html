@@ -543,83 +543,138 @@
         /* ==========================================================
            🎴 フルスクリーン暗記セッション（超快適フラッシュカード）
            ========================================================== */
+        /* ==========================================================
+           🎴 フルスクリーン暗記セッション（ハイエンド・モダンリデザイン）
+           ========================================================== */
         .memo-session-overlay {
             position: fixed;
             inset: 0;
             z-index: 10000;
-            background: #0B1325;
+            background: radial-gradient(circle at 50% 5%, rgba(16, 185, 129, 0.16) 0%, transparent 45%),
+                        radial-gradient(circle at 85% 85%, rgba(59, 130, 246, 0.12) 0%, transparent 45%),
+                        #080E1B;
             color: #FFFFFF;
             display: none;
             flex-direction: column;
             justify-content: space-between;
             overflow: hidden;
             user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
         .memo-session-overlay.active {
             display: flex;
         }
 
-        /* セッション上部バー */
+        /* セッション上部バー (グラスモーフィズム) */
         .session-top-bar {
-            padding: env(safe-area-inset-top, 0.75rem) 1rem 0.5rem 1rem;
+            padding: max(env(safe-area-inset-top, 0.75rem), 0.75rem) 1.1rem 0.65rem 1.1rem;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 0.8rem;
+            gap: 0.85rem;
+            background: rgba(10, 16, 30, 0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            z-index: 10;
         }
         .session-close-btn {
             width: 38px;
             height: 38px;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.12);
-            border: none;
-            color: #FFFFFF;
-            font-size: 1.2rem;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #E2E8F0;
+            font-size: 1.1rem;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: background 0.15s;
+            transition: all 0.15s ease;
+            flex-shrink: 0;
         }
         .session-close-btn:active {
-            background: rgba(255, 255, 255, 0.25);
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(0.94);
         }
+
         .session-progress-wrap {
             flex: 1;
+            min-width: 0;
         }
         .session-progress-labels {
             display: flex;
             justify-content: space-between;
+            align-items: baseline;
             font-size: 0.75rem;
-            font-weight: 700;
             color: #94A3B8;
-            margin-bottom: 0.3rem;
+            margin-bottom: 0.35rem;
+            gap: 0.5rem;
+        }
+        .session-progress-labels #session-progress-text {
+            font-family: var(--font-heading);
+            font-weight: 800;
+            color: #F8FAFC;
+            letter-spacing: -0.01em;
+            font-size: 0.88rem;
+            font-variant-numeric: tabular-nums;
+        }
+        .session-progress-labels #session-scope-title {
+            font-weight: 600;
+            color: #38BDF8;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: 0.72rem;
+            letter-spacing: 0.02em;
         }
         .session-progress-track {
-            height: 6px;
-            background: rgba(255, 255, 255, 0.15);
+            height: 5px;
+            background: rgba(255, 255, 255, 0.1);
             border-radius: 9999px;
             overflow: hidden;
         }
         .session-progress-fill {
             height: 100%;
-            background: linear-gradient(90deg, #10B981, #059669);
+            background: linear-gradient(90deg, #10B981 0%, #34D399 100%);
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.6);
             width: 0%;
             border-radius: 9999px;
-            transition: width 0.3s ease;
+            transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1);
         }
+
+        /* ツールアクション群（シャッフル & 音声） */
+        .session-actions-cluster {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            flex-shrink: 0;
+        }
+        .session-tool-btn,
         .session-sound-btn {
             width: 38px;
             height: 38px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.12);
-            border: none;
-            color: #FFFFFF;
-            font-size: 1rem;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #E2E8F0;
+            font-size: 0.95rem;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .session-tool-btn.active {
+            background: rgba(16, 185, 129, 0.22);
+            border-color: rgba(16, 185, 129, 0.55);
+            color: #6EE7B7;
+            box-shadow: 0 0 12px rgba(16, 185, 129, 0.25);
+        }
+        .session-tool-btn:active,
+        .session-sound-btn:active {
+            transform: scale(0.92);
+            background: rgba(255, 255, 255, 0.2);
         }
 
         /* カードステージ */
@@ -629,62 +684,80 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 0.75rem 1.15rem;
-            perspective: 1200px;
+            padding: 0.65rem 1.15rem;
+            perspective: 1400px;
+            min-height: 0;
         }
         .session-card-container {
             width: 100%;
             max-width: 440px;
-            height: 380px;
+            height: min(440px, calc(100vh - 275px));
+            min-height: 330px;
             position: relative;
             transform-style: preserve-3d;
-            transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transition: transform 0.48s cubic-bezier(0.34, 1.45, 0.64, 1);
             cursor: pointer;
+            touch-action: manipulation;
         }
         .session-card-container.flipped {
             transform: rotateY(180deg);
         }
+
         .card-face {
             position: absolute;
             inset: 0;
             width: 100%;
             height: 100%;
             background: #FFFFFF;
-            border-radius: 24px;
-            padding: 1.4rem 1.25rem;
+            border-radius: 26px;
+            padding: 1.25rem 1.35rem 1.1rem 1.35rem;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             backface-visibility: hidden;
             -webkit-backface-visibility: hidden;
-            box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35);
+            box-shadow: 0 24px 50px -12px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.15);
             color: #0F172A;
             box-sizing: border-box;
-            border: 2px solid transparent;
+            border: 2px solid rgba(16, 185, 129, 0.25);
+            overflow: hidden;
         }
         .card-front {
-            border-color: rgba(16, 185, 129, 0.4);
+            border-color: rgba(16, 185, 129, 0.35);
         }
         .card-back {
             transform: rotateY(180deg);
-            border-color: rgba(5, 150, 105, 0.5);
-            background: #FAFAFA;
+            border-color: rgba(5, 150, 105, 0.45);
+            background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
         }
 
-        /* 表面・裏面のレイアウト */
+        /* 表面・裏面のヘッダーバー */
         .card-header-bar {
             display: flex;
             align-items: center;
             justify-content: space-between;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+        }
+        .card-header-left {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
         }
         .card-subj-pill {
-            font-size: 0.75rem;
+            font-size: 0.76rem;
             font-weight: 800;
-            padding: 0.2rem 0.55rem;
+            padding: 0.22rem 0.6rem;
             border-radius: 8px;
             background: #ECFDF5;
             color: #047857;
             border: 1px solid #A7F3D0;
+            letter-spacing: 0.02em;
+        }
+        .card-meta-sep {
+            color: #CBD5E1;
+            font-weight: 700;
+            font-size: 0.75rem;
         }
         .card-level-pill {
             font-size: 0.72rem;
@@ -693,17 +766,32 @@
             border-radius: 8px;
             background: #F1F5F9;
             color: #475569;
+            font-variant-numeric: tabular-nums;
         }
-        .card-source-title {
-            font-size: 0.75rem;
+        .card-flip-badge {
+            font-size: 0.7rem;
             font-weight: 700;
-            color: #64748B;
-            margin-top: 0.4rem;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            color: #94A3B8;
+            letter-spacing: 0.02em;
         }
 
+        /* 教科書・単元タイトル（2行まで自然に収容し変な切れ目を防止） */
+        .card-source-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #64748B;
+            margin-top: 0.5rem;
+            line-height: 1.45;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-wrap: balance;
+            word-break: auto-phrase;
+            line-break: strict;
+        }
+
+        /* カード本文（センタリング & スクロール可能） */
         .card-body-center {
             flex: 1;
             display: flex;
@@ -711,132 +799,174 @@
             justify-content: center;
             align-items: center;
             text-align: center;
-            padding: 0.5rem 0;
+            padding: 0.4rem 0;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
             width: 100%;
             max-width: 100%;
         }
         .card-q-prompt {
-            font-size: 0.78rem;
-            font-weight: 700;
+            font-size: 0.72rem;
+            font-weight: 800;
             color: #059669;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.45rem;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.12em;
             white-space: nowrap;
         }
         .card-q-text {
-            font-size: clamp(1.15rem, 4.2vw, 1.45rem);
+            font-size: clamp(1.2rem, 4.4vw, 1.55rem);
             font-weight: 800;
-            line-height: 1.5;
+            line-height: 1.58;
             color: #0F172A;
-            word-break: break-word;
+            word-break: auto-phrase;
             overflow-wrap: break-word;
+            text-wrap: pretty;
             line-break: strict;
-            letter-spacing: -0.01em;
+            letter-spacing: 0.01em;
             width: 100%;
+            max-width: 100%;
         }
         .card-q-text.is-long {
-            font-size: clamp(0.95rem, 3.4vw, 1.12rem);
+            font-size: clamp(0.96rem, 3.4vw, 1.12rem);
             text-align: left;
-            line-height: 1.55;
+            line-height: 1.72;
+            font-weight: 600;
+        }
+        .card-q-text.is-short-impact {
+            font-size: clamp(1.8rem, 6.5vw, 2.3rem);
+            font-weight: 900;
         }
 
-        /* 裏面のデザイン */
+        /* 解答面のデザイン */
         .card-a-prompt {
-            font-size: 0.78rem;
+            font-size: 0.72rem;
             font-weight: 800;
             color: #047857;
-            margin-bottom: 0.4rem;
+            margin-bottom: 0.45rem;
             text-transform: uppercase;
+            letter-spacing: 0.12em;
             white-space: nowrap;
         }
         .card-a-text {
-            font-size: clamp(1.2rem, 4.4vw, 1.55rem);
-            font-weight: 900;
-            color: #065F46;
-            line-height: 1.4;
-            background: rgba(5, 150, 105, 0.08);
-            border-radius: 12px;
-            padding: 0.65rem 0.9rem;
+            font-size: clamp(1.25rem, 4.6vw, 1.6rem);
+            font-weight: 800;
+            color: #064E3B;
+            line-height: 1.55;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.10) 0%, rgba(5, 150, 105, 0.04) 100%);
+            border: 1px solid rgba(16, 185, 129, 0.25);
+            border-radius: 16px;
+            padding: 0.75rem 1.1rem;
             width: 100%;
-            word-break: break-word;
+            word-break: auto-phrase;
             overflow-wrap: break-word;
+            text-wrap: pretty;
             line-break: strict;
-            letter-spacing: -0.01em;
+            letter-spacing: 0.012em;
             box-sizing: border-box;
+            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.06);
+        }
+        .card-a-text.is-short-impact {
+            font-size: clamp(2rem, 7.5vw, 2.75rem);
+            font-weight: 900;
+            letter-spacing: 0.03em;
+            padding: 0.85rem 1.4rem;
+            display: inline-block;
+            width: auto;
+            max-width: 100%;
         }
         .card-a-text.is-long {
-            font-size: clamp(0.95rem, 3.4vw, 1.15rem);
+            font-size: clamp(0.96rem, 3.4vw, 1.14rem);
             text-align: left;
-            line-height: 1.55;
+            line-height: 1.7;
+            font-weight: 600;
         }
+
+        /* 要点・ポイントの洗練メモボックス */
         .card-note-box {
-            margin-top: 0.65rem;
-            background: #FFFBEB;
-            border: 1px solid #FDE68A;
-            border-radius: 10px;
-            padding: 0.45rem 0.65rem;
-            font-size: 0.8rem;
-            color: #92400E;
+            margin-top: 0.75rem;
+            background: linear-gradient(135deg, rgba(254, 243, 199, 0.8) 0%, rgba(253, 230, 138, 0.45) 100%);
+            border: 1px solid rgba(245, 158, 11, 0.35);
+            border-radius: 14px;
+            padding: 0.6rem 0.85rem;
             text-align: left;
             width: 100%;
-            line-height: 1.45;
-            word-break: break-word;
-            overflow-wrap: break-word;
             box-sizing: border-box;
+            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.08);
+        }
+        .card-note-box .note-kicker {
+            font-size: 0.68rem;
+            font-weight: 800;
+            color: #B45309;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            display: block;
+            margin-bottom: 0.2rem;
+        }
+        .card-note-box .note-content {
+            font-size: clamp(0.78rem, 2.8vw, 0.86rem);
+            color: #78350F;
+            line-height: 1.58;
+            font-weight: 600;
+            word-break: auto-phrase;
+            overflow-wrap: break-word;
+            text-wrap: pretty;
+            line-break: strict;
         }
 
         .card-tap-hint {
-            font-size: 0.75rem;
+            font-size: 0.74rem;
             font-weight: 700;
             color: #94A3B8;
             text-align: center;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 0.3rem;
+            gap: 0.35rem;
             white-space: nowrap;
+            padding-top: 0.4rem;
         }
 
-        /* 画面下部：ボタントレイ（親指フレンドリー） */
+        /* 画面下部：ボタントレイ（親指フレンドリー & グラスモーフィズム） */
         .session-controls-area {
-            padding: 0.75rem 1.15rem calc(env(safe-area-inset-bottom, 0.75rem) + 0.5rem) 1.15rem;
-            background: rgba(15, 23, 42, 0.75);
-            backdrop-filter: blur(12px);
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 0.85rem 1.15rem max(calc(env(safe-area-inset-bottom, 0.75rem) + 0.35rem), 0.85rem) 1.15rem;
+            background: linear-gradient(180deg, rgba(8, 14, 27, 0) 0%, rgba(8, 14, 27, 0.85) 20%, rgba(8, 14, 27, 0.98) 100%);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            z-index: 10;
         }
 
         /* 表面表示時のボタン: 答えを見る */
         .btn-view-answer {
             width: 100%;
-            background: linear-gradient(135deg, #10B981, #059669);
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
             color: #FFFFFF;
             border: none;
-            border-radius: 16px;
-            padding: 1rem;
-            font-size: clamp(0.95rem, 3.8vw, 1.05rem);
+            border-radius: 18px;
+            padding: 1.05rem;
+            font-size: clamp(1rem, 3.9vw, 1.12rem);
             font-weight: 800;
             font-family: var(--font-heading);
             cursor: pointer;
-            box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4);
+            box-shadow: 0 8px 24px -4px rgba(16, 185, 129, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.25);
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 0.45rem;
+            gap: 0.55rem;
             white-space: nowrap;
-            transition: transform 0.12s;
+            transition: transform 0.14s ease, box-shadow 0.14s ease;
         }
         .btn-view-answer:active {
-            transform: scale(0.97);
+            transform: scale(0.975);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
         }
 
-        /* 裏面表示時のボタントレイ: 4段階（メイン2ボタン + サブ2ボタン） */
+        /* 裏面表示時のボタントレイ: 4段階（メイン2ボタン + サブ4ボタン） */
         .rating-tray {
             display: none;
             flex-direction: column;
-            gap: 0.5rem;
+            gap: 0.55rem;
         }
         .rating-tray.active {
             display: flex;
@@ -845,57 +975,61 @@
         .rating-main-row {
             display: grid;
             grid-template-columns: 1fr 1.35fr;
-            gap: 0.65rem;
+            gap: 0.75rem;
         }
         .rate-btn-again {
-            background: #EF4444;
+            background: linear-gradient(135deg, #F43F5E 0%, #E11D48 100%);
             color: #FFFFFF;
             border: none;
-            border-radius: 14px;
-            padding: 0.85rem 0.5rem;
-            font-size: clamp(0.85rem, 3.4vw, 0.95rem);
-            font-weight: 800;
-            font-family: var(--font-heading);
+            border-radius: 16px;
+            padding: 0.9rem 0.5rem;
             cursor: pointer;
-            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
+            box-shadow: 0 8px 20px -4px rgba(225, 29, 72, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.2);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             gap: 0.15rem;
             white-space: nowrap;
-            transition: transform 0.12s;
+            transition: transform 0.14s ease;
+        }
+        .rate-btn-again span.label {
+            font-size: clamp(0.92rem, 3.6vw, 1.02rem);
+            font-weight: 800;
+            font-family: var(--font-heading);
         }
         .rate-btn-again span.sub {
             font-size: 0.68rem;
-            opacity: 0.85;
+            opacity: 0.9;
             font-weight: 600;
             white-space: nowrap;
         }
         .rate-btn-again:active { transform: scale(0.96); }
 
         .rate-btn-good {
-            background: #10B981;
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
             color: #FFFFFF;
             border: none;
-            border-radius: 14px;
-            padding: 0.85rem 0.5rem;
-            font-size: clamp(0.92rem, 3.8vw, 1.05rem);
-            font-weight: 800;
-            font-family: var(--font-heading);
+            border-radius: 16px;
+            padding: 0.9rem 0.5rem;
             cursor: pointer;
-            box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4);
+            box-shadow: 0 8px 24px -4px rgba(16, 185, 129, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.25);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             gap: 0.15rem;
             white-space: nowrap;
-            transition: transform 0.12s;
+            transition: transform 0.14s ease;
+        }
+        .rate-btn-good span.label {
+            font-size: clamp(0.98rem, 4vw, 1.12rem);
+            font-weight: 800;
+            font-family: var(--font-heading);
         }
         .rate-btn-good span.sub {
-            font-size: 0.68rem;
-            opacity: 0.85;
+            font-size: 0.7rem;
+            opacity: 0.92;
             font-weight: 600;
             white-space: nowrap;
         }
@@ -905,15 +1039,15 @@
         .rating-sub-row {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 0.35rem;
+            gap: 0.4rem;
         }
         .rate-btn-sub {
-            background: rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.08);
             color: #E2E8F0;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 10px;
-            padding: 0.5rem 0.15rem;
-            font-size: clamp(0.68rem, 2.5vw, 0.75rem);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 12px;
+            padding: 0.55rem 0.15rem;
+            font-size: clamp(0.68rem, 2.5vw, 0.76rem);
             font-weight: 700;
             cursor: pointer;
             text-align: center;
@@ -921,17 +1055,20 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: background 0.12s;
+            transition: background 0.14s ease, transform 0.14s ease;
         }
-        .rate-btn-sub:active { background: rgba(255, 255, 255, 0.25); }
+        .rate-btn-sub:active {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(0.94);
+        }
 
         .rate-btn-ai {
-            background: rgba(99, 102, 241, 0.25);
+            background: rgba(99, 102, 241, 0.22);
             border: 1px solid rgba(99, 102, 241, 0.45);
             color: #C7D2FE;
-            border-radius: 10px;
-            padding: 0.5rem 0.15rem;
-            font-size: clamp(0.68rem, 2.5vw, 0.75rem);
+            border-radius: 12px;
+            padding: 0.55rem 0.15rem;
+            font-size: clamp(0.68rem, 2.5vw, 0.76rem);
             font-weight: 800;
             cursor: pointer;
             display: flex;
@@ -939,8 +1076,12 @@
             justify-content: center;
             gap: 0.2rem;
             white-space: nowrap;
+            transition: background 0.14s ease, transform 0.14s ease;
         }
-        .rate-btn-ai:active { background: rgba(99, 102, 241, 0.45); }
+        .rate-btn-ai:active {
+            background: rgba(99, 102, 241, 0.4);
+            transform: scale(0.94);
+        }
 
         /* 🤖 AI解説ボトムシート */
         .ai-sheet-overlay {
@@ -1926,7 +2067,7 @@
     </main>
 
     <!-- ==========================================================
-       🎴 フルスクリーン暗記セッション（超快適フラッシュカード）
+       🎴 フルスクリーン暗記セッション（ハイエンド・モダンリデザイン）
        ========================================================== -->
     <div id="session-overlay" class="memo-session-overlay">
         <!-- 上部バー -->
@@ -1941,7 +2082,10 @@
                     <div class="session-progress-fill" id="session-progress-bar"></div>
                 </div>
             </div>
-            <button type="button" class="session-sound-btn" id="session-btn-sound" title="音声読み上げ">🔊</button>
+            <div class="session-actions-cluster">
+                <button type="button" class="session-tool-btn" id="session-btn-shuffle" title="出題順シャッフル切替">🔀</button>
+                <button type="button" class="session-sound-btn" id="session-btn-sound" title="音声読み上げ">🔊</button>
+            </div>
         </div>
 
         <!-- カードステージ -->
@@ -1950,8 +2094,12 @@
                 <!-- 表面 -->
                 <div class="card-face card-front">
                     <div class="card-header-bar">
-                        <span class="card-subj-pill" id="card-front-subj">公共</span>
-                        <span class="card-level-pill" id="card-front-level">Lv.1</span>
+                        <div class="card-header-left">
+                            <span class="card-subj-pill" id="card-front-subj">公共</span>
+                            <span class="card-meta-sep">•</span>
+                            <span class="card-level-pill" id="card-front-level">Lv.1</span>
+                        </div>
+                        <span class="card-flip-badge">表面 (問題)</span>
                     </div>
                     <div class="card-source-title" id="card-front-source">単元名</div>
                     <div class="card-body-center">
@@ -1959,15 +2107,19 @@
                         <div class="card-q-text tex2jax_process" id="card-front-text">--</div>
                     </div>
                     <div class="card-tap-hint">
-                        <span>👆 カードをタップ または 下のボタンで答えを表示</span>
+                        <span>👆 タップ または 下のボタンで答えを表示</span>
                     </div>
                 </div>
 
                 <!-- 裏面 -->
                 <div class="card-face card-back">
                     <div class="card-header-bar">
-                        <span class="card-subj-pill" id="card-back-subj">公共</span>
-                        <span class="card-level-pill" id="card-back-level">Lv.1</span>
+                        <div class="card-header-left">
+                            <span class="card-subj-pill" id="card-back-subj">公共</span>
+                            <span class="card-meta-sep">•</span>
+                            <span class="card-level-pill" id="card-back-level">Lv.1</span>
+                        </div>
+                        <span class="card-flip-badge" style="color:#059669;">裏面 (解答)</span>
                     </div>
                     <div class="card-source-title" id="card-back-source">単元名</div>
                     <div class="card-body-center">
@@ -1976,7 +2128,7 @@
                         <div class="card-note-box tex2jax_process" id="card-back-note" style="display:none;"></div>
                     </div>
                     <div class="card-tap-hint">
-                        <span>👆 カードをタップ または 「🔄 問題に戻る」で問題を表示</span>
+                        <span>👆 タップ または 「🔄 問題に戻る」で問題を表示</span>
                     </div>
                 </div>
             </div>
@@ -1994,20 +2146,20 @@
                 <!-- メインの2大ボタン（親指にジャストフィット） -->
                 <div class="rating-main-row">
                     <button type="button" class="rate-btn-again" id="btn-rate-again">
-                        <span>❌ もう一度</span>
+                        <span class="label">❌ もう一度</span>
                         <span class="sub">数問後に再出題</span>
                     </button>
                     <button type="button" class="rate-btn-good" id="btn-rate-good">
-                        <span>⭕ 覚えた！</span>
+                        <span class="label">⭕ 覚えた！</span>
                         <span class="sub" id="rate-good-interval-sub">3日後復習</span>
                     </button>
                 </div>
                 <!-- サブボタン（問題に戻る / Hard / Easy / AI解説） -->
                 <div class="rating-sub-row">
-                    <button type="button" class="rate-btn-sub" id="btn-unflip-card" style="background:#334155; color:#F8FAFC; border-color:#475569;">🔄 問題に戻る</button>
-                    <button type="button" class="rate-btn-sub" id="btn-rate-hard">⚡ 難しい (明日)</button>
-                    <button type="button" class="rate-btn-sub" id="btn-rate-easy">🌟 かんたん (19日後)</button>
-                    <button type="button" class="rate-btn-ai" id="btn-session-ai-explain">🤖 AI解説</button>
+                    <button type="button" class="rate-btn-sub" id="btn-unflip-card" style="background:rgba(255,255,255,0.12); color:#F8FAFC; border-color:rgba(255,255,255,0.2);">🔄 戻る</button>
+                    <button type="button" class="rate-btn-sub" id="btn-rate-hard">⚡ 難しい</button>
+                    <button type="button" class="rate-btn-sub" id="btn-rate-easy">🌟 簡単</button>
+                    <button type="button" class="rate-btn-ai" id="btn-session-ai-explain">🤖 解説</button>
                 </div>
             </div>
         </div>
@@ -2430,6 +2582,50 @@
                 .replace(/'/g, "&#039;");
         }
 
+        // 🔀 高精度 Fisher-Yates シャッフル
+        function shuffleArray(arr) {
+            const copy = [...arr];
+            for (let i = copy.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [copy[i], copy[j]] = [copy[j], copy[i]];
+            }
+            return copy;
+        }
+
+        // 🖋️ 日本語テキストの自然な句読点・助詞・熟語折り返し補助（変な改行の根絶）
+        function formatJapanesePhrasing(rawText) {
+            if (!rawText || typeof rawText !== "string") return "";
+            
+            // 数式トークンを保護
+            const mathTokens = [];
+            let text = rawText.replace(/(\$\$[\s\S]*?\$\$|\$[^\$]+?\$|\\\[[\s\S]*?\\\]|\\\(.*?\\\))/g, (m) => {
+                mathTokens.push(m);
+                return `___MATH_TOKEN_${mathTokens.length - 1}___`;
+            });
+
+            let safe = escapeHtml(text);
+
+            // 1. 句読点・閉じ括弧・記号の直後に改行促進<wbr>
+            safe = safe.replace(/([、。！？\?：:）\)」』】])/g, '$1<wbr>');
+            
+            // 2. 開き括弧・波ダッシュの直前に改行促進<wbr>
+            safe = safe.replace(/([（\(「『【〜~])/g, '<wbr>$1');
+            
+            // 3. 複合助詞・接続表現の直前に改行促進<wbr>（文意・熟語の泣き別れを防止）
+            safe = safe.replace(/(について|における|において|に対して|にとって|によって|とともに|をはじめ|に関して|として|という|こと|もの|ため|など|および|ならびに|ただし|または|あるいは)/g, '<wbr>$1');
+
+            // 4. 2文字以上の漢字・カタカナに続く一文字助詞の前に区切りを促進
+            safe = safe.replace(/([\u4e00-\u9faf\u30a0-\u30ff]{2,})(は|が|を|に|へ|で|と|より|から)([\u4e00-\u9faf\u3040-\u30ff])/g, '$1<wbr>$2$3');
+
+            // 5. 改行コードを<br>に変換
+            safe = safe.replace(/\r?\n/g, '<br>');
+
+            // 数式トークンを復元
+            safe = safe.replace(/___MATH_TOKEN_(\d+)___/g, (_, idx) => mathTokens[parseInt(idx, 10)] || '');
+
+            return safe;
+        }
+
         function showToast(msg) {
             const container = document.getElementById("m-toast-container");
             if (!container) return;
@@ -2805,9 +3001,9 @@
                                 <button type="button" class="item-act-btn item-btn-play" title="このカードを復習">▶ 特訓</button>
                             </div>
                         </div>
-                        <div class="item-q tex2jax_process">Q. ${escapeHtml(c.question)}</div>
-                        <div class="item-a tex2jax_process">A. ${escapeHtml(c.answer)}</div>
-                        ${c.note ? `<div class="item-note tex2jax_process">💡 ${escapeHtml(c.note)}</div>` : ''}
+                        <div class="item-q tex2jax_process"><strong style="color:var(--text-secondary); margin-right:0.25rem;">Q.</strong>${formatJapanesePhrasing(c.question)}</div>
+                        <div class="item-a tex2jax_process"><strong style="color:#059669; margin-right:0.25rem;">A.</strong>${formatJapanesePhrasing(c.answer)}</div>
+                        ${c.note ? `<div class="item-note tex2jax_process"><span style="font-weight:700; color:#B45309;">💡 ポイント:</span> ${formatJapanesePhrasing(c.note)}</div>` : ''}
                         <div class="item-footer">
                             <span>📘 ${escapeHtml(c.sourceTitle)}</span>
                             <span>${c.nextReviewDate ? `復習期日: ${c.nextReviewDate}` : '未復習'}</span>
@@ -2839,6 +3035,20 @@
         let sessionFailedCards = [];
         let isCardFlipped = false;
         let sessionCurrentMode = "standard"; // standard | reverse
+        let sessionIsShuffle = localStorage.getItem("flora_fc_shuffle") !== "false";
+
+        function updateSessionShuffleUI() {
+            const btn = document.getElementById("session-btn-shuffle");
+            if (btn) {
+                btn.classList.toggle("active", !!sessionIsShuffle);
+                btn.textContent = sessionIsShuffle ? "🔀" : "📋";
+                btn.title = sessionIsShuffle ? "出題順: シャッフルON（タップで単元順に変更）" : "出題順: 順番通り（タップでシャッフルに変更）";
+            }
+            const customChk = document.getElementById("m-custom-shuffle");
+            if (customChk) {
+                customChk.checked = !!sessionIsShuffle;
+            }
+        }
 
         // 音声読み上げ（トグル停止対応）
         function speakCurrentCard() {
@@ -2868,13 +3078,26 @@
         }
 
         // セッション開始
-        function startSession(cards, title, mode = "standard") {
+        function startSession(cards, title, mode = "standard", forceShuffle = null) {
             if (!cards || cards.length === 0) {
                 showToast("出題対象のカードが0件です");
                 return;
             }
             sessionCurrentMode = mode;
-            sessionQueue = [...cards].sort(() => Math.random() - 0.5);
+            if (forceShuffle !== null) {
+                sessionIsShuffle = !!forceShuffle;
+                localStorage.setItem("flora_fc_shuffle", sessionIsShuffle ? "true" : "false");
+            } else {
+                sessionIsShuffle = localStorage.getItem("flora_fc_shuffle") !== "false";
+            }
+            updateSessionShuffleUI();
+
+            // 元の順番を記録
+            cards.forEach((c, idx) => {
+                if (c._origIdx === undefined) c._origIdx = idx;
+            });
+
+            sessionQueue = sessionIsShuffle ? shuffleArray(cards) : [...cards];
             sessionInitialCount = sessionQueue.length;
             sessionMasteredCount = 0;
             sessionFailedCards = [];
@@ -2929,19 +3152,21 @@
             if (backSubj) backSubj.textContent = `${icon} ${s}`;
             if (frontLevel) frontLevel.textContent = curLevel === 0 ? "Lv.0 未学習" : `Lv.${curLevel}`;
             if (backLevel) backLevel.textContent = curLevel === 0 ? "Lv.0 未学習" : `Lv.${curLevel}`;
-            if (frontSource) frontSource.textContent = sessionCurrentCard.sourceTitle || "授業";
-            if (backSource) backSource.textContent = sessionCurrentCard.sourceTitle || "授業";
+            
+            const srcTitleHtml = formatJapanesePhrasing(sessionCurrentCard.sourceTitle || "授業");
+            if (frontSource) frontSource.innerHTML = srcTitleHtml;
+            if (backSource) backSource.innerHTML = srcTitleHtml;
 
-            let qText = sessionCurrentCard.question;
-            let aText = sessionCurrentCard.answer;
+            let qText = sessionCurrentCard.question || "";
+            let aText = sessionCurrentCard.answer || "";
             let qPrompt = "QUESTION";
             let aPrompt = "ANSWER";
 
             if (sessionCurrentMode === "reverse") {
                 // リバース想起: 表面に用語・解答、裏面に問題・定義
-                qText = sessionCurrentCard.answer;
-                aText = sessionCurrentCard.question;
-                qPrompt = "🔄 REVERSE: 用語から意味・定義を想起";
+                qText = sessionCurrentCard.answer || "";
+                aText = sessionCurrentCard.question || "";
+                qPrompt = "🔄 REVERSE: 用語から想起";
                 aPrompt = "DEFINITION / QUESTION";
             }
 
@@ -2951,18 +3176,30 @@
             if (promptAEl) promptAEl.textContent = aPrompt;
 
             if (frontText) {
-                frontText.textContent = qText;
-                frontText.className = "card-q-text tex2jax_process" + (qText.length > 30 ? " is-long" : "");
+                let qClass = "card-q-text tex2jax_process";
+                if (qText.length <= 6 && !containsMath(qText)) {
+                    qClass += " is-short-impact";
+                } else if (qText.length > 28) {
+                    qClass += " is-long";
+                }
+                frontText.className = qClass;
+                frontText.innerHTML = formatJapanesePhrasing(qText);
             }
             if (backText) {
-                backText.textContent = aText;
-                backText.className = "card-a-text tex2jax_process" + (aText.length > 35 ? " is-long" : "");
+                let aClass = "card-a-text tex2jax_process";
+                if (aText.length <= 6 && !containsMath(aText)) {
+                    aClass += " is-short-impact";
+                } else if (aText.length > 32) {
+                    aClass += " is-long";
+                }
+                backText.className = aClass;
+                backText.innerHTML = formatJapanesePhrasing(aText);
             }
 
             if (backNote) {
                 if (sessionCurrentCard.note && sessionCurrentCard.note.trim()) {
                     backNote.style.display = "block";
-                    backNote.innerHTML = `<strong>💡 ポイント:</strong> ${escapeHtml(sessionCurrentCard.note)}`;
+                    backNote.innerHTML = `<span class="note-kicker">💡 ポイント解説</span><div class="note-content">${formatJapanesePhrasing(sessionCurrentCard.note)}</div>`;
                 } else {
                     backNote.style.display = "none";
                 }
@@ -3187,13 +3424,13 @@
         let quizPoolAllAnswers = [];
         let quizAnswerLocked = false;
 
-        function startQuizMode(cards, title = "🎯 スピード4択テスト") {
+        function startQuizMode(cards, title = "🎯 スピード4択テスト", forceShuffle = true) {
             const pool = cards && cards.length >= 4 ? cards : getAllCards();
             if (pool.length < 4) {
                 showToast("4択テストにはカードが4枚以上必要です");
                 return;
             }
-            quizQueue = [...pool].sort(() => Math.random() - 0.5);
+            quizQueue = forceShuffle ? shuffleArray(pool) : [...pool];
             // 制限が指定されていなければ最大15問
             if (quizQueue.length > 15 && (!cards || cards.length > 15)) {
                 quizQueue = quizQueue.slice(0, 15);
@@ -3720,11 +3957,11 @@
                         </div>
                         <div class="ct-preview-q tex2jax_process">
                             <span style="font-weight:800; color:var(--text-secondary); margin-right:0.25rem;">Q.</span>
-                            ${escapeHtml(c.question || "")}
+                            ${formatJapanesePhrasing(c.question || "")}
                         </div>
                         <div class="ct-preview-a tex2jax_process">
                             <span style="font-weight:800; color:#059669; margin-right:0.25rem;">A.</span>
-                            ${escapeHtml(c.answer || "")}
+                            ${formatJapanesePhrasing(c.answer || "")}
                         </div>
                     </div>
                 `;
@@ -3741,6 +3978,10 @@
             const searchInput = document.getElementById("custom-test-search-input");
             const previewSearchInput = document.getElementById("ct-preview-card-search");
             if (previewSearchInput) previewSearchInput.value = "";
+            const chk = document.getElementById("m-custom-shuffle");
+            if (chk) {
+                chk.checked = localStorage.getItem("flora_fc_shuffle") !== "false";
+            }
             if (searchInput) {
                 if (initialSubject) {
                     searchInput.value = initialSubject;
@@ -3898,18 +4139,17 @@
                     }
 
                     let items = [...filtered];
-
-                    // シャッフル
-                    if (isCustomShuffleEnabled()) {
-                        items.sort(() => Math.random() - 0.5);
-                    }
+                    const isShuffle = isCustomShuffleEnabled();
+                    sessionIsShuffle = isShuffle;
+                    localStorage.setItem("flora_fc_shuffle", isShuffle ? "true" : "false");
+                    updateSessionShuffleUI();
 
                     // 枚数制限
                     const limitVal = getSelectedCustomLimit();
                     if (limitVal !== "all") {
                         const maxN = parseInt(limitVal, 10);
                         if (!isNaN(maxN) && maxN > 0) {
-                            items = items.slice(0, maxN);
+                            items = isShuffle ? shuffleArray(items).slice(0, maxN) : items.slice(0, maxN);
                         }
                     }
 
@@ -3917,11 +4157,11 @@
                     closeCustomTestModal();
 
                     if (modeVal === "quiz") {
-                        startQuizMode(items, "🎯 カスタム4択テスト");
+                        startQuizMode(items, "🎯 カスタム4択テスト", isShuffle);
                     } else if (modeVal === "reverse") {
-                        startSession(items, "🔄 リバース想起特訓", "reverse");
+                        startSession(items, "🔄 リバース想起特訓", "reverse", isShuffle);
                     } else {
-                        startSession(items, "🎯 カスタム暗記特訓", "standard");
+                        startSession(items, "🎯 カスタム暗記特訓", "standard", isShuffle);
                     }
                 };
             }
@@ -4004,7 +4244,39 @@
         const btnEasy = document.getElementById("btn-rate-easy");
         if (btnEasy) btnEasy.onclick = () => rateCard("easy");
 
-        // 音声読み上げ & AI
+        // シャッフル切替 & 音声読み上げ & AI
+        const btnShuffle = document.getElementById("session-btn-shuffle");
+        if (btnShuffle) {
+            updateSessionShuffleUI();
+            btnShuffle.onclick = () => {
+                sessionIsShuffle = !sessionIsShuffle;
+                localStorage.setItem("flora_fc_shuffle", sessionIsShuffle ? "true" : "false");
+                updateSessionShuffleUI();
+
+                // 出題中カードを維持しつつ、残りキューの順序を動的に再編成
+                if (sessionQueue && sessionQueue.length > 1) {
+                    const current = sessionQueue[0];
+                    const rest = sessionQueue.slice(1);
+                    if (sessionIsShuffle) {
+                        sessionQueue = [current, ...shuffleArray(rest)];
+                    } else {
+                        rest.sort((a, b) => (a._origIdx || 0) - (b._origIdx || 0));
+                        sessionQueue = [current, ...rest];
+                    }
+                }
+                showToast(sessionIsShuffle ? "🔀 出題順: シャッフルON" : "📋 出題順: 単元順（順番通り）");
+            };
+        }
+
+        const customShuffleEl = document.getElementById("m-custom-shuffle");
+        if (customShuffleEl) {
+            customShuffleEl.onchange = () => {
+                sessionIsShuffle = customShuffleEl.checked;
+                localStorage.setItem("flora_fc_shuffle", sessionIsShuffle ? "true" : "false");
+                updateSessionShuffleUI();
+            };
+        }
+
         const btnSound = document.getElementById("session-btn-sound");
         if (btnSound) btnSound.onclick = () => speakCurrentCard();
         const btnAi = document.getElementById("btn-session-ai-explain");
