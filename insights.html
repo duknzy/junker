@@ -3749,6 +3749,10 @@
         window.removeSingleSelectedUnit = function(unitId, e) {
             if (e) e.stopPropagation();
             selectedInsightUnitIds.delete(unitId);
+            if (typeof selectedLessonFilterIds !== "undefined") {
+                selectedLessonFilterIds.delete(unitId);
+                saveSelectedLessons();
+            }
             saveSelectedInsightUnits();
             updateUnitMultiPickerUI();
             resetDisplayLimits();
@@ -3759,6 +3763,10 @@
         window.clearAllSelectedUnits = function(e) {
             if (e) e.stopPropagation();
             selectedInsightUnitIds.clear();
+            if (typeof selectedLessonFilterIds !== "undefined") {
+                selectedLessonFilterIds.clear();
+                saveSelectedLessons();
+            }
             saveSelectedInsightUnits();
             updateUnitMultiPickerUI();
             resetDisplayLimits();
@@ -3769,10 +3777,13 @@
         function toggleUnitSelection(unitId) {
             if (selectedInsightUnitIds.has(unitId)) {
                 selectedInsightUnitIds.delete(unitId);
+                if (typeof selectedLessonFilterIds !== "undefined") selectedLessonFilterIds.delete(unitId);
             } else {
                 selectedInsightUnitIds.add(unitId);
+                if (typeof selectedLessonFilterIds !== "undefined") selectedLessonFilterIds.add(unitId);
             }
             saveSelectedInsightUnits();
+            if (typeof saveSelectedLessons === "function") saveSelectedLessons();
             updateUnitMultiPickerUI();
             resetDisplayLimits();
             renderActiveView();
@@ -9629,10 +9640,7 @@
                 updateMemorizeViewModeButtons();
 
                 // 4. 暗記事項タブへ切り替え
-                const tabMemorizeBtn = document.getElementById("tab-memorize");
-                if (tabMemorizeBtn) {
-                    switchTab("memorize");
-                }
+                switchTab("memorize");
 
                 // 5. モーダルを閉じる
                 closeLessonPickerModal();
@@ -9649,6 +9657,11 @@
         function openLessonPickerModal() {
             if (!lessonPickerModal) return;
             switchCustomTestTab("settings");
+            // メイン画面で選択されていた単元を同期
+            if (selectedInsightUnitIds && selectedInsightUnitIds.size > 0) {
+                selectedInsightUnitIds.forEach(id => selectedLessonFilterIds.add(id));
+                saveSelectedLessons();
+            }
             lessonPickerModal.style.display = "flex";
             if (lessonPickerSearch) lessonPickerSearch.value = "";
             if (modalPreviewCardSearch) modalPreviewCardSearch.value = "";
