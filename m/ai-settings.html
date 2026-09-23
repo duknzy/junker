@@ -260,6 +260,65 @@
 
     <main class="m-content">
 
+        <!-- 🖼️ 壁紙 & 表示カスタマイズ -->
+        <div class="setting-section">
+            <div class="setting-section-title">🖼️ 壁紙 & 表示カスタマイズ</div>
+            <div class="setting-section-sub">
+                お好みの画像を壁紙としてアップロードし、背景の薄さやカードの透過度、すりガラスぼかし強度を自由に調整できます。
+            </div>
+            <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap; margin-bottom:1rem;">
+                <button type="button" class="m-btn m-btn-primary" id="m-set-wp-upload-btn" style="flex:1; min-width:140px; padding:0.55rem 0.8rem; font-size:var(--fs-xs); font-weight:700; border-radius:10px; display:flex; align-items:center; justify-content:center; gap:0.35rem;">
+                    <span>📷 画像をアップロード</span>
+                </button>
+                <input type="file" id="m-set-wp-input" accept="image/*" style="display:none;">
+                <button type="button" class="m-btn" id="m-set-wp-remove-btn" style="color:var(--error); border-color:#FECACA; background:#FEF2F2; padding:0.55rem 0.75rem; font-size:var(--fs-xs); font-weight:700; border-radius:10px; white-space:nowrap;">
+                    🗑️ デフォルトに戻す
+                </button>
+            </div>
+
+            <!-- スライダー 1: 背景オーバーレイの濃さ -->
+            <div class="wp-slider-group" style="margin-bottom:0.85rem;">
+                <div class="wp-slider-label-row">
+                    <span>背景白オーバーレイ（薄いほど壁紙鮮明）：</span>
+                    <span class="wp-slider-val" id="m-set-val-overlay">22%</span>
+                </div>
+                <input type="range" class="wp-range-input" id="m-set-range-overlay" min="0" max="80" step="5" value="22">
+                <div style="display:flex; justify-content:space-between; font-size:0.68rem; color:var(--text-muted); margin-top:0.2rem;">
+                    <span>0% (壁紙くっきり)</span>
+                    <span>40%</span>
+                    <span>80% (白め)</span>
+                </div>
+            </div>
+
+            <!-- スライダー 2: カード・パネルの不透明度 -->
+            <div class="wp-slider-group" style="margin-bottom:0.85rem;">
+                <div class="wp-slider-label-row">
+                    <span>カード・パネルの不透明度：</span>
+                    <span class="wp-slider-val" id="m-set-val-card">85%</span>
+                </div>
+                <input type="range" class="wp-range-input" id="m-set-range-card" min="30" max="95" step="5" value="85">
+                <div style="display:flex; justify-content:space-between; font-size:0.68rem; color:var(--text-muted); margin-top:0.2rem;">
+                    <span>30% (透明グラス)</span>
+                    <span>60%</span>
+                    <span>95% (ソリッド白)</span>
+                </div>
+            </div>
+
+            <!-- スライダー 3: すりガラスのぼかし強度 -->
+            <div class="wp-slider-group">
+                <div class="wp-slider-label-row">
+                    <span>すりガラスのぼかし強度 (Blur)：</span>
+                    <span class="wp-slider-val" id="m-set-val-blur">8px</span>
+                </div>
+                <input type="range" class="wp-range-input" id="m-set-range-blur" min="0" max="20" step="1" value="8">
+                <div style="display:flex; justify-content:space-between; font-size:0.68rem; color:var(--text-muted); margin-top:0.2rem;">
+                    <span>0px (なし)</span>
+                    <span>10px</span>
+                    <span>20px (強)</span>
+                </div>
+            </div>
+        </div>
+
         <!-- 🔑 Gemini APIキー管理 -->
         <div class="setting-section">
             <div class="setting-section-title">✨ Gemini APIキー</div>
@@ -633,6 +692,102 @@
                 importFileInput.value = "";
             });
         }
+
+        // ==================== 🖼️ 壁紙 & 表示カスタマイズ ====================
+        (function initWallpaperPageControls() {
+            const rangeOverlay = document.getElementById('m-set-range-overlay');
+            const rangeCard = document.getElementById('m-set-range-card');
+            const rangeBlur = document.getElementById('m-set-range-blur');
+
+            const valOverlay = document.getElementById('m-set-val-overlay');
+            const valCard = document.getElementById('m-set-val-card');
+            const valBlur = document.getElementById('m-set-val-blur');
+
+            const uploadBtn = document.getElementById('m-set-wp-upload-btn');
+            const fileInput = document.getElementById('m-set-wp-input');
+            const removeBtn = document.getElementById('m-set-wp-remove-btn');
+
+            const currentOverlay = localStorage.getItem('flora_wallpaper_overlay') || '0.22';
+            const currentCard = localStorage.getItem('flora_wallpaper_card') || '0.85';
+            const currentBlur = localStorage.getItem('flora_wallpaper_blur') || '8';
+
+            if (rangeOverlay && valOverlay) {
+                rangeOverlay.value = Math.round(currentOverlay * 100);
+                valOverlay.textContent = `${Math.round(currentOverlay * 100)}%`;
+                rangeOverlay.oninput = (e) => {
+                    const val = e.target.value;
+                    const decimal = (val / 100).toFixed(2);
+                    valOverlay.textContent = `${val}%`;
+                    document.documentElement.style.setProperty('--wp-overlay-opacity', decimal);
+                    localStorage.setItem('flora_wallpaper_overlay', decimal);
+                };
+            }
+
+            if (rangeCard && valCard) {
+                rangeCard.value = Math.round(currentCard * 100);
+                valCard.textContent = `${Math.round(currentCard * 100)}%`;
+                rangeCard.oninput = (e) => {
+                    const val = e.target.value;
+                    const decimal = (val / 100).toFixed(2);
+                    valCard.textContent = `${val}%`;
+                    document.documentElement.style.setProperty('--wp-card-opacity', decimal);
+                    localStorage.setItem('flora_wallpaper_card', decimal);
+                };
+            }
+
+            if (rangeBlur && valBlur) {
+                rangeBlur.value = currentBlur;
+                valBlur.textContent = `${currentBlur}px`;
+                rangeBlur.oninput = (e) => {
+                    const val = e.target.value;
+                    valBlur.textContent = `${val}px`;
+                    document.documentElement.style.setProperty('--wp-blur', `${val}px`);
+                    localStorage.setItem('flora_wallpaper_blur', val);
+                };
+            }
+
+            if (uploadBtn && fileInput) {
+                uploadBtn.onclick = () => fileInput.click();
+                fileInput.onchange = (e) => {
+                    const file = e.target.files && e.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                        const dataUrl = ev.target.result;
+                        if (window.floraWallpaperDB) {
+                            window.floraWallpaperDB.save(dataUrl).catch(err => console.warn('[Flora Mobile] DB save error:', err));
+                            try { localStorage.removeItem('flora_wallpaper'); } catch(e) {}
+                        } else {
+                            try { localStorage.setItem('flora_wallpaper', dataUrl); } catch(err) {}
+                        }
+                        if (window.applyFloraWallpaper) {
+                            window.applyFloraWallpaper(dataUrl);
+                        } else {
+                            document.body.style.setProperty('--user-wallpaper', `url("${dataUrl}")`);
+                            document.body.classList.add('has-custom-wallpaper');
+                        }
+                        if (window.mToast) mToast('🖼️ 新しい壁紙を設定しました！');
+                    };
+                    reader.readAsDataURL(file);
+                };
+            }
+
+            if (removeBtn) {
+                removeBtn.onclick = () => {
+                    if (confirm('壁紙を解除してデフォルトの背景に戻しますか？')) {
+                        if (window.removeFloraWallpaper) {
+                            window.removeFloraWallpaper();
+                        } else {
+                            if (window.floraWallpaperDB) window.floraWallpaperDB.remove();
+                            try { localStorage.removeItem('flora_wallpaper'); } catch(e) {}
+                            document.body.classList.remove('has-custom-wallpaper');
+                            document.body.style.removeProperty('--user-wallpaper');
+                        }
+                        if (window.mToast) mToast('壁紙をデフォルトに戻しました');
+                    }
+                };
+            }
+        })();
 
         renderAllKeyLists();
         renderFeatureCards();
