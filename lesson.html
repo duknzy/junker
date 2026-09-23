@@ -3455,6 +3455,9 @@
                                         <option value="title_asc">🔤 授業タイトル順</option>
                                     </select>
                                 </div>
+                                <button type="button" class="tactile-btn" id="btn-batch-generate-choice-drills" style="font-size:0.75rem; font-weight:700; padding:0.4rem 0.85rem; height:36px; background:#EEF2FF; color:#4F46E5; border:1px solid #C7D2FE; border-radius:var(--radius-full); white-space:nowrap; display:inline-flex; align-items:center; gap:0.35rem; cursor:pointer;" title="選択問題（共通テスト形式）が未作成の過去授業を検出し、API制限に配慮しながら段階的に一括作成します">
+                                    🎯 選択問題を一括生成
+                                </button>
                                 <button type="button" class="tactile-btn" id="btn-autofix-lesson-subjects" style="font-size:0.75rem; font-weight:700; padding:0.4rem 0.85rem; height:36px; background:var(--brand-light); color:var(--brand-primary); border:1px solid var(--brand-border); border-radius:var(--radius-full); white-space:nowrap; display:inline-flex; align-items:center; gap:0.35rem; cursor:pointer;" title="「その他」や「未分類」の授業のタイトル・内容を自動判定し、政経・化学などの適切な教科へ一括で分類し直します（暗記カードも同期）">
                                     ⚡ 過去の授業の教科を一括自動判別
                                 </button>
@@ -4029,6 +4032,81 @@
             <div style="display: flex; justify-content: flex-end; gap: 0.6rem;">
                 <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="cancel-batch-autofix-btn">キャンセル</button>
                 <button type="button" class="flora-btn flora-btn-primary btn-sm" id="confirm-batch-autofix-btn">⚡ 確定して一括適用（暗記カードも同期）</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🎯 選択問題の一括段階的生成モーダル -->
+    <div class="modal-overlay" id="batch-choice-drills-modal" style="display: none;">
+        <div class="modal-content" style="max-width: 600px; width: 92%;">
+            <div class="modal-header">
+                <div style="display:flex; align-items:center; gap:0.5rem;">
+                    <span style="font-size:1.25rem;">🎯</span>
+                    <div>
+                        <h3 class="modal-title" style="margin:0;">選択問題の一括段階的作成</h3>
+                        <div style="font-size:0.72rem; color:var(--text-muted); font-weight:normal; margin-top:2px;">共通テスト形式・出題者の罠解析（各パート4〜5問）</div>
+                    </div>
+                </div>
+                <button type="button" class="modal-close-btn" id="close-batch-choice-drills-modal-btn">✕</button>
+            </div>
+
+            <!-- 初期設定ビュー -->
+            <div id="batch-choice-drills-setup-view">
+                <p style="font-size:0.82rem; color:var(--text-secondary); line-height:1.55; margin-bottom:0.75rem;">
+                    選択問題がまだ作成されていない過去の授業を検出しました。<br>
+                    <span style="color:var(--brand-primary); font-weight:700;">※ APIレートリミットを避けるため、1件完了ごとにクールダウンを挟みながら段階的に生成・即時保存します。</span>
+                </p>
+
+                <!-- 教科フィルタータブ -->
+                <div style="display:flex; gap:0.4rem; flex-wrap:wrap; margin-bottom:0.75rem;" id="batch-choice-subject-chips"></div>
+
+                <!-- 選択操作バー -->
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem; font-size:0.75rem; color:var(--text-secondary);">
+                    <div>対象授業: <b id="batch-choice-target-count" style="color:var(--text-primary);">0</b> 件</div>
+                    <div style="display:flex; gap:0.5rem;">
+                        <button type="button" class="tactile-btn" id="btn-batch-choice-select-all" style="font-size:0.7rem; padding:0.2rem 0.5rem; background:var(--bg-subtle);">全選択</button>
+                        <button type="button" class="tactile-btn" id="btn-batch-choice-deselect-all" style="font-size:0.7rem; padding:0.2rem 0.5rem; background:var(--bg-subtle);">全解除</button>
+                    </div>
+                </div>
+
+                <!-- 候補リスト -->
+                <div id="batch-choice-candidates-list" style="max-height: 260px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.45rem; margin-bottom: 1rem; border:1px solid var(--border-color); border-radius:var(--radius-md); padding:0.4rem; background:var(--bg-subtle);"></div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 0.6rem;">
+                    <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="cancel-batch-choice-btn">キャンセル</button>
+                    <button type="button" class="flora-btn flora-btn-primary btn-sm" id="start-batch-choice-btn" style="background:#4F46E5; border-color:#4F46E5; color:#fff; font-weight:700;">
+                        🎯 一括生成を開始する
+                    </button>
+                </div>
+            </div>
+
+            <!-- 進行中・完了ビュー -->
+            <div id="batch-choice-drills-progress-view" style="display:none;">
+                <div style="margin-bottom:1rem;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.82rem; font-weight:700; margin-bottom:0.4rem;">
+                        <span id="batch-choice-progress-label">処理準備中...</span>
+                        <span id="batch-choice-progress-percent" style="color:var(--brand-primary);">0%</span>
+                    </div>
+                    <div style="height:8px; background:var(--bg-subtle); border-radius:var(--radius-full); overflow:hidden; border:1px solid var(--border-color);">
+                        <div id="batch-choice-progress-bar" style="height:100%; width:0%; background:linear-gradient(90deg, #4F46E5, #059669); transition:width 0.3s ease;"></div>
+                    </div>
+                    <div id="batch-choice-current-task" style="font-size:0.78rem; color:var(--text-secondary); margin-top:0.45rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                        待機中...
+                    </div>
+                </div>
+
+                <!-- リアルタイムログ -->
+                <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted); margin-bottom:0.35rem;">処理履歴ログ</div>
+                <div id="batch-choice-log-list" style="max-height: 180px; overflow-y: auto; background:var(--bg-subtle); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:0.6rem; display:flex; flex-direction:column; gap:0.35rem; font-size:0.76rem; font-family:monospace; margin-bottom:1rem;"></div>
+
+                <div style="display:flex; justify-content:flex-end; gap:0.6rem;">
+                    <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="stop-batch-choice-btn" style="color:var(--error); border-color:var(--error);">
+                        ⏸️ 一時停止 / 中断
+                    </button>
+                    <button type="button" class="flora-btn flora-btn-primary btn-sm" id="finish-batch-choice-btn" style="display:none;">
+                        ✅ 完了して閉じる
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -8757,6 +8835,292 @@ ${existingLeads}
         });
         el("confirm-batch-autofix-btn")?.addEventListener("click", applyBatchAutofix);
         el("btn-autofix-lesson-subjects")?.addEventListener("click", openBatchAutofixModal);
+
+        // ==============================================================
+        // 🎯 選択問題の一括段階的生成（キュー処理・APIレートリミット配慮）
+        // ==============================================================
+        let batchChoiceDrillCandidates = [];
+        let batchChoiceSelectedSubject = "all";
+        let isBatchGeneratingChoiceDrills = false;
+        let batchChoiceStopRequested = false;
+
+        function openBatchChoiceDrillsModal() {
+            if (!lastLessonsSnapshot) {
+                showToast("授業データを読み込み中です...", "info", 2000);
+                return;
+            }
+
+            // choiceDrillsが未作成（null, undefined, 空配列）の授業を抽出
+            const candidates = [];
+            Object.entries(lastLessonsSnapshot).forEach(([id, l]) => {
+                if (!l) return;
+                const drills = Array.isArray(l.choiceDrills) ? l.choiceDrills : [];
+                if (drills.length === 0) {
+                    candidates.push({
+                        id,
+                        title: l.title || "無題の授業",
+                        subject: l.subject || detectLessonSubject(l) || "その他",
+                        partsCount: Array.isArray(l.parts) ? l.parts.length : 1,
+                        lesson: l,
+                        selected: true
+                    });
+                }
+            });
+
+            if (candidates.length === 0) {
+                showToast("すべての授業で選択問題がすでに作成されています！🎉", "success", 3000);
+                return;
+            }
+
+            batchChoiceDrillCandidates = candidates;
+            batchChoiceSelectedSubject = "all";
+
+            const setupView = el("batch-choice-drills-setup-view");
+            const progressView = el("batch-choice-drills-progress-view");
+            if (setupView) setupView.style.display = "block";
+            if (progressView) progressView.style.display = "none";
+
+            renderBatchChoiceSubjectChips();
+            renderBatchChoiceCandidatesList();
+
+            const modal = el("batch-choice-drills-modal");
+            if (modal) modal.style.display = "flex";
+        }
+
+        function renderBatchChoiceSubjectChips() {
+            const chipsContainer = el("batch-choice-subject-chips");
+            if (!chipsContainer) return;
+
+            const subjectsCount = {};
+            batchChoiceDrillCandidates.forEach(c => {
+                subjectsCount[c.subject] = (subjectsCount[c.subject] || 0) + 1;
+            });
+
+            let html = `<button type="button" class="lesson-subject-chip ${batchChoiceSelectedSubject === 'all' ? 'active' : ''}" onclick="filterBatchChoiceBySubject('all')">すべて (${batchChoiceDrillCandidates.length})</button>`;
+            Object.entries(subjectsCount).forEach(([subj, count]) => {
+                const icon = LESSON_SUBJECT_ICONS[subj] || "📎";
+                html += `<button type="button" class="lesson-subject-chip ${batchChoiceSelectedSubject === subj ? 'active' : ''}" onclick="filterBatchChoiceBySubject('${escapeHtml(subj)}')">${icon} ${escapeHtml(subj)} (${count})</button>`;
+            });
+            chipsContainer.innerHTML = html;
+        }
+
+        window.filterBatchChoiceBySubject = function(subj) {
+            batchChoiceSelectedSubject = subj;
+            renderBatchChoiceSubjectChips();
+            renderBatchChoiceCandidatesList();
+        };
+
+        function renderBatchChoiceCandidatesList() {
+            const listEl = el("batch-choice-candidates-list");
+            const countEl = el("batch-choice-target-count");
+            if (!listEl) return;
+
+            const visibleItems = batchChoiceDrillCandidates.filter(c => {
+                if (batchChoiceSelectedSubject === "all") return true;
+                return c.subject === batchChoiceSelectedSubject;
+            });
+
+            const selectedCount = visibleItems.filter(c => c.selected).length;
+            if (countEl) countEl.textContent = `${selectedCount} / ${visibleItems.length}`;
+
+            if (visibleItems.length === 0) {
+                listEl.innerHTML = `<div style="text-align:center; padding:1.5rem; color:var(--text-muted); font-size:0.8rem;">この教科に未作成の授業はありません。</div>`;
+                return;
+            }
+
+            listEl.innerHTML = visibleItems.map(c => `
+                <label style="display:flex; align-items:center; gap:0.6rem; padding:0.5rem 0.75rem; background:var(--bg-surface); border:1px solid var(--border-color); border-radius:var(--radius-md); cursor:pointer; user-select:none;">
+                    <input type="checkbox" ${c.selected ? "checked" : ""} onchange="toggleBatchChoiceCandidateSelection('${c.id}', this.checked)" style="accent-color:var(--brand-primary); cursor:pointer; width:16px; height:16px;">
+                    <div style="flex:1; min-width:0;">
+                        <div style="font-size:0.84rem; font-weight:700; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                            ${escapeHtml(c.title)}
+                        </div>
+                        <div style="font-size:0.72rem; color:var(--text-secondary); display:flex; gap:0.4rem; align-items:center; margin-top:2px;">
+                            <span>${LESSON_SUBJECT_ICONS[c.subject] || "📎"} ${escapeHtml(c.subject)}</span>
+                            <span>•</span>
+                            <span>全${c.partsCount}パート（約${c.partsCount * 5}問）</span>
+                        </div>
+                    </div>
+                </label>
+            `).join("");
+        }
+
+        window.toggleBatchChoiceCandidateSelection = function(id, checked) {
+            const item = batchChoiceDrillCandidates.find(c => c.id === id);
+            if (item) item.selected = checked;
+            const countEl = el("batch-choice-target-count");
+            const visibleItems = batchChoiceDrillCandidates.filter(c => batchChoiceSelectedSubject === "all" || c.subject === batchChoiceSelectedSubject);
+            const selectedCount = visibleItems.filter(c => c.selected).length;
+            if (countEl) countEl.textContent = `${selectedCount} / ${visibleItems.length}`;
+        };
+
+        el("btn-batch-choice-select-all")?.addEventListener("click", () => {
+            batchChoiceDrillCandidates.forEach(c => {
+                if (batchChoiceSelectedSubject === "all" || c.subject === batchChoiceSelectedSubject) {
+                    c.selected = true;
+                }
+            });
+            renderBatchChoiceCandidatesList();
+        });
+
+        el("btn-batch-choice-deselect-all")?.addEventListener("click", () => {
+            batchChoiceDrillCandidates.forEach(c => {
+                if (batchChoiceSelectedSubject === "all" || c.subject === batchChoiceSelectedSubject) {
+                    c.selected = false;
+                }
+            });
+            renderBatchChoiceCandidatesList();
+        });
+
+        async function startBatchChoiceDrillsGeneration() {
+            if (!loginUid) {
+                showToast("ログインが必要です。", "error", 2000);
+                return;
+            }
+
+            const targets = batchChoiceDrillCandidates.filter(c => {
+                const matchesSubj = (batchChoiceSelectedSubject === "all" || c.subject === batchChoiceSelectedSubject);
+                return matchesSubj && c.selected;
+            });
+
+            if (targets.length === 0) {
+                showToast("選択された授業がありません。", "warning", 2500);
+                return;
+            }
+
+            el("batch-choice-drills-setup-view").style.display = "none";
+            el("batch-choice-drills-progress-view").style.display = "block";
+            el("stop-batch-choice-btn").style.display = "inline-flex";
+            el("finish-batch-choice-btn").style.display = "none";
+
+            const logList = el("batch-choice-log-list");
+            if (logList) logList.innerHTML = "";
+
+            function addLog(msg, type = "info") {
+                if (!logList) return;
+                const color = type === "success" ? "#059669" : (type === "error" ? "#dc2626" : (type === "warn" ? "#d97706" : "var(--text-secondary)"));
+                const time = new Date().toLocaleTimeString();
+                const div = document.createElement("div");
+                div.style.color = color;
+                div.textContent = `[${time}] ${msg}`;
+                logList.appendChild(div);
+                logList.scrollTop = logList.scrollHeight;
+            }
+
+            isBatchGeneratingChoiceDrills = true;
+            batchChoiceStopRequested = false;
+
+            let successCount = 0;
+            let failCount = 0;
+            let totalQuestionsGenerated = 0;
+            const total = targets.length;
+
+            addLog(`🚀 選択問題の一括作成を開始します（対象: 全${total}件）`);
+            addLog(`ℹ️ APIクォータ保護のため、各授業完了ごとに約1.5秒のクールダウンを設けます`);
+
+            for (let i = 0; i < total; i++) {
+                if (batchChoiceStopRequested) {
+                    addLog(`⏸️ 処理が中断されました。これまでに作成された問題は安全に保存されています。`, "warn");
+                    break;
+                }
+
+                const target = targets[i];
+                const progressPct = Math.round((i / total) * 100);
+
+                el("batch-choice-progress-label").textContent = `処理中: ${i + 1} / ${total} 件目`;
+                el("batch-choice-progress-percent").textContent = `${progressPct}%`;
+                el("batch-choice-progress-bar").style.width = `${progressPct}%`;
+                el("batch-choice-current-task").textContent = `⏳「${target.title}」（${target.subject} / ${target.partsCount}パート）を分析・生成中...`;
+
+                addLog(`[${i + 1}/${total}] ⏳「${target.title}」の選択問題を生成中...`);
+
+                try {
+                    const lesson = target.lesson;
+                    const subject = target.subject || detectLessonSubject(lesson) || "その他";
+                    const parts = Array.isArray(lesson.parts) && lesson.parts.length > 0 ? lesson.parts : null;
+
+                    const drills = await generateChoiceDrills(
+                        lesson.extractedText || "",
+                        lesson.title || "",
+                        subject,
+                        parts,
+                        5
+                    );
+
+                    if (!Array.isArray(drills) || drills.length === 0) {
+                        throw new Error("問題の生成結果が空でした");
+                    }
+
+                    const now = new Date().toISOString();
+                    await update(ref(database, `users/${loginUid}/lessons/${target.id}`), {
+                        choiceDrills: drills,
+                        updatedAt: now
+                    });
+
+                    if (lastLessonsSnapshot && lastLessonsSnapshot[target.id]) {
+                        lastLessonsSnapshot[target.id].choiceDrills = drills;
+                        lastLessonsSnapshot[target.id].updatedAt = now;
+                    }
+                    if (currentLesson && currentLesson.id === target.id) {
+                        currentLesson.choiceDrills = drills;
+                        if (typeof renderChoiceDrills === "function") renderChoiceDrills();
+                    }
+
+                    successCount++;
+                    totalQuestionsGenerated += drills.length;
+                    addLog(`✓「${target.title}」: ${drills.length}問の選択問題を作成・保存しました`, "success");
+
+                } catch (err) {
+                    console.error(`Error generating drills for ${target.title}:`, err);
+                    failCount++;
+                    addLog(`✕「${target.title}」の生成に失敗: ${err.message}`, "error");
+                }
+
+                if (i < total - 1 && !batchChoiceStopRequested) {
+                    el("batch-choice-current-task").textContent = `⏱️ APIクォータ保護インターバル中（1.5秒待機）...`;
+                    await new Promise(r => setTimeout(r, 1500));
+                }
+            }
+
+            isBatchGeneratingChoiceDrills = false;
+            el("batch-choice-progress-bar").style.width = `100%`;
+            el("batch-choice-progress-percent").textContent = `100%`;
+            el("batch-choice-progress-label").textContent = batchChoiceStopRequested ? "⏸️ 処理を一時停止しました" : "🎉 一括作成が完了しました！";
+            el("batch-choice-current-task").textContent = `結果: 成功 ${successCount}件（計${totalQuestionsGenerated}問作成）/ 失敗 ${failCount}件`;
+
+            addLog(`🏁 処理完了: 成功 ${successCount}件（計${totalQuestionsGenerated}問）、失敗 ${failCount}件`, "info");
+
+            el("stop-batch-choice-btn").style.display = "none";
+            el("finish-batch-choice-btn").style.display = "inline-flex";
+
+            renderLessonList(lastLessonsSnapshot);
+            showToast(`🎉 選択問題の一括作成が完了しました！（${successCount}件 / ${totalQuestionsGenerated}問）`, "success", 4000);
+        }
+
+        function stopBatchChoiceDrillsGeneration() {
+            if (!isBatchGeneratingChoiceDrills) return;
+            batchChoiceStopRequested = true;
+            el("batch-choice-current-task").textContent = "⏸️ 現在の処理が終了次第、安全に停止します...";
+        }
+
+        // イベントバインド
+        el("btn-batch-generate-choice-drills")?.addEventListener("click", openBatchChoiceDrillsModal);
+        el("close-batch-choice-drills-modal-btn")?.addEventListener("click", () => {
+            if (isBatchGeneratingChoiceDrills) {
+                if (!confirm("現在一括作成の処理中です。中断しますか？")) return;
+                stopBatchChoiceDrillsGeneration();
+            }
+            el("batch-choice-drills-modal").style.display = "none";
+        });
+        el("cancel-batch-choice-btn")?.addEventListener("click", () => el("batch-choice-drills-modal").style.display = "none");
+        el("start-batch-choice-btn")?.addEventListener("click", startBatchChoiceDrillsGeneration);
+        el("stop-batch-choice-btn")?.addEventListener("click", stopBatchChoiceDrillsGeneration);
+        el("finish-batch-choice-btn")?.addEventListener("click", () => el("batch-choice-drills-modal").style.display = "none");
+        el("batch-choice-drills-modal")?.addEventListener("click", (e) => {
+            if (e.target.id === "batch-choice-drills-modal" && !isBatchGeneratingChoiceDrills) {
+                el("batch-choice-drills-modal").style.display = "none";
+            }
+        });
 
         const lessonSearchInputEl = el("lesson-search-input");
         if (lessonSearchInputEl) {
