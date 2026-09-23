@@ -1924,6 +1924,224 @@
             padding: 0.2rem 0.4rem;
         }
 
+        /* 🔴 赤シートツールバー & 赤シートマスクスタイル */
+        .red-sheet-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            margin: 0.25rem 1rem 0.55rem 1rem;
+            padding: 0.4rem 0.75rem;
+            background: #FFFFFF;
+            border-radius: 12px;
+            border: 1px solid var(--memo-border);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+            flex-wrap: wrap;
+        }
+        .red-sheet-toggle-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.35rem 0.75rem;
+            border-radius: 9999px;
+            border: 1.5px solid #FCA5A5;
+            background: #FEF2F2;
+            color: #DC2626;
+            font-size: 0.82rem;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .red-sheet-toggle-btn.active {
+            background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+            color: #FFFFFF;
+            border-color: #B91C1C;
+            box-shadow: 0 2px 8px rgba(220, 38, 38, 0.35);
+        }
+        .red-sheet-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #DC2626;
+            transition: background 0.2s;
+        }
+        .red-sheet-toggle-btn.active .red-sheet-dot {
+            background: #FFFFFF;
+            box-shadow: 0 0 6px rgba(255, 255, 255, 0.8);
+        }
+        .red-sheet-status-badge {
+            font-size: 0.68rem;
+            padding: 0.1rem 0.35rem;
+            border-radius: 6px;
+            background: rgba(220, 38, 38, 0.12);
+            font-weight: 800;
+        }
+        .red-sheet-toggle-btn.active .red-sheet-status-badge {
+            background: rgba(255, 255, 255, 0.25);
+            color: #FFFFFF;
+        }
+        .red-sheet-sub-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        .red-sheet-sub-btn {
+            background: #F8FAFC;
+            border: 1px solid #E2E8F0;
+            color: #475569;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 0.25rem 0.55rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .red-sheet-sub-btn:active {
+            background: #E2E8F0;
+            transform: scale(0.96);
+        }
+        .red-sheet-hint {
+            font-size: 0.72rem;
+            color: #94A3B8;
+            font-weight: 600;
+        }
+
+        /* 赤シートマスクボックス */
+        .red-sheet-answer-box {
+            position: relative;
+            overflow: hidden;
+            border-radius: 8px;
+            transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .red-sheet-answer-box.is-masked {
+            cursor: pointer;
+            border: 1.5px dashed #EF4444 !important;
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(220, 38, 38, 0.15) 100%) !important;
+            padding: 0.6rem 0.8rem !important;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            box-shadow: inset 0 1px 3px rgba(220, 38, 38, 0.06);
+        }
+        .red-sheet-answer-box.is-masked:active {
+            transform: scale(0.985);
+            background: rgba(239, 68, 68, 0.2) !important;
+        }
+        .red-sheet-answer-box.is-masked .red-sheet-cover {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            gap: 0.4rem;
+        }
+        .red-sheet-answer-box.is-masked .red-sheet-real-content {
+            display: none !important;
+        }
+        .red-sheet-answer-box:not(.is-masked) .red-sheet-cover {
+            display: none !important;
+        }
+        .red-sheet-cover-inner {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            font-size: 0.84rem;
+            font-weight: 700;
+            color: #DC2626;
+        }
+        .red-sheet-cover-icon {
+            font-size: 0.95rem;
+            filter: drop-shadow(0 1px 2px rgba(220, 38, 38, 0.3));
+        }
+        .red-sheet-peek-badge {
+            font-size: 0.72rem;
+            font-weight: 800;
+            background: #DC2626;
+            color: #FFFFFF;
+            padding: 0.22rem 0.55rem;
+            border-radius: 9999px;
+            box-shadow: 0 1px 4px rgba(220, 38, 38, 0.25);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.2rem;
+            flex-shrink: 0;
+        }
+        .red-sheet-answer-box.is-revealed {
+            animation: redSheetRevealPop 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+            border-left: 3.5px solid #059669;
+            background: #ECFDF5;
+            padding: 0.45rem 0.65rem;
+            border-radius: 8px;
+        }
+        .red-sheet-remask-btn {
+            background: #FEF2F2;
+            border: 1px solid #FCA5A5;
+            color: #DC2626;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 0.15rem 0.45rem;
+            border-radius: 6px;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: all 0.15s;
+        }
+        .red-sheet-remask-btn:active {
+            background: #EF4444;
+            color: #FFFFFF;
+        }
+        .red-sheet-note-hidden {
+            display: none !important;
+        }
+        @keyframes redSheetRevealPop {
+            0% { opacity: 0.4; transform: scale(0.97); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .memo-unit-chip-redsheet {
+            background: #FEF2F2;
+            border: 1.2px solid #FCA5A5;
+            color: #DC2626;
+            font-size: 0.74rem;
+            font-weight: 800;
+            border-radius: 9999px;
+            padding: 0.2rem 0.65rem;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .memo-unit-chip-redsheet:active {
+            transform: scale(0.95);
+            background: #FEE2E2;
+        }
+        .ct-view-cards-redsheet-btn {
+            background: #FEF2F2;
+            border: 1.5px solid #F87171;
+            color: #DC2626;
+            font-weight: 800;
+            font-size: 0.84rem;
+            padding: 0.65rem 0.95rem;
+            border-radius: 12px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.3rem;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+        .ct-view-cards-redsheet-btn:active {
+            background: #EF4444;
+            color: #FFFFFF;
+            transform: scale(0.97);
+        }
+
         /* トースト通知 */
         #m-toast-container {
             position: fixed;
@@ -2065,6 +2283,24 @@
 
         <div class="memo-chips-row" id="memo-subject-chips">
             <!-- JSで動的生成 -->
+        </div>
+
+        <!-- 🔴 赤シート コントロールツールバー -->
+        <div class="red-sheet-toolbar" id="red-sheet-toolbar">
+            <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+                <button type="button" class="red-sheet-toggle-btn" id="btn-red-sheet-toggle" title="答えを赤シートで隠して暗記テスト">
+                    <span class="red-sheet-dot"></span>
+                    <span class="red-sheet-toggle-label">🔴 赤シート</span>
+                    <span class="red-sheet-status-badge" id="red-sheet-status-badge">OFF</span>
+                </button>
+                <div class="red-sheet-sub-actions" id="red-sheet-sub-actions" style="display:none;">
+                    <button type="button" class="red-sheet-sub-btn" id="btn-red-sheet-reveal-all" title="すべての答えを一度に表示">👁️ 全表示</button>
+                    <button type="button" class="red-sheet-sub-btn" id="btn-red-sheet-hide-all" title="すべての答えを赤シートで隠す">🙈 全隠し</button>
+                </div>
+            </div>
+            <div class="red-sheet-hint" id="red-sheet-hint" style="display:none;">
+                <span>👆 タップで答えを確認</span>
+            </div>
         </div>
 
         <!-- 📋 カード一覧 -->
@@ -2338,10 +2574,13 @@
                 </div>
                 <div class="ct-footer-actions">
                     <button type="button" class="ct-view-cards-btn" id="ct-btn-view-cards" title="この条件のまま一覧画面でカードを確認">
-                        <span>🃏 カード一覧を表示</span>
+                        <span>🃏 通常一覧</span>
+                    </button>
+                    <button type="button" class="ct-view-cards-redsheet-btn" id="ct-btn-view-cards-redsheet" title="赤シートで答えを隠して一覧表示">
+                        <span>🔴 赤シート</span>
                     </button>
                     <button type="button" class="ct-start-btn" id="ct-btn-start">
-                        🚀 テスト開始
+                        🚀 特訓開始
                     </button>
                 </div>
             </div>
@@ -2967,6 +3206,96 @@
             });
         }
 
+        // ==========================================================
+        // 🔴 赤シート（答え目隠し）モード状態管理
+        // ==========================================================
+        let isRedSheetActive = localStorage.getItem("flora_red_sheet_mode") === "true";
+        let revealedCardIds = new Set();
+        let isRedSheetToolbarBound = false;
+
+        function updateRedSheetToolbarUI() {
+            const toggleBtn = document.getElementById("btn-red-sheet-toggle");
+            const statusBadge = document.getElementById("red-sheet-status-badge");
+            const subActions = document.getElementById("red-sheet-sub-actions");
+            const hint = document.getElementById("red-sheet-hint");
+            if (!toggleBtn) return;
+
+            if (isRedSheetActive) {
+                toggleBtn.classList.add("active");
+                if (statusBadge) statusBadge.textContent = "ON";
+                if (subActions) subActions.style.display = "flex";
+                if (hint) hint.style.display = "block";
+            } else {
+                toggleBtn.classList.remove("active");
+                if (statusBadge) statusBadge.textContent = "OFF";
+                if (subActions) subActions.style.display = "none";
+                if (hint) hint.style.display = "none";
+            }
+        }
+
+        function toggleRedSheetMode(forceVal = null) {
+            if (forceVal !== null) {
+                isRedSheetActive = Boolean(forceVal);
+            } else {
+                isRedSheetActive = !isRedSheetActive;
+            }
+            try {
+                localStorage.setItem("flora_red_sheet_mode", isRedSheetActive ? "true" : "false");
+            } catch(e) {}
+            revealedCardIds.clear();
+            updateRedSheetToolbarUI();
+            const cards = getAllCards();
+            renderCardsList(cards);
+            if (isRedSheetActive) {
+                showToast("🔴 赤シートON：答えをタップすると表示されます");
+            } else {
+                showToast("赤シートをOFFにしました");
+            }
+        }
+
+        function initRedSheetToolbarEvents() {
+            if (isRedSheetToolbarBound) return;
+            const toggleBtn = document.getElementById("btn-red-sheet-toggle");
+            const btnRevealAll = document.getElementById("btn-red-sheet-reveal-all");
+            const btnHideAll = document.getElementById("btn-red-sheet-hide-all");
+
+            if (toggleBtn) {
+                toggleBtn.onclick = () => toggleRedSheetMode();
+            }
+
+            if (btnRevealAll) {
+                btnRevealAll.onclick = () => {
+                    const listEl = document.getElementById("memo-card-list");
+                    if (!listEl) return;
+                    listEl.querySelectorAll(".red-sheet-answer-box.is-masked").forEach(box => {
+                        const cid = box.getAttribute("data-card-id");
+                        if (cid) revealedCardIds.add(cid);
+                        box.classList.remove("is-masked");
+                        box.classList.add("is-revealed");
+                    });
+                    listEl.querySelectorAll(".item-note.red-sheet-note-hidden").forEach(n => n.classList.remove("red-sheet-note-hidden"));
+                    triggerMathTypeset(listEl);
+                    showToast("👁️ すべての答えを表示しました");
+                };
+            }
+
+            if (btnHideAll) {
+                btnHideAll.onclick = () => {
+                    revealedCardIds.clear();
+                    const listEl = document.getElementById("memo-card-list");
+                    if (!listEl) return;
+                    listEl.querySelectorAll(".red-sheet-answer-box.is-revealed").forEach(box => {
+                        box.classList.remove("is-revealed");
+                        box.classList.add("is-masked");
+                    });
+                    listEl.querySelectorAll(".item-note").forEach(n => n.classList.add("red-sheet-note-hidden"));
+                    showToast("🙈 すべての答えを赤シートで隠しました");
+                };
+            }
+
+            isRedSheetToolbarBound = true;
+        }
+
         // 📋 カード一覧描画
         let cardListDisplayLimit = 25;
         function renderCardsList(cards) {
@@ -2974,6 +3303,10 @@
             const filterCountEl = document.getElementById("cards-filter-count");
             const chipsEl = document.getElementById("memo-subject-chips");
             if (!listEl) return;
+
+            // 赤シートツールバー状態・イベント同期
+            updateRedSheetToolbarUI();
+            initRedSheetToolbarEvents();
 
             // 教科チップ一覧
             const subjects = Array.from(new Set(cards.map(c => c.subject || "その他")));
@@ -3044,6 +3377,35 @@
             let html = visible.map(c => {
                 const icon = SUBJECT_ICONS[c.subject] || "📚";
                 const bg = SUBJECT_BG[c.subject] || "#F1F5F9";
+                const isRevealed = !isRedSheetActive || revealedCardIds.has(c.id);
+
+                let answerHtml = "";
+                if (!isRedSheetActive) {
+                    answerHtml = `
+                        <div class="item-a tex2jax_process">
+                            <strong style="color:#059669; margin-right:0.25rem;">A.</strong>${formatJapanesePhrasing(c.answer)}
+                        </div>
+                    `;
+                } else {
+                    answerHtml = `
+                        <div class="item-a tex2jax_process red-sheet-answer-box ${isRevealed ? 'is-revealed' : 'is-masked'}" data-card-id="${c.id}" role="button" tabindex="0" title="${isRevealed ? 'クリックで再目隠し' : 'タップして答えを確認'}">
+                            <div class="red-sheet-cover">
+                                <div class="red-sheet-cover-inner">
+                                    <span class="red-sheet-cover-icon">🔴</span>
+                                    <span class="red-sheet-cover-text">答えを目隠し中</span>
+                                </div>
+                                <span class="red-sheet-peek-badge">👆 タップで確認</span>
+                            </div>
+                            <div class="red-sheet-real-content">
+                                <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:0.4rem;">
+                                    <div><strong style="color:#059669; margin-right:0.25rem;">A.</strong>${formatJapanesePhrasing(c.answer)}</div>
+                                    <button type="button" class="red-sheet-remask-btn" data-card-id="${c.id}" title="赤シートで隠す">🔴 隠す</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+
                 return `
                     <div class="item-card" data-card-id="${c.id}">
                         <div class="item-card-header">
@@ -3058,8 +3420,8 @@
                             </div>
                         </div>
                         <div class="item-q tex2jax_process"><strong style="color:var(--text-secondary); margin-right:0.25rem;">Q.</strong>${formatJapanesePhrasing(c.question)}</div>
-                        <div class="item-a tex2jax_process"><strong style="color:#059669; margin-right:0.25rem;">A.</strong>${formatJapanesePhrasing(c.answer)}</div>
-                        ${c.note ? `<div class="item-note tex2jax_process"><span style="font-weight:700; color:#B45309;">💡 ポイント:</span> ${formatJapanesePhrasing(c.note)}</div>` : ''}
+                        ${answerHtml}
+                        ${c.note ? `<div class="item-note tex2jax_process ${isRedSheetActive && !isRevealed ? 'red-sheet-note-hidden' : ''}"><span style="font-weight:700; color:#B45309;">💡 ポイント:</span> ${formatJapanesePhrasing(c.note)}</div>` : ''}
                         <div class="item-footer">
                             <span>📘 ${escapeHtml(c.sourceTitle)}</span>
                             <span>${c.nextReviewDate ? `復習期日: ${c.nextReviewDate}` : '未復習'}</span>
@@ -3088,6 +3450,48 @@
                     renderCardsList(cards);
                 };
             }
+
+            // 🔴 赤シート タップして答えを表示
+            listEl.querySelectorAll(".red-sheet-answer-box.is-masked").forEach(box => {
+                box.onclick = (e) => {
+                    e.stopPropagation();
+                    const cardId = box.getAttribute("data-card-id");
+                    if (cardId) {
+                        revealedCardIds.add(cardId);
+                        box.classList.remove("is-masked");
+                        box.classList.add("is-revealed");
+                        box.setAttribute("title", "クリックで再目隠し");
+                        const cardItem = box.closest(".item-card");
+                        if (cardItem) {
+                            const noteEl = cardItem.querySelector(".item-note.red-sheet-note-hidden");
+                            if (noteEl) noteEl.classList.remove("red-sheet-note-hidden");
+                        }
+                        triggerMathTypeset(box);
+                    }
+                };
+            });
+
+            // 🔴 赤シート もう一度隠す
+            listEl.querySelectorAll(".red-sheet-remask-btn").forEach(btn => {
+                btn.onclick = (e) => {
+                    e.stopPropagation();
+                    const cardId = btn.getAttribute("data-card-id");
+                    if (cardId) {
+                        revealedCardIds.delete(cardId);
+                        const box = btn.closest(".red-sheet-answer-box");
+                        if (box) {
+                            box.classList.remove("is-revealed");
+                            box.classList.add("is-masked");
+                            box.setAttribute("title", "タップして答えを確認");
+                        }
+                        const cardItem = btn.closest(".item-card");
+                        if (cardItem) {
+                            const noteEl = cardItem.querySelector(".item-note");
+                            if (noteEl) noteEl.classList.add("red-sheet-note-hidden");
+                        }
+                    }
+                };
+            });
 
             // 1問だけ復習
             listEl.querySelectorAll(".item-btn-play").forEach(btn => {
@@ -3687,8 +4091,29 @@
                     `;
                 });
 
+                if (selectedCount > 0) {
+                    chipsHtml += `
+                        <button type="button" class="memo-unit-chip-redsheet" id="memo-unit-btn-quick-redsheet" title="この単元のカードを赤シートで暗記">
+                            <span>🔴 赤シートで確認</span>
+                        </button>
+                    `;
+                }
+
                 chipsHtml += `<button type="button" class="memo-unit-clear-all" id="memo-unit-btn-clear-all">✕ 全解除</button>`;
                 chipsBar.innerHTML = chipsHtml;
+
+                // 赤シートクイック確認イベント
+                const btnQuickRedSheet = chipsBar.querySelector("#memo-unit-btn-quick-redsheet");
+                if (btnQuickRedSheet) {
+                    btnQuickRedSheet.onclick = (e) => {
+                        e.stopPropagation();
+                        toggleRedSheetMode(true);
+                        const cardsSection = document.getElementById("memo-card-list");
+                        if (cardsSection) {
+                            cardsSection.scrollIntoView({ behavior: "smooth", block: "start" });
+                        }
+                    };
+                }
 
                 // ステータス解除イベント
                 const statusRemoveBtn = chipsBar.querySelector("#memo-status-chip-remove");
@@ -4023,6 +4448,35 @@
                 const icon = SUBJECT_ICONS[c.subject] || "📚";
                 const bg = SUBJECT_BG[c.subject] || "#F1F5F9";
 
+                let answerHtml = "";
+                if (!isRedSheetActive) {
+                    answerHtml = `
+                        <div class="ct-preview-a tex2jax_process">
+                            <span style="font-weight:800; color:#059669; margin-right:0.25rem;">A.</span>
+                            ${formatJapanesePhrasing(c.answer || "")}
+                        </div>
+                    `;
+                } else {
+                    const isRevealed = revealedCardIds.has(c.id);
+                    answerHtml = `
+                        <div class="ct-preview-a tex2jax_process red-sheet-answer-box ${isRevealed ? 'is-revealed' : 'is-masked'}" data-card-id="${c.id}" role="button" tabindex="0" title="${isRevealed ? 'クリックで再目隠し' : 'タップして答えを確認'}">
+                            <div class="red-sheet-cover">
+                                <div class="red-sheet-cover-inner">
+                                    <span class="red-sheet-cover-icon">🔴</span>
+                                    <span class="red-sheet-cover-text">答えを目隠し中</span>
+                                </div>
+                                <span class="red-sheet-peek-badge">👆 タップで確認</span>
+                            </div>
+                            <div class="red-sheet-real-content">
+                                <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:0.4rem;">
+                                    <div><span style="font-weight:800; color:#059669; margin-right:0.25rem;">A.</span>${formatJapanesePhrasing(c.answer || "")}</div>
+                                    <button type="button" class="red-sheet-remask-btn" data-card-id="${c.id}" title="赤シートで隠す">🔴 隠す</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+
                 return `
                     <div class="ct-preview-card-item">
                         <div class="ct-preview-card-meta">
@@ -4036,13 +4490,38 @@
                             <span style="font-weight:800; color:var(--text-secondary); margin-right:0.25rem;">Q.</span>
                             ${formatJapanesePhrasing(c.question || "")}
                         </div>
-                        <div class="ct-preview-a tex2jax_process">
-                            <span style="font-weight:800; color:#059669; margin-right:0.25rem;">A.</span>
-                            ${formatJapanesePhrasing(c.answer || "")}
-                        </div>
+                        ${answerHtml}
                     </div>
                 `;
             }).join("");
+
+            // プレビュー内の赤シート タップ開閉
+            listEl.querySelectorAll(".red-sheet-answer-box.is-masked").forEach(box => {
+                box.onclick = (e) => {
+                    e.stopPropagation();
+                    const cardId = box.getAttribute("data-card-id");
+                    if (cardId) {
+                        revealedCardIds.add(cardId);
+                        box.classList.remove("is-masked");
+                        box.classList.add("is-revealed");
+                        triggerMathTypeset(box);
+                    }
+                };
+            });
+            listEl.querySelectorAll(".red-sheet-remask-btn").forEach(btn => {
+                btn.onclick = (e) => {
+                    e.stopPropagation();
+                    const cardId = btn.getAttribute("data-card-id");
+                    if (cardId) {
+                        revealedCardIds.delete(cardId);
+                        const box = btn.closest(".red-sheet-answer-box");
+                        if (box) {
+                            box.classList.remove("is-revealed");
+                            box.classList.add("is-masked");
+                        }
+                    }
+                };
+            });
 
             triggerMathTypeset(listEl);
         }
@@ -4123,6 +4602,41 @@
                         cardsSection.scrollIntoView({ behavior: "smooth", block: "start" });
                     }
                     showToast(`🃏 選択した ${selectedLessonFilterIds.size} 単元のカード一覧を表示しました`);
+                };
+            }
+
+            // 🔴 「赤シート表示」ボタン
+            const btnViewCardsRedSheet = document.getElementById("ct-btn-view-cards-redsheet");
+            if (btnViewCardsRedSheet) {
+                btnViewCardsRedSheet.onclick = () => {
+                    if (selectedLessonFilterIds.size === 0) {
+                        showToast("⚠️ 少なくとも1つの単元を選択してください");
+                        return;
+                    }
+
+                    // 出題条件（ステータス）をメイン画面フィルターに同期
+                    const status = getSelectedCustomStatus();
+                    currentCardStatusFilter = status;
+
+                    // 赤シートモードをONにして目隠し初期化
+                    isRedSheetActive = true;
+                    try {
+                        localStorage.setItem("flora_red_sheet_mode", "true");
+                    } catch(e) {}
+                    revealedCardIds.clear();
+
+                    // モーダルを閉じる
+                    closeCustomTestModal();
+
+                    // メイン画面のダッシュボードとカード一覧を再描画
+                    renderDashboard();
+
+                    // カード一覧エリアへスクロール
+                    const cardsSection = document.getElementById("memo-card-list");
+                    if (cardsSection) {
+                        cardsSection.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }
+                    showToast(`🔴 選択した ${selectedLessonFilterIds.size} 単元を赤シートモードで表示しました`);
                 };
             }
 
