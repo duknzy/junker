@@ -7665,14 +7665,20 @@
             };
         }
 
+        function updateFcShuffleButton() {
+            if (fcShuffleToggle) {
+                fcShuffleToggle.classList.toggle("active", !!fcIsShuffle);
+                fcShuffleToggle.textContent = fcIsShuffle ? "🔀 シャッフル" : "📋 順番通り";
+                fcShuffleToggle.title = fcIsShuffle ? "出題順: シャッフルON（クリックで単元順に変更）" : "出題順: 順番通り（クリックでシャッフルに変更）";
+            }
+        }
+
         if (fcShuffleToggle) {
-            fcShuffleToggle.classList.toggle("active", fcIsShuffle);
-            fcShuffleToggle.textContent = fcIsShuffle ? "🔀 シャッフル" : "📋 順番通り";
+            updateFcShuffleButton();
             fcShuffleToggle.onclick = () => {
                 fcIsShuffle = !fcIsShuffle;
                 localStorage.setItem("flora_fc_shuffle", fcIsShuffle ? "true" : "false");
-                fcShuffleToggle.classList.toggle("active", fcIsShuffle);
-                fcShuffleToggle.textContent = fcIsShuffle ? "🔀 シャッフル" : "📋 順番通り";
+                updateFcShuffleButton();
                 
                 // 演習中の場合、現在出題中以外の残りキューをリアルタイムに並べ替え（現在カードはそのまま）
                 if (fcQueue && fcQueue.length > 1) {
@@ -8130,9 +8136,11 @@
 
             // 各カードに元の並び順インデックスを記録＆再挑戦フラグ初期化
             items.forEach((item, idx) => {
-                item._origIdx = idx;
+                if (item._origIdx === undefined) item._origIdx = idx;
                 item._isRetry = false;
             });
+
+            updateFcShuffleButton();
 
             fcInitialCount = items.length;
             fcMasteredTotal = 0;
@@ -8161,13 +8169,34 @@
             renderNextFcCard();
         }
 
-        // 日本語テキストの自然な句読点折り返し補助
+        // 日本語テキストの自然な句読点・助詞・熟語折り返し補助（変な改行の根絶）
         function formatJapanesePhrasing(rawText) {
-            if (!rawText) return "";
-            let safe = escapeHtml(rawText);
-            // 句読点や助詞の直後に改行促進<wbr>を挿入し、変な位置での文字泣き別れを防止
-            safe = safe.replace(/([、。！？\?])/g, '$1<wbr>');
-            safe = safe.replace(/(について|における|に対して|によって|という|こと|もの)/g, '<wbr>$1');
+            if (!rawText || typeof rawText !== "string") return "";
+            
+            // 数式トークンを保護
+            const mathTokens = [];
+            let text = rawText.replace(/(\$\$[\s\S]*?\$\$|\$[^\$]+?\$|\\\[[\s\S]*?\\\]|\\\(.*?\\\))/g, (m) => {
+                mathTokens.push(m);
+                return `___MATH_TOKEN_${mathTokens.length - 1}___`;
+            });
+
+            let safe = escapeHtml(text);
+
+            // 1. 句読点・閉じ括弧・記号の直後に改行促進<wbr>
+            safe = safe.replace(/([、。！？\?：:）\)」』】])/g, '$1<wbr>');
+            
+            // 2. 開き括弧・波ダッシュの直前に改行促進<wbr>
+            safe = safe.replace(/([（\(「『【〜~])/g, '<wbr>$1');
+            
+            // 3. 複合助詞・接続表現の直前に改行促進<wbr>（文意・熟語の泣き別れを防止）
+            safe = safe.replace(/(について|における|において|に対して|にとって|によって|とともに|をはじめ|に関して|として|という|こと|もの|ため|など|および|ならびに|ただし|または|あるいは)/g, '<wbr>$1');
+
+            // 4. 2文字以上の漢字・カタカナに続く一文字助詞の前に区切りを促進
+            safe = safe.replace(/([\u4e00-\u9faf\u30a0-\u30ff]{2,})(は|が|を|に|へ|で|と|より|から)([\u4e00-\u9faf\u3040-\u30ff])/g, '$1<wbr>$2$3');
+
+            // 数式トークンを復元
+            safe = safe.replace(/___MATH_TOKEN_(\d+)___/g, (_, idx) => mathTokens[parseInt(idx, 10)] || '');
+
             return normalizeMathSyntax(safe);
         }
 
@@ -9662,6 +9691,10 @@
                 selectedInsightUnitIds.forEach(id => selectedLessonFilterIds.add(id));
                 saveSelectedLessons();
             }
+            const shuffleEl = document.getElementById("custom-test-shuffle");
+            if (shuffleEl) {
+                shuffleEl.checked = localStorage.getItem("flora_fc_shuffle") !== "false";
+            }
             lessonPickerModal.style.display = "flex";
             if (lessonPickerSearch) lessonPickerSearch.value = "";
             if (modalPreviewCardSearch) modalPreviewCardSearch.value = "";
@@ -9756,17 +9789,12 @@
 
                 fcIsShuffle = isShuffle;
                 localStorage.setItem("flora_fc_shuffle", isShuffle ? "true" : "false");
-                const shuffleToggle = document.getElementById("fc-shuffle-toggle");
-                if (shuffleToggle) shuffleToggle.checked = isShuffle;
-
-                if (isShuffle) {
-                    items = shuffleArray(items);
-                }
+                updateFcShuffleButton();
 
                 if (limitVal !== "all") {
                     const limitNum = parseInt(limitVal, 10);
                     if (Number.isFinite(limitNum) && items.length > limitNum) {
-                        items = items.slice(0, limitNum);
+                        items = isShuffle ? shuffleArray(items).slice(0, limitNum) : items.slice(0, limitNum);
                     }
                 }
 
