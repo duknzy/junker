@@ -703,6 +703,7 @@ export const GEMINI_FEATURES = [
     { id: "lesson_drill",     label: "授業の類題作成",               page: "lesson.html" },
     { id: "lesson_teach",     label: "授業内AIチャット",             page: "lesson.html" },
     { id: "memorization_points", label: "単元の暗記事項リスト生成（授業プランとは別リクエスト）", page: "lesson.html" },
+    { id: "choice_quiz",      label: "授業の選択問題（4択・正誤判定）生成", page: "lesson.html / insights.html" },
     { id: "refbook_extract",  label: "参考書の写真からの問題読み取り",  page: "refbook.html" },
     { id: "refbook_answer_generate", label: "参考書問題のAIによる解答・解説生成", page: "refbook.html" },
 ];
