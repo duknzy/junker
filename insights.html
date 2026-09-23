@@ -1904,8 +1904,16 @@
                             <option value="ALL">すべての教科</option>
                         </select>
 
+                        <span class="filter-label" style="margin-left:0.4rem;">📘 単元：</span>
+                        <select class="flora-select" id="lesson-filter-select" style="width: auto; max-width: 220px; padding: 0.4rem 0.8rem; font-size: var(--fs-xs);" title="特定の単元・授業を選択して絞り込み">
+                            <option value="ALL">すべての単元・授業</option>
+                        </select>
+
                         <span class="filter-label" style="margin-left:0.4rem;">🔀 並べ替え：</span>
                         <select class="flora-select" id="sort-select" style="width: auto; padding: 0.4rem 0.8rem; font-size: var(--fs-xs);" title="授業・カードの並び順を選択">
+                            <option value="mastery_weak_first">🎯 習得度順（未習得・要復習を優先）</option>
+                            <option value="mastery_mastered_first">🏆 習得度順（覚えた・習得済を優先）</option>
+                            <option value="srs_due">🔥 忘却期日順（今日復習すべき順）</option>
                             <option value="custom">📌 授業の並び順（自由並べ替え・受講順）</option>
                             <option value="lesson_desc">📅 授業の受講日（新しい順）</option>
                             <option value="lesson_asc">📅 授業の受講日（古い順）</option>
@@ -1913,7 +1921,6 @@
                             <option value="newest">⚡ カード更新が新しい順</option>
                             <option value="oldest">⚡ カード更新が古い順</option>
                             <option value="words_desc">🔢 暗記事項・単語数が多い順</option>
-                            <option value="mastery_asc">🎯 習得率が低い順（要復習優先）</option>
                             <option value="subject">📚 教科・単元順</option>
                         </select>
 
@@ -1950,8 +1957,11 @@
                             <button type="button" class="toggle-btn active" id="btn-memorize-view-grouped" title="単元・分類ごとに整理された辞書リストで表示します">
                                 🗂 単元・分類別（辞書リスト）
                             </button>
-                            <button type="button" class="toggle-btn" id="btn-memorize-view-grid" title="カードグリッドで一覧表示します">
-                                🃏 カード表示
+                            <button type="button" class="toggle-btn" id="btn-memorize-view-grid" title="すべてのカードをカード形式で一覧表示します（テスト不要でそのままスクロール閲覧可能）">
+                                🃏 カード一覧
+                            </button>
+                            <button type="button" class="toggle-btn" id="btn-memorize-view-compact" title="1行ずつコンパクトに全暗記項目を一覧表示します">
+                                📋 爆速リスト
                             </button>
                             <span style="color: var(--border-color); margin: 0 0.15rem;">|</span>
                             <button type="button" class="toggle-btn" id="btn-toggle-red-sheet" title="赤シートのように解答・解説を隠し、タップした項目だけめくって答えを確認できます">
@@ -2789,17 +2799,22 @@
 
         const btnMemorizeViewGrouped = document.getElementById("btn-memorize-view-grouped");
         const btnMemorizeViewGrid = document.getElementById("btn-memorize-view-grid");
+        const btnMemorizeViewCompact = document.getElementById("btn-memorize-view-compact");
         const memorizeStatusFilters = document.getElementById("memorize-status-filters");
 
+        function updateMemorizeViewModeButtons() {
+            if (btnMemorizeViewGrouped) btnMemorizeViewGrouped.classList.toggle("active", memorizeViewMode === "grouped");
+            if (btnMemorizeViewGrid) btnMemorizeViewGrid.classList.toggle("active", memorizeViewMode === "grid");
+            if (btnMemorizeViewCompact) btnMemorizeViewCompact.classList.toggle("active", memorizeViewMode === "compact");
+        }
+
         if (btnMemorizeViewGrouped && btnMemorizeViewGrid) {
-            btnMemorizeViewGrouped.classList.toggle("active", memorizeViewMode === "grouped");
-            btnMemorizeViewGrid.classList.toggle("active", memorizeViewMode === "grid");
+            updateMemorizeViewModeButtons();
 
             btnMemorizeViewGrouped.addEventListener("click", () => {
                 memorizeViewMode = "grouped";
                 localStorage.setItem("fc_memorize_view_mode", "grouped");
-                btnMemorizeViewGrouped.classList.add("active");
-                btnMemorizeViewGrid.classList.remove("active");
+                updateMemorizeViewModeButtons();
                 resetDisplayLimits();
                 renderMemorize();
             });
@@ -2807,11 +2822,20 @@
             btnMemorizeViewGrid.addEventListener("click", () => {
                 memorizeViewMode = "grid";
                 localStorage.setItem("fc_memorize_view_mode", "grid");
-                btnMemorizeViewGrid.classList.add("active");
-                btnMemorizeViewGrouped.classList.remove("active");
+                updateMemorizeViewModeButtons();
                 resetDisplayLimits();
                 renderMemorize();
             });
+
+            if (btnMemorizeViewCompact) {
+                btnMemorizeViewCompact.addEventListener("click", () => {
+                    memorizeViewMode = "compact";
+                    localStorage.setItem("fc_memorize_view_mode", "compact");
+                    updateMemorizeViewModeButtons();
+                    resetDisplayLimits();
+                    renderMemorize();
+                });
+            }
         }
 
         if (memorizeStatusFilters) {
@@ -3010,9 +3034,12 @@
         const subjectSelect = document.getElementById("subject-select");
 
         // 保存されたソート順を復元（デフォルトは custom）
-        const savedSortMode = localStorage.getItem("fc_insights_sort_mode") || "custom";
+        let savedSortMode = localStorage.getItem("fc_insights_sort_mode") || "custom";
+        if (savedSortMode === "mastery_asc") savedSortMode = "mastery_weak_first";
+        if (savedSortMode === "mastery_desc") savedSortMode = "mastery_mastered_first";
         if (sortSelect) {
             sortSelect.value = savedSortMode;
+            if (!sortSelect.value) sortSelect.value = "custom";
         }
 
         let searchInputDebounceTimer = null;
@@ -3023,6 +3050,8 @@
                 renderActiveView();
             }, 160);
         });
+        const lessonFilterSelect = document.getElementById("lesson-filter-select");
+
         sortSelect.addEventListener("change", () => {
             localStorage.setItem("fc_insights_sort_mode", sortSelect.value);
             resetDisplayLimits();
@@ -3030,10 +3059,81 @@
         });
         subjectSelect.addEventListener("change", () => {
             resetDisplayLimits();
+            populateLessonFilter();
             renderActiveView();
         });
+        if (lessonFilterSelect) {
+            lessonFilterSelect.addEventListener("change", () => {
+                resetDisplayLimits();
+                renderActiveView();
+            });
+        }
 
         const AVAILABLE_SUBJECTS = ["政治・経済", "公共", "公民", "数学", "英語", "国語", "物理", "化学", "生物", "地学", "日本史", "世界史", "地理", "情報", "その他"];
+
+        function populateLessonFilter() {
+            if (!lessonFilterSelect) return;
+            const currentVal = lessonFilterSelect.value || "ALL";
+            const selectedSubject = subjectSelect.value || "ALL";
+            const lessonsMap = new Map();
+
+            if (activeTab === "memorize") {
+                const items = buildMemorizationItems();
+                items.forEach(item => {
+                    const itemSubj = item.subject || "未分類";
+                    if (selectedSubject === "ALL" || itemSubj === selectedSubject) {
+                        const lid = item.lessonId || "standalone";
+                        const title = item.short_title || (rawLessons[lid] && rawLessons[lid].title) || "暗記単元";
+                        if (!lessonsMap.has(lid)) {
+                            lessonsMap.set(lid, { id: lid, title: title, subject: itemSubj });
+                        }
+                    }
+                });
+            } else if (activeTab === "insights") {
+                const probItems = Object.values(rawProblems).filter(p => p && p.insight && p.insight.trim() !== "");
+                probItems.forEach(p => {
+                    const s = p.subject || "未分類";
+                    if (selectedSubject === "ALL" || s === selectedSubject) {
+                        const fieldName = p.field || "未分類";
+                        if (!lessonsMap.has(fieldName)) {
+                            lessonsMap.set(fieldName, { id: fieldName, title: `📌 ${fieldName}`, subject: s });
+                        }
+                    }
+                });
+                buildLessonMemoItems().forEach(m => {
+                    const s = m.subject || "未分類";
+                    if (selectedSubject === "ALL" || s === selectedSubject) {
+                        const lid = m.lessonId || m.short_title || "lesson";
+                        const title = m.short_title || "授業メモ";
+                        if (!lessonsMap.has(lid)) {
+                            lessonsMap.set(lid, { id: lid, title: `📘 ${title}`, subject: s });
+                        }
+                    }
+                });
+            }
+
+            const lessonsList = Array.from(lessonsMap.values());
+            lessonsList.sort((a, b) => {
+                const lessonA = rawLessons[a.id];
+                const lessonB = rawLessons[b.id];
+                const ordA = lessonA && typeof lessonA.orderIndex === "number" ? lessonA.orderIndex : 999999;
+                const ordB = lessonB && typeof lessonB.orderIndex === "number" ? lessonB.orderIndex : 999999;
+                if (ordA !== ordB) return ordA - ordB;
+                return (a.title || "").localeCompare(b.title || "", "ja");
+            });
+
+            let optionsHtml = `<option value="ALL">すべての単元・授業</option>`;
+            lessonsList.forEach(l => {
+                optionsHtml += `<option value="${escapeHtml(l.id)}">${escapeHtml(l.title)}</option>`;
+            });
+            lessonFilterSelect.innerHTML = optionsHtml;
+
+            if (lessonsMap.has(currentVal)) {
+                lessonFilterSelect.value = currentVal;
+            } else {
+                lessonFilterSelect.value = "ALL";
+            }
+        }
 
         function populateSubjectFilter() {
             const currentVal = subjectSelect.value || "ALL";
@@ -3082,6 +3182,7 @@
                 sorted.map(s => `<option value="${s}">${s}</option>`).join("");
 
             if (subjects.has(currentVal)) subjectSelect.value = currentVal;
+            populateLessonFilter();
         }
 
         function formatDate(iso) {
@@ -4205,6 +4306,63 @@
             const lessonA = a.lessonId ? rawLessons[a.lessonId] : null;
             const lessonB = b.lessonId ? rawLessons[b.lessonId] : null;
 
+            // 🎯 習得度順（未習得・要復習優先）: weak (1) -> unlearned (2) -> learning (3) -> mastered (4)
+            if (sortMode === "mastery_weak_first" || sortMode === "mastery_asc") {
+                const getStatusWeight = (item) => {
+                    const st = item.status;
+                    if (st === "weak") return 1;
+                    if (st === "unlearned") return 2;
+                    if (st === "learning") return 3;
+                    if (st === "mastered") return 4;
+                    return 2;
+                };
+                const weightA = getStatusWeight(a);
+                const weightB = getStatusWeight(b);
+                if (weightA !== weightB) return weightA - weightB;
+                const levelA = typeof a.boxLevel === "number" ? a.boxLevel : 0;
+                const levelB = typeof b.boxLevel === "number" ? b.boxLevel : 0;
+                if (levelA !== levelB) return levelA - levelB;
+                const lapsesA = a.lapses || 0;
+                const lapsesB = b.lapses || 0;
+                if (lapsesA !== lapsesB) return lapsesB - lapsesA;
+                return new Date(b.insightUpdatedAt || b.createdAt || 0) - new Date(a.insightUpdatedAt || a.createdAt || 0);
+            }
+
+            // 🏆 習得度順（覚えた・習得済優先）: mastered (1) -> learning (2) -> weak (3) -> unlearned (4)
+            if (sortMode === "mastery_mastered_first" || sortMode === "mastery_desc") {
+                const getStatusWeightDesc = (item) => {
+                    const st = item.status;
+                    if (st === "mastered") return 1;
+                    if (st === "learning") return 2;
+                    if (st === "weak") return 3;
+                    if (st === "unlearned") return 4;
+                    return 4;
+                };
+                const weightA = getStatusWeightDesc(a);
+                const weightB = getStatusWeightDesc(b);
+                if (weightA !== weightB) return weightA - weightB;
+                const levelA = typeof a.boxLevel === "number" ? a.boxLevel : 0;
+                const levelB = typeof b.boxLevel === "number" ? b.boxLevel : 0;
+                if (levelA !== levelB) return levelB - levelA;
+                return new Date(b.insightUpdatedAt || b.createdAt || 0) - new Date(a.insightUpdatedAt || a.createdAt || 0);
+            }
+
+            // 🔥 忘却期日順 (SRS期日順: 今日以前の期限切れが最優先、未着手、未来期日)
+            if (sortMode === "srs_due") {
+                const today = getTodayStr();
+                const getDueScore = (item) => {
+                    if (item.status === "weak") return 0;
+                    if (!item.nextReviewDate) return item.status === "mastered" ? 999999 : 10;
+                    if (item.nextReviewDate <= today) return 1;
+                    const diffDays = (new Date(item.nextReviewDate) - new Date(today)) / (1000 * 60 * 60 * 24);
+                    return 100 + diffDays;
+                };
+                const scoreA = getDueScore(a);
+                const scoreB = getDueScore(b);
+                if (scoreA !== scoreB) return scoreA - scoreB;
+                return new Date(b.insightUpdatedAt || b.createdAt || 0) - new Date(a.insightUpdatedAt || a.createdAt || 0);
+            }
+
             if (sortMode === "custom") {
                 const ordA = lessonA && typeof lessonA.orderIndex === "number" ? lessonA.orderIndex : 999999;
                 const ordB = lessonB && typeof lessonB.orderIndex === "number" ? lessonB.orderIndex : 999999;
@@ -4247,6 +4405,7 @@
             const query = searchInput.value.trim().toLowerCase();
             const subject = subjectSelect.value;
             const sort = sortSelect.value;
+            const selectedLesson = lessonFilterSelect ? lessonFilterSelect.value : "ALL";
 
             let items = [
                 ...Object.values(rawProblems).filter(p => p && p.insight && p.insight.trim() !== "").map(p => ({ ...p, sourceType: "problem" })),
@@ -4254,6 +4413,9 @@
             ];
 
             if (subject !== "ALL") items = items.filter(p => (p.subject || "未分類") === subject);
+            if (selectedLesson !== "ALL") {
+                items = items.filter(p => p.lessonId === selectedLesson || p.field === selectedLesson || p.short_title === selectedLesson);
+            }
             if (filterPinnedOnly) items = items.filter(p => !!p.isPinned);
             if (query) {
                 items = items.filter(p =>
@@ -4365,10 +4527,12 @@
             const query = searchInput.value.trim().toLowerCase();
             const subject = subjectSelect.value;
             const sort = sortSelect.value;
+            const selectedLesson = lessonFilterSelect ? lessonFilterSelect.value : "ALL";
 
             let items = buildMemorizationItems();
 
             if (subject !== "ALL") items = items.filter(p => (p.subject || "未分類") === subject);
+            if (selectedLesson !== "ALL") items = items.filter(p => p.lessonId === selectedLesson);
             if (query) {
                 items = items.filter(p =>
                     (p.insight || "").toLowerCase().includes(query) ||
@@ -4405,12 +4569,15 @@
                 return;
             }
 
-            // グリッド（カード）表示
+            // グリッド（カード一覧） or 爆速リスト表示
             const totalItems = items.length;
             const visibleItems = items.slice(0, memorizeDisplayCount);
             const hasMore = totalItems > memorizeDisplayCount;
 
-            const gridHtml = `<div class="insight-grid">${visibleItems.map(p => renderMemorizeCardHtml(p)).join("")}</div>`;
+            const mainHtml = memorizeViewMode === "compact"
+                ? `<div class="insight-compact-list">${visibleItems.map(p => renderMemorizeCompactRowHtml(p)).join("")}</div>`
+                : `<div class="insight-grid">${visibleItems.map(p => renderMemorizeCardHtml(p)).join("")}</div>`;
+
             let loadMoreHtml = "";
             if (hasMore) {
                 const remaining = totalItems - memorizeDisplayCount;
@@ -4424,7 +4591,7 @@
                 `;
             }
 
-            container.innerHTML = gridHtml + loadMoreHtml;
+            container.innerHTML = mainHtml + loadMoreHtml;
 
             if (hasMore) {
                 const btn = document.getElementById("btn-memorize-load-more");
@@ -4526,10 +4693,21 @@
                     if (currentSort === "words_desc") {
                         return itemsB.length - itemsA.length;
                     }
-                    if (currentSort === "mastery_asc") {
+                    if (currentSort === "mastery_asc" || currentSort === "mastery_weak_first") {
                         const mastA = itemsA.filter(p => p.status === "mastered").length / (itemsA.length || 1);
                         const mastB = itemsB.filter(p => p.status === "mastered").length / (itemsB.length || 1);
                         return mastA - mastB;
+                    }
+                    if (currentSort === "mastery_mastered_first") {
+                        const mastA = itemsA.filter(p => p.status === "mastered").length / (itemsA.length || 1);
+                        const mastB = itemsB.filter(p => p.status === "mastered").length / (itemsB.length || 1);
+                        return mastB - mastA;
+                    }
+                    if (currentSort === "srs_due") {
+                        const today = getTodayStr();
+                        const dueA = itemsA.filter(p => p.status === "weak" || (p.nextReviewDate && p.nextReviewDate <= today)).length;
+                        const dueB = itemsB.filter(p => p.status === "weak" || (p.nextReviewDate && p.nextReviewDate <= today)).length;
+                        return dueB - dueA;
                     }
                     if (currentSort === "oldest") {
                         const timeA = Math.min(...itemsA.map(p => new Date(p.insightUpdatedAt || p.createdAt || 0).getTime()));
@@ -4546,6 +4724,8 @@
 
                 lessonEntries.forEach(([lid, unitItems], lessonIdx) => {
                     const unitId = `${subj}_${lid}`;
+                    // 単元内の単語リストも指定のソート順（習得度順など）でソート
+                    unitItems.sort((a, b) => compareLessonItems(a, b, currentSort));
                     dictUnitItemsDataMap[unitId] = unitItems;
 
                     // 初期展開フラグ：検索時は全開、または以前開いた単元、または最初の1単元のみ開く
@@ -5082,11 +5262,33 @@
         }
 
         function renderMemorizeCompactRowHtml(p) {
+            let statusClass = "unlearned";
+            let statusLabel = "🌱 未習得";
+            let statusTitle = "クリックで「覚えた！」に変更";
+            if (p.status === "mastered") {
+                statusClass = "mastered";
+                statusLabel = `✅ 覚えた (Lv.${p.boxLevel})`;
+                statusTitle = "クリックで未習得に戻す";
+            } else if (p.status === "weak") {
+                statusClass = "weak";
+                statusLabel = "🔄 要復習";
+                statusTitle = "クリックで「覚えた！」に変更";
+            } else if (p.status === "learning") {
+                statusClass = "learning";
+                statusLabel = `⚡ 復習中 (Lv.${p.boxLevel})`;
+                statusTitle = "クリックで「覚えた！」に変更";
+            }
+
+            const cleanQ = (p.question || "").trim().replace(/^(?:Q[.:：]|問題[.:：]?)\s*/i, "");
+            const cleanA = (p.answer || "").trim().replace(/^(?:A[.:：]|答え[.:：]?|解答[.:：]?)\s*/i, "");
+            const displayText = cleanQ && cleanA ? `<strong>Q. ${cleanQ}</strong> ➔ A. ${cleanA}` : (p.rawContent || p.insight);
+
             return `
                 <div class="insight-compact-row">
+                    <button type="button" class="dict-status-btn ${statusClass}" onclick="toggleMemorizeMastered('${p.lessonId}', '${p.memoId}', event)" title="${statusTitle}" style="font-size:0.7rem; padding:0.18rem 0.5rem; flex-shrink:0;">${statusLabel}</button>
                     <span class="badge badge-physics" style="font-size:0.68rem; flex-shrink:0; background: rgba(0,243,255,0.1); border-color: var(--accent-cyan); color: var(--accent-cyan); cursor:pointer;" onclick="openQuickSubjectModal('lesson', '${p.lessonId}', '${(p.short_title || '暗記事項').replace(/'/g, "\\'")}', event)" title="クリックして教科を変更">🧠 ${p.subject || "未分類"} ▾</span>
                     <div class="compact-main">
-                        <div class="compact-text tex2jax_process">${normalizeMathSyntax(p.rawContent || p.insight)}</div>
+                        <div class="compact-text tex2jax_process">${normalizeMathSyntax(displayText)}</div>
                         <div class="compact-sub">📘 ${p.short_title} ${p.rawCategory ? `[${p.rawCategory}]` : ""} ｜ ${formatDate(p.insightUpdatedAt || p.createdAt)}</div>
                     </div>
                     <button type="button" onclick="startTypingForCard('memorize', '${p.lessonId}', '${p.memoId}', event)" style="flex-shrink:0; background:var(--brand-light); border:1px solid var(--brand-border); color:var(--brand-primary); cursor:pointer; font-size:0.74rem; font-weight:700; padding:0.22rem 0.5rem; border-radius:var(--radius-sm);" title="写経タイピング">⌨️ タイプ</button>
