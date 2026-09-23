@@ -621,8 +621,10 @@
             grid-template-columns: 100%;
             grid-template-rows: 100%;
             min-height: 480px;
-            transition: transform 0.42s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: transform 0.42s cubic-bezier(0.2, 0.8, 0.2, 1);
             transform-style: preserve-3d;
+            will-change: transform;
+            transform: translate3d(0, 0, 0);
         }
         @media (min-width: 1024px) {
             .fc-card-inner {
@@ -630,7 +632,7 @@
             }
         }
         .fc-stage.flipped .fc-card-inner {
-            transform: rotateY(180deg);
+            transform: rotateY(180deg) translate3d(0, 0, 0);
         }
         .fc-card-face {
             grid-area: 1 / 1 / 2 / 2;
@@ -641,6 +643,8 @@
             box-sizing: border-box;
             backface-visibility: hidden;
             -webkit-backface-visibility: hidden;
+            will-change: transform;
+            transform: translate3d(0, 0, 0);
             border-radius: var(--radius-xl);
             border: 1.5px solid var(--border-color);
             padding: 1.6rem 2rem;
@@ -4203,9 +4207,16 @@
             return s.trim();
         }
 
-        // 🧠 授業ページの「暗記事項リスト」を気づき一覧アイテム形式に変換
-        //    （授業ページ内だけでなく、気づき・極意メモ一覧からも横断的に見えるようにする）
+        // 🧠 授業ページの「暗記事項リスト」を気づき一覧アイテム形式に変換（キャッシュ付き高速化）
+        let _cachedBuildMemorizationItems = null;
+        let _cachedBuildChoiceDrillItems = null;
+        function invalidateInsightsDataCache() {
+            _cachedBuildMemorizationItems = null;
+            _cachedBuildChoiceDrillItems = null;
+        }
+
         function buildMemorizationItems() {
+            if (_cachedBuildMemorizationItems) return _cachedBuildMemorizationItems;
             const items = [];
             Object.entries(rawLessons).forEach(([lessonId, lesson]) => {
                 if (!lesson || !Array.isArray(lesson.memorizationPoints)) return;
@@ -4269,11 +4280,13 @@
                     });
                 });
             });
+            _cachedBuildMemorizationItems = items;
             return items;
         }
 
         // 🎯 授業ごとの「選択問題（共通テスト形式）」を一覧アイテム形式に抽出・正規化
         function buildChoiceDrillItems() {
+            if (_cachedBuildChoiceDrillItems) return _cachedBuildChoiceDrillItems;
             const items = [];
             Object.entries(rawLessons).forEach(([lessonId, lesson]) => {
                 if (!lesson || !Array.isArray(lesson.choiceDrills)) return;
@@ -4314,6 +4327,7 @@
                     });
                 });
             });
+            _cachedBuildChoiceDrillItems = items;
             return items;
         }
 
@@ -9934,6 +9948,7 @@
             function handleFirebaseSync() {
                 if (firebaseSyncDebounceTimer) clearTimeout(firebaseSyncDebounceTimer);
                 firebaseSyncDebounceTimer = setTimeout(() => {
+                    invalidateInsightsDataCache();
                     updateCounts();
                     populateSubjectFilter();
                     renderActiveView();

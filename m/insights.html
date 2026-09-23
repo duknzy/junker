@@ -457,6 +457,9 @@
             box-shadow: var(--memo-shadow);
             transition: border-color 0.15s;
             position: relative;
+            contain: content;
+            content-visibility: auto;
+            contain-intrinsic-size: 0 115px;
         }
         .item-card-header {
             display: flex;
@@ -695,12 +698,14 @@
             min-height: 330px;
             position: relative;
             transform-style: preserve-3d;
-            transition: transform 0.48s cubic-bezier(0.34, 1.45, 0.64, 1);
+            transition: transform 0.44s cubic-bezier(0.2, 0.8, 0.2, 1);
+            will-change: transform;
+            transform: translate3d(0, 0, 0);
             cursor: pointer;
             touch-action: manipulation;
         }
         .session-card-container.flipped {
-            transform: rotateY(180deg);
+            transform: rotateY(180deg) translate3d(0, 0, 0);
         }
 
         .card-face {
@@ -716,6 +721,8 @@
             justify-content: space-between;
             backface-visibility: hidden;
             -webkit-backface-visibility: hidden;
+            will-change: transform;
+            transform: translate3d(0, 0, 0);
             box-shadow: 0 24px 50px -12px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.15);
             color: #0F172A;
             box-sizing: border-box;
@@ -726,7 +733,7 @@
             border-color: rgba(16, 185, 129, 0.35);
         }
         .card-back {
-            transform: rotateY(180deg);
+            transform: rotateY(180deg) translate3d(0, 0, 0);
             border-color: rgba(5, 150, 105, 0.45);
             background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
         }
@@ -2636,17 +2643,54 @@
             setTimeout(() => { toast.remove(); }, 2500);
         }
 
-        // 数式局所スケジューラ
+        // ⏱️ 高性能デバウンス（検索入力・フィルター時のメインスレッド負荷を軽減）
+        function debounce(fn, wait = 120) {
+            let timer = null;
+            return function(...args) {
+                clearTimeout(timer);
+                timer = setTimeout(() => fn.apply(this, args), wait);
+            };
+        }
+
+        // ⚡ 超軽量・高性能 数式レンダラー（メインスレッドのブロッキングを完全防止）
+        let mathTypesetQueue = Promise.resolve();
         function containsMath(text) {
             if (!text || typeof text !== "string") return false;
             return /(\$|\\\(|\\\[|\\frac|\\sqrt|\\sum|\\int|\\bbox|\\boxed)/.test(text);
         }
-        function triggerMathTypeset(el) {
-            if (!window.MathJax || !window.MathJax.typesetPromise || !el) return;
-            if (containsMath(el.textContent)) {
-                try {
-                    MathJax.typesetPromise([el]).catch(e => console.debug(e));
-                } catch(e) {}
+
+        function triggerMathTypeset(container) {
+            if (!window.MathJax || !window.MathJax.typesetPromise || !container) return;
+            
+            const targets = [];
+            if (container.classList && container.classList.contains("tex2jax_process")) {
+                if (containsMath(container.textContent)) targets.push(container);
+            } else {
+                const candidates = container.querySelectorAll(".tex2jax_process");
+                for (let i = 0; i < candidates.length; i++) {
+                    if (containsMath(candidates[i].textContent)) {
+                        targets.push(candidates[i]);
+                    }
+                }
+            }
+
+            if (targets.length === 0) return;
+
+            const runTypeset = () => {
+                mathTypesetQueue = mathTypesetQueue
+                    .then(() => {
+                        if (typeof MathJax.typesetClear === "function") {
+                            try { MathJax.typesetClear(targets); } catch (e) {}
+                        }
+                        return MathJax.typesetPromise(targets);
+                    })
+                    .catch(e => console.debug("MathJax scheduled:", e));
+            };
+
+            if ('requestIdleCallback' in window) {
+                requestIdleCallback(runTypeset, { timeout: 350 });
+            } else {
+                requestAnimationFrame(runTypeset);
             }
         }
 
@@ -2674,8 +2718,14 @@
             return "公共";
         }
 
-        // 🧠 全カードプールの抽出（PC版 insights.html と完全統一されたキー構造とデータ形式）
+        // 🧠 全カードプールの抽出（PC版 insights.html と完全統一されたキー構造とデータ形式・キャッシュ最適化）
+        let _cachedAllCards = null;
+        function invalidateCardCache() {
+            _cachedAllCards = null;
+        }
+
         function getAllCards() {
+            if (_cachedAllCards) return _cachedAllCards;
             const cards = [];
             const today = getTodayStr();
 
@@ -2780,6 +2830,7 @@
                 });
             });
 
+            _cachedAllCards = cards;
             return cards;
         }
 
@@ -2917,6 +2968,7 @@
         }
 
         // 📋 カード一覧描画
+        let cardListDisplayLimit = 25;
         function renderCardsList(cards) {
             const listEl = document.getElementById("memo-card-list");
             const filterCountEl = document.getElementById("cards-filter-count");
@@ -2935,6 +2987,7 @@
                 chipsEl.querySelectorAll(".memo-chip").forEach(btn => {
                     btn.onclick = () => {
                         currentSubjectFilter = btn.getAttribute("data-subj");
+                        cardListDisplayLimit = 25;
                         renderDashboard();
                     };
                 });
@@ -2985,7 +3038,10 @@
                 return;
             }
 
-            listEl.innerHTML = filtered.slice(0, 50).map(c => {
+            const visible = filtered.slice(0, cardListDisplayLimit);
+            const hasMore = filtered.length > cardListDisplayLimit;
+
+            let html = visible.map(c => {
                 const icon = SUBJECT_ICONS[c.subject] || "📚";
                 const bg = SUBJECT_BG[c.subject] || "#F1F5F9";
                 return `
@@ -3011,6 +3067,27 @@
                     </div>
                 `;
             }).join("");
+
+            if (hasMore) {
+                const remaining = filtered.length - cardListDisplayLimit;
+                html += `
+                    <div style="text-align:center; padding:0.6rem 0.5rem 1.2rem;">
+                        <button type="button" id="btn-load-more-cards" style="background:#FFFFFF; border:1px solid #CBD5E1; color:#334155; padding:0.65rem 1.4rem; border-radius:12px; font-weight:700; font-size:0.85rem; box-shadow:0 2px 6px rgba(0,0,0,0.04); cursor:pointer;">
+                            ▼ さらに読み込む（残り ${remaining} 件）
+                        </button>
+                    </div>
+                `;
+            }
+
+            listEl.innerHTML = html;
+
+            const btnLoadMore = listEl.querySelector("#btn-load-more-cards");
+            if (btnLoadMore) {
+                btnLoadMore.onclick = () => {
+                    cardListDisplayLimit += 25;
+                    renderCardsList(cards);
+                };
+            }
 
             // 1問だけ復習
             listEl.querySelectorAll(".item-btn-play").forEach(btn => {
@@ -4012,7 +4089,7 @@
             // カードプレビュー内検索
             const previewSearchInput = document.getElementById("ct-preview-card-search");
             if (previewSearchInput) {
-                previewSearchInput.oninput = () => renderModalCardsPreview();
+                previewSearchInput.oninput = debounce(() => renderModalCardsPreview(), 120);
             }
 
             // メイン画面の「📘 単元選択」ボタン
@@ -4052,10 +4129,10 @@
             // 検索入力
             const searchInput = document.getElementById("custom-test-search-input");
             if (searchInput) {
-                searchInput.oninput = (e) => {
+                searchInput.oninput = debounce((e) => {
                     customTestSearchQuery = e.target.value.trim();
                     renderCustomTestLessonList();
-                };
+                }, 120);
             }
 
             // すべて選択
@@ -4304,10 +4381,11 @@
         // 検索インプット
         const searchInput = document.getElementById("memo-search-input");
         if (searchInput) {
-            searchInput.oninput = (e) => {
+            searchInput.oninput = debounce((e) => {
                 searchQuery = e.target.value.trim();
+                cardListDisplayLimit = 25;
                 renderCardsList(getAllCards());
-            };
+            }, 120);
         }
 
         // 新規カード追加モーダル
@@ -4456,6 +4534,7 @@
             });
 
             showToast("✨ サンプル暗記カード（8問）を読み込みました！");
+            invalidateCardCache();
             renderDashboard();
         }
 
@@ -4467,17 +4546,21 @@
             if (user) {
                 onValue(ref(database, `users/${user.uid}/lessons`), snap => {
                     allLessons = snap.val() || {};
+                    invalidateCardCache();
                     renderDashboard();
                 });
                 onValue(ref(database, `users/${user.uid}/problems`), snap => {
                     allProblems = snap.val() || {};
+                    invalidateCardCache();
                     renderDashboard();
                 });
                 onValue(ref(database, `users/${user.uid}/memorizeProgress`), snap => {
                     allMemorizeProgress = snap.val() || {};
+                    invalidateCardCache();
                     renderDashboard();
                 });
             } else {
+                invalidateCardCache();
                 renderDashboard();
             }
         });
