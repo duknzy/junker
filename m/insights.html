@@ -2937,6 +2937,7 @@
         let currentUser = null;
         let allLessons = {};
         let allProblems = {};
+        let allQnaLogs = {};
         let allMemorizeProgress = {};
         let currentSubjectFilter = "ALL";
         let searchQuery = "";
@@ -3287,6 +3288,125 @@
                     isDue: isDue,
                     isMastered: isMastered,
                     retryCount: lapses || prog.retryCount || 0,
+                    lastRating: prog.lastRating || null
+                });
+            });
+
+            // 3. 授業の気づきメモ (PC版 lm_${lessonId}_${memoId} と完全同期)
+            Object.entries(allLessons).forEach(([lid, l]) => {
+                if (!l || !Array.isArray(l.lessonMemos)) return;
+                const subj = detectSubjectFromLesson(l);
+                l.lessonMemos.forEach(m => {
+                    if (!m || !m.text || !m.text.trim()) return;
+                    const memoId = m.id;
+                    const progressKey = sanitizeDbKey(`lm_${lid}_${memoId}`);
+                    const prog = allMemorizeProgress[progressKey] || {};
+                    const boxLevel = typeof prog.boxLevel === 'number' ? prog.boxLevel : 0;
+                    const lapses = prog.lapses || 0;
+                    const reps = prog.reps || 0;
+                    const nextDate = prog.nextReviewDate || null;
+                    const isDue = (boxLevel === 0) || (!nextDate || nextDate <= today);
+                    const isMastered = boxLevel >= 4;
+
+                    const part = (l.parts && typeof m.partIndex === "number" && l.parts[m.partIndex]) ? `第${m.partIndex + 1}回: ${l.parts[m.partIndex].title}` : "";
+
+                    cards.push({
+                        id: `lessonmemo_${lid}_${memoId}`,
+                        progressKey: progressKey,
+                        safeId: progressKey,
+                        lessonId: lid,
+                        memoId: memoId,
+                        subject: m.subject || subj,
+                        category: "授業メモ",
+                        sourceTitle: [l.title || "授業メモ", part].filter(Boolean).join(" - "),
+                        question: `💡 授業で記録した「理解の急所・気づき」は？`,
+                        answer: m.text.trim(),
+                        note: m.pinned ? "⭐ ピン留め重要事項" : "",
+                        box: boxLevel,
+                        boxLevel: boxLevel,
+                        reps: reps,
+                        lapses: lapses,
+                        nextReviewDate: nextDate,
+                        isDue: isDue,
+                        isMastered: isMastered,
+                        retryCount: lapses || 0,
+                        lastRating: prog.lastRating || null
+                    });
+                });
+            });
+
+            // 4. 世界史などの年代語呂合わせ (PC版 mnem_${pid} と完全同期)
+            Object.entries(allProblems).forEach(([pid, p]) => {
+                if (!p || p.subject !== "世界史" || !p.mnemonic || !p.mnemonic.trim()) return;
+                const progressKey = sanitizeDbKey(`mnem_${pid}`);
+                const prog = allMemorizeProgress[progressKey] || {};
+                const boxLevel = typeof prog.boxLevel === 'number' ? prog.boxLevel : 0;
+                const lapses = prog.lapses || 0;
+                const reps = prog.reps || 0;
+                const nextDate = prog.nextReviewDate || null;
+                const isDue = (boxLevel === 0) || (!nextDate || nextDate <= today);
+                const isMastered = boxLevel >= 4;
+
+                cards.push({
+                    id: `mnem_${pid}`,
+                    progressKey: progressKey,
+                    safeId: progressKey,
+                    problemId: pid,
+                    subject: "世界史",
+                    category: p.field || "語呂合わせ",
+                    sourceTitle: p.short_title || "年代暗記",
+                    question: `🎴 この出来事の年号・語呂合わせフレーズは？\n【${p.short_title || p.title || '歴史事項'}】`,
+                    answer: p.mnemonic.trim(),
+                    note: p.title ? `詳細: ${p.title.slice(0, 80)}` : "",
+                    box: boxLevel,
+                    boxLevel: boxLevel,
+                    reps: reps,
+                    lapses: lapses,
+                    nextReviewDate: nextDate,
+                    isDue: isDue,
+                    isMastered: isMastered,
+                    retryCount: lapses || 0,
+                    lastRating: prog.lastRating || null
+                });
+            });
+
+            // 5. 質問ログ (PC版 qna_${qid} と完全同期)
+            Object.entries(allQnaLogs).forEach(([qid, log]) => {
+                if (!log) return;
+                const progressKey = sanitizeDbKey(`qna_${qid}`);
+                const prog = allMemorizeProgress[progressKey] || {};
+                const boxLevel = typeof prog.boxLevel === 'number' ? prog.boxLevel : 0;
+                const lapses = prog.lapses || 0;
+                const reps = prog.reps || 0;
+                const nextDate = prog.nextReviewDate || null;
+                const isDue = (boxLevel === 0) || (!nextDate || nextDate <= today);
+                const isMastered = boxLevel >= 4;
+
+                const msgs = log.messages || [];
+                const userMsg = msgs.find(m => m.role === 'user');
+                const aiMsg = [...msgs].reverse().find(m => m.role === 'model');
+                const qText = userMsg ? userMsg.content : (log.shortTitle || '質問');
+                const aText = aiMsg ? aiMsg.content : '（AI回答）';
+
+                cards.push({
+                    id: `qna_${qid}`,
+                    progressKey: progressKey,
+                    safeId: progressKey,
+                    problemId: log.problemId || null,
+                    subject: log.subject || "未分類",
+                    category: log.field || "AI質問",
+                    sourceTitle: log.shortTitle || "問題での質問",
+                    question: `❓ あなたがAIに質問した疑問：その結論・解法は？\n${qText.length > 100 ? qText.slice(0, 100) + '…' : qText}`,
+                    answer: aText,
+                    note: log.shortTitle ? `元問題: ${log.shortTitle}` : "",
+                    box: boxLevel,
+                    boxLevel: boxLevel,
+                    reps: reps,
+                    lapses: lapses,
+                    nextReviewDate: nextDate,
+                    isDue: isDue,
+                    isMastered: isMastered,
+                    retryCount: lapses || 0,
                     lastRating: prog.lastRating || null
                 });
             });
@@ -5461,6 +5581,11 @@
                 });
                 onValue(ref(database, `users/${user.uid}/memorizeProgress`), snap => {
                     allMemorizeProgress = snap.val() || {};
+                    invalidateCardCache();
+                    renderDashboard();
+                });
+                onValue(ref(database, `users/${user.uid}/qna_logs`), snap => {
+                    allQnaLogs = snap.val() || {};
                     invalidateCardCache();
                     renderDashboard();
                 });
