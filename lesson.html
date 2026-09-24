@@ -5357,7 +5357,9 @@
             getFeatureAssignment, setFeatureAssignment, resetFeatureAssignment,
             getEffectiveModelList, getEffectiveThinkingLevel,
             ALL_AVAILABLE_MODELS, GEMINI_MODEL_FALLBACK_LIST, DEEPSEEK_MODELS,
-            GEMINI_THINKING_LEVELS, DEEPSEEK_REASONING_EFFORTS, isDeepseekModel
+            GEMINI_THINKING_LEVELS, DEEPSEEK_REASONING_EFFORTS, isDeepseekModel,
+            getActiveThinkingIdForEngine, getThinkingDisplayLabel,
+            buildGeminiThinkingConfig, buildDeepseekThinkingPayload
         } from "./api-key-manager.js?v=4.0";
 
         const proto = "https" + "://";
@@ -5408,19 +5410,19 @@
         };
 
         const GEMINI_THINKING_DISPLAY_LABELS = {
-            "default": "default (モデル標準・自動思考)",
-            "minimal": "minimal (最小・超高速)",
-            "low": "low (低・要約/基本)",
-            "medium": "medium (中・標準バランス)",
-            "high": "high (高・深層思考)"
+            "default": "default (自動思考・推奨)",
+            "low": "low (低思考・高速応答)",
+            "medium": "medium (中思考・標準バランス)",
+            "high": "high (高思考・深層推論)",
+            "minimal": "minimal (極小・最速 ※Flash-Lite等)"
         };
 
         const DEEPSEEK_EFFORT_DISPLAY_LABELS = {
-            "default": "default (モデル標準・自動)",
-            "none": "none (推論なし / 通常速度)",
-            "low": "low (低推論)",
-            "high": "high (高推論・深層)",
-            "max": "max (最大推論 128K)"
+            "default": "default (自動・高推論標準)",
+            "none": "none (思考OFF・即時回答)",
+            "low": "low (低推論・軽量高速)",
+            "high": "high (高推論・標準深層思考)",
+            "max": "max (最大推論・最深128K CoT)"
         };
 
         function getDisplayModelName(modelName) {
@@ -5448,51 +5450,20 @@
             const isDs = isDeepseekModel(selectedModel);
             const rawOptions = isDs ? DEEPSEEK_REASONING_EFFORTS : GEMINI_THINKING_LEVELS;
 
-            // [object Object] 汚染文字列や無効値をクリーンアップ
-            let cleanThinking = (currentThinking && currentThinking !== "[object Object]" && typeof currentThinking === "string") ? currentThinking : null;
+            // エンジン（Gemini vs DeepSeek）に応じた正確な思考レベルIDにマッピング
+            let cleanThinking = (currentThinking && currentThinking !== "[object Object]" && typeof currentThinking === "string") ? currentThinking : "default";
+            cleanThinking = getActiveThinkingIdForEngine(cleanThinking, isDs);
 
-            // 各オプションを { id, label } に正規化
-            const options = rawOptions.map(opt => {
-                if (typeof opt === "object" && opt !== null) {
-                    const id = opt.id;
-                    const label = isDs
-                        ? (DEEPSEEK_EFFORT_DISPLAY_LABELS[id] || opt.label || id)
-                        : (GEMINI_THINKING_DISPLAY_LABELS[id] || opt.label || id);
-                    return { id, label };
-                }
-                const id = String(opt);
+            rawOptions.forEach(opt => {
+                const id = opt.id;
                 const label = isDs
-                    ? (DEEPSEEK_EFFORT_DISPLAY_LABELS[id] || id)
-                    : (GEMINI_THINKING_DISPLAY_LABELS[id] || id);
-                return { id, label };
-            });
-
-            const validIds = options.map(o => o.id);
-
-            // モデル切り替え時（Gemini ⇄ DeepSeek）の思考レベルマッピングとフォールバック
-            if (!cleanThinking || !validIds.includes(cleanThinking)) {
-                if (cleanThinking === "default") {
-                    cleanThinking = "default";
-                } else if (isDs) {
-                    if (cleanThinking === "minimal") cleanThinking = "none";
-                    else if (cleanThinking === "medium") cleanThinking = "high";
-                    else cleanThinking = "default";
-                } else {
-                    if (cleanThinking === "none") cleanThinking = "minimal";
-                    else if (cleanThinking === "max") cleanThinking = "high";
-                    else cleanThinking = "default";
-                }
-                if (!validIds.includes(cleanThinking)) {
-                    cleanThinking = validIds[0];
-                }
-            }
-
-            options.forEach(item => {
-                const opt = document.createElement("option");
-                opt.value = item.id;
-                opt.textContent = item.label;
-                if (item.id === cleanThinking) opt.selected = true;
-                selectEl.appendChild(opt);
+                    ? (DEEPSEEK_EFFORT_DISPLAY_LABELS[id] || opt.label || id)
+                    : (GEMINI_THINKING_DISPLAY_LABELS[id] || opt.label || id);
+                const optEl = document.createElement("option");
+                optEl.value = id;
+                optEl.textContent = label;
+                if (id === cleanThinking) optEl.selected = true;
+                selectEl.appendChild(optEl);
             });
 
             selectEl.value = cleanThinking;
@@ -5510,14 +5481,19 @@
         }
 
         function setFeatureModelAndThinking(featureId, newModel, newThinking, showFeedback = true) {
+            const isDs = isDeepseekModel(newModel);
             let cleanThinking = (newThinking && newThinking !== "[object Object]" && typeof newThinking === "string") ? newThinking : "default";
+            cleanThinking = getActiveThinkingIdForEngine(cleanThinking, isDs);
             const reordered = [newModel, ...ALL_AVAILABLE_MODELS.filter(m => m !== newModel)];
             setFeatureAssignment(featureId, { models: reordered, thinkingLevel: cleanThinking });
             syncAllLessonAiSelectors();
             if (showFeedback) {
                 const featureTitle = LESSON_FEATURE_TITLES[featureId] || featureId;
                 const modelShort = (newModel || "").replace("gemini-", "Gemini ").replace("deepseek-", "DeepSeek ");
-                showToast(`🤖 ${featureTitle}のAIを【${modelShort} (思考:${cleanThinking})】に設定しました`, "info", 2000);
+                const label = isDs
+                    ? (DEEPSEEK_EFFORT_DISPLAY_LABELS[cleanThinking] || cleanThinking)
+                    : (GEMINI_THINKING_DISPLAY_LABELS[cleanThinking] || cleanThinking);
+                showToast(`🤖 ${featureTitle}のAIを【${modelShort} (思考:${label})】に設定しました`, "info", 2000);
             }
         }
 

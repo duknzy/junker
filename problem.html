@@ -1099,7 +1099,8 @@
             getDeepseekKeys, fetchWithKeyRotation, initApiKeyManager,
             stripCodeFence, fixJsonEscapes, extractJsonObject,
             showToast, callGeminiJSON, callGeminiChat,
-            isStaticHostingEnvironment, openApiKeyManager
+            isStaticHostingEnvironment, openApiKeyManager,
+            getEffectiveThinkingLevel, buildDeepseekThinkingPayload
         } from "./api-key-manager.js?v=3.6";
 
         const proto = "https" + "://";
@@ -2655,6 +2656,8 @@ ${glossaryBlock}`;
                 if (getProblemImages(currentProblemData).length > 0 && !currentProblemData.title) {
                     throw new Error("DeepSeekは画像を直接読み取れません。先に✨Geminiで一度解析して問題文を文字起こしするか、問題文を手動で入力してから再度お試しください。");
                 }
+                const currentThinking = getEffectiveThinkingLevel(featureId, "default");
+                const dsThinking = buildDeepseekThinkingPayload(currentThinking);
                 const deepseekBody = JSON.stringify({
                     "model": MODEL_NAME,
                     "messages": [
@@ -2662,10 +2665,8 @@ ${glossaryBlock}`;
                         { "role": "user", "content": instructionText }
                     ],
                     "temperature": 0.3,
-                    "thinking": { "type": "enabled" },
-                    "reasoning_effort": "high",
                     "response_format": { "type": "json_object" },
-                    "max_tokens": 8192 // 💡 未指定だとthinkingで使い切ってcontentが空のまま打ち切られることがあるため明示
+                    ...dsThinking
                 });
 
                 const dsKeys = getDeepseekKeys();
@@ -2926,14 +2927,14 @@ ${EXPERT_TEACHER_PROMPT}
                         { "role": "system", "content": getChatPrompt(currentProblemData.subject) },
                         ...conversationMessages
                     ];
+                    const currentThinking = getEffectiveThinkingLevel("chat", "default");
+                    const dsThinking = buildDeepseekThinkingPayload(currentThinking);
                     const tutorDeepseekBody = JSON.stringify({
                         "model": MODEL_NAME,
                         "messages": optimizedMessages,
                         "temperature": 0.5,
-                        "thinking": { "type": "enabled" },
-                        "reasoning_effort": "high",
                         "response_format": { "type": "json_object" },
-                        "max_tokens": 8192 // 💡 未指定だとthinkingで使い切ってcontentが空のまま打ち切られることがあるため明示
+                        ...dsThinking
                     });
 
                     // 💡 DeepSeekはthinking+json_object併用時に稀にcontentが空で返ってくる
