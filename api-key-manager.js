@@ -675,8 +675,8 @@ export const GEMINI_THINKING_LEVELS = [
     { id: 'default', label: 'default（自動思考・推奨）', description: 'モデル既定の自動思考' },
     { id: 'low',     label: 'low（低思考・高速応答）', description: '要約・抽出・定型処理向け・高速' },
     { id: 'medium',  label: 'medium（中思考・標準バランス）', description: '標準的な推論と応答速度のバランス' },
-    { id: 'high',    label: 'high（高思考・深層推論）', description: '論理思考・難問解説・深層推論' },
-    { id: 'minimal', label: 'minimal（極小・最速 ※Flash-Lite等）', description: 'Flash-Lite等で思考を極小化（他モデルはlow自動適用）' }
+    { id: 'high',    label: 'high（高思考・深層推論）', description: '論理思考・難問解説・深層推論（※Lite系統は自動でこれに固定）' },
+    { id: 'minimal', label: 'minimal（極小・最速）', description: '思考を極小化（非対応モデルはlowに自動補正）' }
 ];
 
 export const DEEPSEEK_REASONING_EFFORTS = [
@@ -824,12 +824,23 @@ function setFeatureEntry(featureId, entry) {
     saveFeatureConfig(cfg);
 }
 
+export function isLiteModel(modelName) {
+    if (!modelName || typeof modelName !== "string") return false;
+    return modelName.toLowerCase().includes("lite");
+}
+
 export function getFeatureAssignment(featureId) { return getFeatureEntry(featureId); }
 export function setFeatureAssignment(featureId, { models, keys, thinkingLevel }) {
     const prev = getFeatureEntry(featureId);
     let cleanThinking = thinkingLevel;
     if (cleanThinking === "[object Object]" || (cleanThinking && typeof cleanThinking !== "string")) {
         cleanThinking = null;
+    }
+    const currentModels = (models && models.length > 0) ? models : (prev.models || null);
+    const primaryModel = (currentModels && currentModels.length > 0) ? currentModels[0] : null;
+    // 💡 lite系統（Flash-Lite）が最優先モデルの場合、思考レベルは常に "high" に設定
+    if (isLiteModel(primaryModel)) {
+        cleanThinking = "high";
     }
     setFeatureEntry(featureId, {
         models: (models && models.length > 0) ? models : null,
@@ -844,6 +855,11 @@ export function resetFeatureAssignment(featureId) {
 export function getEffectiveThinkingLevel(featureId, defaultLevel = "default") {
     if (!featureId) return defaultLevel;
     const entry = getFeatureEntry(featureId);
+    const primaryModel = (entry.models && entry.models.length > 0) ? entry.models[0] : (GEMINI_MODEL_FALLBACK_LIST[0]);
+    // 💡 lite系統が選ばれている場合は全て "high" を適用
+    if (isLiteModel(primaryModel)) {
+        return "high";
+    }
     const val = entry.thinkingLevel;
     if (!val || val === "[object Object]" || typeof val !== "string") return defaultLevel;
     return val;
@@ -963,7 +979,10 @@ function convertGeminiContentsToOpenAIMessages(contents, systemInstructionText) 
     return messages;
 }
 
-export function getActiveThinkingIdForEngine(rawThinking, isDeepseek) {
+export function getActiveThinkingIdForEngine(rawThinking, isDeepseek, modelName = null) {
+    if (modelName && isLiteModel(modelName)) {
+        return "high";
+    }
     if (!rawThinking || rawThinking === "default" || rawThinking === "auto") return "default";
     const clean = String(rawThinking).toLowerCase();
     if (isDeepseek) {
@@ -981,7 +1000,8 @@ export function getActiveThinkingIdForEngine(rawThinking, isDeepseek) {
 
 export function getThinkingDisplayLabel(engineOrModel, thinkingLevel) {
     const isDs = typeof engineOrModel === "boolean" ? engineOrModel : isDeepseekModel(engineOrModel);
-    const activeId = getActiveThinkingIdForEngine(thinkingLevel, isDs);
+    const modelName = typeof engineOrModel === "string" ? engineOrModel : null;
+    const activeId = getActiveThinkingIdForEngine(thinkingLevel, isDs, modelName);
     const list = isDs ? DEEPSEEK_REASONING_EFFORTS : GEMINI_THINKING_LEVELS;
     const item = list.find(x => x.id === activeId);
     return item ? item.label : activeId;
@@ -1024,6 +1044,15 @@ export function buildDeepseekThinkingPayload(thinkingLevel) {
 }
 
 export function buildGeminiThinkingConfig(modelName, thinkingLevel) {
+    // 💡 lite系統（Gemini 3.5 Flash-Lite, Gemini 3.1 Flash-Lite等）が選ばれたときは思考レベルを全て "high" に設定
+    if (isLiteModel(modelName)) {
+        return {
+            thinkingConfig: {
+                thinkingLevel: "high"
+            }
+        };
+    }
+
     if (!thinkingLevel || thinkingLevel === "default" || thinkingLevel === "auto") {
         return {}; // モデル既定の自動思考
     }
@@ -1048,10 +1077,7 @@ export function buildGeminiThinkingConfig(modelName, thinkingLevel) {
     // HTTP 400 "Thinking level MINIMAL is not supported for this model" になるため、
     // flash-lite 以外のモデルで minimal が指定された場合は安全に "low" へクランプする。
     if (targetLevel === "minimal") {
-        const supportsMinimal = modelName && (modelName.includes("flash-lite") || modelName.includes("lite"));
-        if (!supportsMinimal) {
-            targetLevel = "low";
-        }
+        targetLevel = "low";
     }
 
     if (!["minimal", "low", "medium", "high"].includes(targetLevel)) {
@@ -1241,7 +1267,8 @@ async function runGeminiFallbackLoop(contents, systemInstruction, options = {}) 
 
     async function attemptOnce(modelName, systemInstructionText) {
         const generationConfig = {};
-        const geminiThinking = buildGeminiThinkingConfig(modelName, effectiveThinkingLevel);
+        const thinkingForAttempt = isLiteModel(modelName) ? "high" : effectiveThinkingLevel;
+        const geminiThinking = buildGeminiThinkingConfig(modelName, thinkingForAttempt);
         if (geminiThinking.thinkingConfig) {
             generationConfig.thinkingConfig = geminiThinking.thinkingConfig;
         }

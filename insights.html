@@ -2949,7 +2949,7 @@
                                 <div class="fc-back-note" id="fc-back-note" style="display:none;"></div>
 
                                 <!-- 📝 ユーザー追加メモ表示＆編集エリア -->
-                                <div class="fc-user-memo-box" id="fc-back-user-memo-box" style="margin-top:0.75rem; background:rgba(245,158,11,0.06); border:1px dashed rgba(217,119,6,0.35); border-radius:var(--radius-md); padding:0.6rem 0.8rem; text-align:left;">
+                                <div class="fc-user-memo-box" id="fc-back-user-memo-box" style="margin-top:0.75rem; background:rgba(245,158,11,0.06); border:1px dashed rgba(217,119,6,0.35); border-radius:var(--radius-md); padding:0.6rem 0.8rem; text-align:left; cursor:pointer;" title="タップまたはクリックして自分用メモを入力・編集">
                                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.3rem;">
                                         <span style="font-size:0.75rem; font-weight:800; color:#b45309; display:inline-flex; align-items:center; gap:0.3rem;">
                                             📝 あなたの追加メモ (自分用)
@@ -2959,13 +2959,16 @@
                                         </button>
                                     </div>
                                     <div id="fc-back-user-memo-text" style="font-size:0.86rem; color:var(--text-primary); line-height:1.5; white-space:pre-wrap;">
-                                        <span style="color:var(--text-muted); font-style:italic;">（メモはまだありません。「✏️ 編集」から語呂合わせや自分だけの覚え方をメモできます）</span>
+                                        <span style="color:var(--text-muted); font-style:italic;">（メモはまだありません。タップして語呂合わせや自分だけの覚え方をメモできます）</span>
                                     </div>
-                                    <div id="fc-back-user-memo-editor" style="display:none; margin-top:0.4rem;">
+                                    <div id="fc-back-user-memo-editor" style="display:none; margin-top:0.4rem; cursor:default;">
                                         <textarea id="fc-back-user-memo-input" class="flora-textarea" rows="2" style="font-size:0.82rem; width:100%; box-sizing:border-box;" placeholder="語呂合わせや注意点、自分だけのメモを入力..."></textarea>
-                                        <div style="display:flex; justify-content:flex-end; gap:0.4rem; margin-top:0.35rem;">
-                                            <button type="button" id="fc-btn-save-memo" class="flora-btn flora-btn-primary btn-sm" style="font-size:0.72rem; padding:0.2rem 0.65rem;">💾 保存</button>
-                                            <button type="button" id="fc-btn-cancel-memo" class="flora-btn flora-btn-ghost btn-sm" style="font-size:0.72rem; padding:0.2rem 0.5rem;">✕ 取消</button>
+                                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:0.35rem; gap:0.4rem; flex-wrap:wrap;">
+                                            <span style="font-size:0.7rem; color:var(--text-muted);">💡 [Enter] で確定保存 / [Shift+Enter] で改行</span>
+                                            <div style="display:flex; gap:0.4rem;">
+                                                <button type="button" id="fc-btn-save-memo" class="flora-btn flora-btn-primary btn-sm" style="font-size:0.72rem; padding:0.2rem 0.65rem;">💾 確定保存</button>
+                                                <button type="button" id="fc-btn-cancel-memo" class="flora-btn flora-btn-ghost btn-sm" style="font-size:0.72rem; padding:0.2rem 0.5rem;">✕ 取消</button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -9072,8 +9075,10 @@
                     subject: fcCurrentCard.subject || "",
                     term: fcCurrentCard.frontMain || ""
                 };
+                fcCurrentCard.userMemo = trimmed;
             } else {
                 delete rawCardUserMemos[cardKey];
+                fcCurrentCard.userMemo = "";
             }
 
             try {
@@ -9433,8 +9438,16 @@
         // イベントバインド
         if (fcCardStage) {
             fcCardStage.onclick = (e) => {
-                // 選択肢ボタンやアクションボタンをクリックした場合は回転させない
-                if (e.target.closest("button") || e.target.closest(".fc-quiz-option") || e.target.closest(".fc-srs-btn")) return;
+                // 選択肢ボタン、評価ボタン、メモ欄全体、入力・テキストエリアをクリックした場合はカードを回転させない
+                if (
+                    e.target.closest("button") ||
+                    e.target.closest("input") ||
+                    e.target.closest("textarea") ||
+                    e.target.closest(".fc-quiz-option") ||
+                    e.target.closest(".fc-srs-btn") ||
+                    e.target.closest(".fc-user-memo-box") ||
+                    e.target.closest("#fc-back-user-memo-box")
+                ) return;
                 flipFcCard();
             };
         }
@@ -9491,21 +9504,53 @@
         const fcBtnEditMemo = document.getElementById("fc-btn-edit-memo");
         const fcBtnSaveMemo = document.getElementById("fc-btn-save-memo");
         const fcBtnCancelMemo = document.getElementById("fc-btn-cancel-memo");
+        const fcBackUserMemoBox = document.getElementById("fc-back-user-memo-box");
         const fcBackUserMemoEditor = document.getElementById("fc-back-user-memo-editor");
         const fcBackUserMemoText = document.getElementById("fc-back-user-memo-text");
         const fcBackUserMemoInput = document.getElementById("fc-back-user-memo-input");
 
+        function enterFcUserMemoEditMode() {
+            if (!fcBackUserMemoEditor || !fcBackUserMemoText || !fcBackUserMemoInput) return;
+            fcBackUserMemoEditor.style.display = "block";
+            fcBackUserMemoText.style.display = "none";
+            const cardKey = getCardMemoKey(fcCurrentCard);
+            const memoEntry = rawCardUserMemos[cardKey];
+            fcBackUserMemoInput.value = (memoEntry && memoEntry.memo) ? memoEntry.memo : (fcCurrentCard?.userMemo || "");
+            fcBackUserMemoInput.focus();
+            const len = fcBackUserMemoInput.value.length;
+            try {
+                fcBackUserMemoInput.setSelectionRange(len, len);
+            } catch(_) {}
+        }
+
+        // メモ枠全体タップ・クリック時に直接編集モードへ遷移（カード反転を抑止）
+        if (fcBackUserMemoBox) {
+            fcBackUserMemoBox.onclick = (e) => {
+                e.stopPropagation();
+                if (e.target.closest("button") || e.target.closest("textarea") || e.target.closest("input")) return;
+                if (fcBackUserMemoEditor && fcBackUserMemoEditor.style.display === "none") {
+                    enterFcUserMemoEditMode();
+                }
+            };
+        }
+
+        if (fcBackUserMemoText) {
+            fcBackUserMemoText.onclick = (e) => {
+                e.stopPropagation();
+                enterFcUserMemoEditMode();
+            };
+        }
+
+        if (fcBackUserMemoEditor) {
+            fcBackUserMemoEditor.onclick = (e) => {
+                e.stopPropagation();
+            };
+        }
+
         if (fcBtnEditMemo) {
             fcBtnEditMemo.onclick = (e) => {
                 e.stopPropagation();
-                if (fcBackUserMemoEditor) fcBackUserMemoEditor.style.display = "block";
-                if (fcBackUserMemoText) fcBackUserMemoText.style.display = "none";
-                if (fcBackUserMemoInput) {
-                    const cardKey = getCardMemoKey(fcCurrentCard);
-                    const memoEntry = rawCardUserMemos[cardKey];
-                    fcBackUserMemoInput.value = (memoEntry && memoEntry.memo) ? memoEntry.memo : (fcCurrentCard?.userMemo || "");
-                    fcBackUserMemoInput.focus();
-                }
+                enterFcUserMemoEditMode();
             };
         }
 
@@ -9514,6 +9559,7 @@
                 e.stopPropagation();
                 if (fcBackUserMemoEditor) fcBackUserMemoEditor.style.display = "none";
                 if (fcBackUserMemoText) fcBackUserMemoText.style.display = "block";
+                if (fcBackUserMemoInput) fcBackUserMemoInput.blur();
             };
         }
 
@@ -9524,7 +9570,41 @@
                 await saveCurrentCardUserMemo(val);
                 if (fcBackUserMemoEditor) fcBackUserMemoEditor.style.display = "none";
                 if (fcBackUserMemoText) fcBackUserMemoText.style.display = "block";
+                if (fcBackUserMemoInput) fcBackUserMemoInput.blur();
             };
+        }
+
+        if (fcBackUserMemoInput) {
+            fcBackUserMemoInput.onclick = (e) => {
+                e.stopPropagation();
+            };
+            fcBackUserMemoInput.addEventListener("keydown", async (e) => {
+                // 外側のキーイベント（カードフリップやSRS採点ショートカット）への伝播を完全に遮断
+                e.stopPropagation();
+
+                // 日本語IME文字変換中のEnterキー（変換確定）は保存させず文字変換を通す
+                if (e.isComposing || e.keyCode === 229) {
+                    return;
+                }
+
+                if (e.key === "Enter") {
+                    if (e.shiftKey) {
+                        // Shift+Enter は改行
+                        return;
+                    }
+                    // Enter 単体、または Ctrl+Enter / Cmd+Enter でメモを確定・保存！
+                    e.preventDefault();
+                    const val = fcBackUserMemoInput.value;
+                    await saveCurrentCardUserMemo(val);
+                    if (fcBackUserMemoEditor) fcBackUserMemoEditor.style.display = "none";
+                    if (fcBackUserMemoText) fcBackUserMemoText.style.display = "block";
+                    fcBackUserMemoInput.blur();
+                } else if (e.key === "Escape") {
+                    e.preventDefault();
+                    if (fcBtnCancelMemo) fcBtnCancelMemo.click();
+                    fcBackUserMemoInput.blur();
+                }
+            });
         }
 
         // 💬 教科書AI質問モーダルのイベントバインド
@@ -10246,6 +10326,25 @@
             }
 
             if (fcModal.style.display === "flex") {
+                // テキスト入力欄（textarea, input, contenteditable）にフォーカスがある時はフラッシュカードのキー操作を完全に遮断
+                const isTyping = document.activeElement && (
+                    document.activeElement.tagName === "INPUT" ||
+                    document.activeElement.tagName === "TEXTAREA" ||
+                    document.activeElement.isContentEditable
+                );
+
+                if (isTyping) {
+                    if (e.key === "Escape") {
+                        if (fcBackUserMemoEditor && fcBackUserMemoEditor.style.display !== "none") {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (fcBtnCancelMemo) fcBtnCancelMemo.click();
+                            document.activeElement.blur();
+                        }
+                    }
+                    return; // 重要: 入力中の [Enter] や [Space], [1]〜[4] による次カード誤爆を防止
+                }
+
                 if (e.key === "Escape") {
                     e.preventDefault();
                     closeFcModal();

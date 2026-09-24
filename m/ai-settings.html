@@ -383,10 +383,10 @@
         import {
             getGeminiKeys, getDeepseekKeys, addKey, removeKey, getKeyLabel, setKeyLabel,
             GEMINI_FEATURES, GEMINI_MODEL_FALLBACK_LIST, ALL_AVAILABLE_MODELS, DEEPSEEK_MODELS,
-            GEMINI_THINKING_LEVELS, DEEPSEEK_REASONING_EFFORTS, isDeepseekModel,
+            GEMINI_THINKING_LEVELS, DEEPSEEK_REASONING_EFFORTS, isDeepseekModel, isLiteModel,
             getFeatureAssignment, setFeatureAssignment, resetFeatureAssignment,
             initApiKeyManager, exportAISettings, importAISettings,
-            getActiveThinkingIdForEngine
+            getActiveThinkingIdForEngine, showToast
         } from "../api-key-manager.js?v=4.0";
 
         initApiKeyManager({ needGemini: true, needDeepseek: false });
@@ -488,6 +488,14 @@
                 const featureId = thinkingChip.getAttribute("data-thinking-chip");
                 const level = thinkingChip.getAttribute("data-level");
                 const entry = getFeatureAssignment(featureId);
+                const activeModels = (entry.models && entry.models.length > 0) ? entry.models : GEMINI_MODEL_FALLBACK_LIST;
+                const primaryModel = activeModels[0] || "gemini-3.8-flash";
+                if (isLiteModel(primaryModel)) {
+                    showToast(`⚡ ${primaryModel} はLite系統のため、思考レベルは常に【high（高思考）】に自動固定されます`, "info");
+                    setFeatureAssignment(featureId, { models: entry.models, keys: entry.keys, thinkingLevel: "high" });
+                    renderFeatureCards();
+                    return;
+                }
                 setFeatureAssignment(featureId, { models: entry.models, keys: entry.keys, thinkingLevel: level });
                 renderFeatureCards();
                 return;
@@ -605,9 +613,11 @@
                 }
 
                 // 思考レベルチップ
-                const isDsPrimary = isDeepseekModel(activeModels[0] || "gemini-3.8-flash");
+                const primaryModel = activeModels[0] || "gemini-3.8-flash";
+                const isDsPrimary = isDeepseekModel(primaryModel);
+                const isLitePrimary = isLiteModel(primaryModel);
                 const thinkingList = isDsPrimary ? DEEPSEEK_REASONING_EFFORTS : GEMINI_THINKING_LEVELS;
-                const activeThinkingId = getActiveThinkingIdForEngine(currentThinking, isDsPrimary);
+                const activeThinkingId = isLitePrimary ? "high" : getActiveThinkingIdForEngine(currentThinking, isDsPrimary, primaryModel);
                 const thinkingChipsHtml = thinkingList.map(tl => {
                     const active = activeThinkingId === tl.id;
                     return `<button type="button" class="chip-toggle ${active ? 'active' : ''}" data-thinking-chip="${f.id}" data-level="${tl.id}">${active ? '⚡ ' : ''}${tl.label}</button>`;
@@ -617,9 +627,13 @@
                     ? `<div style="font-size:0.72rem; color:#0369a1; background:#f0f9ff; border:1px solid #bae6fd; padding:0.4rem 0.5rem; border-radius:6px; margin-top:0.35rem; line-height:1.4;">
                         <b>🐋 DeepSeek推論:</b> 思考モード (<code>thinking: enabled/disabled</code>) と推論深度 (<code>reasoning_effort: none/low/high/max</code>) を指定。max_tokensが自動最適化されます。
                        </div>`
-                    : `<div style="font-size:0.72rem; color:#15803d; background:#f0fdf4; border:1px solid #bbf7d0; padding:0.4rem 0.5rem; border-radius:6px; margin-top:0.35rem; line-height:1.4;">
-                        <b>✨ Gemini思考:</b> 思考レベル (<code>thinkingConfig: thinkingLevel</code>) を指定。モデル特性に応じて安全に最適化されます。
-                       </div>`;
+                    : isLitePrimary
+                        ? `<div style="font-size:0.72rem; color:#b45309; background:#fffbeb; border:1px solid #fde68a; padding:0.4rem 0.5rem; border-radius:6px; margin-top:0.35rem; line-height:1.4;">
+                            <b>⚡ Lite系統特則:</b> 選択中のモデル（<code>${primaryModel}</code>）はLite系統のため、思考レベルは常に <b>high（高思考・深層推論）</b> に自動固定されます。
+                           </div>`
+                        : `<div style="font-size:0.72rem; color:#15803d; background:#f0fdf4; border:1px solid #bbf7d0; padding:0.4rem 0.5rem; border-radius:6px; margin-top:0.35rem; line-height:1.4;">
+                            <b>✨ Gemini思考:</b> 思考レベル (<code>thinkingConfig: thinkingLevel</code>) を指定。モデル特性に応じて安全に最適化されます。
+                           </div>`;
 
                 // キー選択チップ
                 let keyChipsHtml = "";
