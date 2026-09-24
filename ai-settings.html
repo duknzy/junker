@@ -372,7 +372,8 @@ import {
     GEMINI_FEATURES, GEMINI_MODEL_FALLBACK_LIST, DEEPSEEK_MODELS, ALL_AVAILABLE_MODELS,
     GEMINI_THINKING_LEVELS, DEEPSEEK_REASONING_EFFORTS, isDeepseekModel,
     getFeatureAssignment, setFeatureAssignment, resetFeatureAssignment,
-    showToast, exportAISettings, importAISettings
+    showToast, exportAISettings, importAISettings,
+    getActiveThinkingIdForEngine, getThinkingDisplayLabel
 } from "./api-key-manager.js?v=4.0";
 
 const ENGINE_LABEL = { gemini: "✨ Gemini", deepseek: "🐋 DeepSeek" };
@@ -487,8 +488,10 @@ function renderAssignTable() {
     tbody.innerHTML = GEMINI_FEATURES.map(f => {
         const entry = getFeatureAssignment(f.id);
         const modelBadges = badgesHtml(entry.models, "デフォルト（全モデル）", true);
-        const thinkingLevel = entry.thinkingLevel || "default";
-        const thinkingLabelText = thinkingLevel === "default" ? "default (自動)" : thinkingLevel;
+        const primaryModel = (entry.models && entry.models[0]) || "gemini-3.8-flash";
+        const isDsPrimary = isDeepseekModel(primaryModel);
+        const activeThinkingId = getActiveThinkingIdForEngine(entry.thinkingLevel, isDsPrimary);
+        const thinkingLabelText = getThinkingDisplayLabel(isDsPrimary, activeThinkingId);
         const thinkingBadge = `<span class="badge-pill is-custom" style="background:var(--brand-light, #eff6ff); color:var(--brand-primary, #2563eb); border-color:var(--brand-border, #bfdbfe); font-weight:700;">⚡ ${thinkingLabelText}</span>`;
         const keyBadges = badgesHtml((entry.keys || []).map(keyDisplayLabel), "デフォルト（全キー）");
         return `
@@ -551,11 +554,20 @@ function renderFeatureCards() {
         const primaryModel = selectedModelList[0] || "gemini-3.8-flash";
         const isDsPrimary = isDeepseekModel(primaryModel);
         const thinkingList = isDsPrimary ? DEEPSEEK_REASONING_EFFORTS : GEMINI_THINKING_LEVELS;
+        const activeThinkingId = getActiveThinkingIdForEngine(currentThinking, isDsPrimary);
         const thinkingChips = thinkingList.map(tl => `
-            <button type="button" class="chip-toggle thinking-chip ${currentThinking === tl.id ? 'active' : ''}" data-chip-thinking="${f.id}:${tl.id}">
-                ${currentThinking === tl.id ? '⚡ ' : ''}${tl.label}
+            <button type="button" class="chip-toggle thinking-chip ${activeThinkingId === tl.id ? 'active' : ''}" data-chip-thinking="${f.id}:${tl.id}">
+                ${activeThinkingId === tl.id ? '⚡ ' : ''}${tl.label}
             </button>
         `).join("");
+
+        const thinkingHintHtml = isDsPrimary
+            ? `<div style="font-size: 0.74rem; color: #0369a1; background: #f0f9ff; border: 1px solid #bae6fd; padding: 0.45rem 0.65rem; border-radius: 6px; margin-top: 0.4rem; line-height: 1.45;">
+                <b>🐋 DeepSeekの推論仕様:</b> 思考モード (<code>thinking: enabled/disabled</code>) と推論深度 (<code>reasoning_effort: none/low/high/max</code>) を送信します。推論トークン用バッファとして自動で <code>max_tokens</code> (8,192〜16,384) が確保されます。
+               </div>`
+            : `<div style="font-size: 0.74rem; color: #15803d; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 0.45rem 0.65rem; border-radius: 6px; margin-top: 0.4rem; line-height: 1.45;">
+                <b>✨ Geminiの思考仕様:</b> 思考レベル (<code>thinkingConfig: thinkingLevel</code>) を送信します。3.8-Flash等の仕様に合わせて安全に自動補正されます（minimal指定時もエラーを防ぎlowで実行）。
+               </div>`;
 
         const keyChips = allGeminiKeys.length === 0
             ? `<div class="chip-empty-note">Geminiキーが未登録です。上のセクションで先に登録してください。</div>`
@@ -581,8 +593,9 @@ function renderFeatureCards() {
                     ${priorityListHtml}
                 </div>
 
-                <div class="chip-group-label" style="margin-top: 1rem;">⚡ 思考レベル（Thinking Level / Reasoning Effort）</div>
+                <div class="chip-group-label" style="margin-top: 1rem;">⚡ 思考レベル（${isDsPrimary ? "🐋 DeepSeek 推論設定" : "✨ Gemini 思考レベル設定"}）</div>
                 <div class="chip-row">${thinkingChips}</div>
+                ${thinkingHintHtml}
 
                 <div class="chip-group-label" style="margin-top: 1rem;">🔑 使用キー（未選択＝全キー対象）</div>
                 <div class="chip-row">${keyChips}</div>

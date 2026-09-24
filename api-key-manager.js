@@ -672,19 +672,19 @@ export const ALL_AVAILABLE_MODELS = [
 ];
 
 export const GEMINI_THINKING_LEVELS = [
-    { id: 'default', label: 'default（モデル標準・自動思考）' },
-    { id: 'minimal', label: 'minimal（超高速・思考ほぼなし）' },
-    { id: 'low',     label: 'low（低思考・要約/基本）' },
-    { id: 'medium',  label: 'medium（標準バランス）' },
-    { id: 'high',    label: 'high（高思考・深層推論）' }
+    { id: 'default', label: 'default（自動思考・推奨）', description: 'モデル既定の自動思考' },
+    { id: 'low',     label: 'low（低思考・高速応答）', description: '要約・抽出・定型処理向け・高速' },
+    { id: 'medium',  label: 'medium（中思考・標準バランス）', description: '標準的な推論と応答速度のバランス' },
+    { id: 'high',    label: 'high（高思考・深層推論）', description: '論理思考・難問解説・深層推論' },
+    { id: 'minimal', label: 'minimal（極小・最速 ※Flash-Lite等）', description: 'Flash-Lite等で思考を極小化（他モデルはlow自動適用）' }
 ];
 
 export const DEEPSEEK_REASONING_EFFORTS = [
-    { id: 'default', label: 'default（モデル標準・自動）' },
-    { id: 'none', label: 'none（無効）' },
-    { id: 'low',  label: 'low（低推論）' },
-    { id: 'high', label: 'high（高推論）' },
-    { id: 'max',  label: 'max（最大推論 128K）' }
+    { id: 'default', label: 'default（自動・高推論標準）', description: 'DeepSeek標準の推論モード（high相当）' },
+    { id: 'none',    label: 'none（思考OFF・即時回答）', description: '推論完全無効（thinking: disabled）' },
+    { id: 'low',     label: 'low（低推論・軽量高速）', description: '軽量な推論プロセス（トークン節約）' },
+    { id: 'high',    label: 'high（高推論・標準深層思考）', description: '標準的な深い思考（CoT推論展開）' },
+    { id: 'max',     label: 'max（最大推論・最深128K CoT）', description: '最大トークン消費での極大推論' }
 ];
 
 export const GEMINI_FEATURES = [
@@ -963,17 +963,114 @@ function convertGeminiContentsToOpenAIMessages(contents, systemInstructionText) 
     return messages;
 }
 
-function mapThinkingLevelToDeepseekReasoning(level) {
-    if (!level || level === "default" || level === "auto") return null;
-    if (level === "minimal") return "none";
-    if (level === "low") return "low";
-    if (level === "medium") return "high";
-    if (level === "high") return "high";
-    if (["none", "low", "high", "max"].includes(level)) return level;
-    return null;
+export function getActiveThinkingIdForEngine(rawThinking, isDeepseek) {
+    if (!rawThinking || rawThinking === "default" || rawThinking === "auto") return "default";
+    const clean = String(rawThinking).toLowerCase();
+    if (isDeepseek) {
+        if (["none", "low", "high", "max"].includes(clean)) return clean;
+        if (clean === "minimal") return "none";
+        if (clean === "medium") return "high";
+        return "default";
+    } else {
+        if (["minimal", "low", "medium", "high"].includes(clean)) return clean;
+        if (clean === "none") return "minimal";
+        if (clean === "max") return "high";
+        return "default";
+    }
 }
 
-function normalizeGeminiThinkingLevel(level) {
+export function getThinkingDisplayLabel(engineOrModel, thinkingLevel) {
+    const isDs = typeof engineOrModel === "boolean" ? engineOrModel : isDeepseekModel(engineOrModel);
+    const activeId = getActiveThinkingIdForEngine(thinkingLevel, isDs);
+    const list = isDs ? DEEPSEEK_REASONING_EFFORTS : GEMINI_THINKING_LEVELS;
+    const item = list.find(x => x.id === activeId);
+    return item ? item.label : activeId;
+}
+
+export function buildDeepseekThinkingPayload(thinkingLevel) {
+    if (!thinkingLevel || thinkingLevel === "default" || thinkingLevel === "auto") {
+        // DeepSeek標準: 高推論 (high) + 8192トークン
+        return {
+            thinking: { type: "enabled" },
+            reasoning_effort: "high",
+            max_tokens: 8192
+        };
+    }
+    const clean = String(thinkingLevel).toLowerCase();
+    if (clean === "none" || clean === "minimal") {
+        return {
+            thinking: { type: "disabled" },
+            reasoning_effort: "none",
+            max_tokens: 4096
+        };
+    }
+    let effort = "high";
+    let maxTokens = 8192;
+    if (clean === "low") {
+        effort = "low";
+        maxTokens = 8192;
+    } else if (clean === "medium" || clean === "high") {
+        effort = "high";
+        maxTokens = 8192;
+    } else if (clean === "max") {
+        effort = "max";
+        maxTokens = 16384;
+    }
+    return {
+        thinking: { type: "enabled" },
+        reasoning_effort: effort,
+        max_tokens: maxTokens
+    };
+}
+
+export function buildGeminiThinkingConfig(modelName, thinkingLevel) {
+    if (!thinkingLevel || thinkingLevel === "default" || thinkingLevel === "auto") {
+        return {}; // モデル既定の自動思考
+    }
+    const cleanLvl = String(thinkingLevel).toLowerCase();
+
+    // Gemini 2.5/2.0系は thinkingBudget (数値トークン数) を使用
+    if (modelName && (modelName.includes("2.5") || modelName.includes("gemini-2.0"))) {
+        let budget = 4096;
+        if (cleanLvl === "minimal" || cleanLvl === "none") budget = 0;
+        else if (cleanLvl === "low") budget = 1024;
+        else if (cleanLvl === "medium") budget = 4096;
+        else if (cleanLvl === "high" || cleanLvl === "max") budget = 8192;
+        return { thinkingConfig: { thinkingBudget: budget } };
+    }
+
+    // Gemini 3系（gemini-3.8-flash, gemini-3.1-pro-preview, gemini-3.1-flash-lite 等）
+    let targetLevel = cleanLvl;
+    if (targetLevel === "none") targetLevel = "minimal";
+    if (targetLevel === "max") targetLevel = "high";
+
+    // 💡 重要: gemini-3.8-flash や gemini-3.1-pro-preview は "minimal" を受け付けず
+    // HTTP 400 "Thinking level MINIMAL is not supported for this model" になるため、
+    // flash-lite 以外のモデルで minimal が指定された場合は安全に "low" へクランプする。
+    if (targetLevel === "minimal") {
+        const supportsMinimal = modelName && (modelName.includes("flash-lite") || modelName.includes("lite"));
+        if (!supportsMinimal) {
+            targetLevel = "low";
+        }
+    }
+
+    if (!["minimal", "low", "medium", "high"].includes(targetLevel)) {
+        targetLevel = "medium";
+    }
+
+    return {
+        thinkingConfig: {
+            thinkingLevel: targetLevel
+        }
+    };
+}
+
+export function mapThinkingLevelToDeepseekReasoning(level) {
+    const payload = buildDeepseekThinkingPayload(level);
+    return payload.reasoning_effort || "high";
+}
+
+export function normalizeGeminiThinkingLevel(level) {
     if (!level || level === "default" || level === "auto") return null;
     if (["minimal", "low", "medium", "high"].includes(level)) return level;
     if (level === "none") return "minimal";
@@ -994,7 +1091,7 @@ async function runDeepseekFallbackLoop(contents, systemInstruction, options = {}
 
     const deepseekKeys = getDeepseekKeys();
     const effectiveThinking = options.thinkingLevel || getEffectiveThinkingLevel(featureId, "default");
-    const reasoningEffort = mapThinkingLevelToDeepseekReasoning(effectiveThinking);
+    const deepseekThinkingPayload = buildDeepseekThinkingPayload(effectiveThinking);
     const baseMessages = convertGeminiContentsToOpenAIMessages(contents, systemInstruction);
 
     let modelList = [preferredModel, ...DEEPSEEK_MODELS.filter(m => m !== preferredModel)];
@@ -1009,11 +1106,9 @@ async function runDeepseekFallbackLoop(contents, systemInstruction, options = {}
         }
         const requestPayload = {
             model: modelName,
-            messages: messages
+            messages: messages,
+            ...deepseekThinkingPayload
         };
-        if (reasoningEffort) {
-            requestPayload.reasoning_effort = reasoningEffort;
-        }
 
         let response;
         try {
@@ -1049,7 +1144,10 @@ async function runDeepseekFallbackLoop(contents, systemInstruction, options = {}
             return { ok: false, isFormatError: false, reason: "JSON応答パースエラー", error: jsonErr };
         }
 
-        const candidateText = resData?.choices?.[0]?.message?.content || "";
+        const message = resData?.choices?.[0]?.message || {};
+        const candidateText = (message.content && message.content.trim())
+            || (message.reasoning_content && message.reasoning_content.trim())
+            || "";
         if (!candidateText) {
             return { ok: false, isFormatError: false, reason: "空応答", error: new Error(`Empty response from ${modelName}`) };
         }
@@ -1140,14 +1238,12 @@ async function runGeminiFallbackLoop(contents, systemInstruction, options = {}) 
 
     // 🧠 思考レベル（thinking_level）の決定
     const effectiveThinkingLevel = options.thinkingLevel || getEffectiveThinkingLevel(featureId, "default");
-    const normalizedGeminiThinking = normalizeGeminiThinkingLevel(effectiveThinkingLevel);
 
     async function attemptOnce(modelName, systemInstructionText) {
         const generationConfig = {};
-        if (normalizedGeminiThinking) {
-            generationConfig.thinkingConfig = {
-                thinkingLevel: normalizedGeminiThinking
-            };
+        const geminiThinking = buildGeminiThinkingConfig(modelName, effectiveThinkingLevel);
+        if (geminiThinking.thinkingConfig) {
+            generationConfig.thinkingConfig = geminiThinking.thinkingConfig;
         }
         const effectiveResponseMimeType = responseSchema ? "application/json" : responseMimeType;
         if (effectiveResponseMimeType) generationConfig.responseMimeType = effectiveResponseMimeType;
