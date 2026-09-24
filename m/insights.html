@@ -2589,6 +2589,30 @@
                         <div class="card-a-prompt">ANSWER</div>
                         <div class="card-a-text tex2jax_process" id="card-back-text">--</div>
                         <div class="card-note-box tex2jax_process" id="card-back-note" style="display:none;"></div>
+                        <!-- 📝 ユーザー追加メモ表示＆編集エリア -->
+                        <div class="card-user-memo-box" id="m-card-user-memo-box" style="margin-top:0.6rem; width:100%; box-sizing:border-box; background:rgba(245,158,11,0.08); border:1px dashed rgba(217,119,6,0.35); border-radius:12px; padding:0.5rem 0.75rem; text-align:left; cursor:pointer;" title="タップして自分用メモを入力・編集">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.25rem;">
+                                <span style="font-size:0.72rem; font-weight:800; color:#b45309; display:inline-flex; align-items:center; gap:0.25rem;">
+                                    📝 あなたの追加メモ (自分用)
+                                </span>
+                                <button type="button" id="m-btn-edit-memo" style="background:none; border:none; color:var(--brand-primary); font-size:0.72rem; cursor:pointer; font-weight:700; padding:0.1rem 0.35rem;">
+                                    ✏️ 編集
+                                </button>
+                            </div>
+                            <div id="m-card-user-memo-text" style="font-size:0.82rem; color:var(--text-primary); line-height:1.45; white-space:pre-wrap;">
+                                <span style="color:var(--text-muted); font-style:italic;">（タップして語呂合わせや自分だけの覚え方をメモできます）</span>
+                            </div>
+                            <div id="m-card-user-memo-editor" style="display:none; margin-top:0.35rem; cursor:default;">
+                                <textarea id="m-card-user-memo-input" class="flora-textarea" rows="2" style="font-size:0.82rem; width:100%; box-sizing:border-box;" placeholder="語呂合わせや注意点、自分だけのメモを入力..."></textarea>
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:0.35rem; gap:0.35rem; flex-wrap:wrap;">
+                                    <span style="font-size:0.68rem; color:var(--text-muted);">💡 [Enter] で確定保存</span>
+                                    <div style="display:flex; gap:0.35rem;">
+                                        <button type="button" id="m-btn-save-memo" class="flora-btn flora-btn-primary btn-sm" style="font-size:0.7rem; padding:0.2rem 0.55rem;">💾 確定保存</button>
+                                        <button type="button" id="m-btn-cancel-memo" class="flora-btn flora-btn-ghost btn-sm" style="font-size:0.7rem; padding:0.2rem 0.45rem;">✕ 取消</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div class="card-tap-hint">
                         <span>👆 タップ または 「🔄 問題に戻る」で問題を表示</span>
@@ -4174,6 +4198,9 @@
                 }
             }
 
+            // 📝 ユーザーメモ表示の更新
+            updateMobileCardUserMemoDisplay();
+
             // 次の期日プレビュー（PC版 SRS_INTERVALS に完全連動）
             const goodIntervalSub = document.getElementById("rate-good-interval-sub");
             if (goodIntervalSub) {
@@ -5308,11 +5335,243 @@
             startSession(deckCards, `📚 ${subject} 暗記特訓`);
         }
 
+        // ==========================================
+        // 📝 モバイル版 単語追加メモ（自分用メモ）ロジック
+        // ==========================================
+        let rawMobileCardUserMemos = {};
+        try {
+            const saved = localStorage.getItem("local_card_user_memos");
+            if (saved) rawMobileCardUserMemos = JSON.parse(saved);
+        } catch(_) {}
+
+        function getMobileCardMemoKey(card) {
+            if (!card) return "";
+            return card.progressKey || (card.lessonId ? `${card.lessonId}_${card.id || card.memoId || 0}` : `${card.type || 'card'}_${card.id || 0}`);
+        }
+
+        function updateMobileCardUserMemoDisplay() {
+            const memoBox = document.getElementById("m-card-user-memo-box");
+            const memoTextEl = document.getElementById("m-card-user-memo-text");
+            const memoEditor = document.getElementById("m-card-user-memo-editor");
+            const memoInput = document.getElementById("m-card-user-memo-input");
+            if (!memoTextEl) return;
+
+            if (memoEditor) memoEditor.style.display = "none";
+            memoTextEl.style.display = "block";
+
+            if (!sessionCurrentCard) {
+                if (memoBox) memoBox.style.display = "none";
+                return;
+            }
+            if (memoBox) memoBox.style.display = "block";
+
+            const cardKey = getMobileCardMemoKey(sessionCurrentCard);
+            const memoEntry = rawMobileCardUserMemos[cardKey];
+            const memoContent = (memoEntry && memoEntry.memo) ? memoEntry.memo.trim() : (sessionCurrentCard.userMemo || "").trim();
+
+            if (memoContent) {
+                memoTextEl.textContent = memoContent;
+                memoTextEl.style.color = "var(--text-primary)";
+                memoTextEl.style.fontStyle = "normal";
+            } else {
+                memoTextEl.innerHTML = '<span style="color:var(--text-muted); font-style:italic;">（タップして語呂合わせや自分だけの覚え方をメモできます）</span>';
+            }
+            if (memoInput) memoInput.value = memoContent;
+        }
+
+        async function saveMobileCardUserMemo(text) {
+            if (!sessionCurrentCard) return;
+            const cardKey = getMobileCardMemoKey(sessionCurrentCard);
+            const trimmed = (text || "").trim();
+            if (!rawMobileCardUserMemos) rawMobileCardUserMemos = {};
+
+            if (trimmed) {
+                rawMobileCardUserMemos[cardKey] = {
+                    memo: trimmed,
+                    updatedAt: new Date().toISOString(),
+                    subject: sessionCurrentCard.subject || "",
+                    term: sessionCurrentCard.question || ""
+                };
+                sessionCurrentCard.userMemo = trimmed;
+            } else {
+                delete rawMobileCardUserMemos[cardKey];
+                sessionCurrentCard.userMemo = "";
+            }
+
+            try {
+                localStorage.setItem("local_card_user_memos", JSON.stringify(rawMobileCardUserMemos));
+            } catch(_) {}
+
+            if (currentUser) {
+                try {
+                    const safeKey = cardKey.replace(/[\/.$#[\]]/g, "_");
+                    await set(ref(database, 'users/' + currentUser.uid + '/card_memos/' + safeKey), rawMobileCardUserMemos[cardKey] || null);
+                } catch(err) {
+                    console.warn("Mobile memo sync error:", err);
+                }
+            }
+
+            updateMobileCardUserMemoDisplay();
+            showToast(trimmed ? "単語メモを保存しました！" : "単語メモを消去しました");
+        }
+
         // 5. フラッシュカードめくり（何度でもトグル可能） & 評価
         const stageEl = document.getElementById("session-card-stage");
         if (stageEl) {
-            stageEl.onclick = () => toggleCardFlip();
+            stageEl.onclick = (e) => {
+                // 選択肢ボタン、入力フォーム、メモ枠全体のタップ時はカード反転を抑止
+                if (
+                    e.target.closest("button") ||
+                    e.target.closest("textarea") ||
+                    e.target.closest("input") ||
+                    e.target.closest(".card-user-memo-box") ||
+                    e.target.closest("#m-card-user-memo-box")
+                ) return;
+                toggleCardFlip();
+            };
         }
+
+        const mCardUserMemoBox = document.getElementById("m-card-user-memo-box");
+        const mCardUserMemoText = document.getElementById("m-card-user-memo-text");
+        const mCardUserMemoEditor = document.getElementById("m-card-user-memo-editor");
+        const mCardUserMemoInput = document.getElementById("m-card-user-memo-input");
+        const mBtnEditMemo = document.getElementById("m-btn-edit-memo");
+        const mBtnSaveMemo = document.getElementById("m-btn-save-memo");
+        const mBtnCancelMemo = document.getElementById("m-btn-cancel-memo");
+
+        function enterMobileUserMemoEditMode() {
+            if (!mCardUserMemoEditor || !mCardUserMemoText || !mCardUserMemoInput) return;
+            mCardUserMemoEditor.style.display = "block";
+            mCardUserMemoText.style.display = "none";
+            const cardKey = getMobileCardMemoKey(sessionCurrentCard);
+            const memoEntry = rawMobileCardUserMemos[cardKey];
+            mCardUserMemoInput.value = (memoEntry && memoEntry.memo) ? memoEntry.memo : (sessionCurrentCard?.userMemo || "");
+            mCardUserMemoInput.focus();
+            const len = mCardUserMemoInput.value.length;
+            try { mCardUserMemoInput.setSelectionRange(len, len); } catch(_) {}
+        }
+
+        if (mCardUserMemoBox) {
+            mCardUserMemoBox.onclick = (e) => {
+                e.stopPropagation();
+                if (e.target.closest("button") || e.target.closest("textarea") || e.target.closest("input")) return;
+                if (mCardUserMemoEditor && mCardUserMemoEditor.style.display === "none") {
+                    enterMobileUserMemoEditMode();
+                }
+            };
+        }
+
+        if (mCardUserMemoText) {
+            mCardUserMemoText.onclick = (e) => {
+                e.stopPropagation();
+                enterMobileUserMemoEditMode();
+            };
+        }
+
+        if (mCardUserMemoEditor) {
+            mCardUserMemoEditor.onclick = (e) => {
+                e.stopPropagation();
+            };
+        }
+
+        if (mBtnEditMemo) {
+            mBtnEditMemo.onclick = (e) => {
+                e.stopPropagation();
+                enterMobileUserMemoEditMode();
+            };
+        }
+
+        if (mBtnCancelMemo) {
+            mBtnCancelMemo.onclick = (e) => {
+                e.stopPropagation();
+                if (mCardUserMemoEditor) mCardUserMemoEditor.style.display = "none";
+                if (mCardUserMemoText) mCardUserMemoText.style.display = "block";
+                if (mCardUserMemoInput) mCardUserMemoInput.blur();
+            };
+        }
+
+        if (mBtnSaveMemo) {
+            mBtnSaveMemo.onclick = async (e) => {
+                e.stopPropagation();
+                const val = mCardUserMemoInput ? mCardUserMemoInput.value : "";
+                await saveMobileCardUserMemo(val);
+                if (mCardUserMemoEditor) mCardUserMemoEditor.style.display = "none";
+                if (mCardUserMemoText) mCardUserMemoText.style.display = "block";
+                if (mCardUserMemoInput) mCardUserMemoInput.blur();
+            };
+        }
+
+        if (mCardUserMemoInput) {
+            mCardUserMemoInput.onclick = (e) => {
+                e.stopPropagation();
+            };
+            mCardUserMemoInput.addEventListener("keydown", async (e) => {
+                e.stopPropagation();
+                if (e.isComposing || e.keyCode === 229) return;
+                if (e.key === "Enter") {
+                    if (e.shiftKey) return;
+                    e.preventDefault();
+                    const val = mCardUserMemoInput.value;
+                    await saveMobileCardUserMemo(val);
+                    if (mCardUserMemoEditor) mCardUserMemoEditor.style.display = "none";
+                    if (mCardUserMemoText) mCardUserMemoText.style.display = "block";
+                    mCardUserMemoInput.blur();
+                } else if (e.key === "Escape") {
+                    e.preventDefault();
+                    if (mBtnCancelMemo) mBtnCancelMemo.click();
+                    mCardUserMemoInput.blur();
+                }
+            });
+        }
+
+        // キーボードショートカット（タブレット・外付けキーボード用）
+        document.addEventListener("keydown", (e) => {
+            const isTyping = document.activeElement && (
+                document.activeElement.tagName === "INPUT" ||
+                document.activeElement.tagName === "TEXTAREA" ||
+                document.activeElement.isContentEditable
+            );
+            if (isTyping) {
+                if (e.key === "Escape") {
+                    if (mCardUserMemoEditor && mCardUserMemoEditor.style.display !== "none") {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (mBtnCancelMemo) mBtnCancelMemo.click();
+                        document.activeElement.blur();
+                    }
+                }
+                return; // 入力中はキーショートカットによるカードめくりや採点を完全ブロック
+            }
+
+            const sessionModal = document.getElementById("session-modal");
+            if (sessionModal && sessionModal.classList.contains("active")) {
+                if (e.key === "Escape") {
+                    e.preventDefault();
+                    closeSession();
+                    return;
+                }
+                if (e.key === " " || e.key === "Spacebar") {
+                    e.preventDefault();
+                    toggleCardFlip();
+                    return;
+                }
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    if (!isCardFlipped) {
+                        toggleCardFlip(true);
+                    } else {
+                        rateCard("good");
+                    }
+                    return;
+                }
+                if (isCardFlipped) {
+                    if (e.key === "1") { e.preventDefault(); rateCard("again"); return; }
+                    if (e.key === "2") { e.preventDefault(); rateCard("hard"); return; }
+                    if (e.key === "3") { e.preventDefault(); rateCard("good"); return; }
+                    if (e.key === "4") { e.preventDefault(); rateCard("easy"); return; }
+                }
+            }
+        });
         const flipBtn = document.getElementById("session-btn-flip");
         if (flipBtn) {
             flipBtn.onclick = () => flipCard();
@@ -5588,6 +5847,15 @@
                     allQnaLogs = snap.val() || {};
                     invalidateCardCache();
                     renderDashboard();
+                });
+                onValue(ref(database, `users/${user.uid}/card_memos`), snap => {
+                    rawMobileCardUserMemos = snap.val() || {};
+                    try {
+                        localStorage.setItem("local_card_user_memos", JSON.stringify(rawMobileCardUserMemos));
+                    } catch(_) {}
+                    if (typeof updateMobileCardUserMemoDisplay === "function") {
+                        updateMobileCardUserMemoDisplay();
+                    }
                 });
             } else {
                 invalidateCardCache();

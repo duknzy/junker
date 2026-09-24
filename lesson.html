@@ -5357,7 +5357,7 @@
             getFeatureAssignment, setFeatureAssignment, resetFeatureAssignment,
             getEffectiveModelList, getEffectiveThinkingLevel,
             ALL_AVAILABLE_MODELS, GEMINI_MODEL_FALLBACK_LIST, DEEPSEEK_MODELS,
-            GEMINI_THINKING_LEVELS, DEEPSEEK_REASONING_EFFORTS, isDeepseekModel,
+            GEMINI_THINKING_LEVELS, DEEPSEEK_REASONING_EFFORTS, isDeepseekModel, isLiteModel,
             getActiveThinkingIdForEngine, getThinkingDisplayLabel,
             buildGeminiThinkingConfig, buildDeepseekThinkingPayload
         } from "./api-key-manager.js?v=4.0";
@@ -5448,17 +5448,26 @@
             if (!selectEl) return;
             selectEl.innerHTML = "";
             const isDs = isDeepseekModel(selectedModel);
+            const isLite = isLiteModel(selectedModel);
             const rawOptions = isDs ? DEEPSEEK_REASONING_EFFORTS : GEMINI_THINKING_LEVELS;
 
             // エンジン（Gemini vs DeepSeek）に応じた正確な思考レベルIDにマッピング
             let cleanThinking = (currentThinking && currentThinking !== "[object Object]" && typeof currentThinking === "string") ? currentThinking : "default";
             cleanThinking = getActiveThinkingIdForEngine(cleanThinking, isDs);
 
+            // 💡 lite系統モデル選択時は思考レベルを自動的に "high" に固定
+            if (isLite) {
+                cleanThinking = "high";
+            }
+
             rawOptions.forEach(opt => {
                 const id = opt.id;
-                const label = isDs
+                let label = isDs
                     ? (DEEPSEEK_EFFORT_DISPLAY_LABELS[id] || opt.label || id)
                     : (GEMINI_THINKING_DISPLAY_LABELS[id] || opt.label || id);
+                if (isLite && id === "high") {
+                    label = "high（Lite自動固定・高思考）";
+                }
                 const optEl = document.createElement("option");
                 optEl.value = id;
                 optEl.textContent = label;
@@ -5467,6 +5476,9 @@
             });
 
             selectEl.value = cleanThinking;
+            if (isLite) {
+                selectEl.title = "Lite系統モデルのため思考レベルは「high（高思考）」に自動固定されます";
+            }
         }
 
         function getPrimaryModelForFeature(featureId) {
@@ -5482,17 +5494,23 @@
 
         function setFeatureModelAndThinking(featureId, newModel, newThinking, showFeedback = true) {
             const isDs = isDeepseekModel(newModel);
+            const isLite = isLiteModel(newModel);
             let cleanThinking = (newThinking && newThinking !== "[object Object]" && typeof newThinking === "string") ? newThinking : "default";
             cleanThinking = getActiveThinkingIdForEngine(cleanThinking, isDs);
+            if (isLite) {
+                cleanThinking = "high";
+            }
             const reordered = [newModel, ...ALL_AVAILABLE_MODELS.filter(m => m !== newModel)];
             setFeatureAssignment(featureId, { models: reordered, thinkingLevel: cleanThinking });
             syncAllLessonAiSelectors();
             if (showFeedback) {
                 const featureTitle = LESSON_FEATURE_TITLES[featureId] || featureId;
                 const modelShort = (newModel || "").replace("gemini-", "Gemini ").replace("deepseek-", "DeepSeek ");
-                const label = isDs
-                    ? (DEEPSEEK_EFFORT_DISPLAY_LABELS[cleanThinking] || cleanThinking)
-                    : (GEMINI_THINKING_DISPLAY_LABELS[cleanThinking] || cleanThinking);
+                const label = isLite
+                    ? "high（Lite自動固定）"
+                    : isDs
+                        ? (DEEPSEEK_EFFORT_DISPLAY_LABELS[cleanThinking] || cleanThinking)
+                        : (GEMINI_THINKING_DISPLAY_LABELS[cleanThinking] || cleanThinking);
                 showToast(`🤖 ${featureTitle}のAIを【${modelShort} (思考:${label})】に設定しました`, "info", 2000);
             }
         }
@@ -5555,11 +5573,15 @@
             if (planModelSel && planThinkingSel) {
                 planModelSel.addEventListener("change", () => {
                     const m = planModelSel.value;
-                    const prevT = planThinkingSel.value;
+                    const prevT = isLiteModel(m) ? "high" : planThinkingSel.value;
                     populateThinkingSelect(planThinkingSel, m, prevT);
                     setFeatureModelAndThinking("lesson_plan", m, planThinkingSel.value);
                 });
                 planThinkingSel.addEventListener("change", () => {
+                    if (isLiteModel(planModelSel.value)) {
+                        showToast(`⚡ Lite系統モデルは思考レベルが【high（高思考）】に自動固定されます`, "info", 2000);
+                        planThinkingSel.value = "high";
+                    }
                     setFeatureModelAndThinking("lesson_plan", planModelSel.value, planThinkingSel.value);
                 });
             }
@@ -5570,11 +5592,15 @@
             if (srcModelSel && srcThinkingSel) {
                 srcModelSel.addEventListener("change", () => {
                     const m = srcModelSel.value;
-                    const prevT = srcThinkingSel.value;
+                    const prevT = isLiteModel(m) ? "high" : srcThinkingSel.value;
                     populateThinkingSelect(srcThinkingSel, m, prevT);
                     setFeatureModelAndThinking("lesson_plan", m, srcThinkingSel.value);
                 });
                 srcThinkingSel.addEventListener("change", () => {
+                    if (isLiteModel(srcModelSel.value)) {
+                        showToast(`⚡ Lite系統モデルは思考レベルが【high（高思考）】に自動固定されます`, "info", 2000);
+                        srcThinkingSel.value = "high";
+                    }
                     setFeatureModelAndThinking("lesson_plan", srcModelSel.value, srcThinkingSel.value);
                 });
             }
@@ -5585,11 +5611,15 @@
             if (chatModelSel && chatThinkingSel) {
                 chatModelSel.addEventListener("change", () => {
                     const m = chatModelSel.value;
-                    const prevT = chatThinkingSel.value;
+                    const prevT = isLiteModel(m) ? "high" : chatThinkingSel.value;
                     populateThinkingSelect(chatThinkingSel, m, prevT);
                     setFeatureModelAndThinking("lesson_teach", m, chatThinkingSel.value);
                 });
                 chatThinkingSel.addEventListener("change", () => {
+                    if (isLiteModel(chatModelSel.value)) {
+                        showToast(`⚡ Lite系統モデルは思考レベルが【high（高思考）】に自動固定されます`, "info", 2000);
+                        chatThinkingSel.value = "high";
+                    }
                     setFeatureModelAndThinking("lesson_teach", chatModelSel.value, chatThinkingSel.value);
                 });
             }
@@ -5600,11 +5630,15 @@
             if (memModelSel && memThinkingSel) {
                 memModelSel.addEventListener("change", () => {
                     const m = memModelSel.value;
-                    const prevT = memThinkingSel.value;
+                    const prevT = isLiteModel(m) ? "high" : memThinkingSel.value;
                     populateThinkingSelect(memThinkingSel, m, prevT);
                     setFeatureModelAndThinking("memorization_points", m, memThinkingSel.value);
                 });
                 memThinkingSel.addEventListener("change", () => {
+                    if (isLiteModel(memModelSel.value)) {
+                        showToast(`⚡ Lite系統モデルは思考レベルが【high（高思考）】に自動固定されます`, "info", 2000);
+                        memThinkingSel.value = "high";
+                    }
                     setFeatureModelAndThinking("memorization_points", memModelSel.value, memThinkingSel.value);
                 });
             }
@@ -5617,7 +5651,7 @@
                     const thinkSel = row ? row.querySelector(".modal-feature-thinking") : null;
                     if (thinkSel) {
                         const m = sel.value;
-                        const prevT = thinkSel.value;
+                        const prevT = isLiteModel(m) ? "high" : thinkSel.value;
                         populateThinkingSelect(thinkSel, m, prevT);
                         setFeatureModelAndThinking(fId, m, thinkSel.value);
                     }
@@ -5630,6 +5664,10 @@
                     const row = sel.closest(".lesson-ai-modal-row");
                     const modelSel = row ? row.querySelector(".modal-feature-model") : null;
                     if (modelSel) {
+                        if (isLiteModel(modelSel.value)) {
+                            showToast(`⚡ Lite系統モデルは思考レベルが【high（高思考）】に自動固定されます`, "info", 2000);
+                            sel.value = "high";
+                        }
                         setFeatureModelAndThinking(fId, modelSel.value, sel.value);
                     }
                 });

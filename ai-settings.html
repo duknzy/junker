@@ -370,7 +370,7 @@
 import {
     getGeminiKeys, getDeepseekKeys, addKey, removeKey, getKeyLabel, setKeyLabel,
     GEMINI_FEATURES, GEMINI_MODEL_FALLBACK_LIST, DEEPSEEK_MODELS, ALL_AVAILABLE_MODELS,
-    GEMINI_THINKING_LEVELS, DEEPSEEK_REASONING_EFFORTS, isDeepseekModel,
+    GEMINI_THINKING_LEVELS, DEEPSEEK_REASONING_EFFORTS, isDeepseekModel, isLiteModel,
     getFeatureAssignment, setFeatureAssignment, resetFeatureAssignment,
     showToast, exportAISettings, importAISettings,
     getActiveThinkingIdForEngine, getThinkingDisplayLabel
@@ -490,8 +490,11 @@ function renderAssignTable() {
         const modelBadges = badgesHtml(entry.models, "デフォルト（全モデル）", true);
         const primaryModel = (entry.models && entry.models[0]) || "gemini-3.8-flash";
         const isDsPrimary = isDeepseekModel(primaryModel);
-        const activeThinkingId = getActiveThinkingIdForEngine(entry.thinkingLevel, isDsPrimary);
-        const thinkingLabelText = getThinkingDisplayLabel(isDsPrimary, activeThinkingId);
+        const isLitePrimary = isLiteModel(primaryModel);
+        const activeThinkingId = isLitePrimary ? "high" : getActiveThinkingIdForEngine(entry.thinkingLevel, isDsPrimary, primaryModel);
+        const thinkingLabelText = isLitePrimary
+            ? "high（Lite系統・自動固定）"
+            : getThinkingDisplayLabel(isDsPrimary, activeThinkingId);
         const thinkingBadge = `<span class="badge-pill is-custom" style="background:var(--brand-light, #eff6ff); color:var(--brand-primary, #2563eb); border-color:var(--brand-border, #bfdbfe); font-weight:700;">⚡ ${thinkingLabelText}</span>`;
         const keyBadges = badgesHtml((entry.keys || []).map(keyDisplayLabel), "デフォルト（全キー）");
         return `
@@ -553,8 +556,9 @@ function renderFeatureCards() {
 
         const primaryModel = selectedModelList[0] || "gemini-3.8-flash";
         const isDsPrimary = isDeepseekModel(primaryModel);
+        const isLitePrimary = isLiteModel(primaryModel);
         const thinkingList = isDsPrimary ? DEEPSEEK_REASONING_EFFORTS : GEMINI_THINKING_LEVELS;
-        const activeThinkingId = getActiveThinkingIdForEngine(currentThinking, isDsPrimary);
+        const activeThinkingId = isLitePrimary ? "high" : getActiveThinkingIdForEngine(currentThinking, isDsPrimary, primaryModel);
         const thinkingChips = thinkingList.map(tl => `
             <button type="button" class="chip-toggle thinking-chip ${activeThinkingId === tl.id ? 'active' : ''}" data-chip-thinking="${f.id}:${tl.id}">
                 ${activeThinkingId === tl.id ? '⚡ ' : ''}${tl.label}
@@ -565,9 +569,13 @@ function renderFeatureCards() {
             ? `<div style="font-size: 0.74rem; color: #0369a1; background: #f0f9ff; border: 1px solid #bae6fd; padding: 0.45rem 0.65rem; border-radius: 6px; margin-top: 0.4rem; line-height: 1.45;">
                 <b>🐋 DeepSeekの推論仕様:</b> 思考モード (<code>thinking: enabled/disabled</code>) と推論深度 (<code>reasoning_effort: none/low/high/max</code>) を送信します。推論トークン用バッファとして自動で <code>max_tokens</code> (8,192〜16,384) が確保されます。
                </div>`
-            : `<div style="font-size: 0.74rem; color: #15803d; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 0.45rem 0.65rem; border-radius: 6px; margin-top: 0.4rem; line-height: 1.45;">
-                <b>✨ Geminiの思考仕様:</b> 思考レベル (<code>thinkingConfig: thinkingLevel</code>) を送信します。3.8-Flash等の仕様に合わせて安全に自動補正されます（minimal指定時もエラーを防ぎlowで実行）。
-               </div>`;
+            : isLitePrimary
+                ? `<div style="font-size: 0.74rem; color: #b45309; background: #fffbeb; border: 1px solid #fde68a; padding: 0.45rem 0.65rem; border-radius: 6px; margin-top: 0.4rem; line-height: 1.45;">
+                    <b>⚡ Lite系統モデル特則:</b> 選択中のモデル（<code>${primaryModel}</code>）はLite系統のため、推論精度を最大化すべく思考レベルは常に <b>high（高思考・深層推論）</b> に自動固定されます。
+                   </div>`
+                : `<div style="font-size: 0.74rem; color: #15803d; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 0.45rem 0.65rem; border-radius: 6px; margin-top: 0.4rem; line-height: 1.45;">
+                    <b>✨ Geminiの思考仕様:</b> 思考レベル (<code>thinkingConfig: thinkingLevel</code>) を送信します。3.8-Flash等の仕様に合わせて安全に自動補正されます（minimal指定時もエラーを防ぎlowで実行）。
+                   </div>`;
 
         const keyChips = allGeminiKeys.length === 0
             ? `<div class="chip-empty-note">Geminiキーが未登録です。上のセクションで先に登録してください。</div>`
@@ -639,6 +647,13 @@ document.addEventListener("click", (e) => {
     if (thinkingChip) {
         const [featureId, level] = thinkingChip.getAttribute("data-chip-thinking").split(":");
         const entry = getFeatureAssignment(featureId);
+        const primaryModel = (entry.models && entry.models[0]) || "gemini-3.8-flash";
+        if (isLiteModel(primaryModel)) {
+            showToast(`⚡ ${primaryModel} はLite系統のため、思考レベルは常に【high（高思考）】に自動固定されます`, "info");
+            setFeatureAssignment(featureId, { models: entry.models, keys: entry.keys, thinkingLevel: "high" });
+            renderFeatureUI();
+            return;
+        }
         setFeatureAssignment(featureId, { models: entry.models, keys: entry.keys, thinkingLevel: level });
         renderFeatureUI();
         return;
