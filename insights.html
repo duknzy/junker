@@ -1796,22 +1796,52 @@
             opacity: 1;
         }
 
-        /* 気づきタブでの赤シート対応 */
+        /* 気づきタブ・暗記事項タブでの赤シート対応 */
+        .insight-memorize-a {
+            position: relative;
+        }
+        .insight-memorize-a .red-sheet-peek-indicator,
+        .insight-text .red-sheet-peek-indicator {
+            display: inline-flex;
+            align-items: center;
+            font-size: 0.68rem;
+            font-weight: 700;
+            padding: 0.12rem 0.4rem;
+            margin-left: 0.5rem;
+            background: rgba(16, 185, 129, 0.12);
+            color: #059669;
+            border-radius: 4px;
+            vertical-align: middle;
+        }
         .red-sheet-active .insight-memorize-a,
-        .red-sheet-active .insight-compact-row .compact-text {
+        .red-sheet-active .insight-compact-row .compact-text,
+        .red-sheet-active #view-memorize .insight-text,
+        .red-sheet-active #view-insights .insight-text {
             cursor: pointer;
             transition: all 0.2s ease;
         }
         .red-sheet-active .insight-memorize-a:not(.is-revealed),
-        .red-sheet-active .insight-compact-row.covered .compact-text {
+        .red-sheet-active .insight-compact-row.covered .compact-text,
+        .red-sheet-active #view-memorize .insight-text:not(.is-revealed),
+        .red-sheet-active #view-insights .insight-text:not(.is-revealed) {
             filter: blur(9px);
             opacity: 0.25;
             user-select: none;
+            background: rgba(239, 68, 68, 0.08);
+            border-radius: var(--radius-sm);
+        }
+        .red-sheet-active .insight-memorize-a:not(.is-revealed):hover,
+        .red-sheet-active #view-memorize .insight-text:not(.is-revealed):hover {
+            opacity: 0.45;
+            filter: blur(6px);
         }
         .red-sheet-active .insight-memorize-a.is-revealed,
-        .red-sheet-active .insight-compact-row:not(.covered) .compact-text {
+        .red-sheet-active .insight-compact-row:not(.covered) .compact-text,
+        .red-sheet-active #view-memorize .insight-text.is-revealed,
+        .red-sheet-active #view-insights .insight-text.is-revealed {
             filter: none;
             opacity: 1;
+            background: transparent;
         }
 
         /* 授業並べ替えボタン */
@@ -3597,20 +3627,35 @@
             revealedWordKeys.clear();
             updateRedSheetUI();
 
-            // 既存のDOM上の単語行の状態を一括反映
-            document.querySelectorAll(".dict-a-box").forEach(box => {
-                const lid = box.getAttribute("data-lesson-id");
-                const mid = box.getAttribute("data-memo-id");
-                const key = `${lid}:${mid}`;
-                const isRevealed = revealedWordKeys.has(key);
+            // 既存のDOM上の単語行・カード・爆速リストの状態を一括反映
+            document.querySelectorAll(".dict-a-box, .insight-memorize-a, .insight-text, .compact-text").forEach(box => {
+                const lid = box.getAttribute("data-lesson-id") || box.closest("[data-lesson-id]")?.getAttribute("data-lesson-id");
+                const mid = box.getAttribute("data-memo-id") || box.closest("[data-memo-id]")?.getAttribute("data-memo-id");
+                const key = (lid && mid) ? `${lid}:${mid}` : null;
+                const isRevealed = key ? revealedWordKeys.has(key) : false;
                 if (isRedSheetActive && !isRevealed) {
                     box.classList.add("is-covered");
                     box.classList.remove("is-revealed");
+                    if (box.classList.contains("compact-text")) {
+                        box.closest(".insight-compact-row")?.classList.add("covered");
+                    }
                     const ind = box.querySelector(".red-sheet-peek-indicator");
                     if (ind) ind.remove();
+                    box.setAttribute("title", "クリックで解答を表示（赤シート）");
                 } else {
                     box.classList.remove("is-covered");
-                    box.classList.add("is-revealed");
+                    if (box.classList.contains("compact-text")) {
+                        box.closest(".insight-compact-row")?.classList.remove("covered");
+                    }
+                    if (isRedSheetActive && isRevealed) {
+                        box.classList.add("is-revealed");
+                        box.setAttribute("title", "クリックで隠す（赤シート）");
+                    } else {
+                        box.classList.remove("is-revealed");
+                        box.setAttribute("title", "クリックしてその場で編集");
+                        const ind = box.querySelector(".red-sheet-peek-indicator");
+                        if (ind) ind.remove();
+                    }
                 }
             });
 
@@ -3634,24 +3679,38 @@
             if (event) event.stopPropagation();
             if (isRedSheetActive) {
                 const key = `${lessonId}:${memoId}`;
-                const box = event.currentTarget.closest(".dict-a-box") || event.currentTarget;
+                const card = (event && event.currentTarget && event.currentTarget.closest(".insight-card, .dict-item, .insight-compact-row")) || document;
+                const box = (card && card.querySelector(`.insight-memorize-a[data-memo-id="${memoId}"], .dict-a-box[data-memo-id="${memoId}"], .insight-text[data-memo-id="${memoId}"], .compact-text[data-memo-id="${memoId}"]`))
+                    || (event && event.currentTarget && event.currentTarget.closest(".dict-a-box, .insight-memorize-a, .insight-text, .compact-text"))
+                    || (event ? event.currentTarget : null);
+
                 if (revealedWordKeys.has(key)) {
                     revealedWordKeys.delete(key);
-                    box.classList.add("is-covered");
-                    box.classList.remove("is-revealed");
-                    box.setAttribute("title", "クリックで解答を表示（赤シート）");
-                    const ind = box.querySelector(".red-sheet-peek-indicator");
-                    if (ind) ind.remove();
+                    if (box) {
+                        box.classList.add("is-covered");
+                        box.classList.remove("is-revealed");
+                        if (box.classList.contains("compact-text")) {
+                            box.closest(".insight-compact-row")?.classList.add("covered");
+                        }
+                        box.setAttribute("title", "クリックで解答を表示（赤シート）");
+                        const ind = box.querySelector(".red-sheet-peek-indicator");
+                        if (ind) ind.remove();
+                    }
                 } else {
                     revealedWordKeys.add(key);
-                    box.classList.remove("is-covered");
-                    box.classList.add("is-revealed");
-                    box.setAttribute("title", "クリックで隠す（赤シート）");
-                    if (!box.querySelector(".red-sheet-peek-indicator")) {
-                        const span = document.createElement("span");
-                        span.className = "red-sheet-peek-indicator";
-                        span.innerText = "👁️ 表示中";
-                        box.appendChild(span);
+                    if (box) {
+                        box.classList.remove("is-covered");
+                        box.classList.add("is-revealed");
+                        if (box.classList.contains("compact-text")) {
+                            box.closest(".insight-compact-row")?.classList.remove("covered");
+                        }
+                        box.setAttribute("title", "クリックで隠す（赤シート）");
+                        if (!box.querySelector(".red-sheet-peek-indicator")) {
+                            const span = document.createElement("span");
+                            span.className = "red-sheet-peek-indicator";
+                            span.innerText = "👁️ 表示中";
+                            box.appendChild(span);
+                        }
                     }
                 }
             } else {
@@ -4380,7 +4439,8 @@
                     }
 
                     const progressKey = sanitizeDbKey(`mem_${lessonId}_${mpId}`);
-                    const prog = (rawMemorizeProgress && rawMemorizeProgress[progressKey]) || {};
+                    const legacyKey1 = sanitizeDbKey(`${lessonId}:${mpId}`);
+                    const prog = (rawMemorizeProgress && (rawMemorizeProgress[progressKey] || rawMemorizeProgress[legacyKey1] || rawMemorizeProgress[`${lessonId}:${mpId}`])) || {};
                     const boxLevel = typeof prog.boxLevel === 'number' ? prog.boxLevel : 0;
                     const lapses = prog.lapses || 0;
                     const reps = prog.reps || 0;
@@ -4439,7 +4499,8 @@
                 }
 
                 lesson.choiceDrills.forEach((drill, idx) => {
-                    if (!drill || !drill.lead) return;
+                    const leadText = drill?.lead_text || drill?.lead || drill?.question || drill?.title || "";
+                    if (!drill || !leadText) return;
                     const drillId = drill.id || `drill_${idx}`;
                     const partIndex = typeof drill.partIndex === "number" ? drill.partIndex : 0;
                     const partTitle = (lesson.parts && lesson.parts[partIndex])
@@ -4462,6 +4523,16 @@
                         subject: lessonSubj || "その他",
                         partTitle: partTitle,
                         partIndex: partIndex,
+                        lead: leadText,
+                        lead_text: leadText,
+                        statement_a: drill.statement_a || null,
+                        statement_b: drill.statement_b || null,
+                        statements: Array.isArray(drill.statements) ? drill.statements : [],
+                        options: Array.isArray(drill.options) ? drill.options : [],
+                        correct_option: Number(drill.correct_option) || 1,
+                        trap_type: drill.trap_type || "引っかけの急所",
+                        trap_explanation: drill.trap_explanation || "",
+                        explanation: drill.explanation || "",
                         answerStatus,
                         isAnswered,
                         isCorrect,
@@ -4475,8 +4546,12 @@
         }
 
         // 🧠 暗記事項のその場編集・削除
-        window.startEditMemorizeFromInsights = function(lessonId, mpId, e) {
+        window.startEditMemorizeFromInsights = function(lessonId, mpId, e, forceEdit = false) {
             if (e) e.stopPropagation();
+            if (isRedSheetActive && !forceEdit) {
+                handleDictAnswerClick(lessonId, mpId, e);
+                return;
+            }
             editingMemorizeKey = `${lessonId}:${mpId}`;
             renderActiveView();
         };
@@ -4594,6 +4669,7 @@
                 console.warn("Failed to persist progress:", err);
             }
 
+            invalidateInsightsDataCache();
             updateSrsDashboardCounts();
             if (activeTab === "memorize") {
                 renderMemorize();
@@ -6354,6 +6430,12 @@
             const isEditing = editingMemorizeKey === memoKey;
             const safeLessonTitle = (p.short_title || "暗記事項").replace(/'/g, "\\'");
 
+            const isRevealed = revealedWordKeys.has(memoKey);
+            const isCovered = isRedSheetActive && !isRevealed;
+            const aTitle = isRedSheetActive
+                ? (isRevealed ? "クリックで解答を隠す（赤シート）" : "クリックで解答を表示（赤シート）")
+                : "クリックしてその場で編集";
+
             const cleanQ = (p.question || "").trim().replace(/^(?:Q[.:：]|問題[.:：]?)\s*/i, "");
             const cleanA = (p.answer || "").trim().replace(/^(?:A[.:：]|答え[.:：]?|解答[.:：]?)\s*/i, "");
             const hasQA = Boolean(cleanQ && cleanA);
@@ -6407,12 +6489,12 @@
                     </div>
                 </div>
             ` : hasQA ? `
-                <div class="insight-memorize-q tex2jax_process" onclick="startEditMemorizeFromInsights('${p.lessonId}', '${p.memoId}', event)" title="クリックしてその場で編集"><span class="insight-memorize-q-badge">Q.</span><span class="insight-memorize-q-text">${normalizeMathSyntax(cleanQ || p.question)}</span></div>
-                <div class="insight-memorize-a tex2jax_process" onclick="startEditMemorizeFromInsights('${p.lessonId}', '${p.memoId}', event)" title="クリックしてその場で編集"><span class="insight-memorize-a-badge">A.</span><span class="insight-memorize-a-text">${normalizeMathSyntax(cleanA || p.answer)}</span></div>
+                <div class="insight-memorize-q tex2jax_process" onclick="${isRedSheetActive ? `handleDictAnswerClick('${p.lessonId}', '${p.memoId}', event)` : `startEditMemorizeFromInsights('${p.lessonId}', '${p.memoId}', event)`}" title="${isRedSheetActive ? 'クリックで解答を表示/非表示（赤シート）' : 'クリックしてその場で編集'}"><span class="insight-memorize-q-badge">Q.</span><span class="insight-memorize-q-text">${normalizeMathSyntax(cleanQ || p.question)}</span></div>
+                <div class="insight-memorize-a tex2jax_process ${isRevealed ? 'is-revealed' : ''} ${isCovered ? 'is-covered' : ''}" data-lesson-id="${p.lessonId}" data-memo-id="${p.memoId}" onclick="handleDictAnswerClick('${p.lessonId}', '${p.memoId}', event)" title="${aTitle}"><span class="insight-memorize-a-badge">A.</span><span class="insight-memorize-a-text">${normalizeMathSyntax(cleanA || p.answer)}</span>${isRedSheetActive && isRevealed ? `<span class="red-sheet-peek-indicator" title="クリックで隠す">👁️ 表示中</span>` : ''}</div>
                 ${p.rawNote ? `<div class="tex2jax_process" style="font-size:0.82rem; color:var(--accent-yellow); margin-top:0.45rem; padding-top:0.45rem; border-top:1px dashed rgba(255,255,255,0.08); word-break:break-word; line-height:1.5;">💡 ${normalizeMathSyntax(p.rawNote).trim()}</div>` : ''}
                 ${userMemoText ? `<div style="font-size:0.8rem; color:var(--accent-green, #10B981); margin-top:0.45rem; padding:0.35rem 0.6rem; background:rgba(16,185,129,0.08); border-radius:6px; border-left:3px solid #10B981; word-break:break-word; line-height:1.4;"><span style="font-weight:700;">📝 自分用メモ:</span> ${escapeHtml(userMemoText)}</div>` : ''}
             ` : `
-                <div class="insight-text tex2jax_process" onclick="startEditMemorizeFromInsights('${p.lessonId}', '${p.memoId}', event)" title="クリックしてその場で編集">${normalizeMathSyntax(p.rawContent || p.insight).trim()}</div>
+                <div class="insight-text tex2jax_process ${isRevealed ? 'is-revealed' : ''} ${isCovered ? 'is-covered' : ''}" data-lesson-id="${p.lessonId}" data-memo-id="${p.memoId}" onclick="handleDictAnswerClick('${p.lessonId}', '${p.memoId}', event)" title="${aTitle}">${normalizeMathSyntax(p.rawContent || p.insight).trim()}${isRedSheetActive && isRevealed ? `<span class="red-sheet-peek-indicator" title="クリックで隠す">👁️ 表示中</span>` : ''}</div>
                 ${p.rawNote ? `<div class="tex2jax_process" style="font-size:0.82rem; color:var(--accent-yellow); margin-top:0.45rem; padding-top:0.45rem; border-top:1px dashed rgba(255,255,255,0.08); word-break:break-word; line-height:1.5;">💡 ${normalizeMathSyntax(p.rawNote).trim()}</div>` : ''}
                 ${userMemoText ? `<div style="font-size:0.8rem; color:var(--accent-green, #10B981); margin-top:0.45rem; padding:0.35rem 0.6rem; background:rgba(16,185,129,0.08); border-radius:6px; border-left:3px solid #10B981; word-break:break-word; line-height:1.4;"><span style="font-weight:700;">📝 自分用メモ:</span> ${escapeHtml(userMemoText)}</div>` : ''}
             `;
@@ -6441,7 +6523,7 @@
                         <div class="insight-body-label">
                             <span>🧠 覚えるべきこと</span>
                             <div style="display:flex; gap:0.6rem;">
-                                ${!isEditing ? `<button type="button" style="background:none; border:none; color:var(--accent-cyan); font-size:0.72rem; font-weight:800; cursor:pointer;" onclick="startEditMemorizeFromInsights('${p.lessonId}', '${p.memoId}', event)">✏️ 編集</button>` : ''}
+                                ${!isEditing ? `<button type="button" style="background:none; border:none; color:var(--accent-cyan); font-size:0.72rem; font-weight:800; cursor:pointer;" onclick="startEditMemorizeFromInsights('${p.lessonId}', '${p.memoId}', event, true)">✏️ 編集</button>` : ''}
                                 <button type="button" style="background:none; border:none; color:var(--error); font-size:0.72rem; font-weight:800; cursor:pointer;" onclick="deleteMemorizeFromInsights('${p.lessonId}', '${p.memoId}', event)">🗑 削除</button>
                             </div>
                         </div>
@@ -6789,7 +6871,7 @@
             // 検索クエリ適用
             if (query) {
                 filteredDrills = filteredDrills.filter(d =>
-                    (d.lead || "").toLowerCase().includes(query) ||
+                    (d.lead || d.lead_text || "").toLowerCase().includes(query) ||
                     (d.lessonTitle || "").toLowerCase().includes(query) ||
                     (d.partTitle || "").toLowerCase().includes(query) ||
                     (d.trap_type || "").toLowerCase().includes(query) ||
@@ -6797,6 +6879,7 @@
                     (d.explanation || "").toLowerCase().includes(query) ||
                     (d.statement_a || "").toLowerCase().includes(query) ||
                     (d.statement_b || "").toLowerCase().includes(query) ||
+                    (d.statements || []).some(st => (st || "").toLowerCase().includes(query)) ||
                     (d.options || []).some(opt => (opt.text || "").toLowerCase().includes(query))
                 );
             }
@@ -6977,7 +7060,7 @@
                             </div>
                         </div>
 
-                        <div class="choice-drill-lead">${renderFormattedMarkdown(d.lead)}</div>
+                        <div class="choice-drill-lead">${renderFormattedMarkdown(d.lead_text || d.lead || "")}</div>
                         ${statementsHtml}
                         <div class="choice-drill-options-grid">${optionsHtml}</div>
                         ${resultBoxHtml}
@@ -7018,6 +7101,7 @@
                     playTypingSound("miss");
                     showToast("❌ 不正解です。解説と罠を確認しましょう！", "error", 2000);
                 }
+                _cachedBuildChoiceDrillItems = null;
                 renderDrills();
                 updateCounts();
             } catch (err) {
@@ -7044,6 +7128,7 @@
                     updatedAt: new Date().toISOString()
                 });
                 showToast("未解答にリセットしました。もう一度解いてみましょう！", "info", 1500);
+                _cachedBuildChoiceDrillItems = null;
                 renderDrills();
                 updateCounts();
             } catch (err) {
@@ -7071,7 +7156,8 @@
                     subject: lesson.subject || detectSubjectFromLesson(lesson) || "その他",
                     type: "choice_drill",
                     drillType: d.type || "single_choice",
-                    lead: d.lead || "",
+                    lead: d.lead_text || d.lead || "",
+                    lead_text: d.lead_text || d.lead || "",
                     statement_a: d.statement_a || null,
                     statement_b: d.statement_b || null,
                     statements: d.statements || null,
@@ -7129,6 +7215,7 @@
 
                 await update(ref(database, `users/${currentUser.uid}`), updates);
                 showToast(`🔄 ${count}問の解答をリセットしました！`, "success", 2500);
+                _cachedBuildChoiceDrillItems = null;
                 renderDrills();
                 updateCounts();
             } catch (err) {
@@ -7825,15 +7912,12 @@
             const keys = Object.keys(pendingSrsUpdates);
             if (keys.length === 0) return;
 
-            const payload = {};
-            for (const k of keys) {
-                payload[`users/${currentUser.uid}/memorizeProgress/${k}`] = pendingSrsUpdates[k];
-            }
+            const updates = { ...pendingSrsUpdates };
             pendingSrsUpdates = {};
 
             try {
-                // Firebase Realtime Database のマルチパス更新：1リクエストで一括書き込み
-                await update(ref(database), payload);
+                // Firebase Realtime Database の更新：users/${currentUser.uid}/memorizeProgress へ書き込み
+                await update(ref(database, `users/${currentUser.uid}/memorizeProgress`), updates);
             } catch (err) {
                 console.warn("[Flora SRS] Batch progress save failed:", err);
             }
@@ -7841,11 +7925,15 @@
 
         function queueSrsUpdate(pKey, progressData) {
             pendingSrsUpdates[pKey] = progressData;
-            // 3秒間操作が途切れたら自動で一括書き込み
+            // 🚀 PC・スマホ間でズレが生じないよう即時Firebase書き込み（WebSocket経由で超軽量）
+            if (currentUser && currentUser.uid) {
+                update(ref(database, `users/${currentUser.uid}/memorizeProgress/${pKey}`), progressData)
+                    .catch(err => console.warn("[Flora SRS] Immediate progress save failed:", err));
+            }
             if (srsFlushTimer) clearTimeout(srsFlushTimer);
             srsFlushTimer = setTimeout(() => {
                 flushPendingSrsUpdates();
-            }, 3000);
+            }, 1000);
         }
 
         window.addEventListener("beforeunload", () => {
@@ -8871,10 +8959,11 @@
             };
             rawMemorizeProgress[pKey] = progressData;
 
-            // Firebaseへバッチキューイング（毎問の個別writeを抑制し、通信数・書き込み数を激減）
+            // Firebaseへキューイング & 即時更新
             queueSrsUpdate(pKey, progressData);
 
-            // ダッシュボード集計更新
+            // キャッシュ破棄＆ダッシュボード集計更新
+            invalidateInsightsDataCache();
             updateSrsDashboardCounts();
 
             // 解答チラ見え防止のため裏面テキストを即座にブランク化
@@ -8888,6 +8977,7 @@
 
         function showFcFinishView() {
             flushPendingSrsUpdates();
+            invalidateInsightsDataCache();
             playFcSound("finish");
             fcActiveContainer.style.display = "none";
             fcFinishView.style.display = "block";
@@ -8918,9 +9008,12 @@
             fcModal.style.display = "none";
             fcCardStage.classList.remove("flipped");
             fcIsFlipped = false;
+            invalidateInsightsDataCache();
             updateSrsDashboardCounts();
             if (activeTab === "memorize") {
                 renderMemorize();
+            } else if (activeTab === "insights") {
+                renderInsights();
             }
         }
 
@@ -10256,15 +10349,20 @@
                 handleFirebaseSync();
             });
 
-            // 🧠 間隔反復(SRS)の進捗データをリアルタイム購読
+            // 🧠 間隔反復(SRS)の進捗データをリアルタイム購読（スマホ・PC相互同期）
             onValue(ref(database, 'users/' + user.uid + '/memorizeProgress'), (snapshot) => {
                 rawMemorizeProgress = snapshot.val() || {};
+                // キャッシュを破棄して他端末での進捗変更を即時反映
+                invalidateInsightsDataCache();
+
                 // モーダル演習中はバックグラウンドの不要な再描画を抑制してCPUとUI負荷を低減
                 const isFcModalOpen = fcModal && fcModal.style.display !== "none";
                 if (!isFcModalOpen) {
                     updateSrsDashboardCounts();
                     if (activeTab === "memorize") {
                         renderMemorize();
+                    } else if (activeTab === "insights") {
+                        renderInsights();
                     }
                 }
             });
