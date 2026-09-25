@@ -86,25 +86,27 @@
         }
         .search-input:focus { outline: none; border-color: var(--brand-primary); }
 
-        /* タイムライン本体 */
+        /* タイムライン本体（軸とドットの完全幾何アライメント・文字被り防止） */
         .timeline-stream {
             position: relative;
             margin-top: 1rem;
-            padding-left: 2rem;
+            padding-left: 2.6rem;
             display: flex;
             flex-direction: column;
             gap: 1.2rem;
         }
 
-        /* 縦のタイムライン軸 */
+        /* 縦のタイムライン軸：中央を 1.3rem (20.8px) に固定 */
         .timeline-stream::before {
             content: "";
             position: absolute;
             top: 0;
             bottom: 0;
-            left: 11px;
+            left: 1.3rem;
             width: 2px;
-            background: linear-gradient(180deg, var(--brand-primary) 0%, rgba(5, 150, 105, 0.1) 100%);
+            transform: translateX(-50%);
+            background: linear-gradient(180deg, var(--brand-primary) 0%, rgba(5, 150, 105, 0.2) 100%);
+            z-index: 1;
         }
 
         .timeline-node {
@@ -114,36 +116,39 @@
             gap: 0.5rem;
         }
 
-        /* タイムライン上のドット */
+        /* タイムライン上のドット：軸線（left: -1.3rem）に完全同期 */
         .timeline-node::before {
             content: "";
             position: absolute;
-            left: -2rem;
-            top: 1.2rem;
-            width: 12px;
-            height: 12px;
+            left: -1.3rem;
+            top: 1.4rem;
+            transform: translate(-50%, -50%);
+            width: 14px;
+            height: 14px;
             border-radius: 50%;
             background: #fff;
-            border: 2px solid var(--brand-primary);
-            box-shadow: 0 0 0 3px var(--brand-light);
-            z-index: 2;
+            border: 2.5px solid var(--brand-primary);
+            box-shadow: 0 0 0 4px var(--brand-light);
+            z-index: 3;
         }
 
-        /* 時代・世紀見出しセパレーター */
+        /* 時代・世紀見出しセパレーター：背景を不透明化して縦軸の文字貫通・重なりを完全防止 */
         .century-header {
             position: relative;
-            font-size: 1rem;
-            font-weight: 700;
+            font-size: 0.95rem;
+            font-weight: 800;
             color: var(--brand-primary);
-            margin: 1.5rem 0 0.5rem -1.2rem;
-            padding: 0.35rem 0.85rem;
-            background: var(--brand-light);
-            border-left: 3px solid var(--brand-primary);
-            border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+            margin: 1.8rem 0 0.4rem -1.9rem;
+            padding: 0.4rem 1.05rem 0.4rem 0.9rem;
+            background: var(--bg-surface);
+            border: 1.5px solid var(--brand-primary);
+            border-radius: var(--radius-full);
             display: inline-flex;
             align-items: center;
             gap: 0.6rem;
             align-self: flex-start;
+            z-index: 4;
+            box-shadow: 0 2px 8px rgba(5, 150, 105, 0.12);
         }
         .century-heat-badge {
             background: #FEE2E2;
@@ -192,12 +197,15 @@
             padding: 0.25rem 0.6rem;
             font-size: 0.74rem;
             font-weight: 800;
+            white-space: nowrap;
         }
 
         .event-top {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
         }
         .event-year {
             font-family: var(--font-heading);
@@ -208,55 +216,70 @@
             display: inline-flex;
             align-items: center;
             gap: 0.4rem;
+            flex-shrink: 0;
         }
         .event-name {
             font-size: 1rem;
             font-weight: 700;
             color: var(--text-primary);
-            line-height: 1.4;
+            line-height: 1.45;
+            word-break: break-word;
         }
 
-        /* 🔴 赤シート・🔵 青シート ブラインドマスキングシステム */
+        /* 🔴 赤シート・🔵 青シート ブラインドマスキングシステム（文字被り・ハミ出しゼロ設計） */
         .blind-masked {
             cursor: pointer;
             user-select: none;
             position: relative;
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             transition: all 0.2s ease;
+            max-width: 100%;
+            vertical-align: middle;
         }
         .blind-masked.mask-red:not(.revealed) {
             background: linear-gradient(135deg, #EF4444, #DC2626) !important;
             color: transparent !important;
             border-radius: var(--radius-sm);
-            padding: 0.15rem 0.6rem;
+            padding: 0.2rem 0.65rem;
+            min-width: 120px;
             box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3);
+            overflow: hidden;
+            flex-shrink: 0;
         }
         .blind-masked.mask-red:not(.revealed)::after {
-            content: "🔴 ??? 年 [タップで表示]";
+            content: "🔴 ??? 年 ［表示］";
             position: absolute;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             color: #fff;
-            font-size: 0.72rem;
+            font-size: 0.74rem;
             font-weight: 800;
             white-space: nowrap;
+            letter-spacing: -0.2px;
         }
         .blind-masked.mask-blue:not(.revealed) {
             background: linear-gradient(135deg, #3B82F6, #2563EB) !important;
             color: transparent !important;
             border-radius: var(--radius-sm);
-            padding: 0.2rem 0.8rem;
+            padding: 0.35rem 0.85rem;
+            min-width: 180px;
+            min-height: 2rem;
             box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+            overflow: hidden;
         }
         .blind-masked.mask-blue:not(.revealed)::after {
-            content: "🔵 出来事名 [タップで表示]";
+            content: "🔵 出来事名 ［タップで表示］";
             position: absolute;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             color: #fff;
-            font-size: 0.76rem;
+            font-size: 0.78rem;
             font-weight: 800;
             white-space: nowrap;
         }
@@ -265,10 +288,57 @@
             background: rgba(16, 185, 129, 0.1) !important;
             border-radius: var(--radius-sm);
             outline: 1.5px dashed #10B981;
+            padding: 0.1rem 0.35rem;
         }
         @keyframes blindPop {
             0% { transform: scale(0.95); opacity: 0.6; }
             100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* 📊 年代表（対照マトリクス表）スタイル */
+        .timeline-table-container {
+            width: 100%;
+            overflow-x: auto;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-xs);
+            margin-top: 1rem;
+            -webkit-overflow-scrolling: touch;
+        }
+        .chronology-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.88rem;
+            min-width: 680px;
+        }
+        .chronology-table th {
+            background: var(--bg-subtle);
+            color: var(--text-secondary);
+            font-weight: 800;
+            padding: 0.75rem 0.9rem;
+            border-bottom: 2px solid var(--border-color);
+            text-align: left;
+            white-space: nowrap;
+        }
+        .chronology-table td {
+            padding: 0.75rem 0.9rem;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: top;
+        }
+        .chronology-table tr:hover td {
+            background: rgba(5, 150, 105, 0.03);
+        }
+        .chronology-table tr.is-mistake td {
+            background: rgba(254, 242, 242, 0.5);
+        }
+        .chronology-era-row td {
+            background: var(--brand-light) !important;
+            color: var(--brand-primary) !important;
+            font-weight: 800;
+            font-size: 0.92rem;
+            padding: 0.55rem 0.9rem;
+            border-top: 2px solid var(--brand-primary);
         }
 
         .event-links {
@@ -483,6 +553,16 @@
                             <span class="filter-label">🔎 検索：</span>
                             <input type="text" class="search-input" id="search-input" placeholder="出来事名・年号・キーワードで検索...">
                         </div>
+
+                        <!-- 📜 タイムライン / 📊 年代表 表示形式切替 -->
+                        <div style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap;">
+                            <span class="filter-label">👀 表示形式：</span>
+                            <div style="display:inline-flex; background:var(--bg-subtle); padding:0.18rem; border-radius:var(--radius-md); border:1px solid var(--border-color);">
+                                <button type="button" class="region-tab-btn active" id="btn-view-stream" style="padding:0.25rem 0.65rem; font-size:0.75rem;">📜 タイムライン</button>
+                                <button type="button" class="region-tab-btn" id="btn-view-table" style="padding:0.25rem 0.65rem; font-size:0.75rem;">📊 時代別 年代表</button>
+                            </div>
+                        </div>
+
                         <!-- 🔴 赤シート・暗記モード切替コントロール -->
                         <div style="display:flex; align-items:center; gap:0.35rem; flex-wrap:wrap;">
                             <span class="filter-label">🎴 暗記シート：</span>
@@ -525,6 +605,10 @@
                 <main id="timeline-main">
                     <div class="timeline-stream" id="timeline-stream">
                         <!-- JSで動的に出来事ノードを挿入 -->
+                    </div>
+                    <!-- 📊 時代別 年代表（マトリクス表ビュー） -->
+                    <div class="timeline-table-container" id="timeline-table-container" style="display:none;">
+                        <!-- JSで年代表テーブルを動的生成 -->
                     </div>
                     <div id="empty-notice" style="display:none; text-align:center; padding: 4rem 1rem; color: var(--text-secondary); font-size: var(--fs-sm);">
                         まだ出来事データがありません。<br>問題を誤答ノートに登録するか、授業モードで学習すると自動でここに年表が作られます！
@@ -594,14 +678,19 @@
             "地域をまたぐ／世界全体"
         ];
 
-        // 日本史カテゴリー（時代・分野）
+        // 日本史カテゴリー（高校日本史・共通テスト対応の正式な時代区分）
         const JAPAN_ERAS = [
             "ALL",
-            "古代（旧石器〜平安）",
-            "中世（鎌倉・室町）",
-            "近世（安土桃山・江戸）",
-            "近代（幕末〜大正）",
-            "現代（昭和〜令和）"
+            "弥生・古墳",
+            "飛鳥",
+            "奈良",
+            "平安",
+            "鎌倉",
+            "室町・戦国",
+            "安土桃山",
+            "江戸",
+            "明治・大正",
+            "昭和・現代"
         ];
 
         // 🏛️ 共通テスト・高校歴史 頻出重要出来事プリセット（データが少ない時でも即座に並べ替えや赤シートが使える）
@@ -628,26 +717,27 @@
         ];
 
         const PRESET_JAPAN_EVENTS = [
-            { name: "漢委奴国王の金印授与（後漢書東夷伝）", year: "57年", year_sort: 57, category: "古代（旧石器〜平安）", mnemonics: ["57年: こんな(57)金印ありがたい"], note: "光武帝から奴国王へ" },
-            { name: "大化の改新（改新の詔）", year: "645年", year_sort: 645, category: "古代（旧石器〜平安）", mnemonics: ["645年: 虫(64)ご(5)ろし蘇我入鹿暗殺"], note: "中大兄皇子と中臣鎌足" },
-            { name: "大宝律令の完成", year: "701年", year_sort: 701, category: "古代（旧石器〜平安）", mnemonics: ["701年: な(7)お(0)い(1)い律令政治始まる"], note: "二官八省と国郡里制" },
-            { name: "平城京遷都（奈良時代開始）", year: "710年", year_sort: 710, category: "古代（旧石器〜平安）", mnemonics: ["710年: なん(71)と(0)綺麗な平城京"], note: "元明天皇の代" },
-            { name: "平安京遷都（平安時代開始）", year: "794年", year_sort: 794, category: "古代（旧石器〜平安）", mnemonics: ["794年: 鳴く(79)よ(4)ウグイス平安京"], note: "桓武天皇の代" },
-            { name: "白紙に戻す遣唐使廃止（菅原道真の建議）", year: "894年", year_sort: 894, category: "古代（旧石器〜平安）", mnemonics: ["894年: 白紙(894)に戻そう遣唐使"], note: "国風文化の開花へ" },
-            { name: "源頼朝が征夷大将軍に任官（鎌倉幕府の成立期）", year: "1192年", year_sort: 1192, category: "中世（鎌倉・室町）", mnemonics: ["1192年: いい(11)国(92)作ろう鎌倉幕府"], note: "御家人と御恩と奉公の主従関係" },
-            { name: "御成敗式目（貞永式目）の制定", year: "1232年", year_sort: 1232, category: "中世（鎌倉・室町）", mnemonics: ["1232年: 人に(12)み(3)に(2)くい裁判なし"], note: "北条泰時が制定した武家法" },
-            { name: "建武の新政（後醍醐天皇）", year: "1334年", year_sort: 1334, category: "中世（鎌倉・室町）", mnemonics: ["1334年: いざ(13)見(3)よ(4)建武の新政"], note: "武士の反発を招き足利尊氏と対立" },
-            { name: "応仁の乱勃発（戦国時代の幕開け）", year: "1467年", year_sort: 1467, category: "中世（鎌倉・室町）", mnemonics: ["1467年: 人の(14)む(6)な(7)しい応仁の乱"], note: "細川勝元と山名宗全の対立、下剋上の世へ" },
-            { name: "種子島への鉄砲伝来", year: "1543年", year_sort: 1543, category: "近世（安土桃山・江戸）", mnemonics: ["1543年: 以後(15)よ(4)み(3)がえる戦術の変革"], note: "ポルトガル人より伝来" },
-            { name: "関ヶ原の戦い（天下分け目の合戦）", year: "1600年", year_sort: 1600, category: "近世（安土桃山・江戸）", mnemonics: ["1600年: ヒーロー(16)おお(00)いに関ヶ原"], note: "徳川家康が石田三成を破り覇権掌握" },
-            { name: "島原・天草一揆と鎖国の完成", year: "1637年", year_sort: 1637, category: "近世（安土桃山・江戸）", mnemonics: ["1637年: ヒーロー(16)み(3)な(7)決起す島原一揆"], note: "ポルトガル船来航禁止、出島オランダ商館へ" },
-            { name: "ペリー来航（浦賀沖に黒船出現）", year: "1853年", year_sort: 1853, category: "近代（幕末〜大正）", mnemonics: ["1853年: いや(18)ご(5)み(3)だらけ黒船来航"], note: "日米和親条約の締結へ" },
-            { name: "大政奉還（徳川慶喜が政権返上）", year: "1867年", year_sort: 1867, category: "近代（幕末〜大正）", mnemonics: ["1867年: 人は(18)む(6)な(7)しく幕府返上"], note: "明治維新の始まり" },
-            { name: "大日本帝国憲法発布", year: "1889年", year_sort: 1889, category: "近代（幕末〜大正）", mnemonics: ["1889年: いちは(18)やく(89)発布帝国憲法"], note: "伊藤博文が起草、欽定憲法" },
-            { name: "日露戦争勃発", year: "1904年", year_sort: 1904, category: "近代（幕末〜大正）", mnemonics: ["1904年: 行く(19)わ(04)よ日露戦争"], note: "ポーツマス条約で講和" }
+            { name: "漢委奴国王の金印授与（後漢書東夷伝）", year: "57年", year_sort: 57, category: "弥生・古墳", mnemonics: ["57年: こんな(57)金印ありがたい"], note: "光武帝から奴国王へ" },
+            { name: "大化の改新（改新の詔）", year: "645年", year_sort: 645, category: "飛鳥", mnemonics: ["645年: 虫(64)ご(5)ろし蘇我入鹿暗殺"], note: "中大兄皇子と中臣鎌足" },
+            { name: "大宝律令の完成", year: "701年", year_sort: 701, category: "飛鳥", mnemonics: ["701年: な(7)お(0)い(1)い律令政治始まる"], note: "二官八省と国郡里制" },
+            { name: "平城京遷都（奈良時代開始）", year: "710年", year_sort: 710, category: "奈良", mnemonics: ["710年: なん(71)と(0)綺麗な平城京"], note: "元明天皇の代" },
+            { name: "平安京遷都（平安時代開始）", year: "794年", year_sort: 794, category: "平安", mnemonics: ["794年: 鳴く(79)よ(4)ウグイス平安京"], note: "桓武天皇の代" },
+            { name: "白紙に戻す遣唐使廃止（菅原道真の建議）", year: "894年", year_sort: 894, category: "平安", mnemonics: ["894年: 白紙(894)に戻そう遣唐使"], note: "国風文化の開花へ" },
+            { name: "源頼朝が征夷大将軍に任官（鎌倉幕府の成立期）", year: "1192年", year_sort: 1192, category: "鎌倉", mnemonics: ["1192年: いい(11)国(92)作ろう鎌倉幕府"], note: "御家人と御恩と奉公の主従関係" },
+            { name: "御成敗式目（貞永式目）の制定", year: "1232年", year_sort: 1232, category: "鎌倉", mnemonics: ["1232年: 人に(12)み(3)に(2)くい裁判なし"], note: "北条泰時が制定した武家法" },
+            { name: "建武の新政（後醍醐天皇）", year: "1334年", year_sort: 1334, category: "室町・戦国", mnemonics: ["1334年: いざ(13)見(3)よ(4)建武の新政"], note: "武士の反発を招き足利尊氏と対立" },
+            { name: "応仁の乱勃発（戦国時代の幕開け）", year: "1467年", year_sort: 1467, category: "室町・戦国", mnemonics: ["1467年: 人の(14)む(6)な(7)しい応仁の乱"], note: "細川勝元と山名宗全の対立、下剋上の世へ" },
+            { name: "種子島への鉄砲伝来", year: "1543年", year_sort: 1543, category: "安土桃山", mnemonics: ["1543年: 以後(15)よ(4)み(3)がえる戦術の変革"], note: "ポルトガル人より伝来" },
+            { name: "関ヶ原の戦い（天下分け目の合戦）", year: "1600年", year_sort: 1600, category: "安土桃山", mnemonics: ["1600年: ヒーロー(16)おお(00)いに関ヶ原"], note: "徳川家康が石田三成を破り覇権掌握" },
+            { name: "島原・天草一揆と鎖国の完成", year: "1637年", year_sort: 1637, category: "江戸", mnemonics: ["1637年: ヒーロー(16)み(3)な(7)決起す島原一揆"], note: "ポルトガル船来航禁止、出島オランダ商館へ" },
+            { name: "ペリー来航（浦賀沖に黒船出現）", year: "1853年", year_sort: 1853, category: "明治・大正", mnemonics: ["1853年: いや(18)ご(5)み(3)だらけ黒船来航"], note: "日米和親条約の締結へ" },
+            { name: "大政奉還（徳川慶喜が政権返上）", year: "1867年", year_sort: 1867, category: "明治・大正", mnemonics: ["1867年: 人は(18)む(6)な(7)しく幕府返上"], note: "明治維新の始まり" },
+            { name: "大日本帝国憲法発布", year: "1889年", year_sort: 1889, category: "明治・大正", mnemonics: ["1889年: いちは(18)やく(89)発布帝国憲法"], note: "伊藤博文が起草、欽定憲法" },
+            { name: "日露戦争勃発", year: "1904年", year_sort: 1904, category: "明治・大正", mnemonics: ["1904年: 行く(19)わ(04)よ日露戦争"], note: "ポーツマス条約で講和" }
         ];
 
         let activeHistoryType = "world"; // "world" or "japan"
+        let currentViewMode = "stream"; // "stream" (タイムライン) or "table" (年代表)
         let currentCategoryFilter = "ALL";
         let currentSearchQuery = "";
         let filterMistakesOnly = false;
@@ -658,6 +748,20 @@
 
         let rawProblems = {};
         let rawLessons = {};
+
+        // 表示形式切替（📜 タイムライン ｜ 📊 年代表）
+        const btnViewStream = document.getElementById("btn-view-stream");
+        const btnViewTable = document.getElementById("btn-view-table");
+
+        function setViewMode(mode) {
+            currentViewMode = mode;
+            if (btnViewStream) btnViewStream.classList.toggle("active", mode === "stream");
+            if (btnViewTable) btnViewTable.classList.toggle("active", mode === "table");
+            renderTimeline();
+        }
+
+        if (btnViewStream) btnViewStream.onclick = () => setViewMode("stream");
+        if (btnViewTable) btnViewTable.onclick = () => setViewMode("table");
 
         // カテゴリーフィルターボタンの再構築
         function rebuildCategoryFilters() {
@@ -784,13 +888,61 @@
             };
         }
 
-        // 日本史の時代判定ヘルパー
+        // 年号パースヘルパー（紀元前・BC・負の年代を精密ソート・9999フォールバック）
+        function parseYearSort(yearStr, fallbackSort) {
+            if (typeof fallbackSort === "number" && !isNaN(fallbackSort)) return fallbackSort;
+            if (yearStr == null) return 9999;
+            const s = String(yearStr).trim();
+            if (!s) return 9999;
+            const isBc = /^(前|紀元前|bc|b\.c\.)/i.test(s) || /前\s*\d+/.test(s) || /-\d+/.test(s);
+            const m = s.match(/\d+/);
+            if (!m) return 9999;
+            const num = parseInt(m[0], 10);
+            return isBc ? -num : num;
+        }
+
+        // 日本史の時代判定ヘルパー（高校日本史・共通テスト準拠）
         function getJapanEraCategory(yearSort) {
-            if (yearSort <= 1185) return "古代（旧石器〜平安）";
-            if (yearSort <= 1573) return "中世（鎌倉・室町）";
-            if (yearSort <= 1867) return "近世（安土桃山・江戸）";
-            if (yearSort <= 1926) return "近代（幕末〜大正）";
-            return "現代（昭和〜令和）";
+            if (yearSort <= 592) return "弥生・古墳";
+            if (yearSort <= 710) return "飛鳥";
+            if (yearSort <= 794) return "奈良";
+            if (yearSort <= 1185) return "平安";
+            if (yearSort <= 1333) return "鎌倉";
+            if (yearSort <= 1573) return "室町・戦国";
+            if (yearSort <= 1603) return "安土桃山";
+            if (yearSort <= 1867) return "江戸";
+            if (yearSort <= 1926) return "明治・大正";
+            return "昭和・現代";
+        }
+
+        // 世紀・時代のラベル生成ヘルパー（出来事ごとの年号重複を廃止し、時代区分として整理）
+        function formatCentury(yearSort) {
+            if (yearSort === 9999) return "年代未詳・その他";
+            if (activeHistoryType === "japan") {
+                const era = getJapanEraCategory(yearSort);
+                const eraLabelMap = {
+                    "弥生・古墳": "弥生・古墳時代（前4世紀〜6世紀末）",
+                    "飛鳥": "飛鳥時代（592年〜710年）",
+                    "奈良": "奈良時代（710年〜794年）",
+                    "平安": "平安時代（794年〜1185年）",
+                    "鎌倉": "鎌倉時代（1185年〜1333年）",
+                    "室町・戦国": "室町・戦国時代（1336年〜1573年）",
+                    "安土桃山": "安土桃山時代（1573年〜1603年）",
+                    "江戸": "江戸時代（1603年〜1867年）",
+                    "明治・大正": "明治・大正時代（1868年〜1926年）",
+                    "昭和・現代": "昭和・現代（1926年〜現在）"
+                };
+                return eraLabelMap[era] || `${era}時代`;
+            }
+            if (yearSort < 0) {
+                const c = Math.ceil(Math.abs(yearSort) / 100);
+                return `紀元前 ${c} 世紀 (前${c * 100}〜前${(c - 1) * 100 + 1}年)`;
+            } else if (yearSort === 0) {
+                return "1 世紀（紀元前後）";
+            } else {
+                const c = Math.ceil(yearSort / 100);
+                return `${c} 世紀 (${(c - 1) * 100 + 1}〜${c * 100}年)`;
+            }
         }
 
         // Firebaseデータ収集＆マージ（プリセットフォールバック付き）
@@ -830,7 +982,7 @@
 
                 problemEvents.forEach(ev => {
                     if (!ev || !ev.name) return;
-                    const yearSort = typeof ev.year_sort === "number" ? ev.year_sort : (parseInt(ev.year) || 9999);
+                    const yearSort = parseYearSort(ev.year, ev.year_sort);
                     const category = isWorld 
                         ? (ev.region || "地域をまたぐ／世界全体")
                         : (ev.era || getJapanEraCategory(yearSort));
@@ -879,7 +1031,7 @@
 
                 l.historicalEvents.forEach(ev => {
                     if (!ev || !ev.name) return;
-                    const yearSort = typeof ev.year_sort === "number" ? ev.year_sort : (parseInt(ev.year) || 9999);
+                    const yearSort = parseYearSort(ev.year, ev.year_sort);
                     const category = isWorld 
                         ? (ev.region || "地域をまたぐ／世界全体")
                         : (ev.era || getJapanEraCategory(yearSort));
@@ -921,28 +1073,10 @@
                 .replace(/'/g, "&#39;");
         }
 
-        // 世紀・時代のラベル生成ヘルパー
-        function formatCentury(yearSort) {
-            if (yearSort === 9999) return "年代未詳・その他";
-            if (activeHistoryType === "japan") {
-                const era = getJapanEraCategory(yearSort);
-                if (yearSort > 0) return `${era} (${yearSort}年頃)`;
-                return `${era} (紀元前)`;
-            }
-            if (yearSort < 0) {
-                const c = Math.ceil(Math.abs(yearSort) / 100);
-                return `紀元前 ${c} 世紀`;
-            } else if (yearSort === 0) {
-                return "1 世紀（紀元前後）";
-            } else {
-                const c = Math.ceil(yearSort / 100);
-                return `${c} 世紀`;
-            }
-        }
-
-        // タイムライン描画（赤シート、ヒートマップ対応）
+        // タイムライン描画（タイムラインストリーム ＆ 年代表マトリクス両対応・文字被り防止）
         function renderTimeline() {
             const streamEl = document.getElementById("timeline-stream");
+            const tableContainerEl = document.getElementById("timeline-table-container");
             const emptyEl = document.getElementById("empty-notice");
             const totalCountEl = document.getElementById("event-total-count");
             const countMistakeEl = document.getElementById("count-mistake-events");
@@ -990,6 +1124,9 @@
 
             if (filtered.length === 0) {
                 streamEl.innerHTML = "";
+                if (tableContainerEl) tableContainerEl.innerHTML = "";
+                streamEl.style.display = "none";
+                if (tableContainerEl) tableContainerEl.style.display = "none";
                 emptyEl.style.display = "block";
                 emptyEl.innerHTML = `該当する条件の出来事が見つかりませんでした。<br>フィルターを解除するか検索ワードを変更してください。`;
                 return;
@@ -997,92 +1134,198 @@
 
             emptyEl.style.display = "none";
 
-            let currentCenturyLabel = null;
-            let html = "";
+            // ==========================================
+            // 模式 A: 📜 タイムライン形式（縦軸ストリーム）
+            // ==========================================
+            if (currentViewMode === "stream") {
+                streamEl.style.display = "flex";
+                if (tableContainerEl) tableContainerEl.style.display = "none";
 
-            filtered.forEach(ev => {
-                const centuryLabel = formatCentury(ev.year_sort);
-                if (centuryLabel !== currentCenturyLabel) {
-                    currentCenturyLabel = centuryLabel;
-                    const cMistakes = centuryMistakeMap[centuryLabel] || 0;
-                    const heatBadgeHtml = cMistakes > 0 
-                        ? `<span class="century-heat-badge">🔥 弱点誤答: ${cMistakes}件</span>` 
+                let currentCenturyLabel = null;
+                let html = "";
+
+                filtered.forEach(ev => {
+                    const centuryLabel = formatCentury(ev.year_sort);
+                    if (centuryLabel !== currentCenturyLabel) {
+                        currentCenturyLabel = centuryLabel;
+                        const cMistakes = centuryMistakeMap[centuryLabel] || 0;
+                        const heatBadgeHtml = cMistakes > 0 
+                            ? `<span class="century-heat-badge">🔥 弱点誤答: ${cMistakes}件</span>` 
+                            : "";
+                        html += `
+                            <div class="century-header">
+                                <span>⏳ ${escapeHtml(centuryLabel)}</span>
+                                ${heatBadgeHtml}
+                            </div>
+                        `;
+                    }
+
+                    const sourcesHtml = ev.sources.map(s => {
+                        if (s.type === "problem") {
+                            const mistakeCls = s.isMistake ? "is-mistake-link" : "";
+                            const icon = s.isMistake ? "🔥" : "📌";
+                            return `<a href="problem.html?id=${encodeURIComponent(s.id)}" class="source-link-btn link-problem ${mistakeCls}">${icon} 誤答問題: ${escapeHtml(s.title)}</a>`;
+                        } else {
+                            return `<a href="lesson.html?id=${encodeURIComponent(s.id)}" class="source-link-btn link-lesson">📖 授業: ${escapeHtml(s.title)}</a>`;
+                        }
+                    }).join("");
+
+                    const mnemonicHtml = ev.mnemonics.length > 0
+                        ? `<div class="mnemonic-badge">🎴 語呂: ${escapeHtml(ev.mnemonics[0])}</div>`
                         : "";
+
+                    const noteHtml = ev.note 
+                        ? `<div style="font-size:0.78rem; color:var(--text-secondary); margin-top:0.2rem; line-height:1.45;">💡 ${escapeHtml(ev.note)}</div>` 
+                        : "";
+
+                    const trapAlertHtml = (ev.isMistake && ev.trapNote)
+                        ? `<div style="font-size:0.76rem; color:#B91C1C; background:rgba(239,68,68,0.08); border-left:3px solid #EF4444; padding:0.35rem 0.65rem; border-radius:4px; margin-top:0.3rem;">⚠️ <strong>落とし穴の急所:</strong> ${escapeHtml(ev.trapNote)}</div>`
+                        : "";
+
+                    const cardMistakeCls = ev.isMistake ? "is-mistake" : "";
+                    const heatPillHtml = ev.isMistake 
+                        ? `<span class="heat-alert-pill">🔥 要復習 (${ev.mistakeCount}回)</span>`
+                        : "";
+
+                    // 赤シート・青シート用のマスキングクラス判定
+                    const evKey = `${ev.name}_${ev.year}`;
+                    const isManuallyRevealed = isAllRevealed || manuallyRevealedKeys.has(evKey);
+
+                    let yearClass = "event-year";
+                    let nameClass = "event-name";
+
+                    if (blindMaskMode === "year") {
+                        yearClass += ` blind-masked mask-red ${isManuallyRevealed ? 'revealed' : ''}`;
+                    } else if (blindMaskMode === "name") {
+                        nameClass += ` blind-masked mask-blue ${isManuallyRevealed ? 'revealed' : ''}`;
+                    }
+
                     html += `
-                        <div class="century-header">
-                            <span>⏳ ${escapeHtml(centuryLabel)}</span>
-                            ${heatBadgeHtml}
+                        <div class="timeline-node">
+                            <div class="event-card ${cardMistakeCls}" data-event-key="${escapeHtml(evKey)}">
+                                <div class="event-top">
+                                    <span class="${yearClass}" onclick="toggleEventBlindMask(event, '${escapeHtml(evKey)}', 'year')">
+                                        ${escapeHtml(ev.year)}
+                                    </span>
+                                    <div style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap;">
+                                        ${heatPillHtml}
+                                        <span class="badge badge-history" style="font-size:0.7rem;">${escapeHtml(ev.category)}</span>
+                                    </div>
+                                </div>
+                                <div class="${nameClass}" onclick="toggleEventBlindMask(event, '${escapeHtml(evKey)}', 'name')">
+                                    ${escapeHtml(ev.name)}
+                                </div>
+                                ${noteHtml}
+                                ${trapAlertHtml}
+                                ${mnemonicHtml}
+                                <div class="event-links">
+                                    ${sourcesHtml}
+                                </div>
+                            </div>
                         </div>
                     `;
-                }
+                });
 
-                const sourcesHtml = ev.sources.map(s => {
-                    if (s.type === "problem") {
-                        const mistakeCls = s.isMistake ? "is-mistake-link" : "";
-                        const icon = s.isMistake ? "🔥" : "📌";
-                        return `<a href="problem.html?id=${encodeURIComponent(s.id)}" class="source-link-btn link-problem ${mistakeCls}">${icon} 誤答問題: ${escapeHtml(s.title)}</a>`;
-                    } else {
-                        return `<a href="lesson.html?id=${encodeURIComponent(s.id)}" class="source-link-btn link-lesson">📖 授業: ${escapeHtml(s.title)}</a>`;
+                streamEl.innerHTML = html;
+                return;
+            }
+
+            // ==========================================
+            // 模式 B: 📊 時代別 年代表（対照マトリクス表）
+            // ==========================================
+            if (currentViewMode === "table" && tableContainerEl) {
+                streamEl.style.display = "none";
+                tableContainerEl.style.display = "block";
+
+                const isWorld = activeHistoryType === "world";
+                let currentEra = null;
+                let rowsHtml = "";
+
+                filtered.forEach(ev => {
+                    const eraLabel = formatCentury(ev.year_sort);
+                    if (eraLabel !== currentEra) {
+                        currentEra = eraLabel;
+                        const cMistakes = centuryMistakeMap[eraLabel] || 0;
+                        const heatTxt = cMistakes > 0 ? ` <span style="color:#DC2626; font-size:0.76rem; font-weight:800;">(🔥 弱点誤答: ${cMistakes}件)</span>` : "";
+                        rowsHtml += `
+                            <tr class="chronology-era-row">
+                                <td colspan="${isWorld ? 5 : 5}">⏳ ${escapeHtml(eraLabel)}${heatTxt}</td>
+                            </tr>
+                        `;
                     }
-                }).join("");
 
-                const mnemonicHtml = ev.mnemonics.length > 0
-                    ? `<div class="mnemonic-badge">🎴 語呂: ${escapeHtml(ev.mnemonics[0])}</div>`
-                    : "";
+                    const evKey = `${ev.name}_${ev.year}`;
+                    const isManuallyRevealed = isAllRevealed || manuallyRevealedKeys.has(evKey);
 
-                const noteHtml = ev.note 
-                    ? `<div style="font-size:0.78rem; color:var(--text-secondary); margin-top:0.2rem; line-height:1.45;">💡 ${escapeHtml(ev.note)}</div>` 
-                    : "";
+                    let yearClass = "event-year";
+                    let nameClass = "event-name";
 
-                const trapAlertHtml = (ev.isMistake && ev.trapNote)
-                    ? `<div style="font-size:0.76rem; color:#B91C1C; background:rgba(239,68,68,0.08); border-left:3px solid #EF4444; padding:0.35rem 0.65rem; border-radius:4px; margin-top:0.3rem;">⚠️ <strong>落とし穴の急所:</strong> ${escapeHtml(ev.trapNote)}</div>`
-                    : "";
+                    if (blindMaskMode === "year") {
+                        yearClass += ` blind-masked mask-red ${isManuallyRevealed ? 'revealed' : ''}`;
+                    } else if (blindMaskMode === "name") {
+                        nameClass += ` blind-masked mask-blue ${isManuallyRevealed ? 'revealed' : ''}`;
+                    }
 
-                const cardMistakeCls = ev.isMistake ? "is-mistake" : "";
-                const heatPillHtml = ev.isMistake 
-                    ? `<span class="heat-alert-pill">🔥 要復習 (${ev.mistakeCount}回)</span>`
-                    : "";
+                    const mnemonicHtml = ev.mnemonics.length > 0
+                        ? `<div class="mnemonic-badge" style="margin-top:0.25rem;">🎴 語呂: ${escapeHtml(ev.mnemonics[0])}</div>`
+                        : "";
 
-                // 赤シート・青シート用のマスキングクラス判定
-                const evKey = `${ev.name}_${ev.year}`;
-                const isManuallyRevealed = isAllRevealed || manuallyRevealedKeys.has(evKey);
+                    const noteHtml = ev.note 
+                        ? `<div style="font-size:0.78rem; color:var(--text-secondary); line-height:1.4;">💡 ${escapeHtml(ev.note)}</div>` 
+                        : "";
 
-                let yearClass = "event-year";
-                let nameClass = "event-name";
+                    const trapAlertHtml = (ev.isMistake && ev.trapNote)
+                        ? `<div style="font-size:0.75rem; color:#B91C1C; background:rgba(239,68,68,0.08); padding:0.25rem 0.5rem; border-radius:4px; margin-top:0.25rem;">⚠️ ${escapeHtml(ev.trapNote)}</div>`
+                        : "";
 
-                if (blindMaskMode === "year") {
-                    yearClass += ` blind-masked mask-red ${isManuallyRevealed ? 'revealed' : ''}`;
-                } else if (blindMaskMode === "name") {
-                    nameClass += ` blind-masked mask-blue ${isManuallyRevealed ? 'revealed' : ''}`;
-                }
+                    const heatPill = ev.isMistake
+                        ? `<span class="heat-alert-pill" style="margin-bottom:0.3rem;">🔥 要復習</span>`
+                        : "";
 
-                html += `
-                    <div class="timeline-node">
-                        <div class="event-card ${cardMistakeCls}" data-event-key="${escapeHtml(evKey)}">
-                            <div class="event-top">
+                    rowsHtml += `
+                        <tr class="${ev.isMistake ? 'is-mistake' : ''}">
+                            <td style="font-weight:700; color:var(--text-secondary); font-size:0.82rem; white-space:nowrap;">
+                                ${escapeHtml(ev.category)}
+                            </td>
+                            <td style="white-space:nowrap;">
                                 <span class="${yearClass}" onclick="toggleEventBlindMask(event, '${escapeHtml(evKey)}', 'year')">
                                     ${escapeHtml(ev.year)}
                                 </span>
-                                <div style="display:flex; align-items:center; gap:0.4rem;">
-                                    ${heatPillHtml}
-                                    <span class="badge badge-history" style="font-size:0.7rem;">${escapeHtml(ev.category)}</span>
+                            </td>
+                            <td>
+                                <div class="${nameClass}" onclick="toggleEventBlindMask(event, '${escapeHtml(evKey)}', 'name')">
+                                    ${escapeHtml(ev.name)}
                                 </div>
-                            </div>
-                            <div class="${nameClass}" onclick="toggleEventBlindMask(event, '${escapeHtml(evKey)}', 'name')">
-                                ${escapeHtml(ev.name)}
-                            </div>
-                            ${noteHtml}
-                            ${trapAlertHtml}
-                            ${mnemonicHtml}
-                            <div class="event-links">
-                                ${sourcesHtml}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
+                                ${heatPill}
+                            </td>
+                            <td>
+                                ${noteHtml}
+                                ${trapAlertHtml}
+                            </td>
+                            <td>
+                                ${mnemonicHtml || '<span style="color:var(--text-muted); font-size:0.75rem;">—</span>'}
+                            </td>
+                        </tr>
+                    `;
+                });
 
-            streamEl.innerHTML = html;
+                tableContainerEl.innerHTML = `
+                    <table class="chronology-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 14%;">時代・地域</th>
+                                <th style="width: 15%;">年代 (年号)</th>
+                                <th style="width: 33%;">出来事名</th>
+                                <th style="width: 23%;">要点・因果関係・落とし穴</th>
+                                <th style="width: 15%;">暗記語呂</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rowsHtml}
+                        </tbody>
+                    </table>
+                `;
+            }
         }
 
         // 個別カードのマスキングめくりトグル
@@ -1312,12 +1555,12 @@
                     <div style="display:flex; flex-direction:column; gap:0.6rem;">
                         ${quizCurrentItems.correctOrder.map((ev, i) => `
                             <div class="reorder-result-card is-correct-row">
-                                <div style="display:flex; justify-content:space-between; align-items:center;">
-                                    <div style="display:flex; align-items:center; gap:0.5rem;">
-                                        <span style="font-weight:800; font-size:0.95rem; color:#059669;">${romanLabels[i]}</span>
-                                        <span style="font-weight:800; font-size:1.02rem; color:var(--text-primary);">${escapeHtml(ev.name)}</span>
+                                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
+                                    <div style="display:flex; align-items:center; gap:0.5rem; min-width:0; flex:1;">
+                                        <span style="font-weight:800; font-size:0.95rem; color:#059669; flex-shrink:0;">${romanLabels[i]}</span>
+                                        <span style="font-weight:800; font-size:1.02rem; color:var(--text-primary); word-break:break-word;">${escapeHtml(ev.name)}</span>
                                     </div>
-                                    <span style="font-family:var(--font-heading); font-size:1.05rem; font-weight:800; color:#059669;">
+                                    <span style="font-family:var(--font-heading); font-size:1.05rem; font-weight:800; color:#059669; flex-shrink:0;">
                                         ${escapeHtml(ev.year)}
                                     </span>
                                 </div>
