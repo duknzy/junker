@@ -623,6 +623,19 @@
                 });
             });
 
+            // 3. ユーザーの手書きメモ・自作語呂合わせを反映
+            try {
+                const userNotes = JSON.parse(localStorage.getItem("flora_timeline_user_notes") || "{}");
+                Object.entries(userNotes).forEach(([k, uData]) => {
+                    if (!uData) return;
+                    if (map.has(k)) {
+                        const item = map.get(k);
+                        if (uData.note) item.userNote = uData.note;
+                        if (uData.mnemonic) item.userMnemonic = uData.mnemonic;
+                    }
+                });
+            } catch (e) {}
+
             return Array.from(map.values()).sort((a, b) => a.yearSort - b.yearSort);
         }
 
@@ -704,7 +717,9 @@
                         </div>
                         <div class="${nameClass}" onclick="toggleMMask('${escapeHtml(evKey)}')">${escapeHtml(ev.name || '')}</div>
                         ${ev.note ? `<div style="font-size:0.75rem; color:var(--text-secondary); margin-bottom:0.25rem;">💡 ${escapeHtml(ev.note)}</div>` : ''}
-                        ${ev.mnemonic ? `<div class="tl-mnemonic">🎴 語呂: ${escapeHtml(ev.mnemonic)}</div>` : ''}
+                        ${ev.userNote ? `<div style="font-size:0.75rem; color:#065F46; background:rgba(5,150,105,0.08); border-left:3px solid #059669; padding:0.25rem 0.5rem; border-radius:4px; margin-bottom:0.25rem;">📝 <strong>自分メモ:</strong> ${escapeHtml(ev.userNote)}</div>` : ''}
+                        ${ev.userMnemonic ? `<div class="tl-mnemonic" style="background:#FEF3C7; border:1px solid #F59E0B; color:#92400E; margin-bottom:0.25rem;">🎴 <strong>自作語呂:</strong> ${escapeHtml(ev.userMnemonic)}</div>` : ''}
+                        ${ev.mnemonic && ev.mnemonic !== ev.userMnemonic ? `<div class="tl-mnemonic">🎴 語呂: ${escapeHtml(ev.mnemonic)}</div>` : ''}
                         <div style="font-size:0.68rem; color:var(--text-muted); margin-top:0.35rem;">
                             出典: ${escapeHtml(ev.source)}
                         </div>

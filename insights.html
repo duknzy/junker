@@ -13,12 +13,18 @@
     <!-- MathJax 3 (High-performance SVG Renderer: No font downloads, zero latency) -->
     <script>
         window.MathJax = {
-            loader: { load: ['[tex]/bbox', '[tex]/color'] },
+            loader: { load: ['[tex]/bbox', '[tex]/color', '[tex]/mhchem'] },
             startup: {
-                typeset: false // ページ全体の自動フルスキャンを停止（必要な数式ノードのみピンポイント処理）
+                typeset: false, // ページ全体の自動フルスキャンを停止（必要な数式ノードのみピンポイント処理）
+                ready: () => {
+                    MathJax.startup.defaultReady();
+                    if (typeof window.processMathQueue === "function") {
+                        window.processMathQueue();
+                    }
+                }
             },
             tex: {
-                packages: { '[+]': ['bbox', 'color'] },
+                packages: { '[+]': ['bbox', 'color', 'mhchem'] },
                 inlineMath: [['$', '$'], ['\\(', '\\)']],
                 displayMath: [['$$', '$$'], ['\\[', '\\]']],
                 processEscapes: true,
@@ -28,8 +34,6 @@
                 }
             },
             options: {
-                ignoreHtmlClass: 'tex2jax_ignore',
-                processHtmlClass: 'tex2jax_process',
                 skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
             },
             chtml: {
@@ -2972,7 +2976,7 @@
                 <div class="fc-stage" id="fc-card-stage" title="クリックまたは[Space]でめくる">
                     <div class="fc-card-inner" id="fc-card-inner">
                         <!-- 表面（問題 / 用語 / 問い） -->
-                        <div class="fc-card-face fc-card-front" id="fc-face-front">
+                        <div class="fc-card-face fc-card-front tex2jax_process" id="fc-face-front">
                             <div class="fc-face-header">
                                 <div style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap;">
                                     <span class="fc-subject-pill" id="fc-front-subject">公共</span>
@@ -2986,17 +2990,17 @@
                                 </div>
                             </div>
                             <div class="fc-prompt-body">
-                                <div class="fc-prompt-label" id="fc-front-prompt-label">Q. この重要事項の定義・急所を思い出そう</div>
-                                <div class="fc-main-term" id="fc-front-main-term">契約自由の原則</div>
-                                <div class="fc-front-hint" id="fc-front-hint" style="display:none;"></div>
+                                <div class="fc-prompt-label tex2jax_process" id="fc-front-prompt-label">Q. この重要事項の定義・急所を思い出そう</div>
+                                <div class="fc-main-term tex2jax_process" id="fc-front-main-term">契約自由の原則</div>
+                                <div class="fc-front-hint tex2jax_process" id="fc-front-hint" style="display:none;"></div>
 
                                 <!-- 🎯 4択スピードテスト用選択肢コンテナ（quizモード時のみ表示） -->
-                                <div class="fc-quiz-box" id="fc-quiz-box" style="display:none;">
+                                <div class="fc-quiz-box tex2jax_process" id="fc-quiz-box" style="display:none;">
                                     <!-- JSで4つの選択肢ボタンを生成 -->
                                 </div>
 
                                 <!-- 🎯 4択スピードテスト用回答後フィードバック・解説エリア -->
-                                <div class="fc-quiz-feedback-box" id="fc-quiz-feedback-box" style="display:none;">
+                                <div class="fc-quiz-feedback-box tex2jax_process" id="fc-quiz-feedback-box" style="display:none;">
                                     <!-- JSで回答後に正解・解説と次へボタンを展開 -->
                                 </div>
                             </div>
@@ -3007,7 +3011,7 @@
                         </div>
 
                         <!-- 裏面（答え / 解説 / 補足） -->
-                        <div class="fc-card-face fc-card-back" id="fc-face-back">
+                        <div class="fc-card-face fc-card-back tex2jax_process" id="fc-face-back">
                             <div class="fc-face-header">
                                 <div style="display:flex; align-items:center; gap:0.4rem; flex-shrink:0;">
                                     <span class="fc-subject-pill" id="fc-back-subject">公共</span>
@@ -3023,9 +3027,9 @@
                                 </div>
                             </div>
                             <div class="fc-answer-body">
-                                <div class="fc-back-term-title" id="fc-back-term-title" style="display:none; font-size:1.18rem; font-weight:800; color:#059669; margin-bottom:0.6rem; padding-bottom:0.4rem; border-bottom:1px dashed var(--border-color);"></div>
-                                <div class="fc-main-answer" id="fc-back-main-answer">解答内容</div>
-                                <div class="fc-back-note" id="fc-back-note" style="display:none;"></div>
+                                <div class="fc-back-term-title tex2jax_process" id="fc-back-term-title" style="display:none; font-size:1.18rem; font-weight:800; color:#059669; margin-bottom:0.6rem; padding-bottom:0.4rem; border-bottom:1px dashed var(--border-color);"></div>
+                                <div class="fc-main-answer tex2jax_process" id="fc-back-main-answer">解答内容</div>
+                                <div class="fc-back-note tex2jax_process" id="fc-back-note" style="display:none;"></div>
 
                                 <!-- 📝 ユーザー追加メモ表示＆編集エリア -->
                                 <div class="fc-user-memo-box" id="fc-back-user-memo-box" style="margin-top:0.75rem; background:rgba(245,158,11,0.06); border:1px dashed rgba(217,119,6,0.35); border-radius:var(--radius-md); padding:0.6rem 0.8rem; text-align:left; cursor:pointer;" title="タップまたはクリックして自分用メモを入力・編集">
@@ -3037,7 +3041,7 @@
                                             ✏️ 編集
                                         </button>
                                     </div>
-                                    <div id="fc-back-user-memo-text" style="font-size:0.86rem; color:var(--text-primary); line-height:1.5; white-space:pre-wrap;">
+                                    <div id="fc-back-user-memo-text" class="tex2jax_process" style="font-size:0.86rem; color:var(--text-primary); line-height:1.5; white-space:pre-wrap;">
                                         <span style="color:var(--text-muted); font-style:italic;">（メモはまだありません。タップして語呂合わせや自分だけの覚え方をメモできます）</span>
                                     </div>
                                     <div id="fc-back-user-memo-editor" style="display:none; margin-top:0.4rem; cursor:default;">
@@ -5605,12 +5609,40 @@
             return /(\$|\\\(|\\\[|\\frac|\\sqrt|\\sum|\\int|\\bbox|\\boxed|\\alpha|\\beta|\\theta|\\pm|\\times|\\div|\\neq|\\leqq|\\geqq|\\triangle|\\angle)/.test(text);
         }
 
+        let mathTypesetQueue = Promise.resolve();
         let pendingMathElements = new Set();
         let mathScheduleTimer = null;
 
-        function scheduleMathTypeset(targetOrTargets) {
-            if (!window.MathJax || !window.MathJax.typesetPromise) return;
+        function processMathQueue() {
+            if (pendingMathElements.size === 0) return;
+            const rawTargets = Array.from(pendingMathElements).filter(el => el && el.isConnected);
+            pendingMathElements.clear();
+            if (rawTargets.length === 0) return;
 
+            // 🛡️ 祖先・子孫が重複して含まれる場合の解消（子要素を優先し、親による重複レンダリング・DOM衝突・splitText IndexSizeErrorを完全防止）
+            const targetsToTypeset = rawTargets.filter(el => {
+                return !rawTargets.some(other => other !== el && el.contains(other));
+            });
+
+            mathTypesetQueue = mathTypesetQueue.then(async () => {
+                if (!window.MathJax || !window.MathJax.typesetPromise) return;
+                const valid = targetsToTypeset.filter(el => el && el.isConnected);
+                if (valid.length === 0) return;
+                try {
+                    if (typeof MathJax.typesetClear === "function") {
+                        try { MathJax.typesetClear(valid); } catch (e) {}
+                    }
+                    await MathJax.typesetPromise(valid);
+                } catch (err) {
+                    console.debug("MathJax typeset notice:", err);
+                }
+            }).catch(err => {
+                console.debug("MathJax typeset queue notice:", err);
+            });
+        }
+        window.processMathQueue = processMathQueue;
+
+        function scheduleMathTypeset(targetOrTargets) {
             const targets = Array.isArray(targetOrTargets) ? targetOrTargets : [targetOrTargets];
             targets.forEach(t => {
                 if (!t) return;
@@ -5624,6 +5656,11 @@
 
             function isElementVisible(node) {
                 if (!node || !node.isConnected) return false;
+                // フラッシュカード内は、モーダルが開いていれば常にレンダリング対象とする
+                const fcModal = node.closest && node.closest('#flashcard-drill-modal');
+                if (fcModal) {
+                    return fcModal.style.display !== "none";
+                }
                 // 折りたたまれた単元アコーディオンや非表示要素内はレンダリングをスキップ
                 if (node.closest && node.closest('.group-content.collapsed, [style*="display: none"], [style*="display:none"]')) {
                     return false;
@@ -5632,44 +5669,48 @@
             }
 
             function collectMathElements(container) {
+                if (!container) return;
                 if (container.classList && container.classList.contains("tex2jax_process")) {
                     if (containsMathSyntax(container.textContent) && isElementVisible(container)) {
                         pendingMathElements.add(container);
+                        return;
                     }
                 }
+                let foundSub = false;
                 if (container.querySelectorAll) {
                     const list = container.querySelectorAll(".tex2jax_process");
                     list.forEach(node => {
                         if (containsMathSyntax(node.textContent) && isElementVisible(node)) {
                             pendingMathElements.add(node);
+                            foundSub = true;
                         }
                     });
+                }
+                if (!foundSub) {
+                    if (containsMathSyntax(container.textContent) && isElementVisible(container)) {
+                        if (container.classList && !container.classList.contains("tex2jax_process")) {
+                            container.classList.add("tex2jax_process");
+                        }
+                        pendingMathElements.add(container);
+                    }
                 }
             }
 
             if (pendingMathElements.size === 0) return;
 
+            if (!window.MathJax || !window.MathJax.typesetPromise) {
+                if (window.MathJax && window.MathJax.startup && window.MathJax.startup.promise) {
+                    window.MathJax.startup.promise.then(() => processMathQueue());
+                } else {
+                    setTimeout(() => processMathQueue(), 200);
+                }
+                return;
+            }
+
             if (mathScheduleTimer) clearTimeout(mathScheduleTimer);
             mathScheduleTimer = setTimeout(() => {
-                const toProcess = Array.from(pendingMathElements);
-                pendingMathElements.clear();
-                if (toProcess.length === 0) return;
-
-                const executeTypeset = () => {
-                    if (typeof MathJax.typesetClear === "function") {
-                        try { MathJax.typesetClear(toProcess); } catch (e) {}
-                    }
-                    MathJax.typesetPromise(toProcess).catch(err => {
-                        console.debug("MathJax typeset skipped:", err);
-                    });
-                };
-
-                if ('requestIdleCallback' in window) {
-                    requestIdleCallback(executeTypeset, { timeout: 600 });
-                } else {
-                    requestAnimationFrame(executeTypeset);
-                }
-            }, 40);
+                processMathQueue();
+            }, 25);
         }
 
         // ⚡ 段階的チャンク描画用定数・状態
@@ -9008,7 +9049,7 @@
             }
 
             // ⚡ 数式記法を含む要素だけをピンポイントで非同期レンダリング
-            scheduleMathTypeset(fcCardInner);
+            scheduleMathTypeset([fcFrontMainTerm, fcBackMainAnswer, fcBackTermTitle, fcBackNote, fcFrontPromptLabel]);
         }
 
         // 4択テストの選択肢生成
@@ -9069,6 +9110,7 @@
 
                 fcQuizBox.appendChild(btn);
             });
+            scheduleMathTypeset(fcQuizBox);
         }
 
         // 4択テストの回答処理（回答後即座に飛ばず、解説と他選択肢を確認できるように改善）
@@ -9168,7 +9210,7 @@
             fcCardStage.classList.toggle("flipped", fcIsFlipped);
 
             // ⚡ 数式記法を含む要素だけをピンポイントで非同期レンダリング
-            scheduleMathTypeset(fcCardInner);
+            scheduleMathTypeset([fcFrontMainTerm, fcBackMainAnswer, fcBackTermTitle, fcBackNote, fcFrontPromptLabel]);
         }
 
         // 🧠 4段階SRS評価エンジン（1:もう一度, 2:難しい, 3:覚えた, 4:簡単！）

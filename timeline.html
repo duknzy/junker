@@ -393,6 +393,122 @@
             font-weight: 600;
         }
 
+        /* 📝 ユーザー年代メモ＆語呂合わせスタイル */
+        .timeline-user-note-card {
+            background: rgba(245, 158, 11, 0.08);
+            border: 1px solid rgba(245, 158, 11, 0.35);
+            border-radius: var(--radius-md);
+            padding: 0.35rem 0.6rem;
+            margin-top: 0.25rem;
+            font-size: 0.8rem;
+            line-height: 1.45;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.4rem;
+        }
+        .timeline-user-note-card:hover {
+            border-color: #F59E0B;
+            background: rgba(245, 158, 11, 0.15);
+            box-shadow: 0 2px 6px rgba(245, 158, 11, 0.15);
+        }
+        .user-note-badge {
+            background: #F59E0B;
+            color: #fff;
+            font-size: 0.65rem;
+            font-weight: 800;
+            padding: 0.1rem 0.35rem;
+            border-radius: var(--radius-xs);
+            white-space: nowrap;
+            flex-shrink: 0;
+            margin-top: 0.1rem;
+        }
+        .user-note-text {
+            flex: 1;
+            word-break: break-word;
+            white-space: pre-wrap;
+        }
+        .btn-note-cell-edit {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 0.75rem;
+            opacity: 0.6;
+            padding: 0 0.2rem;
+            transition: opacity 0.15s;
+            flex-shrink: 0;
+        }
+        .btn-note-cell-edit:hover { opacity: 1; transform: scale(1.15); }
+
+        .btn-cell-add-note, .btn-cell-add-mnemonic {
+            background: transparent;
+            border: 1px dashed var(--border-color);
+            border-radius: var(--radius-sm);
+            color: var(--text-muted);
+            font-size: 0.74rem;
+            font-weight: 600;
+            padding: 0.25rem 0.6rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            user-select: none;
+        }
+        .btn-cell-add-note:hover {
+            border-color: var(--brand-primary);
+            color: var(--brand-primary);
+            background: rgba(5, 150, 105, 0.06);
+        }
+        .btn-cell-add-mnemonic:hover {
+            border-color: #D97706;
+            color: #D97706;
+            background: rgba(217, 119, 6, 0.06);
+        }
+        .timeline-user-mnemonic-tag {
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .mnemonic-badge.user-created {
+            background: #FEF3C7;
+            border: 1px solid #F59E0B;
+            color: #92400E;
+            font-weight: 700;
+        }
+        .btn-table-row-edit {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 0.3rem 0.5rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: all 0.15s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-table-row-edit:hover {
+            background: var(--brand-light);
+            border-color: var(--brand-primary);
+            color: var(--brand-primary);
+        }
+        .custom-event-badge {
+            background: #ECFDF5;
+            color: #059669;
+            border: 1px solid #A7F3D0;
+            padding: 0.1rem 0.4rem;
+            border-radius: var(--radius-full);
+            font-size: 0.68rem;
+            font-weight: 700;
+            display: inline-block;
+            margin-left: 0.3rem;
+        }
+
         /* 🎯 共通テスト整序特訓モーダル */
         .reorder-modal-overlay {
             position: fixed;
@@ -619,18 +735,26 @@
                     </div>
 
                     <!-- 🔥 誤答ヒートマップ＆特殊フィルター -->
-                    <div class="filter-row" style="border-top:1px dashed var(--border-color); padding-top:0.65rem; justify-content:space-between; align-items:center;">
+                    <div class="filter-row" style="border-top:1px dashed var(--border-color); padding-top:0.65rem; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.6rem;">
                         <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
-                            <span class="filter-label">🔥 弱点あぶり出し：</span>
+                            <span class="filter-label">🔍 抽出：</span>
                             <button type="button" class="region-tab-btn" id="filter-mistakes-only" style="color:#DC2626; border-color:#FECACA; background:#FEF2F2;" title="誤答ノートに登録されている問題の出来事だけを抽出">
                                 🔥 誤答・要復習のみ (<span id="count-mistake-events">0</span>)
                             </button>
                             <button type="button" class="region-tab-btn" id="filter-mnemonics-only" style="color:#92400E; border-color:#FDE68A; background:#FEF3C7;" title="語呂合わせが登録されている出来事のみを抽出">
                                 💡 語呂合わせあり (<span id="count-mnemonic-events">0</span>)
                             </button>
+                            <button type="button" class="region-tab-btn" id="filter-notes-only" style="color:#059669; border-color:#A7F3D0; background:#ECFDF5;" title="自分でメモや語呂合わせを書き込んだ出来事のみを抽出">
+                                📝 自分のメモあり (<span id="count-note-events">0</span>)
+                            </button>
                         </div>
-                        <div id="mistake-heatmap-summary" style="font-size:0.76rem; font-weight:700; color:var(--text-secondary);">
-                            <!-- JSで最多誤答時代を要約表示 -->
+                        <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;">
+                            <div id="mistake-heatmap-summary" style="font-size:0.76rem; font-weight:700; color:var(--text-secondary);">
+                                <!-- JSで最多誤答時代を要約表示 -->
+                            </div>
+                            <button type="button" class="flora-btn flora-btn-primary btn-sm" id="btn-add-custom-event" style="padding:0.35rem 0.85rem; font-size:0.78rem; font-weight:800; border-radius:var(--radius-full); display:inline-flex; align-items:center; gap:0.35rem; cursor:pointer;" title="年表にオリジナルの出来事・年号を追加します">
+                                <span>＋</span> 年代カードを追加
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -670,13 +794,107 @@
         </div>
     </div>
 
+    <!-- 📝 年代カード メモ・語呂合わせ編集モーダル -->
+    <div id="timeline-note-modal" class="reorder-modal-overlay" style="z-index: 100070;">
+        <div class="reorder-modal-dialog" style="max-width: 600px;">
+            <div class="reorder-modal-header" style="background:var(--bg-surface);">
+                <div style="display:flex; align-items:center; gap:0.6rem;">
+                    <span style="font-size:1.25rem;">📝</span>
+                    <h3 style="margin:0; font-size:1.05rem; font-weight:800; color:var(--text-primary);">年代カードのメモ・語呂合わせを編集</h3>
+                </div>
+                <button type="button" id="btn-close-note-modal" style="background:none; border:none; font-size:1.35rem; color:var(--text-secondary); cursor:pointer; line-height:1; padding:0.2rem 0.5rem; border-radius:4px;" title="閉じる">✕</button>
+            </div>
+            <div class="reorder-modal-body" style="gap:1rem; padding:1.2rem 1.4rem;">
+                <!-- 出来事ヘッダーバッジ -->
+                <div style="background:var(--bg-subtle); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:0.85rem 1rem;">
+                    <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.35rem; flex-wrap:wrap;">
+                        <span id="note-modal-category" class="badge badge-history" style="font-size:0.75rem; font-weight:800;">時代・地域</span>
+                        <span id="note-modal-year" style="font-family:var(--font-heading); font-size:1.05rem; font-weight:800; color:var(--brand-primary);">年代</span>
+                    </div>
+                    <div id="note-modal-event-name" style="font-size:1.05rem; font-weight:800; color:var(--text-primary); line-height:1.4;">出来事名</div>
+                </div>
+
+                <!-- 💡 要点・因果関係・自分用メモ入力 -->
+                <div>
+                    <label style="display:flex; justify-content:space-between; align-items:center; font-size:0.82rem; font-weight:800; color:var(--text-secondary); margin-bottom:0.35rem;">
+                        <span>💡 要点・因果関係・落とし穴（自分用メモ）</span>
+                        <span style="font-size:0.72rem; color:var(--text-muted); font-weight:normal;">背景・因果関係・覚え方をメモ</span>
+                    </label>
+                    <textarea id="tl-note-input" class="flora-textarea" rows="4" style="width:100%; box-sizing:border-box; font-size:0.88rem; line-height:1.5; border-radius:var(--radius-md); padding:0.6rem 0.8rem;" placeholder="背景、結果、因果関係、重要人物、定期テスト・共通テストの落とし穴など、自由にメモを残せます..."></textarea>
+                </div>
+
+                <!-- 🎴 暗記語呂入力 -->
+                <div>
+                    <label style="display:block; font-size:0.82rem; font-weight:800; color:var(--text-secondary); margin-bottom:0.35rem;">
+                        <span>🎴 自分だけの暗記語呂合わせ</span>
+                    </label>
+                    <input type="text" id="tl-mnemonic-input" class="search-input" style="width:100%; box-sizing:border-box; font-size:0.88rem;" placeholder="例: 1605年: ひ(1)ろ(6)まる大奥(05) など">
+                </div>
+            </div>
+            <div style="padding:0.9rem 1.4rem; background:var(--bg-subtle); border-top:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center; gap:0.6rem; flex-wrap:wrap;">
+                <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="btn-delete-note" style="color:#DC2626; border-color:transparent; font-size:0.8rem; display:none;">
+                    🗑️ メモを消去
+                </button>
+                <div style="display:flex; gap:0.5rem; margin-left:auto;">
+                    <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="btn-cancel-note-modal" style="font-size:0.82rem; padding:0.45rem 1rem;">
+                        ✕ キャンセル
+                    </button>
+                    <button type="button" class="flora-btn flora-btn-primary btn-sm" id="btn-save-note-modal" style="font-size:0.82rem; font-weight:800; padding:0.45rem 1.3rem; background:var(--brand-primary); color:#fff; border:none; border-radius:var(--radius-md); cursor:pointer;">
+                        💾 メモを保存
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ＋ 年代カード追加モーダル -->
+    <div id="timeline-custom-event-modal" class="reorder-modal-overlay" style="z-index: 100070;">
+        <div class="reorder-modal-dialog" style="max-width: 600px;">
+            <div class="reorder-modal-header" style="background:var(--bg-surface);">
+                <div style="display:flex; align-items:center; gap:0.6rem;">
+                    <span style="font-size:1.25rem;">＋</span>
+                    <h3 style="margin:0; font-size:1.05rem; font-weight:800; color:var(--text-primary);">新しい年代カードを追加</h3>
+                </div>
+                <button type="button" id="btn-close-custom-event-modal" style="background:none; border:none; font-size:1.35rem; color:var(--text-secondary); cursor:pointer; line-height:1; padding:0.2rem 0.5rem; border-radius:4px;" title="閉じる">✕</button>
+            </div>
+            <div class="reorder-modal-body" style="gap:0.9rem; padding:1.2rem 1.4rem;">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.8rem;">
+                    <div>
+                        <label style="display:block; font-size:0.8rem; font-weight:800; color:var(--text-secondary); margin-bottom:0.3rem;">時代・地域 <span style="color:#DC2626;">*</span></label>
+                        <select id="custom-ev-category" class="flora-select" style="width:100%; box-sizing:border-box; font-size:0.85rem; padding:0.5rem;"></select>
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.8rem; font-weight:800; color:var(--text-secondary); margin-bottom:0.3rem;">年代 (年号) <span style="color:#DC2626;">*</span></label>
+                        <input type="text" id="custom-ev-year" class="search-input" style="width:100%; box-sizing:border-box; font-size:0.85rem;" placeholder="例: 1603年, 前202年">
+                    </div>
+                </div>
+                <div>
+                    <label style="display:block; font-size:0.8rem; font-weight:800; color:var(--text-secondary); margin-bottom:0.3rem;">出来事名 <span style="color:#DC2626;">*</span></label>
+                    <input type="text" id="custom-ev-name" class="search-input" style="width:100%; box-sizing:border-box; font-size:0.88rem;" placeholder="例: 江戸幕府の開府">
+                </div>
+                <div>
+                    <label style="display:block; font-size:0.8rem; font-weight:800; color:var(--text-secondary); margin-bottom:0.3rem;">要点・因果関係・落とし穴（メモ）</label>
+                    <textarea id="custom-ev-note" class="flora-textarea" rows="3" style="width:100%; box-sizing:border-box; font-size:0.85rem; padding:0.55rem;" placeholder="背景、結果、試験での狙われどころなど..."></textarea>
+                </div>
+                <div>
+                    <label style="display:block; font-size:0.8rem; font-weight:800; color:var(--text-secondary); margin-bottom:0.3rem;">暗記語呂合わせ</label>
+                    <input type="text" id="custom-ev-mnemonic" class="search-input" style="width:100%; box-sizing:border-box; font-size:0.85rem;" placeholder="例: 1603年: ヒーロー(16)おっさん(03)家康幕府開く">
+                </div>
+            </div>
+            <div style="padding:0.9rem 1.4rem; background:var(--bg-subtle); border-top:1px solid var(--border-color); display:flex; justify-content:flex-end; gap:0.6rem;">
+                <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="btn-cancel-custom-event-modal" style="font-size:0.82rem; padding:0.45rem 1rem;">✕ キャンセル</button>
+                <button type="button" class="flora-btn flora-btn-primary btn-sm" id="btn-save-custom-event-modal" style="font-size:0.82rem; font-weight:800; padding:0.45rem 1.3rem; background:var(--brand-primary); color:#fff; border:none; border-radius:var(--radius-md); cursor:pointer;">💾 年代カードを追加</button>
+            </div>
+        </div>
+    </div>
+
     <script src="sidebar.js"></script>
 
     <script type="module">
         import { TimelineQuizEngine } from "./timeline-quiz.js";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+        import { getDatabase, ref, onValue, set, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB55MdhpjJizQaLEdRu-XhBVJ4PqrHsAyY",
@@ -769,12 +987,278 @@
         let currentSearchQuery = "";
         let filterMistakesOnly = false;
         let filterMnemonicsOnly = false;
+        let filterNotesOnly = false;
         let blindMaskMode = "none"; // "none", "year" (赤シート), "name" (青シート)
         const manuallyRevealedKeys = new Set(); // ユーザーがタップしてめくった出来事キー
         let isAllRevealed = false;
 
         let rawProblems = {};
         let rawLessons = {};
+        let rawTimelineNotes = {};
+        let rawTimelineCustomEvents = {};
+
+        const LOCAL_TIMELINE_NOTES_KEY = "flora_timeline_user_notes";
+        const LOCAL_TIMELINE_CUSTOM_EVENTS_KEY = "flora_timeline_custom_events";
+        let currentEditingEventKey = null;
+
+        function sanitizeDbKey(key) {
+            return encodeURIComponent(String(key || "")).replace(/\./g, '%2E').replace(/#/g, '%23').replace(/\$/g, '%24').replace(/\[/g, '%5B').replace(/\]/g, '%5D').replace(/\//g, '%2F');
+        }
+
+        function escapeJsString(str) {
+            return String(str || "").replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        }
+
+        function showToast(message, type = "info") {
+            let container = document.getElementById("timeline-toast");
+            if (!container) {
+                container = document.createElement("div");
+                container.id = "timeline-toast";
+                container.style.cssText = "position:fixed; bottom:28px; left:50%; transform:translateX(-50%); background:#0f172a; color:#fff; padding:0.65rem 1.4rem; border-radius:9999px; font-size:0.86rem; font-weight:700; z-index:100099; box-shadow:0 10px 30px rgba(0,0,0,0.35); pointer-events:none; transition:all 0.25s cubic-bezier(0.16, 1, 0.3, 1); opacity:0;";
+                document.body.appendChild(container);
+            }
+            container.textContent = message;
+            container.style.opacity = "1";
+            container.style.transform = "translateX(-50%) translateY(0)";
+            clearTimeout(container._timer);
+            container._timer = setTimeout(() => {
+                container.style.opacity = "0";
+                container.style.transform = "translateX(-50%) translateY(10px)";
+            }, 2500);
+        }
+
+        function getTimelineUserNotes() {
+            let local = {};
+            try {
+                local = JSON.parse(localStorage.getItem(LOCAL_TIMELINE_NOTES_KEY) || "{}");
+            } catch (e) { local = {}; }
+            return { ...local, ...(rawTimelineNotes || {}) };
+        }
+
+        function getTimelineCustomEventsList() {
+            let localList = [];
+            try {
+                localList = JSON.parse(localStorage.getItem(LOCAL_TIMELINE_CUSTOM_EVENTS_KEY) || "[]");
+            } catch (e) { localList = []; }
+            const firebaseMap = rawTimelineCustomEvents || {};
+            const firebaseList = Object.entries(firebaseMap).map(([id, val]) => ({ id, ...val }));
+            const map = new Map();
+            localList.forEach(item => { if (item) map.set(item.id || `${item.name}_${item.year}`, item); });
+            firebaseList.forEach(item => { if (item) map.set(item.id || `${item.name}_${item.year}`, item); });
+            return Array.from(map.values());
+        }
+
+        function saveTimelineUserNote(eventKey, noteText, mnemonicText) {
+            const cleanNote = (noteText || "").trim();
+            const cleanMnemonic = (mnemonicText || "").trim();
+            let local = {};
+            try {
+                local = JSON.parse(localStorage.getItem(LOCAL_TIMELINE_NOTES_KEY) || "{}");
+            } catch (e) { local = {}; }
+
+            if (!cleanNote && !cleanMnemonic) {
+                delete local[eventKey];
+                localStorage.setItem(LOCAL_TIMELINE_NOTES_KEY, JSON.stringify(local));
+                if (auth.currentUser) {
+                    try {
+                        remove(ref(database, 'users/' + auth.currentUser.uid + '/timelineNotes/' + sanitizeDbKey(eventKey)));
+                    } catch (e) { console.warn("Firebase note delete error:", e); }
+                }
+                showToast("🗑️ メモを消去しました", "info");
+            } else {
+                const entry = {
+                    note: cleanNote,
+                    mnemonic: cleanMnemonic,
+                    updatedAt: new Date().toISOString()
+                };
+                local[eventKey] = entry;
+                localStorage.setItem(LOCAL_TIMELINE_NOTES_KEY, JSON.stringify(local));
+                if (auth.currentUser) {
+                    try {
+                        set(ref(database, 'users/' + auth.currentUser.uid + '/timelineNotes/' + sanitizeDbKey(eventKey)), entry);
+                    } catch (e) { console.warn("Firebase note save error:", e); }
+                }
+                showToast("💾 年代カードのメモを保存しました", "success");
+            }
+            renderTimeline();
+        }
+
+        function deleteTimelineUserNote(eventKey) {
+            saveTimelineUserNote(eventKey, "", "");
+        }
+
+        function saveTimelineCustomEvent(eventData) {
+            const id = eventData.id || ('cust_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5));
+            const newEvent = {
+                id,
+                name: (eventData.name || "").trim(),
+                year: (eventData.year || "").trim(),
+                year_sort: parseYearSort(eventData.year),
+                category: eventData.category,
+                historyType: activeHistoryType,
+                note: (eventData.note || "").trim(),
+                mnemonic: (eventData.mnemonic || "").trim(),
+                createdAt: new Date().toISOString()
+            };
+            let localList = [];
+            try {
+                localList = JSON.parse(localStorage.getItem(LOCAL_TIMELINE_CUSTOM_EVENTS_KEY) || "[]");
+            } catch (e) { localList = []; }
+            const existingIdx = localList.findIndex(x => x.id === id);
+            if (existingIdx >= 0) localList[existingIdx] = newEvent;
+            else localList.push(newEvent);
+            localStorage.setItem(LOCAL_TIMELINE_CUSTOM_EVENTS_KEY, JSON.stringify(localList));
+
+            if (auth.currentUser) {
+                try {
+                    set(ref(database, 'users/' + auth.currentUser.uid + '/timelineCustomEvents/' + id), newEvent);
+                } catch (e) { console.warn("Firebase custom event save error:", e); }
+            }
+            showToast("💾 新しい年代カードを追加しました！", "success");
+            renderTimeline();
+        }
+
+        function deleteTimelineCustomEvent(eventId) {
+            let localList = [];
+            try {
+                localList = JSON.parse(localStorage.getItem(LOCAL_TIMELINE_CUSTOM_EVENTS_KEY) || "[]");
+            } catch (e) { localList = []; }
+            localList = localList.filter(x => x.id !== eventId);
+            localStorage.setItem(LOCAL_TIMELINE_CUSTOM_EVENTS_KEY, JSON.stringify(localList));
+
+            if (auth.currentUser) {
+                try {
+                    remove(ref(database, 'users/' + auth.currentUser.uid + '/timelineCustomEvents/' + eventId));
+                } catch (e) { console.warn("Firebase custom event delete error:", e); }
+            }
+            showToast("🗑️ 年代カードを削除しました", "info");
+            renderTimeline();
+        }
+
+        // 📝 年代カード メモ・語呂合わせ編集モーダル制御
+        function openTimelineNoteModal(eventKey) {
+            currentEditingEventKey = eventKey;
+            const allEvents = collectAllEvents();
+            const ev = allEvents.find(e => `${e.name}_${e.year}` === eventKey) || {
+                name: eventKey,
+                year: "",
+                category: activeHistoryType === "world" ? "世界史" : "日本史",
+                note: "",
+                userNote: "",
+                userMnemonic: ""
+            };
+
+            const userNotes = getTimelineUserNotes();
+            const currentRecord = userNotes[eventKey] || {};
+            const existingUserNote = ev.userNote || currentRecord.note || "";
+            const existingUserMnemonic = ev.userMnemonic || currentRecord.mnemonic || "";
+
+            const categoryEl = document.getElementById("note-modal-category");
+            const yearEl = document.getElementById("note-modal-year");
+            const nameEl = document.getElementById("note-modal-event-name");
+            const noteInput = document.getElementById("tl-note-input");
+            const mnemonicInput = document.getElementById("tl-mnemonic-input");
+            const btnDelete = document.getElementById("btn-delete-note");
+            const modal = document.getElementById("timeline-note-modal");
+
+            if (categoryEl) categoryEl.textContent = ev.category || (activeHistoryType === "world" ? "世界史" : "日本史");
+            if (yearEl) yearEl.textContent = ev.year || "年代未詳";
+            if (nameEl) nameEl.textContent = ev.name || eventKey;
+            if (noteInput) noteInput.value = existingUserNote;
+            if (mnemonicInput) mnemonicInput.value = existingUserMnemonic;
+
+            if (btnDelete) {
+                btnDelete.style.display = (existingUserNote || existingUserMnemonic) ? "inline-block" : "none";
+            }
+
+            if (modal) modal.style.display = "flex";
+            if (noteInput) noteInput.focus();
+        }
+        window.openTimelineNoteModal = openTimelineNoteModal;
+
+        function closeTimelineNoteModal() {
+            const modal = document.getElementById("timeline-note-modal");
+            if (modal) modal.style.display = "none";
+            currentEditingEventKey = null;
+        }
+        window.closeTimelineNoteModal = closeTimelineNoteModal;
+
+        const btnCloseNoteModal = document.getElementById("btn-close-note-modal");
+        const btnCancelNoteModal = document.getElementById("btn-cancel-note-modal");
+        const btnSaveNoteModal = document.getElementById("btn-save-note-modal");
+        const btnDeleteNote = document.getElementById("btn-delete-note");
+
+        if (btnCloseNoteModal) btnCloseNoteModal.onclick = closeTimelineNoteModal;
+        if (btnCancelNoteModal) btnCancelNoteModal.onclick = closeTimelineNoteModal;
+        if (btnSaveNoteModal) {
+            btnSaveNoteModal.onclick = () => {
+                if (!currentEditingEventKey) return;
+                const noteVal = document.getElementById("tl-note-input")?.value || "";
+                const mnemonicVal = document.getElementById("tl-mnemonic-input")?.value || "";
+                saveTimelineUserNote(currentEditingEventKey, noteVal, mnemonicVal);
+                closeTimelineNoteModal();
+            };
+        }
+        if (btnDeleteNote) {
+            btnDeleteNote.onclick = () => {
+                if (!currentEditingEventKey) return;
+                deleteTimelineUserNote(currentEditingEventKey);
+                closeTimelineNoteModal();
+            };
+        }
+
+        // ＋ 年代カード追加モーダル制御
+        function openCustomEventModal() {
+            const modal = document.getElementById("timeline-custom-event-modal");
+            const catSelect = document.getElementById("custom-ev-category");
+            const categories = activeHistoryType === "world" ? WORLD_REGIONS : JAPAN_ERAS;
+            if (catSelect) {
+                catSelect.innerHTML = categories.filter(c => c !== "ALL").map(c => `
+                    <option value="${escapeHtml(c)}">${escapeHtml(c)}</option>
+                `).join("");
+            }
+            const nameInput = document.getElementById("custom-ev-name");
+            const yearInput = document.getElementById("custom-ev-year");
+            const noteInput = document.getElementById("custom-ev-note");
+            const mnemonicInput = document.getElementById("custom-ev-mnemonic");
+            if (nameInput) nameInput.value = "";
+            if (yearInput) yearInput.value = "";
+            if (noteInput) noteInput.value = "";
+            if (mnemonicInput) mnemonicInput.value = "";
+            if (modal) modal.style.display = "flex";
+            if (yearInput) yearInput.focus();
+        }
+        window.openCustomEventModal = openCustomEventModal;
+
+        function closeCustomEventModal() {
+            const modal = document.getElementById("timeline-custom-event-modal");
+            if (modal) modal.style.display = "none";
+        }
+        window.closeCustomEventModal = closeCustomEventModal;
+
+        const btnAddCustomEvent = document.getElementById("btn-add-custom-event");
+        const btnCloseCustomModal = document.getElementById("btn-close-custom-event-modal");
+        const btnCancelCustomModal = document.getElementById("btn-cancel-custom-event-modal");
+        const btnSaveCustomModal = document.getElementById("btn-save-custom-event-modal");
+
+        if (btnAddCustomEvent) btnAddCustomEvent.onclick = openCustomEventModal;
+        if (btnCloseCustomModal) btnCloseCustomModal.onclick = closeCustomEventModal;
+        if (btnCancelCustomModal) btnCancelCustomModal.onclick = closeCustomEventModal;
+        if (btnSaveCustomModal) {
+            btnSaveCustomModal.onclick = () => {
+                const name = document.getElementById("custom-ev-name")?.value.trim();
+                const year = document.getElementById("custom-ev-year")?.value.trim();
+                const category = document.getElementById("custom-ev-category")?.value;
+                const note = document.getElementById("custom-ev-note")?.value.trim();
+                const mnemonic = document.getElementById("custom-ev-mnemonic")?.value.trim();
+                if (!name || !year) {
+                    showToast("⚠️ 年代と出来事名を入力してください", "warning");
+                    return;
+                }
+                saveTimelineCustomEvent({ name, year, category, note, mnemonic });
+                closeCustomEventModal();
+            };
+        }
 
         // 表示形式切替（📜 タイムライン ｜ 📊 年代表）
         const btnViewStream = document.getElementById("btn-view-stream");
@@ -915,6 +1399,22 @@
             };
         }
 
+        const btnFilterNotes = document.getElementById("filter-notes-only");
+        if (btnFilterNotes) {
+            btnFilterNotes.onclick = () => {
+                filterNotesOnly = !filterNotesOnly;
+                btnFilterNotes.classList.toggle("active", filterNotesOnly);
+                if (filterNotesOnly) {
+                    btnFilterNotes.style.background = "#059669";
+                    btnFilterNotes.style.color = "#fff";
+                } else {
+                    btnFilterNotes.style.background = "#ECFDF5";
+                    btnFilterNotes.style.color = "#059669";
+                }
+                renderTimeline();
+            };
+        }
+
         // 年号パースヘルパー（紀元前・BC・負の年代を精密ソート・9999フォールバック）
         function parseYearSort(yearStr, fallbackSort) {
             if (typeof fallbackSort === "number" && !isNaN(fallbackSort)) return fallbackSort;
@@ -991,11 +1491,55 @@
                     sources: [],
                     isMistake: false,
                     mistakeCount: 0,
-                    trapNote: ""
+                    trapNote: "",
+                    userNote: "",
+                    userMnemonic: "",
+                    hasUserNote: false,
+                    isCustom: false
                 });
             });
 
-            // 1. 誤答問題 (problems) から抽出（ユーザー実データをマージ）
+            // 1. ユーザー作成カスタム出来事をマージ
+            const customEvents = getTimelineCustomEventsList();
+            customEvents.forEach(cev => {
+                if (!cev || !cev.name) return;
+                const matchHistory = cev.historyType ? (cev.historyType === activeHistoryType) : true;
+                if (!matchHistory) return;
+                const key = `${cev.name}_${cev.year}`;
+                const yearSort = parseYearSort(cev.year, cev.year_sort);
+                const category = cev.category || (isWorld ? "世界史" : getJapanEraCategory(yearSort));
+                if (!eventsMap.has(key)) {
+                    eventsMap.set(key, {
+                        name: cev.name,
+                        year: cev.year,
+                        year_sort: yearSort,
+                        category: category,
+                        mnemonics: cev.mnemonic ? [cev.mnemonic] : [],
+                        note: cev.note || "",
+                        sources: [],
+                        isMistake: false,
+                        mistakeCount: 0,
+                        trapNote: "",
+                        userNote: cev.note || "",
+                        userMnemonic: cev.mnemonic || "",
+                        hasUserNote: !!(cev.note || cev.mnemonic),
+                        isCustom: true,
+                        id: cev.id
+                    });
+                } else {
+                    const item = eventsMap.get(key);
+                    item.isCustom = true;
+                    item.id = cev.id;
+                    if (cev.note) { item.note = cev.note; item.userNote = cev.note; item.hasUserNote = true; }
+                    if (cev.mnemonic) {
+                        item.userMnemonic = cev.mnemonic;
+                        item.hasUserNote = true;
+                        if (!item.mnemonics.includes(cev.mnemonic)) item.mnemonics.unshift(cev.mnemonic);
+                    }
+                }
+            });
+
+            // 2. 誤答問題 (problems) から抽出（ユーザー実データをマージ）
             Object.values(rawProblems).forEach(p => {
                 if (!p) return;
                 const isMatchSubject = isWorld
@@ -1025,7 +1569,11 @@
                             sources: [],
                             isMistake: false,
                             mistakeCount: 0,
-                            trapNote: ""
+                            trapNote: "",
+                            userNote: "",
+                            userMnemonic: "",
+                            hasUserNote: false,
+                            isCustom: false
                         });
                     }
                     const item = eventsMap.get(key);
@@ -1048,7 +1596,7 @@
                 });
             });
 
-            // 2. 参考書授業 (lessons) から抽出
+            // 3. 参考書授業 (lessons) から抽出
             Object.values(rawLessons).forEach(l => {
                 if (!l || !Array.isArray(l.historicalEvents)) return;
                 const isMatchSubject = isWorld
@@ -1074,7 +1622,11 @@
                             sources: [],
                             isMistake: false,
                             mistakeCount: 0,
-                            trapNote: ""
+                            trapNote: "",
+                            userNote: "",
+                            userMnemonic: "",
+                            hasUserNote: false,
+                            isCustom: false
                         });
                     }
                     const item = eventsMap.get(key);
@@ -1084,6 +1636,25 @@
                         title: l.title || "授業"
                     });
                 });
+            });
+
+            // 4. ユーザーの手書きメモ・自作語呂合わせ（localStorage / Firebase）を完全マージ
+            const userNotesMap = getTimelineUserNotes();
+            Object.entries(userNotesMap).forEach(([key, uData]) => {
+                if (!uData) return;
+                const noteVal = (uData.note || "").trim();
+                const mnemVal = (uData.mnemonic || "").trim();
+                if (!noteVal && !mnemVal) return;
+
+                if (eventsMap.has(key)) {
+                    const item = eventsMap.get(key);
+                    item.userNote = noteVal;
+                    item.userMnemonic = mnemVal;
+                    item.hasUserNote = true;
+                    if (mnemVal && !item.mnemonics.includes(mnemVal)) {
+                        item.mnemonics.unshift(mnemVal);
+                    }
+                }
             });
 
             // 配列化して年代順（year_sort 昇順）にソート
@@ -1115,8 +1686,11 @@
             // 統計カウント
             const mistakeTotal = allEvents.filter(ev => ev.isMistake).length;
             const mnemonicTotal = allEvents.filter(ev => ev.mnemonics.length > 0).length;
+            const noteTotal = allEvents.filter(ev => ev.hasUserNote).length;
             if (countMistakeEl) countMistakeEl.textContent = mistakeTotal;
             if (countMnemonicEl) countMnemonicEl.textContent = mnemonicTotal;
+            const countNoteEl = document.getElementById("count-note-events");
+            if (countNoteEl) countNoteEl.textContent = noteTotal;
 
             // 最多誤答の時代・世紀を計算（ヒートマップ要約）
             const centuryMistakeMap = {};
@@ -1140,8 +1714,9 @@
                 if (currentCategoryFilter !== "ALL" && ev.category !== currentCategoryFilter) return false;
                 if (filterMistakesOnly && !ev.isMistake) return false;
                 if (filterMnemonicsOnly && ev.mnemonics.length === 0) return false;
+                if (filterNotesOnly && !ev.hasUserNote) return false;
                 if (currentSearchQuery) {
-                    const haystack = `${ev.name} ${ev.year} ${ev.category} ${ev.mnemonics.join(" ")} ${ev.note || ""}`.toLowerCase();
+                    const haystack = `${ev.name} ${ev.year} ${ev.category} ${ev.mnemonics.join(" ")} ${ev.note || ""} ${ev.userNote || ""} ${ev.userMnemonic || ""}`.toLowerCase();
                     if (!haystack.includes(currentSearchQuery)) return false;
                 }
                 return true;
@@ -1201,8 +1776,16 @@
                         ? `<div class="mnemonic-badge">🎴 語呂: ${escapeHtml(ev.mnemonics[0])}</div>`
                         : "";
 
+                    const userMnemonicHtml = ev.userMnemonic
+                        ? `<div class="mnemonic-badge user-created" onclick="openTimelineNoteModal('${escapeJsString(evKey)}')" style="cursor:pointer;" title="自作語呂合わせ（クリックで編集）"><span>🎴 自作:</span> ${escapeHtml(ev.userMnemonic)}</div>`
+                        : "";
+
                     const noteHtml = ev.note 
                         ? `<div style="font-size:0.78rem; color:var(--text-secondary); margin-top:0.2rem; line-height:1.45;">💡 ${escapeHtml(ev.note)}</div>` 
+                        : "";
+
+                    const userNoteHtml = ev.userNote
+                        ? `<div class="timeline-user-note-card" onclick="openTimelineNoteModal('${escapeJsString(evKey)}')" title="クリックしてメモを編集"><span class="user-note-badge">📝 私のメモ</span><div class="user-note-text">${escapeHtml(ev.userNote)}</div><span class="btn-note-cell-edit">✏️</span></div>`
                         : "";
 
                     const trapAlertHtml = (ev.isMistake && ev.trapNote)
@@ -1212,6 +1795,10 @@
                     const cardMistakeCls = ev.isMistake ? "is-mistake" : "";
                     const heatPillHtml = ev.isMistake 
                         ? `<span class="heat-alert-pill">🔥 要復習 (${ev.mistakeCount}回)</span>`
+                        : "";
+
+                    const customBadge = ev.isCustom
+                        ? `<span class="custom-event-badge">✨ 自作カード</span>`
                         : "";
 
                     // 赤シート・青シート用のマスキングクラス判定
@@ -1237,6 +1824,8 @@
                                     <div style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap;">
                                         ${heatPillHtml}
                                         <span class="badge badge-history" style="font-size:0.7rem;">${escapeHtml(ev.category)}</span>
+                                        ${customBadge}
+                                        <button type="button" class="btn-table-row-edit" onclick="openTimelineNoteModal('${escapeJsString(evKey)}')" style="font-size:0.72rem; padding:0.18rem 0.45rem;" title="メモや語呂合わせを編集">✏️ メモ・語呂</button>
                                     </div>
                                 </div>
                                 <div class="${nameClass}" onclick="toggleEventBlindMask(event, '${escapeHtml(evKey)}', 'name')">
@@ -1244,7 +1833,11 @@
                                 </div>
                                 ${noteHtml}
                                 ${trapAlertHtml}
-                                ${mnemonicHtml}
+                                ${userNoteHtml}
+                                <div style="display:flex; gap:0.35rem; flex-wrap:wrap; align-items:center;">
+                                    ${userMnemonicHtml}
+                                    ${mnemonicHtml}
+                                </div>
                                 <div class="event-links">
                                     ${sourcesHtml}
                                 </div>
@@ -1276,7 +1869,7 @@
                         const heatTxt = cMistakes > 0 ? ` <span style="color:#DC2626; font-size:0.76rem; font-weight:800;">(🔥 弱点誤答: ${cMistakes}件)</span>` : "";
                         rowsHtml += `
                             <tr class="chronology-era-row">
-                                <td colspan="${isWorld ? 5 : 5}">⏳ ${escapeHtml(eraLabel)}${heatTxt}</td>
+                                <td colspan="${isWorld ? 6 : 6}">⏳ ${escapeHtml(eraLabel)}${heatTxt}</td>
                             </tr>
                         `;
                     }
@@ -1293,26 +1886,70 @@
                         nameClass += ` blind-masked mask-blue ${isManuallyRevealed ? 'revealed' : ''}`;
                     }
 
-                    const mnemonicHtml = ev.mnemonics.length > 0
-                        ? `<div class="mnemonic-badge" style="margin-top:0.25rem;">🎴 語呂: ${escapeHtml(ev.mnemonics[0])}</div>`
-                        : "";
+                    // ユーザー自作メモ表示
+                    const userNoteHtml = ev.userNote ? `
+                        <div class="timeline-user-note-card" onclick="event.stopPropagation(); openTimelineNoteModal('${escapeJsString(evKey)}')" title="クリックしてメモを編集">
+                            <span class="user-note-badge">📝 私のメモ</span>
+                            <div class="user-note-text">${escapeHtml(ev.userNote)}</div>
+                            <span class="btn-note-cell-edit">✏️</span>
+                        </div>
+                    ` : `
+                        <button type="button" class="btn-cell-add-note" onclick="event.stopPropagation(); openTimelineNoteModal('${escapeJsString(evKey)}')" title="この出来事に自分用のメモを書き込む">
+                            <span>✏️</span><span>メモを書く</span>
+                        </button>
+                    `;
 
-                    const noteHtml = ev.note 
-                        ? `<div style="font-size:0.78rem; color:var(--text-secondary); line-height:1.4;">💡 ${escapeHtml(ev.note)}</div>` 
-                        : "";
+                    // プリセット・解説ノート表示
+                    const baseNoteHtml = ev.note ? `
+                        <div style="font-size:0.78rem; color:var(--text-secondary); line-height:1.45; margin-bottom:0.25rem;">
+                            💡 ${escapeHtml(ev.note)}
+                        </div>
+                    ` : '';
 
-                    const trapAlertHtml = (ev.isMistake && ev.trapNote)
-                        ? `<div style="font-size:0.75rem; color:#B91C1C; background:rgba(239,68,68,0.08); padding:0.25rem 0.5rem; border-radius:4px; margin-top:0.25rem;">⚠️ ${escapeHtml(ev.trapNote)}</div>`
-                        : "";
+                    const trapAlertHtml = (ev.isMistake && ev.trapNote) ? `
+                        <div style="font-size:0.75rem; color:#B91C1C; background:rgba(239,68,68,0.08); padding:0.25rem 0.5rem; border-radius:4px; margin-top:0.25rem;">
+                            ⚠️ ${escapeHtml(ev.trapNote)}
+                        </div>
+                    ` : '';
 
-                    const heatPill = ev.isMistake
-                        ? `<span class="heat-alert-pill" style="margin-bottom:0.3rem;">🔥 要復習</span>`
-                        : "";
+                    // 語呂合わせ表示
+                    let mnemonicsHtml = "";
+                    if (ev.userMnemonic) {
+                        mnemonicsHtml += `
+                            <div class="mnemonic-badge user-created" onclick="event.stopPropagation(); openTimelineNoteModal('${escapeJsString(evKey)}')" title="自作語呂合わせ（クリックで編集）" style="cursor:pointer; margin-bottom:0.25rem;">
+                                <span>🎴 自作:</span> ${escapeHtml(ev.userMnemonic)}
+                            </div>
+                        `;
+                    }
+                    const otherMnemonics = ev.mnemonics.filter(m => m !== ev.userMnemonic);
+                    if (otherMnemonics.length > 0) {
+                        mnemonicsHtml += `
+                            <div class="mnemonic-badge" style="margin-bottom:0.25rem;">
+                                🎴 ${escapeHtml(otherMnemonics[0])}
+                            </div>
+                        `;
+                    }
+                    if (!ev.userMnemonic) {
+                        mnemonicsHtml += `
+                            <button type="button" class="btn-cell-add-mnemonic" onclick="event.stopPropagation(); openTimelineNoteModal('${escapeJsString(evKey)}')" title="自作の暗記語呂合わせを登録">
+                                <span>＋</span><span>語呂登録</span>
+                            </button>
+                        `;
+                    }
+
+                    const heatPill = ev.isMistake ? `
+                        <span class="heat-alert-pill" style="margin-bottom:0.3rem;">🔥 要復習</span>
+                    ` : '';
+
+                    const customBadge = ev.isCustom ? `
+                        <span class="custom-event-badge">✨ 自作</span>
+                    ` : '';
 
                     rowsHtml += `
                         <tr class="${ev.isMistake ? 'is-mistake' : ''}">
                             <td style="font-weight:700; color:var(--text-secondary); font-size:0.82rem; white-space:nowrap;">
                                 ${escapeHtml(ev.category)}
+                                ${customBadge}
                             </td>
                             <td style="white-space:nowrap;">
                                 <span class="${yearClass}" onclick="toggleEventBlindMask(event, '${escapeHtml(evKey)}', 'year')">
@@ -1325,12 +1962,18 @@
                                 </div>
                                 ${heatPill}
                             </td>
-                            <td>
-                                ${noteHtml}
+                            <td style="cursor:pointer;" onclick="openTimelineNoteModal('${escapeJsString(evKey)}')">
+                                ${baseNoteHtml}
                                 ${trapAlertHtml}
+                                ${userNoteHtml}
                             </td>
-                            <td>
-                                ${mnemonicHtml || '<span style="color:var(--text-muted); font-size:0.75rem;">—</span>'}
+                            <td style="cursor:pointer;" onclick="openTimelineNoteModal('${escapeJsString(evKey)}')">
+                                ${mnemonicsHtml}
+                            </td>
+                            <td style="text-align:center; white-space:nowrap;">
+                                <button type="button" class="btn-table-row-edit" onclick="openTimelineNoteModal('${escapeJsString(evKey)}')" title="この年代カードのメモ・語呂合わせを編集">
+                                    ✏️ メモ
+                                </button>
                             </td>
                         </tr>
                     `;
@@ -1340,11 +1983,12 @@
                     <table class="chronology-table">
                         <thead>
                             <tr>
-                                <th style="width: 14%;">時代・地域</th>
-                                <th style="width: 15%;">年代 (年号)</th>
-                                <th style="width: 33%;">出来事名</th>
-                                <th style="width: 23%;">要点・因果関係・落とし穴</th>
-                                <th style="width: 15%;">暗記語呂</th>
+                                <th style="width: 13%;">時代・地域</th>
+                                <th style="width: 13%;">年代 (年号)</th>
+                                <th style="width: 25%;">出来事・項目名</th>
+                                <th style="width: 29%;">要点・因果関係・落とし穴（メモ）</th>
+                                <th style="width: 13%;">暗記語呂</th>
+                                <th style="width: 7%; text-align:center;">操作</th>
                             </tr>
                         </thead>
                         <tbody>
