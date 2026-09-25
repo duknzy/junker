@@ -1459,8 +1459,11 @@
                         <button type="button" class="m-bubble-action-btn" id="solve-related-problem-btn" style="display:none; color:var(--accent-cyan, #0284c7); font-weight:700;" title="元の誤答問題を開く">
                             🎯 誤答ノート
                         </button>
+                        <button type="button" class="m-bubble-action-btn" id="m-btn-header-recreate" title="授業を再作成（暗記物をキープする柔軟設定）" style="color:var(--brand-primary); font-weight:750;">
+                            🔄 再作成
+                        </button>
                         <button type="button" class="m-bubble-action-btn m-bubble-regen-btn" id="m-btn-regen-current-part" title="現在の回を作り直す">
-                            🔄
+                            ⚡
                         </button>
                         <button type="button" class="m-bubble-action-btn" id="m-btn-open-parts-modal" title="目次・回切り替え">
                             📑 <span id="lesson-part-indicator">Part 1/1</span>
@@ -1560,14 +1563,27 @@
             <div id="lesson-tab-source-wrap" style="display:none; padding:0.85rem 0.85rem 5rem 0.85rem;">
                 <div style="background:var(--bg-surface); border:1px solid var(--border-color); border-radius:var(--radius-lg); padding:0.95rem; box-shadow:var(--shadow-xs);">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem; gap:0.4rem; flex-wrap:wrap;">
-                        <div style="font-size:0.82rem; font-weight:800; color:var(--text-primary);">
-                            📄 参考書の文字起こし全文
+                        <div style="font-size:0.82rem; font-weight:800; color:var(--text-primary); display:flex; align-items:center; gap:0.35rem;">
+                            <span>📄 参考書の文字起こし全文</span>
+                            <span id="m-source-text-length-badge" style="font-size:0.7rem; font-weight:normal; color:var(--text-muted);"></span>
                         </div>
-                        <div style="display:flex; gap:0.35rem;">
+                        <div style="display:flex; gap:0.35rem; flex-wrap:wrap;">
+                            <button type="button" class="m-btn m-btn-secondary" id="m-btn-edit-source-text" style="font-size:0.72rem; padding:0.25rem 0.6rem;">✏️ 原本を編集</button>
                             <button type="button" class="m-btn m-btn-secondary" id="m-btn-copy-source-text" style="font-size:0.72rem; padding:0.25rem 0.6rem;">📋 コピー</button>
-                            <button type="button" class="m-btn m-btn-secondary" id="m-btn-recreate-all-from-source" style="font-size:0.72rem; padding:0.25rem 0.6rem; color:var(--error);" title="原本を元に全パート再生成">🔄 全再生成</button>
+                            <button type="button" class="m-btn m-btn-primary" id="m-btn-open-recreate-modal" style="font-size:0.72rem; padding:0.25rem 0.65rem; background:linear-gradient(135deg, #10B981, #059669); border:none;" title="暗記物をキープして授業を柔軟に再作成">🔄 授業再作成・設定</button>
                         </div>
                     </div>
+
+                    <!-- 直接編集フォーム（非表示デフォルト） -->
+                    <div id="m-source-edit-area" style="display:none; flex-direction:column; gap:0.5rem; margin-bottom:0.75rem;">
+                        <div style="font-size:0.72rem; color:var(--text-secondary);">※原本テキストを修正・追記して保存できます：</div>
+                        <textarea id="m-source-edit-textarea" class="m-input" rows="7" style="font-size:0.82rem; line-height:1.55; white-space:pre-wrap;"></textarea>
+                        <div style="display:flex; justify-content:flex-end; gap:0.4rem;">
+                            <button type="button" class="m-btn m-btn-secondary" id="m-btn-cancel-edit-source" style="font-size:0.72rem; padding:0.25rem 0.6rem;">キャンセル</button>
+                            <button type="button" class="m-btn m-btn-primary" id="m-btn-save-edit-source" style="font-size:0.72rem; padding:0.25rem 0.75rem;">💾 原本を保存</button>
+                        </div>
+                    </div>
+
                     <div id="m-lesson-source-text" class="tex2jax_process" style="font-size:0.82rem; line-height:1.65; color:var(--text-secondary); max-height:60vh; overflow-y:auto; white-space:pre-wrap; word-break:break-word; background:var(--bg-subtle); padding:0.75rem; border-radius:var(--radius-md); border:1px solid var(--border-subtle);">
                         原本テキストはありません
                     </div>
@@ -1828,6 +1844,94 @@
             </p>
             <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:0.5rem; margin-bottom:1rem;" id="subject-change-grid">
                 <!-- JSで動的にボタン生成 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 🔄 モバイル授業再作成・設定モーダル（ボトムシート） -->
+    <div class="create-modal-overlay" id="m-lesson-recreate-modal" style="display:none; z-index:100060;">
+        <div class="create-modal-sheet" style="max-height:85vh; overflow-y:auto; padding:1.2rem 1.25rem 2rem 1.25rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem;">
+                <div style="display:flex; align-items:center; gap:0.4rem;">
+                    <span style="font-size:1.15rem;">🔄</span>
+                    <h3 style="font-family:var(--font-heading); font-size:1rem; font-weight:800; color:var(--text-primary); margin:0;">授業の再作成・設定</h3>
+                </div>
+                <button type="button" id="close-m-recreate-modal-btn" style="background:none; border:none; font-size:1.25rem; cursor:pointer; color:var(--text-muted); padding:0.2rem;">✕</button>
+            </div>
+            <p style="font-size:0.73rem; color:var(--text-muted); margin-bottom:0.7rem; line-height:1.4;">
+                原本テキストの変更や、既存の暗記データ・問題・用語の引き継ぎを柔軟に選択して再作成できます。
+            </p>
+
+            <!-- ⚡ ワンタップ プリセット -->
+            <div style="background:rgba(99, 102, 241, 0.08); border:1px solid rgba(99, 102, 241, 0.25); border-radius:var(--radius-md); padding:0.6rem 0.75rem; margin-bottom:0.75rem;">
+                <div style="font-size:0.72rem; font-weight:800; color:#4F46E5; margin-bottom:0.35rem;">⚡ クイック選択:</div>
+                <div style="display:flex; gap:0.4rem; flex-wrap:wrap;">
+                    <button type="button" id="m-preset-keep-all" class="m-btn m-btn-secondary" style="font-size:0.7rem; padding:0.25rem 0.55rem; color:#059669; font-weight:800; background:rgba(16, 185, 129, 0.08); border-color:rgba(16, 185, 129, 0.3);">
+                        ✨ 講義のみ再作成（暗記物は全キープ）
+                    </button>
+                    <button type="button" id="m-preset-full-reset" class="m-btn m-btn-secondary" style="font-size:0.7rem; padding:0.25rem 0.55rem; color:#DC2626; font-weight:800; background:rgba(239, 68, 68, 0.06); border-color:rgba(239, 68, 68, 0.3);">
+                        🔄 完全リセット（一から再生成）
+                    </button>
+                </div>
+            </div>
+
+            <!-- 1. 原本テキスト -->
+            <div style="margin-bottom:0.75rem;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.25rem;">
+                    <label style="font-size:0.75rem; font-weight:800; color:var(--text-secondary);">📄 原本テキスト（変更があれば編集）</label>
+                    <span id="m-recreate-len-indicator" style="font-size:0.68rem; color:var(--text-muted);">0文字</span>
+                </div>
+                <textarea id="m-recreate-source-input" class="m-input" rows="4" style="font-size:0.78rem; line-height:1.5; resize:vertical;" placeholder="原本テキスト..."></textarea>
+            </div>
+
+            <!-- 2. 引き継ぎチェックボックス群 -->
+            <div style="margin-bottom:0.75rem;">
+                <label style="font-size:0.75rem; font-weight:800; color:var(--text-secondary); display:block; margin-bottom:0.35rem;">🎴 引き継ぎ項目（チェックONで保持）</label>
+                <div style="display:flex; flex-direction:column; gap:0.45rem;">
+                    <label style="display:flex; align-items:center; justify-content:space-between; background:var(--bg-subtle); padding:0.55rem 0.7rem; border-radius:var(--radius-md); border:1px solid var(--border-color); cursor:pointer;">
+                        <span style="display:flex; align-items:center; gap:0.45rem; font-size:0.78rem; font-weight:700; color:var(--text-primary);">
+                            <input type="checkbox" id="m-chk-keep-memo" checked style="accent-color:var(--brand-primary); width:16px; height:16px;">
+                            <span>🧠 暗記事項（カード）を保持</span>
+                        </span>
+                        <span id="m-badge-memo-count" style="font-size:0.68rem; background:rgba(0,0,0,0.06); padding:0.1rem 0.4rem; border-radius:10px;">0件</span>
+                    </label>
+                    <label style="display:flex; align-items:center; justify-content:space-between; background:var(--bg-subtle); padding:0.55rem 0.7rem; border-radius:var(--radius-md); border:1px solid var(--border-color); cursor:pointer;">
+                        <span style="display:flex; align-items:center; gap:0.45rem; font-size:0.78rem; font-weight:700; color:var(--text-primary);">
+                            <input type="checkbox" id="m-chk-keep-drills" checked style="accent-color:var(--brand-primary); width:16px; height:16px;">
+                            <span>🎯 共通テスト形式 実戦選択問題を保持</span>
+                        </span>
+                        <span id="m-badge-drills-count" style="font-size:0.68rem; background:rgba(0,0,0,0.06); padding:0.1rem 0.4rem; border-radius:10px;">0問</span>
+                    </label>
+                    <label style="display:flex; align-items:center; justify-content:space-between; background:var(--bg-subtle); padding:0.55rem 0.7rem; border-radius:var(--radius-md); border:1px solid var(--border-color); cursor:pointer;">
+                        <span style="display:flex; align-items:center; gap:0.45rem; font-size:0.78rem; font-weight:700; color:var(--text-primary);">
+                            <input type="checkbox" id="m-chk-keep-terms" checked style="accent-color:var(--brand-primary); width:16px; height:16px;">
+                            <span>📚 重要用語集を保持・マージ</span>
+                        </span>
+                        <span id="m-badge-terms-count" style="font-size:0.68rem; background:rgba(0,0,0,0.06); padding:0.1rem 0.4rem; border-radius:10px;">0個</span>
+                    </label>
+                    <label style="display:flex; align-items:center; justify-content:space-between; background:var(--bg-subtle); padding:0.55rem 0.7rem; border-radius:var(--radius-md); border:1px solid var(--border-color); cursor:pointer;">
+                        <span style="display:flex; align-items:center; gap:0.45rem; font-size:0.78rem; font-weight:700; color:var(--text-primary);">
+                            <input type="checkbox" id="m-chk-keep-events" checked style="accent-color:var(--brand-primary); width:16px; height:16px;">
+                            <span>⏳ 歴史年表（出来事）を保持</span>
+                        </span>
+                        <span id="m-badge-events-count" style="font-size:0.68rem; background:rgba(0,0,0,0.06); padding:0.1rem 0.4rem; border-radius:10px;">0件</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 3. スタイル選択 -->
+            <div style="margin-bottom:0.9rem;">
+                <label style="font-size:0.75rem; font-weight:800; color:var(--text-secondary); display:block; margin-bottom:0.25rem;">講義スタイル</label>
+                <select id="m-recreate-style-select" class="m-input" style="padding:0.4rem 0.6rem; font-size:0.78rem;">
+                    <option value="standard">📖 標準参考書講義スタイル</option>
+                    <option value="socratic">🏛️ ソクラテス対話ゼミ（問答式）</option>
+                </select>
+            </div>
+
+            <!-- アクションボタン -->
+            <div style="display:flex; justify-content:flex-end; gap:0.5rem;">
+                <button type="button" class="m-btn m-btn-secondary" id="m-btn-cancel-recreate" style="padding:0.5rem 0.9rem; font-size:0.78rem;">キャンセル</button>
+                <button type="button" class="m-btn m-btn-primary" id="m-btn-execute-recreate" style="padding:0.5rem 1.1rem; font-size:0.8rem; background:linear-gradient(135deg, #10B981, #059669); border:none; font-weight:800;">🚀 設定を適用して再作成</button>
             </div>
         </div>
     </div>
@@ -4112,22 +4216,28 @@ ${extractedText || "（本文なし）"}
 
         document.getElementById("m-btn-save-memo")?.addEventListener("click", addMobileLessonMemo);
 
-        // ==================== 📄 原本テキスト（Source Text）機能 ====================
+        // ==================== 📄 原本テキスト（Source Text）機能 ＆ 柔軟な再作成 ====================
         function renderMobileSourceText() {
-            const container = document.getElementById("m-source-text-content");
-            if (!container || !activeLessonId) return;
+            const container = document.getElementById("m-lesson-source-text") || document.getElementById("m-source-text-content");
+            const lengthBadge = document.getElementById("m-source-text-length-badge");
+            if (!activeLessonId) return;
             const lesson = lessonsCache[activeLessonId];
             if (!lesson) return;
 
-            const src = lesson.extractedText || lesson.sourceText || lesson.rawText || "（原本テキストは登録されていません）";
-            container.textContent = src;
+            const src = (lesson.extractedText || lesson.sourceText || lesson.rawText || "").trim();
+            if (container) {
+                container.textContent = src || "（原本テキストは登録されていません）";
+            }
+            if (lengthBadge) {
+                lengthBadge.textContent = src ? `(${src.length}文字)` : "";
+            }
         }
 
         async function copyMobileSourceText() {
             if (!activeLessonId) return;
             const lesson = lessonsCache[activeLessonId];
             if (!lesson) return;
-            const src = lesson.extractedText || lesson.sourceText || lesson.rawText || "";
+            const src = (lesson.extractedText || lesson.sourceText || lesson.rawText || "").trim();
             if (!src) return;
             try {
                 await navigator.clipboard.writeText(src);
@@ -4138,6 +4248,326 @@ ${extractedText || "（本文なし）"}
         }
 
         document.getElementById("m-btn-copy-source-text")?.addEventListener("click", copyMobileSourceText);
+
+        // ✏️ モバイル原本テキストの直接編集
+        const mBtnEditSource = document.getElementById("m-btn-edit-source-text");
+        const mSourceEditArea = document.getElementById("m-source-edit-area");
+        const mSourceEditTextarea = document.getElementById("m-source-edit-textarea");
+        const mBtnCancelEditSource = document.getElementById("m-btn-cancel-edit-source");
+        const mBtnSaveEditSource = document.getElementById("m-btn-save-edit-source");
+
+        if (mBtnEditSource && mSourceEditArea && mSourceEditTextarea) {
+            mBtnEditSource.addEventListener("click", () => {
+                if (!activeLessonId) return;
+                const lesson = lessonsCache[activeLessonId];
+                if (!lesson) return;
+                mSourceEditTextarea.value = (lesson.extractedText || lesson.sourceText || lesson.rawText || "").trim();
+                mSourceEditArea.style.display = "flex";
+                mSourceEditTextarea.focus();
+            });
+        }
+
+        if (mBtnCancelEditSource && mSourceEditArea) {
+            mBtnCancelEditSource.addEventListener("click", () => {
+                mSourceEditArea.style.display = "none";
+            });
+        }
+
+        if (mBtnSaveEditSource && mSourceEditArea && mSourceEditTextarea) {
+            mBtnSaveEditSource.addEventListener("click", async () => {
+                if (!activeLessonId || !currentUser) return;
+                const lesson = lessonsCache[activeLessonId];
+                if (!lesson) return;
+                const newText = mSourceEditTextarea.value.trim();
+                lesson.extractedText = newText;
+                lesson.updatedAt = new Date().toISOString();
+                renderMobileSourceText();
+                mSourceEditArea.style.display = "none";
+                await update(ref(database, `users/${currentUser.uid}/lessons/${activeLessonId}`), {
+                    extractedText: newText,
+                    updatedAt: lesson.updatedAt
+                });
+                if (window.mToast) mToast("💾 原本テキストを更新・保存しました！");
+            });
+        }
+
+        // 🔄 モバイル授業再作成・設定モーダル
+        const mModalRecreate = document.getElementById("m-lesson-recreate-modal");
+        const mBtnCloseRecreate = document.getElementById("close-m-recreate-modal-btn");
+        const mBtnCancelRecreate = document.getElementById("m-btn-cancel-recreate");
+        const mBtnExecuteRecreate = document.getElementById("m-btn-execute-recreate");
+
+        const mRecreateSourceInput = document.getElementById("m-recreate-source-input");
+        const mRecreateLenIndicator = document.getElementById("m-recreate-len-indicator");
+        const mChkKeepMemo = document.getElementById("m-chk-keep-memo");
+        const mChkKeepDrills = document.getElementById("m-chk-keep-drills");
+        const mChkKeepTerms = document.getElementById("m-chk-keep-terms");
+        const mChkKeepEvents = document.getElementById("m-chk-keep-events");
+        const mBadgeMemoCount = document.getElementById("m-badge-memo-count");
+        const mBadgeDrillsCount = document.getElementById("m-badge-drills-count");
+        const mBadgeTermsCount = document.getElementById("m-badge-terms-count");
+        const mBadgeEventsCount = document.getElementById("m-badge-events-count");
+        const mSelectRecreateStyle = document.getElementById("m-recreate-style-select");
+
+        const mBtnPresetKeepAll = document.getElementById("m-preset-keep-all");
+        const mBtnPresetFullReset = document.getElementById("m-preset-full-reset");
+
+        function openMobileRecreateModal() {
+            if (!activeLessonId) {
+                if (window.mToast) mToast("授業データが見つかりません");
+                return;
+            }
+            const lesson = lessonsCache[activeLessonId];
+            if (!lesson || !mModalRecreate) return;
+
+            const sourceText = (lesson.extractedText || lesson.sourceText || lesson.rawText || "").trim();
+            if (mRecreateSourceInput) {
+                mRecreateSourceInput.value = sourceText;
+            }
+            if (mRecreateLenIndicator) {
+                mRecreateLenIndicator.textContent = `${sourceText.length}文字`;
+            }
+
+            const memoPoints = Array.isArray(lesson.memorizationPoints) ? lesson.memorizationPoints : [];
+            const drills = Array.isArray(lesson.choiceDrills) ? lesson.choiceDrills : [];
+            const terms = Array.isArray(lesson.keyTerms) ? lesson.keyTerms : [];
+            const events = Array.isArray(lesson.historicalEvents) ? lesson.historicalEvents : [];
+
+            if (mBadgeMemoCount) mBadgeMemoCount.textContent = `${memoPoints.length}件`;
+            if (mBadgeDrillsCount) mBadgeDrillsCount.textContent = `${drills.length}問`;
+            if (mBadgeTermsCount) mBadgeTermsCount.textContent = `${terms.length}個`;
+            if (mBadgeEventsCount) mBadgeEventsCount.textContent = `${events.length}件`;
+
+            // 暗記物を優先キープするデフォルト設定
+            if (mChkKeepMemo) mChkKeepMemo.checked = memoPoints.length > 0;
+            if (mChkKeepDrills) mChkKeepDrills.checked = drills.length > 0;
+            if (mChkKeepTerms) mChkKeepTerms.checked = terms.length > 0;
+            if (mChkKeepEvents) mChkKeepEvents.checked = events.length > 0;
+
+            if (mSelectRecreateStyle) {
+                mSelectRecreateStyle.value = lesson.teachingStyle === "socratic" ? "socratic" : "standard";
+            }
+
+            mModalRecreate.style.display = "flex";
+        }
+
+        if (mRecreateSourceInput && mRecreateLenIndicator) {
+            mRecreateSourceInput.addEventListener("input", (e) => {
+                mRecreateLenIndicator.textContent = `${e.target.value.length}文字`;
+            });
+        }
+
+        if (mBtnPresetKeepAll) {
+            mBtnPresetKeepAll.addEventListener("click", () => {
+                if (mChkKeepMemo) mChkKeepMemo.checked = true;
+                if (mChkKeepDrills) mChkKeepDrills.checked = true;
+                if (mChkKeepTerms) mChkKeepTerms.checked = true;
+                if (mChkKeepEvents) mChkKeepEvents.checked = true;
+                if (window.mToast) mToast("✨ 暗記カード・問題・用語をすべてキープする設定にしました");
+            });
+        }
+
+        if (mBtnPresetFullReset) {
+            mBtnPresetFullReset.addEventListener("click", () => {
+                if (mChkKeepMemo) mChkKeepMemo.checked = false;
+                if (mChkKeepDrills) mChkKeepDrills.checked = false;
+                if (mChkKeepTerms) mChkKeepTerms.checked = false;
+                if (mChkKeepEvents) mChkKeepEvents.checked = false;
+                if (window.mToast) mToast("🔄 すべて一から再生成する設定にしました");
+            });
+        }
+
+        const closeMobileRecreateModal = () => {
+            if (mModalRecreate) mModalRecreate.style.display = "none";
+        };
+        mBtnCloseRecreate?.addEventListener("click", closeMobileRecreateModal);
+        mBtnCancelRecreate?.addEventListener("click", closeMobileRecreateModal);
+
+        document.getElementById("m-btn-open-recreate-modal")?.addEventListener("click", openMobileRecreateModal);
+        document.getElementById("m-btn-header-recreate")?.addEventListener("click", openMobileRecreateModal);
+
+        async function executeMobileCustomRecreateLesson() {
+            if (!activeLessonId || !currentUser) return;
+            const lesson = lessonsCache[activeLessonId];
+            if (!lesson) return;
+
+            const updatedSourceText = (mRecreateSourceInput ? mRecreateSourceInput.value : (lesson.extractedText || "")).trim();
+            if (!updatedSourceText) {
+                if (window.mToast) mToast("原本テキストを入力してください");
+                return;
+            }
+
+            const keepMemo = mChkKeepMemo ? mChkKeepMemo.checked : true;
+            const keepDrills = mChkKeepDrills ? mChkKeepDrills.checked : true;
+            const keepTerms = mChkKeepTerms ? mChkKeepTerms.checked : true;
+            const keepEvents = mChkKeepEvents ? mChkKeepEvents.checked : true;
+            const selectedStyle = mSelectRecreateStyle ? mSelectRecreateStyle.value : "standard";
+
+            // 保持する既存データの退避
+            const savedMemoPoints = keepMemo ? (Array.isArray(lesson.memorizationPoints) ? [...lesson.memorizationPoints] : []) : null;
+            const savedDrills = keepDrills ? (Array.isArray(lesson.choiceDrills) ? [...lesson.choiceDrills] : []) : null;
+            const savedKeyTerms = keepTerms ? (Array.isArray(lesson.keyTerms) ? [...lesson.keyTerms] : []) : [];
+            const savedEvents = keepEvents ? (Array.isArray(lesson.historicalEvents) ? [...lesson.historicalEvents] : []) : [];
+
+            if (mBtnExecuteRecreate) {
+                mBtnExecuteRecreate.disabled = true;
+                mBtnExecuteRecreate.innerHTML = "⏳ 再構築中...";
+            }
+
+            try {
+                if (window.mToast) mToast("新しい原本からカリキュラムを再構築しています...");
+
+                const subject = lesson.subject || "その他";
+                const isSocratic = selectedStyle === "socratic";
+                const socraticAddon = isSocratic ? "\n【スタイル：ソクラテス対話ゼミ】別解比較・あえて間違える落とし穴の見破り・対話的問答を重視して各パートを計画してください。" : "";
+
+                const RECREATE_PLAN_SCHEMA = {
+                    type: "OBJECT",
+                    properties: {
+                        lesson_title: { type: "STRING" },
+                        parts: {
+                            type: "ARRAY",
+                            items: {
+                                type: "OBJECT",
+                                properties: { title: { type: "STRING" }, summary: { type: "STRING" } },
+                                required: ["title", "summary"]
+                            }
+                        },
+                        key_terms: {
+                            type: "ARRAY",
+                            items: {
+                                type: "OBJECT",
+                                properties: { name: { type: "STRING" }, definition: { type: "STRING" } },
+                                required: ["name", "definition"]
+                            }
+                        }
+                    },
+                    required: ["lesson_title", "parts"]
+                };
+
+                const planInstruction = `あなたは難関大受験指導のプロ講師AIです。
+提供された原本テキスト（文字起こし）から、2〜4パートの論理的な講義カリキュラムと重要用語リストを再構成してください。
+【最重要】社会系科目等の難読漢字、歴史用語、人名、地名、制度名、専門用語には必ず「漢字（よみがな）」または「<ruby>漢字<rt>よみがな</rt></ruby>」で読み仮名を徹底してください。${socraticAddon}`;
+
+                const promptText = `【教科：${subject}】\n以下の原本テキストを解析し、カリキュラムと重要用語をJSONで作成してください。\n\n【原本テキスト】\n${updatedSourceText}`;
+
+                const planResult = await callGeminiJSON(
+                    [{ text: promptText }],
+                    planInstruction,
+                    { responseSchema: RECREATE_PLAN_SCHEMA, featureId: "lesson_plan" }
+                );
+
+                if (!planResult || !Array.isArray(planResult.parts) || planResult.parts.length === 0) {
+                    throw new Error("カリキュラムの取得に失敗しました");
+                }
+
+                // 授業データの更新
+                lesson.title = planResult.lesson_title || lesson.title;
+                lesson.extractedText = updatedSourceText;
+                lesson.sourceText = updatedSourceText;
+                lesson.teachingStyle = selectedStyle;
+                lesson.parts = planResult.parts;
+                lesson.currentPartIndex = 0;
+                lesson.status = "teaching";
+                lesson.chatHistory = [];
+                lesson.updatedAt = new Date().toISOString();
+
+                // 📚 重要用語の引き継ぎ・マージ
+                const newKeyTerms = Array.isArray(planResult.key_terms) ? planResult.key_terms : [];
+                if (keepTerms && savedKeyTerms.length > 0) {
+                    const existingNames = new Set(savedKeyTerms.map(t => t.name));
+                    lesson.keyTerms = [
+                        ...savedKeyTerms,
+                        ...newKeyTerms.filter(t => t && t.name && !existingNames.has(t.name))
+                    ];
+                } else {
+                    lesson.keyTerms = newKeyTerms;
+                }
+
+                // ⏳ 歴史年表の引き継ぎ
+                if (keepEvents && savedEvents.length > 0) {
+                    lesson.historicalEvents = savedEvents;
+                }
+
+                // 🧠 暗記事項（暗記カード）の引き継ぎ
+                if (keepMemo && savedMemoPoints && savedMemoPoints.length > 0) {
+                    lesson.memorizationPoints = savedMemoPoints;
+                } else {
+                    lesson.memorizationPoints = null; // 再生成対象
+                }
+
+                // 🎯 選択問題の引き継ぎ
+                if (keepDrills && savedDrills && savedDrills.length > 0) {
+                    lesson.choiceDrills = savedDrills;
+                } else {
+                    lesson.choiceDrills = null; // 再生成対象
+                }
+
+                // Firebaseへ保存
+                await set(ref(database, `users/${currentUser.uid}/lessons/${activeLessonId}`), lesson);
+
+                closeMobileRecreateModal();
+
+                // UIの再描画
+                renderMobileSourceText();
+                updateMobileLessonHeader();
+                renderMobilePartsList();
+                renderMobileLessonChat();
+
+                if (!keepMemo || !lesson.memorizationPoints) {
+                    ensureMobileMemorizationPoints();
+                } else {
+                    renderMobileMemorizationPoints();
+                }
+
+                // 講義サブタブへ移動
+                switchLessonSubtab("lecture");
+
+                const keptItems = [];
+                if (keepMemo && savedMemoPoints && savedMemoPoints.length > 0) keptItems.push(`暗記カード(${savedMemoPoints.length}件)`);
+                if (keepDrills && savedDrills && savedDrills.length > 0) keptItems.push(`選択問題(${savedDrills.length}問)`);
+                const keptNotice = keptItems.length > 0 ? ` [${keptItems.join('・')}保持]` : '';
+
+                if (window.mToast) mToast(`🎉 授業を再作成しました！${keptNotice}`);
+
+                // 第1回の講義を自動生成・開始
+                try {
+                    const firstPart = lesson.parts[0];
+                    const firstPrompt = `【授業テーマ】${lesson.title}\n【教科】${subject}\n【第1回】${firstPart.title}（${firstPart.summary || ''}）\n\n【指示】第1回の講義を始めてください。論理と公式の厳密性を最優先に、初学者にもわかりやすく解説してください。難しい漢字や歴史・社会用語には必ず読み仮名を添えてください。`;
+                    const firstSystemInstruction = `あなたは予備校の専任プロ講師AIです。論理的で厳密、かつ明快な講義を行ってください。難しい漢字や専門用語には必ず「漢字（よみがな）」を付記してください。数式は$ $で囲んでください。`;
+
+                    const reply = await callGeminiChat(
+                        [{ role: "user", parts: [{ text: firstPrompt }] }],
+                        firstSystemInstruction,
+                        { featureId: "lesson_teach" }
+                    );
+                    const replyText = typeof reply === "string" ? reply : (reply?.message || reply?.reply || JSON.stringify(reply));
+
+                    lesson.chatHistory = [
+                        { role: "divider", content: `第1回: ${firstPart.title}`, text: `第1回: ${firstPart.title}` },
+                        { role: "model", content: replyText, text: replyText }
+                    ];
+
+                    await update(ref(database, `users/${currentUser.uid}/lessons/${activeLessonId}`), {
+                        chatHistory: lesson.chatHistory
+                    });
+                    renderMobileLessonChat();
+                } catch(e) {
+                    console.error("第1回生成エラー:", e);
+                }
+
+            } catch (err) {
+                console.error("モバイル授業再作成エラー:", err);
+                if (window.mToast) mToast("⚠️ 再作成に失敗しました: " + err.message);
+            } finally {
+                if (mBtnExecuteRecreate) {
+                    mBtnExecuteRecreate.disabled = false;
+                    mBtnExecuteRecreate.innerHTML = "🚀 設定を適用して再作成";
+                }
+            }
+        }
+
+        mBtnExecuteRecreate?.addEventListener("click", executeMobileCustomRecreateLesson);
 
         // ==================== ⚡ 類題即時テスト（Instant Drill） ====================
         const DRILL_SCHEMA = {
