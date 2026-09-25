@@ -346,11 +346,20 @@
             <button class="type-tab-btn" id="btn-japan">⛩️ 日本史</button>
         </div>
 
-        <!-- 🎯 共通テスト整序特訓起動ボタン -->
-        <div style="margin-bottom:0.65rem;">
+        <!-- 🎯 共通テスト整序特訓 メインフィーチャーカード -->
+        <div class="m-tq-hero-card">
+            <div class="m-tq-badge">🔥 共テ最頻出・得点差直結</div>
+            <div class="m-tq-title">🎯 年代整序マスター特訓スタジオ</div>
+            <div class="m-tq-desc">出来事Ⅰ〜Ⅲの年代順並べ替え（6択マーク式）。因果関係とタテヨコの歴史感覚を完全制覇！</div>
             <button type="button" class="btn-launch-quiz-m" id="btn-start-quiz-m">
-                🎯 共通テスト整序特訓（年代並べ替え）
+                🚀 特訓スタート（全5問）
             </button>
+            <div class="m-tq-chip-row">
+                <button type="button" class="m-tq-chip" data-m-quick-mode="era_close">⚔️ 近接バトル</button>
+                <button type="button" class="m-tq-chip" data-m-quick-mode="theme">📜 テーマ別</button>
+                <button type="button" class="m-tq-chip" data-m-quick-mode="era_select">🏛️ 時代別</button>
+                <button type="button" class="m-tq-chip" data-m-quick-mode="mistakes">🔥 苦手克服</button>
+            </div>
         </div>
 
         <!-- ツールバー（赤シート・青シート＆誤答フィルター） -->
@@ -725,7 +734,7 @@
         const btnStartMQuiz = document.getElementById("btn-start-quiz-m");
         const btnCloseMQuiz = document.getElementById("m-quiz-close");
 
-        function openMobileQuizStudio() {
+        function openMobileQuizStudio(targetMode = null) {
             const allEvents = collectMobileEvents().filter(e => e.yearSort !== 9999);
             modalMQuiz.style.display = "flex";
 
@@ -733,6 +742,7 @@
                 containerModal: modalMQuiz,
                 historyType: mActiveHistoryType,
                 customEvents: allEvents,
+                initialMode: targetMode || "era_close",
                 onFinish: () => {
                     modalMQuiz.style.display = "none";
                 }
@@ -743,6 +753,23 @@
 
         if (btnStartMQuiz) {
             btnStartMQuiz.onclick = () => openMobileQuizStudio();
+        }
+
+        // モバイルクイックモードチップ
+        document.querySelectorAll("[data-m-quick-mode]").forEach(chip => {
+            chip.onclick = () => {
+                const mode = chip.getAttribute("data-m-quick-mode");
+                openMobileQuizStudio(mode);
+            };
+        });
+
+        // URLパラメータからの自動起動
+        const mUrlParams = new URLSearchParams(window.location.search);
+        if (mUrlParams.has("quiz") || mUrlParams.has("drill")) {
+            const requestedMode = mUrlParams.get("mode") || "era_close";
+            setTimeout(() => {
+                openMobileQuizStudio(requestedMode);
+            }, 300);
         }
 
         if (btnCloseMQuiz) {

@@ -523,8 +523,8 @@
                 <!-- ページヘッダー -->
                 <div class="page-header" style="flex-wrap:wrap; gap:0.8rem; align-items:center; justify-content:space-between;">
                     <div class="page-title-group">
-                        <h1 class="page-title" id="page-main-title">🏛️ 歴史 統合年表</h1>
-                        <p class="page-subtitle">誤答問題や参考書授業から抽出された出来事が、自動で年代順に整理されるビジュアル年表</p>
+                        <h1 class="page-title" id="page-main-title">🏛️ 歴史 統合年表 & 共通テスト整序特訓</h1>
+                        <p class="page-subtitle">誤答問題や参考書授業から抽出された出来事が、自動で年代順に整理されるビジュアル年表・本格整序演習</p>
                     </div>
                     <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;">
                         <button type="button" id="btn-start-reorder-quiz" style="background:linear-gradient(135deg, #4F46E5, #7C3AED); color:#fff; border:none; padding:0.55rem 1.15rem; border-radius:var(--radius-lg); font-size:0.88rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:0.45rem; box-shadow:0 3px 10px rgba(99, 102, 241, 0.3); transition:all 0.15s ease;" title="共通テスト頻出の年代並べ替え問題を生成して解きます">
@@ -533,6 +533,40 @@
                         <div class="page-actions" style="font-size: var(--fs-xs); color: var(--text-secondary);" id="event-total-count">
                             読み込み中...
                         </div>
+                    </div>
+                </div>
+
+                <!-- 🎯 共通テスト年代整序特訓 メインフィーチャーバナー -->
+                <div class="tq-feature-hero">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:0.8rem;">
+                        <div>
+                            <div class="tq-feature-hero-badge">🔥 大学入学共通テスト最頻出・合否直結</div>
+                            <h2 class="tq-feature-hero-title">🎯 共通テスト 歴史年代整序マスター特訓スタジオ</h2>
+                            <p class="tq-feature-hero-desc">
+                                本番で最大の合否分岐点となる「出来事Ⅰ〜Ⅲの年代順並べ替え（マーク式6択判定）」。<br>
+                                単なる年号丸暗記を脱却し、<strong>歴史の因果関係・タテヨコの同時代感覚</strong>を完全マスターする本格特訓モードです。
+                            </p>
+                        </div>
+                    </div>
+                    <div class="tq-feature-hero-actions">
+                        <button type="button" class="tq-hero-start-btn" id="btn-hero-launch-quiz">
+                            🚀 整序特訓をスタート（全5問）
+                        </button>
+                        <button type="button" class="tq-hero-mode-chip" data-quick-mode="era_close">
+                            ⚔️ 時代近接バトル
+                        </button>
+                        <button type="button" class="tq-hero-mode-chip" data-quick-mode="theme">
+                            📜 テーマ別特訓（政治・外交・文化）
+                        </button>
+                        <button type="button" class="tq-hero-mode-chip" data-quick-mode="era_select">
+                            🏛️ 時代別集中特訓
+                        </button>
+                        <button type="button" class="tq-hero-mode-chip" data-quick-mode="mistakes">
+                            🔥 苦手克服・誤答ノート
+                        </button>
+                        <button type="button" class="tq-hero-mode-chip" data-quick-mode="random">
+                            🌟 全時代ランダム
+                        </button>
                     </div>
                 </div>
 
@@ -1346,7 +1380,7 @@
         const btnStartQuiz = document.getElementById("btn-start-reorder-quiz");
         const btnCloseQuiz = document.getElementById("btn-close-reorder-quiz");
 
-        function openQuizStudio() {
+        function openQuizStudio(targetMode = null) {
             const allEvents = collectAllEvents();
             modalQuiz.style.display = "flex";
 
@@ -1354,6 +1388,7 @@
                 containerModal: modalQuiz,
                 historyType: activeHistoryType,
                 customEvents: allEvents,
+                initialMode: targetMode || "era_close",
                 onFinish: () => {
                     modalQuiz.style.display = "none";
                 }
@@ -1364,6 +1399,29 @@
 
         if (btnStartQuiz) {
             btnStartQuiz.onclick = () => openQuizStudio();
+        }
+
+        // ヒーローバナーのメイン起動ボタン
+        const btnHeroLaunch = document.getElementById("btn-hero-launch-quiz");
+        if (btnHeroLaunch) {
+            btnHeroLaunch.onclick = () => openQuizStudio();
+        }
+
+        // 各モード直接ランチャー
+        document.querySelectorAll("[data-quick-mode]").forEach(chip => {
+            chip.onclick = () => {
+                const mode = chip.getAttribute("data-quick-mode");
+                openQuizStudio(mode);
+            };
+        });
+
+        // URLパラメータからの自動起動サポート（例: timeline.html?quiz=true または ?mode=era_close）
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has("quiz") || urlParams.has("drill")) {
+            const requestedMode = urlParams.get("mode") || "era_close";
+            setTimeout(() => {
+                openQuizStudio(requestedMode);
+            }, 300);
         }
 
         if (btnCloseQuiz) {
