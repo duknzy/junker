@@ -5639,14 +5639,28 @@
                         <span style="font-size: 0.82rem; font-weight: 800; color: #4338CA;">Step 1: 出題対象パートを選択 ＆ プロンプト・スキーマを取得</span>
                     </div>
 
-                    <!-- パート選択 -->
-                    <div style="margin-bottom: 0.55rem;">
-                        <label for="byot-drills-part-select" style="font-size: 0.74rem; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 0.2rem;">
-                            🎯 出題対象のパート範囲:
-                        </label>
-                        <select id="byot-drills-part-select" class="flora-select" style="font-size: 0.78rem; width: 100%; padding: 0.35rem 0.6rem;">
-                            <option value="all" selected>🌟 全パート一括（全パートから満遍なく良問を作成）</option>
-                        </select>
+                    <!-- パート選択 ＆ 出題形式バージョン -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-bottom: 0.55rem;">
+                        <div>
+                            <label for="byot-drills-part-select" style="font-size: 0.74rem; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 0.2rem;">
+                                🎯 出題対象のパート範囲:
+                            </label>
+                            <select id="byot-drills-part-select" class="flora-select" style="font-size: 0.78rem; width: 100%; padding: 0.35rem 0.6rem;">
+                                <option value="all" selected>🌟 全パート一括（各パート均等配分）</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="byot-drills-version-select" style="font-size: 0.74rem; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 0.2rem;">
+                                📑 選択問題の形式・バージョン:
+                            </label>
+                            <select id="byot-drills-version-select" class="flora-select" style="font-size: 0.78rem; width: 100%; padding: 0.35rem 0.6rem;">
+                                <option value="mix" selected>🌟 全形式バランス（2文正誤・整序・4択正誤）</option>
+                                <option value="combination">⚔️ 2文正誤組み合わせ特化（文X・文Y判定）</option>
+                                <option value="true_false">🔍 4択正誤判定特化（正文・誤文選択）</option>
+                                <option value="chronological">⏳ 年代・因果整序特化（配列選択）</option>
+                                <option value="cloze">📝 空欄補充特化（空欄ア・イの語句組合せ）</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div style="font-size: 0.74rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 0.6rem;">
@@ -14008,17 +14022,24 @@ ${updatedSourceText}`;
             const selectedPartVal = selectByotMemoPart ? selectByotMemoPart.value : "all";
 
             let partContextSection = "";
+            let targetTextForExtraction = sourceText;
+
             if (selectedPartVal === "all") {
                 if (parts.length > 0) {
                     partContextSection = `【授業全体のカリキュラム構成（全${parts.length}回）】\n` +
                         parts.map((p, i) => `・第${i + 1}回：${p.title}（学習要約・範囲: ${p.summary || "なし"}）`).join("\n") +
-                        `\n\n【全パート自動振り分け指示】\n本文全体から重要事項を網羅的に抽出し、各暗記カードには必ずそれがどのパート（回）に属するかを示す "part_number"（1以上の整数。第1回なら 1、第2回なら 2）を正確に割り振ってください。`;
+                        `\n\n【全パート自動振り分け指示】\n本文全体から重要事項を網羅的に抽出し、各暗記カードには必ずそれがどのパート（回）に属するかを示す "part_number"（1以上の整数。第1回なら 1、第2回なら 2）を正確に割り振ってください。各パートから偏りなく均等に網羅してください。`;
                 }
             } else {
                 const pIdx = parseInt(selectedPartVal, 10);
                 const targetPart = parts[pIdx];
                 if (targetPart) {
-                    partContextSection = `【今回抽出を担当するパート（第${pIdx + 1}回 / 全${parts.length}回）】\nパート見出し: ${targetPart.title}\n学習要約・範囲: ${targetPart.summary || "なし"}\n\n【パート集中抽出の指示】\n本文の中から、上記の【第${pIdx + 1}回：${targetPart.title}】の範囲に属する重要事項に集中し、漏れなく全て抽出してください（"part_number": ${pIdx + 1} としてください）。他のパートの内容は含めないでください。`;
+                    partContextSection = `【今回抽出を担当するパート（第${pIdx + 1}回 / 全${parts.length}回）】\nパート見出し: ${targetPart.title}\n学習要約・範囲: ${targetPart.summary || "なし"}\n\n【パート集中抽出の指示】\n上記の【第${pIdx + 1}回：${targetPart.title}】の範囲に属する重要事項に【完全に集中】し、漏れなく全て抽出してください（全カードの "part_number" は必ず ${pIdx + 1} としてください）。他のパートの内容は含めないでください。`;
+                    
+                    // パート個別の講義内容が存在する場合は、それを最優先の抽出対象本文にする！
+                    if (targetPart.content && targetPart.content.trim().length > 50) {
+                        targetTextForExtraction = `【第${pIdx + 1}回 パート講義ノート: ${targetPart.title}】\n${targetPart.content.trim()}`;
+                    }
                 }
             }
 
@@ -14068,7 +14089,7 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
 \`\`\``;
 
             if (includeText) {
-                prompt += `\n\n【対象テキスト本文】\n${sourceText || "（原本テキストが空です。ここに教科書・参考書のテキストを貼り付けてください）"}`;
+                prompt += `\n\n【対象テキスト本文】\n${targetTextForExtraction || "（原本テキストが空です。ここに教科書・参考書のテキストを貼り付けてください）"}`;
             }
             return prompt;
         }
@@ -14345,6 +14366,7 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
         const btnCopyByotDrillsTextOnly = el("byot-drills-copy-text-only-btn");
         const btnCopyByotDrillsOnly = el("byot-drills-copy-instruction-only-btn");
         const selectByotDrillsPart = el("byot-drills-part-select");
+        const selectByotDrillsVersion = el("byot-drills-version-select");
         const previewByotDrillsSchema = el("byot-drills-schema-preview");
 
         if (previewByotDrillsSchema) {
@@ -14357,42 +14379,87 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
             const sourceText = (currentLesson && currentLesson.extractedText ? currentLesson.extractedText : "").trim();
             const parts = currentLesson && Array.isArray(currentLesson.parts) ? currentLesson.parts : [];
             const selectedPartVal = selectByotDrillsPart ? selectByotDrillsPart.value : "all";
+            const selectedVersion = selectByotDrillsVersion ? selectByotDrillsVersion.value : "mix";
 
             let partContextSection = "";
+            let targetTextForExtraction = sourceText;
+
             if (selectedPartVal === "all") {
                 if (parts.length > 0) {
-                    partContextSection = `【授業のパート構成（全${parts.length}回）】\n` +
-                        parts.map((p, i) => `・第${i + 1}回：${p.title}（要約: ${p.summary || "なし"}）`).join("\n") +
-                        `\n\n【パート出題指示】全パートから満遍なく良問を作成し、各問題にどのパートに属するかを示す "part_number"（1以上の整数）を割り振ってください。`;
+                    partContextSection = `【授業全体のカリキュラム構成（全${parts.length}回）】\n` +
+                        parts.map((p, i) => `・第${i + 1}回：${p.title}（学習要約・範囲: ${p.summary || "なし"}）`).join("\n") +
+                        `\n\n【全パート均等出題指示】\n全パートから偏りなく満遍なく良問を作成し、各問題がどのパートに属するかを示す "part_number"（1以上の整数。第1回なら 1、第2回なら 2）を正確に割り振ってください。`;
                 }
             } else {
                 const pIdx = parseInt(selectedPartVal, 10);
                 const targetPart = parts[pIdx];
                 if (targetPart) {
-                    partContextSection = `【出題対象パート（第${pIdx + 1}回）】\nパート名: ${targetPart.title}\n学習要約: ${targetPart.summary || "なし"}\n\n上記の【第${pIdx + 1}回：${targetPart.title}】の範囲から良問を作成してください（"part_number": ${pIdx + 1}）。`;
+                    partContextSection = `【出題対象パート（第${pIdx + 1}回 / 全${parts.length}回）】\nパート名: ${targetPart.title}\n学習要約・範囲: ${targetPart.summary || "なし"}\n\n【パート集中出題指示】\n上記の【第${pIdx + 1}回：${targetPart.title}】の範囲から【完全に集中】して良問を作成してください（全問 "part_number": ${pIdx + 1} としてください）。他のパートの内容は含めないでください。`;
+
+                    if (targetPart.content && targetPart.content.trim().length > 50) {
+                        targetTextForExtraction = `【第${pIdx + 1}回 パート講義ノート: ${targetPart.title}】\n${targetPart.content.trim()}`;
+                    }
                 }
             }
 
+            let formatInstruction = "";
+            if (selectedVersion === "combination") {
+                formatInstruction = `【出題形式：⚔️ 2文正誤組み合わせ判定（最頻出形式）に特化】
+5問すべてを「type: combination」として作成してください。
+・lead_text: 「次の文 X・Y について、その正誤の組み合わせとして最も適当なものを、下の①〜④のうちから一つ選べ。」
+・statements: ["X: ○○に関する記述...", "Y: △△に関する記述..."] の2文を提示。
+・options:
+  ① X-正 / Y-正
+  ② X-正 / Y-誤
+  ③ X-誤 / Y-正
+  ④ X-誤 / Y-誤
+・XとYのそれぞれに明確な根拠を持たせ、一見正しそうに見える巧妙な引っかけ（時期・主体・因果のすり替え）を盛り込んでください。`;
+            } else if (selectedVersion === "true_false") {
+                formatInstruction = `【出題形式：🔍 4択正誤判定（王道形式）に特化】
+5問すべてを「type: single_choice」または「type: true_false」として作成してください。
+・問題文（lead_text）で「正しいものを一つ選べ」または「誤っているものを一つ選べ」と明確に指示。
+・options: 4つの選択肢（①〜④）を提示。
+・誤文の選択肢には、「主語と述語の入れ替え」「似た法令・用語の混同」「原因と結果の逆転」「年代の前後すり替え」などの典型的トラップを必ず仕込んでください。`;
+            } else if (selectedVersion === "chronological") {
+                formatInstruction = `【出題形式：⏳ 年代・因果関係整序（配列問題）に特化】
+5問すべてを「type: chronological」として作成してください。
+・lead_text: 「次のⅠ〜Ⅲの出来事について、古いものから順に正しく配列したものを、下の①〜⑥のうちから一つ選べ。」
+・statements: ["Ⅰ: ...", "Ⅱ: ...", "Ⅲ: ..."] の3つの出来事やプロセスを提示。
+・options: ① Ⅰ-Ⅱ-Ⅲ, ② Ⅰ-Ⅲ-Ⅱ, ③ Ⅱ-Ⅰ-Ⅲ, ④ Ⅱ-Ⅲ-Ⅰ, ⑤ Ⅲ-Ⅰ-Ⅱ, ⑥ Ⅲ-Ⅱ-Ⅰ （4択にする場合は4つの組み合わせ）
+・時代が離れすぎた問題ではなく、同時代または因果関係で直結する微妙な前後関係を問う良問にしてください。`;
+            } else if (selectedVersion === "cloze") {
+                formatInstruction = `【出題形式：📝 空欄補充型（二連空欄の語句組み合わせ）に特化】
+5問すべてを「type: combination」として作成してください。
+・lead_text: リード文の中に［ ア ］［ イ ］の空欄を設け、「文章中の空欄［ ア ］・［ イ ］に入る語句の組み合わせとして最も適当なものを、下の①〜④のうちから一つ選べ。」とする。
+・options: ① ア: ○○ / イ: △△, ② ア: ○○ / イ: ××, ③ ア: □□ / イ: △△, ④ ア: □□ / イ: ××
+・混同しやすい対立概念や関連語句を配置してください。`;
+            } else {
+                formatInstruction = `【出題形式：🌟 共通テスト本番バランス（全種混合）】
+以下の形式をバランス良く織り交ぜて全5問を作成してください：
+1. 2文正誤の組み合わせ判定（combination）：文Xと文Yの正誤判定（①正-正、②正-誤、③誤-正、④誤-誤）
+2. 年代整序・因果関係順序（chronological）：Ⅰ〜Ⅲの出来事の正しい前後関係
+3. 4択正誤判定（single_choice / true_false）：正しい文・誤っている文を1つ選ばせる良問
+4. 空欄補充型：リード文の［ ア ］［ イ ］に入る語句の組み合わせ`;
+            }
+
             let prompt = `あなたは大学入学共通テストの作問委員・予備校の特任講師AIです。
-以下の【対象テキスト本文】を深く読み解き、共通テスト形式の実戦的な多肢選択問題を【5問】作成してください。
+以下の【対象テキスト本文】を深く読み解き、大学入学共通テスト形式の極めて実戦的で質の高い多肢選択問題を【5問】作成してください。
 
 【教科】${subject}
 【授業タイトル】${title}
 ${partContextSection}
 
-【🚨 共通テスト形式の作問ルール】
-1. 形式の配分：
-   - 2文正誤の組み合わせ判定（combination）：文Xと文Yを提示し、それぞれの正誤（①正-正、②正-誤、③誤-正、④誤-誤）を選ばせる良問。
-   - 年代整序・因果関係順序（chronological）：3〜4個の出来事の正しい前後関係を選ばせる良問。
-   - 4択正誤判定（single_choice または true_false）：正しい文・誤っている文を1つ選ばせる良問。
-2. 引っかけ罠（trap_reason）の徹底：
-   - 単なる知識の暗記テストではなく、受験生が陥りやすい「主語と目的語のすり替え」「似た概念・法令・公式の混同」「因果関係の逆転」「年代の前後トラップ」を巧妙に配置すること。
+${formatInstruction}
+
+【🚨 最重要作問ルール】
+1. 引っかけ罠（trap_reason）の徹底：
+   - 単なる用語想起ではなく、受験生が陥りやすい「主語と目的語のすり替え」「似た概念・法令・公式の混同」「因果関係の逆転」「年代の前後トラップ」を巧妙に配置すること。
    - trap_reason には、「受験生がなぜその誤答を選んでしまうのか、どのような心理的・知識的落とし穴があるか」を明快に解説すること。
-3. 詳細な解説（explanation）：
-   - 正解の根拠だけでなく、不正解の選択肢のどこがどう間違っているかを論理的に解説すること。
-4. 数式表記：
+2. 詳細な解説（explanation）：
+   - 正解の根拠だけでなく、不正解の各選択肢のどこがどう間違っているかを論理的・学術的に解説すること。
+3. 数式表記：
    - 数式は必ず $ $ または $$ $$ で記述すること。
-5. 正解番号：
+4. 正解番号：
    - "correct_number" は必ず 1, 2, 3, 4 のいずれかの半角整数（options 配列の number と一致）にすること。
 
 【🚨 出力形式】
@@ -14425,7 +14492,7 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
 \`\`\``;
 
             if (includeText) {
-                prompt += `\n\n【対象テキスト本文】\n${sourceText || "（原本テキストが空です。ここに教科書・参考書のテキストを貼り付けてください）"}`;
+                prompt += `\n\n【対象テキスト本文】\n${targetTextForExtraction || "（原本テキストが空です。ここに教科書・参考書のテキストを貼り付けてください）"}`;
             }
             return prompt;
         }

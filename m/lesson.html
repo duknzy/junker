@@ -4302,17 +4302,23 @@ ${extractedText || "（本文なし）"}
             const selectedPartVal = mSelectByotMemoPart ? mSelectByotMemoPart.value : "all";
 
             let partContext = "";
+            let targetTextForExtraction = src;
+
             if (selectedPartVal === "all") {
                 if (parts.length > 0) {
                     partContext = `【全カリキュラム構成（全${parts.length}回）】\n` +
                         parts.map((p, i) => `・第${i + 1}回：${p.title}（要約・範囲: ${p.summary || "なし"}）`).join("\n") +
-                        `\n\n【パート振り分けの必須指示】\n本文全体から暗記事項を抽出し、各カードに必ずどのパートに属するかを示す "part_number"（1以上の整数）を正確に割り振ってください。`;
+                        `\n\n【パート振り分けの必須指示】\n本文全体から暗記事項を抽出し、各カードに必ずどのパートに属するかを示す "part_number"（1以上の整数）を正確に割り振ってください。各パートから偏りなく均等に網羅してください。`;
                 }
             } else {
                 const pIdx = parseInt(selectedPartVal, 10);
                 const targetPart = parts[pIdx];
                 if (targetPart) {
-                    partContext = `【抽出対象パート（第${pIdx + 1}回 / 全${parts.length}回）】\nパート見出し: ${targetPart.title}\n範囲要約: ${targetPart.summary || "なし"}\n\n上記の【第${pIdx + 1}回：${targetPart.title}】の範囲に集中し、その範囲で覚えるべき事項を1つも漏らさず全て抽出してください（"part_number": ${pIdx + 1}）。`;
+                    partContext = `【抽出対象パート（第${pIdx + 1}回 / 全${parts.length}回）】\nパート見出し: ${targetPart.title}\n範囲要約: ${targetPart.summary || "なし"}\n\n上記の【第${pIdx + 1}回：${targetPart.title}】の範囲に【完全に集中】し、その範囲で覚えるべき事項を1つも漏らさず全て抽出してください（全カードの "part_number": ${pIdx + 1}）。他のパートの内容は含めないでください。`;
+
+                    if (targetPart.content && targetPart.content.trim().length > 50) {
+                        targetTextForExtraction = `【第${pIdx + 1}回 パート講義ノート: ${targetPart.title}】\n${targetPart.content.trim()}`;
+                    }
                 }
             }
 
@@ -4360,7 +4366,7 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
 \`\`\``;
 
             if (includeText) {
-                prompt += `\n\n【対象テキスト本文】\n${src || "（原本テキストが空です。ここに教科書・参考書のテキストを貼り付けてください）"}`;
+                prompt += `\n\n【対象テキスト本文】\n${targetTextForExtraction || "（原本テキストが空です。ここに教科書・参考書のテキストを貼り付けてください）"}`;
             }
             return prompt;
         }
