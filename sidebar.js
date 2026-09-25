@@ -117,6 +117,7 @@
                     { href: 'custom-sprint.html', icon: '⚡', label: 'カスタムスプリント', match: ['custom-sprint.html'] },
                     { href: 'answer-check.html', icon: '✅', label: 'クイック答え合わせ', match: ['answer-check.html'] },
                     { href: 'insights.html', icon: '💡', label: '質問・学びアーカイブ', match: ['insights.html'] },
+                    { href: 'timeline.html?quiz=true', icon: '🎯', label: '共テ年代整序特訓', badge: '重要', match: ['timeline.html?quiz=true'] },
                     { href: 'timeline.html', icon: '🏛️', label: '歴史 統合年表', match: ['timeline.html'] },
                 ]
             },
@@ -128,12 +129,21 @@
             }
         ];
 
+        const isTimelineQuizActive = window.location.pathname.endsWith('timeline.html') && (window.location.search.includes('quiz') || window.location.search.includes('drill'));
+
         let navHtml = '';
         navSections.forEach(section => {
             navHtml += `<div class="sidebar-section">`;
             navHtml += `<div class="sidebar-section-title">${section.title}</div>`;
             section.items.forEach(item => {
-                const isActive = item.match && item.match.includes(currentPath);
+                let isActive = false;
+                if (item.href === 'timeline.html?quiz=true') {
+                    isActive = isTimelineQuizActive;
+                } else if (item.href === 'timeline.html') {
+                    isActive = window.location.pathname.endsWith('timeline.html') && !isTimelineQuizActive;
+                } else {
+                    isActive = item.match && item.match.includes(currentPath);
+                }
                 const onclickAttr = item.onclick ? `onclick="${item.onclick}"` : '';
                 const badgeHtml = item.badge ? `<span class="sidebar-item-badge" style="background: var(--brand-light); color: var(--brand-primary); font-size: 0.65rem; padding: 0.15rem 0.4rem; border-radius: 4px; font-weight: 700; margin-left: auto;">${item.badge}</span>` : '';
                 navHtml += `

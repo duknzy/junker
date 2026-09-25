@@ -745,35 +745,40 @@ export const WORLD_EVENT_DATABASE = [
     }
 ];
 
-// 🎯 特訓出題モード定義
+// 🎯 特訓出題モード定義（不自然な改行を防ぐすっきりしたタイトル・サブタイトル構造）
 export const QUIZ_MODES = [
     {
         id: "era_close",
-        name: "⚔️ 時代近接バトル（因果・前後関係）",
+        name: "⚔️ 時代近接バトル",
+        subTitle: "因果関係・前後判定",
         tag: "共テ最重要",
         desc: "前後100〜120年以内の近接した出来事から出題。共通テストで最も差がつく同時代・因果関係の判定力を鍛えます。"
     },
     {
         id: "era_select",
         name: "🏛️ 時代別集中特訓",
+        subTitle: "古代・中世・近世・近代",
         tag: "時代攻略",
-        desc: "古代・中世・近世・近代など指定した時代から出題。同一時代内の細かな政変や事件の順序を徹底マスター。"
+        desc: "指定した時代に特化して出題。同一時代内の細かな政変や事件の順序を徹底マスター。"
     },
     {
         id: "theme",
-        name: "📜 テーマ別特訓（政治・外交・文化）",
+        name: "📜 テーマ別特訓",
+        subTitle: "外交・政治・文化史",
         tag: "タテの歴史",
         desc: "「外交・対外関係」「政治・政変」「文化・宗教」など時代を縦断したテーマ史の流れを集中的に制覇。"
     },
     {
         id: "mistakes",
-        name: "🔥 苦手克服・誤答ノート特訓",
+        name: "🔥 苦手克服特訓",
+        subTitle: "誤答ノート・落とし穴",
         tag: "弱点撃破",
         desc: "過去に間違えた出来事やトラップ注意の重要事項を優先出題。自分の落とし穴をゼロにします。"
     },
     {
         id: "random",
         name: "🌟 全時代ランダム演習",
+        subTitle: "古代〜現代の総力戦",
         tag: "実力診断",
         desc: "古代から近現代まで全範囲からランダムにピックアップ。総合的な年代感覚と歴史の巨視的視点をテスト。"
     }
@@ -796,7 +801,7 @@ export class TimelineQuizEngine {
         this.customEvents = options.customEvents || []; // 外部（Firebase）から渡されたイベント
         this.onFinish = options.onFinish || null;
 
-        this.currentMode = "era_close";
+        this.currentMode = options.initialMode || "era_close";
         this.currentEraFilter = "ALL";
         this.currentThemeFilter = "ALL";
 
@@ -807,8 +812,8 @@ export class TimelineQuizEngine {
         this.answered = false;
 
         this.timerInterval = null;
-        this.elapsedSeconds = 0;
-        this.questionElapsedSeconds = 0;
+        this.questionStartTime = 0;
+        this._keyHandler = null;
 
         this.historyResults = []; // 各問の履歴
     }
@@ -880,7 +885,10 @@ export class TimelineQuizEngine {
                     ${QUIZ_MODES.map(m => `
                         <div class="tq-mode-card ${this.currentMode === m.id ? 'active' : ''}" data-mode="${m.id}">
                             <div class="tq-mode-card-header">
-                                <span class="tq-mode-name">${m.name}</span>
+                                <div class="tq-mode-title-wrap">
+                                    <span class="tq-mode-name">${m.name}</span>
+                                    ${m.subTitle ? `<span class="tq-mode-sub">${m.subTitle}</span>` : ''}
+                                </div>
                                 <span class="tq-mode-tag">${m.tag}</span>
                             </div>
                             <div class="tq-mode-desc">${m.desc}</div>
@@ -1071,26 +1079,16 @@ export class TimelineQuizEngine {
         this.renderQuestion();
     }
 
-    // 設問画面の描画
+    // 設問画面の描画（各問題の開始時に1回だけ呼び出し）
     renderQuestion() {
         this.answered = false;
-        this.questionElapsedSeconds = 0;
-        clearInterval(this.timerInterval);
+        this.cleanup();
 
+        this.questionStartTime = Date.now();
         const q = this.questions[this.currentIndex];
-        const roman = ["Ⅰ", "Ⅱ", "Ⅲ"];
 
         const body = this.containerModal.querySelector(".quiz-content-area");
         if (!body) return;
-
-        // タイマー開始
-        this.timerInterval = setInterval(() => {
-            this.questionElapsedSeconds++;
-            const timerEl = body.querySelector("#tq-live-timer");
-            if (timerEl) {
-                timerEl.textContent = `${this.questionElapsedSeconds}秒`;
-            }
-        }, 1000);
 
         body.innerHTML = `
             <div class="tq-question-layout">
@@ -1120,35 +1118,16 @@ export class TimelineQuizEngine {
                 <div class="tq-prompt-box">
                     <div class="tq-prompt-badge">問題</div>
                     <div class="tq-prompt-text">
-                        次の <strong>Ⅰ 〜 Ⅲ</strong> の出来事について、<strong>古いものから年代順に正しく配列したもの</strong>を、下の <strong>① 〜 ⑥</strong> のうちから一つ選べ。
+                        次の <strong>Ⅰ 〜 Ⅲ</strong> の出来事について、<strong>古いものから年代順に正しく配列したもの</strong>を、下の <strong>① 〜 ⑥</strong> のうちから一つ選べ。<br>
+                        <span style="font-size:0.75rem; color:var(--text-secondary); margin-top:0.25rem; display:inline-block;">
+                            💡 「▲ ▼」ボタン、ドラッグ移動、または下の「①〜⑥マークシート」をタップして並べ替えます（キーボード数字キー「1〜6」やEnterキーでも操作可能）。
+                        </span>
                     </div>
                 </div>
 
                 <!-- 本文（Ⅰ, Ⅱ, Ⅲ の定義カード） -->
                 <div class="tq-cards-container" id="tq-cards-board">
-                    ${q.userOrder.map((item, idx) => {
-                        const originalRoman = roman[q.presentationItems.indexOf(item)];
-                        return `
-                            <div class="tq-event-card" draggable="true" data-index="${idx}" data-item-id="${item.name}">
-                                <div class="tq-card-handle" title="ドラッグして並べ替え">
-                                    <span class="tq-roman-badge">${originalRoman}</span>
-                                    <span class="tq-drag-grip">⋮⋮</span>
-                                </div>
-                                <div class="tq-card-content">
-                                    <div class="tq-card-title">${item.name}</div>
-                                    <div class="tq-card-meta">
-                                        <span class="tq-tag">📍 ${item.era || '総合'}</span>
-                                        ${item.theme ? `<span class="tq-tag">🏷️ ${item.theme}</span>` : ''}
-                                        ${item.leader ? `<span class="tq-meta-text">👤 ${item.leader}</span>` : ''}
-                                    </div>
-                                </div>
-                                <div class="tq-move-btns">
-                                    <button type="button" class="tq-btn-move" data-move="-1" ${idx === 0 ? 'disabled' : ''} title="上へ移動">▲</button>
-                                    <button type="button" class="tq-btn-move" data-move="1" ${idx === 2 ? 'disabled' : ''} title="下へ移動">▼</button>
-                                </div>
-                            </div>
-                        `;
-                    }).join("")}
+                    <!-- renderBoardCards() で動的描画 -->
                 </div>
 
                 <!-- 共通テスト形式 マーク式 6択パネル -->
@@ -1177,39 +1156,19 @@ export class TimelineQuizEngine {
             </div>
         `;
 
-        this.bindQuestionEvents();
-        this.syncChoiceHighlights();
-    }
+        // 思考時間タイマー（Date.now() 基準で正確に計算。カード移動でリセットされない）
+        const updateTimer = () => {
+            const timerEl = body.querySelector("#tq-live-timer");
+            if (timerEl) {
+                const elapsed = Math.max(0, Math.floor((Date.now() - this.questionStartTime) / 1000));
+                timerEl.textContent = `${elapsed}秒`;
+            }
+        };
+        updateTimer();
+        this.timerInterval = setInterval(updateTimer, 500);
 
-    getModeName() {
-        const found = QUIZ_MODES.find(m => m.id === this.currentMode);
-        return found ? found.name.split("（")[0] : "整序特訓";
-    }
-
-    // ユーザー操作イベントのバインド
-    bindQuestionEvents() {
-        const body = this.containerModal.querySelector(".quiz-content-area");
-        if (!body) return;
-
-        const q = this.questions[this.currentIndex];
-
-        // ▲ ▼ 移動ボタン
-        body.querySelectorAll(".tq-btn-move").forEach((btn, idx) => {
-            btn.onclick = () => {
-                if (this.answered) return;
-                const card = btn.closest(".tq-event-card");
-                const fromIdx = parseInt(card.getAttribute("data-index"), 10);
-                const delta = parseInt(btn.getAttribute("data-move"), 10);
-                const toIdx = fromIdx + delta;
-
-                if (toIdx >= 0 && toIdx < q.userOrder.length) {
-                    const temp = q.userOrder[fromIdx];
-                    q.userOrder[fromIdx] = q.userOrder[toIdx];
-                    q.userOrder[toIdx] = temp;
-                    this.renderQuestion();
-                }
-            };
-        });
+        // カード描画 & イベント
+        this.renderBoardCards();
 
         // 6択マークボタンをクリックした時の双方向連動
         body.querySelectorAll(".tq-choice-btn").forEach(btn => {
@@ -1218,21 +1177,17 @@ export class TimelineQuizEngine {
                 const choiceIdx = parseInt(btn.getAttribute("data-choice-index"), 10);
                 const choice = KYOTSU_CHOICES.find(c => c.index === choiceIdx);
                 if (choice) {
-                    // presentationItems（Ⅰ, Ⅱ, Ⅲ）を選択肢の順序に並び替える
                     q.userOrder = choice.orderIndices.map(i => q.presentationItems[i]);
-                    this.renderQuestion();
+                    this.renderBoardCards();
                 }
             };
         });
-
-        // ドラッグ＆ドロップ
-        this.setupDragAndDrop();
 
         // 中断ボタン
         const btnGiveup = body.querySelector("#tq-btn-giveup");
         if (btnGiveup) {
             btnGiveup.onclick = () => {
-                clearInterval(this.timerInterval);
+                this.cleanup();
                 this.containerModal.style.display = "none";
             };
         }
@@ -1244,6 +1199,103 @@ export class TimelineQuizEngine {
                 this.submitAnswer();
             };
         }
+
+        // キーボード操作（1〜6で選択、Enterで確定）
+        this._keyHandler = (e) => {
+            if (this.answered) return;
+            // 入力フォーム等フォーカス時は無視
+            if (e.target && (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")) return;
+
+            const keyNum = parseInt(e.key, 10);
+            if (keyNum >= 1 && keyNum <= 6) {
+                const choice = KYOTSU_CHOICES.find(c => c.index === keyNum);
+                if (choice) {
+                    q.userOrder = choice.orderIndices.map(i => q.presentationItems[i]);
+                    this.renderBoardCards();
+                }
+            } else if (e.key === "Enter") {
+                this.submitAnswer();
+            }
+        };
+        if (typeof window !== "undefined") {
+            window.addEventListener("keydown", this._keyHandler);
+        }
+    }
+
+    // カード一覧の描画（並べ替え時にのみ再描画。タイマーや全体レイアウトを破壊しない）
+    renderBoardCards() {
+        const body = this.containerModal.querySelector(".quiz-content-area");
+        if (!body) return;
+        const board = body.querySelector("#tq-cards-board");
+        if (!board) return;
+
+        const q = this.questions[this.currentIndex];
+        const roman = ["Ⅰ", "Ⅱ", "Ⅲ"];
+
+        board.innerHTML = q.userOrder.map((item, idx) => {
+            const originalRoman = roman[q.presentationItems.indexOf(item)];
+            return `
+                <div class="tq-event-card" draggable="true" data-index="${idx}" data-item-id="${item.name}">
+                    <div class="tq-card-handle" title="ドラッグして並べ替え">
+                        <span class="tq-roman-badge">${originalRoman}</span>
+                        <span class="tq-drag-grip">⋮⋮</span>
+                    </div>
+                    <div class="tq-card-content">
+                        <div class="tq-card-title">${item.name}</div>
+                        <div class="tq-card-meta">
+                            <!-- 💡 時代・年号表記はネタバレ防止のため解答後の解説画面で開示 -->
+                            <span class="tq-tag-masked" title="解答後に解説で時代と正確な年号が開示されます">🔒 時代・年号非公開</span>
+                            ${item.leader ? `<span class="tq-meta-text">👤 主体: ${item.leader}</span>` : ''}
+                        </div>
+                    </div>
+                    <div class="tq-move-btns">
+                        <button type="button" class="tq-btn-move" data-move="-1" ${idx === 0 ? 'disabled' : ''} title="上へ移動">▲</button>
+                        <button type="button" class="tq-btn-move" data-move="1" ${idx === 2 ? 'disabled' : ''} title="下へ移動">▼</button>
+                    </div>
+                </div>
+            `;
+        }).join("");
+
+        // ▲ ▼ 移動ボタンイベント
+        board.querySelectorAll(".tq-btn-move").forEach(btn => {
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                if (this.answered) return;
+                const card = btn.closest(".tq-event-card");
+                const fromIdx = parseInt(card.getAttribute("data-index"), 10);
+                const delta = parseInt(btn.getAttribute("data-move"), 10);
+                const toIdx = fromIdx + delta;
+
+                if (toIdx >= 0 && toIdx < q.userOrder.length) {
+                    const temp = q.userOrder[fromIdx];
+                    q.userOrder[fromIdx] = q.userOrder[toIdx];
+                    q.userOrder[toIdx] = temp;
+                    this.renderBoardCards();
+                }
+            };
+        });
+
+        // ドラッグ＆ドロップイベント
+        this.setupDragAndDrop();
+
+        // 6択マークシートのハイライト同期
+        this.syncChoiceHighlights();
+    }
+
+    cleanup() {
+        if (this.timerInterval) {
+            clearInterval(this.timerInterval);
+            this.timerInterval = null;
+        }
+        if (this._keyHandler && typeof window !== "undefined") {
+            window.removeEventListener("keydown", this._keyHandler);
+            this._keyHandler = null;
+        }
+    }
+
+    getModeName() {
+        const found = QUIZ_MODES.find(m => m.id === this.currentMode);
+        return found ? found.name : "整序特訓";
     }
 
     // 現在のカード順序に対応するマークシートボタンを光らせる
@@ -1311,7 +1363,7 @@ export class TimelineQuizEngine {
 
                     const moved = q.userOrder.splice(fromIdx, 1)[0];
                     q.userOrder.splice(toIdx, 0, moved);
-                    this.renderQuestion();
+                    this.renderBoardCards();
                 }
             });
         });
@@ -1321,10 +1373,12 @@ export class TimelineQuizEngine {
     submitAnswer() {
         if (this.answered) return;
         this.answered = true;
-        clearInterval(this.timerInterval);
+        this.cleanup();
 
         const q = this.questions[this.currentIndex];
-        q.spentSeconds = this.questionElapsedSeconds;
+        // 正確な実経過秒数を計算（最小1秒）
+        const elapsed = Math.max(1, Math.round((Date.now() - (this.questionStartTime || Date.now())) / 1000));
+        q.spentSeconds = elapsed;
 
         // 正解判定
         const isCorrect = q.userOrder.every((item, i) => item.year_sort === q.correctOrder[i].year_sort);
@@ -1423,6 +1477,7 @@ export class TimelineQuizEngine {
                                 <div class="tq-chrono-card">
                                     <div class="tq-chrono-card-top">
                                         <span class="tq-chrono-roman">${originalRoman}</span>
+                                        <span class="tq-tag">📍 ${ev.era || '通史'}</span>
                                         <span class="tq-chrono-year">${ev.year}</span>
                                     </div>
                                     <div class="tq-chrono-card-name">${ev.name}</div>
@@ -1447,6 +1502,7 @@ export class TimelineQuizEngine {
                                     <div class="tq-step-header">
                                         <span class="tq-step-number">STEP ${idx + 1}</span>
                                         <span class="tq-step-roman">[ ${originalRoman} ]</span>
+                                        <span class="tq-tag" style="margin-left:0.25rem;">📍 ${ev.era || '通史'}</span>
                                         <span class="tq-step-name">${ev.name}</span>
                                         <span class="tq-step-year">${ev.year}</span>
                                     </div>
