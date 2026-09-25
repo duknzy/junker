@@ -1515,6 +1515,7 @@
                         </div>
                         <div style="display:flex; gap:0.35rem; align-items:center; flex-wrap:wrap;">
                             <button type="button" class="m-btn m-btn-secondary" id="m-btn-toggle-add-memorize" style="padding:0.25rem 0.55rem; font-size:0.72rem;">＋項目追加</button>
+                            <button type="button" class="m-btn m-btn-secondary" id="m-btn-byot-memorize" style="padding:0.25rem 0.55rem; font-size:0.72rem; color:#4338CA; border:1px dashed rgba(99,102,241,0.5); background:rgba(99,102,241,0.06); font-weight:750;" title="Web版Geminiで暗記カードを一括取り込み">📋 Web版Gemini抽出</button>
                             <button type="button" class="m-btn m-btn-secondary" id="m-btn-regen-memorize" style="padding:0.25rem 0.55rem; font-size:0.72rem; color:var(--brand-primary); font-weight:700;">🔄 AI再生成</button>
                             <button type="button" class="m-btn m-btn-secondary" id="m-btn-clean-furigana" style="padding:0.25rem 0.55rem; font-size:0.72rem; color:var(--text-secondary);" title="（ふりがな）括弧を消去">🧹 ふりがな消去</button>
                             <button type="button" class="m-btn m-btn-secondary" id="m-btn-clear-memorize" style="padding:0.25rem 0.55rem; font-size:0.72rem; color:var(--error);" title="暗記事項を全消去">🗑️ 全削除</button>
@@ -1932,6 +1933,83 @@
             <div style="display:flex; justify-content:flex-end; gap:0.5rem;">
                 <button type="button" class="m-btn m-btn-secondary" id="m-btn-cancel-recreate" style="padding:0.5rem 0.9rem; font-size:0.78rem;">キャンセル</button>
                 <button type="button" class="m-btn m-btn-primary" id="m-btn-execute-recreate" style="padding:0.5rem 1.1rem; font-size:0.8rem; background:linear-gradient(135deg, #10B981, #059669); border:none; font-weight:800;">🚀 設定を適用して再作成</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🧠 モバイルWeb版Gemini連携：暗記事項一括インポートモーダル（ボトムシート） -->
+    <div class="create-modal-overlay" id="m-byot-memorize-modal" style="display:none; z-index:100065;">
+        <div class="create-modal-sheet" style="max-height:85vh; overflow-y:auto; padding:1.2rem 1.25rem 2rem 1.25rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem;">
+                <div style="display:flex; align-items:center; gap:0.4rem;">
+                    <span style="font-size:1.15rem;">🧠</span>
+                    <h3 style="font-family:var(--font-heading); font-size:1rem; font-weight:800; color:var(--text-primary); margin:0;">Web版Geminiで暗記カード抽出</h3>
+                </div>
+                <button type="button" id="close-m-byot-memo-modal-btn" style="background:none; border:none; font-size:1.25rem; cursor:pointer; color:var(--text-muted); padding:0.2rem;">✕</button>
+            </div>
+            <p style="font-size:0.73rem; color:var(--text-muted); margin-bottom:0.75rem; line-height:1.4;">
+                無料のWeb版Gemini（gemini.google.com）で生成した暗記事項を取り込みます（API消費ゼロ）。
+            </p>
+
+            <!-- ステップ1: プロンプト取得 -->
+            <div style="background:rgba(99, 102, 241, 0.08); border:1px solid rgba(99, 102, 241, 0.25); border-radius:var(--radius-md); padding:0.65rem 0.75rem; margin-bottom:0.75rem;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem;">
+                    <span style="font-size:0.76rem; font-weight:800; color:#4338CA;">Step 1: パート選択 ＆ プロンプトコピー</span>
+                    <a href="https://gemini.google.com/app" target="_blank" rel="noopener noreferrer" style="font-size:0.7rem; color:#4F46E5; font-weight:700; text-decoration:none;">
+                        🌐 Geminiを開く ↗
+                    </a>
+                </div>
+
+                <!-- パート選択 -->
+                <div style="margin-bottom:0.5rem;">
+                    <label for="m-byot-memo-part-select" style="font-size:0.72rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:0.2rem;">
+                        🎯 抽出対象パート:
+                    </label>
+                    <select id="m-byot-memo-part-select" class="m-input" style="font-size:0.76rem; padding:0.35rem 0.5rem;">
+                        <option value="all" selected>🌟 全パート一括（全パート分抽出・各回へ自動振分）</option>
+                    </select>
+                </div>
+
+                <div style="display:flex; gap:0.35rem; flex-wrap:wrap;">
+                    <button type="button" id="m-byot-memo-copy-with-text" class="m-btn m-btn-primary" style="font-size:0.72rem; padding:0.35rem 0.65rem; background:#4338CA; border-color:#4338CA;">
+                        📋 本文＋プロンプト一括コピー
+                    </button>
+                    <button type="button" id="m-byot-memo-copy-text-only" class="m-btn m-btn-secondary" style="font-size:0.72rem; padding:0.35rem 0.6rem;">
+                        📄 原本テキストのみ
+                    </button>
+                    <button type="button" id="m-byot-memo-copy-prompt-only" class="m-btn m-btn-secondary" style="font-size:0.72rem; padding:0.35rem 0.55rem;">
+                        枠のみ
+                    </button>
+                </div>
+            </div>
+
+            <!-- ステップ2: 出力結果貼り付け -->
+            <div style="margin-bottom:0.75rem;">
+                <label style="font-size:0.75rem; font-weight:800; color:var(--text-secondary); display:block; margin-bottom:0.25rem;">
+                    Step 2: 出力JSON（またはテキスト）を貼り付け
+                </label>
+                <textarea id="m-byot-memo-input" class="m-input" rows="5" style="font-size:0.78rem; font-family:monospace; line-height:1.5; resize:vertical;" placeholder='{\n  "memorization_points": [\n    {"question": "...", "answer": "..."}\n  ]\n}'></textarea>
+            </div>
+
+            <!-- 取り込みオプション -->
+            <div style="margin-bottom:0.9rem; background:var(--bg-subtle); padding:0.55rem 0.75rem; border-radius:var(--radius-md); border:1px solid var(--border-color);">
+                <div style="font-size:0.72rem; font-weight:800; color:var(--text-secondary); margin-bottom:0.3rem;">取り込み方法:</div>
+                <div style="display:flex; flex-direction:column; gap:0.35rem;">
+                    <label style="display:flex; align-items:center; gap:0.4rem; font-size:0.75rem; color:var(--text-primary); cursor:pointer;">
+                        <input type="radio" name="m-byot-memo-mode" value="append" checked style="accent-color:var(--brand-primary);">
+                        <span>➕ 既存の暗記カードに追加（マージ）</span>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:0.4rem; font-size:0.75rem; color:var(--text-primary); cursor:pointer;">
+                        <input type="radio" name="m-byot-memo-mode" value="replace" style="accent-color:var(--brand-primary);">
+                        <span>🔄 既存の暗記カードを全置き換え</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- ボタン -->
+            <div style="display:flex; justify-content:flex-end; gap:0.5rem;">
+                <button type="button" class="m-btn m-btn-secondary" id="m-byot-memo-cancel-btn" style="padding:0.45rem 0.85rem; font-size:0.78rem;">キャンセル</button>
+                <button type="button" class="m-btn m-btn-primary" id="m-byot-memo-submit-btn" style="padding:0.45rem 1.1rem; font-size:0.8rem; background:linear-gradient(135deg, #4F46E5, #4338CA); border:none; font-weight:800;">📥 暗記カードを一括登録</button>
             </div>
         </div>
     </div>
@@ -4120,6 +4198,285 @@ ${extractedText || "（本文なし）"}
             document.getElementById("m-btn-clean-furigana")?.addEventListener("click", cleanMobileMemorizeFurigana);
             document.getElementById("m-btn-clear-all-mem")?.addEventListener("click", clearAllMobileMemorizePoints);
         })();
+
+        // ==================== 🧠 モバイル Web版Gemini暗記事項一括インポート ====================
+        const mModalByotMemo = document.getElementById("m-byot-memorize-modal");
+        const mBtnOpenByotMemo = document.getElementById("m-btn-byot-memorize");
+        const mBtnCloseByotMemo = document.getElementById("close-m-byot-memo-modal-btn");
+        const mBtnCancelByotMemo = document.getElementById("m-byot-memo-cancel-btn");
+        const mBtnSubmitByotMemo = document.getElementById("m-byot-memo-submit-btn");
+        const mInputByotMemo = document.getElementById("m-byot-memo-input");
+        const mBtnCopyByotMemoWithText = document.getElementById("m-byot-memo-copy-with-text");
+        const mBtnCopyByotMemoTextOnly = document.getElementById("m-byot-memo-copy-text-only");
+        const mBtnCopyByotMemoOnly = document.getElementById("m-byot-memo-copy-prompt-only");
+        const mSelectByotMemoPart = document.getElementById("m-byot-memo-part-select");
+
+        function populateMobileByotPartSelect() {
+            if (!mSelectByotMemoPart || !activeLessonId) return;
+            const lesson = lessonsCache[activeLessonId] || {};
+            const parts = Array.isArray(lesson.parts) ? lesson.parts : [];
+            mSelectByotMemoPart.innerHTML = "";
+
+            const allOpt = document.createElement("option");
+            allOpt.value = "all";
+            allOpt.textContent = "🌟 全パート一括（全パート分抽出・各回へ自動振分）";
+            mSelectByotMemoPart.appendChild(allOpt);
+
+            parts.forEach((p, idx) => {
+                const opt = document.createElement("option");
+                opt.value = String(idx);
+                opt.textContent = `第${idx + 1}回: ${p.title || `パート${idx + 1}`}`;
+                mSelectByotMemoPart.appendChild(opt);
+            });
+            mSelectByotMemoPart.value = "all";
+        }
+
+        function buildMobileByotMemoPrompt(includeText = false) {
+            if (!activeLessonId) return "";
+            const lesson = lessonsCache[activeLessonId] || {};
+            const subject = lesson.subject || "指定なし";
+            const title = lesson.title || "無題の授業";
+            const src = (lesson.extractedText || lesson.sourceText || lesson.rawText || "").trim();
+            const parts = Array.isArray(lesson.parts) ? lesson.parts : [];
+            const selectedPartVal = mSelectByotMemoPart ? mSelectByotMemoPart.value : "all";
+
+            let partContext = "";
+            if (selectedPartVal === "all") {
+                if (parts.length > 0) {
+                    partContext = `【全カリキュラム構成（全${parts.length}回）】\n` +
+                        parts.map((p, i) => `・第${i + 1}回：${p.title}（要約・範囲: ${p.summary || "なし"}）`).join("\n") +
+                        `\n\n【パート振り分けの必須指示】\n本文全体から暗記事項を抽出し、各カードに必ずどのパートに属するかを示す "part_number"（1以上の整数）を正確に割り振ってください。`;
+                }
+            } else {
+                const pIdx = parseInt(selectedPartVal, 10);
+                const targetPart = parts[pIdx];
+                if (targetPart) {
+                    partContext = `【抽出対象パート（第${pIdx + 1}回 / 全${parts.length}回）】\nパート見出し: ${targetPart.title}\n範囲要約: ${targetPart.summary || "なし"}\n\n上記の【第${pIdx + 1}回：${targetPart.title}】の範囲に集中し、その範囲で覚えるべき事項を1つも漏らさず全て抽出してください（"part_number": ${pIdx + 1}）。`;
+                }
+            }
+
+            let prompt = `あなたは生徒の暗記学習を支援するフラッシュカード・重要用語抽出専門AIです。
+以下の【対象テキスト本文】を徹底的に精読し、試験や入試で満点を取るために絶対に暗記すべき重要事項・専門用語・定義・人名・年代・事件・制度・公式・定理・反応式・解法急所を【1つも漏らさず全て】抽出して、フラッシュカード形式のJSONを出力してください。
+
+【教科】${subject}
+【授業タイトル】${title}
+${partContext}
+
+【🚨 最重要ルール1：表面（question）に答えを書くことは【絶対厳禁】】
+フラッシュカードとして機能させるため、表面（question）の中に答えとなる用語名・人名・年号・結論・数式を絶対に書かないでください！
+× 悪い例: 「墾田永年私財法（743年）とはどのような法令か？」
+○ 良い例: 「743年に発布された、開墾地の永久私有を認めた法令は？」
+× 悪い例: 「事象Aが起こらない確率を余事象といい、P(A)=1-P(A)となるがその定義は？」
+○ 良い例: 「事象 $A$ が起こらない事象（余事象 $\bar{A}$）の確率を求める公式は？」
+
+【🚨 最重要ルール2：読み仮名（ひらがな・ふりがな）の括弧表記は【厳禁】】
+用語の後ろに「（ふりがな）」「（ひらがな）」を付けることは【絶対に禁止】です。正式な漢字表記のみでスッキリ記述してください。
+× 悪い例: 「由井正雪（ゆいしょうせつ）」
+○ 良い例: 「由井正雪」
+
+【🚨 最重要ルール3：個数の手加減・間引きは【完全禁止（徹底網羅）】】
+10個〜15個程度で勝手に間引かず、試験に出る重要語句・人名・条約・法令・公式・因果関係は20個、30個になろうとも【すべて】抽出してください。
+
+【🚨 最重要ルール4：数式表記】
+数式は途中で切らず、必ず完全な LaTeX 数式として $ $ または $$ $$ で記述してください。
+
+【🚨 最重要ルール5：出力形式（純粋なJSONのみ）】
+余計な前置きや挨拶文は一切出力せず、以下のJSONコードブロックのみを出力してください。
+
+\`\`\`json
+{
+  "memorization_points": [
+    {
+      "part_number": 1,
+      "category": "公式・法則 または 反応式・現象 または 用語・定義 または 数値・データ または 解法パターン・急所",
+      "question": "表面の問い（答えとなる用語・数式を含めず、思い出させる問いかけにする）",
+      "answer": "裏面の答え・結論・正確な定義・数式",
+      "note": "補足・入試での注意点（任意）"
+    }
+  ]
+}
+\`\`\``;
+
+            if (includeText) {
+                prompt += `\n\n【対象テキスト本文】\n${src || "（原本テキストが空です。ここに教科書・参考書のテキストを貼り付けてください）"}`;
+            }
+            return prompt;
+        }
+
+        mBtnOpenByotMemo?.addEventListener("click", () => {
+            if (!activeLessonId) {
+                if (window.mToast) mToast("授業データが見つかりません");
+                return;
+            }
+            populateMobileByotPartSelect();
+            if (mInputByotMemo) mInputByotMemo.value = "";
+            if (mModalByotMemo) mModalByotMemo.style.display = "flex";
+        });
+
+        const closeMobileByotMemoModal = () => {
+            if (mModalByotMemo) mModalByotMemo.style.display = "none";
+        };
+        mBtnCloseByotMemo?.addEventListener("click", closeMobileByotMemoModal);
+        mBtnCancelByotMemo?.addEventListener("click", closeMobileByotMemoModal);
+
+        mBtnCopyByotMemoWithText?.addEventListener("click", async () => {
+            const p = buildMobileByotMemoPrompt(true);
+            try {
+                await navigator.clipboard.writeText(p);
+                if (window.mToast) mToast("📋 本文＋プロンプトを一括コピーしました！Web版Geminiに貼り付けてください");
+            } catch(e) {
+                if (window.mToast) mToast("⚠️ コピーに失敗しました");
+            }
+        });
+
+        mBtnCopyByotMemoTextOnly?.addEventListener("click", async () => {
+            const lesson = (activeLessonId && lessonsCache[activeLessonId]) || {};
+            const text = (lesson.extractedText || lesson.sourceText || lesson.rawText || "").trim();
+            if (!text) {
+                if (window.mToast) mToast("原本テキストが登録されていません");
+                return;
+            }
+            try {
+                await navigator.clipboard.writeText(text);
+                if (window.mToast) mToast(`📄 原本テキスト全文（${text.length}文字）をコピーしました！`);
+            } catch(e) {
+                if (window.mToast) mToast("⚠️ コピーに失敗しました");
+            }
+        });
+
+        mBtnCopyByotMemoOnly?.addEventListener("click", async () => {
+            const p = buildMobileByotMemoPrompt(false);
+            try {
+                await navigator.clipboard.writeText(p);
+                if (window.mToast) mToast("📋 プロンプト枠のみコピーしました！");
+            } catch(e) {
+                if (window.mToast) mToast("⚠️ コピーに失敗しました");
+            }
+        });
+
+        mBtnSubmitByotMemo?.addEventListener("click", async () => {
+            if (!activeLessonId || !currentUser) return;
+            const lesson = lessonsCache[activeLessonId];
+            if (!lesson) return;
+
+            const rawText = (mInputByotMemo ? mInputByotMemo.value : "").trim();
+            if (!rawText) {
+                if (window.mToast) mToast("Web版Geminiの出力結果を貼り付けてください");
+                return;
+            }
+
+            let parsed = null;
+            try {
+                let clean = rawText.replace(/```json\s*/gi, "").replace(/```\s*$/g, "").trim();
+                const firstBrace = clean.indexOf("{");
+                const firstBracket = clean.indexOf("[");
+                let startIdx = -1;
+                if (firstBrace !== -1 && firstBracket !== -1) startIdx = Math.min(firstBrace, firstBracket);
+                else if (firstBrace !== -1) startIdx = firstBrace;
+                else if (firstBracket !== -1) startIdx = firstBracket;
+
+                if (startIdx !== -1) {
+                    const lastBrace = clean.lastIndexOf("}");
+                    const lastBracket = clean.lastIndexOf("]");
+                    const endIdx = Math.max(lastBrace, lastBracket);
+                    if (endIdx > startIdx) clean = clean.substring(startIdx, endIdx + 1);
+                }
+                parsed = JSON.parse(clean);
+            } catch(e) {
+                console.warn("Mobile BYOT JSON parse warning:", e);
+            }
+
+            let items = [];
+            if (parsed) {
+                if (Array.isArray(parsed)) items = parsed;
+                else if (Array.isArray(parsed.memorization_points)) items = parsed.memorization_points;
+                else if (Array.isArray(parsed.items)) items = parsed.items;
+                else if (Array.isArray(parsed.points)) items = parsed.points;
+            }
+
+            if (items.length === 0) {
+                // Q: / A: フォールバック
+                const lines = rawText.split("\n");
+                let currentQ = "", currentA = "", currentCat = "重要事項";
+                for (const line of lines) {
+                    const trimmed = line.trim();
+                    if (/^[QAＱＡ][.:：\s]/i.test(trimmed)) {
+                        if (/^[QＱ][.:：\s]/i.test(trimmed)) {
+                            if (currentQ && currentA) {
+                                items.push({ category: currentCat, question: currentQ, answer: currentA });
+                                currentQ = ""; currentA = "";
+                            }
+                            currentQ = trimmed.replace(/^[QＱ][.:：\s]+/i, "");
+                        } else {
+                            currentA = trimmed.replace(/^[AＡ][.:：\s]+/i, "");
+                        }
+                    }
+                }
+                if (currentQ && currentA) {
+                    items.push({ category: currentCat, question: currentQ, answer: currentA });
+                }
+            }
+
+            if (items.length === 0) {
+                if (window.mToast) mToast("⚠️ 暗記データを検出できませんでした。JSONをご確認ください");
+                return;
+            }
+
+            const selectedPartVal = mSelectByotMemoPart ? mSelectByotMemoPart.value : "all";
+            const parts = Array.isArray(lesson.parts) ? lesson.parts : [];
+
+            const cleanedItems = items.map((it, idx) => {
+                let pIdx = null;
+                if (typeof it.part_number === "number" && it.part_number >= 1) {
+                    pIdx = it.part_number - 1;
+                } else if (selectedPartVal !== "all") {
+                    pIdx = parseInt(selectedPartVal, 10);
+                }
+                if (pIdx === null || isNaN(pIdx) || pIdx < 0) {
+                    pIdx = lesson.currentPartIndex || 0;
+                }
+                const pTitle = parts[pIdx] ? parts[pIdx].title : `第${pIdx + 1}回`;
+
+                return {
+                    id: it.id || `mp_byot_${Date.now()}_${idx}`,
+                    category: (it.category || "重要事項").trim(),
+                    question: stripFurigana(it.question || "").trim(),
+                    answer: stripFurigana(it.answer || "").trim(),
+                    note: stripFurigana(it.note || "").trim(),
+                    content: `${stripFurigana(it.question || "")}：${stripFurigana(it.answer || "")}`,
+                    partIndex: pIdx,
+                    partTitle: pTitle,
+                    createdAt: new Date().toISOString()
+                };
+            }).filter(it => it.question && it.answer);
+
+            if (cleanedItems.length === 0) {
+                if (window.mToast) mToast("⚠️ 有効なQ&Aカードが見つかりませんでした");
+                return;
+            }
+
+            const modeEl = document.querySelector('input[name="m-byot-memo-mode"]:checked');
+            const isReplace = modeEl && modeEl.value === "replace";
+
+            if (isReplace) {
+                lesson.memorizationPoints = cleanedItems;
+            } else {
+                const existing = Array.isArray(lesson.memorizationPoints) ? lesson.memorizationPoints : [];
+                const existingKeys = new Set(existing.map(p => (p.question + "||" + p.answer).toLowerCase().replace(/[\s\u3000]+/g, "")));
+                const toAdd = cleanedItems.filter(p => !existingKeys.has((p.question + "||" + p.answer).toLowerCase().replace(/[\s\u3000]+/g, "")));
+                lesson.memorizationPoints = [...existing, ...toAdd];
+            }
+
+            lesson.updatedAt = new Date().toISOString();
+            await update(ref(database, `users/${currentUser.uid}/lessons/${activeLessonId}`), {
+                memorizationPoints: lesson.memorizationPoints,
+                updatedAt: lesson.updatedAt
+            });
+
+            closeMobileByotMemoModal();
+            renderMobileMemorizationPoints();
+            if (window.mToast) mToast(`🎉 暗記カード ${cleanedItems.length}件 を各パートに分類して一括取り込みました！（API消費: 0）`);
+        });
 
         // ==================== 📝 授業ノート（メモ）機能 ====================
         function renderMobileLessonMemos() {
