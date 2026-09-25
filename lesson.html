@@ -4468,6 +4468,7 @@
                                                 <select id="memorize-thinking-select" class="flora-select memorize-ai-select" title="思考レベル"></select>
                                             </div>
                                             <button type="button" class="flora-btn flora-btn-secondary btn-sm" onclick="toggleAddMemorizePointForm(true)" style="padding: 0.2rem 0.5rem; font-size: 0.72rem;">＋項目追加</button>
+                                            <button type="button" id="btn-open-byot-memorize-modal" class="flora-btn flora-btn-secondary btn-sm" style="padding: 0.2rem 0.55rem; font-size: 0.72rem; color: #4338CA; border: 1px dashed rgba(99,102,241,0.5); background: rgba(99,102,241,0.06); font-weight: 750;" title="Web版Gemini（無料）にプロンプトを投げて暗記カードを一括取り込み（API消費ゼロ）">📋 Web版Geminiで抽出</button>
                                             <button type="button" id="btn-regen-memorize-points" class="flora-btn flora-btn-secondary btn-sm" onclick="regenerateLessonMemorizationPoints()" style="padding: 0.2rem 0.5rem; font-size: 0.72rem; color: var(--brand-primary); font-weight: 700;" title="この授業の暗記事項をAIで各パートごとに分割して漏れなく再生成します（ふりがななし・網羅）">🔄 AI再生成</button>
                                             <button type="button" id="btn-clean-furigana-points" class="flora-btn flora-btn-secondary btn-sm" onclick="cleanCurrentLessonFurigana()" style="padding: 0.2rem 0.5rem; font-size: 0.72rem; color: var(--text-secondary);" title="この授業の暗記事項から（ひらがな・ふりがな）の括弧表記を一括消去します">🧹 ふりがな消去</button>
                                             <button type="button" id="btn-clear-memorize-points" class="flora-btn flora-btn-secondary btn-sm" onclick="clearLessonMemorizationPoints()" style="padding: 0.2rem 0.5rem; font-size: 0.72rem; color: var(--error);" title="この授業の暗記事項をすべて削除します（暗記完了時のクリア用）">🗑️ 全削除</button>
@@ -4518,6 +4519,7 @@
                                             🎯 共通テスト形式 実戦選択演習
                                         </div>
                                         <div style="display: flex; gap: 0.35rem; align-items: center; flex-wrap: wrap;">
+                                            <button type="button" id="btn-open-byot-drills-modal" class="flora-btn flora-btn-secondary btn-sm" style="padding: 0.2rem 0.55rem; font-size: 0.72rem; color: #4338CA; border: 1px dashed rgba(99,102,241,0.5); background: rgba(99,102,241,0.06); font-weight: 750;" title="Web版Gemini（無料）で作成した共通テスト問題を一括取り込み（API消費ゼロ）">📋 Web版Geminiで作成</button>
                                             <button type="button" id="btn-add-more-choice-drills" class="flora-btn flora-btn-secondary btn-sm" onclick="addMoreChoiceDrills()" style="padding: 0.2rem 0.55rem; font-size: 0.72rem; color: var(--brand-primary); font-weight: 700;" title="さらに新しい視点の選択問題を5問追加します">＋ 5問追加生成</button>
                                             <button type="button" id="btn-regen-choice-drills" class="flora-btn flora-btn-secondary btn-sm" onclick="regenerateLessonChoiceDrills()" style="padding: 0.2rem 0.55rem; font-size: 0.72rem; color: var(--text-secondary);" title="全パートから選択問題を再生成します">🔄 再生成</button>
                                             <button type="button" id="btn-reset-choice-drills-answers" class="flora-btn flora-btn-secondary btn-sm" onclick="resetAllChoiceDrillAnswers()" style="padding: 0.2rem 0.55rem; font-size: 0.72rem; color: var(--text-muted);" title="解答結果をリセットして最初から解き直します">🧹 解答リセット</button>
@@ -5416,6 +5418,202 @@
                 </button>
                 <button type="button" class="flora-btn flora-btn-primary btn-sm" id="btn-done-recent-lessons-modal">
                     閉じる
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🧠 Web版Gemini連携：暗記事項一括インポートモーダル -->
+    <div id="lesson-byot-memorize-modal" class="modal-overlay" style="display:none; z-index:100065;">
+        <div class="modal-content" style="max-width: 680px; width: 94vw; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; padding: 0; border-radius: var(--radius-xl);">
+            <!-- ヘッダー -->
+            <div style="padding: 1.1rem 1.4rem; background: var(--bg-subtle); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 0.6rem;">
+                    <span style="font-size: 1.3rem;">🧠</span>
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <h3 style="margin: 0; font-size: 1.05rem; font-weight: 800; color: var(--text-primary);">Web版Geminiで暗記事項を一括抽出・登録</h3>
+                            <span style="font-size: 0.68rem; background: rgba(99, 102, 241, 0.15); color: #4338CA; padding: 0.15rem 0.5rem; border-radius: var(--radius-full); font-weight: 800;">API消費ゼロ</span>
+                        </div>
+                        <div style="font-size: 0.74rem; color: var(--text-secondary); margin-top: 0.15rem;">無料のWeb版Gemini（gemini.google.com）を活用して、暗記カードを無制限に生成・登録できます</div>
+                    </div>
+                </div>
+                <button type="button" class="star-btn" id="byot-memo-modal-close" style="font-size: 1.5rem; line-height: 1; color: var(--text-muted); cursor: pointer; padding: 0 0.3rem;">×</button>
+            </div>
+
+            <!-- ボディ -->
+            <div style="padding: 1.2rem 1.4rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1.1rem;">
+                <!-- ステップ1: プロンプトの取得 -->
+                <div style="background: rgba(99, 102, 241, 0.05); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: var(--radius-md); padding: 0.85rem 1rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.4rem;">
+                        <span style="font-size: 0.82rem; font-weight: 800; color: #4338CA;">Step 1: 対象パートを選択 ＆ プロンプトをコピー</span>
+                        <a href="https://gemini.google.com/app" target="_blank" rel="noopener noreferrer" style="font-size: 0.73rem; color: #4F46E5; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 0.2rem;">
+                            🌐 Web版Geminiを開く ↗
+                        </a>
+                    </div>
+
+                    <!-- パート選択 -->
+                    <div style="margin-bottom: 0.55rem;">
+                        <label for="byot-memo-part-select" style="font-size: 0.74rem; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 0.2rem;">
+                            🎯 抽出対象のパート範囲:
+                        </label>
+                        <select id="byot-memo-part-select" class="flora-select" style="font-size: 0.78rem; width: 100%; padding: 0.35rem 0.6rem;">
+                            <option value="all" selected>🌟 全パート一括（全パート分を抽出・各回へ自動振り分け）</option>
+                        </select>
+                    </div>
+
+                    <div style="font-size: 0.74rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 0.6rem;">
+                        💡 <b>本文＋プロンプトを一括コピー</b>を押せば、対象パート情報と原本テキスト全文が一体化されたプロンプトがコピーされます。Web版GeminiにそのままペーストするだけでOKです！
+                    </div>
+
+                    <div style="display: flex; gap: 0.45rem; flex-wrap: wrap;">
+                        <button type="button" id="byot-memo-copy-with-text-btn" class="flora-btn flora-btn-primary btn-sm" style="font-size: 0.76rem; font-weight: 800; background: #4338CA; border-color: #4338CA;">
+                            📋 本文＋プロンプトを一括コピー（推奨）
+                        </button>
+                        <button type="button" id="byot-memo-copy-text-only-btn" class="flora-btn flora-btn-secondary btn-sm" style="font-size: 0.73rem;">
+                            📄 原本テキストのみコピー
+                        </button>
+                        <button type="button" id="byot-memo-copy-instruction-only-btn" class="flora-btn flora-btn-secondary btn-sm" style="font-size: 0.73rem;">
+                            📋 指示枠のみコピー
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ステップ2: Web版Geminiの出力を貼り付け -->
+                <div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                        <label for="byot-memo-json-input" style="font-size: 0.82rem; font-weight: 800; color: var(--text-primary);">
+                            Step 2: Web版Geminiの出力結果を貼り付け
+                        </label>
+                        <span id="byot-memo-char-count" style="font-size: 0.72rem; color: var(--text-muted);">0文字</span>
+                    </div>
+                    <div style="font-size: 0.73rem; color: var(--text-secondary); margin-bottom: 0.45rem;">
+                        Web版Geminiが出力したJSONコードブロック（```json ... ```）またはテキストをそのまま貼り付けてください。自動で綺麗に解析します。
+                    </div>
+                    <textarea id="byot-memo-json-input" class="flora-input" rows="7" style="width: 100%; font-size: 0.8rem; font-family: monospace; line-height: 1.5; resize: vertical; padding: 0.6rem 0.8rem;" placeholder='{\n  "memorization_points": [\n    {\n      "category": "公式・法則",\n      "question": "〜の公式は？",\n      "answer": "〜",\n      "note": "補足"\n    }\n  ]\n}'></textarea>
+                </div>
+
+                <!-- 登録オプション（追加 or 置き換え） -->
+                <div style="background: var(--bg-subtle); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.7rem 0.9rem; display: flex; flex-direction: column; gap: 0.4rem;">
+                    <div style="font-size: 0.76rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.15rem;">取り込み方法:</div>
+                    <div style="display: flex; gap: 1.2rem; flex-wrap: wrap;">
+                        <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; cursor: pointer; color: var(--text-primary);">
+                            <input type="radio" name="byot-memo-mode" value="append" checked style="accent-color: var(--brand-primary);">
+                            <span>➕ 既存の暗記カードに追加（重複は自動排除）</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; cursor: pointer; color: var(--text-primary);">
+                            <input type="radio" name="byot-memo-mode" value="replace" style="accent-color: var(--brand-primary);">
+                            <span>🔄 既存の暗記カードをすべて置き換える</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- フッター -->
+            <div style="padding: 0.9rem 1.4rem; background: var(--bg-subtle); border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 0.6rem; align-items: center;">
+                <button type="button" class="flora-btn flora-btn-secondary" id="byot-memo-modal-cancel">
+                    キャンセル
+                </button>
+                <button type="button" class="flora-btn flora-btn-primary" id="byot-memo-modal-submit" style="background: linear-gradient(135deg, #4F46E5, #4338CA); color: #fff; border: none; font-weight: 800; padding: 0.55rem 1.3rem;">
+                    📥 暗記カードを一括インポート
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🎯 Web版Gemini連携：共通テスト形式問題一括インポートモーダル -->
+    <div id="lesson-byot-drills-modal" class="modal-overlay" style="display:none; z-index:100065;">
+        <div class="modal-content" style="max-width: 680px; width: 94vw; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; padding: 0; border-radius: var(--radius-xl);">
+            <!-- ヘッダー -->
+            <div style="padding: 1.1rem 1.4rem; background: var(--bg-subtle); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 0.6rem;">
+                    <span style="font-size: 1.3rem;">🎯</span>
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <h3 style="margin: 0; font-size: 1.05rem; font-weight: 800; color: var(--text-primary);">Web版Geminiで共通テスト形式問題を作成・登録</h3>
+                            <span style="font-size: 0.68rem; background: rgba(99, 102, 241, 0.15); color: #4338CA; padding: 0.15rem 0.5rem; border-radius: var(--radius-full); font-weight: 800;">API消費ゼロ</span>
+                        </div>
+                        <div style="font-size: 0.74rem; color: var(--text-secondary); margin-top: 0.15rem;">Web版Geminiに作成させた選択問題・罠解説を取り込み、API消費ゼロで演習できます</div>
+                    </div>
+                </div>
+                <button type="button" class="star-btn" id="byot-drills-modal-close" style="font-size: 1.5rem; line-height: 1; color: var(--text-muted); cursor: pointer; padding: 0 0.3rem;">×</button>
+            </div>
+
+            <!-- ボディ -->
+            <div style="padding: 1.2rem 1.4rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1.1rem;">
+                <!-- ステップ1: プロンプトの取得 -->
+                <div style="background: rgba(99, 102, 241, 0.05); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: var(--radius-md); padding: 0.85rem 1rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.4rem;">
+                        <span style="font-size: 0.82rem; font-weight: 800; color: #4338CA;">Step 1: 出題対象パートを選択 ＆ プロンプトをコピー</span>
+                        <a href="https://gemini.google.com/app" target="_blank" rel="noopener noreferrer" style="font-size: 0.73rem; color: #4F46E5; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 0.2rem;">
+                            🌐 Web版Geminiを開く ↗
+                        </a>
+                    </div>
+
+                    <!-- パート選択 -->
+                    <div style="margin-bottom: 0.55rem;">
+                        <label for="byot-drills-part-select" style="font-size: 0.74rem; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 0.2rem;">
+                            🎯 出題対象のパート範囲:
+                        </label>
+                        <select id="byot-drills-part-select" class="flora-select" style="font-size: 0.78rem; width: 100%; padding: 0.35rem 0.6rem;">
+                            <option value="all" selected>🌟 全パート一括（全パートから満遍なく良問を作成）</option>
+                        </select>
+                    </div>
+
+                    <div style="font-size: 0.74rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 0.6rem;">
+                        共通テスト形式の良問（2文正誤組み合わせ判定、年代整序、4択正誤判定、引っかけ罠解説付き）を5問作成させるプロンプトです。
+                    </div>
+
+                    <div style="display: flex; gap: 0.45rem; flex-wrap: wrap;">
+                        <button type="button" id="byot-drills-copy-with-text-btn" class="flora-btn flora-btn-primary btn-sm" style="font-size: 0.76rem; font-weight: 800; background: #4338CA; border-color: #4338CA;">
+                            📋 本文＋問題作成プロンプトを一括コピー（推奨）
+                        </button>
+                        <button type="button" id="byot-drills-copy-text-only-btn" class="flora-btn flora-btn-secondary btn-sm" style="font-size: 0.73rem;">
+                            📄 原本テキストのみコピー
+                        </button>
+                        <button type="button" id="byot-drills-copy-instruction-only-btn" class="flora-btn flora-btn-secondary btn-sm" style="font-size: 0.73rem;">
+                            📋 指示枠のみコピー
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ステップ2: Web版Geminiの出力を貼り付け -->
+                <div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                        <label for="byot-drills-json-input" style="font-size: 0.82rem; font-weight: 800; color: var(--text-primary);">
+                            Step 2: Web版Geminiの出力結果を貼り付け
+                        </label>
+                        <span id="byot-drills-char-count" style="font-size: 0.72rem; color: var(--text-muted);">0文字</span>
+                    </div>
+                    <div style="font-size: 0.73rem; color: var(--text-secondary); margin-bottom: 0.45rem;">
+                        Web版Geminiが出力したJSONコードブロック（```json ... ```）をそのまま貼り付けてください。
+                    </div>
+                    <textarea id="byot-drills-json-input" class="flora-input" rows="7" style="width: 100%; font-size: 0.8rem; font-family: monospace; line-height: 1.5; resize: vertical; padding: 0.6rem 0.8rem;" placeholder='{\n  "choice_drills": [\n    {\n      "type": "combination",\n      "lead_text": "問題文...",\n      "statements": ["文X: ...", "文Y: ..."],\n      "options": [\n        {"number": 1, "text": "① X-正 / Y-正"}\n      ],\n      "correct_number": 1,\n      "explanation": "解説...",\n      "trap_reason": "落とし穴の解説..."\n    }\n  ]\n}'></textarea>
+                </div>
+
+                <!-- 登録オプション（追加 or 置き換え） -->
+                <div style="background: var(--bg-subtle); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.7rem 0.9rem; display: flex; flex-direction: column; gap: 0.4rem;">
+                    <div style="font-size: 0.76rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.15rem;">取り込み方法:</div>
+                    <div style="display: flex; gap: 1.2rem; flex-wrap: wrap;">
+                        <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; cursor: pointer; color: var(--text-primary);">
+                            <input type="radio" name="byot-drills-mode" value="append" checked style="accent-color: var(--brand-primary);">
+                            <span>➕ 既存の選択問題に追加する</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; cursor: pointer; color: var(--text-primary);">
+                            <input type="radio" name="byot-drills-mode" value="replace" style="accent-color: var(--brand-primary);">
+                            <span>🔄 既存の選択問題をすべて置き換える</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- フッター -->
+            <div style="padding: 0.9rem 1.4rem; background: var(--bg-subtle); border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 0.6rem; align-items: center;">
+                <button type="button" class="flora-btn flora-btn-secondary" id="byot-drills-modal-cancel">
+                    キャンセル
+                </button>
+                <button type="button" class="flora-btn flora-btn-primary" id="byot-drills-modal-submit" style="background: linear-gradient(135deg, #4F46E5, #4338CA); color: #fff; border: none; font-weight: 800; padding: 0.55rem 1.3rem;">
+                    📥 選択問題を一括インポート
                 </button>
             </div>
         </div>
@@ -13608,6 +13806,545 @@ ${updatedSourceText}`;
         }
         if (el("lesson-header-recreate-btn")) {
             el("lesson-header-recreate-btn").addEventListener("click", openRecreateLessonModal);
+        }
+
+        // ==========================================================
+        // 🧠 Web版Gemini連携（暗記事項一括インポート）ロジック
+        // ==========================================================
+        const modalByotMemo = el("lesson-byot-memorize-modal");
+        const btnOpenByotMemo = el("btn-open-byot-memorize-modal");
+        const btnCloseByotMemo = el("byot-memo-modal-close");
+        const btnCancelByotMemo = el("byot-memo-modal-cancel");
+        const btnSubmitByotMemo = el("byot-memo-modal-submit");
+        const inputByotMemoJson = el("byot-memo-json-input");
+        const countByotMemoChar = el("byot-memo-char-count");
+        const btnCopyByotMemoWithText = el("byot-memo-copy-with-text-btn");
+        const btnCopyByotMemoTextOnly = el("byot-memo-copy-text-only-btn");
+        const btnCopyByotMemoOnly = el("byot-memo-copy-instruction-only-btn");
+        const selectByotMemoPart = el("byot-memo-part-select");
+
+        function populateByotPartSelect(selectEl, defaultVal = "all") {
+            if (!selectEl) return;
+            selectEl.innerHTML = "";
+            const allOpt = document.createElement("option");
+            allOpt.value = "all";
+            allOpt.textContent = "🌟 全パート一括（全パート分を抽出・各回へ自動振り分け）";
+            selectEl.appendChild(allOpt);
+
+            const parts = currentLesson && Array.isArray(currentLesson.parts) ? currentLesson.parts : [];
+            parts.forEach((p, idx) => {
+                const opt = document.createElement("option");
+                opt.value = String(idx);
+                opt.textContent = `第${idx + 1}回: ${p.title || `パート${idx + 1}`}`;
+                selectEl.appendChild(opt);
+            });
+            selectEl.value = defaultVal;
+        }
+
+        function buildByotMemorizePrompt(includeText = false) {
+            const subject = (currentLesson && (currentLesson.subject || detectLessonSubject(currentLesson))) || "指定なし";
+            const title = (currentLesson && currentLesson.title) || "無題の授業";
+            const sourceText = (currentLesson && currentLesson.extractedText ? currentLesson.extractedText : "").trim();
+            const parts = currentLesson && Array.isArray(currentLesson.parts) ? currentLesson.parts : [];
+            const selectedPartVal = selectByotMemoPart ? selectByotMemoPart.value : "all";
+
+            let partContextSection = "";
+            if (selectedPartVal === "all") {
+                if (parts.length > 0) {
+                    partContextSection = `【授業全体のカリキュラム構成（全${parts.length}回）】\n` +
+                        parts.map((p, i) => `・第${i + 1}回：${p.title}（学習要約・範囲: ${p.summary || "なし"}）`).join("\n") +
+                        `\n\n【全パート自動振り分け指示】\n本文全体から重要事項を網羅的に抽出し、各暗記カードには必ずそれがどのパート（回）に属するかを示す "part_number"（1以上の整数。第1回なら 1、第2回なら 2）を正確に割り振ってください。`;
+                }
+            } else {
+                const pIdx = parseInt(selectedPartVal, 10);
+                const targetPart = parts[pIdx];
+                if (targetPart) {
+                    partContextSection = `【今回抽出を担当するパート（第${pIdx + 1}回 / 全${parts.length}回）】\nパート見出し: ${targetPart.title}\n学習要約・範囲: ${targetPart.summary || "なし"}\n\n【パート集中抽出の指示】\n本文の中から、上記の【第${pIdx + 1}回：${targetPart.title}】の範囲に属する重要事項に集中し、漏れなく全て抽出してください（"part_number": ${pIdx + 1} としてください）。他のパートの内容は含めないでください。`;
+                }
+            }
+
+            let prompt = `あなたは生徒の暗記学習を支援するフラッシュカード・重要用語抽出専門AIです。
+以下の【対象テキスト本文】を徹底的に精読し、試験や入試で満点を取るために絶対に暗記すべき重要事項・専門用語・定義・人名・年代・事件・制度・公式・定理・反応式・解法急所を【1つも漏らさず全て】抽出して、フラッシュカード形式のJSONを出力してください。
+
+【教科】${subject}
+【授業タイトル】${title}
+${partContextSection}
+
+【🚨 最重要ルール1：表面（question）に答えを書くことは【絶対厳禁】】
+フラッシュカードとして機能させるため、表面（question）の中に答えとなる用語名・人名・年号・結論・数式を絶対に書かないでください！
+× 悪い例: 「墾田永年私財法（743年）とはどのような法令か？」
+○ 良い例: 「743年に発布された、開墾地の永久私有を認めた法令は？」
+× 悪い例: 「事象Aが起こらない確率を余事象といい、P(A)=1-P(A)となるがその定義は？」
+○ 良い例: 「事象 $A$ が起こらない事象（余事象 $\bar{A}$）の確率を求める公式は？」
+× 悪い例: 「水酸化ナトリウムの電離式：NaOH → Na+ + OH-」
+○ 良い例: 「水酸化ナトリウムの電離式とその水溶液の液性は？」
+
+【🚨 最重要ルール2：読み仮名（ひらがな・ふりがな）の括弧表記は【厳禁】】
+用語の後ろに「（ふりがな）」「（ひらがな）」を付けることは【絶対に禁止】です。正式な漢字表記のみでスッキリ記述してください。
+× 悪い例: 「由井正雪（ゆいしょうせつ）」「墾田永年私財法（こんでんえいねんしざいほう）」
+○ 良い例: 「由井正雪」「墾田永年私財法」
+
+【🚨 最重要ルール3：個数の手加減・間引きは【完全禁止（徹底網羅）】】
+「10個〜15個程度にまとめる」「代表例だけに絞る」ことは固く禁止します。教科書や本文に登場する覚えるべき専門用語、人名、事件名、制度名、法令名、条約、地名、文化財、年号、因果関係、公式、定理、反応式、解法急所は、20個、30個、40個になろうとも【すべて】抽出してください。
+
+【🚨 最重要ルール4：数式表記】
+数式は途中で切らず、必ず完全な LaTeX 数式として $ $ または $$ $$ で記述してください。
+
+【🚨 最重要ルール5：出力形式（純粋なJSONのみ）】
+余計な前置き、挨拶、まとめなどの自然言語は一切出力せず、以下のJSONコードブロックのみを出力してください。
+
+\`\`\`json
+{
+  "memorization_points": [
+    {
+      "part_number": 1,
+      "category": "公式・法則 または 反応式・現象 または 用語・定義 または 数値・データ または 解法パターン・急所",
+      "question": "表面の問い（答えとなる用語・数式を含めず、思い出させる問いかけにする）",
+      "answer": "裏面の答え・結論・正確な定義・数式",
+      "note": "補足・入試での注意点・盲点（任意）"
+    }
+  ]
+}
+\`\`\``;
+
+            if (includeText) {
+                prompt += `\n\n【対象テキスト本文】\n${sourceText || "（原本テキストが空です。ここに教科書・参考書のテキストを貼り付けてください）"}`;
+            }
+            return prompt;
+        }
+
+        function openByotMemorizeModal() {
+            if (!currentLesson) {
+                showToast("授業データが見つかりません。", "error");
+                return;
+            }
+            if (!modalByotMemo) return;
+            populateByotPartSelect(selectByotMemoPart, "all");
+            if (inputByotMemoJson) inputByotMemoJson.value = "";
+            if (countByotMemoChar) countByotMemoChar.textContent = "0文字";
+            modalByotMemo.style.display = "flex";
+        }
+
+        if (btnOpenByotMemo) btnOpenByotMemo.addEventListener("click", openByotMemorizeModal);
+        if (btnCloseByotMemo) btnCloseByotMemo.addEventListener("click", () => { modalByotMemo.style.display = "none"; });
+        if (btnCancelByotMemo) btnCancelByotMemo.addEventListener("click", () => { modalByotMemo.style.display = "none"; });
+
+        if (inputByotMemoJson && countByotMemoChar) {
+            inputByotMemoJson.addEventListener("input", (e) => {
+                countByotMemoChar.textContent = `${e.target.value.length}文字`;
+            });
+        }
+
+        if (btnCopyByotMemoWithText) {
+            btnCopyByotMemoWithText.addEventListener("click", async () => {
+                const prompt = buildByotMemorizePrompt(true);
+                try {
+                    await navigator.clipboard.writeText(prompt);
+                    showToast("📋 本文＋プロンプトを一括コピーしました！Web版Geminiに貼り付けてください", "success", 4000);
+                } catch(e) {
+                    showToast("コピーに失敗しました。手動でコピーしてください。", "error");
+                }
+            });
+        }
+
+        if (btnCopyByotMemoTextOnly) {
+            btnCopyByotMemoTextOnly.addEventListener("click", async () => {
+                const text = (currentLesson && currentLesson.extractedText ? currentLesson.extractedText : "").trim();
+                if (!text) {
+                    showToast("原本テキストが登録されていません。", "warning");
+                    return;
+                }
+                try {
+                    await navigator.clipboard.writeText(text);
+                    showToast(`📄 原本テキスト全文（${text.length}文字）をコピーしました！`, "success", 3000);
+                } catch(e) {
+                    showToast("コピーに失敗しました。", "error");
+                }
+            });
+        }
+
+        if (btnCopyByotMemoOnly) {
+            btnCopyByotMemoOnly.addEventListener("click", async () => {
+                const prompt = buildByotMemorizePrompt(false);
+                try {
+                    await navigator.clipboard.writeText(prompt);
+                    showToast("📋 プロンプト枠のみコピーしました！", "info", 3000);
+                } catch(e) {
+                    showToast("コピーに失敗しました。", "error");
+                }
+            });
+        }
+
+        if (btnSubmitByotMemo) {
+            btnSubmitByotMemo.addEventListener("click", async () => {
+                if (!currentLesson || !currentLessonId) return;
+                const rawText = (inputByotMemoJson ? inputByotMemoJson.value : "").trim();
+                if (!rawText) {
+                    showToast("Web版Geminiの出力結果を貼り付けてください。", "error");
+                    return;
+                }
+
+                let parsed = null;
+                try {
+                    let clean = rawText.replace(/```json\s*/gi, "").replace(/```\s*$/g, "").trim();
+                    const firstBrace = clean.indexOf("{");
+                    const firstBracket = clean.indexOf("[");
+                    let startIdx = -1;
+                    if (firstBrace !== -1 && firstBracket !== -1) startIdx = Math.min(firstBrace, firstBracket);
+                    else if (firstBrace !== -1) startIdx = firstBrace;
+                    else if (firstBracket !== -1) startIdx = firstBracket;
+
+                    if (startIdx !== -1) {
+                        const lastBrace = clean.lastIndexOf("}");
+                        const lastBracket = clean.lastIndexOf("]");
+                        const endIdx = Math.max(lastBrace, lastBracket);
+                        if (endIdx > startIdx) clean = clean.substring(startIdx, endIdx + 1);
+                    }
+
+                    parsed = JSON.parse(clean);
+                } catch(parseErr) {
+                    console.warn("JSON直接パース失敗、テキスト行フォールバックを試行:", parseErr);
+                }
+
+                let items = [];
+                if (parsed) {
+                    if (Array.isArray(parsed)) items = parsed;
+                    else if (Array.isArray(parsed.memorization_points)) items = parsed.memorization_points;
+                    else if (Array.isArray(parsed.items)) items = parsed.items;
+                    else if (Array.isArray(parsed.points)) items = parsed.points;
+                }
+
+                // テキスト行フォールバック（Q: / A: 形式）
+                if (items.length === 0) {
+                    const lines = rawText.split("\n");
+                    let currentQ = "", currentA = "", currentCat = "重要事項";
+                    for (const line of lines) {
+                        const trimmed = line.trim();
+                        if (/^[QAＱＡ][.:：\s]/i.test(trimmed)) {
+                            if (/^[QＱ][.:：\s]/i.test(trimmed)) {
+                                if (currentQ && currentA) {
+                                    items.push({ category: currentCat, question: currentQ, answer: currentA });
+                                    currentQ = ""; currentA = "";
+                                }
+                                currentQ = trimmed.replace(/^[QＱ][.:：\s]+/i, "");
+                            } else {
+                                currentA = trimmed.replace(/^[AＡ][.:：\s]+/i, "");
+                            }
+                        }
+                    }
+                    if (currentQ && currentA) {
+                        items.push({ category: currentCat, question: currentQ, answer: currentA });
+                    }
+                }
+
+                if (items.length === 0) {
+                    showToast("暗記事項データが検出できませんでした。JSONフォーマットをご確認ください。", "error", 5000);
+                    return;
+                }
+
+                const selectedPartVal = selectByotMemoPart ? selectByotMemoPart.value : "all";
+                const parts = currentLesson && Array.isArray(currentLesson.parts) ? currentLesson.parts : [];
+
+                const cleanedItems = items.map((it, idx) => {
+                    let pIdx = null;
+                    if (typeof it.part_number === "number" && it.part_number >= 1) {
+                        pIdx = it.part_number - 1;
+                    } else if (selectedPartVal !== "all") {
+                        pIdx = parseInt(selectedPartVal, 10);
+                    }
+                    if (pIdx === null || isNaN(pIdx) || pIdx < 0) {
+                        pIdx = currentLesson.currentPartIndex || 0;
+                    }
+                    const pTitle = parts[pIdx] ? parts[pIdx].title : `第${pIdx + 1}回`;
+
+                    return {
+                        id: it.id || `memo_byot_${Date.now()}_${idx}`,
+                        category: (it.category || "重要事項").trim(),
+                        question: stripFurigana(it.question || "").trim(),
+                        answer: stripFurigana(it.answer || "").trim(),
+                        note: stripFurigana(it.note || "").trim(),
+                        partIndex: pIdx,
+                        partTitle: pTitle
+                    };
+                }).filter(it => it.question && it.answer);
+
+                if (cleanedItems.length === 0) {
+                    showToast("有効な暗記カード（問題と解答）が見つかりませんでした。", "error");
+                    return;
+                }
+
+                const modeEl = document.querySelector('input[name="byot-memo-mode"]:checked');
+                const isReplace = modeEl && modeEl.value === "replace";
+
+                if (isReplace) {
+                    currentLesson.memorizationPoints = cleanedItems;
+                } else {
+                    const existing = Array.isArray(currentLesson.memorizationPoints) ? currentLesson.memorizationPoints : [];
+                    const existingKeys = new Set(existing.map(p => (p.question + "||" + p.answer).toLowerCase().replace(/[\s\u3000]+/g, "")));
+                    const toAdd = cleanedItems.filter(p => !existingKeys.has((p.question + "||" + p.answer).toLowerCase().replace(/[\s\u3000]+/g, "")));
+                    currentLesson.memorizationPoints = [...existing, ...toAdd];
+                }
+
+                currentLesson.updatedAt = new Date().toISOString();
+                await saveLesson();
+                renderMemorizationPoints();
+                modalByotMemo.style.display = "none";
+                showToast(`🎉 暗記カード ${cleanedItems.length}件 を各パートに分類して一括取り込みました！（API消費: 0）`, "success", 4500);
+            });
+        }
+
+        // ==========================================================
+        // 🎯 Web版Gemini連携（共通テスト形式問題一括インポート）ロジック
+        // ==========================================================
+        const modalByotDrills = el("lesson-byot-drills-modal");
+        const btnOpenByotDrills = el("btn-open-byot-drills-modal");
+        const btnCloseByotDrills = el("byot-drills-modal-close");
+        const btnCancelByotDrills = el("byot-drills-modal-cancel");
+        const btnSubmitByotDrills = el("byot-drills-modal-submit");
+        const inputByotDrillsJson = el("byot-drills-json-input");
+        const countByotDrillsChar = el("byot-drills-char-count");
+        const btnCopyByotDrillsWithText = el("byot-drills-copy-with-text-btn");
+        const btnCopyByotDrillsTextOnly = el("byot-drills-copy-text-only-btn");
+        const btnCopyByotDrillsOnly = el("byot-drills-copy-instruction-only-btn");
+        const selectByotDrillsPart = el("byot-drills-part-select");
+
+        function buildByotDrillsPrompt(includeText = false) {
+            const subject = (currentLesson && (currentLesson.subject || detectLessonSubject(currentLesson))) || "指定なし";
+            const title = (currentLesson && currentLesson.title) || "無題の授業";
+            const sourceText = (currentLesson && currentLesson.extractedText ? currentLesson.extractedText : "").trim();
+            const parts = currentLesson && Array.isArray(currentLesson.parts) ? currentLesson.parts : [];
+            const selectedPartVal = selectByotDrillsPart ? selectByotDrillsPart.value : "all";
+
+            let partContextSection = "";
+            if (selectedPartVal === "all") {
+                if (parts.length > 0) {
+                    partContextSection = `【授業のパート構成（全${parts.length}回）】\n` +
+                        parts.map((p, i) => `・第${i + 1}回：${p.title}（要約: ${p.summary || "なし"}）`).join("\n") +
+                        `\n\n【パート出題指示】全パートから満遍なく良問を作成し、各問題にどのパートに属するかを示す "part_number"（1以上の整数）を割り振ってください。`;
+                }
+            } else {
+                const pIdx = parseInt(selectedPartVal, 10);
+                const targetPart = parts[pIdx];
+                if (targetPart) {
+                    partContextSection = `【出題対象パート（第${pIdx + 1}回）】\nパート名: ${targetPart.title}\n学習要約: ${targetPart.summary || "なし"}\n\n上記の【第${pIdx + 1}回：${targetPart.title}】の範囲から良問を作成してください（"part_number": ${pIdx + 1}）。`;
+                }
+            }
+
+            let prompt = `あなたは大学入学共通テストの作問委員・予備校の特任講師AIです。
+以下の【対象テキスト本文】を深く読み解き、共通テスト形式の実戦的な多肢選択問題を【5問】作成して、指定のJSON形式で出力してください。
+
+【教科】${subject}
+【授業タイトル】${title}
+${partContextSection}
+
+【🚨 共通テスト形式の作問ルール】
+1. 形式の配分：
+   - 2文正誤の組み合わせ判定（combination）：文Xと文Yを提示し、それぞれの正誤（①正-正、②正-誤、③誤-正、④誤-誤）を選ばせる良問。
+   - 年代整序・因果関係順序（chronological）：3〜4個の出来事の正しい前後関係を選ばせる良問。
+   - 4択正誤判定（single_choice または true_false）：正しい文・誤っている文を1つ選ばせる良問。
+2. 引っかけ罠（trap_reason）の徹底：
+   - 単なる知識の暗記テストではなく、受験生が陥りやすい「主語と目的語のすり替え」「似た概念・法令・公式の混同」「因果関係の逆転」「年代の前後トラップ」を巧妙に配置すること。
+   - trap_reason には、「受験生がなぜその誤答を選んでしまうのか、どのような心理的・知識的落とし穴があるか」を明快に解説すること。
+3. 詳細な解説（explanation）：
+   - 正解の根拠だけでなく、不正解の選択肢のどこがどう間違っているかを論理的に解説すること。
+4. 数式表記：
+   - 数式は必ず $ $ または $$ $$ で記述すること。
+5. 正解番号：
+   - "correct_number" は必ず 1, 2, 3, 4 のいずれかの半角整数（options 配列の number と一致）にすること。
+
+【🚨 出力形式（純粋なJSONのみ）】
+余計な前置きや挨拶文は一切出力せず、以下のJSONコードブロックのみを出力してください。
+
+\`\`\`json
+{
+  "choice_drills": [
+    {
+      "part_number": 1,
+      "type": "combination",
+      "lead_text": "問題文のリード文...",
+      "statements": [
+        "文X: 内容...",
+        "文Y: 内容..."
+      ],
+      "options": [
+        { "number": 1, "text": "① X-正 / Y-正" },
+        { "number": 2, "text": "② X-正 / Y-誤" },
+        { "number": 3, "text": "③ X-誤 / Y-正" },
+        { "number": 4, "text": "④ X-誤 / Y-誤" }
+      ],
+      "correct_number": 1,
+      "explanation": "正解の論理的根拠と各選択肢の解説...",
+      "trap_reason": "受験生が最も引っかかりやすい落とし穴の分析..."
+    }
+  ]
+}
+\`\`\``;
+
+            if (includeText) {
+                prompt += `\n\n【対象テキスト本文】\n${sourceText || "（原本テキストが空です。ここに教科書・参考書のテキストを貼り付けてください）"}`;
+            }
+            return prompt;
+        }
+
+        function openByotDrillsModal() {
+            if (!currentLesson) {
+                showToast("授業データが見つかりません。", "error");
+                return;
+            }
+            if (!modalByotDrills) return;
+            populateByotPartSelect(selectByotDrillsPart, "all");
+            if (inputByotDrillsJson) inputByotDrillsJson.value = "";
+            if (countByotDrillsChar) countByotDrillsChar.textContent = "0文字";
+            modalByotDrills.style.display = "flex";
+        }
+
+        if (btnOpenByotDrills) btnOpenByotDrills.addEventListener("click", openByotDrillsModal);
+        if (btnCloseByotDrills) btnCloseByotDrills.addEventListener("click", () => { modalByotDrills.style.display = "none"; });
+        if (btnCancelByotDrills) btnCancelByotDrills.addEventListener("click", () => { modalByotDrills.style.display = "none"; });
+
+        if (inputByotDrillsJson && countByotDrillsChar) {
+            inputByotDrillsJson.addEventListener("input", (e) => {
+                countByotDrillsChar.textContent = `${e.target.value.length}文字`;
+            });
+        }
+
+        if (btnCopyByotDrillsWithText) {
+            btnCopyByotDrillsWithText.addEventListener("click", async () => {
+                const prompt = buildByotDrillsPrompt(true);
+                try {
+                    await navigator.clipboard.writeText(prompt);
+                    showToast("📋 本文＋問題作成プロンプトを一括コピーしました！Web版Geminiに貼り付けてください", "success", 4000);
+                } catch(e) {
+                    showToast("コピーに失敗しました。", "error");
+                }
+            });
+        }
+
+        if (btnCopyByotDrillsTextOnly) {
+            btnCopyByotDrillsTextOnly.addEventListener("click", async () => {
+                const text = (currentLesson && currentLesson.extractedText ? currentLesson.extractedText : "").trim();
+                if (!text) {
+                    showToast("原本テキストが登録されていません。", "warning");
+                    return;
+                }
+                try {
+                    await navigator.clipboard.writeText(text);
+                    showToast(`📄 原本テキスト全文（${text.length}文字）をコピーしました！`, "success", 3000);
+                } catch(e) {
+                    showToast("コピーに失敗しました。", "error");
+                }
+            });
+        }
+
+        if (btnCopyByotDrillsOnly) {
+            btnCopyByotDrillsOnly.addEventListener("click", async () => {
+                const prompt = buildByotDrillsPrompt(false);
+                try {
+                    await navigator.clipboard.writeText(prompt);
+                    showToast("📋 プロンプト枠のみコピーしました！", "info", 3000);
+                } catch(e) {
+                    showToast("コピーに失敗しました。", "error");
+                }
+            });
+        }
+
+        if (btnSubmitByotDrills) {
+            btnSubmitByotDrills.addEventListener("click", async () => {
+                if (!currentLesson || !currentLessonId) return;
+                const rawText = (inputByotDrillsJson ? inputByotDrillsJson.value : "").trim();
+                if (!rawText) {
+                    showToast("Web版Geminiの出力結果を貼り付けてください。", "error");
+                    return;
+                }
+
+                let parsed = null;
+                try {
+                    let clean = rawText.replace(/```json\s*/gi, "").replace(/```\s*$/g, "").trim();
+                    const firstBrace = clean.indexOf("{");
+                    const firstBracket = clean.indexOf("[");
+                    let startIdx = -1;
+                    if (firstBrace !== -1 && firstBracket !== -1) startIdx = Math.min(firstBrace, firstBracket);
+                    else if (firstBrace !== -1) startIdx = firstBrace;
+                    else if (firstBracket !== -1) startIdx = firstBracket;
+
+                    if (startIdx !== -1) {
+                        const lastBrace = clean.lastIndexOf("}");
+                        const lastBracket = clean.lastIndexOf("]");
+                        const endIdx = Math.max(lastBrace, lastBracket);
+                        if (endIdx > startIdx) clean = clean.substring(startIdx, endIdx + 1);
+                    }
+                    parsed = JSON.parse(clean);
+                } catch(parseErr) {
+                    console.error("問題JSONパースエラー:", parseErr);
+                }
+
+                let drills = [];
+                if (parsed) {
+                    if (Array.isArray(parsed)) drills = parsed;
+                    else if (Array.isArray(parsed.choice_drills)) drills = parsed.choice_drills;
+                    else if (Array.isArray(parsed.drills)) drills = parsed.drills;
+                    else if (Array.isArray(parsed.questions)) drills = parsed.questions;
+                }
+
+                if (drills.length === 0) {
+                    showToast("選択問題データが検出できませんでした。JSONフォーマットをご確認ください。", "error", 5000);
+                    return;
+                }
+
+                const selectedPartVal = selectByotDrillsPart ? selectByotDrillsPart.value : "all";
+                const parts = currentLesson && Array.isArray(currentLesson.parts) ? currentLesson.parts : [];
+
+                const cleanedDrills = drills.map((d, idx) => {
+                    let opts = Array.isArray(d.options) ? d.options : [];
+                    opts = opts.map((opt, oIdx) => {
+                        if (typeof opt === "string") return { number: oIdx + 1, text: opt };
+                        return { number: opt.number || (oIdx + 1), text: opt.text || "" };
+                    });
+
+                    let pIdx = null;
+                    if (typeof d.part_number === "number" && d.part_number >= 1) {
+                        pIdx = d.part_number - 1;
+                    } else if (selectedPartVal !== "all") {
+                        pIdx = parseInt(selectedPartVal, 10);
+                    }
+                    if (pIdx === null || isNaN(pIdx) || pIdx < 0) {
+                        pIdx = currentLesson.currentPartIndex || 0;
+                    }
+
+                    return {
+                        id: d.id || `drill_byot_${Date.now()}_${idx}`,
+                        type: d.type || "single_choice",
+                        lead_text: d.lead_text || d.question || d.problem || "",
+                        statements: Array.isArray(d.statements) ? d.statements : [],
+                        options: opts,
+                        correct_number: Number(d.correct_number || d.correct_answer || 1),
+                        explanation: d.explanation || "",
+                        trap_reason: d.trap_reason || d.trap || "",
+                        partIndex: pIdx
+                    };
+                }).filter(d => d.lead_text && d.options.length >= 2);
+
+                if (cleanedDrills.length === 0) {
+                    showToast("有効な選択問題（問題文と2つ以上の選択肢）が見つかりませんでした。", "error");
+                    return;
+                }
+
+                const modeEl = document.querySelector('input[name="byot-drills-mode"]:checked');
+                const isReplace = modeEl && modeEl.value === "replace";
+
+                if (isReplace) {
+                    currentLesson.choiceDrills = cleanedDrills;
+                } else {
+                    const existing = Array.isArray(currentLesson.choiceDrills) ? currentLesson.choiceDrills : [];
+                    currentLesson.choiceDrills = [...existing, ...cleanedDrills];
+                }
+
+                currentLesson.updatedAt = new Date().toISOString();
+                await saveLesson();
+                renderChoiceDrills();
+                modalByotDrills.style.display = "none";
+                showToast(`🎉 共通テスト形式問題 ${cleanedDrills.length}問 を一括取り込みました！（API消費: 0）`, "success", 4000);
+            });
         }
 
         document.querySelectorAll(".sidebar-tab-btn").forEach(btn => {
