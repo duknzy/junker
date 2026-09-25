@@ -140,8 +140,19 @@
             background: var(--brand-light);
             border-left: 3px solid var(--brand-primary);
             border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
             align-self: flex-start;
+        }
+        .century-heat-badge {
+            background: #FEE2E2;
+            color: #DC2626;
+            border: 1px solid #FCA5A5;
+            padding: 0.15rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.72rem;
+            font-weight: 800;
         }
 
         /* 出来事カード */
@@ -155,11 +166,32 @@
             gap: 0.5rem;
             box-shadow: var(--shadow-xs);
             transition: all 0.2s ease;
+            position: relative;
         }
         .event-card:hover {
             border-color: var(--brand-primary);
             box-shadow: var(--shadow-sm);
             transform: translateX(4px);
+        }
+
+        /* 🔥 誤答ヒートマップ用ハイライトカード */
+        .event-card.is-mistake {
+            border-color: #F87171;
+            border-left: 5px solid #EF4444;
+            background: linear-gradient(135deg, rgba(254, 242, 242, 0.6) 0%, var(--bg-surface) 100%);
+            box-shadow: 0 2px 10px rgba(239, 68, 68, 0.08);
+        }
+        .heat-alert-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            background: #FEF2F2;
+            color: #DC2626;
+            border: 1px solid #FECACA;
+            border-radius: var(--radius-md);
+            padding: 0.25rem 0.6rem;
+            font-size: 0.74rem;
+            font-weight: 800;
         }
 
         .event-top {
@@ -173,12 +205,70 @@
             font-weight: 800;
             color: var(--brand-primary);
             letter-spacing: -0.5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
         }
         .event-name {
             font-size: 1rem;
             font-weight: 700;
             color: var(--text-primary);
             line-height: 1.4;
+        }
+
+        /* 🔴 赤シート・🔵 青シート ブラインドマスキングシステム */
+        .blind-masked {
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            display: inline-block;
+            transition: all 0.2s ease;
+        }
+        .blind-masked.mask-red:not(.revealed) {
+            background: linear-gradient(135deg, #EF4444, #DC2626) !important;
+            color: transparent !important;
+            border-radius: var(--radius-sm);
+            padding: 0.15rem 0.6rem;
+            box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3);
+        }
+        .blind-masked.mask-red:not(.revealed)::after {
+            content: "🔴 ??? 年 [タップで表示]";
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            color: #fff;
+            font-size: 0.72rem;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+        .blind-masked.mask-blue:not(.revealed) {
+            background: linear-gradient(135deg, #3B82F6, #2563EB) !important;
+            color: transparent !important;
+            border-radius: var(--radius-sm);
+            padding: 0.2rem 0.8rem;
+            box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+        }
+        .blind-masked.mask-blue:not(.revealed)::after {
+            content: "🔵 出来事名 [タップで表示]";
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            color: #fff;
+            font-size: 0.76rem;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+        .blind-masked.revealed {
+            animation: blindPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            background: rgba(16, 185, 129, 0.1) !important;
+            border-radius: var(--radius-sm);
+            outline: 1.5px dashed #10B981;
+        }
+        @keyframes blindPop {
+            0% { transform: scale(0.95); opacity: 0.6; }
+            100% { transform: scale(1); opacity: 1; }
         }
 
         .event-links {
@@ -205,6 +295,13 @@
             border-color: #C7D2FE;
         }
         .link-problem:hover { background: #E0E7FF; }
+        .link-problem.is-mistake-link {
+            background: #FEF2F2;
+            color: #DC2626;
+            border-color: #FCA5A5;
+            font-weight: 700;
+        }
+        .link-problem.is-mistake-link:hover { background: #FEE2E2; }
         .link-lesson {
             background: #ECFDF5;
             color: #059669;
@@ -225,6 +322,122 @@
             margin-top: 0.2rem;
             font-weight: 600;
         }
+
+        /* 🎯 共通テスト整序特訓モーダル */
+        .reorder-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 100060;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1.2rem;
+            animation: fadeIn 0.2s ease;
+        }
+        .reorder-modal-dialog {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-xl);
+            width: 100%;
+            max-width: 760px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 20px 40px -8px rgba(0, 0, 0, 0.35);
+        }
+        .reorder-modal-header {
+            padding: 1rem 1.4rem;
+            background: var(--bg-subtle);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .reorder-modal-body {
+            padding: 1.4rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1.1rem;
+        }
+        .reorder-card {
+            background: var(--bg-surface);
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 0.95rem 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.9rem;
+            box-shadow: var(--shadow-xs);
+            cursor: grab;
+            transition: all 0.15s ease;
+            user-select: none;
+        }
+        .reorder-card:active { cursor: grabbing; }
+        .reorder-card.dragging {
+            opacity: 0.4;
+            border-color: #6366F1;
+            background: rgba(99, 102, 241, 0.05);
+        }
+        .reorder-card.drag-over {
+            border-color: #6366F1;
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3);
+            transform: translateY(-2px);
+        }
+        .reorder-index-badge {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.95rem;
+            flex-shrink: 0;
+        }
+        .reorder-btn-move {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            border-radius: 6px;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.15s ease;
+        }
+        .reorder-btn-move:hover:not(:disabled) {
+            background: var(--brand-primary);
+            color: #fff;
+            border-color: var(--brand-primary);
+        }
+        .reorder-btn-move:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+        .reorder-result-card {
+            background: var(--bg-subtle);
+            border: 1.5px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 0.85rem 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+        .reorder-result-card.is-correct-row {
+            border-color: #10B981;
+            background: rgba(16, 185, 129, 0.05);
+        }
     </style>
 </head>
 <body>
@@ -238,13 +451,18 @@
             <div class="workspace-content-wrap">
 
                 <!-- ページヘッダー -->
-                <div class="page-header">
+                <div class="page-header" style="flex-wrap:wrap; gap:0.8rem; align-items:center; justify-content:space-between;">
                     <div class="page-title-group">
                         <h1 class="page-title" id="page-main-title">🏛️ 歴史 統合年表</h1>
                         <p class="page-subtitle">誤答問題や参考書授業から抽出された出来事が、自動で年代順に整理されるビジュアル年表</p>
                     </div>
-                    <div class="page-actions" style="font-size: var(--fs-xs); color: var(--text-secondary);" id="event-total-count">
-                        読み込み中...
+                    <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;">
+                        <button type="button" id="btn-start-reorder-quiz" style="background:linear-gradient(135deg, #4F46E5, #7C3AED); color:#fff; border:none; padding:0.55rem 1.15rem; border-radius:var(--radius-lg); font-size:0.88rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:0.45rem; box-shadow:0 3px 10px rgba(99, 102, 241, 0.3); transition:all 0.15s ease;" title="共通テスト頻出の年代並べ替え問題を生成して解きます">
+                            🎯 共通テスト整序特訓（並べ替え）
+                        </button>
+                        <div class="page-actions" style="font-size: var(--fs-xs); color: var(--text-secondary);" id="event-total-count">
+                            読み込み中...
+                        </div>
                     </div>
                 </div>
 
@@ -258,16 +476,47 @@
                     </button>
                 </div>
 
-                <!-- フィルターバー -->
+                <!-- フィルターバー & 暗記シートコントロール -->
                 <div class="filter-card">
-                    <div class="filter-row">
-                        <span class="filter-label">🔎 検索：</span>
-                        <input type="text" class="search-input" id="search-input" placeholder="出来事名・年号・キーワードで検索...">
+                    <div class="filter-row" style="justify-content:space-between; flex-wrap:wrap; gap:0.8rem;">
+                        <div style="display:flex; align-items:center; gap:0.6rem; flex:1; min-width:240px;">
+                            <span class="filter-label">🔎 検索：</span>
+                            <input type="text" class="search-input" id="search-input" placeholder="出来事名・年号・キーワードで検索...">
+                        </div>
+                        <!-- 🔴 赤シート・暗記モード切替コントロール -->
+                        <div style="display:flex; align-items:center; gap:0.35rem; flex-wrap:wrap;">
+                            <span class="filter-label">🎴 暗記シート：</span>
+                            <div style="display:inline-flex; background:var(--bg-subtle); padding:0.18rem; border-radius:var(--radius-md); border:1px solid var(--border-color);">
+                                <button type="button" class="region-tab-btn active" id="btn-mask-none" style="padding:0.25rem 0.6rem; font-size:0.75rem;">通常</button>
+                                <button type="button" class="region-tab-btn" id="btn-mask-year" style="padding:0.25rem 0.6rem; font-size:0.75rem; color:#DC2626;" title="年号を隠してタップでめくる暗記トレーニング">🔴 年号赤シート</button>
+                                <button type="button" class="region-tab-btn" id="btn-mask-name" style="padding:0.25rem 0.6rem; font-size:0.75rem; color:#2563EB;" title="出来事名を隠して年号から想起するトレーニング">🔵 出来事青シート</button>
+                            </div>
+                            <button type="button" id="btn-toggle-all-masks" class="region-tab-btn" style="padding:0.25rem 0.65rem; font-size:0.75rem;" title="シートで隠されたカードを一括でめくったり戻したりします">
+                                👀 全てめくる
+                            </button>
+                        </div>
                     </div>
+
                     <div class="filter-row" id="filter-category-row">
                         <span class="filter-label" id="filter-category-label">🌍 地域：</span>
                         <div id="region-filter-container" style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
                             <!-- JSで動的生成 -->
+                        </div>
+                    </div>
+
+                    <!-- 🔥 誤答ヒートマップ＆特殊フィルター -->
+                    <div class="filter-row" style="border-top:1px dashed var(--border-color); padding-top:0.65rem; justify-content:space-between; align-items:center;">
+                        <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+                            <span class="filter-label">🔥 弱点あぶり出し：</span>
+                            <button type="button" class="region-tab-btn" id="filter-mistakes-only" style="color:#DC2626; border-color:#FECACA; background:#FEF2F2;" title="誤答ノートに登録されている問題の出来事だけを抽出">
+                                🔥 誤答・要復習のみ (<span id="count-mistake-events">0</span>)
+                            </button>
+                            <button type="button" class="region-tab-btn" id="filter-mnemonics-only" style="color:#92400E; border-color:#FDE68A; background:#FEF3C7;" title="語呂合わせが登録されている出来事のみを抽出">
+                                💡 語呂合わせあり (<span id="count-mnemonic-events">0</span>)
+                            </button>
+                        </div>
+                        <div id="mistake-heatmap-summary" style="font-size:0.76rem; font-weight:700; color:var(--text-secondary);">
+                            <!-- JSで最多誤答時代を要約表示 -->
                         </div>
                     </div>
                 </div>
@@ -284,6 +533,31 @@
 
             </div>
         </main>
+    </div>
+
+    <!-- 🎯 共通テスト整序特訓（年代順並べ替え）モーダル -->
+    <div id="reorder-quiz-modal" class="reorder-modal-overlay">
+        <div class="reorder-modal-dialog">
+            <div class="reorder-modal-header">
+                <div style="display:flex; align-items:center; gap:0.6rem;">
+                    <span style="font-size:1.2rem;">🎯</span>
+                    <div>
+                        <div style="font-weight:800; font-size:1.02rem; color:var(--text-primary);" id="quiz-modal-title">共通テスト整序特訓（年代順並べ替え）</div>
+                        <div style="font-size:0.74rem; color:var(--text-secondary);" id="quiz-modal-subtitle">第 1 / 5 問 ｜ 古い順（過去 ➔ 未来）に並べ替えてください</div>
+                    </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:0.8rem;">
+                    <div style="font-size:0.85rem; font-weight:800; color:#4F46E5; background:#EEF2FF; padding:0.25rem 0.65rem; border-radius:var(--radius-sm);" id="quiz-score-badge">
+                        スコア: 0 pt
+                    </div>
+                    <button type="button" id="btn-close-reorder-quiz" style="background:none; border:none; font-size:1.4rem; color:var(--text-secondary); cursor:pointer; line-height:1;">✕</button>
+                </div>
+            </div>
+
+            <div class="reorder-modal-body" id="quiz-modal-body">
+                <!-- クイズ画面または結果画面を動的生成 -->
+            </div>
+        </div>
     </div>
 
     <script src="sidebar.js"></script>
@@ -330,9 +604,58 @@
             "現代（昭和〜令和）"
         ];
 
+        // 🏛️ 共通テスト・高校歴史 頻出重要出来事プリセット（データが少ない時でも即座に並べ替えや赤シートが使える）
+        const PRESET_WORLD_EVENTS = [
+            { name: "前漢の武帝が即位・塩鉄専売制", year: "前141年", year_sort: -141, category: "東アジア", mnemonics: ["前141年: い(14)よ(1)いよ武帝即位"], note: "シルクロードの開拓、儒教の官学化" },
+            { name: "アクティウムの海戦（プトレマイオス朝滅亡）", year: "前31年", year_sort: -31, category: "ヨーロッパ", mnemonics: ["前31年: オクタヴィアヌス勝利、ローマ内乱終結"], note: "地中海世界がオクタヴィアヌスにより統一される" },
+            { name: "ミラノ勅令（キリスト教公認）", year: "313年", year_sort: 313, category: "ヨーロッパ", mnemonics: ["313年: さい(31)さん(3)迫害されたキリスト教公認"], note: "コンスタンティヌス帝が発布" },
+            { name: "ニケーア公会議（アタナシウス派を正統認定）", year: "325年", year_sort: 325, category: "ヨーロッパ", mnemonics: ["325年: 三ツ子(325)が争う三位一体説"], note: "アリウス派は異端とされた" },
+            { name: "ヒジュラ（イスラーム暦元年・聖遷）", year: "622年", year_sort: 622, category: "西アジア・中央アジア", mnemonics: ["622年: む(6)に(2)むに(2)移動メッカからメディナへ"], note: "ムハンマドがメディナへ逃れた年" },
+            { name: "タラス河畔の戦い（製紙法の西伝）", year: "751年", year_sort: 751, category: "西アジア・中央アジア", mnemonics: ["751年: な(7)ご(5)い(1)紙の製法西へ伝わる"], note: "アッバース朝が高仙芝率いる唐軍を破る" },
+            { name: "カノッサの屈辱（叙任権闘争）", year: "1077年", year_sort: 1077, category: "ヨーロッパ", mnemonics: ["1077年: 人を(10)なな(77)める教皇グレゴリウス7世"], note: "皇帝ハインリヒ4世が教皇に謝罪" },
+            { name: "第1回十字軍の遠征開始", year: "1096年", year_sort: 1096, category: "ヨーロッパ", mnemonics: ["1096年: と(10)く(9)ろう(6)する十字軍"], note: "ウルバヌス2世のクレルモン公会議の呼びかけ" },
+            { name: "マグナ・カルタ（大憲章）承認", year: "1215年", year_sort: 1215, category: "ヨーロッパ", mnemonics: ["1215年: 人に(12)い(1)こ(5)う大憲章"], note: "イギリスのジョン王が貴族に屈服" },
+            { name: "ルターが95か条の論題を発表（宗教改革）", year: "1517年", year_sort: 1517, category: "ヨーロッパ", mnemonics: ["1517年: 以後(15)人(1)な(7)み宗教改革"], note: "免罪符（贖宥状）批判から始まる" },
+            { name: "マゼラン艦隊の世界周航達成", year: "1522年", year_sort: 1522, category: "地域をまたぐ／世界全体", mnemonics: ["1522年: 以後(15)つ(2)つ(2)がなく世界一周"], note: "地球球体説が実証される" },
+            { name: "アルマダ海戦（無敵艦隊の敗北）", year: "1588年", year_sort: 1588, category: "ヨーロッパ", mnemonics: ["1588年: い(1)ご(5)は(8)は(8)無敵艦隊敗北"], note: "イギリス海軍がスペイン無敵艦隊を破る" },
+            { name: "ウェストファリア条約締結（主権国家体制の確立）", year: "1648年", year_sort: 1648, category: "ヨーロッパ", mnemonics: ["1648年: 人類(16)し(4)あ(8)わせ三十年戦争終結"], note: "国際法・近代主権国家体制の基礎となる" },
+            { name: "名誉革命と権利の章典", year: "1689年", year_sort: 1689, category: "ヨーロッパ", mnemonics: ["1689年: い(1)ろ(6)は(8)き(9)まった権利の章典"], note: "立憲君主制・議会政治の確立" },
+            { name: "アメリカ独立宣言", year: "1776年", year_sort: 1776, category: "アメリカ大陸", mnemonics: ["1776年: い(1)な(7)な(7)ろ(6)う自由のアメリカ独立"], note: "ジェファソンらが起草" },
+            { name: "フランス革命勃発（バスティーユ牢獄襲撃）", year: "1789年", year_sort: 1789, category: "ヨーロッパ", mnemonics: ["1789年: 火(1789)の粉散るフランス革命"], note: "自由・平等・友愛と人権宣言" },
+            { name: "アヘン戦争勃発", year: "1840年", year_sort: 1840, category: "東アジア", mnemonics: ["1840年: いや(18)よ(4)お(0)アヘン戦争"], note: "南京条約で香港割譲・開港へ" },
+            { name: "サラエボ事件（第一次世界大戦勃発）", year: "1914年", year_sort: 1914, category: "ヨーロッパ", mnemonics: ["1914年: 行く(19)い(1)よ(4)第一次世界大戦"], note: "オーストリア皇太子夫妻が暗殺される" },
+            { name: "世界恐慌（ニューヨーク株価大暴落）", year: "1929年", year_sort: 1929, category: "アメリカ大陸", mnemonics: ["1929年: ひ(1)ど(9)く(2)苦(9)しい世界恐慌"], note: "ブロック経済化から第二次大戦へ" }
+        ];
+
+        const PRESET_JAPAN_EVENTS = [
+            { name: "漢委奴国王の金印授与（後漢書東夷伝）", year: "57年", year_sort: 57, category: "古代（旧石器〜平安）", mnemonics: ["57年: こんな(57)金印ありがたい"], note: "光武帝から奴国王へ" },
+            { name: "大化の改新（改新の詔）", year: "645年", year_sort: 645, category: "古代（旧石器〜平安）", mnemonics: ["645年: 虫(64)ご(5)ろし蘇我入鹿暗殺"], note: "中大兄皇子と中臣鎌足" },
+            { name: "大宝律令の完成", year: "701年", year_sort: 701, category: "古代（旧石器〜平安）", mnemonics: ["701年: な(7)お(0)い(1)い律令政治始まる"], note: "二官八省と国郡里制" },
+            { name: "平城京遷都（奈良時代開始）", year: "710年", year_sort: 710, category: "古代（旧石器〜平安）", mnemonics: ["710年: なん(71)と(0)綺麗な平城京"], note: "元明天皇の代" },
+            { name: "平安京遷都（平安時代開始）", year: "794年", year_sort: 794, category: "古代（旧石器〜平安）", mnemonics: ["794年: 鳴く(79)よ(4)ウグイス平安京"], note: "桓武天皇の代" },
+            { name: "白紙に戻す遣唐使廃止（菅原道真の建議）", year: "894年", year_sort: 894, category: "古代（旧石器〜平安）", mnemonics: ["894年: 白紙(894)に戻そう遣唐使"], note: "国風文化の開花へ" },
+            { name: "源頼朝が征夷大将軍に任官（鎌倉幕府の成立期）", year: "1192年", year_sort: 1192, category: "中世（鎌倉・室町）", mnemonics: ["1192年: いい(11)国(92)作ろう鎌倉幕府"], note: "御家人と御恩と奉公の主従関係" },
+            { name: "御成敗式目（貞永式目）の制定", year: "1232年", year_sort: 1232, category: "中世（鎌倉・室町）", mnemonics: ["1232年: 人に(12)み(3)に(2)くい裁判なし"], note: "北条泰時が制定した武家法" },
+            { name: "建武の新政（後醍醐天皇）", year: "1334年", year_sort: 1334, category: "中世（鎌倉・室町）", mnemonics: ["1334年: いざ(13)見(3)よ(4)建武の新政"], note: "武士の反発を招き足利尊氏と対立" },
+            { name: "応仁の乱勃発（戦国時代の幕開け）", year: "1467年", year_sort: 1467, category: "中世（鎌倉・室町）", mnemonics: ["1467年: 人の(14)む(6)な(7)しい応仁の乱"], note: "細川勝元と山名宗全の対立、下剋上の世へ" },
+            { name: "種子島への鉄砲伝来", year: "1543年", year_sort: 1543, category: "近世（安土桃山・江戸）", mnemonics: ["1543年: 以後(15)よ(4)み(3)がえる戦術の変革"], note: "ポルトガル人より伝来" },
+            { name: "関ヶ原の戦い（天下分け目の合戦）", year: "1600年", year_sort: 1600, category: "近世（安土桃山・江戸）", mnemonics: ["1600年: ヒーロー(16)おお(00)いに関ヶ原"], note: "徳川家康が石田三成を破り覇権掌握" },
+            { name: "島原・天草一揆と鎖国の完成", year: "1637年", year_sort: 1637, category: "近世（安土桃山・江戸）", mnemonics: ["1637年: ヒーロー(16)み(3)な(7)決起す島原一揆"], note: "ポルトガル船来航禁止、出島オランダ商館へ" },
+            { name: "ペリー来航（浦賀沖に黒船出現）", year: "1853年", year_sort: 1853, category: "近代（幕末〜大正）", mnemonics: ["1853年: いや(18)ご(5)み(3)だらけ黒船来航"], note: "日米和親条約の締結へ" },
+            { name: "大政奉還（徳川慶喜が政権返上）", year: "1867年", year_sort: 1867, category: "近代（幕末〜大正）", mnemonics: ["1867年: 人は(18)む(6)な(7)しく幕府返上"], note: "明治維新の始まり" },
+            { name: "大日本帝国憲法発布", year: "1889年", year_sort: 1889, category: "近代（幕末〜大正）", mnemonics: ["1889年: いちは(18)やく(89)発布帝国憲法"], note: "伊藤博文が起草、欽定憲法" },
+            { name: "日露戦争勃発", year: "1904年", year_sort: 1904, category: "近代（幕末〜大正）", mnemonics: ["1904年: 行く(19)わ(04)よ日露戦争"], note: "ポーツマス条約で講和" }
+        ];
+
         let activeHistoryType = "world"; // "world" or "japan"
         let currentCategoryFilter = "ALL";
         let currentSearchQuery = "";
+        let filterMistakesOnly = false;
+        let filterMnemonicsOnly = false;
+        let blindMaskMode = "none"; // "none", "year" (赤シート), "name" (青シート)
+        const manuallyRevealedKeys = new Set(); // ユーザーがタップしてめくった出来事キー
+        let isAllRevealed = false;
+
         let rawProblems = {};
         let rawLessons = {};
 
@@ -383,14 +706,83 @@
             renderTimeline();
         });
 
-        rebuildCategoryFilters();
-
         // 検索入力リスナー
         const searchInput = document.getElementById("search-input");
         searchInput.addEventListener("input", (e) => {
             currentSearchQuery = e.target.value.trim().toLowerCase();
             renderTimeline();
         });
+
+        // 🔴 赤シート・暗記モード切り替え
+        const btnMaskNone = document.getElementById("btn-mask-none");
+        const btnMaskYear = document.getElementById("btn-mask-year");
+        const btnMaskName = document.getElementById("btn-mask-name");
+        const btnToggleAll = document.getElementById("btn-toggle-all-masks");
+
+        function setBlindMaskMode(mode) {
+            blindMaskMode = mode;
+            btnMaskNone.classList.toggle("active", mode === "none");
+            btnMaskYear.classList.toggle("active", mode === "year");
+            btnMaskName.classList.toggle("active", mode === "name");
+            manuallyRevealedKeys.clear();
+            isAllRevealed = false;
+            if (btnToggleAll) btnToggleAll.textContent = "👀 全てめくる";
+            renderTimeline();
+        }
+
+        if (btnMaskNone) btnMaskNone.onclick = () => setBlindMaskMode("none");
+        if (btnMaskYear) btnMaskYear.onclick = () => setBlindMaskMode("year");
+        if (btnMaskName) btnMaskName.onclick = () => setBlindMaskMode("name");
+
+        if (btnToggleAll) {
+            btnToggleAll.onclick = () => {
+                if (blindMaskMode === "none") {
+                    setBlindMaskMode("year");
+                    return;
+                }
+                isAllRevealed = !isAllRevealed;
+                btnToggleAll.textContent = isAllRevealed ? "🙈 全て隠す" : "👀 全てめくる";
+                const stream = document.getElementById("timeline-stream");
+                if (stream) {
+                    stream.querySelectorAll(".blind-masked").forEach(el => {
+                        el.classList.toggle("revealed", isAllRevealed);
+                    });
+                }
+            };
+        }
+
+        // 🔥 誤答・語呂合わせフィルター切り替え
+        const btnFilterMistakes = document.getElementById("filter-mistakes-only");
+        if (btnFilterMistakes) {
+            btnFilterMistakes.onclick = () => {
+                filterMistakesOnly = !filterMistakesOnly;
+                btnFilterMistakes.classList.toggle("active", filterMistakesOnly);
+                if (filterMistakesOnly) {
+                    btnFilterMistakes.style.background = "#DC2626";
+                    btnFilterMistakes.style.color = "#fff";
+                } else {
+                    btnFilterMistakes.style.background = "#FEF2F2";
+                    btnFilterMistakes.style.color = "#DC2626";
+                }
+                renderTimeline();
+            };
+        }
+
+        const btnFilterMnemonics = document.getElementById("filter-mnemonics-only");
+        if (btnFilterMnemonics) {
+            btnFilterMnemonics.onclick = () => {
+                filterMnemonicsOnly = !filterMnemonicsOnly;
+                btnFilterMnemonics.classList.toggle("active", filterMnemonicsOnly);
+                if (filterMnemonicsOnly) {
+                    btnFilterMnemonics.style.background = "#92400E";
+                    btnFilterMnemonics.style.color = "#fff";
+                } else {
+                    btnFilterMnemonics.style.background = "#FEF3C7";
+                    btnFilterMnemonics.style.color = "#92400E";
+                }
+                renderTimeline();
+            };
+        }
 
         // 日本史の時代判定ヘルパー
         function getJapanEraCategory(yearSort) {
@@ -401,12 +793,30 @@
             return "現代（昭和〜令和）";
         }
 
-        // Firebaseデータ収集＆マージ
+        // Firebaseデータ収集＆マージ（プリセットフォールバック付き）
         function collectAllEvents() {
             const eventsMap = new Map(); // key: "出来事名_年" -> 統合オブジェクト
             const isWorld = activeHistoryType === "world";
 
-            // 1. 誤答問題 (problems) から抽出
+            // 0. プリセット出来事を初期登録
+            const presets = isWorld ? PRESET_WORLD_EVENTS : PRESET_JAPAN_EVENTS;
+            presets.forEach(ev => {
+                const key = `${ev.name}_${ev.year}`;
+                eventsMap.set(key, {
+                    name: ev.name,
+                    year: ev.year,
+                    year_sort: ev.year_sort,
+                    category: ev.category,
+                    mnemonics: ev.mnemonics ? [...ev.mnemonics] : [],
+                    note: ev.note || "",
+                    sources: [],
+                    isMistake: false,
+                    mistakeCount: 0,
+                    trapNote: ""
+                });
+            });
+
+            // 1. 誤答問題 (problems) から抽出（ユーザー実データをマージ）
             Object.values(rawProblems).forEach(p => {
                 if (!p) return;
                 const isMatchSubject = isWorld
@@ -415,6 +825,9 @@
                 if (!isMatchSubject) return;
 
                 const problemEvents = Array.isArray(p.events) ? p.events : [];
+                const isProblemMistake = (p.is_mistake !== false); // 誤答ノート登録問題
+                const mistakeReviews = (p.reviewCount || p.attempts || 1);
+
                 problemEvents.forEach(ev => {
                     if (!ev || !ev.name) return;
                     const yearSort = typeof ev.year_sort === "number" ? ev.year_sort : (parseInt(ev.year) || 9999);
@@ -429,15 +842,29 @@
                             year: ev.year || "年代未詳",
                             year_sort: yearSort,
                             category: category,
-                            mnemonics: p.mnemonic ? [p.mnemonic] : [],
-                            sources: []
+                            mnemonics: [],
+                            sources: [],
+                            isMistake: false,
+                            mistakeCount: 0,
+                            trapNote: ""
                         });
                     }
                     const item = eventsMap.get(key);
+                    if (p.mnemonic && !item.mnemonics.includes(p.mnemonic)) {
+                        item.mnemonics.push(p.mnemonic);
+                    }
+                    if (isProblemMistake) {
+                        item.isMistake = true;
+                        item.mistakeCount += mistakeReviews;
+                        if (p.trap_description && !item.trapNote) {
+                            item.trapNote = p.trap_description;
+                        }
+                    }
                     item.sources.push({
                         type: "problem",
                         id: p.id,
-                        title: p.short_title || "誤答問題"
+                        title: p.short_title || "誤答問題",
+                        isMistake: isProblemMistake
                     });
                 });
             });
@@ -465,7 +892,10 @@
                             year_sort: yearSort,
                             category: category,
                             mnemonics: [],
-                            sources: []
+                            sources: [],
+                            isMistake: false,
+                            mistakeCount: 0,
+                            trapNote: ""
                         });
                     }
                     const item = eventsMap.get(key);
@@ -500,18 +930,47 @@
             }
         }
 
+        // タイムライン描画（赤シート、ヒートマップ対応）
         function renderTimeline() {
             const streamEl = document.getElementById("timeline-stream");
             const emptyEl = document.getElementById("empty-notice");
             const totalCountEl = document.getElementById("event-total-count");
+            const countMistakeEl = document.getElementById("count-mistake-events");
+            const countMnemonicEl = document.getElementById("count-mnemonic-events");
+            const summaryHeatEl = document.getElementById("mistake-heatmap-summary");
 
             const allEvents = collectAllEvents();
+
+            // 統計カウント
+            const mistakeTotal = allEvents.filter(ev => ev.isMistake).length;
+            const mnemonicTotal = allEvents.filter(ev => ev.mnemonics.length > 0).length;
+            if (countMistakeEl) countMistakeEl.textContent = mistakeTotal;
+            if (countMnemonicEl) countMnemonicEl.textContent = mnemonicTotal;
+
+            // 最多誤答の時代・世紀を計算（ヒートマップ要約）
+            const centuryMistakeMap = {};
+            allEvents.forEach(ev => {
+                if (ev.isMistake) {
+                    const c = formatCentury(ev.year_sort);
+                    centuryMistakeMap[c] = (centuryMistakeMap[c] || 0) + 1;
+                }
+            });
+            const topCentury = Object.entries(centuryMistakeMap).sort((a, b) => b[1] - a[1])[0];
+            if (summaryHeatEl) {
+                if (topCentury && topCentury[1] > 0) {
+                    summaryHeatEl.innerHTML = `<span style="color:#DC2626;">🔥 最多弱点時代:</span> <strong>${escapeHtml(topCentury[0])}</strong> (${topCentury[1]}問誤答)`;
+                } else {
+                    summaryHeatEl.innerHTML = `<span style="color:#059669;">✨ 弱点集中時代: なし（順調です！）</span>`;
+                }
+            }
 
             // 絞り込み
             const filtered = allEvents.filter(ev => {
                 if (currentCategoryFilter !== "ALL" && ev.category !== currentCategoryFilter) return false;
+                if (filterMistakesOnly && !ev.isMistake) return false;
+                if (filterMnemonicsOnly && ev.mnemonics.length === 0) return false;
                 if (currentSearchQuery) {
-                    const haystack = `${ev.name} ${ev.year} ${ev.category} ${ev.mnemonics.join(" ")}`.toLowerCase();
+                    const haystack = `${ev.name} ${ev.year} ${ev.category} ${ev.mnemonics.join(" ")} ${ev.note || ""}`.toLowerCase();
                     if (!haystack.includes(currentSearchQuery)) return false;
                 }
                 return true;
@@ -522,7 +981,7 @@
             if (filtered.length === 0) {
                 streamEl.innerHTML = "";
                 emptyEl.style.display = "block";
-                emptyEl.innerHTML = `まだ${activeHistoryType === "world" ? "世界史" : "日本史"}の出来事データがありません。<br>${activeHistoryType === "world" ? "世界史" : "日本史"}の問題を誤答ノートに登録するか、授業モードで学習すると自動でここに年表が作られます！`;
+                emptyEl.innerHTML = `該当する条件の出来事が見つかりませんでした。<br>フィルターを解除するか検索ワードを変更してください。`;
                 return;
             }
 
@@ -535,29 +994,75 @@
                 const centuryLabel = formatCentury(ev.year_sort);
                 if (centuryLabel !== currentCenturyLabel) {
                     currentCenturyLabel = centuryLabel;
-                    html += `<div class="century-header">⏳ ${centuryLabel}</div>`;
+                    const cMistakes = centuryMistakeMap[centuryLabel] || 0;
+                    const heatBadgeHtml = cMistakes > 0 
+                        ? `<span class="century-heat-badge">🔥 弱点誤答: ${cMistakes}件</span>` 
+                        : "";
+                    html += `
+                        <div class="century-header">
+                            <span>⏳ ${escapeHtml(centuryLabel)}</span>
+                            ${heatBadgeHtml}
+                        </div>
+                    `;
                 }
 
                 const sourcesHtml = ev.sources.map(s => {
                     if (s.type === "problem") {
-                        return `<a href="problem.html?id=${encodeURIComponent(s.id)}" class="source-link-btn link-problem">📌 問題: ${s.title}</a>`;
+                        const mistakeCls = s.isMistake ? "is-mistake-link" : "";
+                        const icon = s.isMistake ? "🔥" : "📌";
+                        return `<a href="problem.html?id=${encodeURIComponent(s.id)}" class="source-link-btn link-problem ${mistakeCls}">${icon} 誤答問題: ${escapeHtml(s.title)}</a>`;
                     } else {
-                        return `<a href="lesson.html?id=${encodeURIComponent(s.id)}" class="source-link-btn link-lesson">📖 授業: ${s.title}</a>`;
+                        return `<a href="lesson.html?id=${encodeURIComponent(s.id)}" class="source-link-btn link-lesson">📖 授業: ${escapeHtml(s.title)}</a>`;
                     }
                 }).join("");
 
                 const mnemonicHtml = ev.mnemonics.length > 0
-                    ? `<div class="mnemonic-badge">🎴 語呂合わせ: ${ev.mnemonics[0]}</div>`
+                    ? `<div class="mnemonic-badge">🎴 語呂: ${escapeHtml(ev.mnemonics[0])}</div>`
                     : "";
+
+                const noteHtml = ev.note 
+                    ? `<div style="font-size:0.78rem; color:var(--text-secondary); margin-top:0.2rem; line-height:1.45;">💡 ${escapeHtml(ev.note)}</div>` 
+                    : "";
+
+                const trapAlertHtml = (ev.isMistake && ev.trapNote)
+                    ? `<div style="font-size:0.76rem; color:#B91C1C; background:rgba(239,68,68,0.08); border-left:3px solid #EF4444; padding:0.35rem 0.65rem; border-radius:4px; margin-top:0.3rem;">⚠️ <strong>落とし穴の急所:</strong> ${escapeHtml(ev.trapNote)}</div>`
+                    : "";
+
+                const cardMistakeCls = ev.isMistake ? "is-mistake" : "";
+                const heatPillHtml = ev.isMistake 
+                    ? `<span class="heat-alert-pill">🔥 要復習 (${ev.mistakeCount}回)</span>`
+                    : "";
+
+                // 赤シート・青シート用のマスキングクラス判定
+                const evKey = `${ev.name}_${ev.year}`;
+                const isManuallyRevealed = isAllRevealed || manuallyRevealedKeys.has(evKey);
+
+                let yearClass = "event-year";
+                let nameClass = "event-name";
+
+                if (blindMaskMode === "year") {
+                    yearClass += ` blind-masked mask-red ${isManuallyRevealed ? 'revealed' : ''}`;
+                } else if (blindMaskMode === "name") {
+                    nameClass += ` blind-masked mask-blue ${isManuallyRevealed ? 'revealed' : ''}`;
+                }
 
                 html += `
                     <div class="timeline-node">
-                        <div class="event-card">
+                        <div class="event-card ${cardMistakeCls}" data-event-key="${escapeHtml(evKey)}">
                             <div class="event-top">
-                                <span class="event-year">${ev.year}</span>
-                                <span class="badge badge-history" style="font-size:0.7rem;">${ev.category}</span>
+                                <span class="${yearClass}" onclick="toggleEventBlindMask(event, '${escapeHtml(evKey)}', 'year')">
+                                    ${escapeHtml(ev.year)}
+                                </span>
+                                <div style="display:flex; align-items:center; gap:0.4rem;">
+                                    ${heatPillHtml}
+                                    <span class="badge badge-history" style="font-size:0.7rem;">${escapeHtml(ev.category)}</span>
+                                </div>
                             </div>
-                            <div class="event-name">${ev.name}</div>
+                            <div class="${nameClass}" onclick="toggleEventBlindMask(event, '${escapeHtml(evKey)}', 'name')">
+                                ${escapeHtml(ev.name)}
+                            </div>
+                            ${noteHtml}
+                            ${trapAlertHtml}
                             ${mnemonicHtml}
                             <div class="event-links">
                                 ${sourcesHtml}
@@ -569,6 +1074,307 @@
 
             streamEl.innerHTML = html;
         }
+
+        // 個別カードのマスキングめくりトグル
+        window.toggleEventBlindMask = function(e, key, targetType) {
+            if (blindMaskMode === "none") return;
+            e.stopPropagation();
+            if (manuallyRevealedKeys.has(key)) {
+                manuallyRevealedKeys.delete(key);
+            } else {
+                manuallyRevealedKeys.add(key);
+            }
+            renderTimeline();
+        };
+
+        // ==========================================================
+        // 🎯 共通テスト整序特訓（年代順並べ替え）ゲームエンジン
+        // ==========================================================
+        let quizEventsPool = [];
+        let currentQuizIndex = 0;
+        let quizTotalQuestions = 5;
+        let quizCurrentItems = [];
+        let quizScore = 0;
+        let quizAnswered = false;
+
+        const modalQuiz = document.getElementById("reorder-quiz-modal");
+        const btnStartQuiz = document.getElementById("btn-start-reorder-quiz");
+        const btnCloseQuiz = document.getElementById("btn-close-reorder-quiz");
+        const quizModalBody = document.getElementById("quiz-modal-body");
+        const quizScoreBadge = document.getElementById("quiz-score-badge");
+        const quizSubTitle = document.getElementById("quiz-modal-subtitle");
+
+        if (btnStartQuiz) {
+            btnStartQuiz.onclick = () => startReorderQuiz();
+        }
+        if (btnCloseQuiz) {
+            btnCloseQuiz.onclick = () => {
+                modalQuiz.style.display = "none";
+            };
+        }
+
+        function startReorderQuiz() {
+            const all = collectAllEvents();
+            // 重複年代や年代未詳を除外
+            const valid = all.filter(ev => ev.year_sort !== 9999);
+            if (valid.length < 3) {
+                alert("並べ替え問題を作成するには出来事が3つ以上必要です。");
+                return;
+            }
+
+            quizEventsPool = valid;
+            currentQuizIndex = 0;
+            quizScore = 0;
+            quizTotalQuestions = Math.min(5, Math.floor(valid.length / 3) * 2);
+            if (quizTotalQuestions < 3) quizTotalQuestions = 3;
+
+            modalQuiz.style.display = "flex";
+            renderNextQuizQuestion();
+        }
+
+        function renderNextQuizQuestion() {
+            quizAnswered = false;
+            if (currentQuizIndex >= quizTotalQuestions) {
+                renderQuizFinalResult();
+                return;
+            }
+
+            if (quizScoreBadge) quizScoreBadge.textContent = `スコア: ${quizScore} pt`;
+            if (quizSubTitle) {
+                quizSubTitle.textContent = `第 ${currentQuizIndex + 1} / ${quizTotalQuestions} 問 ｜ 過去から未来へ年代順に並べ替えてください`;
+            }
+
+            // ランダムに3〜4つの年代が異なる出来事を抽出
+            const count = 3; // 共通テストの基本は3要素並べ替え (Ⅰ, Ⅱ, Ⅲ)
+            const shuffledPool = [...quizEventsPool].sort(() => Math.random() - 0.5);
+            const picked = [];
+            const usedYears = new Set();
+
+            for (const ev of shuffledPool) {
+                if (!usedYears.has(ev.year_sort)) {
+                    picked.push(ev);
+                    usedYears.add(ev.year_sort);
+                    if (picked.length >= count) break;
+                }
+            }
+
+            // 正解の並び順（year_sort 昇順）
+            const correctOrder = [...picked].sort((a, b) => a.year_sort - b.year_sort);
+
+            // ユーザー回答用にシャッフル（絶対に最初から正解順になっていないようにする）
+            let userOrder = [...picked].sort(() => Math.random() - 0.5);
+            let attempts = 0;
+            while (userOrder.every((item, i) => item.year_sort === correctOrder[i].year_sort) && attempts < 10) {
+                userOrder.sort(() => Math.random() - 0.5);
+                attempts++;
+            }
+
+            quizCurrentItems = {
+                userOrder: userOrder,
+                correctOrder: correctOrder
+            };
+
+            renderQuizCardList();
+        }
+
+        function renderQuizCardList() {
+            const romanLabels = ["Ⅰ", "Ⅱ", "Ⅲ", "Ⅳ"];
+            const listHtml = quizCurrentItems.userOrder.map((item, idx) => `
+                <div class="reorder-card" draggable="true" data-index="${idx}">
+                    <div class="reorder-index-badge">${romanLabels[idx]}</div>
+                    <div style="flex:1; min-width:0;">
+                        <div style="font-weight:800; font-size:1.02rem; color:var(--text-primary); margin-bottom:0.25rem;">
+                            ${escapeHtml(item.name)}
+                        </div>
+                        <div style="font-size:0.75rem; color:var(--text-secondary); display:flex; gap:0.5rem; flex-wrap:wrap;">
+                            <span class="badge" style="background:var(--bg-subtle); border:1px solid var(--border-color); font-size:0.7rem;">📍 ${escapeHtml(item.category)}</span>
+                            ${item.note ? `<span>💡 ${escapeHtml(item.note)}</span>` : ''}
+                        </div>
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:0.25rem;">
+                        <button type="button" class="reorder-btn-move" onclick="moveQuizCard(${idx}, -1)" ${idx === 0 ? 'disabled' : ''} title="上へ移動">▲</button>
+                        <button type="button" class="reorder-btn-move" onclick="moveQuizCard(${idx}, 1)" ${idx === quizCurrentItems.userOrder.length - 1 ? 'disabled' : ''} title="下へ移動">▼</button>
+                    </div>
+                </div>
+            `).join("");
+
+            quizModalBody.innerHTML = `
+                <div style="background:rgba(99, 102, 241, 0.08); border:1px solid rgba(99, 102, 241, 0.25); border-radius:var(--radius-md); padding:0.75rem 1rem; font-size:0.84rem; color:var(--text-primary); line-height:1.5;">
+                    💡 <strong>共通テスト形式:</strong> 下の3つの出来事カードをドラッグ、または右側の「▲」「▼」ボタンで入れ替えて、<strong>古い年代順（上 ➔ 下）</strong>に並べて「決定・判定する」を押してください。
+                </div>
+
+                <div id="quiz-cards-container" style="display:flex; flex-direction:column; gap:0.65rem;">
+                    ${listHtml}
+                </div>
+
+                <div style="display:flex; justify-content:flex-end; gap:0.8rem; margin-top:0.6rem;">
+                    <button type="button" class="flora-btn flora-btn-secondary" onclick="document.getElementById('reorder-quiz-modal').style.display='none'">
+                        中断して年表に戻る
+                    </button>
+                    <button type="button" class="flora-btn flora-btn-primary" id="btn-submit-reorder" onclick="submitReorderAnswer()" style="padding:0.65rem 1.6rem; font-size:0.95rem; font-weight:800; background:linear-gradient(135deg, #10B981, #059669); color:#fff; border:none; border-radius:var(--radius-md); cursor:pointer; box-shadow:0 3px 10px rgba(16,185,129,0.3);">
+                        ✅ この順序で決定・判定する
+                    </button>
+                </div>
+            `;
+
+            setupQuizDragAndDrop();
+        }
+
+        window.moveQuizCard = function(fromIndex, delta) {
+            if (quizAnswered) return;
+            const toIndex = fromIndex + delta;
+            if (toIndex < 0 || toIndex >= quizCurrentItems.userOrder.length) return;
+
+            const temp = quizCurrentItems.userOrder[fromIndex];
+            quizCurrentItems.userOrder[fromIndex] = quizCurrentItems.userOrder[toIndex];
+            quizCurrentItems.userOrder[toIndex] = temp;
+            renderQuizCardList();
+        };
+
+        function setupQuizDragAndDrop() {
+            const container = document.getElementById("quiz-cards-container");
+            if (!container) return;
+
+            let dragSrcEl = null;
+
+            container.querySelectorAll(".reorder-card").forEach(card => {
+                card.addEventListener("dragstart", (e) => {
+                    dragSrcEl = card;
+                    card.classList.add("dragging");
+                    e.dataTransfer.effectAllowed = "move";
+                    e.dataTransfer.setData("text/plain", card.getAttribute("data-index"));
+                });
+
+                card.addEventListener("dragover", (e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = "move";
+                    card.classList.add("drag-over");
+                });
+
+                card.addEventListener("dragleave", () => {
+                    card.classList.remove("drag-over");
+                });
+
+                card.addEventListener("dragend", () => {
+                    card.classList.remove("dragging");
+                    container.querySelectorAll(".reorder-card").forEach(c => c.classList.remove("drag-over"));
+                });
+
+                card.addEventListener("drop", (e) => {
+                    e.preventDefault();
+                    card.classList.remove("drag-over");
+                    if (dragSrcEl && dragSrcEl !== card) {
+                        const fromIdx = parseInt(dragSrcEl.getAttribute("data-index"), 10);
+                        const toIdx = parseInt(card.getAttribute("data-index"), 10);
+
+                        const moved = quizCurrentItems.userOrder.splice(fromIdx, 1)[0];
+                        quizCurrentItems.userOrder.splice(toIdx, 0, moved);
+                        renderQuizCardList();
+                    }
+                });
+            });
+        }
+
+        window.submitReorderAnswer = function() {
+            if (quizAnswered) return;
+            quizAnswered = true;
+
+            const isCorrect = quizCurrentItems.userOrder.every((item, i) => item.year_sort === quizCurrentItems.correctOrder[i].year_sort);
+
+            if (isCorrect) {
+                quizScore += 100;
+            }
+
+            const romanLabels = ["Ⅰ", "Ⅱ", "Ⅲ", "Ⅳ"];
+
+            const resultHtml = `
+                <div style="text-align:center; padding:1.2rem; border-radius:var(--radius-lg); background:${isCorrect ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)'}; border:2px solid ${isCorrect ? '#10B981' : '#EF4444'};">
+                    <div style="font-size:2.2rem; line-height:1; margin-bottom:0.4rem;">${isCorrect ? '🎉' : '❌'}</div>
+                    <div style="font-size:1.25rem; font-weight:800; color:${isCorrect ? '#059669' : '#DC2626'};">
+                        ${isCorrect ? '正解！完璧な時系列把握です！ (+100pt)' : '惜しい！正解の時系列はこちら'}
+                    </div>
+                </div>
+
+                <div style="margin-top:0.4rem;">
+                    <div style="font-size:0.85rem; font-weight:800; color:var(--text-secondary); margin-bottom:0.6rem;">
+                        ⏳ 正しい年代順タイムラインと因果関係：
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:0.6rem;">
+                        ${quizCurrentItems.correctOrder.map((ev, i) => `
+                            <div class="reorder-result-card is-correct-row">
+                                <div style="display:flex; justify-content:space-between; align-items:center;">
+                                    <div style="display:flex; align-items:center; gap:0.5rem;">
+                                        <span style="font-weight:800; font-size:0.95rem; color:#059669;">${romanLabels[i]}</span>
+                                        <span style="font-weight:800; font-size:1.02rem; color:var(--text-primary);">${escapeHtml(ev.name)}</span>
+                                    </div>
+                                    <span style="font-family:var(--font-heading); font-size:1.05rem; font-weight:800; color:#059669;">
+                                        ${escapeHtml(ev.year)}
+                                    </span>
+                                </div>
+                                ${ev.mnemonics && ev.mnemonics.length > 0 ? `
+                                    <div style="font-size:0.78rem; color:#92400E; background:#FEF3C7; padding:0.2rem 0.5rem; border-radius:4px; align-self:flex-start; margin-top:0.2rem;">
+                                        🎴 語呂合わせ: ${escapeHtml(ev.mnemonics[0])}
+                                    </div>
+                                ` : ''}
+                                ${ev.note ? `
+                                    <div style="font-size:0.8rem; color:var(--text-secondary); margin-top:0.15rem;">
+                                        💡 ${escapeHtml(ev.note)}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        `).join("")}
+                    </div>
+                </div>
+
+                <div style="display:flex; justify-content:flex-end; gap:0.8rem; margin-top:1rem;">
+                    <button type="button" class="flora-btn flora-btn-primary" onclick="proceedNextQuizQuestion()" style="padding:0.65rem 1.6rem; font-size:0.95rem; font-weight:800; background:linear-gradient(135deg, #4F46E5, #7C3AED); color:#fff; border:none; border-radius:var(--radius-md); cursor:pointer;">
+                        ${currentQuizIndex + 1 < quizTotalQuestions ? '次の問題へ ➔' : '結果発表を見る ➔'}
+                    </button>
+                </div>
+            `;
+
+            quizModalBody.innerHTML = resultHtml;
+        };
+
+        window.proceedNextQuizQuestion = function() {
+            currentQuizIndex++;
+            renderNextQuizQuestion();
+        };
+
+        function renderQuizFinalResult() {
+            const maxScore = quizTotalQuestions * 100;
+            const rate = Math.round((quizScore / maxScore) * 100);
+            let rankText = "歴史ビギナー";
+            if (rate === 100) rankText = "👑 共通テスト整序マスター！神レベル！";
+            else if (rate >= 80) rankText = "🎖️ 上級歴史ストラテジスト！";
+            else if (rate >= 60) rankText = "✨ 基礎時系列はバッチリ！";
+
+            quizModalBody.innerHTML = `
+                <div style="text-align:center; padding:2rem 1rem;">
+                    <div style="font-size:3.5rem; line-height:1; margin-bottom:0.6rem;">🏆</div>
+                    <div style="font-size:1.6rem; font-weight:800; color:var(--text-primary); margin-bottom:0.3rem;">
+                        整序特訓チャレンジ完了！
+                    </div>
+                    <div style="font-size:1rem; color:#4F46E5; font-weight:700; margin-bottom:1.2rem;">
+                        ${rankText}
+                    </div>
+                    <div style="font-size:2.2rem; font-family:var(--font-heading); font-weight:800; color:#059669; margin-bottom:1.5rem;">
+                        ${quizScore} / ${maxScore} pt <span style="font-size:1.1rem; color:var(--text-secondary);">(正答率 ${rate}%)</span>
+                    </div>
+
+                    <div style="display:flex; justify-content:center; gap:0.9rem; flex-wrap:wrap;">
+                        <button type="button" class="flora-btn flora-btn-secondary" onclick="document.getElementById('reorder-quiz-modal').style.display='none'">
+                            年表へ戻る
+                        </button>
+                        <button type="button" class="flora-btn flora-btn-primary" onclick="startReorderQuiz()" style="background:linear-gradient(135deg, #4F46E5, #7C3AED); color:#fff; border:none; padding:0.65rem 1.6rem; font-weight:800; border-radius:var(--radius-md); cursor:pointer;">
+                            🔄 もう一度特訓する
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        rebuildCategoryFilters();
 
         // テスターログイン
         window.floraTestLogin = async function() {

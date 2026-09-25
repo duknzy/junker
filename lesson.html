@@ -4361,6 +4361,9 @@
                                         <button type="button" id="lesson-header-ai-config-btn" class="lesson-ai-badge-btn" title="AIモデル・思考レベルを設定">
                                             🤖 <span id="lesson-header-ai-model-label">Gemini 3.8 Flash</span>
                                         </button>
+                                        <button type="button" id="lesson-header-recreate-btn" class="lesson-order-btn" title="授業を再作成（原本の変更や、暗記物をキープする柔軟な設定が可能）" style="font-size: 0.72rem; padding: 0.15rem 0.55rem; height: 26px; min-width: auto; gap: 0.25rem; display: inline-flex; align-items: center; border-radius: var(--radius-full); color: var(--brand-primary); margin-left: 0.2rem;">
+                                            🔄 <span style="font-size: 0.7rem; font-weight: 700;">授業を再作成</span>
+                                        </button>
                                     </div>
                                     <div id="lesson-title-edit-mode" style="display: none; align-items: center; gap: 0.35rem; flex: 1; min-width: 0;">
                                         <input type="text" id="lesson-title-edit-input" class="flora-input" style="flex: 1; min-width: 140px; font-weight: 700; font-size: 0.9rem; padding: 0.25rem 0.6rem; height: 30px;" placeholder="授業タイトルを入力...">
@@ -4562,15 +4565,31 @@
                                     <div style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 600;" id="source-panel-label">
                                         🔍 参考書の文字起こし全文
                                     </div>
-                                    <div style="margin-bottom: 0.65rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-                                        <button type="button" id="recreate-lesson-from-source-btn" class="recreate-all-lesson-btn" title="保存された原本テキストを元に、全パートのカリキュラムと授業を一から作り直します">
-                                            🔄 授業を一から作り直す（全パート再生成）
+                                    <div style="margin-bottom: 0.65rem; display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
+                                        <button type="button" id="recreate-lesson-from-source-btn" class="recreate-all-lesson-btn" title="原本テキストと暗記物の引き継ぎをカスタマイズして、授業を作り直します">
+                                            🔄 授業を再作成（暗記物キープ設定）
+                                        </button>
+                                        <button type="button" id="btn-toggle-edit-source-text" class="flora-btn flora-btn-secondary btn-sm" style="font-size:0.72rem; padding:0.22rem 0.55rem;" title="原本テキストを直接編集・修正します">
+                                            ✏️ 原本を編集
                                         </button>
                                         <div class="source-ai-quick-bar" style="display:inline-flex; align-items:center; gap:0.3rem;" title="授業再生成モデル・思考設定">
                                             <select id="source-model-select" class="flora-select chat-ai-select" title="プラン再生成モデル"></select>
                                             <select id="source-thinking-select" class="flora-select chat-ai-select" title="思考レベル"></select>
                                         </div>
                                     </div>
+
+                                    <!-- 原本編集ボックス -->
+                                    <div id="lesson-source-edit-area" style="display:none; flex-direction:column; gap:0.4rem; margin-bottom:0.75rem;">
+                                        <div style="font-size:0.74rem; font-weight:700; color:var(--text-secondary);">
+                                            ✏️ 原本テキストを直接編集中（保存するとこの授業の原本が更新されます）:
+                                        </div>
+                                        <textarea id="lesson-source-edit-input" class="flora-input" rows="7" style="font-size:0.82rem; line-height:1.55; resize:vertical; width:100%;"></textarea>
+                                        <div style="display:flex; justify-content:flex-end; gap:0.4rem;">
+                                            <button type="button" id="btn-cancel-source-edit" class="flora-btn flora-btn-ghost btn-sm" style="font-size:0.74rem;">キャンセル</button>
+                                            <button type="button" id="btn-save-source-edit" class="flora-btn flora-btn-primary btn-sm" style="font-size:0.74rem;">💾 原本テキストを保存</button>
+                                        </div>
+                                    </div>
+
                                     <div id="lesson-extracted-source-text" class="source-text-box tex2jax_process"></div>
                                 </div>
                             </aside>
@@ -5220,6 +5239,154 @@
                     ⚙️ 全機能のフォールバック・APIキー管理へ ↗
                 </a>
                 <button type="button" class="flora-btn flora-btn-primary btn-sm" id="done-lesson-ai-modal-btn">完了</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🔄 授業再作成・カスタマイズ設定モーダル -->
+    <div id="lesson-recreate-modal" class="modal-overlay" style="display:none; z-index:100060;">
+        <div class="modal-content" style="max-width: 680px; width: 94vw; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; padding: 0; border-radius: var(--radius-xl);">
+            <!-- ヘッダー -->
+            <div style="padding: 1.1rem 1.5rem; background: var(--bg-subtle); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 0.6rem;">
+                    <span style="font-size: 1.3rem;">🔄</span>
+                    <div>
+                        <h3 style="margin: 0; font-size: 1.05rem; font-weight: 800; color: var(--text-primary);">授業の再作成・再受講設定</h3>
+                        <div style="font-size: 0.74rem; color: var(--text-secondary); margin-top: 0.15rem;">原本の変更や暗記物データの引き継ぎを柔軟にカスタマイズできます</div>
+                    </div>
+                </div>
+                <button type="button" class="star-btn" id="lesson-recreate-modal-close" style="font-size: 1.5rem; line-height: 1; color: var(--text-muted); cursor: pointer; padding: 0 0.3rem;">×</button>
+            </div>
+
+            <!-- ボディ -->
+            <div style="padding: 1.3rem 1.5rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1.15rem;">
+                <!-- ⚡ ワンクリック プリセット設定 -->
+                <div style="background: rgba(99, 102, 241, 0.06); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: var(--radius-md); padding: 0.8rem 1rem;">
+                    <div style="font-size: 0.76rem; font-weight: 800; color: #4F46E5; margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.35rem;">
+                        <span>⚡ クイック選択プリセット:</span>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <button type="button" id="preset-keep-all-memos" class="flora-btn flora-btn-secondary btn-sm" style="font-size: 0.74rem; font-weight: 800; color: #059669; border-color: rgba(16, 185, 129, 0.4); background: rgba(16, 185, 129, 0.08);" title="暗記カード・選択問題・用語集をすべてそのまま引き継ぎ、講義本文のみを作り直します">
+                            ✨ 講義のみ再作成（暗記物はすべてキープ）
+                        </button>
+                        <button type="button" id="preset-full-reset" class="flora-btn flora-btn-secondary btn-sm" style="font-size: 0.74rem; font-weight: 800; color: #DC2626; border-color: rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.06);" title="暗記物も含めてすべて新テキストから再生成します">
+                            🔄 完全フルリセット（すべて一から再生成）
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 1. 原本テキスト（授業の元ネタ）の編集 -->
+                <div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
+                        <label style="font-weight: 800; font-size: 0.85rem; color: var(--text-primary); display: flex; align-items: center; gap: 0.35rem;">
+                            <span>📄 原本テキスト（参考書・教科書の文字起こし）</span>
+                        </label>
+                        <span style="font-size: 0.72rem; color: var(--text-muted);" id="recreate-modal-source-length">0文字</span>
+                    </div>
+                    <div style="font-size: 0.73rem; color: var(--text-secondary); margin-bottom: 0.4rem;">
+                        ※原文に変更・追記・修正がある場合は、下の枠を自由に編集してください。
+                    </div>
+                    <textarea id="recreate-modal-source-input" class="flora-input" rows="5" style="width: 100%; font-size: 0.82rem; line-height: 1.55; resize: vertical; padding: 0.6rem 0.8rem;" placeholder="原本テキストを入力..."></textarea>
+                </div>
+
+                <!-- 2. 引き継ぎ・保持するデータの設定（チェックボックス群） -->
+                <div>
+                    <div style="font-weight: 800; font-size: 0.85rem; color: var(--text-primary); margin-bottom: 0.25rem;">
+                        🎴 既存データの引き継ぎ設定（チェックONで保持）
+                    </div>
+                    <div style="font-size: 0.73rem; color: var(--text-secondary); margin-bottom: 0.6rem;">
+                        過去に学習・作成したデータのうち、<strong>再作成させずにそのまま維持したい項目</strong>を選択してください。
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 0.55rem;">
+                        <!-- 暗記事項 -->
+                        <label style="display: flex; align-items: flex-start; gap: 0.65rem; background: var(--bg-subtle); padding: 0.7rem 0.85rem; border-radius: var(--radius-md); border: 1.5px solid var(--border-color); cursor: pointer;">
+                            <input type="checkbox" id="chk-keep-memorization" checked style="margin-top: 0.2rem; width: 17px; height: 17px; accent-color: var(--brand-primary); cursor: pointer;">
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <strong style="font-size: 0.86rem; color: var(--text-primary);">🧠 暗記事項（フラッシュカード・一問一答）を保持する</strong>
+                                    <span class="badge" style="font-size: 0.7rem;" id="badge-keep-memorization-count">0件</span>
+                                </div>
+                                <div style="font-size: 0.74rem; color: var(--text-secondary); margin-top: 0.15rem;">
+                                    すでに登録済みの暗記カードや習得状況をキープし、AIによる再抽出・上書きを行いません。
+                                </div>
+                            </div>
+                        </label>
+
+                        <!-- 選択問題 -->
+                        <label style="display: flex; align-items: flex-start; gap: 0.65rem; background: var(--bg-subtle); padding: 0.7rem 0.85rem; border-radius: var(--radius-md); border: 1.5px solid var(--border-color); cursor: pointer;">
+                            <input type="checkbox" id="chk-keep-drills" checked style="margin-top: 0.2rem; width: 17px; height: 17px; accent-color: var(--brand-primary); cursor: pointer;">
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <strong style="font-size: 0.86rem; color: var(--text-primary);">🎯 共通テスト形式 実戦選択問題を保持する</strong>
+                                    <span class="badge" style="font-size: 0.7rem;" id="badge-keep-drills-count">0問</span>
+                                </div>
+                                <div style="font-size: 0.74rem; color: var(--text-secondary); margin-top: 0.15rem;">
+                                    過去に解いた選択問題・罠解説・正誤履歴をそのまま維持します。
+                                </div>
+                            </div>
+                        </label>
+
+                        <!-- 重要用語集 -->
+                        <label style="display: flex; align-items: flex-start; gap: 0.65rem; background: var(--bg-subtle); padding: 0.7rem 0.85rem; border-radius: var(--radius-md); border: 1.5px solid var(--border-color); cursor: pointer;">
+                            <input type="checkbox" id="chk-keep-terms" checked style="margin-top: 0.2rem; width: 17px; height: 17px; accent-color: var(--brand-primary); cursor: pointer;">
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <strong style="font-size: 0.86rem; color: var(--text-primary);">📚 重要用語集（キーワード）を保持・マージする</strong>
+                                    <span class="badge" style="font-size: 0.7rem;" id="badge-keep-terms-count">0個</span>
+                                </div>
+                                <div style="font-size: 0.74rem; color: var(--text-secondary); margin-top: 0.15rem;">
+                                    過去の用語を保持した上で、新しい原文に新たな用語があれば追加します。
+                                </div>
+                            </div>
+                        </label>
+
+                        <!-- 歴史年表 -->
+                        <label style="display: flex; align-items: flex-start; gap: 0.65rem; background: var(--bg-subtle); padding: 0.7rem 0.85rem; border-radius: var(--radius-md); border: 1.5px solid var(--border-color); cursor: pointer;">
+                            <input type="checkbox" id="chk-keep-events" checked style="margin-top: 0.2rem; width: 17px; height: 17px; accent-color: var(--brand-primary); cursor: pointer;">
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <strong style="font-size: 0.86rem; color: var(--text-primary);">⏳ 歴史年表（出来事・年号リスト）を保持する</strong>
+                                    <span class="badge" style="font-size: 0.7rem;" id="badge-keep-events-count">0件</span>
+                                </div>
+                                <div style="font-size: 0.74rem; color: var(--text-secondary); margin-top: 0.15rem;">
+                                    年表データに登録された出来事を維持・統合します。
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 3. スタイル設定 -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem;">
+                    <div>
+                        <label style="font-weight: 700; font-size: 0.78rem; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">講義スタイル</label>
+                        <select id="recreate-modal-style-select" class="flora-select" style="width: 100%;">
+                            <option value="standard">📖 標準参考書講義スタイル</option>
+                            <option value="socratic">🏛️ ソクラテス対話ゼミ（問答式）</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-weight: 700; font-size: 0.78rem; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">パート数構成目安</label>
+                        <select id="recreate-modal-parts-select" class="flora-select" style="width: 100%;">
+                            <option value="auto">🤖 AIにおまかせ (最適化)</option>
+                            <option value="2">2パート (コンパクト要点)</option>
+                            <option value="3">3パート (標準構成)</option>
+                            <option value="4">4パート (しっかり網羅)</option>
+                            <option value="5">5パート (じっくり深く)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- フッター -->
+            <div style="padding: 0.9rem 1.5rem; background: var(--bg-subtle); border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 0.7rem; align-items: center;">
+                <button type="button" class="flora-btn flora-btn-secondary" id="btn-cancel-recreate-modal">
+                    キャンセル
+                </button>
+                <button type="button" class="flora-btn flora-btn-primary" id="btn-execute-recreate-modal" style="background: linear-gradient(135deg, #10B981, #059669); color: #fff; border: none; padding: 0.6rem 1.4rem; font-weight: 800; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);">
+                    🚀 指定した設定で授業を再作成
+                </button>
             </div>
         </div>
     </div>
@@ -13101,48 +13268,193 @@ ${subjectGuide}
             const sourceText = (currentLesson.extractedText || "").trim();
             container.textContent = sourceText || (isTopicMode ? "（授業ノートが見つかりません）" : "（原本テキストが見つかりません）");
             if (btn) {
-                btn.disabled = !sourceText;
-                btn.title = sourceText
-                    ? (isTopicMode ? "この授業ノートをもとに全パートの授業カリキュラムを一から作り直します" : "保存された原本テキストをもとに全パートの授業カリキュラムを一から作り直します")
-                    : "原本テキストが存在しないため再作成できません";
+                btn.disabled = false;
+                btn.title = "原本テキストと暗記物の引き継ぎをカスタマイズして、授業を作り直します";
             }
         }
 
-        async function recreateLessonFromSourceText() {
+        // ✏️ 原本テキストの直接編集
+        const btnToggleEditSource = el("btn-toggle-edit-source-text");
+        const areaSourceEdit = el("lesson-source-edit-area");
+        const inputSourceEdit = el("lesson-source-edit-input");
+        const btnSaveSourceEdit = el("btn-save-source-edit");
+        const btnCancelSourceEdit = el("btn-cancel-source-edit");
+
+        if (btnToggleEditSource && areaSourceEdit && inputSourceEdit) {
+            btnToggleEditSource.onclick = () => {
+                const currentText = (currentLesson && currentLesson.extractedText) ? currentLesson.extractedText : "";
+                inputSourceEdit.value = currentText;
+                areaSourceEdit.style.display = "flex";
+                inputSourceEdit.focus();
+            };
+        }
+        if (btnCancelSourceEdit && areaSourceEdit) {
+            btnCancelSourceEdit.onclick = () => {
+                areaSourceEdit.style.display = "none";
+            };
+        }
+        if (btnSaveSourceEdit && areaSourceEdit && inputSourceEdit) {
+            btnSaveSourceEdit.onclick = async () => {
+                if (!currentLesson || !currentLessonId) return;
+                const newText = inputSourceEdit.value.trim();
+                currentLesson.extractedText = newText;
+                currentLesson.updatedAt = new Date().toISOString();
+                renderSourceText();
+                areaSourceEdit.style.display = "none";
+                await saveLesson();
+                showToast("💾 原本テキストを保存しました！", "success", 2500);
+            };
+        }
+
+        // ==========================================================
+        // 🔄 授業再作成・カスタマイズ設定モーダル ロジック
+        // ==========================================================
+        const modalRecreate = el("lesson-recreate-modal");
+        const btnCloseRecreateModal = el("lesson-recreate-modal-close");
+        const btnCancelRecreateModal = el("btn-cancel-recreate-modal");
+        const btnExecuteRecreateModal = el("btn-execute-recreate-modal");
+
+        const recreateSourceInput = el("recreate-modal-source-input");
+        const recreateSourceLen = el("recreate-modal-source-length");
+        const chkKeepMemo = el("chk-keep-memorization");
+        const chkKeepDrills = el("chk-keep-drills");
+        const chkKeepTerms = el("chk-keep-terms");
+        const chkKeepEvents = el("chk-keep-events");
+        const badgeMemoCount = el("badge-keep-memorization-count");
+        const badgeDrillsCount = el("badge-keep-drills-count");
+        const badgeTermsCount = el("badge-keep-terms-count");
+        const badgeEventsCount = el("badge-keep-events-count");
+        const selectRecreateStyle = el("recreate-modal-style-select");
+        const selectRecreateParts = el("recreate-modal-parts-select");
+
+        const btnPresetKeepAll = el("preset-keep-all-memos");
+        const btnPresetFullReset = el("preset-full-reset");
+
+        function openRecreateLessonModal() {
             if (!currentLesson || !currentLessonId) {
                 showToast("授業データが見つかりません。", "error");
                 return;
             }
+            if (!modalRecreate) return;
+
             const sourceText = (currentLesson.extractedText || "").trim();
-            if (!sourceText) {
-                showToast("原本テキストが保存されていないため、授業を再作成できません。", "error");
+            if (recreateSourceInput) {
+                recreateSourceInput.value = sourceText;
+            }
+            if (recreateSourceLen) {
+                recreateSourceLen.textContent = `${sourceText.length} 文字`;
+            }
+
+            // 件数バッジ更新
+            const memoPoints = Array.isArray(currentLesson.memorizationPoints) ? currentLesson.memorizationPoints : [];
+            const drills = Array.isArray(currentLesson.choiceDrills) ? currentLesson.choiceDrills : [];
+            const terms = Array.isArray(currentLesson.keyTerms) ? currentLesson.keyTerms : [];
+            const events = Array.isArray(currentLesson.historicalEvents) ? currentLesson.historicalEvents : [];
+
+            if (badgeMemoCount) badgeMemoCount.textContent = `${memoPoints.length}件`;
+            if (badgeDrillsCount) badgeDrillsCount.textContent = `${drills.length}問`;
+            if (badgeTermsCount) badgeTermsCount.textContent = `${terms.length}個`;
+            if (badgeEventsCount) badgeEventsCount.textContent = `${events.length}件`;
+
+            // デフォルトは「暗記物を大切にキープ」
+            if (chkKeepMemo) chkKeepMemo.checked = memoPoints.length > 0;
+            if (chkKeepDrills) chkKeepDrills.checked = drills.length > 0;
+            if (chkKeepTerms) chkKeepTerms.checked = terms.length > 0;
+            if (chkKeepEvents) chkKeepEvents.checked = events.length > 0;
+
+            if (selectRecreateStyle) {
+                selectRecreateStyle.value = currentLesson.teachingStyle === "socratic" ? "socratic" : "standard";
+            }
+            if (selectRecreateParts) {
+                selectRecreateParts.value = "auto";
+            }
+
+            modalRecreate.style.display = "flex";
+        }
+
+        if (recreateSourceInput && recreateSourceLen) {
+            recreateSourceInput.addEventListener("input", (e) => {
+                recreateSourceLen.textContent = `${e.target.value.length} 文字`;
+            });
+        }
+
+        if (btnPresetKeepAll) {
+            btnPresetKeepAll.onclick = () => {
+                if (chkKeepMemo) chkKeepMemo.checked = true;
+                if (chkKeepDrills) chkKeepDrills.checked = true;
+                if (chkKeepTerms) chkKeepTerms.checked = true;
+                if (chkKeepEvents) chkKeepEvents.checked = true;
+                showToast("✨ 暗記カード・問題・用語をすべてキープする設定にしました", "info", 2000);
+            };
+        }
+
+        if (btnPresetFullReset) {
+            btnPresetFullReset.onclick = () => {
+                if (chkKeepMemo) chkKeepMemo.checked = false;
+                if (chkKeepDrills) chkKeepDrills.checked = false;
+                if (chkKeepTerms) chkKeepTerms.checked = false;
+                if (chkKeepEvents) chkKeepEvents.checked = false;
+                showToast("🔄 すべて一から再生成する設定にしました", "info", 2000);
+            };
+        }
+
+        if (btnCloseRecreateModal) {
+            btnCloseRecreateModal.onclick = () => {
+                modalRecreate.style.display = "none";
+            };
+        }
+        if (btnCancelRecreateModal) {
+            btnCancelRecreateModal.onclick = () => {
+                modalRecreate.style.display = "none";
+            };
+        }
+
+        if (btnExecuteRecreateModal) {
+            btnExecuteRecreateModal.onclick = async () => {
+                await executeCustomRecreateLesson();
+            };
+        }
+
+        async function executeCustomRecreateLesson() {
+            if (!currentLesson || !currentLessonId) return;
+
+            const updatedSourceText = (recreateSourceInput ? recreateSourceInput.value : (currentLesson.extractedText || "")).trim();
+            if (!updatedSourceText) {
+                showToast("原本テキストを入力してください。", "error");
                 return;
             }
 
-            const isTopic = currentLesson.sourceMode === "topic";
-            const confirmMsg = "【確認】授業を丸ごと作り直しますか？\n\n" +
-                "・現在のチャット会話履歴や進行状況はすべてリセットされます。\n" +
-                "・保存されている" + (isTopic ? "授業ノート" : "原本テキスト") + "をもとに、Part 1〜N のカリキュラム構成、タイトル、重要用語を一から再構築し、第1回の授業をスタートします。\n\n" +
-                "本当によろしいですか？";
-            if (!confirm(confirmMsg)) return;
+            const keepMemo = chkKeepMemo ? chkKeepMemo.checked : true;
+            const keepDrills = chkKeepDrills ? chkKeepDrills.checked : true;
+            const keepTerms = chkKeepTerms ? chkKeepTerms.checked : true;
+            const keepEvents = chkKeepEvents ? chkKeepEvents.checked : true;
+            const selectedStyle = selectRecreateStyle ? selectRecreateStyle.value : "standard";
+            const selectedPartsCount = selectRecreateParts ? selectRecreateParts.value : "auto";
 
-            const btn = el("recreate-lesson-from-source-btn");
-            const origBtnText = btn ? btn.innerHTML : "";
-            if (btn) {
-                btn.disabled = true;
-                btn.innerHTML = `⏳ カリキュラム再構築中...`;
-            }
+            // 保持する既存データの退避
+            const savedMemoPoints = keepMemo ? (Array.isArray(currentLesson.memorizationPoints) ? [...currentLesson.memorizationPoints] : []) : null;
+            const savedDrills = keepDrills ? (Array.isArray(currentLesson.choiceDrills) ? [...currentLesson.choiceDrills] : []) : null;
+            const savedKeyTerms = keepTerms ? (Array.isArray(currentLesson.keyTerms) ? [...currentLesson.keyTerms] : []) : [];
+            const savedEvents = keepEvents ? (Array.isArray(currentLesson.historicalEvents) ? [...currentLesson.historicalEvents] : []) : [];
+
+            // ボタン表示更新
+            btnExecuteRecreateModal.disabled = true;
+            btnExecuteRecreateModal.innerHTML = `⏳ カリキュラム再構築中...`;
 
             try {
-                showToast("原本テキストからカリキュラムを再構築しています...", "info", 6000);
+                showToast("新しい原本テキストからカリキュラムを再構築しています...", "info", 6000);
 
                 const subject = currentLesson.subject || detectLessonSubject(currentLesson) || "その他";
                 const subjectGuide = SUBJECT_PROMPT_GUIDES[subject] || "";
-                const isSocratic = currentLesson.teachingStyle === "socratic";
+                const isSocratic = selectedStyle === "socratic";
                 const socraticAddon = isSocratic ? `
 【特記事項：ソクラテス対話ゼミ】
 この授業は「多角的アプローチ（別解比較）」「あえて間違える落とし穴の見破り」「対話式問答」を重視するスタイルです。
 各パートの要約(summary)には、単なる解説範囲だけでなく「生徒に投げかけるべき核心の問いや、比較検討すべき別解の視点」を盛り込んで計画してください。` : "";
+
+                const partsConstraint = (selectedPartsCount !== "auto")
+                    ? `【パート数制限】全体を必ずちょうど「${selectedPartsCount}パート」に分割して論理的に構成してください。`
+                    : `【パート数目安】内容量に応じた最適な区切りの「大まかな授業プラン」を作成すること（目安は2〜6パート程度）。`;
 
                 const PLAN_SYSTEM_INSTRUCTION = `${customPolicyPrompt}
 【対象教科：${subject}】
@@ -13150,43 +13462,20 @@ ${subjectGuide}
 ${socraticAddon}
 
 今回はまだ授業本編ではなく、授業の準備（カリキュラム再設計）をしてください。
-1. 提供された原本テキストの内容を正確に踏まえ、内容量に応じた最適な区切りの「大まかな授業プラン」を作成すること（目安は2〜6パート程度）。
+1. 提供された原本テキストの内容を正確に踏まえ、${partsConstraint}
 2. 各パートのタイトルと要約（summary）を、学習の因果関係・論理展開に沿ってわかりやすく設計すること。
 3. 原本テキストは一字一句省略せずそのまま extracted_text として出力すること。
 4. この範囲の中で、参考書オリジナルの名前がついた法則・定理・原則・手順があれば抽出すること。
-5. 歴史科目（日本史・世界史）または年号を伴う内容の場合、原本テキスト中に出てくる年号（西暦・元号）および重要な歴史的事件・出来事・体制成立・法令・条約・開港などを【1つも漏らさず全て】historical_eventsとして抽出すること。表記揺れ（例: 前講や他ページとの重複）に配慮し、年号(year)と出来事名(name)は正式名称で抽出すること。
-6. 【重要：読み仮名の徹底】社会系科目（日本史・世界史・地理・公共・政治経済・公民）をはじめ、高校生がつまずきやすい難しい漢字、歴史用語、人名、地名、制度名、事件名、法律名などには、必ず「漢字（よみがな）」または「<ruby>漢字<rt>よみがな</rt></ruby>」で読み仮名を徹底して付記すること。
+5. 歴史科目（日本史・世界史）または年号を伴う内容の場合、原本テキスト中に出てくる年号（西暦・元号）および重要な歴史的事件・出来事・体制成立・法令・条約・開港などを【1つも漏らさず全て】historical_eventsとして抽出すること。
+6. 【重要：読み仮名の徹底】社会系科目をはじめ、高校生がつまずきやすい難しい漢字、歴史用語、人名、地名、制度名、事件名、法律名などには、必ず「漢字（よみがな）」または「<ruby>漢字<rt>よみがな</rt></ruby>」で読み仮名を徹底して付記すること。
 
 出力は必ず指定のJSON形式のみで返してください。`;
 
-                // 🔗 直前の授業（シリーズ前話）からの引き継ぎ情報を考慮（元の授業が続き物だった場合）
-                let continuationPromptAddon = "";
-                let prevLessonHistoricalEvents = [];
-                if (currentLesson.previousLessonId && loginUid) {
-                    try {
-                        const prevSnap = await get(ref(database, 'users/' + loginUid + '/lessons/' + currentLesson.previousLessonId));
-                        const prevLessonData = prevSnap.val();
-                        if (prevLessonData) {
-                            continuationPromptAddon = buildContinuationContext(prevLessonData, subject, currentLesson.level || "");
-                            prevLessonHistoricalEvents = prevLessonData.historicalEvents || [];
-                        }
-                    } catch (err) {
-                        console.warn("⚠️ 直前の授業の引き継ぎ情報取得に失敗:", err);
-                    }
-                } else if (Array.isArray(currentLesson.historicalEvents) && currentLesson.historicalEvents.length > 0) {
-                    // 直前の授業IDが明示されていない場合でも、現在の授業に既に登録されている年表があれば退避して漏れを防止
-                    prevLessonHistoricalEvents = currentLesson.historicalEvents;
-                }
-
                 let promptText = `【教科：${subject}】
 以下の原本テキスト（参考書・教科書の文字起こし全文）を解析し、全パートの構成（Part 1〜N）と重要用語リストを再構成して指定のJSONで授業プランを作成してください。
-また、原本テキスト中に登場する歴史的出来事・年代・事件は漏れなくすべて historical_events 配列に抽出してください。
 
 【原本テキスト全文】
-${sourceText}`;
-                if (continuationPromptAddon) {
-                    promptText += `\n\n${continuationPromptAddon}`;
-                }
+${updatedSourceText}`;
 
                 const result = await callGeminiJSON(
                     [{ text: promptText }],
@@ -13198,29 +13487,49 @@ ${sourceText}`;
                     throw new Error("カリキュラムの生成に失敗しました（パート情報が取得できませんでした）。");
                 }
 
-                // 授業データを上書き更新（続き元の継承用語・年表があれば引き継ぐ）
+                // 授業データを上書き更新
                 currentLesson.title = result.lesson_title || currentLesson.title;
+                currentLesson.extractedText = updatedSourceText;
+                currentLesson.teachingStyle = selectedStyle;
                 currentLesson.parts = result.parts;
-                const newKeyTerms = Array.isArray(result.key_terms) ? result.key_terms : [];
-                currentLesson.keyTerms = newKeyTerms;
-                const inherited = Array.isArray(currentLesson.inheritedKeyTerms) ? currentLesson.inheritedKeyTerms : [];
-                const existingNames = new Set(inherited.map(t => t.name));
-                currentLesson.accumulatedKeyTerms = [
-                    ...inherited,
-                    ...newKeyTerms.filter(t => t && t.name && !existingNames.has(t.name))
-                ];
-
-                // ⛩️ 日本史・世界史などの歴史イベント（年表）のマージ・重複排除・年代順ソート
-                const thisLessonHistoricalEvents = Array.isArray(result.historical_events) ? result.historical_events : [];
-                const mergedHistoricalEvents = mergeAndDeduplicateHistoricalEvents(prevLessonHistoricalEvents, thisLessonHistoricalEvents);
-                currentLesson.historicalEvents = mergedHistoricalEvents;
-
                 currentLesson.currentPartIndex = 0;
                 currentLesson.status = "teaching";
                 currentLesson.chatHistory = [];
-                currentLesson.memorizationPoints = null; // 暗記項目リセット（新パートに合わせて再生成）
-                currentLesson.choiceDrills = null; // 🎯 選択問題リセット（新パートに合わせて再生成）
                 currentLesson.updatedAt = new Date().toISOString();
+
+                // 📚 重要用語の適用（キープ設定に基づくマージ）
+                const newKeyTerms = Array.isArray(result.key_terms) ? result.key_terms : [];
+                if (keepTerms && savedKeyTerms.length > 0) {
+                    const existingNames = new Set(savedKeyTerms.map(t => t.name));
+                    currentLesson.keyTerms = [
+                        ...savedKeyTerms,
+                        ...newKeyTerms.filter(t => t && t.name && !existingNames.has(t.name))
+                    ];
+                } else {
+                    currentLesson.keyTerms = newKeyTerms;
+                }
+
+                // ⏳ 歴史年表の適用（キープ設定に基づくマージ）
+                const newHistoricalEvents = Array.isArray(result.historical_events) ? result.historical_events : [];
+                if (keepEvents && savedEvents.length > 0) {
+                    currentLesson.historicalEvents = mergeAndDeduplicateHistoricalEvents(savedEvents, newHistoricalEvents);
+                } else {
+                    currentLesson.historicalEvents = newHistoricalEvents;
+                }
+
+                // 🧠 暗記事項（暗記カード）の適用（キープ時はそのまま維持！）
+                if (keepMemo && savedMemoPoints && savedMemoPoints.length > 0) {
+                    currentLesson.memorizationPoints = savedMemoPoints;
+                } else {
+                    currentLesson.memorizationPoints = null; // 新パートに合わせて自動再生成
+                }
+
+                // 🎯 選択問題の適用（キープ時はそのまま維持！）
+                if (keepDrills && savedDrills && savedDrills.length > 0) {
+                    currentLesson.choiceDrills = savedDrills;
+                } else {
+                    currentLesson.choiceDrills = null; // 新パートに合わせて自動再生成
+                }
 
                 // 演習エリアや完了表示のクリーンアップ
                 const drillContainer = el("drill-container-area");
@@ -13230,16 +13539,30 @@ ${sourceText}`;
                 // Firebase に保存
                 await set(ref(database, 'users/' + loginUid + '/lessons/' + currentLessonId), currentLesson);
 
+                // モーダルを閉じる
+                modalRecreate.style.display = "none";
+
                 // UI 各種更新
                 updateProgressStrip();
                 updateCompletionUI();
                 renderPartsTOC();
                 initLessonTitleEditor();
                 renderSourceText();
-                ensureMemorizationPoints();
-                ensureChoiceDrills();
 
-                // 原本タブから「パート目次」タブへ自動で切り替えて、新しく作られた目次がすぐ見えるようにする
+                // キープしなかった場合のみ、新パートに合わせて再抽出
+                if (!keepMemo || !currentLesson.memorizationPoints) {
+                    ensureMemorizationPoints();
+                } else {
+                    renderMemorizationPoints();
+                }
+
+                if (!keepDrills || !currentLesson.choiceDrills) {
+                    ensureChoiceDrills();
+                } else {
+                    renderChoiceDrills();
+                }
+
+                // 原本タブから「パート目次」タブへ自動で切り替え
                 document.querySelectorAll(".sidebar-tab-btn").forEach(b => b.classList.remove("active"));
                 document.querySelectorAll(".sidebar-panel").forEach(p => p.classList.remove("active"));
                 const tocTabBtn = document.querySelector('.sidebar-tab-btn[data-tab="tab-parts"]');
@@ -13252,7 +13575,12 @@ ${sourceText}`;
                 renderChatTranscript();
                 renderVscodeMode();
 
-                showToast("カリキュラムを再構築しました！第1回の授業を開始します。", "success", 3000);
+                const keepStatusMsg = [];
+                if (keepMemo && savedMemoPoints && savedMemoPoints.length > 0) keepStatusMsg.push(`暗記カード(${savedMemoPoints.length}件)維持`);
+                if (keepDrills && savedDrills && savedDrills.length > 0) keepStatusMsg.push(`選択問題(${savedDrills.length}問)維持`);
+                const statusSuffix = keepStatusMsg.length > 0 ? ` [${keepStatusMsg.join('・')}]` : '';
+
+                showToast(`🎉 授業を再作成しました！${statusSuffix} 第1回の講義を開始します。`, "success", 4000);
 
                 try {
                     const firstPart = currentLesson.parts[0];
@@ -13269,15 +13597,17 @@ ${sourceText}`;
                 console.error("授業再構築エラー:", err);
                 showToast("授業の再構築に失敗しました: " + err.message, "error", 7000);
             } finally {
-                if (btn) {
-                    btn.disabled = false;
-                    btn.innerHTML = origBtnText;
-                }
+                btnExecuteRecreateModal.disabled = false;
+                btnExecuteRecreateModal.innerHTML = `🚀 指定した設定で授業を再作成`;
             }
         }
 
+        // 授業再作成ボタンのリスナー（原本タブ＆ヘッダー）
         if (el("recreate-lesson-from-source-btn")) {
-            el("recreate-lesson-from-source-btn").addEventListener("click", recreateLessonFromSourceText);
+            el("recreate-lesson-from-source-btn").addEventListener("click", openRecreateLessonModal);
+        }
+        if (el("lesson-header-recreate-btn")) {
+            el("lesson-header-recreate-btn").addEventListener("click", openRecreateLessonModal);
         }
 
         document.querySelectorAll(".sidebar-tab-btn").forEach(btn => {
