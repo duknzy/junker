@@ -95,7 +95,7 @@
         /* タイムラインアイテム */
         .timeline-flow {
             position: relative;
-            padding-left: 1.5rem;
+            padding-left: 1.8rem;
             margin-top: 0.8rem;
         }
         .timeline-flow::before {
@@ -103,9 +103,11 @@
             position: absolute;
             top: 0;
             bottom: 0;
-            left: 6px;
+            left: 0.9rem;
             width: 2px;
-            background: linear-gradient(180deg, var(--brand-primary) 0%, rgba(5,150,105,0.1) 100%);
+            transform: translateX(-50%);
+            background: linear-gradient(180deg, var(--brand-primary) 0%, rgba(5,150,105,0.15) 100%);
+            z-index: 1;
         }
 
         .m-century-sep {
@@ -113,14 +115,16 @@
             font-size: 0.78rem;
             font-weight: 800;
             color: var(--brand-primary);
-            margin: 1.1rem 0 0.5rem -0.8rem;
-            padding: 0.25rem 0.65rem;
-            background: var(--brand-light);
-            border-left: 3px solid var(--brand-primary);
-            border-radius: 0 var(--radius-xs) var(--radius-xs) 0;
+            margin: 1.2rem 0 0.5rem -1.2rem;
+            padding: 0.28rem 0.75rem;
+            background: var(--bg-surface);
+            border: 1px solid var(--brand-primary);
+            border-radius: var(--radius-full);
             display: inline-flex;
             align-items: center;
             gap: 0.4rem;
+            z-index: 3;
+            box-shadow: 0 1px 4px rgba(5, 150, 105, 0.12);
         }
 
         .tl-item {
@@ -141,14 +145,16 @@
         .tl-item::before {
             content: '';
             position: absolute;
-            left: -1.5rem;
-            top: 1.1rem;
-            width: 10px;
-            height: 10px;
+            left: -0.9rem;
+            top: 1.2rem;
+            width: 12px;
+            height: 12px;
             border-radius: 50%;
-            background: var(--brand-primary);
-            border: 2px solid #fff;
-            transform: translateX(-4px);
+            background: #fff;
+            border: 2px solid var(--brand-primary);
+            box-shadow: 0 0 0 3px var(--brand-light);
+            transform: translate(-50%, -50%);
+            z-index: 2;
         }
 
         .tl-year {
@@ -160,6 +166,7 @@
             display: inline-flex;
             align-items: center;
             gap: 0.35rem;
+            flex-shrink: 0;
         }
         .tl-name {
             font-weight: 700;
@@ -167,30 +174,40 @@
             color: var(--text-primary);
             margin-bottom: 0.35rem;
             line-height: 1.4;
+            word-break: break-word;
         }
 
-        /* 🔴 赤シート・🔵 青シート ブラインドマスキング（モバイル） */
+        /* 🔴 赤シート・🔵 青シート ブラインドマスキング（モバイル・文字被り防止） */
         .m-blind-masked {
             cursor: pointer;
             user-select: none;
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             transition: all 0.2s ease;
+            position: relative;
+            vertical-align: middle;
+            max-width: 100%;
         }
         .m-blind-masked.m-mask-red:not(.revealed) {
             background: linear-gradient(135deg, #EF4444, #DC2626) !important;
             color: transparent !important;
             border-radius: var(--radius-xs);
-            padding: 0.1rem 0.5rem;
-            position: relative;
+            padding: 0.15rem 0.5rem;
+            min-width: 95px;
+            overflow: hidden;
+            flex-shrink: 0;
+            box-shadow: 0 1px 4px rgba(239, 68, 68, 0.25);
         }
         .m-blind-masked.m-mask-red:not(.revealed)::after {
             content: "🔴 ??? 年 👆";
             position: absolute;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             color: #fff;
-            font-size: 0.7rem;
+            font-size: 0.72rem;
             font-weight: 800;
             white-space: nowrap;
         }
@@ -198,17 +215,21 @@
             background: linear-gradient(135deg, #3B82F6, #2563EB) !important;
             color: transparent !important;
             border-radius: var(--radius-xs);
-            padding: 0.15rem 0.6rem;
-            position: relative;
+            padding: 0.25rem 0.7rem;
+            min-width: 140px;
+            min-height: 1.8rem;
+            overflow: hidden;
+            box-shadow: 0 1px 4px rgba(37, 99, 235, 0.25);
         }
         .m-blind-masked.m-mask-blue:not(.revealed)::after {
             content: "🔵 出来事名 👆";
             position: absolute;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             color: #fff;
-            font-size: 0.72rem;
+            font-size: 0.75rem;
             font-weight: 800;
             white-space: nowrap;
         }
@@ -216,6 +237,7 @@
             background: rgba(16, 185, 129, 0.12) !important;
             outline: 1.5px dashed #10B981;
             border-radius: var(--radius-xs);
+            padding: 0.1rem 0.35rem;
         }
 
         .tl-mnemonic {
@@ -419,17 +441,17 @@
         ];
 
         const PRESET_JAPAN = [
-            { name: "漢委奴国王の金印授与", year: "57年", yearSort: 57, region: "古代", mnemonic: "57年: こんな(57)金印ありがたい", note: "後漢の光武帝から" },
-            { name: "大化の改新（改新の詔）", year: "645年", yearSort: 645, region: "古代", mnemonic: "645年: 虫ご(645)ろし蘇我入鹿暗殺", note: "中大兄皇子と中臣鎌足" },
-            { name: "平城京遷都（奈良時代）", year: "710年", yearSort: 710, region: "古代", mnemonic: "710年: なんと(710)綺麗な平城京", note: "元明天皇" },
-            { name: "平安京遷都（平安時代）", year: "794年", yearSort: 794, region: "古代", mnemonic: "794年: 鳴くよ(794)ウグイス平安京", note: "桓武天皇" },
-            { name: "源頼朝が征夷大将軍に任官", year: "1192年", yearSort: 1192, region: "中世", mnemonic: "1192年: いい国(1192)作ろう鎌倉幕府", note: "御恩と奉公" },
-            { name: "建武の新政（後醍醐天皇）", year: "1334年", yearSort: 1334, region: "中世", mnemonic: "1334年: いざ見よ(1334)建武の新政", note: "足利尊氏と対立" },
-            { name: "応仁の乱勃発（戦国時代へ）", year: "1467年", yearSort: 1467, region: "中世", mnemonic: "1467年: 人のむな(1467)しい応仁の乱", note: "下剋上の世へ" },
-            { name: "関ヶ原の戦い", year: "1600年", yearSort: 1600, region: "近世", mnemonic: "1600年: ヒーローおお(1600)いに関ヶ原", note: "徳川家康が勝利" },
-            { name: "ペリー来航（黒船出現）", year: "1853年", yearSort: 1853, region: "近代", mnemonic: "1853年: いやごみ(1853)だらけ黒船", note: "日米和親条約へ" },
-            { name: "大政奉還（幕府返上）", year: "1867年", yearSort: 1867, region: "近代", mnemonic: "1867年: 人はむな(1867)しく幕府返上", note: "明治維新の始まり" },
-            { name: "大日本帝国憲法発布", year: "1889年", yearSort: 1889, region: "近代", mnemonic: "1889年: いちはやく(1889)発布憲法", note: "伊藤博文起草" }
+            { name: "漢委奴国王の金印授与", year: "57年", yearSort: 57, region: "弥生・古墳", mnemonic: "57年: こんな(57)金印ありがたい", note: "後漢の光武帝から" },
+            { name: "大化の改新（改新の詔）", year: "645年", yearSort: 645, region: "飛鳥", mnemonic: "645年: 虫ご(645)ろし蘇我入鹿暗殺", note: "中大兄皇子と中臣鎌足" },
+            { name: "平城京遷都（奈良時代）", year: "710年", yearSort: 710, region: "奈良", mnemonic: "710年: なんと(710)綺麗な平城京", note: "元明天皇" },
+            { name: "平安京遷都（平安時代）", year: "794年", yearSort: 794, region: "平安", mnemonic: "794年: 鳴くよ(794)ウグイス平安京", note: "桓武天皇" },
+            { name: "源頼朝が征夷大将軍に任官", year: "1192年", yearSort: 1192, region: "鎌倉", mnemonic: "1192年: いい国(1192)作ろう鎌倉幕府", note: "御恩と奉公" },
+            { name: "建武の新政（後醍醐天皇）", year: "1334年", yearSort: 1334, region: "室町・戦国", mnemonic: "1334年: いざ見よ(1334)建武の新政", note: "足利尊氏と対立" },
+            { name: "応仁の乱勃発（戦国時代へ）", year: "1467年", yearSort: 1467, region: "室町・戦国", mnemonic: "1467年: 人のむな(1467)しい応仁の乱", note: "下剋上の世へ" },
+            { name: "関ヶ原の戦い", year: "1600年", yearSort: 1600, region: "安土桃山", mnemonic: "1600年: ヒーローおお(1600)いに関ヶ原", note: "徳川家康が勝利" },
+            { name: "ペリー来航（黒船出現）", year: "1853年", yearSort: 1853, region: "明治・大正", mnemonic: "1853年: いやごみ(1853)だらけ黒船", note: "日米和親条約へ" },
+            { name: "大政奉還（幕府返上）", year: "1867年", yearSort: 1867, region: "明治・大正", mnemonic: "1867年: 人はむな(1867)しく幕府返上", note: "明治維新の始まり" },
+            { name: "大日本帝国憲法発布", year: "1889年", yearSort: 1889, region: "明治・大正", mnemonic: "1889年: いちはやく(1889)発布憲法", note: "伊藤博文起草" }
         ];
 
         let currentHistoryType = "world"; // "world" or "japan"
@@ -554,13 +576,13 @@
                 if (Array.isArray(p.events)) {
                     p.events.forEach(ev => {
                         const k = `${ev.name}_${ev.year}`;
-                        const ySort = typeof ev.year_sort === "number" ? ev.year_sort : (parseInt(ev.year) || 9999);
+                        const ySort = parseMobileYearSort(ev.year, ev.year_sort);
                         if (!map.has(k)) {
                             map.set(k, {
                                 name: ev.name,
                                 year: ev.year || "年代未詳",
                                 yearSort: ySort,
-                                region: ev.region || "全般",
+                                region: ev.region || (isWorld ? "全般" : "日本史"),
                                 mnemonic: p.mnemonic || "",
                                 note: "",
                                 isMistake: false,
@@ -580,13 +602,13 @@
                 const eventsArr = Array.isArray(l.historicalEvents) ? l.historicalEvents : (Array.isArray(l.events) ? l.events : []);
                 eventsArr.forEach(ev => {
                     const k = `${ev.name}_${ev.year}`;
-                    const ySort = typeof ev.year_sort === "number" ? ev.year_sort : (parseInt(ev.year) || 9999);
+                    const ySort = parseMobileYearSort(ev.year, ev.year_sort);
                     if (!map.has(k)) {
                         map.set(k, {
                             name: ev.name,
                             year: ev.year || "年代未詳",
                             yearSort: ySort,
-                            region: ev.region || "全般",
+                            region: ev.region || (isWorld ? "全般" : "日本史"),
                             mnemonic: l.mnemonic || "",
                             note: "",
                             isMistake: false,
@@ -600,7 +622,19 @@
         }
 
         function formatCenturyMobile(yearSort) {
-            if (yearSort === 9999) return "年代未詳";
+            if (yearSort === 9999) return "年代未詳・その他";
+            if (currentHistoryType === "japan") {
+                if (yearSort <= 592) return "弥生・古墳時代（〜6世紀末）";
+                if (yearSort <= 710) return "飛鳥時代（592〜710年）";
+                if (yearSort <= 794) return "奈良時代（710〜794年）";
+                if (yearSort <= 1185) return "平安時代（794〜1185年）";
+                if (yearSort <= 1333) return "鎌倉時代（1185〜1333年）";
+                if (yearSort <= 1573) return "室町・戦国時代（1336〜1573年）";
+                if (yearSort <= 1603) return "安土桃山時代（1573〜1603年）";
+                if (yearSort <= 1867) return "江戸時代（1603〜1867年）";
+                if (yearSort <= 1926) return "明治・大正時代（1868〜1926年）";
+                return "昭和・現代（1926年〜現在）";
+            }
             if (yearSort < 0) return `紀元前 ${Math.ceil(Math.abs(yearSort)/100)} 世紀`;
             if (yearSort === 0) return "1 世紀";
             return `${Math.ceil(yearSort / 100)} 世紀`;
@@ -656,7 +690,7 @@
 
                 html += `
                     <div class="tl-item ${ev.isMistake ? 'is-mistake' : ''}">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.4rem;">
                             <span class="${yearClass}" onclick="toggleMMask('${escapeHtml(evKey)}')">${escapeHtml(ev.year || '')}</span>
                             <div style="display:flex; align-items:center; gap:0.3rem;">
                                 ${ev.isMistake ? '<span style="font-size:0.68rem; font-weight:800; color:#DC2626; background:#FEE2E2; padding:0.1rem 0.35rem; border-radius:4px;">🔥 誤答</span>' : ''}
