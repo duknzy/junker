@@ -2657,18 +2657,6 @@ ${glossaryBlock}`;
                     throw new Error("DeepSeekは画像を直接読み取れません。先に✨Geminiで一度解析して問題文を文字起こしするか、問題文を手動で入力してから再度お試しください。");
                 }
                 const currentThinking = getEffectiveThinkingLevel(featureId, "default");
-                const dsThinking = buildDeepseekThinkingPayload(currentThinking);
-                const deepseekBody = JSON.stringify({
-                    "model": MODEL_NAME,
-                    "messages": [
-                        { "role": "system", "content": systemInstruction },
-                        { "role": "user", "content": instructionText }
-                    ],
-                    "temperature": 0.3,
-                    "response_format": { "type": "json_object" },
-                    ...dsThinking
-                });
-
                 const dsKeys = getDeepseekKeys();
                 if ((!dsKeys || dsKeys.length === 0) && (isStaticHostingEnvironment() || (typeof window !== "undefined" && window.__serverHasDeepseekKey === false))) {
                     setTimeout(() => { if (window.__apikmOpen) window.__apikmOpen(); }, 150);
@@ -2679,6 +2667,25 @@ ${glossaryBlock}`;
                 let deepseekLastError = null;
 
                 for (let attempt = 1; attempt <= MAX_DEEPSEEK_ATTEMPTS; attempt++) {
+                    // 1回目は設定通りの思考レベル、2回目以降でトークン上限や空応答があれば推論深度を落として回答枠を確保
+                    let thinkingForAttempt = currentThinking;
+                    if (attempt === 2) {
+                        thinkingForAttempt = (currentThinking === "low" || currentThinking === "none") ? "none" : "low";
+                    } else if (attempt >= 3) {
+                        thinkingForAttempt = "none";
+                    }
+                    const dsThinking = buildDeepseekThinkingPayload(thinkingForAttempt);
+                    const deepseekBody = JSON.stringify({
+                        "model": MODEL_NAME,
+                        "messages": [
+                            { "role": "system", "content": systemInstruction },
+                            { "role": "user", "content": instructionText }
+                        ],
+                        "temperature": 0.3,
+                        "response_format": { "type": "json_object" },
+                        ...dsThinking
+                    });
+
                     const currentKeys = getDeepseekKeys();
                     const response = (currentKeys && currentKeys.length > 0)
                         ? await fetchWithKeyRotation(currentKeys, (key) => ({
@@ -2708,28 +2715,46 @@ ${glossaryBlock}`;
                     }
 
                     const data = await response.json();
-                    const message = data?.choices?.[0]?.message || {};
-                    const finishReason = data?.choices?.[0]?.finish_reason;
-                    let rawText = (message.content && message.content.trim())
-                        || (message.reasoning_content && message.reasoning_content.trim())
-                        || "";
+                    const choice = data?.choices?.[0] || {};
+                    const message = choice.message || {};
+                    const finishReason = choice.finish_reason;
+                    let rawText = (message.content && message.content.trim()) || "";
 
                     if (!rawText) {
+                        if (finishReason === "length") {
+                            console.warn(`⚠️ DeepSeekがトークン上限（max_tokens）に到達し、回答出力前に終了しました（${attempt}/${MAX_DEEPSEEK_ATTEMPTS}回目）→ 推論深度を落としてリトライ`);
+                            const rContent = (message.reasoning_content && message.reasoning_content.trim()) || "";
+                            if (rContent) {
+                                try {
+                                    return cleanDeepSeekResponse(rContent);
+                                } catch (_) {}
+                            }
+                            deepseekLastError = new Error(`DeepSeekがトークン上限（finish_reason: length）に達し、回答出力前に中断されました。`);
+                            continue;
+                        }
+
+                        const rContent = (message.reasoning_content && message.reasoning_content.trim()) || "";
+                        if (rContent) {
+                            try {
+                                return cleanDeepSeekResponse(rContent);
+                            } catch (_) {}
+                        }
+
                         console.warn(`⚠️ DeepSeekが空の応答を返却しました（${attempt}/${MAX_DEEPSEEK_ATTEMPTS}回目, finish_reason: ${finishReason || "不明"}）→ リトライ`);
                         deepseekLastError = new Error(`DeepSeekが空の応答を返却しました（finish_reason: ${finishReason || "不明"}）`);
                         continue;
                     }
 
                     try {
-    return cleanDeepSeekResponse(rawText);
-} catch (parseErr) {
-    console.warn(`⚠️ DeepSeekの応答が不正なJSONでした（${attempt}/${MAX_DEEPSEEK_ATTEMPTS}回目）→ リトライ`, parseErr);
-    deepseekLastError = parseErr;
-    continue;
-}
+                        return cleanDeepSeekResponse(rawText);
+                    } catch (parseErr) {
+                        console.warn(`⚠️ DeepSeekの応答が不正なJSONでした（${attempt}/${MAX_DEEPSEEK_ATTEMPTS}回目）→ リトライ`, parseErr);
+                        deepseekLastError = parseErr;
+                        continue;
+                    }
                 }
 
-                throw new Error(`DeepSeekブレインが${MAX_DEEPSEEK_ATTEMPTS}回連続で空/不正な応答を返しました（DeepSeek側の既知の仕様上の問題です）。もう一度実行するか、✨Geminiに切り替えてみてください。\n最終エラー: ${deepseekLastError?.message || "不明"}`);
+                throw new Error(`DeepSeekブレインが${MAX_DEEPSEEK_ATTEMPTS}回連続で空/不正な応答を返しました（トークン上限またはDeepSeek API側の混雑の可能性があります）。もう一度実行するか、✨Geminiに切り替えてみてください。\n最終エラー: ${deepseekLastError?.message || "不明"}`);
 
             } else {
                 // ✨ Gemini（画像入力対応・複数枚まとめて送信可）
@@ -2928,18 +2953,7 @@ ${EXPERT_TEACHER_PROMPT}
                         ...conversationMessages
                     ];
                     const currentThinking = getEffectiveThinkingLevel("chat", "default");
-                    const dsThinking = buildDeepseekThinkingPayload(currentThinking);
-                    const tutorDeepseekBody = JSON.stringify({
-                        "model": MODEL_NAME,
-                        "messages": optimizedMessages,
-                        "temperature": 0.5,
-                        "response_format": { "type": "json_object" },
-                        ...dsThinking
-                    });
 
-                    // 💡 DeepSeekはthinking+json_object併用時に稀にcontentが空で返ってくる
-                    //   既知の仕様上の癖があるため（公式ドキュメントにも明記）、その場合は
-                    //   自動リトライする（Geminiのモデル・フォールバックに相当する対策）
                     const dsKeys = getDeepseekKeys();
                     if ((!dsKeys || dsKeys.length === 0) && (isStaticHostingEnvironment() || (typeof window !== "undefined" && window.__serverHasDeepseekKey === false))) {
                         setTimeout(() => { if (window.__apikmOpen) window.__apikmOpen(); }, 150);
@@ -2950,6 +2964,21 @@ ${EXPERT_TEACHER_PROMPT}
                     let deepseekLastError = null;
 
                     for (let attempt = 1; attempt <= MAX_DEEPSEEK_ATTEMPTS; attempt++) {
+                        let thinkingForAttempt = currentThinking;
+                        if (attempt === 2) {
+                            thinkingForAttempt = (currentThinking === "low" || currentThinking === "none") ? "none" : "low";
+                        } else if (attempt >= 3) {
+                            thinkingForAttempt = "none";
+                        }
+                        const dsThinking = buildDeepseekThinkingPayload(thinkingForAttempt);
+                        const tutorDeepseekBody = JSON.stringify({
+                            "model": MODEL_NAME,
+                            "messages": optimizedMessages,
+                            "temperature": 0.5,
+                            "response_format": { "type": "json_object" },
+                            ...dsThinking
+                        });
+
                         const currentKeys = getDeepseekKeys();
                         const response = (currentKeys && currentKeys.length > 0)
                             ? await fetchWithKeyRotation(currentKeys, (key) => ({
@@ -2979,14 +3008,35 @@ ${EXPERT_TEACHER_PROMPT}
                         }
 
                         const data = await response.json();
-                        const message = data?.choices?.[0]?.message || {};
-                        const finishReason = data?.choices?.[0]?.finish_reason;
-                        // contentが空なら、稀にJSONがreasoning_content側に出てしまうケースの救済も試みる
-                        const rawOutput = (message.content && message.content.trim())
-                            || (message.reasoning_content && message.reasoning_content.trim())
-                            || "";
+                        const choice = data?.choices?.[0] || {};
+                        const message = choice.message || {};
+                        const finishReason = choice.finish_reason;
+                        let rawOutput = (message.content && message.content.trim()) || "";
 
                         if (!rawOutput) {
+                            if (finishReason === "length") {
+                                console.warn(`⚠️ DeepSeekがトークン上限（max_tokens）に到達し、回答出力前に終了しました（${attempt}/${MAX_DEEPSEEK_ATTEMPTS}回目）→ 推論深度を落としてリトライ`);
+                                const rContent = (message.reasoning_content && message.reasoning_content.trim()) || "";
+                                if (rContent) {
+                                    try {
+                                        aiJson = cleanDeepSeekResponse(rContent);
+                                        deepseekLastError = null;
+                                        break;
+                                    } catch (_) {}
+                                }
+                                deepseekLastError = new Error(`DeepSeekがトークン上限（finish_reason: length）に達し、回答出力前に中断されました。`);
+                                continue;
+                            }
+
+                            const rContent = (message.reasoning_content && message.reasoning_content.trim()) || "";
+                            if (rContent) {
+                                try {
+                                    aiJson = cleanDeepSeekResponse(rContent);
+                                    deepseekLastError = null;
+                                    break;
+                                } catch (_) {}
+                            }
+
                             console.warn(`⚠️ DeepSeekが空の応答を返却しました（${attempt}/${MAX_DEEPSEEK_ATTEMPTS}回目, finish_reason: ${finishReason || "不明"}）→ リトライ`);
                             deepseekLastError = new Error(`DeepSeekが空の応答を返却しました（finish_reason: ${finishReason || "不明"}）`);
                             continue;
@@ -3004,7 +3054,7 @@ ${EXPERT_TEACHER_PROMPT}
                     }
 
                     if (deepseekLastError) {
-                        throw new Error(`DeepSeekブレインが${MAX_DEEPSEEK_ATTEMPTS}回連続で空/不正な応答を返しました（DeepSeek側の既知の仕様上の問題です）。もう一度送信するか、右上のトグルからGeminiに切り替えてみてください。\n最終エラー: ${deepseekLastError.message}`);
+                        throw new Error(`DeepSeekブレインが${MAX_DEEPSEEK_ATTEMPTS}回連続で空/不正な応答を返しました（トークン上限またはDeepSeek API側の混雑の可能性があります）。もう一度送信するか、右上のトグルからGeminiに切り替えてみてください。\n最終エラー: ${deepseekLastError.message}`);
                     }
 
                 } else {

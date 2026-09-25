@@ -1007,39 +1007,39 @@ export function getThinkingDisplayLabel(engineOrModel, thinkingLevel) {
     return item ? item.label : activeId;
 }
 
-export function buildDeepseekThinkingPayload(thinkingLevel) {
-    if (!thinkingLevel || thinkingLevel === "default" || thinkingLevel === "auto") {
-        // DeepSeek標準: 高推論 (high) + 8192トークン
-        return {
-            thinking: { type: "enabled" },
-            reasoning_effort: "high",
-            max_tokens: 8192
-        };
-    }
-    const clean = String(thinkingLevel).toLowerCase();
+export function buildDeepseekThinkingPayload(thinkingLevel, options = {}) {
+    const clean = (!thinkingLevel || thinkingLevel === "default" || thinkingLevel === "auto")
+        ? "default"
+        : String(thinkingLevel).toLowerCase();
+
     if (clean === "none" || clean === "minimal") {
         return {
             thinking: { type: "disabled" },
             reasoning_effort: "none",
-            max_tokens: 4096
+            max_tokens: options.max_tokens || 8000
         };
     }
+
+    // 💡 DeepSeekの思考モード (thinking enabled) では、推論(reasoning_content)と最終回答(content)が
+    //    max_tokensの共通枠を消費します。以前の8,192上限では長文思考時に8192トークンすべてを推論で使い切り、
+    //    finish_reason: "length" となって肝心の回答(content)が空のまま終了する不具合が発生していました。
+    //    DeepSeek公式仕様に準拠し、思考モード時は64,000トークン（max時は128,000）を確保して思考枯渇を防止します。
     let effort = "high";
-    let maxTokens = 8192;
+    let maxTokens = 64000;
     if (clean === "low") {
         effort = "low";
-        maxTokens = 8192;
-    } else if (clean === "medium" || clean === "high") {
+        maxTokens = 32000;
+    } else if (clean === "medium" || clean === "high" || clean === "default") {
         effort = "high";
-        maxTokens = 8192;
+        maxTokens = 64000;
     } else if (clean === "max") {
         effort = "max";
-        maxTokens = 16384;
+        maxTokens = 128000;
     }
     return {
         thinking: { type: "enabled" },
         reasoning_effort: effort,
-        max_tokens: maxTokens
+        max_tokens: options.max_tokens || maxTokens
     };
 }
 
@@ -1104,6 +1104,18 @@ export function normalizeGeminiThinkingLevel(level) {
     return null;
 }
 
+function contentsContainImages(contents) {
+    if (!Array.isArray(contents)) return false;
+    for (const c of contents) {
+        if (Array.isArray(c?.parts)) {
+            for (const p of c.parts) {
+                if (p?.inlineData || p?.inline_data) return true;
+            }
+        }
+    }
+    return false;
+}
+
 async function runDeepseekFallbackLoop(contents, systemInstruction, options = {}) {
     const wantsJson = !!(options.responseSchema || options.responseMimeType === "application/json" || options.rawText === false);
     const {
@@ -1117,22 +1129,33 @@ async function runDeepseekFallbackLoop(contents, systemInstruction, options = {}
 
     const deepseekKeys = getDeepseekKeys();
     const effectiveThinking = options.thinkingLevel || getEffectiveThinkingLevel(featureId, "default");
-    const deepseekThinkingPayload = buildDeepseekThinkingPayload(effectiveThinking);
-    const baseMessages = convertGeminiContentsToOpenAIMessages(contents, systemInstruction);
+    
+    // 💡 DeepSeek向けにresponseSchemaをプロンプト内へスキーマ定義として補完注入
+    let systemWithSchema = systemInstruction || "";
+    if (options.responseSchema) {
+        try {
+            const schemaStr = JSON.stringify(options.responseSchema, null, 2);
+            systemWithSchema += `\n\n【必須JSONスキーマ定義】\n回答は以下のJSONスキーマ構造に厳密に従って出力してください:\n\`\`\`json\n${schemaStr}\n\`\`\``;
+        } catch (_) {}
+    }
+    const baseMessages = convertGeminiContentsToOpenAIMessages(contents, systemWithSchema);
 
     let modelList = [preferredModel, ...DEEPSEEK_MODELS.filter(m => m !== preferredModel)];
     const strictJsonReminder = "\n\n❗最重要ルール: 出力は指定されたJSON形式のみとすること。挨拶・前置き・説明文・Markdownのコードブロック(```)など、JSON以外の文字列は一切含めないこと。";
     let lastError = null;
     const fallbackAttempts = [];
 
-    async function attemptDeepseekOnce(modelName, extraInstruction = "") {
+    async function attemptDeepseekOnce(modelName, extraInstruction = "", overrideThinking = null) {
         const messages = [...baseMessages];
         if (extraInstruction) {
             messages.push({ role: "user", content: extraInstruction });
         }
+        const thinkingToUse = overrideThinking !== null ? overrideThinking : effectiveThinking;
+        const deepseekThinkingPayload = buildDeepseekThinkingPayload(thinkingToUse);
         const requestPayload = {
             model: modelName,
             messages: messages,
+            ...(wantsJson ? { response_format: { type: "json_object" } } : {}),
             ...deepseekThinkingPayload
         };
 
@@ -1160,22 +1183,55 @@ async function runDeepseekFallbackLoop(contents, systemInstruction, options = {}
                 }
             }
         } catch (err) {
-            return { ok: false, isFormatError: false, reason: err?.message || "通信エラー", error: err };
+            return { ok: false, isFormatError: false, isTokenLimitError: false, reason: err?.message || "通信エラー", error: err };
         }
 
         let resData;
         try {
             resData = await response.json();
         } catch (jsonErr) {
-            return { ok: false, isFormatError: false, reason: "JSON応答パースエラー", error: jsonErr };
+            return { ok: false, isFormatError: false, isTokenLimitError: false, reason: "JSON応答パースエラー", error: jsonErr };
         }
 
-        const message = resData?.choices?.[0]?.message || {};
-        const candidateText = (message.content && message.content.trim())
-            || (message.reasoning_content && message.reasoning_content.trim())
-            || "";
+        const choice = resData?.choices?.[0] || {};
+        const message = choice.message || {};
+        const finishReason = choice.finish_reason;
+
+        let candidateText = (message.content && message.content.trim()) || "";
+
+        // もし content が空で finish_reason が "length" の場合、思考トークンが上限に抵触
+        if (!candidateText && finishReason === "length") {
+            const thinkingText = (message.reasoning_content && message.reasoning_content.trim()) || "";
+            if (thinkingText && !rawText) {
+                try {
+                    const extractor = arrayMode ? extractJsonArray : extractJsonObject;
+                    const extracted = extractor(stripCodeFence(thinkingText));
+                    const parsed = JSON.parse(extracted);
+                    return { ok: true, parsed };
+                } catch (_) {}
+            }
+            return {
+                ok: false,
+                isFormatError: false,
+                isTokenLimitError: true,
+                reason: "トークン上限到達（finish_reason: length / 回答出力前に中断）",
+                error: new Error(`DeepSeekの推論トークンが上限に達し、回答本文が出力される前に中断されました (finish_reason: length)。`)
+            };
+        }
+
+        // reasoning_content の救済
         if (!candidateText) {
-            return { ok: false, isFormatError: false, reason: "空応答", error: new Error(`Empty response from ${modelName}`) };
+            candidateText = (message.reasoning_content && message.reasoning_content.trim()) || "";
+        }
+
+        if (!candidateText) {
+            return {
+                ok: false,
+                isFormatError: false,
+                isTokenLimitError: (finishReason === "length"),
+                reason: finishReason === "length" ? "トークン上限到達（空応答）" : "空応答",
+                error: new Error(`Empty response from ${modelName} (finish_reason: ${finishReason || "unknown"})`)
+            };
         }
 
         if (rawText) {
@@ -1194,13 +1250,19 @@ async function runDeepseekFallbackLoop(contents, systemInstruction, options = {}
             }
             return { ok: true, parsed };
         } catch (parseErr) {
-            return { ok: false, isFormatError: true, reason: "JSON解析エラー", error: parseErr, rawText: candidateText };
+            return { ok: false, isFormatError: true, isTokenLimitError: (finishReason === "length"), reason: "JSON解析エラー", error: parseErr, rawText: candidateText };
         }
     }
 
     for (const modelName of modelList) {
         let result = await attemptDeepseekOnce(modelName);
-        if (!result.ok && result.isFormatError) {
+        if (!result.ok && result.isTokenLimitError) {
+            console.warn(`⚠️ ${modelName} がトークン上限に達したため、推論深度をlowに引き下げて再試行します`);
+            result = await attemptDeepseekOnce(modelName, "", "low");
+            if (!result.ok && result.isTokenLimitError) {
+                result = await attemptDeepseekOnce(modelName, "", "none");
+            }
+        } else if (!result.ok && result.isFormatError) {
             result = await attemptDeepseekOnce(modelName, strictJsonReminder);
         }
         if (result.ok) {
@@ -1239,11 +1301,15 @@ async function runGeminiFallbackLoop(contents, systemInstruction, options = {}) 
     }
 
     // 🐋 もし優先モデルがDeepSeek、あるいはモデルリストの先頭がDeepSeekならDeepSeekループへ移譲
-    if ((preferredModel && isDeepseekModel(preferredModel)) || (modelList.length > 0 && isDeepseekModel(modelList[0]))) {
+    // （※ただし画像入力がある場合はDeepSeekは非対応のためGeminiへ自動ルーティング）
+    const hasImages = contentsContainImages(contents);
+    if (!hasImages && ((preferredModel && isDeepseekModel(preferredModel)) || (modelList.length > 0 && isDeepseekModel(modelList[0])))) {
         return runDeepseekFallbackLoop(contents, systemInstruction, {
             ...options,
             preferredModel: preferredModel || modelList[0]
         });
+    } else if (hasImages && ((preferredModel && isDeepseekModel(preferredModel)) || (modelList.length > 0 && isDeepseekModel(modelList[0])))) {
+        console.warn("ℹ️ 入力データに画像が含まれているため、マルチモーダル非対応のDeepSeekをバイパスしてGeminiへ自動ルーティングします");
     }
 
     // Gemini用モデルリストに絞り込み
