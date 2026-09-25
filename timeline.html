@@ -619,27 +619,19 @@
         </main>
     </div>
 
-    <!-- 🎯 共通テスト整序特訓（年代順並べ替え）モーダル -->
+    <!-- 🎯 共通テスト整序特訓（年代順並べ替え）マスタースタジオ モーダル -->
     <div id="reorder-quiz-modal" class="reorder-modal-overlay">
-        <div class="reorder-modal-dialog">
-            <div class="reorder-modal-header">
+        <div class="reorder-modal-dialog" style="max-width: 860px;">
+            <div class="reorder-modal-header" style="padding: 0.9rem 1.4rem; background: var(--bg-surface);">
                 <div style="display:flex; align-items:center; gap:0.6rem;">
-                    <span style="font-size:1.2rem;">🎯</span>
-                    <div>
-                        <div style="font-weight:800; font-size:1.02rem; color:var(--text-primary);" id="quiz-modal-title">共通テスト整序特訓（年代順並べ替え）</div>
-                        <div style="font-size:0.74rem; color:var(--text-secondary);" id="quiz-modal-subtitle">第 1 / 5 問 ｜ 古い順（過去 ➔ 未来）に並べ替えてください</div>
-                    </div>
+                    <span style="font-size:1.25rem;">🎯</span>
+                    <span style="font-weight:800; font-size:1.05rem; color:var(--text-primary);">共通テスト整序マスター特訓スタジオ</span>
                 </div>
-                <div style="display:flex; align-items:center; gap:0.8rem;">
-                    <div style="font-size:0.85rem; font-weight:800; color:#4F46E5; background:#EEF2FF; padding:0.25rem 0.65rem; border-radius:var(--radius-sm);" id="quiz-score-badge">
-                        スコア: 0 pt
-                    </div>
-                    <button type="button" id="btn-close-reorder-quiz" style="background:none; border:none; font-size:1.4rem; color:var(--text-secondary); cursor:pointer; line-height:1;">✕</button>
-                </div>
+                <button type="button" id="btn-close-reorder-quiz" style="background:none; border:none; font-size:1.35rem; color:var(--text-secondary); cursor:pointer; line-height:1; padding:0.2rem 0.5rem; border-radius:4px;" title="閉じる">✕</button>
             </div>
 
-            <div class="reorder-modal-body" id="quiz-modal-body">
-                <!-- クイズ画面または結果画面を動的生成 -->
+            <div class="reorder-modal-body quiz-content-area" id="quiz-modal-body" style="padding: 1.4rem; max-height: calc(90vh - 65px); overflow-y: auto;">
+                <!-- TimelineQuizEngine によって動的に描画 -->
             </div>
         </div>
     </div>
@@ -647,6 +639,7 @@
     <script src="sidebar.js"></script>
 
     <script type="module">
+        import { TimelineQuizEngine } from "./timeline-quiz.js";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
         import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
@@ -1344,287 +1337,39 @@
         // 🎯 共通テスト整序特訓（年代順並べ替え）ゲームエンジン
         // ==========================================================
         let quizEventsPool = [];
-        let currentQuizIndex = 0;
-        let quizTotalQuestions = 5;
-        let quizCurrentItems = [];
-        let quizScore = 0;
-        let quizAnswered = false;
+        // ==========================================================
+        // 🎯 共通テスト整序特訓（年代順並べ替え）エキスパートエンジン連携
+        // ==========================================================
+        let timelineQuizInstance = null;
 
         const modalQuiz = document.getElementById("reorder-quiz-modal");
         const btnStartQuiz = document.getElementById("btn-start-reorder-quiz");
         const btnCloseQuiz = document.getElementById("btn-close-reorder-quiz");
-        const quizModalBody = document.getElementById("quiz-modal-body");
-        const quizScoreBadge = document.getElementById("quiz-score-badge");
-        const quizSubTitle = document.getElementById("quiz-modal-subtitle");
+
+        function openQuizStudio() {
+            const allEvents = collectAllEvents();
+            modalQuiz.style.display = "flex";
+
+            timelineQuizInstance = new TimelineQuizEngine({
+                containerModal: modalQuiz,
+                historyType: activeHistoryType,
+                customEvents: allEvents,
+                onFinish: () => {
+                    modalQuiz.style.display = "none";
+                }
+            });
+
+            timelineQuizInstance.renderModeSelect();
+        }
 
         if (btnStartQuiz) {
-            btnStartQuiz.onclick = () => startReorderQuiz();
+            btnStartQuiz.onclick = () => openQuizStudio();
         }
+
         if (btnCloseQuiz) {
             btnCloseQuiz.onclick = () => {
                 modalQuiz.style.display = "none";
             };
-        }
-
-        function startReorderQuiz() {
-            const all = collectAllEvents();
-            // 重複年代や年代未詳を除外
-            const valid = all.filter(ev => ev.year_sort !== 9999);
-            if (valid.length < 3) {
-                alert("並べ替え問題を作成するには出来事が3つ以上必要です。");
-                return;
-            }
-
-            quizEventsPool = valid;
-            currentQuizIndex = 0;
-            quizScore = 0;
-            quizTotalQuestions = Math.min(5, Math.floor(valid.length / 3) * 2);
-            if (quizTotalQuestions < 3) quizTotalQuestions = 3;
-
-            modalQuiz.style.display = "flex";
-            renderNextQuizQuestion();
-        }
-
-        function renderNextQuizQuestion() {
-            quizAnswered = false;
-            if (currentQuizIndex >= quizTotalQuestions) {
-                renderQuizFinalResult();
-                return;
-            }
-
-            if (quizScoreBadge) quizScoreBadge.textContent = `スコア: ${quizScore} pt`;
-            if (quizSubTitle) {
-                quizSubTitle.textContent = `第 ${currentQuizIndex + 1} / ${quizTotalQuestions} 問 ｜ 過去から未来へ年代順に並べ替えてください`;
-            }
-
-            // ランダムに3〜4つの年代が異なる出来事を抽出
-            const count = 3; // 共通テストの基本は3要素並べ替え (Ⅰ, Ⅱ, Ⅲ)
-            const shuffledPool = [...quizEventsPool].sort(() => Math.random() - 0.5);
-            const picked = [];
-            const usedYears = new Set();
-
-            for (const ev of shuffledPool) {
-                if (!usedYears.has(ev.year_sort)) {
-                    picked.push(ev);
-                    usedYears.add(ev.year_sort);
-                    if (picked.length >= count) break;
-                }
-            }
-
-            // 正解の並び順（year_sort 昇順）
-            const correctOrder = [...picked].sort((a, b) => a.year_sort - b.year_sort);
-
-            // ユーザー回答用にシャッフル（絶対に最初から正解順になっていないようにする）
-            let userOrder = [...picked].sort(() => Math.random() - 0.5);
-            let attempts = 0;
-            while (userOrder.every((item, i) => item.year_sort === correctOrder[i].year_sort) && attempts < 10) {
-                userOrder.sort(() => Math.random() - 0.5);
-                attempts++;
-            }
-
-            quizCurrentItems = {
-                userOrder: userOrder,
-                correctOrder: correctOrder
-            };
-
-            renderQuizCardList();
-        }
-
-        function renderQuizCardList() {
-            const romanLabels = ["Ⅰ", "Ⅱ", "Ⅲ", "Ⅳ"];
-            const listHtml = quizCurrentItems.userOrder.map((item, idx) => `
-                <div class="reorder-card" draggable="true" data-index="${idx}">
-                    <div class="reorder-index-badge">${romanLabels[idx]}</div>
-                    <div style="flex:1; min-width:0;">
-                        <div style="font-weight:800; font-size:1.02rem; color:var(--text-primary); margin-bottom:0.25rem;">
-                            ${escapeHtml(item.name)}
-                        </div>
-                        <div style="font-size:0.75rem; color:var(--text-secondary); display:flex; gap:0.5rem; flex-wrap:wrap;">
-                            <span class="badge" style="background:var(--bg-subtle); border:1px solid var(--border-color); font-size:0.7rem;">📍 ${escapeHtml(item.category)}</span>
-                            ${item.note ? `<span>💡 ${escapeHtml(item.note)}</span>` : ''}
-                        </div>
-                    </div>
-                    <div style="display:flex; flex-direction:column; gap:0.25rem;">
-                        <button type="button" class="reorder-btn-move" onclick="moveQuizCard(${idx}, -1)" ${idx === 0 ? 'disabled' : ''} title="上へ移動">▲</button>
-                        <button type="button" class="reorder-btn-move" onclick="moveQuizCard(${idx}, 1)" ${idx === quizCurrentItems.userOrder.length - 1 ? 'disabled' : ''} title="下へ移動">▼</button>
-                    </div>
-                </div>
-            `).join("");
-
-            quizModalBody.innerHTML = `
-                <div style="background:rgba(99, 102, 241, 0.08); border:1px solid rgba(99, 102, 241, 0.25); border-radius:var(--radius-md); padding:0.75rem 1rem; font-size:0.84rem; color:var(--text-primary); line-height:1.5;">
-                    💡 <strong>共通テスト形式:</strong> 下の3つの出来事カードをドラッグ、または右側の「▲」「▼」ボタンで入れ替えて、<strong>古い年代順（上 ➔ 下）</strong>に並べて「決定・判定する」を押してください。
-                </div>
-
-                <div id="quiz-cards-container" style="display:flex; flex-direction:column; gap:0.65rem;">
-                    ${listHtml}
-                </div>
-
-                <div style="display:flex; justify-content:flex-end; gap:0.8rem; margin-top:0.6rem;">
-                    <button type="button" class="flora-btn flora-btn-secondary" onclick="document.getElementById('reorder-quiz-modal').style.display='none'">
-                        中断して年表に戻る
-                    </button>
-                    <button type="button" class="flora-btn flora-btn-primary" id="btn-submit-reorder" onclick="submitReorderAnswer()" style="padding:0.65rem 1.6rem; font-size:0.95rem; font-weight:800; background:linear-gradient(135deg, #10B981, #059669); color:#fff; border:none; border-radius:var(--radius-md); cursor:pointer; box-shadow:0 3px 10px rgba(16,185,129,0.3);">
-                        ✅ この順序で決定・判定する
-                    </button>
-                </div>
-            `;
-
-            setupQuizDragAndDrop();
-        }
-
-        window.moveQuizCard = function(fromIndex, delta) {
-            if (quizAnswered) return;
-            const toIndex = fromIndex + delta;
-            if (toIndex < 0 || toIndex >= quizCurrentItems.userOrder.length) return;
-
-            const temp = quizCurrentItems.userOrder[fromIndex];
-            quizCurrentItems.userOrder[fromIndex] = quizCurrentItems.userOrder[toIndex];
-            quizCurrentItems.userOrder[toIndex] = temp;
-            renderQuizCardList();
-        };
-
-        function setupQuizDragAndDrop() {
-            const container = document.getElementById("quiz-cards-container");
-            if (!container) return;
-
-            let dragSrcEl = null;
-
-            container.querySelectorAll(".reorder-card").forEach(card => {
-                card.addEventListener("dragstart", (e) => {
-                    dragSrcEl = card;
-                    card.classList.add("dragging");
-                    e.dataTransfer.effectAllowed = "move";
-                    e.dataTransfer.setData("text/plain", card.getAttribute("data-index"));
-                });
-
-                card.addEventListener("dragover", (e) => {
-                    e.preventDefault();
-                    e.dataTransfer.dropEffect = "move";
-                    card.classList.add("drag-over");
-                });
-
-                card.addEventListener("dragleave", () => {
-                    card.classList.remove("drag-over");
-                });
-
-                card.addEventListener("dragend", () => {
-                    card.classList.remove("dragging");
-                    container.querySelectorAll(".reorder-card").forEach(c => c.classList.remove("drag-over"));
-                });
-
-                card.addEventListener("drop", (e) => {
-                    e.preventDefault();
-                    card.classList.remove("drag-over");
-                    if (dragSrcEl && dragSrcEl !== card) {
-                        const fromIdx = parseInt(dragSrcEl.getAttribute("data-index"), 10);
-                        const toIdx = parseInt(card.getAttribute("data-index"), 10);
-
-                        const moved = quizCurrentItems.userOrder.splice(fromIdx, 1)[0];
-                        quizCurrentItems.userOrder.splice(toIdx, 0, moved);
-                        renderQuizCardList();
-                    }
-                });
-            });
-        }
-
-        window.submitReorderAnswer = function() {
-            if (quizAnswered) return;
-            quizAnswered = true;
-
-            const isCorrect = quizCurrentItems.userOrder.every((item, i) => item.year_sort === quizCurrentItems.correctOrder[i].year_sort);
-
-            if (isCorrect) {
-                quizScore += 100;
-            }
-
-            const romanLabels = ["Ⅰ", "Ⅱ", "Ⅲ", "Ⅳ"];
-
-            const resultHtml = `
-                <div style="text-align:center; padding:1.2rem; border-radius:var(--radius-lg); background:${isCorrect ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)'}; border:2px solid ${isCorrect ? '#10B981' : '#EF4444'};">
-                    <div style="font-size:2.2rem; line-height:1; margin-bottom:0.4rem;">${isCorrect ? '🎉' : '❌'}</div>
-                    <div style="font-size:1.25rem; font-weight:800; color:${isCorrect ? '#059669' : '#DC2626'};">
-                        ${isCorrect ? '正解！完璧な時系列把握です！ (+100pt)' : '惜しい！正解の時系列はこちら'}
-                    </div>
-                </div>
-
-                <div style="margin-top:0.4rem;">
-                    <div style="font-size:0.85rem; font-weight:800; color:var(--text-secondary); margin-bottom:0.6rem;">
-                        ⏳ 正しい年代順タイムラインと因果関係：
-                    </div>
-                    <div style="display:flex; flex-direction:column; gap:0.6rem;">
-                        ${quizCurrentItems.correctOrder.map((ev, i) => `
-                            <div class="reorder-result-card is-correct-row">
-                                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
-                                    <div style="display:flex; align-items:center; gap:0.5rem; min-width:0; flex:1;">
-                                        <span style="font-weight:800; font-size:0.95rem; color:#059669; flex-shrink:0;">${romanLabels[i]}</span>
-                                        <span style="font-weight:800; font-size:1.02rem; color:var(--text-primary); word-break:break-word;">${escapeHtml(ev.name)}</span>
-                                    </div>
-                                    <span style="font-family:var(--font-heading); font-size:1.05rem; font-weight:800; color:#059669; flex-shrink:0;">
-                                        ${escapeHtml(ev.year)}
-                                    </span>
-                                </div>
-                                ${ev.mnemonics && ev.mnemonics.length > 0 ? `
-                                    <div style="font-size:0.78rem; color:#92400E; background:#FEF3C7; padding:0.2rem 0.5rem; border-radius:4px; align-self:flex-start; margin-top:0.2rem;">
-                                        🎴 語呂合わせ: ${escapeHtml(ev.mnemonics[0])}
-                                    </div>
-                                ` : ''}
-                                ${ev.note ? `
-                                    <div style="font-size:0.8rem; color:var(--text-secondary); margin-top:0.15rem;">
-                                        💡 ${escapeHtml(ev.note)}
-                                    </div>
-                                ` : ''}
-                            </div>
-                        `).join("")}
-                    </div>
-                </div>
-
-                <div style="display:flex; justify-content:flex-end; gap:0.8rem; margin-top:1rem;">
-                    <button type="button" class="flora-btn flora-btn-primary" onclick="proceedNextQuizQuestion()" style="padding:0.65rem 1.6rem; font-size:0.95rem; font-weight:800; background:linear-gradient(135deg, #4F46E5, #7C3AED); color:#fff; border:none; border-radius:var(--radius-md); cursor:pointer;">
-                        ${currentQuizIndex + 1 < quizTotalQuestions ? '次の問題へ ➔' : '結果発表を見る ➔'}
-                    </button>
-                </div>
-            `;
-
-            quizModalBody.innerHTML = resultHtml;
-        };
-
-        window.proceedNextQuizQuestion = function() {
-            currentQuizIndex++;
-            renderNextQuizQuestion();
-        };
-
-        function renderQuizFinalResult() {
-            const maxScore = quizTotalQuestions * 100;
-            const rate = Math.round((quizScore / maxScore) * 100);
-            let rankText = "歴史ビギナー";
-            if (rate === 100) rankText = "👑 共通テスト整序マスター！神レベル！";
-            else if (rate >= 80) rankText = "🎖️ 上級歴史ストラテジスト！";
-            else if (rate >= 60) rankText = "✨ 基礎時系列はバッチリ！";
-
-            quizModalBody.innerHTML = `
-                <div style="text-align:center; padding:2rem 1rem;">
-                    <div style="font-size:3.5rem; line-height:1; margin-bottom:0.6rem;">🏆</div>
-                    <div style="font-size:1.6rem; font-weight:800; color:var(--text-primary); margin-bottom:0.3rem;">
-                        整序特訓チャレンジ完了！
-                    </div>
-                    <div style="font-size:1rem; color:#4F46E5; font-weight:700; margin-bottom:1.2rem;">
-                        ${rankText}
-                    </div>
-                    <div style="font-size:2.2rem; font-family:var(--font-heading); font-weight:800; color:#059669; margin-bottom:1.5rem;">
-                        ${quizScore} / ${maxScore} pt <span style="font-size:1.1rem; color:var(--text-secondary);">(正答率 ${rate}%)</span>
-                    </div>
-
-                    <div style="display:flex; justify-content:center; gap:0.9rem; flex-wrap:wrap;">
-                        <button type="button" class="flora-btn flora-btn-secondary" onclick="document.getElementById('reorder-quiz-modal').style.display='none'">
-                            年表へ戻る
-                        </button>
-                        <button type="button" class="flora-btn flora-btn-primary" onclick="startReorderQuiz()" style="background:linear-gradient(135deg, #4F46E5, #7C3AED); color:#fff; border:none; padding:0.65rem 1.6rem; font-weight:800; border-radius:var(--radius-md); cursor:pointer;">
-                            🔄 もう一度特訓する
-                        </button>
-                    </div>
-                </div>
-            `;
         }
 
         rebuildCategoryFilters();
