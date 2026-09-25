@@ -1515,7 +1515,8 @@
                         </div>
                         <div style="display:flex; gap:0.35rem; align-items:center; flex-wrap:wrap;">
                             <button type="button" class="m-btn m-btn-secondary" id="m-btn-toggle-add-memorize" style="padding:0.25rem 0.55rem; font-size:0.72rem;">＋項目追加</button>
-                            <button type="button" class="m-btn m-btn-secondary" id="m-btn-byot-memorize" style="padding:0.25rem 0.55rem; font-size:0.72rem; color:#4338CA; border:1px dashed rgba(99,102,241,0.5); background:rgba(99,102,241,0.06); font-weight:750;" title="Google AI Studio（構造化出力）で暗記カードを一括取り込み">✨ AI Studio抽出</button>
+                            <button type="button" class="m-btn m-btn-secondary" id="m-btn-byot-memorize" style="padding:0.25rem 0.55rem; font-size:0.72rem; color:#4338CA; border:1px dashed rgba(99,102,241,0.5); background:rgba(99,102,241,0.06); font-weight:750;" title="Google AI Studio（構造化出力）で暗記カードを一括取り込み">✨ 暗記抽出</button>
+                            <button type="button" class="m-btn m-btn-secondary" id="m-btn-byot-drills" style="padding:0.25rem 0.55rem; font-size:0.72rem; color:#059669; border:1px dashed rgba(16,185,129,0.5); background:rgba(16,185,129,0.06); font-weight:750;" title="Google AI Studioで共通テスト形式選択問題を作成">🎯 選択問題抽出</button>
                             <button type="button" class="m-btn m-btn-secondary" id="m-btn-regen-memorize" style="padding:0.25rem 0.55rem; font-size:0.72rem; color:var(--brand-primary); font-weight:700;">🔄 AI再生成</button>
                             <button type="button" class="m-btn m-btn-secondary" id="m-btn-clean-furigana" style="padding:0.25rem 0.55rem; font-size:0.72rem; color:var(--text-secondary);" title="（ふりがな）括弧を消去">🧹 ふりがな消去</button>
                             <button type="button" class="m-btn m-btn-secondary" id="m-btn-clear-memorize" style="padding:0.25rem 0.55rem; font-size:0.72rem; color:var(--error);" title="暗記事項を全消去">🗑️ 全削除</button>
@@ -1979,6 +1980,9 @@
                     <select id="m-byot-memo-part-select" class="m-input" style="font-size:0.76rem; padding:0.35rem 0.5rem;">
                         <option value="all" selected>🌟 全パート一括（全パート分抽出・各回へ自動振分）</option>
                     </select>
+                    <div id="m-byot-memo-part-status-badge" style="margin-top:0.35rem; font-size:0.7rem; color:#4338CA; font-weight:750; background:rgba(99,102,241,0.08); padding:0.2rem 0.5rem; border-radius:4px; display:inline-flex; align-items:center; gap:0.25rem;">
+                        <span>📊 対象:</span> <span id="m-byot-memo-char-count">計算中...</span>
+                    </div>
                 </div>
 
                 <div style="display:flex; gap:0.35rem; flex-wrap:wrap;">
@@ -1995,6 +1999,11 @@
                         枠のみ
                     </button>
                 </div>
+
+                <details style="margin-top:0.55rem; font-size:0.72rem; background:var(--bg-surface); border:1px dashed rgba(99,102,241,0.35); border-radius:var(--radius-sm); padding:0.35rem 0.55rem;">
+                    <summary style="cursor:pointer; font-weight:700; color:#4338CA;">🔍 プロンプトを確認する</summary>
+                    <pre id="m-byot-memo-prompt-preview" style="margin:0.35rem 0 0 0; font-size:0.67rem; max-height:120px; overflow-y:auto; padding:0.4rem; background:var(--bg-subtle); border-radius:4px; font-family:monospace; line-height:1.4; white-space:pre-wrap; word-break:break-all;"></pre>
+                </details>
             </div>
 
             <!-- ステップ2: 出力結果貼り付け -->
@@ -2033,6 +2042,132 @@
             <div style="display:flex; justify-content:flex-end; gap:0.5rem;">
                 <button type="button" class="m-btn m-btn-secondary" id="m-byot-memo-cancel-btn" style="padding:0.45rem 0.85rem; font-size:0.78rem;">キャンセル</button>
                 <button type="button" class="m-btn m-btn-primary" id="m-byot-memo-submit-btn" style="padding:0.45rem 1.1rem; font-size:0.8rem; background:linear-gradient(135deg, #4F46E5, #4338CA); border:none; font-weight:800;">📥 暗記カードを一括登録</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🎯 モバイルGoogle AI Studio連携：共通テスト形式問題一括インポートモーダル（ボトムシート） -->
+    <div class="create-modal-overlay" id="m-byot-drills-modal" style="display:none; z-index:100065;">
+        <div class="create-modal-sheet" style="max-height:88vh; overflow-y:auto; padding:1.2rem 1.25rem 2rem 1.25rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem;">
+                <div style="display:flex; align-items:center; gap:0.4rem;">
+                    <span style="font-size:1.15rem;">🎯</span>
+                    <h3 style="font-family:var(--font-heading); font-size:1rem; font-weight:800; color:var(--text-primary); margin:0;">AI Studioで共通テスト問題作成</h3>
+                </div>
+                <button type="button" id="close-m-byot-drills-modal-btn" style="background:none; border:none; font-size:1.25rem; cursor:pointer; color:var(--text-muted); padding:0.2rem;">✕</button>
+            </div>
+            <p style="font-size:0.73rem; color:var(--text-muted); margin-bottom:0.65rem; line-height:1.4;">
+                Google AI StudioのStructured outputsを活用して、引っかけ罠解説付きの共通テスト形式良問（5問）を一括作成・登録します。
+            </p>
+
+            <!-- ⚡ 推奨設定バナー -->
+            <div style="background:rgba(99, 102, 241, 0.08); border:1px solid rgba(99, 102, 241, 0.25); border-radius:var(--radius-md); padding:0.6rem 0.75rem; margin-bottom:0.75rem;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem; flex-wrap:wrap; gap:0.3rem;">
+                    <span style="font-size:0.74rem; font-weight:800; color:#4338CA;">⚡ AI Studio 推奨設定:</span>
+                    <a href="https://aistudio.google.com/prompts/new_chat" target="_blank" rel="noopener noreferrer" style="font-size:0.7rem; color:#4F46E5; font-weight:800; text-decoration:none;">
+                        🌐 AI Studioを開く ↗
+                    </a>
+                </div>
+                <div style="font-size:0.7rem; color:var(--text-secondary); line-height:1.4;">
+                    ・<b>Structured outputs</b>: <span style="color:#4338CA; font-weight:800;">ON</span>（下の「スキーマコピー」を貼り付け）<br>
+                    ・<b>Code execution</b>: <span style="color:#DC2626; font-weight:800;">OFF</span>（必ずOFF）
+                </div>
+            </div>
+
+            <!-- ステップ1: パート選択 ＆ 形式選択 -->
+            <div style="background:var(--bg-subtle); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:0.65rem 0.75rem; margin-bottom:0.75rem;">
+                <div style="margin-bottom:0.45rem;">
+                    <span style="font-size:0.76rem; font-weight:800; color:var(--text-primary);">Step 1: 出題設定 ＆ プロンプト取得</span>
+                </div>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.45rem; margin-bottom:0.5rem;">
+                    <div>
+                        <label for="m-byot-drills-part-select" style="font-size:0.7rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:0.15rem;">
+                            🎯 出題パート:
+                        </label>
+                        <select id="m-byot-drills-part-select" class="m-input" style="font-size:0.74rem; padding:0.3rem 0.45rem;">
+                            <option value="all" selected>🌟 全パート一括</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="m-byot-drills-version-select" style="font-size:0.7rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:0.15rem;">
+                            📑 出題形式:
+                        </label>
+                        <select id="m-byot-drills-version-select" class="m-input" style="font-size:0.74rem; padding:0.3rem 0.45rem;">
+                            <option value="mix" selected>🌟 全形式バランス</option>
+                            <option value="combination">⚔️ 2文正誤判定</option>
+                            <option value="true_false">🔍 4択正誤判定</option>
+                            <option value="chronological">⏳ 年代・因果整序</option>
+                            <option value="cloze">📝 空欄補充特化</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="m-byot-drills-part-status-badge" style="margin-bottom:0.45rem; font-size:0.7rem; color:#4338CA; font-weight:750; background:rgba(99,102,241,0.08); padding:0.2rem 0.5rem; border-radius:4px; display:inline-flex; align-items:center; gap:0.25rem;">
+                    <span>📊 対象:</span> <span id="m-byot-drills-char-count">計算中...</span>
+                </div>
+
+                <div id="m-byot-drills-version-guide" style="font-size:0.69rem; color:#059669; font-weight:700; line-height:1.35; margin-bottom:0.5rem;">
+                    🌟 共通テスト本番に即した多彩な出題形式で満遍なく演習
+                </div>
+
+                <div style="display:flex; gap:0.35rem; flex-wrap:wrap;">
+                    <button type="button" id="m-byot-drills-copy-with-text" class="m-btn m-btn-primary" style="font-size:0.72rem; padding:0.35rem 0.65rem; background:#4338CA; border-color:#4338CA;">
+                        📋 本文＋問題作成プロンプト一括コピー
+                    </button>
+                    <button type="button" id="m-byot-drills-copy-schema" class="m-btn" style="font-size:0.72rem; padding:0.35rem 0.65rem; background:#059669; color:#fff; border-color:#059669; font-weight:800;">
+                        ⚙️ スキーマコピー
+                    </button>
+                    <button type="button" id="m-byot-drills-copy-text-only" class="m-btn m-btn-secondary" style="font-size:0.72rem; padding:0.35rem 0.6rem;">
+                        📄 原本のみ
+                    </button>
+                    <button type="button" id="m-byot-drills-copy-prompt-only" class="m-btn m-btn-secondary" style="font-size:0.72rem; padding:0.35rem 0.55rem;">
+                        枠のみ
+                    </button>
+                </div>
+
+                <details style="margin-top:0.55rem; font-size:0.72rem; background:var(--bg-surface); border:1px dashed rgba(99,102,241,0.35); border-radius:var(--radius-sm); padding:0.35rem 0.55rem;">
+                    <summary style="cursor:pointer; font-weight:700; color:#4338CA;">🔍 作成プロンプトを確認する</summary>
+                    <pre id="m-byot-drills-prompt-preview" style="margin:0.35rem 0 0 0; font-size:0.67rem; max-height:120px; overflow-y:auto; padding:0.4rem; background:var(--bg-subtle); border-radius:4px; font-family:monospace; line-height:1.4; white-space:pre-wrap; word-break:break-all;"></pre>
+                </details>
+            </div>
+
+            <!-- ステップ2: 出力結果貼り付け -->
+            <div style="margin-bottom:0.75rem;">
+                <label style="font-size:0.75rem; font-weight:800; color:var(--text-secondary); display:block; margin-bottom:0.25rem;">
+                    Step 2: Google AI Studioの出力結果を貼り付け
+                </label>
+                <textarea id="m-byot-drills-input" class="m-input" rows="5" style="font-size:0.78rem; font-family:monospace; line-height:1.5; resize:vertical;" placeholder='{
+  "choice_drills": [
+    {
+      "part_number": 1,
+      "type": "combination",
+      "lead_text": "...",
+      "options": [...]
+    }
+  ]
+}'></textarea>
+            </div>
+
+            <!-- 取り込みオプション -->
+            <div style="margin-bottom:0.9rem; background:var(--bg-subtle); padding:0.55rem 0.75rem; border-radius:var(--radius-md); border:1px solid var(--border-color);">
+                <div style="font-size:0.72rem; font-weight:800; color:var(--text-secondary); margin-bottom:0.3rem;">取り込み方法:</div>
+                <div style="display:flex; flex-direction:column; gap:0.35rem;">
+                    <label style="display:flex; align-items:center; gap:0.4rem; font-size:0.75rem; color:var(--text-primary); cursor:pointer;">
+                        <input type="radio" name="m-byot-drills-mode" value="append" checked style="accent-color:var(--brand-primary);">
+                        <span>➕ 既存の問題に追加（マージ）</span>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:0.4rem; font-size:0.75rem; color:var(--text-primary); cursor:pointer;">
+                        <input type="radio" name="m-byot-drills-mode" value="replace" style="accent-color:var(--brand-primary);">
+                        <span>🔄 既存の問題を全置き換え</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- ボタン -->
+            <div style="display:flex; justify-content:flex-end; gap:0.5rem;">
+                <button type="button" class="m-btn m-btn-secondary" id="m-byot-drills-cancel-btn" style="padding:0.45rem 0.85rem; font-size:0.78rem;">キャンセル</button>
+                <button type="button" class="m-btn m-btn-primary" id="m-byot-drills-submit-btn" style="padding:0.45rem 1.1rem; font-size:0.8rem; background:linear-gradient(135deg, #059669, #047857); border:none; font-weight:800;">📥 選択問題を一括登録</button>
             </div>
         </div>
     </div>
@@ -4260,6 +4395,185 @@ ${extractedText || "（本文なし）"}
             "required": ["memorization_points"]
         };
 
+        // ==========================================================
+        // 🧠 モバイルGoogle AI Studio連携：スマートパート抽出ヘルパー
+        // ==========================================================
+        function sliceMobileTextForPart(fullText, parts, pIdx) {
+            if (!fullText || !Array.isArray(parts) || parts.length <= 1) return fullText || "";
+            const currentPart = parts[pIdx];
+            if (!currentPart) return fullText;
+
+            const markers = parts.map((p, idx) => {
+                const titleClean = (p.title || "").replace(/^[【\[「第\d+回章部\s:：】\]」]+/g, "").trim();
+                const patterns = [
+                    `第${idx + 1}回`,
+                    `第${idx + 1}章`,
+                    `第${idx + 1}部`,
+                    `第${idx + 1}講`,
+                    `パート${idx + 1}`,
+                    `Part ${idx + 1}`,
+                    `Part${idx + 1}`,
+                    `【第${idx + 1}回`,
+                    `【${idx + 1}】`,
+                    `[${idx + 1}]`,
+                    p.title ? p.title.trim() : null,
+                    titleClean.length >= 3 ? titleClean : null
+                ].filter(Boolean);
+
+                let bestPos = -1;
+                let bestPat = "";
+                for (const pat of patterns) {
+                    const pos = fullText.indexOf(pat);
+                    if (pos !== -1 && (bestPos === -1 || pos < bestPos)) {
+                        bestPos = pos;
+                        bestPat = pat;
+                    }
+                }
+                return { idx, pos: bestPos, pat: bestPat };
+            });
+
+            const currentMarker = markers[pIdx];
+            if (currentMarker && currentMarker.pos !== -1) {
+                const startPos = currentMarker.pos;
+                let endPos = fullText.length;
+                for (let nextIdx = pIdx + 1; nextIdx < markers.length; nextIdx++) {
+                    if (markers[nextIdx].pos > startPos) {
+                        endPos = markers[nextIdx].pos;
+                        break;
+                    }
+                }
+                const sliced = fullText.substring(startPos, endPos).trim();
+                if (sliced.length > 50) return sliced;
+            }
+
+            const totalParts = parts.length;
+            const partLen = Math.floor(fullText.length / totalParts);
+            const startPos = Math.max(0, Math.floor((pIdx - 0.15) * partLen));
+            const endPos = Math.min(fullText.length, Math.floor((pIdx + 1.15) * partLen));
+            return fullText.substring(startPos, endPos).trim();
+        }
+
+        function extractMobilePartContext(lesson, selectedPartVal) {
+            if (!lesson) {
+                return { isAll: true, partIndex: -1, partNumber: 0, partTitle: "全体", targetText: "", snippetInfo: "データなし", charCount: 0 };
+            }
+            const parts = Array.isArray(lesson.parts) ? lesson.parts : [];
+            const fullText = (lesson.extractedText || lesson.sourceText || lesson.rawText || "").trim();
+
+            if (selectedPartVal === "all" || parts.length === 0) {
+                return {
+                    isAll: true,
+                    partIndex: -1,
+                    partNumber: 0,
+                    partTitle: "全パート一括",
+                    partSummary: "",
+                    targetText: fullText,
+                    snippetInfo: `🌟 全パート（${fullText.length.toLocaleString()}文字）`,
+                    charCount: fullText.length,
+                    parts: parts
+                };
+            }
+
+            const pIdx = parseInt(selectedPartVal, 10);
+            const targetPart = parts[pIdx];
+            if (!targetPart) {
+                return {
+                    isAll: true,
+                    partIndex: -1,
+                    partNumber: 0,
+                    partTitle: "全パート一括",
+                    partSummary: "",
+                    targetText: fullText,
+                    snippetInfo: `🌟 全パート（${fullText.length.toLocaleString()}文字）`,
+                    charCount: fullText.length,
+                    parts: parts
+                };
+            }
+
+            const partTitle = targetPart.title || `第${pIdx + 1}回`;
+            const partSummary = targetPart.summary || "";
+
+            if (targetPart.content && targetPart.content.trim().length > 60) {
+                const text = `【第${pIdx + 1}回 講義ノート: ${partTitle}】\n` +
+                    (partSummary ? `【範囲要約】${partSummary}\n\n` : "\n") +
+                    targetPart.content.trim();
+                return {
+                    isAll: false,
+                    partIndex: pIdx,
+                    partNumber: pIdx + 1,
+                    partTitle: partTitle,
+                    partSummary: partSummary,
+                    targetText: text,
+                    snippetInfo: `第${pIdx + 1}回 講義ノート（${text.length.toLocaleString()}文字）`,
+                    charCount: text.length,
+                    parts: parts
+                };
+            }
+
+            let chatPartText = "";
+            if (Array.isArray(lesson.messages) && lesson.messages.length > 0) {
+                const relevantMsgs = lesson.messages.filter(m => m.partIndex === pIdx || (m.meta && m.meta.partIndex === pIdx));
+                if (relevantMsgs.length > 0) {
+                    chatPartText = relevantMsgs.map(m => (m.text || m.content || "")).join("\n\n");
+                }
+            }
+            if (chatPartText.trim().length > 100) {
+                const text = `【第${pIdx + 1}回 授業講義ログ: ${partTitle}】\n` +
+                    (partSummary ? `【範囲要約】${partSummary}\n\n` : "\n") +
+                    chatPartText.trim();
+                return {
+                    isAll: false,
+                    partIndex: pIdx,
+                    partNumber: pIdx + 1,
+                    partTitle: partTitle,
+                    partSummary: partSummary,
+                    targetText: text,
+                    snippetInfo: `第${pIdx + 1}回 講義ログ（${text.length.toLocaleString()}文字）`,
+                    charCount: text.length,
+                    parts: parts
+                };
+            }
+
+            if (fullText.length > 0) {
+                const sectionText = sliceMobileTextForPart(fullText, parts, pIdx);
+                if (sectionText && sectionText.trim().length > 50) {
+                    const text = `【第${pIdx + 1}回 パート該当本文: ${partTitle}】\n` +
+                        (partSummary ? `【範囲要約】${partSummary}\n\n` : "\n") +
+                        sectionText.trim();
+                    return {
+                        isAll: false,
+                        partIndex: pIdx,
+                        partNumber: pIdx + 1,
+                        partTitle: partTitle,
+                        partSummary: partSummary,
+                        targetText: text,
+                        snippetInfo: `第${pIdx + 1}回 該当本文抜粋（${text.length.toLocaleString()}文字）`,
+                        charCount: text.length,
+                        parts: parts
+                    };
+                }
+            }
+
+            const text = `【第${pIdx + 1}回 対象講義範囲: ${partTitle}】\n` +
+                (partSummary ? `【範囲要約】${partSummary}\n\n` : "\n") +
+                (fullText || "（講義ノートテキスト）");
+
+            return {
+                isAll: false,
+                partIndex: pIdx,
+                partNumber: pIdx + 1,
+                partTitle: partTitle,
+                partSummary: partSummary,
+                targetText: text,
+                snippetInfo: `第${pIdx + 1}回（${text.length.toLocaleString()}文字）`,
+                charCount: text.length,
+                parts: parts
+            };
+        }
+
+        // ==========================================================
+        // 🧠 モバイル暗記抽出ロジック
+        // ==========================================================
         const mModalByotMemo = document.getElementById("m-byot-memorize-modal");
         const mBtnOpenByotMemo = document.getElementById("m-btn-byot-memorize");
         const mBtnCloseByotMemo = document.getElementById("close-m-byot-memo-modal-btn");
@@ -4271,25 +4585,27 @@ ${extractedText || "（本文なし）"}
         const mBtnCopyByotMemoTextOnly = document.getElementById("m-byot-memo-copy-text-only");
         const mBtnCopyByotMemoOnly = document.getElementById("m-byot-memo-copy-prompt-only");
         const mSelectByotMemoPart = document.getElementById("m-byot-memo-part-select");
+        const mBadgeByotMemoCharCount = document.getElementById("m-byot-memo-char-count");
+        const mPreviewByotMemoPrompt = document.getElementById("m-byot-memo-prompt-preview");
 
-        function populateMobileByotPartSelect() {
-            if (!mSelectByotMemoPart || !activeLessonId) return;
+        function populateMobileByotPartSelect(selectEl, defaultVal = "all") {
+            if (!selectEl || !activeLessonId) return;
             const lesson = lessonsCache[activeLessonId] || {};
             const parts = Array.isArray(lesson.parts) ? lesson.parts : [];
-            mSelectByotMemoPart.innerHTML = "";
+            selectEl.innerHTML = "";
 
             const allOpt = document.createElement("option");
             allOpt.value = "all";
             allOpt.textContent = "🌟 全パート一括（全パート分抽出・各回へ自動振分）";
-            mSelectByotMemoPart.appendChild(allOpt);
+            selectEl.appendChild(allOpt);
 
             parts.forEach((p, idx) => {
                 const opt = document.createElement("option");
                 opt.value = String(idx);
                 opt.textContent = `第${idx + 1}回: ${p.title || `パート${idx + 1}`}`;
-                mSelectByotMemoPart.appendChild(opt);
+                selectEl.appendChild(opt);
             });
-            mSelectByotMemoPart.value = "all";
+            selectEl.value = defaultVal;
         }
 
         function buildMobileByotMemoPrompt(includeText = false) {
@@ -4297,29 +4613,22 @@ ${extractedText || "（本文なし）"}
             const lesson = lessonsCache[activeLessonId] || {};
             const subject = lesson.subject || "指定なし";
             const title = lesson.title || "無題の授業";
-            const src = (lesson.extractedText || lesson.sourceText || lesson.rawText || "").trim();
-            const parts = Array.isArray(lesson.parts) ? lesson.parts : [];
             const selectedPartVal = mSelectByotMemoPart ? mSelectByotMemoPart.value : "all";
+            const ctx = extractMobilePartContext(lesson, selectedPartVal);
 
             let partContext = "";
-            let targetTextForExtraction = src;
-
-            if (selectedPartVal === "all") {
-                if (parts.length > 0) {
-                    partContext = `【全カリキュラム構成（全${parts.length}回）】\n` +
-                        parts.map((p, i) => `・第${i + 1}回：${p.title}（要約・範囲: ${p.summary || "なし"}）`).join("\n") +
+            if (ctx.isAll) {
+                if (ctx.parts && ctx.parts.length > 0) {
+                    partContext = `【全カリキュラム構成（全${ctx.parts.length}回）】\n` +
+                        ctx.parts.map((p, i) => `・第${i + 1}回：${p.title}（要約・範囲: ${p.summary || "なし"}）`).join("\n") +
                         `\n\n【パート振り分けの必須指示】\n本文全体から暗記事項を抽出し、各カードに必ずどのパートに属するかを示す "part_number"（1以上の整数）を正確に割り振ってください。各パートから偏りなく均等に網羅してください。`;
                 }
             } else {
-                const pIdx = parseInt(selectedPartVal, 10);
-                const targetPart = parts[pIdx];
-                if (targetPart) {
-                    partContext = `【抽出対象パート（第${pIdx + 1}回 / 全${parts.length}回）】\nパート見出し: ${targetPart.title}\n範囲要約: ${targetPart.summary || "なし"}\n\n上記の【第${pIdx + 1}回：${targetPart.title}】の範囲に【完全に集中】し、その範囲で覚えるべき事項を1つも漏らさず全て抽出してください（全カードの "part_number": ${pIdx + 1}）。他のパートの内容は含めないでください。`;
-
-                    if (targetPart.content && targetPart.content.trim().length > 50) {
-                        targetTextForExtraction = `【第${pIdx + 1}回 パート講義ノート: ${targetPart.title}】\n${targetPart.content.trim()}`;
-                    }
-                }
+                partContext = `【🚨 抽出対象パートの厳格限定（第${ctx.partNumber}回 / 全${ctx.parts.length}回）】\n` +
+                    `パート見出し: ${ctx.partTitle}\n` +
+                    `範囲要約: ${ctx.partSummary || "該当範囲"}\n\n` +
+                    `【⚠️ パート集中抽出の指示】\n` +
+                    `今回は【第${ctx.partNumber}回：${ctx.partTitle}】の範囲に【完全に集中】し、その範囲で覚えるべき事項を1つも漏らさず全て抽出してください（全カードの "part_number": ${ctx.partNumber}）。他のパートの内容は含めないでください。`;
             }
 
             let prompt = `あなたは生徒の暗記学習を支援するフラッシュカード・重要用語抽出専門AIです。
@@ -4355,7 +4664,7 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
 {
   "memorization_points": [
     {
-      "part_number": 1,
+      "part_number": ${ctx.isAll ? 1 : ctx.partNumber},
       "category": "公式・法則 または 反応式・現象 または 用語・定義 または 数値・データ または 解法パターン・急所",
       "question": "表面の問い（答えとなる用語・数式を含めず、思い出させる問いかけにする）",
       "answer": "裏面の答え・結論・正確な定義・数式",
@@ -4366,18 +4675,40 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
 \`\`\``;
 
             if (includeText) {
-                prompt += `\n\n【対象テキスト本文】\n${targetTextForExtraction || "（原本テキストが空です。ここに教科書・参考書のテキストを貼り付けてください）"}`;
+                prompt += `\n\n【対象テキスト本文】\n${ctx.targetText || "（原本テキストが空です。ここに教科書・参考書のテキストを貼り付けてください）"}`;
             }
             return prompt;
         }
+
+        function updateMobileByotMemoUI() {
+            if (!activeLessonId) return;
+            const lesson = lessonsCache[activeLessonId] || {};
+            const selectedPartVal = mSelectByotMemoPart ? mSelectByotMemoPart.value : "all";
+            const ctx = extractMobilePartContext(lesson, selectedPartVal);
+
+            if (mBadgeByotMemoCharCount) {
+                mBadgeByotMemoCharCount.textContent = ctx.snippetInfo;
+            }
+            if (mBtnCopyByotMemoTextOnly) {
+                mBtnCopyByotMemoTextOnly.innerHTML = ctx.isAll
+                    ? `📄 原本全文（${ctx.charCount.toLocaleString()}文字）`
+                    : `📄 第${ctx.partNumber}回本文（${ctx.charCount.toLocaleString()}文字）`;
+            }
+            if (mPreviewByotMemoPrompt) {
+                mPreviewByotMemoPrompt.textContent = buildMobileByotMemoPrompt(false);
+            }
+        }
+
+        mSelectByotMemoPart?.addEventListener("change", updateMobileByotMemoUI);
 
         mBtnOpenByotMemo?.addEventListener("click", () => {
             if (!activeLessonId) {
                 if (window.mToast) mToast("授業データが見つかりません");
                 return;
             }
-            populateMobileByotPartSelect();
+            populateMobileByotPartSelect(mSelectByotMemoPart, "all");
             if (mInputByotMemo) mInputByotMemo.value = "";
+            updateMobileByotMemoUI();
             if (mModalByotMemo) mModalByotMemo.style.display = "flex";
         });
 
@@ -4408,14 +4739,17 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
 
         mBtnCopyByotMemoTextOnly?.addEventListener("click", async () => {
             const lesson = (activeLessonId && lessonsCache[activeLessonId]) || {};
-            const text = (lesson.extractedText || lesson.sourceText || lesson.rawText || "").trim();
+            const selectedPartVal = mSelectByotMemoPart ? mSelectByotMemoPart.value : "all";
+            const ctx = extractMobilePartContext(lesson, selectedPartVal);
+            const text = (ctx.targetText || "").trim();
             if (!text) {
-                if (window.mToast) mToast("原本テキストが登録されていません");
+                if (window.mToast) mToast("対象テキストが登録されていません");
                 return;
             }
             try {
                 await navigator.clipboard.writeText(text);
-                if (window.mToast) mToast(`📄 原本テキスト全文（${text.length}文字）をコピーしました！`);
+                const label = ctx.isAll ? "原本テキスト全文" : `第${ctx.partNumber}回本文`;
+                if (window.mToast) mToast(`📄 ${label}（${text.length.toLocaleString()}文字）をコピーしました！`);
             } catch(e) {
                 if (window.mToast) mToast("⚠️ コピーに失敗しました");
             }
@@ -4443,11 +4777,9 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
             }
 
             let parsed = null;
-            // 1. Direct JSON parse (from AI Studio Structured outputs)
             try {
                 parsed = JSON.parse(rawText);
             } catch(e1) {
-                // 2. Fallback to codeblocks
                 try {
                     let clean = rawText.replace(/```json\s*/gi, "").replace(/```\s*$/g, "").trim();
                     const firstBrace = clean.indexOf("{");
@@ -4478,7 +4810,6 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
             }
 
             if (items.length === 0) {
-                // Q: / A: フォールバック
                 const lines = rawText.split("\n");
                 let currentQ = "", currentA = "", currentCat = "重要事項";
                 for (const line of lines) {
@@ -4559,6 +4890,382 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
             closeMobileByotMemoModal();
             renderMobileMemorizationPoints();
             if (window.mToast) mToast(`🎉 暗記カード ${cleanedItems.length}件 を各パートに分類して一括取り込みました！（API消費: 0）`);
+        });
+
+        // ==========================================================
+        // 🎯 モバイル共通テスト形式選択問題抽出ロジック
+        // ==========================================================
+        const mModalByotDrills = document.getElementById("m-byot-drills-modal");
+        const mBtnOpenByotDrills = document.getElementById("m-btn-byot-drills");
+        const mBtnCloseByotDrills = document.getElementById("close-m-byot-drills-modal-btn");
+        const mBtnCancelByotDrills = document.getElementById("m-byot-drills-cancel-btn");
+        const mBtnSubmitByotDrills = document.getElementById("m-byot-drills-submit-btn");
+        const mInputByotDrills = document.getElementById("m-byot-drills-input");
+        const mBtnCopyByotDrillsWithText = document.getElementById("m-byot-drills-copy-with-text");
+        const mBtnCopyByotDrillsSchema = document.getElementById("m-byot-drills-copy-schema");
+        const mBtnCopyByotDrillsTextOnly = document.getElementById("m-byot-drills-copy-text-only");
+        const mBtnCopyByotDrillsOnly = document.getElementById("m-byot-drills-copy-prompt-only");
+        const mSelectByotDrillsPart = document.getElementById("m-byot-drills-part-select");
+        const mSelectByotDrillsVersion = document.getElementById("m-byot-drills-version-select");
+        const mBadgeByotDrillsCharCount = document.getElementById("m-byot-drills-char-count");
+        const mGuideByotDrillsVersion = document.getElementById("m-byot-drills-version-guide");
+        const mPreviewByotDrillsPrompt = document.getElementById("m-byot-drills-prompt-preview");
+
+        function getMobileDrillsSchema(version) {
+            const baseProperties = {
+                part_number: { type: "integer", description: "出題対象パート番号（1以上の整数）" },
+                type: { type: "string", description: "問題の形式種別" },
+                lead_text: { type: "string", description: "問題文のリード文" },
+                explanation: { type: "string", description: "正解の根拠と不正解の解説" },
+                trap_reason: { type: "string", description: "受験生が最も引っかかりやすい落とし穴・罠解説" }
+            };
+
+            if (version === "combination") {
+                return {
+                    type: "object",
+                    properties: {
+                        choice_drills: {
+                            type: "array",
+                            description: "2文正誤組み合わせ判定問題リスト（5問）",
+                            items: {
+                                type: "object",
+                                properties: {
+                                    ...baseProperties,
+                                    type: { type: "string", enum: ["combination"] },
+                                    statements: { type: "array", items: { type: "string" }, description: "文Xと文Yの2文" },
+                                    options: {
+                                        type: "array",
+                                        items: {
+                                            type: "object",
+                                            properties: { number: { type: "integer" }, text: { type: "string" } },
+                                            required: ["number", "text"]
+                                        }
+                                    },
+                                    correct_number: { type: "integer", enum: [1, 2, 3, 4] }
+                                },
+                                required: ["type", "lead_text", "statements", "options", "correct_number", "explanation", "trap_reason"]
+                            }
+                        }
+                    },
+                    required: ["choice_drills"]
+                };
+            }
+
+            return {
+                type: "object",
+                properties: {
+                    choice_drills: {
+                        type: "array",
+                        description: "共通テスト形式の実戦選択問題リスト（5問）",
+                        items: {
+                            type: "object",
+                            properties: {
+                                ...baseProperties,
+                                type: { type: "string", enum: ["combination", "chronological", "single_choice", "true_false"] },
+                                statements: { type: "array", items: { type: "string" } },
+                                options: {
+                                    type: "array",
+                                    items: {
+                                        type: "object",
+                                        properties: { number: { type: "integer" }, text: { type: "string" } },
+                                        required: ["number", "text"]
+                                    }
+                                },
+                                correct_number: { type: "integer" }
+                            },
+                            required: ["type", "lead_text", "options", "correct_number", "explanation", "trap_reason"]
+                        }
+                    }
+                },
+                required: ["choice_drills"]
+            };
+        }
+
+        function buildMobileByotDrillsPrompt(includeText = false) {
+            if (!activeLessonId) return "";
+            const lesson = lessonsCache[activeLessonId] || {};
+            const subject = lesson.subject || "指定なし";
+            const title = lesson.title || "無題の授業";
+            const selectedPartVal = mSelectByotDrillsPart ? mSelectByotDrillsPart.value : "all";
+            const selectedVersion = mSelectByotDrillsVersion ? mSelectByotDrillsVersion.value : "mix";
+            const ctx = extractMobilePartContext(lesson, selectedPartVal);
+
+            let partContext = "";
+            if (ctx.isAll) {
+                if (ctx.parts && ctx.parts.length > 0) {
+                    partContext = `【全カリキュラム構成（全${ctx.parts.length}回）】\n` +
+                        ctx.parts.map((p, i) => `・第${i + 1}回：${p.title}（要約・範囲: ${p.summary || "なし"}）`).join("\n") +
+                        `\n\n【全パート均等出題指示】\n全パートから偏りなく良問を作成し、各問題がどのパートに属するかを示す "part_number"（1以上の整数）を正確に割り振ってください。`;
+                }
+            } else {
+                partContext = `【🚨 出題対象パートの限定（第${ctx.partNumber}回 / 全${ctx.parts.length}回）】\n` +
+                    `出題パート見出し: ${ctx.partTitle}\n` +
+                    `範囲要約: ${ctx.partSummary || "該当範囲"}\n\n` +
+                    `【⚠️ パート集中出題の指示】\n` +
+                    `今回は【第${ctx.partNumber}回：${ctx.partTitle}】の講義内容に【完全に集中】して5問を作成してください（全問題 "part_number": ${ctx.partNumber}）。`;
+            }
+
+            let formatInstruction = "";
+            if (selectedVersion === "combination") {
+                formatInstruction = `【出題形式：⚔️ 2文正誤組み合わせ判定（最頻出形式）に特化】\n全5問を「type: combination」として作成し、文X・文Yを提示して①正-正 ②正-誤 ③誤-正 ④誤-誤の4択としてください。`;
+            } else if (selectedVersion === "true_false") {
+                formatInstruction = `【出題形式：🔍 4択正誤判定（王道形式）に特化】\n全5問を4択正誤問題として作成し、「正しいものを一つ選べ」または「誤っているものを一つ選べ」と指示してください。`;
+            } else if (selectedVersion === "chronological") {
+                formatInstruction = `【出題形式：⏳ 年代・因果関係整序（配列問題）に特化】\n全5問を整序問題として作成し、出来事Ⅰ〜Ⅲの正しい前後関係を選ばせてください。`;
+            } else if (selectedVersion === "cloze") {
+                formatInstruction = `【出題形式：📝 空欄補充型に特化】\nリード文中の空欄［ア］［イ］に入る語句の正しい組み合わせを選ばせてください。`;
+            } else {
+                formatInstruction = `【出題形式：🌟 共通テスト本番バランス（全種混合）】\n2文正誤判定、年代整序、4択正誤判定、空欄補充をバランスよく織り交ぜて全5問を作成してください。`;
+            }
+
+            let prompt = `あなたは大学入学共通テストの作問委員・予備校特任講師AIです。
+以下の【対象テキスト本文】を深く読み解き、大学入学共通テスト形式の極めて実戦的で質の高い多肢選択問題を【5問】作成してください。
+
+【教科】${subject}
+【授業タイトル】${title}
+${partContext}
+
+${formatInstruction}
+
+【🚨 最重要作問ルール】
+1. 引っかけ罠（trap_reason）の徹底：受験生がなぜその誤答を選んでしまうのか、落とし穴を明快に解説すること。
+2. 詳細な解説（explanation）：正解の根拠と不正解選択肢の誤りを論理的に解説すること。
+3. 数式表記：数式は必ず $ $ または $$ $$ で記述すること。
+
+【🚨 出力形式】
+Google AI Studioの Structured outputs（構造化出力）で設定したスキーマに従って出力してください。前置きや挨拶文、余計な説明文は一切含めず、純粋なJSONのみを出力してください。
+
+\`\`\`json
+{
+  "choice_drills": [
+    {
+      "part_number": ${ctx.isAll ? 1 : ctx.partNumber},
+      "type": "${selectedVersion === "combination" ? "combination" : selectedVersion === "chronological" ? "chronological" : selectedVersion === "true_false" ? "single_choice" : "combination"}",
+      "lead_text": "問題文...",
+      "options": [
+        { "number": 1, "text": "選択肢1" },
+        { "number": 2, "text": "選択肢2" },
+        { "number": 3, "text": "選択肢3" },
+        { "number": 4, "text": "選択肢4" }
+      ],
+      "correct_number": 1,
+      "explanation": "解説...",
+      "trap_reason": "罠解説..."
+    }
+  ]
+}
+\`\`\``;
+
+            if (includeText) {
+                prompt += `\n\n【対象テキスト本文】\n${ctx.targetText || "（原本テキストが空です。ここに教科書・参考書のテキストを貼り付けてください）"}`;
+            }
+            return prompt;
+        }
+
+        function updateMobileByotDrillsUI() {
+            if (!activeLessonId) return;
+            const lesson = lessonsCache[activeLessonId] || {};
+            const selectedPartVal = mSelectByotDrillsPart ? mSelectByotDrillsPart.value : "all";
+            const selectedVersion = mSelectByotDrillsVersion ? mSelectByotDrillsVersion.value : "mix";
+            const ctx = extractMobilePartContext(lesson, selectedPartVal);
+
+            if (mBadgeByotDrillsCharCount) {
+                mBadgeByotDrillsCharCount.textContent = ctx.snippetInfo;
+            }
+            if (mBtnCopyByotDrillsTextOnly) {
+                mBtnCopyByotDrillsTextOnly.innerHTML = ctx.isAll
+                    ? `📄 原本全文（${ctx.charCount.toLocaleString()}文字）`
+                    : `📄 第${ctx.partNumber}回本文（${ctx.charCount.toLocaleString()}文字）`;
+            }
+            if (mGuideByotDrillsVersion) {
+                const guides = {
+                    mix: "🌟 共通テスト本番に即した多彩な出題形式で満遍なく演習",
+                    combination: "⚔️ 文X・文Yの2文について①正-正 ②正-誤 ③誤-正 ④誤-誤を判定",
+                    true_false: "🔍 4択の中から正しい文・誤文を1つ選ばせる王道正誤問題",
+                    chronological: "⏳ 出来事Ⅰ〜Ⅲの正しい順序（①〜⑥）を年代・因果から判定",
+                    cloze: "📝 空欄［ア］［イ］に入る語句の正しい組み合わせを選ばせる問題"
+                };
+                mGuideByotDrillsVersion.textContent = guides[selectedVersion] || guides.mix;
+            }
+            if (mPreviewByotDrillsPrompt) {
+                mPreviewByotDrillsPrompt.textContent = buildMobileByotDrillsPrompt(false);
+            }
+        }
+
+        mSelectByotDrillsPart?.addEventListener("change", updateMobileByotDrillsUI);
+        mSelectByotDrillsVersion?.addEventListener("change", updateMobileByotDrillsUI);
+
+        mBtnOpenByotDrills?.addEventListener("click", () => {
+            if (!activeLessonId) {
+                if (window.mToast) mToast("授業データが見つかりません");
+                return;
+            }
+            populateMobileByotPartSelect(mSelectByotDrillsPart, "all");
+            if (mInputByotDrills) mInputByotDrills.value = "";
+            updateMobileByotDrillsUI();
+            if (mModalByotDrills) mModalByotDrills.style.display = "flex";
+        });
+
+        const closeMobileByotDrillsModal = () => {
+            if (mModalByotDrills) mModalByotDrills.style.display = "none";
+        };
+        mBtnCloseByotDrills?.addEventListener("click", closeMobileByotDrillsModal);
+        mBtnCancelByotDrills?.addEventListener("click", closeMobileByotDrillsModal);
+
+        mBtnCopyByotDrillsWithText?.addEventListener("click", async () => {
+            const p = buildMobileByotDrillsPrompt(true);
+            try {
+                await navigator.clipboard.writeText(p);
+                if (window.mToast) mToast("📋 本文＋問題作成プロンプトを一括コピーしました！");
+            } catch(e) {
+                if (window.mToast) mToast("⚠️ コピーに失敗しました");
+            }
+        });
+
+        mBtnCopyByotDrillsSchema?.addEventListener("click", async () => {
+            const version = mSelectByotDrillsVersion ? mSelectByotDrillsVersion.value : "mix";
+            const schema = getMobileDrillsSchema(version);
+            try {
+                await navigator.clipboard.writeText(JSON.stringify(schema, null, 2));
+                if (window.mToast) mToast("⚙️ 構造化スキーマをコピーしました！");
+            } catch(e) {
+                if (window.mToast) mToast("⚠️ コピーに失敗しました");
+            }
+        });
+
+        mBtnCopyByotDrillsTextOnly?.addEventListener("click", async () => {
+            const lesson = (activeLessonId && lessonsCache[activeLessonId]) || {};
+            const selectedPartVal = mSelectByotDrillsPart ? mSelectByotDrillsPart.value : "all";
+            const ctx = extractMobilePartContext(lesson, selectedPartVal);
+            const text = (ctx.targetText || "").trim();
+            if (!text) {
+                if (window.mToast) mToast("対象テキストが登録されていません");
+                return;
+            }
+            try {
+                await navigator.clipboard.writeText(text);
+                const label = ctx.isAll ? "原本テキスト全文" : `第${ctx.partNumber}回本文`;
+                if (window.mToast) mToast(`📄 ${label}（${text.length.toLocaleString()}文字）をコピーしました！`);
+            } catch(e) {
+                if (window.mToast) mToast("⚠️ コピーに失敗しました");
+            }
+        });
+
+        mBtnCopyByotDrillsOnly?.addEventListener("click", async () => {
+            const p = buildMobileByotDrillsPrompt(false);
+            try {
+                await navigator.clipboard.writeText(p);
+                if (window.mToast) mToast("📋 プロンプト枠のみコピーしました！");
+            } catch(e) {
+                if (window.mToast) mToast("⚠️ コピーに失敗しました");
+            }
+        });
+
+        mBtnSubmitByotDrills?.addEventListener("click", async () => {
+            if (!activeLessonId || !currentUser) return;
+            const lesson = lessonsCache[activeLessonId];
+            if (!lesson) return;
+
+            const rawText = (mInputByotDrills ? mInputByotDrills.value : "").trim();
+            if (!rawText) {
+                if (window.mToast) mToast("Google AI Studioの出力結果を貼り付けてください");
+                return;
+            }
+
+            let parsed = null;
+            try {
+                parsed = JSON.parse(rawText);
+            } catch(e1) {
+                try {
+                    let clean = rawText.replace(/```json\s*/gi, "").replace(/```\s*$/g, "").trim();
+                    const firstBrace = clean.indexOf("{");
+                    const firstBracket = clean.indexOf("[");
+                    let startIdx = -1;
+                    if (firstBrace !== -1 && firstBracket !== -1) startIdx = Math.min(firstBrace, firstBracket);
+                    else if (firstBrace !== -1) startIdx = firstBrace;
+                    else if (firstBracket !== -1) startIdx = firstBracket;
+
+                    if (startIdx !== -1) {
+                        const lastBrace = clean.lastIndexOf("}");
+                        const lastBracket = clean.lastIndexOf("]");
+                        const endIdx = Math.max(lastBrace, lastBracket);
+                        if (endIdx > startIdx) clean = clean.substring(startIdx, endIdx + 1);
+                    }
+                    parsed = JSON.parse(clean);
+                } catch(e) {
+                    console.warn("Mobile Drills BYOT JSON parse warning:", e);
+                }
+            }
+
+            let drills = [];
+            if (parsed) {
+                if (Array.isArray(parsed)) drills = parsed;
+                else if (Array.isArray(parsed.choice_drills)) drills = parsed.choice_drills;
+                else if (Array.isArray(parsed.drills)) drills = parsed.drills;
+                else if (Array.isArray(parsed.questions)) drills = parsed.questions;
+            }
+
+            if (drills.length === 0) {
+                if (window.mToast) mToast("⚠️ 選択問題データを検出できませんでした。JSONをご確認ください");
+                return;
+            }
+
+            const selectedPartVal = mSelectByotDrillsPart ? mSelectByotDrillsPart.value : "all";
+            const parts = Array.isArray(lesson.parts) ? lesson.parts : [];
+
+            const cleanedDrills = drills.map((d, idx) => {
+                let opts = Array.isArray(d.options) ? d.options : [];
+                opts = opts.map((opt, oIdx) => {
+                    if (typeof opt === "string") return { number: oIdx + 1, text: opt };
+                    return { number: opt.number || (oIdx + 1), text: opt.text || "" };
+                });
+
+                let pIdx = null;
+                if (typeof d.part_number === "number" && d.part_number >= 1) {
+                    pIdx = d.part_number - 1;
+                } else if (selectedPartVal !== "all") {
+                    pIdx = parseInt(selectedPartVal, 10);
+                }
+                if (pIdx === null || isNaN(pIdx) || pIdx < 0) {
+                    pIdx = lesson.currentPartIndex || 0;
+                }
+
+                return {
+                    id: d.id || `drill_byot_${Date.now()}_${idx}`,
+                    type: d.type || "single_choice",
+                    lead_text: d.lead_text || d.question || d.problem || "",
+                    statements: Array.isArray(d.statements) ? d.statements : [],
+                    options: opts,
+                    correct_number: Number(d.correct_number || d.correct_answer || 1),
+                    explanation: d.explanation || "",
+                    trap_reason: d.trap_reason || d.trap || "",
+                    partIndex: pIdx
+                };
+            }).filter(d => d.lead_text && d.options.length >= 2);
+
+            if (cleanedDrills.length === 0) {
+                if (window.mToast) mToast("有効な選択問題が見つかりませんでした");
+                return;
+            }
+
+            const modeEl = document.querySelector('input[name="m-byot-drills-mode"]:checked');
+            const isReplace = modeEl && modeEl.value === "replace";
+
+            if (isReplace) {
+                lesson.choiceDrills = cleanedDrills;
+            } else {
+                const existing = Array.isArray(lesson.choiceDrills) ? lesson.choiceDrills : [];
+                lesson.choiceDrills = [...existing, ...cleanedDrills];
+            }
+
+            lesson.updatedAt = new Date().toISOString();
+            await update(ref(database, `users/${currentUser.uid}/lessons/${activeLessonId}`), {
+                choiceDrills: lesson.choiceDrills,
+                updatedAt: lesson.updatedAt
+            });
+
+            closeMobileByotDrillsModal();
+            if (window.mToast) mToast(`🎉 共通テスト形式問題 ${cleanedDrills.length}問 を登録しました！`);
         });
 
         // ==================== 📝 授業ノート（メモ）機能 ====================

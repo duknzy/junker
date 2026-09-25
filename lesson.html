@@ -5504,6 +5504,9 @@
                         <select id="byot-memo-part-select" class="flora-select" style="font-size: 0.78rem; width: 100%; padding: 0.35rem 0.6rem;">
                             <option value="all" selected>🌟 全パート一括（全パート分を抽出・各回へ自動振り分け）</option>
                         </select>
+                        <div id="byot-memo-part-status-badge" style="margin-top: 0.35rem; font-size: 0.72rem; color: #4338CA; font-weight: 700; background: rgba(99, 102, 241, 0.1); padding: 0.25rem 0.55rem; border-radius: 4px; display: inline-flex; align-items: center; gap: 0.3rem;">
+                            <span>📊 対象文字数:</span> <span id="byot-memo-part-char-count">計算中...</span>
+                        </div>
                     </div>
 
                     <div style="font-size: 0.74rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 0.6rem;">
@@ -5525,11 +5528,17 @@
                         </button>
                     </div>
 
-                    <!-- 構造化スキーマの展開プレビュー -->
-                    <details style="margin-top: 0.6rem; font-size: 0.73rem; background: rgba(255,255,255,0.8); border: 1px dashed rgba(99, 102, 241, 0.4); border-radius: var(--radius-sm); padding: 0.4rem 0.65rem;">
-                        <summary style="cursor: pointer; font-weight: 700; color: #4338CA; user-select: none;">🔍 構造化出力スキーマ（JSON Schema）を確認する</summary>
-                        <pre id="byot-memo-schema-preview" style="margin: 0.4rem 0 0 0; font-size: 0.71rem; max-height: 150px; overflow-y: auto; background: var(--bg-card); padding: 0.5rem; border-radius: 4px; font-family: monospace; color: var(--text-secondary); line-height: 1.4;"></pre>
-                    </details>
+                    <!-- プロンプトとスキーマのプレビュー -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.6rem;">
+                        <details style="font-size: 0.73rem; background: rgba(255,255,255,0.85); border: 1px dashed rgba(99, 102, 241, 0.4); border-radius: var(--radius-sm); padding: 0.4rem 0.65rem;">
+                            <summary style="cursor: pointer; font-weight: 700; color: #4338CA; user-select: none;">🔍 生成プロンプトのプレビュー</summary>
+                            <pre id="byot-memo-prompt-preview" style="margin: 0.4rem 0 0 0; font-size: 0.69rem; max-height: 140px; overflow-y: auto; background: var(--bg-card); padding: 0.5rem; border-radius: 4px; font-family: monospace; color: var(--text-secondary); line-height: 1.4; white-space: pre-wrap; word-break: break-all;"></pre>
+                        </details>
+                        <details style="font-size: 0.73rem; background: rgba(255,255,255,0.85); border: 1px dashed rgba(99, 102, 241, 0.4); border-radius: var(--radius-sm); padding: 0.4rem 0.65rem;">
+                            <summary style="cursor: pointer; font-weight: 700; color: #059669; user-select: none;">⚙️ 構造化出力スキーマ（JSON Schema）</summary>
+                            <pre id="byot-memo-schema-preview" style="margin: 0.4rem 0 0 0; font-size: 0.69rem; max-height: 140px; overflow-y: auto; background: var(--bg-card); padding: 0.5rem; border-radius: 4px; font-family: monospace; color: var(--text-secondary); line-height: 1.4;"></pre>
+                        </details>
+                    </div>
                 </div>
 
                 <!-- ステップ2: Google AI Studioの出力を貼り付け -->
@@ -5648,6 +5657,9 @@
                             <select id="byot-drills-part-select" class="flora-select" style="font-size: 0.78rem; width: 100%; padding: 0.35rem 0.6rem;">
                                 <option value="all" selected>🌟 全パート一括（各パート均等配分）</option>
                             </select>
+                            <div id="byot-drills-part-status-badge" style="margin-top: 0.35rem; font-size: 0.72rem; color: #4338CA; font-weight: 700; background: rgba(99, 102, 241, 0.1); padding: 0.25rem 0.55rem; border-radius: 4px; display: inline-flex; align-items: center; gap: 0.3rem;">
+                                <span>📊 対象文字数:</span> <span id="byot-drills-part-char-count">計算中...</span>
+                            </div>
                         </div>
                         <div>
                             <label for="byot-drills-version-select" style="font-size: 0.74rem; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 0.2rem;">
@@ -5660,10 +5672,13 @@
                                 <option value="chronological">⏳ 年代・因果整序特化（配列選択）</option>
                                 <option value="cloze">📝 空欄補充特化（空欄ア・イの語句組合せ）</option>
                             </select>
+                            <div id="byot-drills-version-guide" style="margin-top: 0.35rem; font-size: 0.71rem; color: #059669; font-weight: 600; line-height: 1.35;">
+                                🌟 共通テスト本番に即した多彩な出題形式で満遍なく演習
+                            </div>
                         </div>
                     </div>
 
-                    <div style="font-size: 0.74rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 0.6rem;">
+                    <div id="byot-drills-summary-lead" style="font-size: 0.74rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 0.6rem;">
                         共通テスト形式の良問（2文正誤組み合わせ判定、年代整序、4択正誤判定、引っかけ罠解説付き）を5問作成させるプロンプトです。
                     </div>
 
@@ -5682,11 +5697,17 @@
                         </button>
                     </div>
 
-                    <!-- 構造化スキーマの展開プレビュー -->
-                    <details style="margin-top: 0.6rem; font-size: 0.73rem; background: rgba(255,255,255,0.8); border: 1px dashed rgba(99, 102, 241, 0.4); border-radius: var(--radius-sm); padding: 0.4rem 0.65rem;">
-                        <summary style="cursor: pointer; font-weight: 700; color: #4338CA; user-select: none;">🔍 構造化出力スキーマ（JSON Schema）を確認する</summary>
-                        <pre id="byot-drills-schema-preview" style="margin: 0.4rem 0 0 0; font-size: 0.71rem; max-height: 150px; overflow-y: auto; background: var(--bg-card); padding: 0.5rem; border-radius: 4px; font-family: monospace; color: var(--text-secondary); line-height: 1.4;"></pre>
-                    </details>
+                    <!-- プロンプトとスキーマのプレビュー -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.6rem;">
+                        <details style="font-size: 0.73rem; background: rgba(255,255,255,0.85); border: 1px dashed rgba(99, 102, 241, 0.4); border-radius: var(--radius-sm); padding: 0.4rem 0.65rem;">
+                            <summary style="cursor: pointer; font-weight: 700; color: #4338CA; user-select: none;">🔍 作成プロンプトのプレビュー</summary>
+                            <pre id="byot-drills-prompt-preview" style="margin: 0.4rem 0 0 0; font-size: 0.69rem; max-height: 140px; overflow-y: auto; background: var(--bg-card); padding: 0.5rem; border-radius: 4px; font-family: monospace; color: var(--text-secondary); line-height: 1.4; white-space: pre-wrap; word-break: break-all;"></pre>
+                        </details>
+                        <details style="font-size: 0.73rem; background: rgba(255,255,255,0.85); border: 1px dashed rgba(99, 102, 241, 0.4); border-radius: var(--radius-sm); padding: 0.4rem 0.65rem;">
+                            <summary style="cursor: pointer; font-weight: 700; color: #059669; user-select: none;">⚙️ 構造化出力スキーマ（JSON Schema）</summary>
+                            <pre id="byot-drills-schema-preview" style="margin: 0.4rem 0 0 0; font-size: 0.69rem; max-height: 140px; overflow-y: auto; background: var(--bg-card); padding: 0.5rem; border-radius: 4px; font-family: monospace; color: var(--text-secondary); line-height: 1.4;"></pre>
+                        </details>
+                    </div>
                 </div>
 
                 <!-- ステップ2: Google AI Studioの出力を貼り付け -->
@@ -13939,6 +13960,189 @@ ${updatedSourceText}`;
         }
 
         // ==========================================================
+        // 🧠 Google AI Studio連携：スマートパート抽出ヘルパー
+        // ==========================================================
+        function sliceTextForPart(fullText, parts, pIdx) {
+            if (!fullText || !Array.isArray(parts) || parts.length <= 1) return fullText || "";
+            const currentPart = parts[pIdx];
+            if (!currentPart) return fullText;
+
+            // 1. 各パートの目印マーカー（第1回、第1章、パート1、見出し、タイトルなど）を探索
+            const markers = parts.map((p, idx) => {
+                const titleClean = (p.title || "").replace(/^[【\[「第\d+回章部\s:：】\]」]+/g, "").trim();
+                const patterns = [
+                    `第${idx + 1}回`,
+                    `第${idx + 1}章`,
+                    `第${idx + 1}部`,
+                    `第${idx + 1}講`,
+                    `パート${idx + 1}`,
+                    `Part ${idx + 1}`,
+                    `Part${idx + 1}`,
+                    `【第${idx + 1}回`,
+                    `【${idx + 1}】`,
+                    `[${idx + 1}]`,
+                    p.title ? p.title.trim() : null,
+                    titleClean.length >= 3 ? titleClean : null
+                ].filter(Boolean);
+
+                let bestPos = -1;
+                let bestPat = "";
+                for (const pat of patterns) {
+                    const pos = fullText.indexOf(pat);
+                    if (pos !== -1 && (bestPos === -1 || pos < bestPos)) {
+                        bestPos = pos;
+                        bestPat = pat;
+                    }
+                }
+                return { idx, pos: bestPos, pat: bestPat };
+            });
+
+            const currentMarker = markers[pIdx];
+            if (currentMarker && currentMarker.pos !== -1) {
+                const startPos = currentMarker.pos;
+                // 次の有効なパートマーカーを探す
+                let endPos = fullText.length;
+                for (let nextIdx = pIdx + 1; nextIdx < markers.length; nextIdx++) {
+                    if (markers[nextIdx].pos > startPos) {
+                        endPos = markers[nextIdx].pos;
+                        break;
+                    }
+                }
+                const sliced = fullText.substring(startPos, endPos).trim();
+                if (sliced.length > 50) return sliced;
+            }
+
+            // 2. マーカーで見つからない場合、パート数に応じて按分スライス（前後に20%のコンテキスト重複を設ける）
+            const totalParts = parts.length;
+            const partLen = Math.floor(fullText.length / totalParts);
+            const startPos = Math.max(0, Math.floor((pIdx - 0.15) * partLen));
+            const endPos = Math.min(fullText.length, Math.floor((pIdx + 1.15) * partLen));
+            return fullText.substring(startPos, endPos).trim();
+        }
+
+        function extractLessonPartContext(lesson, selectedPartVal) {
+            if (!lesson) {
+                return { isAll: true, partIndex: -1, partNumber: 0, partTitle: "全体", targetText: "", snippetInfo: "授業データなし", charCount: 0 };
+            }
+            const parts = Array.isArray(lesson.parts) ? lesson.parts : [];
+            const fullText = (lesson.extractedText || lesson.sourceText || lesson.lectureNote || lesson.rawText || "").trim();
+
+            if (selectedPartVal === "all" || parts.length === 0) {
+                return {
+                    isAll: true,
+                    partIndex: -1,
+                    partNumber: 0,
+                    partTitle: "全パート一括",
+                    partSummary: "",
+                    targetText: fullText,
+                    snippetInfo: `🌟 全パート一括（全文: ${fullText.length.toLocaleString()}文字）`,
+                    charCount: fullText.length,
+                    parts: parts
+                };
+            }
+
+            const pIdx = parseInt(selectedPartVal, 10);
+            const targetPart = parts[pIdx];
+            if (!targetPart) {
+                return {
+                    isAll: true,
+                    partIndex: -1,
+                    partNumber: 0,
+                    partTitle: "全パート一括",
+                    partSummary: "",
+                    targetText: fullText,
+                    snippetInfo: `🌟 全パート一括（全文: ${fullText.length.toLocaleString()}文字）`,
+                    charCount: fullText.length,
+                    parts: parts
+                };
+            }
+
+            const partTitle = targetPart.title || `第${pIdx + 1}回`;
+            const partSummary = targetPart.summary || "";
+
+            // 1. パート独自の講義内容 (content) が充実している場合
+            if (targetPart.content && targetPart.content.trim().length > 60) {
+                const text = `【第${pIdx + 1}回 講義ノート: ${partTitle}】\n` +
+                    (partSummary ? `【範囲要約】${partSummary}\n\n` : "\n") +
+                    targetPart.content.trim();
+                return {
+                    isAll: false,
+                    partIndex: pIdx,
+                    partNumber: pIdx + 1,
+                    partTitle: partTitle,
+                    partSummary: partSummary,
+                    targetText: text,
+                    snippetInfo: `第${pIdx + 1}回 講義ノート（${text.length.toLocaleString()}文字）`,
+                    charCount: text.length,
+                    parts: parts
+                };
+            }
+
+            // 2. チャット履歴（messages/transcript）から該当パートの講義ログを収集
+            let chatPartText = "";
+            if (Array.isArray(lesson.messages) && lesson.messages.length > 0) {
+                const relevantMsgs = lesson.messages.filter(m => m.partIndex === pIdx || (m.meta && m.meta.partIndex === pIdx));
+                if (relevantMsgs.length > 0) {
+                    chatPartText = relevantMsgs.map(m => (m.text || m.content || "")).join("\n\n");
+                }
+            }
+            if (chatPartText.trim().length > 100) {
+                const text = `【第${pIdx + 1}回 授業講義ログ: ${partTitle}】\n` +
+                    (partSummary ? `【範囲要約】${partSummary}\n\n` : "\n") +
+                    chatPartText.trim();
+                return {
+                    isAll: false,
+                    partIndex: pIdx,
+                    partNumber: pIdx + 1,
+                    partTitle: partTitle,
+                    partSummary: partSummary,
+                    targetText: text,
+                    snippetInfo: `第${pIdx + 1}回 講義ログ（${text.length.toLocaleString()}文字）`,
+                    charCount: text.length,
+                    parts: parts
+                };
+            }
+
+            // 3. 原本テキストから該当パート部分をスマートスライス
+            if (fullText.length > 0) {
+                const sectionText = sliceTextForPart(fullText, parts, pIdx);
+                if (sectionText && sectionText.trim().length > 50) {
+                    const text = `【第${pIdx + 1}回 パート該当本文: ${partTitle}】\n` +
+                        (partSummary ? `【範囲要約】${partSummary}\n\n` : "\n") +
+                        sectionText.trim();
+                    return {
+                        isAll: false,
+                        partIndex: pIdx,
+                        partNumber: pIdx + 1,
+                        partTitle: partTitle,
+                        partSummary: partSummary,
+                        targetText: text,
+                        snippetInfo: `第${pIdx + 1}回 該当本文抜粋（${text.length.toLocaleString()}文字）`,
+                        charCount: text.length,
+                        parts: parts
+                    };
+                }
+            }
+
+            // 4. フォールバック
+            const text = `【第${pIdx + 1}回 対象講義範囲: ${partTitle}】\n` +
+                (partSummary ? `【範囲要約】${partSummary}\n\n` : "\n") +
+                (fullText || "（講義ノートテキスト）");
+
+            return {
+                isAll: false,
+                partIndex: pIdx,
+                partNumber: pIdx + 1,
+                partTitle: partTitle,
+                partSummary: partSummary,
+                targetText: text,
+                snippetInfo: `第${pIdx + 1}回 指定（${text.length.toLocaleString()}文字）`,
+                charCount: text.length,
+                parts: parts
+            };
+        }
+
+        // ==========================================================
         // 🧠 Google AI Studio連携（暗記事項一括インポート）ロジック
         // ==========================================================
         const BYOT_MEMORIZE_SCHEMA = {
@@ -13991,6 +14195,8 @@ ${updatedSourceText}`;
         const btnCopyByotMemoOnly = el("byot-memo-copy-instruction-only-btn");
         const selectByotMemoPart = el("byot-memo-part-select");
         const previewByotMemoSchema = el("byot-memo-schema-preview");
+        const previewByotMemoPrompt = el("byot-memo-prompt-preview");
+        const badgeByotMemoCharCount = el("byot-memo-part-char-count");
 
         if (previewByotMemoSchema) {
             previewByotMemoSchema.textContent = JSON.stringify(BYOT_MEMORIZE_SCHEMA, null, 2);
@@ -14017,30 +14223,37 @@ ${updatedSourceText}`;
         function buildByotMemorizePrompt(includeText = false) {
             const subject = (currentLesson && (currentLesson.subject || detectLessonSubject(currentLesson))) || "指定なし";
             const title = (currentLesson && currentLesson.title) || "無題の授業";
-            const sourceText = (currentLesson && currentLesson.extractedText ? currentLesson.extractedText : "").trim();
-            const parts = currentLesson && Array.isArray(currentLesson.parts) ? currentLesson.parts : [];
             const selectedPartVal = selectByotMemoPart ? selectByotMemoPart.value : "all";
+            const ctx = extractLessonPartContext(currentLesson, selectedPartVal);
 
             let partContextSection = "";
-            let targetTextForExtraction = sourceText;
-
-            if (selectedPartVal === "all") {
-                if (parts.length > 0) {
-                    partContextSection = `【授業全体のカリキュラム構成（全${parts.length}回）】\n` +
-                        parts.map((p, i) => `・第${i + 1}回：${p.title}（学習要約・範囲: ${p.summary || "なし"}）`).join("\n") +
+            if (ctx.isAll) {
+                if (ctx.parts && ctx.parts.length > 0) {
+                    partContextSection = `【授業全体のカリキュラム構成（全${ctx.parts.length}回）】\n` +
+                        ctx.parts.map((p, i) => `・第${i + 1}回：${p.title}（学習要約・範囲: ${p.summary || "なし"}）`).join("\n") +
                         `\n\n【全パート自動振り分け指示】\n本文全体から重要事項を網羅的に抽出し、各暗記カードには必ずそれがどのパート（回）に属するかを示す "part_number"（1以上の整数。第1回なら 1、第2回なら 2）を正確に割り振ってください。各パートから偏りなく均等に網羅してください。`;
                 }
             } else {
-                const pIdx = parseInt(selectedPartVal, 10);
-                const targetPart = parts[pIdx];
-                if (targetPart) {
-                    partContextSection = `【今回抽出を担当するパート（第${pIdx + 1}回 / 全${parts.length}回）】\nパート見出し: ${targetPart.title}\n学習要約・範囲: ${targetPart.summary || "なし"}\n\n【パート集中抽出の指示】\n上記の【第${pIdx + 1}回：${targetPart.title}】の範囲に属する重要事項に【完全に集中】し、漏れなく全て抽出してください（全カードの "part_number" は必ず ${pIdx + 1} としてください）。他のパートの内容は含めないでください。`;
-                    
-                    // パート個別の講義内容が存在する場合は、それを最優先の抽出対象本文にする！
-                    if (targetPart.content && targetPart.content.trim().length > 50) {
-                        targetTextForExtraction = `【第${pIdx + 1}回 パート講義ノート: ${targetPart.title}】\n${targetPart.content.trim()}`;
-                    }
-                }
+                partContextSection = `【🚨 抽出対象パートの厳格限定（第${ctx.partNumber}回 / 全${ctx.parts.length}回）】\n` +
+                    `対象パート見出し: ${ctx.partTitle}\n` +
+                    `学習要約・範囲: ${ctx.partSummary || "該当範囲"}\n\n` +
+                    `【⚠️ パート集中抽出の厳格指示】\n` +
+                    `あなたは今回、【第${ctx.partNumber}回：「${ctx.partTitle}」】の範囲の暗記事項のみを担当しています。\n` +
+                    `他のパート（第${ctx.partNumber > 1 ? 1 : 2}回など）の内容や単元は【絶対に含めない】でください。\n` +
+                    `全カードの "part_number" は必ず「${ctx.partNumber}」としてください。\n` +
+                    `この範囲内で覚えるべき専門用語・公式・年号・人名・条約・反応式・因果関係を1つも漏らさず全て網羅してください。`;
+            }
+
+            // 教科別の特化指示
+            let subjectSpecificRule = "";
+            if (subject.includes("歴史") || subject.includes("日本史") || subject.includes("世界史")) {
+                subjectSpecificRule = `【⛩️ 歴史科の抽出重点】\n・単なる用語名だけでなく、「時期・世紀」「誰が」「なぜ（背景・原因）」「どうなったか（結果・後世への影響）」が分かる問いかけにしてください。\n・政策、法令、条約、乱・変、文化財、外交関係を漏らさずカード化してください。`;
+            } else if (subject.includes("公民") || subject.includes("政治") || subject.includes("経済") || subject.includes("公共") || subject.includes("倫理")) {
+                subjectSpecificRule = `【🏛️ 公民科の抽出重点】\n・制度の仕組み、対立概念、憲法条文、重要判例、経済用語・理論（市場機構・金融政策等）の定義を厳密に抽出してください。\n・混同しやすい2つの用語の違いを浮き彫りにする問いを作成してください。`;
+            } else if (subject.includes("物理") || subject.includes("化学") || subject.includes("生物") || subject.includes("理科")) {
+                subjectSpecificRule = `【⚡ 理科の抽出重点】\n・定義、公式、法則、現象の発生メカニズム、実験器具の操作理由（共洗い等の理由）を完全網羅してください。\n・数式や化学式は必ず完全なLaTeX（$ $ や \\ce{...}）で記述してください。`;
+            } else if (subject.includes("数学")) {
+                subjectSpecificRule = `【📐 数学科の抽出重点】\n・公式、定理の適用条件、変形のアルゴリズム、文字や記号（$x_i, \\sum$ 等）の定義・意味を抽出してください。\n・数式は必ず完全なLaTeX（$ $ または $$ $$）で記述してください。`;
             }
 
             let prompt = `あなたは生徒の暗記学習を支援するフラッシュカード・重要用語抽出専門AIです。
@@ -14049,6 +14262,7 @@ ${updatedSourceText}`;
 【教科】${subject}
 【授業タイトル】${title}
 ${partContextSection}
+${subjectSpecificRule ? "\n" + subjectSpecificRule : ""}
 
 【🚨 最重要ルール1：表面（question）に答えを書くことは【絶対厳禁】】
 フラッシュカードとして機能させるため、表面（question）の中に答えとなる用語名・人名・年号・結論・数式を絶対に書かないでください！
@@ -14078,7 +14292,7 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
 {
   "memorization_points": [
     {
-      "part_number": 1,
+      "part_number": ${ctx.isAll ? 1 : ctx.partNumber},
       "category": "公式・法則 または 反応式・現象 または 用語・定義 または 数値・データ または 解法パターン・急所",
       "question": "表面の問い（答えとなる用語・数式を含めず、思い出させる問いかけにする）",
       "answer": "裏面の答え・結論・正確な定義・数式",
@@ -14089,9 +14303,26 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
 \`\`\``;
 
             if (includeText) {
-                prompt += `\n\n【対象テキスト本文】\n${targetTextForExtraction || "（原本テキストが空です。ここに教科書・参考書のテキストを貼り付けてください）"}`;
+                prompt += `\n\n【対象テキスト本文】\n${ctx.targetText || "（原本テキストが空です。ここに教科書・参考書のテキストを貼り付けてください）"}`;
             }
             return prompt;
+        }
+
+        function updateByotMemoUI() {
+            const selectedPartVal = selectByotMemoPart ? selectByotMemoPart.value : "all";
+            const ctx = extractLessonPartContext(currentLesson, selectedPartVal);
+
+            if (badgeByotMemoCharCount) {
+                badgeByotMemoCharCount.textContent = ctx.snippetInfo;
+            }
+            if (btnCopyByotMemoTextOnly) {
+                btnCopyByotMemoTextOnly.innerHTML = ctx.isAll
+                    ? `📄 原本テキスト全文（${ctx.charCount.toLocaleString()}文字）をコピー`
+                    : `📄 第${ctx.partNumber}回の本文（${ctx.charCount.toLocaleString()}文字）をコピー`;
+            }
+            if (previewByotMemoPrompt) {
+                previewByotMemoPrompt.textContent = buildByotMemorizePrompt(false);
+            }
         }
 
         function openByotMemorizeModal() {
@@ -14104,7 +14335,12 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
             if (inputByotMemoJson) inputByotMemoJson.value = "";
             if (countByotMemoChar) countByotMemoChar.textContent = "0文字";
             if (previewByotMemoSchema) previewByotMemoSchema.textContent = JSON.stringify(BYOT_MEMORIZE_SCHEMA, null, 2);
+            updateByotMemoUI();
             modalByotMemo.style.display = "flex";
+        }
+
+        if (selectByotMemoPart) {
+            selectByotMemoPart.addEventListener("change", updateByotMemoUI);
         }
 
         if (btnOpenByotMemo) btnOpenByotMemo.addEventListener("click", openByotMemorizeModal);
@@ -14142,14 +14378,17 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
 
         if (btnCopyByotMemoTextOnly) {
             btnCopyByotMemoTextOnly.addEventListener("click", async () => {
-                const text = (currentLesson && currentLesson.extractedText ? currentLesson.extractedText : "").trim();
+                const selectedPartVal = selectByotMemoPart ? selectByotMemoPart.value : "all";
+                const ctx = extractLessonPartContext(currentLesson, selectedPartVal);
+                const text = (ctx.targetText || "").trim();
                 if (!text) {
-                    showToast("原本テキストが登録されていません。", "warning");
+                    showToast("対象テキストが登録されていません。", "warning");
                     return;
                 }
                 try {
                     await navigator.clipboard.writeText(text);
-                    showToast(`📄 原本テキスト全文（${text.length}文字）をコピーしました！`, "success", 3000);
+                    const label = ctx.isAll ? "原本テキスト全文" : `第${ctx.partNumber}回の本文`;
+                    showToast(`📄 ${label}（${text.length.toLocaleString()}文字）をコピーしました！`, "success", 3000);
                 } catch(e) {
                     showToast("コピーに失敗しました。", "error");
                 }
@@ -14295,64 +14534,186 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
         // ==========================================================
         // 🎯 Google AI Studio連携（共通テスト形式問題一括インポート）ロジック
         // ==========================================================
-        const BYOT_DRILLS_SCHEMA = {
-            "type": "object",
-            "properties": {
-                "choice_drills": {
-                    "type": "array",
-                    "description": "共通テスト形式の実戦選択問題リスト（5問）",
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "part_number": {
-                                "type": "integer",
-                                "description": "出題対象パート番号（1以上の整数）"
-                            },
-                            "type": {
-                                "type": "string",
-                                "enum": ["combination", "chronological", "single_choice", "true_false"],
-                                "description": "問題の形式種別"
-                            },
-                            "lead_text": {
-                                "type": "string",
-                                "description": "問題文のリード文"
-                            },
-                            "statements": {
-                                "type": "array",
-                                "items": { "type": "string" },
-                                "description": "2文正誤判定用の文X, 文Yなど（任意）"
-                            },
-                            "options": {
-                                "type": "array",
-                                "items": {
-                                    "type": "object",
-                                    "properties": {
-                                        "number": { "type": "integer" },
-                                        "text": { "type": "string" }
-                                    },
-                                    "required": ["number", "text"]
-                                },
-                                "description": "選択肢リスト（1〜4）"
-                            },
-                            "correct_number": {
-                                "type": "integer",
-                                "description": "正解の選択肢番号（1〜4）"
-                            },
-                            "explanation": {
-                                "type": "string",
-                                "description": "正解の根拠と不正解の解説"
-                            },
-                            "trap_reason": {
-                                "type": "string",
-                                "description": "受験生が最も引っかかりやすい落とし穴・罠解説"
-                            }
-                        },
-                        "required": ["type", "lead_text", "options", "correct_number", "explanation", "trap_reason"]
-                    }
+        function getDrillsSchemaByVersion(version) {
+            const baseProperties = {
+                part_number: {
+                    type: "integer",
+                    description: "出題対象パート番号（1以上の整数）"
+                },
+                type: {
+                    type: "string",
+                    description: "問題の形式種別"
+                },
+                lead_text: {
+                    type: "string",
+                    description: "問題文のリード文"
+                },
+                explanation: {
+                    type: "string",
+                    description: "正解の根拠と不正解の解説"
+                },
+                trap_reason: {
+                    type: "string",
+                    description: "受験生が最も引っかかりやすい落とし穴・罠解説"
                 }
-            },
-            "required": ["choice_drills"]
-        };
+            };
+
+            if (version === "combination") {
+                return {
+                    type: "object",
+                    properties: {
+                        choice_drills: {
+                            type: "array",
+                            description: "2文正誤組み合わせ判定問題リスト（5問）",
+                            items: {
+                                type: "object",
+                                properties: {
+                                    ...baseProperties,
+                                    type: { type: "string", enum: ["combination"] },
+                                    statements: {
+                                        type: "array",
+                                        items: { type: "string" },
+                                        description: "文Xと文Yの2文リスト（必ず2要素）"
+                                    },
+                                    options: {
+                                        type: "array",
+                                        items: {
+                                            type: "object",
+                                            properties: {
+                                                number: { type: "integer" },
+                                                text: { type: "string" }
+                                            },
+                                            required: ["number", "text"]
+                                        },
+                                        description: "①X-正/Y-正, ②X-正/Y-誤, ③X-誤/Y-正, ④X-誤/Y-誤の4択"
+                                    },
+                                    correct_number: { type: "integer", enum: [1, 2, 3, 4] }
+                                },
+                                required: ["type", "lead_text", "statements", "options", "correct_number", "explanation", "trap_reason"]
+                            }
+                        }
+                    },
+                    required: ["choice_drills"]
+                };
+            }
+
+            if (version === "chronological") {
+                return {
+                    type: "object",
+                    properties: {
+                        choice_drills: {
+                            type: "array",
+                            description: "年代・因果関係整序問題リスト（5問）",
+                            items: {
+                                type: "object",
+                                properties: {
+                                    ...baseProperties,
+                                    type: { type: "string", enum: ["chronological"] },
+                                    statements: {
+                                        type: "array",
+                                        items: { type: "string" },
+                                        description: "出来事Ⅰ〜Ⅲのリスト（必ず3要素）"
+                                    },
+                                    options: {
+                                        type: "array",
+                                        items: {
+                                            type: "object",
+                                            properties: {
+                                                number: { type: "integer" },
+                                                text: { type: "string" }
+                                            },
+                                            required: ["number", "text"]
+                                        },
+                                        description: "①Ⅰ-Ⅱ-Ⅲ などの配列組み合わせ（4〜6択）"
+                                    },
+                                    correct_number: { type: "integer" }
+                                },
+                                required: ["type", "lead_text", "statements", "options", "correct_number", "explanation", "trap_reason"]
+                            }
+                        }
+                    },
+                    required: ["choice_drills"]
+                };
+            }
+
+            if (version === "true_false") {
+                return {
+                    type: "object",
+                    properties: {
+                        choice_drills: {
+                            type: "array",
+                            description: "4択正誤判定問題リスト（5問）",
+                            items: {
+                                type: "object",
+                                properties: {
+                                    ...baseProperties,
+                                    type: { type: "string", enum: ["single_choice", "true_false"] },
+                                    options: {
+                                        type: "array",
+                                        items: {
+                                            type: "object",
+                                            properties: {
+                                                number: { type: "integer" },
+                                                text: { type: "string" }
+                                            },
+                                            required: ["number", "text"]
+                                        },
+                                        description: "4つの選択肢（①〜④）"
+                                    },
+                                    correct_number: { type: "integer", enum: [1, 2, 3, 4] }
+                                },
+                                required: ["type", "lead_text", "options", "correct_number", "explanation", "trap_reason"]
+                            }
+                        }
+                    },
+                    required: ["choice_drills"]
+                };
+            }
+
+            // cloze or mix
+            return {
+                type: "object",
+                properties: {
+                    choice_drills: {
+                        type: "array",
+                        description: "共通テスト形式の実戦選択問題リスト（5問）",
+                        items: {
+                            type: "object",
+                            properties: {
+                                ...baseProperties,
+                                type: {
+                                    type: "string",
+                                    enum: ["combination", "chronological", "single_choice", "true_false"]
+                                },
+                                statements: {
+                                    type: "array",
+                                    items: { type: "string" },
+                                    description: "文X・Yや出来事Ⅰ〜Ⅲなど（任意）"
+                                },
+                                options: {
+                                    type: "array",
+                                    items: {
+                                        type: "object",
+                                        properties: {
+                                            number: { type: "integer" },
+                                            text: { type: "string" }
+                                        },
+                                        required: ["number", "text"]
+                                    },
+                                    description: "選択肢リスト（1〜4または1〜6）"
+                                },
+                                correct_number: {
+                                    type: "integer",
+                                    description: "正解の選択肢番号"
+                                }
+                            },
+                            required: ["type", "lead_text", "options", "correct_number", "explanation", "trap_reason"]
+                        }
+                    }
+                },
+                required: ["choice_drills"]
+            };
+        }
 
         const modalByotDrills = el("lesson-byot-drills-modal");
         const btnOpenByotDrills = el("btn-open-byot-drills-modal");
@@ -14368,44 +14729,38 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
         const selectByotDrillsPart = el("byot-drills-part-select");
         const selectByotDrillsVersion = el("byot-drills-version-select");
         const previewByotDrillsSchema = el("byot-drills-schema-preview");
-
-        if (previewByotDrillsSchema) {
-            previewByotDrillsSchema.textContent = JSON.stringify(BYOT_DRILLS_SCHEMA, null, 2);
-        }
+        const previewByotDrillsPrompt = el("byot-drills-prompt-preview");
+        const badgeByotDrillsCharCount = el("byot-drills-part-char-count");
+        const guideByotDrillsVersion = el("byot-drills-version-guide");
+        const leadByotDrillsSummary = el("byot-drills-summary-lead");
 
         function buildByotDrillsPrompt(includeText = false) {
             const subject = (currentLesson && (currentLesson.subject || detectLessonSubject(currentLesson))) || "指定なし";
             const title = (currentLesson && currentLesson.title) || "無題の授業";
-            const sourceText = (currentLesson && currentLesson.extractedText ? currentLesson.extractedText : "").trim();
-            const parts = currentLesson && Array.isArray(currentLesson.parts) ? currentLesson.parts : [];
             const selectedPartVal = selectByotDrillsPart ? selectByotDrillsPart.value : "all";
             const selectedVersion = selectByotDrillsVersion ? selectByotDrillsVersion.value : "mix";
+            const ctx = extractLessonPartContext(currentLesson, selectedPartVal);
 
             let partContextSection = "";
-            let targetTextForExtraction = sourceText;
-
-            if (selectedPartVal === "all") {
-                if (parts.length > 0) {
-                    partContextSection = `【授業全体のカリキュラム構成（全${parts.length}回）】\n` +
-                        parts.map((p, i) => `・第${i + 1}回：${p.title}（学習要約・範囲: ${p.summary || "なし"}）`).join("\n") +
+            if (ctx.isAll) {
+                if (ctx.parts && ctx.parts.length > 0) {
+                    partContextSection = `【授業全体のカリキュラム構成（全${ctx.parts.length}回）】\n` +
+                        ctx.parts.map((p, i) => `・第${i + 1}回：${p.title}（学習要約・範囲: ${p.summary || "なし"}）`).join("\n") +
                         `\n\n【全パート均等出題指示】\n全パートから偏りなく満遍なく良問を作成し、各問題がどのパートに属するかを示す "part_number"（1以上の整数。第1回なら 1、第2回なら 2）を正確に割り振ってください。`;
                 }
             } else {
-                const pIdx = parseInt(selectedPartVal, 10);
-                const targetPart = parts[pIdx];
-                if (targetPart) {
-                    partContextSection = `【出題対象パート（第${pIdx + 1}回 / 全${parts.length}回）】\nパート名: ${targetPart.title}\n学習要約・範囲: ${targetPart.summary || "なし"}\n\n【パート集中出題指示】\n上記の【第${pIdx + 1}回：${targetPart.title}】の範囲から【完全に集中】して良問を作成してください（全問 "part_number": ${pIdx + 1} としてください）。他のパートの内容は含めないでください。`;
-
-                    if (targetPart.content && targetPart.content.trim().length > 50) {
-                        targetTextForExtraction = `【第${pIdx + 1}回 パート講義ノート: ${targetPart.title}】\n${targetPart.content.trim()}`;
-                    }
-                }
+                partContextSection = `【🚨 出題対象パートの厳格限定（第${ctx.partNumber}回 / 全${ctx.parts.length}回）】\n` +
+                    `出題パート見出し: ${ctx.partTitle}\n` +
+                    `学習要約・範囲: ${ctx.partSummary || "該当範囲"}\n\n` +
+                    `【⚠️ パート集中出題の厳格指示】\n` +
+                    `今回は【第${ctx.partNumber}回：「${ctx.partTitle}」】の講義内容に【完全に集中】して5問を作問してください。\n` +
+                    `他パートの内容は混ぜず、全問題の "part_number" は必ず「${ctx.partNumber}」としてください。`;
             }
 
             let formatInstruction = "";
             if (selectedVersion === "combination") {
-                formatInstruction = `【出題形式：⚔️ 2文正誤組み合わせ判定（最頻出形式）に特化】
-5問すべてを「type: combination」として作成してください。
+                formatInstruction = `【出題形式：⚔️ 2文正誤組み合わせ判定（共通テスト最頻出・文X・文Y判定）に特化】
+全5問すべてを「type: combination」として作成してください。
 ・lead_text: 「次の文 X・Y について、その正誤の組み合わせとして最も適当なものを、下の①〜④のうちから一つ選べ。」
 ・statements: ["X: ○○に関する記述...", "Y: △△に関する記述..."] の2文を提示。
 ・options:
@@ -14415,21 +14770,21 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
   ④ X-誤 / Y-誤
 ・XとYのそれぞれに明確な根拠を持たせ、一見正しそうに見える巧妙な引っかけ（時期・主体・因果のすり替え）を盛り込んでください。`;
             } else if (selectedVersion === "true_false") {
-                formatInstruction = `【出題形式：🔍 4択正誤判定（王道形式）に特化】
-5問すべてを「type: single_choice」または「type: true_false」として作成してください。
+                formatInstruction = `【出題形式：🔍 4択正誤判定（共通テスト王道形式：正文・誤文選択）に特化】
+全5問すべてを「type: single_choice」または「type: true_false」として作成してください。
 ・問題文（lead_text）で「正しいものを一つ選べ」または「誤っているものを一つ選べ」と明確に指示。
 ・options: 4つの選択肢（①〜④）を提示。
-・誤文の選択肢には、「主語と述語の入れ替え」「似た法令・用語の混同」「原因と結果の逆転」「年代の前後すり替え」などの典型的トラップを必ず仕込んでください。`;
+・誤文の選択肢には、「主語と述語の入れ替え」「似た法令・用語・概念の混同」「原因と結果の逆転」「年代の前後すり替え」などの典型的トラップを必ず仕込んでください。`;
             } else if (selectedVersion === "chronological") {
-                formatInstruction = `【出題形式：⏳ 年代・因果関係整序（配列問題）に特化】
-5問すべてを「type: chronological」として作成してください。
+                formatInstruction = `【出題形式：⏳ 年代・因果関係整序（配列問題：Ⅰ〜Ⅲの順序）に特化】
+全5問すべてを「type: chronological」として作成してください。
 ・lead_text: 「次のⅠ〜Ⅲの出来事について、古いものから順に正しく配列したものを、下の①〜⑥のうちから一つ選べ。」
 ・statements: ["Ⅰ: ...", "Ⅱ: ...", "Ⅲ: ..."] の3つの出来事やプロセスを提示。
 ・options: ① Ⅰ-Ⅱ-Ⅲ, ② Ⅰ-Ⅲ-Ⅱ, ③ Ⅱ-Ⅰ-Ⅲ, ④ Ⅱ-Ⅲ-Ⅰ, ⑤ Ⅲ-Ⅰ-Ⅱ, ⑥ Ⅲ-Ⅱ-Ⅰ （4択にする場合は4つの組み合わせ）
 ・時代が離れすぎた問題ではなく、同時代または因果関係で直結する微妙な前後関係を問う良問にしてください。`;
             } else if (selectedVersion === "cloze") {
-                formatInstruction = `【出題形式：📝 空欄補充型（二連空欄の語句組み合わせ）に特化】
-5問すべてを「type: combination」として作成してください。
+                formatInstruction = `【出題形式：📝 空欄補充・対立概念特化（二連空欄の語句組み合わせ）に特化】
+全5問すべてを「type: combination」として作成してください。
 ・lead_text: リード文の中に［ ア ］［ イ ］の空欄を設け、「文章中の空欄［ ア ］・［ イ ］に入る語句の組み合わせとして最も適当なものを、下の①〜④のうちから一つ選べ。」とする。
 ・options: ① ア: ○○ / イ: △△, ② ア: ○○ / イ: ××, ③ ア: □□ / イ: △△, ④ ア: □□ / イ: ××
 ・混同しやすい対立概念や関連語句を配置してください。`;
@@ -14460,7 +14815,7 @@ ${formatInstruction}
 3. 数式表記：
    - 数式は必ず $ $ または $$ $$ で記述すること。
 4. 正解番号：
-   - "correct_number" は必ず 1, 2, 3, 4 のいずれかの半角整数（options 配列の number と一致）にすること。
+   - "correct_number" は必ず 1, 2, 3, 4 などの半角整数（options 配列の number と一致）にすること。
 
 【🚨 出力形式】
 Google AI Studioの Structured outputs（構造化出力）で設定したスキーマに従って出力してください。前置きや挨拶文、余計な説明文は一切含めず、純粋なJSONのみを出力してください。
@@ -14470,18 +14825,15 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
 {
   "choice_drills": [
     {
-      "part_number": 1,
-      "type": "combination",
+      "part_number": ${ctx.isAll ? 1 : ctx.partNumber},
+      "type": "${selectedVersion === "combination" ? "combination" : selectedVersion === "chronological" ? "chronological" : selectedVersion === "true_false" ? "single_choice" : "combination"}",
       "lead_text": "問題文のリード文...",
-      "statements": [
-        "文X: 内容...",
-        "文Y: 内容..."
-      ],
+      ${selectedVersion === "combination" ? '"statements": ["文X: ...", "文Y: ..."],' : selectedVersion === "chronological" ? '"statements": ["Ⅰ: ...", "Ⅱ: ...", "Ⅲ: ..."],' : ''}
       "options": [
-        { "number": 1, "text": "① X-正 / Y-正" },
-        { "number": 2, "text": "② X-正 / Y-誤" },
-        { "number": 3, "text": "③ X-誤 / Y-正" },
-        { "number": 4, "text": "④ X-誤 / Y-誤" }
+        { "number": 1, "text": "選択肢1" },
+        { "number": 2, "text": "選択肢2" },
+        { "number": 3, "text": "選択肢3" },
+        { "number": 4, "text": "選択肢4" }
       ],
       "correct_number": 1,
       "explanation": "正解の論理的根拠と各選択肢の解説...",
@@ -14492,9 +14844,54 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
 \`\`\``;
 
             if (includeText) {
-                prompt += `\n\n【対象テキスト本文】\n${targetTextForExtraction || "（原本テキストが空です。ここに教科書・参考書のテキストを貼り付けてください）"}`;
+                prompt += `\n\n【対象テキスト本文】\n${ctx.targetText || "（原本テキストが空です。ここに教科書・参考書のテキストを貼り付けてください）"}`;
             }
             return prompt;
+        }
+
+        function updateByotDrillsUI() {
+            const selectedPartVal = selectByotDrillsPart ? selectByotDrillsPart.value : "all";
+            const selectedVersion = selectByotDrillsVersion ? selectByotDrillsVersion.value : "mix";
+            const ctx = extractLessonPartContext(currentLesson, selectedPartVal);
+            const schema = getDrillsSchemaByVersion(selectedVersion);
+
+            if (badgeByotDrillsCharCount) {
+                badgeByotDrillsCharCount.textContent = ctx.snippetInfo;
+            }
+            if (btnCopyByotDrillsTextOnly) {
+                btnCopyByotDrillsTextOnly.innerHTML = ctx.isAll
+                    ? `📄 原本テキスト全文（${ctx.charCount.toLocaleString()}文字）をコピー`
+                    : `📄 第${ctx.partNumber}回の本文（${ctx.charCount.toLocaleString()}文字）をコピー`;
+            }
+
+            if (guideByotDrillsVersion) {
+                const guides = {
+                    mix: "🌟 共通テスト本番に即した多彩な出題形式（正誤・整序・空欄）で総合演習",
+                    combination: "⚔️ 文X・文Yの2文について①正-正 ②正-誤 ③誤-正 ④誤-誤を判定（共テ最頻出）",
+                    true_false: "🔍 4択の中から「正しい文」または「誤っている文」を1つ選ばせる王道正誤問題",
+                    chronological: "⏳ 出来事Ⅰ〜Ⅲの正しい順序（①〜⑥）を年代・因果関係から判定する整序問題",
+                    cloze: "📝 リード文の空欄［ア］［イ］に入る語句の正しい組み合わせを選ばせる問題"
+                };
+                guideByotDrillsVersion.textContent = guides[selectedVersion] || guides.mix;
+            }
+
+            if (leadByotDrillsSummary) {
+                const leads = {
+                    mix: "共通テスト形式の良問（2文正誤判定、年代整序、4択正誤、引っかけ罠解説付き）を5問作成させるプロンプトです。",
+                    combination: "共通テスト最頻出の「2文正誤組み合わせ判定（文X・文Y）」に特化した5問を作成させるプロンプトです。",
+                    true_false: "共通テスト王道の「4択正誤判定（正文・誤文選択・トラップ解説付き）」に特化した5問を作成させるプロンプトです。",
+                    chronological: "共通テスト頻出の「年代・因果整序（出来事Ⅰ〜Ⅲの配列選択）」に特化した5問を作成させるプロンプトです。",
+                    cloze: "共通テストの「二連空欄補充（語句組み合わせ判定）」に特化した5問を作成させるプロンプトです。"
+                };
+                leadByotDrillsSummary.textContent = leads[selectedVersion] || leads.mix;
+            }
+
+            if (previewByotDrillsSchema) {
+                previewByotDrillsSchema.textContent = JSON.stringify(schema, null, 2);
+            }
+            if (previewByotDrillsPrompt) {
+                previewByotDrillsPrompt.textContent = buildByotDrillsPrompt(false);
+            }
         }
 
         function openByotDrillsModal() {
@@ -14506,8 +14903,15 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
             populateByotPartSelect(selectByotDrillsPart, "all");
             if (inputByotDrillsJson) inputByotDrillsJson.value = "";
             if (countByotDrillsChar) countByotDrillsChar.textContent = "0文字";
-            if (previewByotDrillsSchema) previewByotDrillsSchema.textContent = JSON.stringify(BYOT_DRILLS_SCHEMA, null, 2);
+            updateByotDrillsUI();
             modalByotDrills.style.display = "flex";
+        }
+
+        if (selectByotDrillsPart) {
+            selectByotDrillsPart.addEventListener("change", updateByotDrillsUI);
+        }
+        if (selectByotDrillsVersion) {
+            selectByotDrillsVersion.addEventListener("change", updateByotDrillsUI);
         }
 
         if (btnOpenByotDrills) btnOpenByotDrills.addEventListener("click", openByotDrillsModal);
@@ -14534,9 +14938,11 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
 
         if (btnCopyByotDrillsSchema) {
             btnCopyByotDrillsSchema.addEventListener("click", async () => {
+                const version = selectByotDrillsVersion ? selectByotDrillsVersion.value : "mix";
+                const schema = getDrillsSchemaByVersion(version);
                 try {
-                    await navigator.clipboard.writeText(JSON.stringify(BYOT_DRILLS_SCHEMA, null, 2));
-                    showToast("⚙️ 共通テスト問題の構造化スキーマ（JSON Schema）をコピーしました！AI StudioのStructured outputs設定に貼り付けてください", "success", 4500);
+                    await navigator.clipboard.writeText(JSON.stringify(schema, null, 2));
+                    showToast("⚙️ 選択問題の構造化スキーマ（JSON Schema）をコピーしました！AI StudioのStructured outputs設定に貼り付けてください", "success", 4500);
                 } catch(e) {
                     showToast("コピーに失敗しました。", "error");
                 }
@@ -14545,14 +14951,17 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
 
         if (btnCopyByotDrillsTextOnly) {
             btnCopyByotDrillsTextOnly.addEventListener("click", async () => {
-                const text = (currentLesson && currentLesson.extractedText ? currentLesson.extractedText : "").trim();
+                const selectedPartVal = selectByotDrillsPart ? selectByotDrillsPart.value : "all";
+                const ctx = extractLessonPartContext(currentLesson, selectedPartVal);
+                const text = (ctx.targetText || "").trim();
                 if (!text) {
-                    showToast("原本テキストが登録されていません。", "warning");
+                    showToast("対象テキストが登録されていません。", "warning");
                     return;
                 }
                 try {
                     await navigator.clipboard.writeText(text);
-                    showToast(`📄 原本テキスト全文（${text.length}文字）をコピーしました！`, "success", 3000);
+                    const label = ctx.isAll ? "原本テキスト全文" : `第${ctx.partNumber}回の本文`;
+                    showToast(`📄 ${label}（${text.length.toLocaleString()}文字）をコピーしました！`, "success", 3000);
                 } catch(e) {
                     showToast("コピーに失敗しました。", "error");
                 }
