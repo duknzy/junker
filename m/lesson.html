@@ -1454,6 +1454,7 @@
                             授業タイトル
                         </span>
                         <button type="button" id="lesson-title-edit-btn" style="background:none; border:none; color:var(--text-muted); font-size:0.75rem; cursor:pointer; padding:0 0.2rem;" title="タイトルを変更">✏️</button>
+                        <button type="button" id="lesson-title-shorten-btn-m" style="background:none; border:none; color:#6366f1; font-size:0.75rem; cursor:pointer; padding:0 0.2rem;" title="タイトルを短縮・整理">🪄</button>
                     </div>
                     <div class="lecture-nav-right">
                         <button type="button" class="m-bubble-action-btn" id="solve-related-problem-btn" style="display:none; color:var(--accent-cyan, #0284c7); font-weight:700;" title="元の誤答問題を開く">
@@ -2211,6 +2212,84 @@
         const requestedLessonId = urlParams.get('id') || urlParams.get('lessonId');
         let initialLessonOpened = false;
 
+        // ==============================================================
+        // ✂️ 授業タイトル・パートタイトルの短縮・クレンジングユーティリティ
+        // ==============================================================
+        function cleanPartTitle(rawTitle, partIndex = 0) {
+            if (!rawTitle || typeof rawTitle !== "string") {
+                return `パート${partIndex + 1}`;
+            }
+            let t = rawTitle.trim();
+
+            // 1. 重複する回数・パートプレフィックスを除去（例: "第1回: ", "Part 1 ", "Part 1「...", "【第1回】", "その1: "）
+            t = t.replace(/^(?:【?\s*第\s*\d+\s*回\s*】?|Part\s*\d+|第\s*\d+\s*章|その\s*\d+|Chapter\s*\d+)[\s:：・\-_]*/i, "").trim();
+
+            // 2. 先頭・末尾の鍵括弧・引用符（「」『』""''）のアンラップ
+            t = t.replace(/^[「『"'\s]+|[」』"'\s]+$/g, "").trim();
+
+            // 3. タイトル内部のふりがな・読み仮名括弧を除去（例: 天下分け目の上場（じょうじょう）争い -> 天下分け目の上場争い）
+            t = t.replace(/[(（][\u3040-\u309F\u30A0-\u30FF\s、・]+[)）]/g, "").trim();
+
+            // 4. サブタイトル（――, ──, ―, --）で区切られた冗長な煽り文・解説文を除去
+            const dashMatch = t.split(/\s*(?:――|──|―|--)\s*/);
+            if (dashMatch.length > 1 && dashMatch[0].trim().length >= 3) {
+                t = dashMatch[0].trim();
+            } else {
+                const colonMatch = t.split(/\s*[:：]\s*/);
+                if (colonMatch.length > 1 && colonMatch[0].trim().length >= 3 && t.length > 18) {
+                    t = colonMatch[0].trim();
+                }
+            }
+
+            // 再度外側括弧のクリーンアップ
+            t = t.replace(/^[「『"'\s]+|[」』"'\s]+$/g, "").trim();
+
+            // 5. 語尾の「〜まで」「〜について」などの冗長な解説句の整理
+            t = t.replace(/まで$/, "").trim();
+
+            // 6. 前後のゴミ記号トリム
+            t = t.replace(/^[・\-_:：\s]+|[・\-_:：\s]+$/g, "").trim();
+
+            // 7. 20文字以内のコンパクト化
+            if (t.length > 20) {
+                t = t.slice(0, 18).trim();
+            }
+
+            return t || `パート${partIndex + 1}`;
+        }
+
+        function cleanLessonTitle(rawTitle) {
+            if (!rawTitle || typeof rawTitle !== "string") {
+                return "無題の授業";
+            }
+            let t = rawTitle.trim();
+
+            // 1. 先頭の教科バッジ表記を除去（例: 【日本史】, 【物理】, [数学] など）
+            t = t.replace(/^[【\[](?:日本史|世界史|地理|公民|公共|政治経済|現代社会|倫理|物理|化学|生物|地学|物理基礎|化学基礎|生物基礎|数学|英語|国語|情報|社会|理科)[】\]]\s*/i, "").trim();
+
+            // 2. タイトル内部のふりがな・読み仮名括弧を除去
+            t = t.replace(/[(（][\u3040-\u309F\u30A0-\u30FF\s、・]+[)）]/g, "").trim();
+
+            // 3. サブタイトル（――, ──, ―, --）を除去
+            const dashMatch = t.split(/\s*(?:――|──|―|--)\s*/);
+            if (dashMatch.length > 1 && dashMatch[0].trim().length >= 3) {
+                t = dashMatch[0].trim();
+            }
+
+            // 4. 外側の引用符
+            t = t.replace(/^[「『"'\s]+|[」』"'\s]+$/g, "").trim();
+
+            // 5. ゴミ記号トリム
+            t = t.replace(/^[・\-_:：\s]+|[・\-_:：\s]+$/g, "").trim();
+
+            // 6. 24文字以内のスマートカット
+            if (t.length > 24) {
+                t = t.slice(0, 22).trim();
+            }
+
+            return t || "無題の授業";
+        }
+
         // ==================== 認証 ====================
         onAuthStateChanged(auth, (user) => {
             const loginNotice = document.getElementById("login-required-notice");
@@ -2708,7 +2787,7 @@
 
                     // タイトルから【第1回】や第1回などの重複部分を除去
                     const rawPartTitle = String(p.title || `Part ${idx + 1}`).trim();
-                    const cleanPartSubTitle = rawPartTitle.replace(/^(【第\s*\d+\s*回】|第\s*\d+\s*回[：:\s]*)/g, "").trim();
+                    const cleanPartSubTitle = cleanPartTitle(rawPartTitle, idx);
 
                     stepperHtml += `
                         <button type="button" class="lecture-step-item ${stepClass}" data-step-idx="${idx}" title="${escapeHtml(rawPartTitle)}">
@@ -2733,8 +2812,8 @@
 
             // 1. 📖 本日の講義ペーパーカード
             const rawPartTitle = String(viewingPart.title || lesson.title || "").trim();
-            const cleanPartTitle = rawPartTitle.replace(/^(【第\s*\d+\s*回】|第\s*\d+\s*回[：:\s]*)/g, "").trim();
-            const displayLectureTitle = cleanPartTitle ? `第${viewingIdx + 1}回: ${escapeHtml(cleanPartTitle)}` : `第${viewingIdx + 1}回 講義`;
+            const cleanedSubTitle = cleanPartTitle(rawPartTitle, viewingIdx);
+            const displayLectureTitle = cleanedSubTitle ? `第${viewingIdx + 1}回: ${escapeHtml(cleanedSubTitle)}` : `第${viewingIdx + 1}回 講義`;
             const summaryText = viewingPart.summary ? String(viewingPart.summary).trim() : "";
 
             // チャット履歴から該当パートに属するメッセージを抽出
@@ -3305,7 +3384,7 @@ ${subjectGuide}
                                 <span style="font-size:0.75rem; font-weight:800; color:var(--brand-primary);">第${idx + 1}回</span>
                                 ${isCurrent ? '<span style="font-size:0.65rem; background:var(--brand-primary); color:#fff; padding:0.1rem 0.4rem; border-radius:var(--radius-full);">受講中</span>' : ''}
                             </div>
-                            <div style="font-size:0.85rem; font-weight:700; color:var(--text-primary);">${escapeHtml(p.title || '')}</div>
+                            <div style="font-size:0.85rem; font-weight:700; color:var(--text-primary);">${escapeHtml(cleanPartTitle(p.title || '', idx))}</div>
                             ${p.summary ? `<div style="font-size:0.72rem; color:var(--text-muted); margin-top:0.2rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(p.summary)}</div>` : ''}
                         </div>
                         <div style="display:flex; flex-direction:column; gap:0.35rem; flex-shrink:0;">
@@ -4490,7 +4569,7 @@ ${extractedText || "（本文なし）"}
                 };
             }
 
-            const partTitle = targetPart.title || `第${pIdx + 1}回`;
+            const partTitle = cleanPartTitle(targetPart.title, pIdx);
             const partSummary = targetPart.summary || "";
 
             if (targetPart.content && targetPart.content.trim().length > 60) {
@@ -4602,7 +4681,7 @@ ${extractedText || "（本文なし）"}
             parts.forEach((p, idx) => {
                 const opt = document.createElement("option");
                 opt.value = String(idx);
-                opt.textContent = `第${idx + 1}回: ${p.title || `パート${idx + 1}`}`;
+                opt.textContent = `第${idx + 1}回: ${cleanPartTitle(p.title, idx)}`;
                 selectEl.appendChild(opt);
             });
             selectEl.value = defaultVal;
@@ -4612,7 +4691,7 @@ ${extractedText || "（本文なし）"}
             if (!activeLessonId) return "";
             const lesson = lessonsCache[activeLessonId] || {};
             const subject = lesson.subject || "指定なし";
-            const title = lesson.title || "無題の授業";
+            const title = cleanLessonTitle(lesson.title || "無題の授業");
             const selectedPartVal = mSelectByotMemoPart ? mSelectByotMemoPart.value : "all";
             const ctx = extractMobilePartContext(lesson, selectedPartVal);
 
@@ -4620,15 +4699,16 @@ ${extractedText || "（本文なし）"}
             if (ctx.isAll) {
                 if (ctx.parts && ctx.parts.length > 0) {
                     partContext = `【全カリキュラム構成（全${ctx.parts.length}回）】\n` +
-                        ctx.parts.map((p, i) => `・第${i + 1}回：${p.title}（要約・範囲: ${p.summary || "なし"}）`).join("\n") +
+                        ctx.parts.map((p, i) => `・第${i + 1}回：${cleanPartTitle(p.title, i)}（要約・範囲: ${p.summary || "なし"}）`).join("\n") +
                         `\n\n【パート振り分けの必須指示】\n本文全体から暗記事項を抽出し、各カードに必ずどのパートに属するかを示す "part_number"（1以上の整数）を正確に割り振ってください。各パートから偏りなく均等に網羅してください。`;
                 }
             } else {
+                const cPartTitle = cleanPartTitle(ctx.partTitle, ctx.partIndex);
                 partContext = `【🚨 抽出対象パートの厳格限定（第${ctx.partNumber}回 / 全${ctx.parts.length}回）】\n` +
-                    `パート見出し: ${ctx.partTitle}\n` +
+                    `パート見出し: 第${ctx.partNumber}回 ${cPartTitle}\n` +
                     `範囲要約: ${ctx.partSummary || "該当範囲"}\n\n` +
                     `【⚠️ パート集中抽出の指示】\n` +
-                    `今回は【第${ctx.partNumber}回：${ctx.partTitle}】の範囲に【完全に集中】し、その範囲で覚えるべき事項を1つも漏らさず全て抽出してください（全カードの "part_number": ${ctx.partNumber}）。他のパートの内容は含めないでください。`;
+                    `今回は【第${ctx.partNumber}回：${cPartTitle}】の範囲に【完全に集中】し、その範囲で覚えるべき事項を1つも漏らさず全て抽出してください（全カードの "part_number": ${ctx.partNumber}）。他のパートの内容は含めないでください。`;
             }
 
             let prompt = `あなたは生徒の暗記学習を支援するフラッシュカード・重要用語抽出専門AIです。
@@ -4985,7 +5065,7 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
             if (!activeLessonId) return "";
             const lesson = lessonsCache[activeLessonId] || {};
             const subject = lesson.subject || "指定なし";
-            const title = lesson.title || "無題の授業";
+            const title = cleanLessonTitle(lesson.title || "無題の授業");
             const selectedPartVal = mSelectByotDrillsPart ? mSelectByotDrillsPart.value : "all";
             const selectedVersion = mSelectByotDrillsVersion ? mSelectByotDrillsVersion.value : "mix";
             const ctx = extractMobilePartContext(lesson, selectedPartVal);
@@ -4994,15 +5074,16 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
             if (ctx.isAll) {
                 if (ctx.parts && ctx.parts.length > 0) {
                     partContext = `【全カリキュラム構成（全${ctx.parts.length}回）】\n` +
-                        ctx.parts.map((p, i) => `・第${i + 1}回：${p.title}（要約・範囲: ${p.summary || "なし"}）`).join("\n") +
+                        ctx.parts.map((p, i) => `・第${i + 1}回：${cleanPartTitle(p.title, i)}（要約・範囲: ${p.summary || "なし"}）`).join("\n") +
                         `\n\n【全パート均等出題指示】\n全パートから偏りなく良問を作成し、各問題がどのパートに属するかを示す "part_number"（1以上の整数）を正確に割り振ってください。`;
                 }
             } else {
+                const cPartTitle = cleanPartTitle(ctx.partTitle, ctx.partIndex);
                 partContext = `【🚨 出題対象パートの限定（第${ctx.partNumber}回 / 全${ctx.parts.length}回）】\n` +
-                    `出題パート見出し: ${ctx.partTitle}\n` +
+                    `出題パート見出し: 第${ctx.partNumber}回 ${cPartTitle}\n` +
                     `範囲要約: ${ctx.partSummary || "該当範囲"}\n\n` +
                     `【⚠️ パート集中出題の指示】\n` +
-                    `今回は【第${ctx.partNumber}回：${ctx.partTitle}】の講義内容に【完全に集中】して5問を作成してください（全問題 "part_number": ${ctx.partNumber}）。`;
+                    `今回は【第${ctx.partNumber}回：${cPartTitle}】の講義内容に【完全に集中】して5問を作成してください（全問題 "part_number": ${ctx.partNumber}）。`;
             }
 
             let formatInstruction = "";
@@ -5594,7 +5675,10 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
 
                 const planInstruction = `あなたは難関大受験指導のプロ講師AIです。
 提供された原本テキスト（文字起こし）から、2〜4パートの論理的な講義カリキュラムと重要用語リストを再構成してください。
-【最重要】社会系科目等の難読漢字、歴史用語、人名、地名、制度名、専門用語には必ず「漢字（よみがな）」または「<ruby>漢字<rt>よみがな</rt></ruby>」で読み仮名を徹底してください。${socraticAddon}`;
+【最重要】社会系科目等の難読漢字、歴史用語、人名、地名、制度名、専門用語には必ず「漢字（よみがな）」または「<ruby>漢字<rt>よみがな</rt></ruby>」で読み仮名を徹底してください。
+【🚨 最重要：タイトル命名の短縮・簡潔化ルール】
+・lesson_title: 簡潔・明快に【12〜22文字以内】。サブタイトル・煽り文・『〜まで』・『――』・読み仮名括弧は一切禁止。
+・parts[].title: 各回のテーマを【8〜16文字程度】で短くスッキリ命名。『Part 1』『第1回』等の回数番号、サブタイトル（「――」）、煽り文句、読み仮名括弧は完全禁止（要約 summary に記載すること）。${socraticAddon}`;
 
                 const promptText = `【教科：${subject}】\n以下の原本テキストを解析し、カリキュラムと重要用語をJSONで作成してください。\n\n【原本テキスト】\n${updatedSourceText}`;
 
@@ -5609,11 +5693,11 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
                 }
 
                 // 授業データの更新
-                lesson.title = planResult.lesson_title || lesson.title;
+                lesson.title = cleanLessonTitle(planResult.lesson_title || lesson.title);
                 lesson.extractedText = updatedSourceText;
                 lesson.sourceText = updatedSourceText;
                 lesson.teachingStyle = selectedStyle;
-                lesson.parts = planResult.parts;
+                lesson.parts = (planResult.parts || []).map((p, idx) => ({ ...p, title: cleanPartTitle(p.title, idx) }));
                 lesson.currentPartIndex = 0;
                 lesson.status = "teaching";
                 lesson.chatHistory = [];
@@ -5894,20 +5978,51 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
         (function initLessonSubjectAndTitleEdit() {
             // タイトル編集
             const titleEl = document.getElementById("lesson-header-title-text");
-            titleEl?.addEventListener("click", async () => {
+            const titleEditBtn = document.getElementById("lesson-title-edit-btn");
+            const titleShortenBtn = document.getElementById("lesson-title-shorten-btn-m");
+
+            const handleTitleEdit = async () => {
                 if (!activeLessonId || !currentUser) return;
                 const lesson = lessonsCache[activeLessonId];
                 if (!lesson) return;
-                const newTitle = prompt("授業のタイトルを編集:", lesson.title || "");
-                if (newTitle !== null && newTitle.trim() && newTitle.trim() !== lesson.title) {
-                    lesson.title = newTitle.trim();
+                const newTitle = prompt("授業のタイトルを編集（短く簡潔に設定できます）:", cleanLessonTitle(lesson.title || ""));
+                if (newTitle !== null && newTitle.trim()) {
+                    const cleaned = cleanLessonTitle(newTitle.trim());
+                    lesson.title = cleaned;
                     await update(ref(database, `users/${currentUser.uid}/lessons/${activeLessonId}`), {
                         title: lesson.title
                     });
-                    titleEl.textContent = lesson.title;
+                    if (titleEl) titleEl.textContent = lesson.title;
                     if (window.mToast) mToast("✅ 授業タイトルを更新しました");
                 }
-            });
+            };
+
+            const handleTitleShorten = async () => {
+                if (!activeLessonId || !currentUser) return;
+                const lesson = lessonsCache[activeLessonId];
+                if (!lesson) return;
+                const currentT = lesson.title || "";
+                const cleaned = cleanLessonTitle(currentT);
+                const willShortenParts = confirm(`授業タイトルを「${cleaned}」に短縮・整理します。\n\n各パートの長大タイトル・煽り文句も同時に短くスッキリ整理しますか？\n【OK】授業タイトル＆全パートのタイトルを短縮\n【キャンセル】授業タイトルのみ短縮`);
+                lesson.title = cleaned;
+                if (willShortenParts && Array.isArray(lesson.parts)) {
+                    lesson.parts = lesson.parts.map((p, idx) => ({
+                        ...p,
+                        title: cleanPartTitle(p.title, idx)
+                    }));
+                }
+                await update(ref(database, `users/${currentUser.uid}/lessons/${activeLessonId}`), {
+                    title: lesson.title,
+                    parts: lesson.parts
+                });
+                if (titleEl) titleEl.textContent = lesson.title;
+                renderMobileLecturePaperView(lesson);
+                if (window.mToast) mToast("✨ タイトルを短縮・スッキリ整理しました");
+            };
+
+            titleEl?.addEventListener("click", handleTitleEdit);
+            titleEditBtn?.addEventListener("click", handleTitleEdit);
+            titleShortenBtn?.addEventListener("click", handleTitleShorten);
 
             // 教科変更モーダル
             const badgeEl = document.getElementById("lesson-header-subject-badge");
@@ -6817,7 +6932,11 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
                         required: ["lesson_title", "parts"]
                     };
 
-                    let curriculumInstruction = "あなたは予備校のカリキュラム設計AIです。各パートのタイトルや要約で難しい漢字や専門用語があれば「漢字（よみがな）」を付記してください。";
+                    let curriculumInstruction = `あなたは予備校のカリキュラム設計AIです。
+【🚨 最重要：タイトル命名の短縮・簡潔化ルール】
+・lesson_title: 簡潔・明快に【12〜22文字以内】。サブタイトル・煽り文・『〜まで』・『――』・読み仮名括弧は一切禁止。
+・parts[].title: 各回のテーマを【8〜16文字程度】で短くスッキリ命名。『Part 1』『第1回』等の回数番号、サブタイトル（「――」）、煽り文句、読み仮名括弧は完全禁止。難しい漢字や専門用語の読み仮名は必ず要約 summary に記載すること。
+`;
                     if (track === "single") {
                         curriculumInstruction += "単元全体（原因・展開・入試頻出要点）を因果関係に沿って網羅する1〜3パートの1回完結カリキュラムを設計してください。難易度分断は行わないでください。";
                     } else if (track === "phys-base") {
@@ -6862,9 +6981,9 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
                         callGeminiJSON([{ text: basePrompt + "\n\n重要公式・用語リストをJSONで出力してください。※漢字の後ろに括弧でふりがな（ひらがな）を付けることは禁止します。正式な漢字表記のみでスッキリ出力してください。" }], "暗記すべき重要公式・用語を漏れなく抽出してください。ふりがな・ひらがなの括弧表記は一切不要です。", { responseSchema: MEMORIZE_SCHEMA, featureId: "lesson_plan", keyOffset: 2 })
                     ]);
 
-                    lessonTitle = resStructure.lesson_title || `【${subject}】${topic}`;
+                    lessonTitle = cleanLessonTitle(resStructure.lesson_title || `【${subject}】${topic}`);
                     lectureNote = resLecture.extracted_text || "";
-                    parts = resStructure.parts || [];
+                    parts = (resStructure.parts || []).map((p, idx) => ({ ...p, title: cleanPartTitle(p.title, idx) }));
                     keyTerms = resMemorize.key_terms || [];
 
                 } else {
@@ -6873,7 +6992,10 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
 【🚨 添付写真のページ順序と連続性の厳守ルール】
 ・添付された画像は、生徒が教科書のページ順・文章順に指定した【1枚目】から順に並んでいます（全${createSelectedImages.length}枚）。
 ・写真1の末尾の文章は、写真2の冒頭へと続いています。写真の境界で段落や文が途切れていても、1つの連続した文章・ストーリーとして結合して正確にテキストを抽出し、講義ノート全文と構成をJSONで作成してください。
-【🚨 読み仮名徹底】社会系科目等の難読漢字や歴史用語、人名、地名、制度名、専門用語には必ず「漢字（よみがな）」または「<ruby>漢字<rt>よみがな</rt></ruby>」で読み仮名を徹底して付記してください。`;
+【🚨 読み仮名徹底】社会系科目等の難読漢字や歴史用語、人名、地名、制度名、専門用語には必ず「漢字（よみがな）」または「<ruby>漢字<rt>よみがな</rt></ruby>」で読み仮名を徹底して付記してください。
+【🚨 最重要：タイトル命名の短縮・簡潔化ルール】
+・lesson_title: 簡潔・明快に【12〜22文字以内】。サブタイトル・煽り文・『〜まで』・『――』・読み仮名括弧は一切禁止。
+・parts[].title: 各回のテーマを【8〜16文字程度】で短くスッキリ命名。『Part 1』『第1回』等の回数番号、サブタイトル（「――」）、煽り文句、読み仮名括弧は完全禁止（要約 summary に記載すること）。`;
                     if (subjectPrompt) photoText += `\n\n${subjectPrompt}`;
                     if (continuationPrompt) photoText += continuationPrompt;
                     if (levelUpPrompt) photoText += levelUpPrompt;
@@ -6900,10 +7022,10 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
                         required: ["lesson_title", "extracted_text", "parts"]
                     };
 
-                    const res = await callGeminiJSON(photoPromptParts, "参考書写真から講義ノート全文を作成してください。難しい漢字や専門用語には読み仮名（ふりがな）を徹底してください。", { responseSchema: PHOTO_SCHEMA, featureId: "lesson_plan" });
-                    lessonTitle = res.lesson_title || `【${subject}】写真から作成した授業`;
+                    const res = await callGeminiJSON(photoPromptParts, "参考書写真から講義ノート全文を作成してください。難しい漢字や専門用語には読み仮名（ふりがな）を徹底してください。タイトルは必ず簡潔・短く命名してください。", { responseSchema: PHOTO_SCHEMA, featureId: "lesson_plan" });
+                    lessonTitle = cleanLessonTitle(res.lesson_title || `【${subject}】写真から作成した授業`);
                     lectureNote = res.extracted_text || "";
-                    parts = res.parts || [];
+                    parts = (res.parts || []).map((p, idx) => ({ ...p, title: cleanPartTitle(p.title, idx) }));
                 }
 
                 // トラック情報の計算
