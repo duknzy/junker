@@ -916,14 +916,14 @@
             min-height: 330px;
             position: relative;
             transform-style: preserve-3d;
+            -webkit-transform-style: preserve-3d;
             transition: transform 0.44s cubic-bezier(0.2, 0.8, 0.2, 1);
             will-change: transform;
-            transform: translate3d(0, 0, 0);
             cursor: pointer;
             touch-action: manipulation;
         }
         .session-card-container.flipped {
-            transform: rotateY(180deg) translate3d(0, 0, 0);
+            transform: rotateY(180deg);
         }
 
         .card-face {
@@ -939,21 +939,44 @@
             justify-content: space-between;
             backface-visibility: hidden;
             -webkit-backface-visibility: hidden;
-            will-change: transform;
-            transform: translate3d(0, 0, 0);
+            will-change: transform, opacity;
             box-shadow: 0 24px 50px -12px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.15);
             color: #0F172A;
             box-sizing: border-box;
             border: 2px solid rgba(16, 185, 129, 0.25);
             overflow: hidden;
+            transition: opacity 0.22s ease, visibility 0.22s ease, border-color 0.2s ease;
         }
         .card-front {
+            transform: rotateY(0deg) translateZ(1px);
             border-color: rgba(16, 185, 129, 0.35);
+            pointer-events: auto;
+            z-index: 2;
+            opacity: 1;
+            visibility: visible;
         }
         .card-back {
-            transform: rotateY(180deg) translate3d(0, 0, 0);
+            transform: rotateY(180deg) translateZ(1px);
             border-color: rgba(5, 150, 105, 0.45);
             background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
+            pointer-events: none;
+            z-index: 1;
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        /* 🎴 フリップ反転時の表示・操作権限の完全切替（モバイルでの誤タップ・裏面透け防止） */
+        .session-card-container.flipped .card-front {
+            pointer-events: none !important;
+            z-index: 1 !important;
+            opacity: 0 !important;
+            visibility: hidden !important;
+        }
+        .session-card-container.flipped .card-back {
+            pointer-events: auto !important;
+            z-index: 2 !important;
+            opacity: 1 !important;
+            visibility: visible !important;
         }
 
         /* 表面・裏面のヘッダーバー */
@@ -1021,7 +1044,7 @@
             flex: 1;
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            justify-content: safe center;
             align-items: center;
             text-align: center;
             padding: 0.4rem 0;
@@ -2997,6 +3020,10 @@
         // 状態
         let currentUser = null;
         let allLessons = {};
+        try {
+            const cached = localStorage.getItem("flora_offline_all_lessons");
+            if (cached) allLessons = JSON.parse(cached);
+        } catch(_) {}
         let allProblems = {};
         let allQnaLogs = {};
         let allMemorizeProgress = {};
@@ -4106,7 +4133,17 @@
         // セッション開始
         function startSession(cards, title, mode = "standard", forceShuffle = null) {
             if (!cards || cards.length === 0) {
-                showToast("出題対象のカードが0件です");
+                if (getAllCards().length === 0) {
+                    if (confirm("暗記カードがまだ登録されていません。体験用サンプルカード（8問）を読み込んで開始しますか？")) {
+                        loadSampleCards();
+                        const samplePool = getAllCards();
+                        if (samplePool.length > 0) {
+                            startSession(samplePool, title, mode, forceShuffle);
+                        }
+                    }
+                } else {
+                    showToast("出題対象のカードが0件です");
+                }
                 return;
             }
             sessionCurrentMode = mode;
@@ -4169,7 +4206,9 @@
                 stage.style.transition = 'none';
                 stage.classList.remove('flipped');
                 void stage.offsetWidth; // 強制リフロー
-                stage.style.transition = '';
+                requestAnimationFrame(() => {
+                    if (stage) stage.style.transition = '';
+                });
             }
             if (flipBtn) flipBtn.style.display = "flex";
             if (ratingTray) ratingTray.classList.remove("active");
@@ -4363,27 +4402,29 @@
                 showToast("これ以上前のカードはありません");
                 return;
             }
-            const prevCard = sessionHistoryStack.pop();
-            if (sessionCurrentCard) {
-                sessionQueue.unshift(sessionCurrentCard);
-            }
-            sessionCurrentCard = prevCard;
-            isCardFlipped = false;
-            sessionMasteredCount = Math.max(0, sessionMasteredCount - 1);
-            const stage = document.getElementById("session-card-stage");
-            if (stage) stage.classList.remove("flipped");
-            const flipBtn = document.getElementById("session-btn-flip");
-            if (flipBtn) flipBtn.style.display = "flex";
-            const ratingTray = document.getElementById("session-rating-tray");
-            if (ratingTray) ratingTray.classList.remove("active");
+            const prevEntry = sessionHistoryStack.pop();
+            const prevCard = prevEntry.card || prevEntry;
+            const prevRating = prevEntry.rating || null;
+            const wasMastered = prevEntry.wasMastered !== undefined ? prevEntry.wasMastered : (prevRating !== "again");
 
-            // カード内容再描画
-            const fText = sessionCurrentCard.question || "";
-            const aText = sessionCurrentCard.answer || "";
-            const fEl = document.getElementById("card-front-text");
-            const aEl = document.getElementById("card-back-text");
-            if (fEl) fEl.innerHTML = formatJapanesePhrasing(fText);
-            if (aEl) aEl.innerHTML = formatJapanesePhrasing(aText);
+            // 直前評価の取り消し
+            if (wasMastered) {
+                sessionMasteredCount = Math.max(0, sessionMasteredCount - 1);
+            }
+            if (prevRating === "again") {
+                const failIdx = sessionFailedCards.map(c => c.id).lastIndexOf(prevCard.id);
+                if (failIdx !== -1) sessionFailedCards.splice(failIdx, 1);
+
+                // 再挿入されていたカードをキューから除去
+                const reinsertedIdx = sessionQueue.findIndex(item => item === prevCard || item.id === prevCard.id);
+                if (reinsertedIdx !== -1) {
+                    sessionQueue.splice(reinsertedIdx, 1);
+                }
+            }
+
+            // prevCard をキューの先頭へ差し戻し、全体を完全再描画
+            sessionQueue.unshift(prevCard);
+            renderNextSessionCard();
             showToast("◀ 前のカードに戻りました");
         }
 
@@ -4396,13 +4437,11 @@
             if (!sessionCurrentCard) return;
             const card = sessionCurrentCard;
 
-            // 履歴に保存
-            sessionHistoryStack.push(card);
-            if (sessionHistoryStack.length > 25) sessionHistoryStack.shift();
-
             if (rating === "again") {
                 playSound("wrong");
-                sessionFailedCards.push(card);
+                if (!sessionFailedCards.some(c => c.id === card.id)) {
+                    sessionFailedCards.push(card);
+                }
             } else if (rating === "hard") {
                 playSound("flip");
             } else {
@@ -4412,6 +4451,10 @@
             const result = saveCardSrsRating(card, rating);
             const isPassed = result ? result.isPassed : (rating !== "again");
             const reinsertOffset = Math.min(3, sessionQueue.length);
+
+            // 履歴に保存（前のカードに戻る機能用）
+            sessionHistoryStack.push({ card, rating, wasMastered: isPassed });
+            if (sessionHistoryStack.length > 25) sessionHistoryStack.shift();
 
             if (isPassed) {
                 sessionMasteredCount++;
@@ -4449,10 +4492,11 @@
             if (retryBtn) {
                 if (sessionFailedCards.length > 0) {
                     retryBtn.style.display = "block";
-                    retryBtn.textContent = `🔄 間違えた ${sessionFailedCards.length} 問を再特訓`;
+                    const uniqueFailed = Array.from(new Set(sessionFailedCards.map(c => c.id))).map(id => sessionFailedCards.find(c => c.id === id));
+                    retryBtn.textContent = `🔄 間違えた ${uniqueFailed.length} 問を再特訓`;
                     retryBtn.onclick = () => {
                         finishOverlay.classList.remove("active");
-                        startSession(sessionFailedCards, "苦手カード再特訓");
+                        startSession(uniqueFailed, "苦手カード再特訓");
                     };
                 } else {
                     retryBtn.style.display = "none";
@@ -4463,6 +4507,9 @@
         }
 
         function closeSession() {
+            if ('speechSynthesis' in window && window.speechSynthesis.speaking) {
+                window.speechSynthesis.cancel();
+            }
             document.body.classList.remove("fc-session-active");
             const overlay = document.getElementById("session-overlay");
             if (overlay) overlay.classList.remove("active");
@@ -5554,8 +5601,34 @@
 
         // 5. フラッシュカードめくり（何度でもトグル可能） & 評価
         const stageEl = document.getElementById("session-card-stage");
+        let stageTouchStartX = 0;
+        let stageTouchStartY = 0;
+        let isStageTouchScrolling = false;
+
         if (stageEl) {
+            stageEl.addEventListener("touchstart", (e) => {
+                if (e.touches && e.touches[0]) {
+                    stageTouchStartX = e.touches[0].clientX;
+                    stageTouchStartY = e.touches[0].clientY;
+                    isStageTouchScrolling = false;
+                }
+            }, { passive: true });
+
+            stageEl.addEventListener("touchmove", (e) => {
+                if (e.touches && e.touches[0]) {
+                    const dx = Math.abs(e.touches[0].clientX - stageTouchStartX);
+                    const dy = Math.abs(e.touches[0].clientY - stageTouchStartY);
+                    if (dx > 10 || dy > 10) {
+                        isStageTouchScrolling = true;
+                    }
+                }
+            }, { passive: true });
+
             stageEl.onclick = (e) => {
+                if (isStageTouchScrolling) {
+                    isStageTouchScrolling = false;
+                    return;
+                }
                 // 選択肢ボタン、入力フォーム、メモ枠全体のタップ時はカード反転を抑止
                 if (
                     e.target.closest("button") ||
@@ -5680,7 +5753,7 @@
                 return; // 入力中はキーショートカットによるカードめくりや採点を完全ブロック
             }
 
-            const sessionModal = document.getElementById("session-modal");
+            const sessionModal = document.getElementById("session-overlay");
             if (sessionModal && sessionModal.classList.contains("active")) {
                 if (e.key === "Escape") {
                     e.preventDefault();
@@ -5954,6 +6027,7 @@
                 }
             });
 
+            try { localStorage.setItem("flora_offline_all_lessons", JSON.stringify(allLessons)); } catch(_) {}
             showToast("✨ サンプル暗記カード（8問）を読み込みました！");
             invalidateCardCache();
             renderDashboard();
@@ -5967,6 +6041,7 @@
             if (user) {
                 onValue(ref(database, `users/${user.uid}/lessons`), snap => {
                     allLessons = snap.val() || {};
+                    try { localStorage.setItem("flora_offline_all_lessons", JSON.stringify(allLessons)); } catch(_) {}
                     invalidateCardCache();
                     renderDashboard();
                 });
