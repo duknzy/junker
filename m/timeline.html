@@ -8,6 +8,7 @@
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" sizes="180x180" href="../icons/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="192x192" href="../icons/icon-192.png">
+    <link rel="stylesheet" href="../style.css?v=3.6">
     <link rel="stylesheet" href="style-m.css">
 
     <style>
@@ -386,19 +387,13 @@
 
     <!-- 🎯 モバイル用整序特訓モーダル -->
     <div id="m-quiz-modal" class="m-quiz-overlay">
-        <div class="m-quiz-sheet">
-            <div class="m-quiz-header">
-                <div>
-                    <div style="font-weight:800; font-size:0.95rem; color:var(--text-primary);" id="m-quiz-header-title">🎯 共通テスト整序特訓</div>
-                    <div style="font-size:0.7rem; color:var(--text-secondary);" id="m-quiz-step-title">第 1 / 5 問 ｜ 古い順に並べ替えてください</div>
-                </div>
-                <div style="display:flex; align-items:center; gap:0.6rem;">
-                    <span style="font-size:0.78rem; font-weight:800; color:#4F46E5; background:#EEF2FF; padding:0.2rem 0.5rem; border-radius:4px;" id="m-quiz-score-badge">0 pt</span>
-                    <button type="button" id="m-quiz-close" style="background:none; border:none; font-size:1.3rem; color:var(--text-secondary); cursor:pointer;">✕</button>
-                </div>
+        <div class="m-quiz-sheet" style="max-height: 92vh; display: flex; flex-direction: column;">
+            <div class="m-quiz-header" style="padding: 0.8rem 1rem; border-bottom: 1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">
+                <div style="font-weight:800; font-size:0.95rem; color:var(--text-primary);" id="m-quiz-header-title">🎯 共通テスト整序マスター特訓</div>
+                <button type="button" id="m-quiz-close" style="background:none; border:none; font-size:1.3rem; color:var(--text-secondary); cursor:pointer; padding: 0.2rem 0.4rem; line-height: 1;">✕</button>
             </div>
-            <div class="m-quiz-body" id="m-quiz-body">
-                <!-- JSで問題と結果を描画 -->
+            <div class="m-quiz-body quiz-content-area" id="m-quiz-body" style="padding: 1rem; overflow-y: auto; -webkit-overflow-scrolling: touch; flex: 1;">
+                <!-- TimelineQuizEngine で動的描画 -->
             </div>
         </div>
     </div>
@@ -407,6 +402,7 @@
     <script src="bottom-nav.js"></script>
 
     <script type="module">
+        import { TimelineQuizEngine } from "../timeline-quiz.js";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
         import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
@@ -721,183 +717,38 @@
         };
 
         // ==========================================================
-        // 🎯 モバイル共通テスト整序特訓クイズ
+        // 🎯 モバイル共通テスト整序マスター特訓（TimelineQuizEngine 連携）
         // ==========================================================
-        let mQuizPool = [];
-        let mQuizIdx = 0;
-        let mQuizTotal = 5;
-        let mQuizItems = null;
-        let mQuizScore = 0;
-        let mQuizAnswered = false;
+        let mTimelineQuizInstance = null;
 
         const modalMQuiz = document.getElementById("m-quiz-modal");
         const btnStartMQuiz = document.getElementById("btn-start-quiz-m");
         const btnCloseMQuiz = document.getElementById("m-quiz-close");
-        const mQuizBody = document.getElementById("m-quiz-body");
-        const mQuizScoreBadge = document.getElementById("m-quiz-score-badge");
-        const mQuizStepTitle = document.getElementById("m-quiz-step-title");
 
-        btnStartMQuiz.onclick = () => {
-            const all = collectMobileEvents().filter(e => e.yearSort !== 9999);
-            if (all.length < 3) {
-                showToast("並べ替え問題を作成するには出来事が3つ以上必要です");
-                return;
-            }
-            mQuizPool = all;
-            mQuizIdx = 0;
-            mQuizScore = 0;
-            mQuizTotal = 5;
+        function openMobileQuizStudio() {
+            const allEvents = collectMobileEvents().filter(e => e.yearSort !== 9999);
             modalMQuiz.style.display = "flex";
-            renderNextMQuiz();
-        };
 
-        btnCloseMQuiz.onclick = () => {
-            modalMQuiz.style.display = "none";
-        };
-
-        function renderNextMQuiz() {
-            mQuizAnswered = false;
-            if (mQuizIdx >= mQuizTotal) {
-                renderMQuizFinish();
-                return;
-            }
-
-            mQuizScoreBadge.textContent = `${mQuizScore} pt`;
-            mQuizStepTitle.textContent = `第 ${mQuizIdx + 1} / ${mQuizTotal} 問 ｜ 古い順（上 ➔ 下）に並べ替えてください`;
-
-            const shuffled = [...mQuizPool].sort(() => Math.random() - 0.5);
-            const picked = [];
-            const usedYears = new Set();
-            for (const ev of shuffled) {
-                if (!usedYears.has(ev.yearSort)) {
-                    picked.push(ev);
-                    usedYears.add(ev.yearSort);
-                    if (picked.length >= 3) break;
+            mTimelineQuizInstance = new TimelineQuizEngine({
+                containerModal: modalMQuiz,
+                historyType: mActiveHistoryType,
+                customEvents: allEvents,
+                onFinish: () => {
+                    modalMQuiz.style.display = "none";
                 }
-            }
+            });
 
-            const correct = [...picked].sort((a, b) => a.yearSort - b.yearSort);
-            let user = [...picked].sort(() => Math.random() - 0.5);
-            let count = 0;
-            while (user.every((item, i) => item.yearSort === correct[i].yearSort) && count < 10) {
-                user.sort(() => Math.random() - 0.5);
-                count++;
-            }
-
-            mQuizItems = { user, correct };
-            renderMQuizCardUI();
+            mTimelineQuizInstance.renderModeSelect();
         }
 
-        function renderMQuizCardUI() {
-            const labels = ["Ⅰ", "Ⅱ", "Ⅲ"];
-            const listHtml = mQuizItems.user.map((item, idx) => `
-                <div class="m-reorder-card">
-                    <div class="m-reorder-badge">${labels[idx]}</div>
-                    <div style="flex:1; min-width:0;">
-                        <div style="font-weight:800; font-size:0.92rem; color:var(--text-primary); margin-bottom:0.15rem;">
-                            ${escapeHtml(item.name)}
-                        </div>
-                        <div style="font-size:0.72rem; color:var(--text-secondary);">
-                            📍 ${escapeHtml(item.region)}
-                        </div>
-                    </div>
-                    <div style="display:flex; flex-direction:column; gap:0.25rem;">
-                        <button type="button" class="m-reorder-btn" onclick="moveMCard(${idx}, -1)" ${idx === 0 ? 'disabled' : ''}>▲</button>
-                        <button type="button" class="m-reorder-btn" onclick="moveMCard(${idx}, 1)" ${idx === mQuizItems.user.length - 1 ? 'disabled' : ''}>▼</button>
-                    </div>
-                </div>
-            `).join("");
-
-            mQuizBody.innerHTML = `
-                <div style="font-size:0.8rem; color:var(--text-secondary); background:rgba(99,102,241,0.06); padding:0.6rem 0.8rem; border-radius:var(--radius-sm); border:1px solid rgba(99,102,241,0.2);">
-                    💡 右の「▲」「▼」ボタンで入れ替えて、<strong>古い年代順（上 ➔ 下）</strong>に並べて判定を押してください。
-                </div>
-                <div style="display:flex; flex-direction:column; gap:0.55rem;">
-                    ${listHtml}
-                </div>
-                <button type="button" onclick="submitMQuiz()" style="width:100%; margin-top:0.4rem; padding:0.75rem; background:linear-gradient(135deg, #10B981, #059669); color:#fff; border:none; border-radius:var(--radius-md); font-weight:800; font-size:0.95rem; cursor:pointer;">
-                    ✅ この順序で判定する
-                </button>
-            `;
+        if (btnStartMQuiz) {
+            btnStartMQuiz.onclick = () => openMobileQuizStudio();
         }
 
-        window.moveMCard = function(fromIdx, delta) {
-            if (mQuizAnswered) return;
-            const toIdx = fromIdx + delta;
-            if (toIdx < 0 || toIdx >= mQuizItems.user.length) return;
-            const t = mQuizItems.user[fromIdx];
-            mQuizItems.user[fromIdx] = mQuizItems.user[toIdx];
-            mQuizItems.user[toIdx] = t;
-            renderMQuizCardUI();
-        };
-
-        window.submitMQuiz = function() {
-            if (mQuizAnswered) return;
-            mQuizAnswered = true;
-
-            const isCorrect = mQuizItems.user.every((item, i) => item.yearSort === mQuizItems.correct[i].yearSort);
-            if (isCorrect) mQuizScore += 100;
-
-            const labels = ["Ⅰ", "Ⅱ", "Ⅲ"];
-
-            mQuizBody.innerHTML = `
-                <div style="text-align:center; padding:0.9rem; border-radius:var(--radius-md); background:${isCorrect ? '#ECFDF5' : '#FEF2F2'}; border:1.5px solid ${isCorrect ? '#10B981' : '#EF4444'};">
-                    <div style="font-size:1.8rem; line-height:1; margin-bottom:0.25rem;">${isCorrect ? '🎉' : '❌'}</div>
-                    <div style="font-size:1.05rem; font-weight:800; color:${isCorrect ? '#059669' : '#DC2626'};">
-                        ${isCorrect ? '正解！完璧な時系列把握です！' : '惜しい！正解はこちら'}
-                    </div>
-                </div>
-
-                <div style="font-size:0.8rem; font-weight:800; color:var(--text-secondary); margin-top:0.2rem;">
-                    ⏳ 正しい年代順タイムライン：
-                </div>
-                <div style="display:flex; flex-direction:column; gap:0.5rem;">
-                    ${mQuizItems.correct.map((item, i) => `
-                        <div style="background:var(--bg-subtle); border:1.5px solid #10B981; border-radius:var(--radius-sm); padding:0.6rem 0.8rem;">
-                            <div style="display:flex; justify-content:space-between; align-items:center;">
-                                <span style="font-weight:800; font-size:0.9rem; color:var(--text-primary);">
-                                    <strong style="color:#059669;">${labels[i]}</strong> ${escapeHtml(item.name)}
-                                </span>
-                                <span style="font-weight:800; font-size:0.95rem; color:#059669;">${escapeHtml(item.year)}</span>
-                            </div>
-                            ${item.mnemonic ? `<div style="font-size:0.72rem; color:#92400E; background:#FEF3C7; padding:0.2rem 0.4rem; border-radius:4px; margin-top:0.25rem;">🎴 ${escapeHtml(item.mnemonic)}</div>` : ''}
-                            ${item.note ? `<div style="font-size:0.72rem; color:var(--text-secondary); margin-top:0.2rem;">💡 ${escapeHtml(item.note)}</div>` : ''}
-                        </div>
-                    `).join("")}
-                </div>
-
-                <button type="button" onclick="mQuizIdx++; renderNextMQuiz();" style="width:100%; margin-top:0.6rem; padding:0.75rem; background:linear-gradient(135deg, #4F46E5, #7C3AED); color:#fff; border:none; border-radius:var(--radius-md); font-weight:800; font-size:0.95rem; cursor:pointer;">
-                    ${mQuizIdx + 1 < mQuizTotal ? '次の問題へ ➔' : '結果発表を見る ➔'}
-                </button>
-            `;
-        };
-
-        function renderMQuizFinish() {
-            const max = mQuizTotal * 100;
-            const rate = Math.round((mQuizScore / max) * 100);
-
-            mQuizBody.innerHTML = `
-                <div style="text-align:center; padding:1.5rem 0.5rem;">
-                    <div style="font-size:3rem; line-height:1; margin-bottom:0.5rem;">🏆</div>
-                    <div style="font-size:1.3rem; font-weight:800; color:var(--text-primary); margin-bottom:0.2rem;">
-                        整序特訓完了！
-                    </div>
-                    <div style="font-size:0.9rem; color:#4F46E5; font-weight:700; margin-bottom:1rem;">
-                        ${rate === 100 ? '👑 整序マスター！' : (rate >= 80 ? '🎖️ 上級ストラテジスト！' : '✨ 基礎はバッチリ！')}
-                    </div>
-                    <div style="font-size:2rem; font-family:var(--font-heading); font-weight:800; color:#059669; margin-bottom:1.5rem;">
-                        ${mQuizScore} / ${max} pt (${rate}%)
-                    </div>
-                    <div style="display:flex; flex-direction:column; gap:0.6rem;">
-                        <button type="button" onclick="modalMQuiz.style.display='none'" style="width:100%; padding:0.7rem; background:var(--bg-subtle); border:1px solid var(--border-color); border-radius:var(--radius-md); font-weight:800;">
-                            年表へ戻る
-                        </button>
-                        <button type="button" onclick="btnStartMQuiz.click()" style="width:100%; padding:0.7rem; background:linear-gradient(135deg, #4F46E5, #7C3AED); color:#fff; border:none; border-radius:var(--radius-md); font-weight:800;">
-                            🔄 もう一度特訓する
-                        </button>
-                    </div>
-                </div>
-            `;
+        if (btnCloseMQuiz) {
+            btnCloseMQuiz.onclick = () => {
+                modalMQuiz.style.display = "none";
+            };
         }
 
         function escapeHtml(s) {
