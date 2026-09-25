@@ -1745,7 +1745,60 @@
             font-weight: 700;
         }
         .choice-drill-option-btn.opt-faded {
-            opacity: 0.45;
+            opacity: 0.88;
+            background: var(--bg-surface);
+            border-color: var(--border-color);
+            color: var(--text-secondary);
+        }
+        .choice-drill-option-btn.opt-faded:hover {
+            border-color: #6366f1;
+            background: rgba(99, 102, 241, 0.05);
+            color: var(--text-primary);
+            opacity: 1;
+        }
+        .choice-drill-option-btn.opt-inspecting {
+            border-color: #6366f1 !important;
+            background: rgba(99, 102, 241, 0.1) !important;
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.35);
+        }
+        .drill-recent-notice {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: var(--radius-sm);
+            padding: 0.35rem 0.65rem;
+            margin-bottom: 0.55rem;
+            font-size: 0.76rem;
+            color: #047857;
+            font-weight: 700;
+        }
+        .drill-recent-notice button {
+            background: var(--bg-surface);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            color: #047857;
+            border-radius: var(--radius-sm);
+            padding: 0.18rem 0.5rem;
+            font-size: 0.7rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .drill-recent-notice button:hover {
+            background: #10b981;
+            color: #fff;
+        }
+        .choice-drill-option-inspect-panel {
+            background: rgba(99, 102, 241, 0.06);
+            border: 1px solid rgba(99, 102, 241, 0.25);
+            border-radius: var(--radius-md);
+            padding: 0.55rem 0.75rem;
+            margin-top: 0.45rem;
+            margin-bottom: 0.55rem;
+            font-size: 0.8rem;
+            line-height: 1.5;
+            color: var(--text-primary);
         }
         .choice-drill-option-num {
             display: inline-flex;
@@ -9080,9 +9133,18 @@ ${extractedText || "（本文なし）"}
 4. 正解番号（correct_option）は必ず 1, 2, 3, 4 のいずれか（options 配列の number と一致）にしてください。`;
 
         let choiceDrillStatusFilter = "all";
+        const lessonRecentlyAnsweredDrillIds = new Set();
+        const lessonInspectedDrillOptions = new Map();
+
+        window.dismissLessonRecentlyAnsweredDrill = function(drillId) {
+            lessonRecentlyAnsweredDrillIds.delete(drillId);
+            lessonInspectedDrillOptions.delete(drillId);
+            renderChoiceDrills();
+        };
 
         function setChoiceDrillStatusFilter(status) {
             choiceDrillStatusFilter = status;
+            lessonRecentlyAnsweredDrillIds.clear();
             document.querySelectorAll("#choice-drills-status-chips .status-chip-btn").forEach(btn => {
                 btn.classList.toggle("active", btn.getAttribute("data-drill-status") === status);
             });
@@ -9317,6 +9379,13 @@ ${existingLeads}
             showToast("全問題の解答をリセットしました！最初からチャレンジできます。", "info", 2500);
         };
 
+        // 選択肢のインスペクト（回答後に他の選択肢をクリックしたときの内容確認）
+        window.inspectLessonChoiceDrillOption = function(drillId, optNumber) {
+            lessonInspectedDrillOptions.set(drillId, optNumber);
+            renderChoiceDrills();
+            forceTriggerMathJax();
+        };
+
         // 1問回答
         window.selectChoiceDrillOption = async function(drillId, optNumber) {
             if (!currentLesson || !Array.isArray(currentLesson.choiceDrills)) return;
@@ -9326,6 +9395,10 @@ ${existingLeads}
             drill.userAnswer = Number(optNumber);
             drill.isCorrect = (drill.userAnswer === Number(drill.correct_option));
             drill.answeredAt = new Date().toISOString();
+
+            // 🎯 回答直後のカードを保持リストに登録して消去防止
+            lessonRecentlyAnsweredDrillIds.add(drillId);
+            lessonInspectedDrillOptions.set(drillId, Number(optNumber));
 
             renderChoiceDrills();
             await forceTriggerMathJax();
@@ -9489,9 +9562,10 @@ ${existingLeads}
             const filteredDrills = allDrills.filter(d => {
                 if (selectedPart !== "all" && d.partIndex !== Number(selectedPart)) return false;
                 if (selectedType !== "all" && d.type !== selectedType) return false;
-                if (choiceDrillStatusFilter === "unanswered" && d.userAnswer !== null && d.userAnswer !== undefined) return false;
-                if (choiceDrillStatusFilter === "correct" && d.isCorrect !== true) return false;
-                if (choiceDrillStatusFilter === "wrong" && d.isCorrect !== false) return false;
+                const isRecent = lessonRecentlyAnsweredDrillIds.has(d.id);
+                if (choiceDrillStatusFilter === "unanswered" && d.userAnswer !== null && d.userAnswer !== undefined && !isRecent) return false;
+                if (choiceDrillStatusFilter === "correct" && d.isCorrect !== true && !isRecent) return false;
+                if (choiceDrillStatusFilter === "wrong" && d.isCorrect !== false && !isRecent) return false;
                 return true;
             });
 
@@ -9515,6 +9589,8 @@ ${existingLeads}
                 const isAnswered = d.userAnswer !== null && d.userAnswer !== undefined;
                 const isCorrect = d.isCorrect === true;
                 const isWrong = isAnswered && !isCorrect;
+                const isRecent = lessonRecentlyAnsweredDrillIds.has(d.id);
+                const inspectedOpt = lessonInspectedDrillOptions.get(d.id) || (isAnswered ? d.correct_option : null);
 
                 const cardStatusClass = isAnswered ? (isCorrect ? "status-correct" : "status-wrong") : "";
                 const typeInfo = TYPE_LABELS[d.type] || { label: "選択問題", class: "pill-type-single_choice" };
@@ -9522,24 +9598,34 @@ ${existingLeads}
                 // 選択肢HTML
                 const optionsHtml = (d.options || []).map(opt => {
                     let optClass = "";
+                    let optBadgeHtml = "";
                     if (isAnswered) {
                         if (opt.number === d.correct_option) {
                             optClass = "opt-correct";
+                            optBadgeHtml = '<span style="color:#059669; font-weight:800; font-size:0.82rem; margin-left:auto;">✓ 正解</span>';
                         } else if (opt.number === d.userAnswer) {
                             optClass = "opt-wrong";
+                            optBadgeHtml = '<span style="color:#dc2626; font-weight:800; font-size:0.82rem; margin-left:auto;">✕ あなたの選択</span>';
                         } else {
                             optClass = "opt-faded";
+                            optBadgeHtml = '<span style="color:var(--text-muted); font-size:0.75rem; margin-left:auto;">[誤答・クリックで詳細]</span>';
+                        }
+
+                        if (inspectedOpt === opt.number) {
+                            optClass += " opt-inspecting";
                         }
                     }
 
                     const optNumLabel = ["①", "②", "③", "④", "⑤", "⑥"][opt.number - 1] || `(${opt.number})`;
+                    const clickFn = isAnswered
+                        ? `inspectLessonChoiceDrillOption('${d.id}', ${opt.number})`
+                        : `selectChoiceDrillOption('${d.id}', ${opt.number})`;
 
                     return `
-                        <button type="button" class="choice-drill-option-btn ${optClass}" onclick="selectChoiceDrillOption('${d.id}', ${opt.number})">
+                        <button type="button" class="choice-drill-option-btn ${optClass}" onclick="${clickFn}" title="${isAnswered ? 'クリックしてこの選択肢の内容・解説を確認' : 'クリックして解答'}">
                             <span class="choice-drill-option-num">${optNumLabel}</span>
                             <span style="flex:1; min-width:0; word-break:break-word;">${renderFormattedMarkdown(opt.text)}</span>
-                            ${isAnswered && opt.number === d.correct_option ? '<span style="color:#059669; font-weight:800; font-size:0.85rem; margin-left:auto;">✓ 正解</span>' : ''}
-                            ${isAnswered && opt.number === d.userAnswer && !isCorrect ? '<span style="color:#dc2626; font-weight:800; font-size:0.85rem; margin-left:auto;">✕ あなたの選択</span>' : ''}
+                            ${optBadgeHtml}
                         </button>
                     `;
                 }).join("");
@@ -9551,9 +9637,41 @@ ${existingLeads}
                         ? `<div style="font-size:0.88rem; font-weight:800; color:#059669; display:flex; align-items:center; gap:0.35rem;">🎉 正解！ [正解: ${["①", "②", "③", "④", "⑤"][d.correct_option - 1] || d.correct_option}]</div>`
                         : `<div style="font-size:0.88rem; font-weight:800; color:#dc2626; display:flex; align-items:center; gap:0.35rem;">❌ 不正解（要復習） [あなたの解答: ${["①", "②", "③", "④", "⑤"][d.userAnswer - 1] || d.userAnswer} / 正解: ${["①", "②", "③", "④", "⑤"][d.correct_option - 1] || d.correct_option}]</div>`;
 
+                    // 選択肢インスペクト枠
+                    let inspectPanelHtml = "";
+                    if (inspectedOpt) {
+                        const targetOptObj = (d.options || []).find(o => o.number === inspectedOpt);
+                        if (targetOptObj) {
+                            const isOptCorrect = (inspectedOpt === d.correct_option);
+                            const optNumName = ["①", "②", "③", "④", "⑤", "⑥"][inspectedOpt - 1] || `(${inspectedOpt})`;
+                            inspectPanelHtml = `
+                                <div class="choice-drill-option-inspect-panel">
+                                    <div style="font-weight:800; margin-bottom:0.25rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.35rem;">
+                                        <span style="color:${isOptCorrect ? '#059669' : '#4f46e5'};">
+                                            🔍 選択肢 ${optNumName} の確認: ${isOptCorrect ? '✓ 正解の選択肢' : '✕ 誤答（引っかけ）の選択肢'}
+                                        </span>
+                                        ${inspectedOpt !== d.userAnswer ? `
+                                            <button type="button" class="flora-btn btn-sm" onclick="selectChoiceDrillOption('${d.id}', ${inspectedOpt})" style="font-size:0.7rem; padding:0.15rem 0.5rem; background:var(--bg-surface); border:1px solid var(--border-color); color:var(--text-primary); cursor:pointer;">
+                                                🔄 この選択肢に変更
+                                            </button>
+                                        ` : ''}
+                                    </div>
+                                    <div style="color:var(--text-primary); font-size:0.8rem; line-height:1.5;">
+                                        ${renderFormattedMarkdown(targetOptObj.text)}
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    }
+
                     resultBoxHtml = `
                         <div style="margin-top:0.75rem; padding-top:0.65rem; border-top:1px dashed var(--border-color);">
-                            ${resultBadge}
+                            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.4rem; margin-bottom:0.4rem;">
+                                ${resultBadge}
+                                <span style="font-size:0.72rem; color:var(--text-muted);">💡 選択肢をクリックして内容を比較確認できます</span>
+                            </div>
+
+                            ${inspectPanelHtml}
 
                             <!-- ⚠️ 出題者の罠（引っかけ急所） -->
                             <div class="choice-drill-trap-box">
@@ -9576,7 +9694,12 @@ ${existingLeads}
                             </div>
 
                             <!-- アクションバー -->
-                            <div style="display:flex; justify-content:flex-end; gap:0.4rem; margin-top:0.6rem; align-items:center;">
+                            <div style="display:flex; justify-content:flex-end; gap:0.4rem; margin-top:0.6rem; align-items:center; flex-wrap:wrap;">
+                                ${isRecent ? `
+                                    <button type="button" class="flora-btn flora-btn-secondary btn-sm" onclick="dismissLessonRecentlyAnsweredDrill('${d.id}')" style="font-size:0.72rem; padding:0.25rem 0.6rem; color:#059669; border-color:rgba(16,185,129,0.4);">
+                                        👁️ 確認完了（次へ）
+                                    </button>
+                                ` : ''}
                                 <button type="button" class="flora-btn flora-btn-secondary btn-sm" onclick="retryChoiceDrill('${d.id}')" style="font-size:0.72rem; padding:0.25rem 0.55rem;">
                                     🔄 もう一度解く
                                 </button>

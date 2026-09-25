@@ -1514,6 +1514,39 @@
             border-color: #EF4444;
             color: #991B1B;
         }
+        .m-quiz-feedback-box {
+            margin-top: 0.85rem;
+            background: #FFFFFF;
+            border-radius: 14px;
+            padding: 0.95rem 1.1rem;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+            animation: modal-pop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .m-quiz-feedback-box.is-correct {
+            border: 2px solid #10B981;
+        }
+        .m-quiz-feedback-box.is-wrong {
+            border: 2px solid #EF4444;
+        }
+        .m-quiz-btn-next {
+            width: 100%;
+            background: linear-gradient(135deg, #10B981, #059669);
+            color: #FFFFFF;
+            border: none;
+            border-radius: 12px;
+            padding: 0.75rem 1rem;
+            font-size: 0.95rem;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35);
+            margin-top: 0.75rem;
+            touch-action: manipulation;
+        }
+        .m-quiz-btn-next:active { transform: scale(0.98); }
 
         /* ➕ 新規暗記カード登録モーダル */
         .memo-modal {
@@ -2545,6 +2578,7 @@
                 </div>
             </div>
             <div class="session-actions-cluster">
+                <button type="button" class="session-tool-btn" id="session-btn-prev" title="前のカードに戻る" style="font-size:0.8rem; font-weight:800;">◀</button>
                 <button type="button" class="session-tool-btn session-wp-btn" id="session-btn-wallpaper" title="壁紙 & 透過設定">🖼️</button>
                 <button type="button" class="session-tool-btn" id="session-btn-shuffle" title="出題順シャッフル切替">🔀</button>
                 <button type="button" class="session-sound-btn" id="session-btn-sound" title="音声読み上げ">🔊</button>
@@ -2847,6 +2881,7 @@
                 </div>
             </div>
             <div class="session-actions-cluster">
+                <button type="button" class="session-tool-btn" id="quiz-btn-auto" title="自動送り切替（デフォルトはOFF）" style="font-size:0.75rem; font-weight:800;">⚡ OFF</button>
                 <button type="button" class="session-tool-btn session-wp-btn" id="quiz-btn-wallpaper" title="壁紙 & 透過設定">🖼️</button>
             </div>
         </div>
@@ -2860,6 +2895,9 @@
             <div class="quiz-options-grid" id="quiz-options-container">
                 <!-- JSで4つの選択肢を動的生成 -->
             </div>
+
+            <!-- 🎯 回答後の解説＆次へボタンエリア -->
+            <div id="m-quiz-feedback-box" class="m-quiz-feedback-box" style="display:none;"></div>
         </div>
     </div>
 
@@ -4319,9 +4357,49 @@
         }
 
         // 🧠 SRS 評価ボタンアクション (Again / Hard / Good / Easy: フラッシュカード評価)
+        let sessionHistoryStack = [];
+
+        function prevMobileSessionCard() {
+            if (!sessionHistoryStack || sessionHistoryStack.length === 0) {
+                showToast("これ以上前のカードはありません");
+                return;
+            }
+            const prevCard = sessionHistoryStack.pop();
+            if (sessionCurrentCard) {
+                sessionQueue.unshift(sessionCurrentCard);
+            }
+            sessionCurrentCard = prevCard;
+            isCardFlipped = false;
+            sessionMasteredCount = Math.max(0, sessionMasteredCount - 1);
+            const stage = document.getElementById("session-card-stage");
+            if (stage) stage.classList.remove("flipped");
+            const flipBtn = document.getElementById("session-btn-flip");
+            if (flipBtn) flipBtn.style.display = "flex";
+            const ratingTray = document.getElementById("session-rating-tray");
+            if (ratingTray) ratingTray.classList.remove("active");
+
+            // カード内容再描画
+            const fText = sessionCurrentCard.question || "";
+            const aText = sessionCurrentCard.answer || "";
+            const fEl = document.getElementById("card-front-text");
+            const aEl = document.getElementById("card-back-text");
+            if (fEl) fEl.innerHTML = formatJapanesePhrasing(fText);
+            if (aEl) aEl.innerHTML = formatJapanesePhrasing(aText);
+            showToast("◀ 前のカードに戻りました");
+        }
+
+        const btnPrevMobile = document.getElementById("session-btn-prev");
+        if (btnPrevMobile) {
+            btnPrevMobile.onclick = prevMobileSessionCard;
+        }
+
         async function rateCard(rating) {
             if (!sessionCurrentCard) return;
             const card = sessionCurrentCard;
+
+            // 履歴に保存
+            sessionHistoryStack.push(card);
+            if (sessionHistoryStack.length > 25) sessionHistoryStack.shift();
 
             if (rating === "again") {
                 playSound("wrong");
@@ -4423,6 +4501,23 @@
         let quizCurrentIndex = 0;
         let quizPoolAllAnswers = [];
         let quizAnswerLocked = false;
+        let mQuizAutoAdvance = localStorage.getItem("flora_m_quiz_auto") === "true";
+        let mQuizTimer = null;
+
+        const quizBtnAuto = document.getElementById("quiz-btn-auto");
+        if (quizBtnAuto) {
+            function updateMobileQuizAutoUI() {
+                quizBtnAuto.textContent = mQuizAutoAdvance ? "⚡ 自動: ON" : "⚡ 自動: OFF";
+                quizBtnAuto.classList.toggle("active", mQuizAutoAdvance);
+            }
+            updateMobileQuizAutoUI();
+            quizBtnAuto.onclick = () => {
+                mQuizAutoAdvance = !mQuizAutoAdvance;
+                localStorage.setItem("flora_m_quiz_auto", mQuizAutoAdvance ? "true" : "false");
+                updateMobileQuizAutoUI();
+                showToast(mQuizAutoAdvance ? "⚡ 3秒後に自動で次へ進みます" : "🛑 ボタンを押すまでじっくり確認できます");
+            };
+        }
 
         function startQuizMode(cards, title = "🎯 スピード4択テスト", forceShuffle = true) {
             const pool = cards && cards.length >= 4 ? cards : getAllCards();
@@ -4438,6 +4533,7 @@
             quizPoolAllAnswers = getAllCards().map(c => c.answer).filter(a => a && a.length > 0);
             quizCurrentIndex = 0;
             quizAnswerLocked = false;
+            if (mQuizTimer) { clearTimeout(mQuizTimer); mQuizTimer = null; }
 
             const overlay = document.getElementById("quiz-overlay");
             const titleEl = document.getElementById("quiz-header-title");
@@ -4451,6 +4547,8 @@
         }
 
         function renderNextQuizQuestion() {
+            if (mQuizTimer) { clearTimeout(mQuizTimer); mQuizTimer = null; }
+
             if (quizCurrentIndex >= quizQueue.length) {
                 // クイズ終了
                 playSound("fanfare");
@@ -4469,6 +4567,12 @@
             const progressText = document.getElementById("quiz-progress-text");
             const progressBar = document.getElementById("quiz-progress-bar");
             const optionsContainer = document.getElementById("quiz-options-container");
+            const feedbackBox = document.getElementById("m-quiz-feedback-box");
+
+            if (feedbackBox) {
+                feedbackBox.style.display = "none";
+                feedbackBox.innerHTML = "";
+            }
 
             if (qSubj) qSubj.textContent = `${SUBJECT_ICONS[card.subject] || '📚'} ${card.subject}`;
             if (qText) qText.textContent = card.question;
@@ -4509,6 +4613,14 @@
                         // SRS進捗の自動更新
                         saveCardSrsRating(card, isCorrect ? "good" : "again");
 
+                        // ボタンの無効化と正誤色ハイライト
+                        optionsContainer.querySelectorAll(".quiz-opt-btn").forEach(b => {
+                            b.style.pointerEvents = "none";
+                            if (b.getAttribute("data-opt-val") === correctAnswer) {
+                                b.classList.add("correct");
+                            }
+                        });
+
                         if (isCorrect) {
                             playSound("correct");
                             btn.classList.add("correct");
@@ -4516,18 +4628,44 @@
                         } else {
                             playSound("wrong");
                             btn.classList.add("wrong");
-                            showToast("❌ 残念！正解は: " + correctAnswer);
-                            // 正解ボタンをハイライト
-                            optionsContainer.querySelectorAll(".quiz-opt-btn").forEach(b => {
-                                if (b.getAttribute("data-opt-val") === correctAnswer) b.classList.add("correct");
-                            });
+                            showToast("❌ 不正解！正解を確認しよう");
                         }
 
-                        // 少し待って次の問題へ
-                        setTimeout(() => {
+                        // フィードバックと解説、次へボタン表示
+                        if (feedbackBox) {
+                            feedbackBox.style.display = "block";
+                            feedbackBox.className = `m-quiz-feedback-box ${isCorrect ? 'is-correct' : 'is-wrong'}`;
+                            feedbackBox.innerHTML = `
+                                <div style="font-size:0.95rem; font-weight:800; color:${isCorrect ? '#059669' : '#DC2626'}; margin-bottom:0.35rem;">
+                                    ${isCorrect ? '🎉 正解！お見事！' : '❌ 不正解... 正解と解説を確認しよう'}
+                                </div>
+                                <div style="font-size:0.86rem; color:#0F172A; line-height:1.5; margin-bottom:0.4rem;">
+                                    <strong>正解:</strong> <span style="color:#059669; font-weight:700;">${escapeHtml(correctAnswer)}</span>
+                                </div>
+                                ${card.note ? `<div style="font-size:0.8rem; color:#475569; line-height:1.5; border-left:3px solid #10B981; padding-left:0.5rem; margin-bottom:0.45rem;">💡 ${escapeHtml(card.note)}</div>` : ''}
+                                <button type="button" class="m-quiz-btn-next" id="m-quiz-next-btn">
+                                    次の問題へ進む ➔
+                                </button>
+                            `;
+
+                            const nextBtn = document.getElementById("m-quiz-next-btn");
+                            if (nextBtn) {
+                                nextBtn.onclick = () => {
+                                    proceedMobileQuiz();
+                                };
+                            }
+                            triggerMathTypeset(feedbackBox);
+                        }
+
+                        function proceedMobileQuiz() {
+                            if (mQuizTimer) { clearTimeout(mQuizTimer); mQuizTimer = null; }
                             quizCurrentIndex++;
                             renderNextQuizQuestion();
-                        }, 900);
+                        }
+
+                        if (mQuizAutoAdvance) {
+                            mQuizTimer = setTimeout(proceedMobileQuiz, 3000);
+                        }
                     };
                 });
 
