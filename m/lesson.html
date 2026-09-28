@@ -3,12 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="theme-color" content="#059669">
+    <meta name="theme-color" content="#059669" id="meta-theme-color">
     <title>Flora | 参考書 授業モード</title>
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" sizes="180x180" href="../icons/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="192x192" href="../icons/icon-192.png">
     <link rel="stylesheet" href="style-m.css">
+    <!-- 🌙 テーマ早期適用（FOUC防止） -->
+    <script>
+        (function() {
+            var t = localStorage.getItem('flora-dark-mode');
+            if (t === 'true' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+                var m = document.querySelector('meta[name="theme-color"]');
+                if (m) m.setAttribute('content', '#131314');
+            }
+        })();
+    </script>
 
     <script>
         window.MathJax = {
@@ -1381,7 +1392,389 @@
             border-color: var(--brand-primary);
             box-shadow: 0 3px 12px rgba(5, 150, 105, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.35);
         }
+
+        /* ==========================================================================
+           🌙 LESSON PAGE DARK THEME OVERRIDES
+           ========================================================================== */
+
+        /* 検索ボックス */
+        html.dark .lesson-search-box input {
+            background: var(--bg-surface-raised);
+            border-color: rgba(255, 255, 255, 0.08);
+            color: var(--text-primary);
+            box-shadow: none;
+        }
+        html.dark .lesson-search-box input:focus {
+            border-color: var(--brand-primary);
+            box-shadow: 0 0 0 3.5px rgba(52, 211, 153, 0.1);
+            background: #2a2d30 !important;
+        }
+        html.dark .lesson-search-box input::placeholder {
+            color: var(--text-muted);
+        }
+
+        /* ソートドロップダウン */
+        html.dark .lesson-sort-select {
+            background-color: var(--bg-surface-raised);
+            border-color: rgba(255, 255, 255, 0.08);
+            color: var(--text-secondary);
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2334d399' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+        }
+
+        /* 続きから再開カード */
+        html.dark .recent-resume-card {
+            background: linear-gradient(135deg, rgba(52, 211, 153, 0.06) 0%, rgba(56, 189, 248, 0.04) 50%, rgba(30, 31, 32, 0.9) 100%);
+            border-color: rgba(52, 211, 153, 0.2);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        /* 教科グループカード */
+        html.dark .subject-group-card {
+            background: var(--bg-surface);
+            border-color: rgba(255, 255, 255, 0.06);
+        }
+        html.dark .subject-group-card.has-active {
+            border-color: rgba(52, 211, 153, 0.2);
+        }
+        html.dark .subject-group-header:active {
+            background: var(--bg-surface-raised);
+        }
+        html.dark .subject-icon-box {
+            background: var(--bg-surface-raised);
+            border-color: rgba(255, 255, 255, 0.08);
+            box-shadow: none;
+        }
+        html.dark .subject-group-badge {
+            background: var(--bg-surface-raised);
+            color: var(--text-muted);
+            border-color: rgba(255, 255, 255, 0.06);
+        }
+        html.dark .subject-group-items {
+            background: rgba(19, 19, 20, 0.5);
+            border-top-color: rgba(255, 255, 255, 0.04);
+        }
+
+        /* 授業カード */
+        html.dark .m-lesson-card {
+            background: var(--bg-surface);
+            border-color: rgba(255, 255, 255, 0.06);
+            box-shadow: var(--shadow-sm);
+        }
+        html.dark .m-lesson-card:active {
+            background: var(--bg-surface-raised);
+        }
+        html.dark .m-lesson-progress-bar-bg {
+            background: rgba(255, 255, 255, 0.08);
+        }
+        html.dark .m-lesson-progress-wrap {
+            border-top-color: rgba(255, 255, 255, 0.06);
+        }
+
+        /* ステータスバッジ */
+        html.dark .status-teaching {
+            background: rgba(52, 211, 153, 0.1);
+            color: var(--brand-primary);
+            border-color: rgba(52, 211, 153, 0.25);
+        }
+        html.dark .status-completed {
+            background: rgba(251, 191, 36, 0.1);
+            color: #fbbf24;
+            border-color: rgba(251, 191, 36, 0.25);
+        }
+
+        /* 受講画面スティッキーナビ */
+        html.dark .lecture-nav-sticky {
+            background: rgba(19, 19, 20, 0.92);
+            border-bottom-color: rgba(255, 255, 255, 0.06);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        }
+        html.dark .lecture-back-btn {
+            background: var(--bg-surface-raised);
+            border-color: rgba(255, 255, 255, 0.08);
+            color: var(--text-primary);
+        }
+        html.dark .lecture-back-btn:active {
+            background: rgba(255, 255, 255, 0.08);
+        }
+        html.dark .lecture-topic-badge {
+            background: rgba(52, 211, 153, 0.1);
+            color: var(--brand-primary);
+            border-color: rgba(52, 211, 153, 0.2);
+        }
+
+        /* サブタブ */
+        html.dark .lesson-subtab-bar {
+            background: rgba(19, 19, 20, 0.85);
+            border-bottom-color: rgba(255, 255, 255, 0.04);
+        }
+        html.dark .lesson-subtab-btn {
+            background: var(--bg-surface);
+            border-color: rgba(255, 255, 255, 0.08);
+            color: var(--text-secondary);
+        }
+        html.dark .lesson-subtab-btn.active {
+            color: #fff;
+            background: var(--brand-gradient);
+            border-color: var(--brand-primary);
+        }
+        html.dark .lesson-subtab-badge {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        /* ステッパー */
+        html.dark .lecture-stepper-row {
+            background: var(--bg-surface);
+            border-bottom-color: rgba(255, 255, 255, 0.04);
+        }
+        html.dark .lecture-step-item {
+            background: var(--bg-surface);
+            border-color: rgba(255, 255, 255, 0.08);
+            color: var(--text-secondary);
+        }
+        html.dark .lecture-step-item.active {
+            background: var(--brand-gradient);
+            border-color: var(--brand-primary);
+            color: #fff;
+        }
+        html.dark .lecture-step-item.completed {
+            background: rgba(52, 211, 153, 0.1);
+            border-color: rgba(52, 211, 153, 0.25);
+            color: var(--brand-primary);
+        }
+
+        /* 講義ペーパーカード */
+        html.dark .lecture-paper-card {
+            background: var(--bg-surface);
+            border-color: rgba(255, 255, 255, 0.06);
+            box-shadow: var(--shadow-card);
+        }
+        html.dark .lecture-paper-header {
+            border-bottom-color: rgba(255, 255, 255, 0.06);
+        }
+        html.dark .lecture-paper-badge {
+            background: rgba(52, 211, 153, 0.1);
+            color: var(--brand-primary);
+            border-color: rgba(52, 211, 153, 0.2);
+        }
+        html.dark .lecture-paper-summary-card {
+            background: linear-gradient(135deg, rgba(52, 211, 153, 0.06) 0%, rgba(56, 189, 248, 0.04) 100%);
+            border-color: rgba(52, 211, 153, 0.15);
+            border-left-color: var(--brand-primary);
+        }
+        html.dark .lecture-paper-content h2 {
+            border-left-color: var(--brand-primary);
+            background: linear-gradient(90deg, rgba(52, 211, 153, 0.06) 0%, transparent 100%);
+        }
+        html.dark .lecture-paper-content h3::before {
+            color: var(--brand-primary);
+        }
+        html.dark .lecture-paper-content blockquote {
+            background: linear-gradient(135deg, rgba(40, 42, 44, 0.9) 0%, rgba(30, 31, 32, 0.9) 100%);
+            border-left-color: var(--brand-primary);
+            color: var(--text-secondary);
+        }
+        html.dark .lecture-paper-content code {
+            background: var(--bg-surface-raised);
+            border-color: rgba(255, 255, 255, 0.08);
+            color: var(--brand-primary);
+        }
+
+        /* Q&A カード */
+        html.dark .qa-card {
+            background: var(--bg-surface);
+            border-color: rgba(255, 255, 255, 0.06);
+        }
+        html.dark .qa-card-question {
+            background: linear-gradient(135deg, rgba(56, 189, 248, 0.08) 0%, rgba(30, 31, 32, 0.6) 100%);
+            border-bottom-color: rgba(56, 189, 248, 0.12);
+        }
+        html.dark .qa-q-badge {
+            background: #0284c7;
+        }
+        html.dark .qa-q-text {
+            color: var(--text-primary);
+        }
+        html.dark .qa-card-answer {
+            color: var(--text-primary);
+        }
+
+        /* アクションボタン */
+        html.dark .paper-action-btn {
+            background: var(--bg-surface-raised);
+            border-color: rgba(255, 255, 255, 0.08);
+            color: var(--text-secondary);
+        }
+        html.dark .paper-action-btn:active {
+            background: rgba(255, 255, 255, 0.08);
+        }
+        html.dark .m-bubble-action-btn {
+            background: var(--bg-surface-raised);
+            border-color: rgba(255, 255, 255, 0.08);
+            color: var(--text-secondary);
+        }
+        html.dark .m-bubble-action-btn:active {
+            background: rgba(52, 211, 153, 0.1);
+            border-color: var(--brand-primary);
+            color: var(--brand-primary);
+        }
+        html.dark .m-bubble-regen-btn {
+            color: var(--brand-primary);
+            border-color: rgba(52, 211, 153, 0.2);
+            background: rgba(52, 211, 153, 0.08);
+        }
+        html.dark .m-bubble-actions {
+            border-top-color: rgba(255, 255, 255, 0.06);
+        }
+
+        /* 下部固定バー */
+        html.dark .lecture-sticky-bottom-bar {
+            background: rgba(19, 19, 20, 0.92);
+            border-top-color: rgba(255, 255, 255, 0.06);
+            box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.3);
+        }
+        html.dark .lecture-bottom-sub-btn {
+            background: var(--bg-surface-raised);
+            border-color: rgba(255, 255, 255, 0.08);
+            color: var(--text-primary);
+        }
+        html.dark .lecture-bottom-sub-btn:active {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        /* 暗記カード */
+        html.dark .m-memorize-card {
+            background: var(--bg-surface);
+            border-color: rgba(255, 255, 255, 0.06);
+        }
+        html.dark .m-memorize-toolbar {
+            background: var(--bg-surface);
+            border-color: rgba(255, 255, 255, 0.06);
+        }
+        html.dark .m-memorize-cat {
+            background: rgba(56, 189, 248, 0.1);
+            color: #38bdf8;
+            border-color: rgba(56, 189, 248, 0.2);
+        }
+        html.dark .m-memorize-a {
+            background: linear-gradient(135deg, rgba(52, 211, 153, 0.06) 0%, rgba(30, 31, 32, 0.8) 100%);
+            border-left-color: var(--brand-primary);
+        }
+        html.dark .m-memorize-a.blurred {
+            filter: blur(6px);
+        }
+        html.dark .m-memorize-note {
+            color: #fbbf24;
+            border-top-color: rgba(255, 255, 255, 0.06);
+        }
+
+        /* ドリル */
+        html.dark .m-drill-box {
+            background: linear-gradient(135deg, rgba(251, 191, 36, 0.06) 0%, rgba(40, 42, 44, 0.4) 100%);
+            border-color: rgba(251, 191, 36, 0.25);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        }
+        html.dark .m-drill-badge {
+            color: #fbbf24;
+            background: rgba(251, 191, 36, 0.12);
+            border-color: rgba(251, 191, 36, 0.25);
+        }
+        html.dark .m-drill-answer-card {
+            background: var(--bg-surface);
+            border-color: rgba(255, 255, 255, 0.06);
+        }
+
+        /* 質問ドロワー */
+        html.dark .question-drawer-overlay {
+            background: rgba(0, 0, 0, 0.6);
+        }
+        html.dark .question-drawer-sheet {
+            background: #1e1f20;
+        }
+        html.dark .quick-q-chip {
+            background: var(--bg-surface-raised);
+            border-color: rgba(255, 255, 255, 0.08);
+            color: var(--text-secondary);
+        }
+        html.dark .quick-q-chip:active {
+            background: rgba(52, 211, 153, 0.1);
+            border-color: rgba(52, 211, 153, 0.2);
+            color: var(--brand-primary);
+        }
+
+        /* メモ */
+        html.dark .m-memo-input-card {
+            background: var(--bg-surface);
+            border-color: rgba(255, 255, 255, 0.06);
+        }
+        html.dark .m-memo-item {
+            background: var(--bg-surface);
+            border-color: rgba(255, 255, 255, 0.06);
+        }
+
+        /* 作成モーダル */
+        html.dark .create-modal-overlay {
+            background: rgba(0, 0, 0, 0.6);
+        }
+        html.dark .create-modal-sheet {
+            background: #1e1f20;
+        }
+        html.dark .mode-toggle-btn {
+            background: var(--bg-surface-raised);
+            border-color: rgba(255, 255, 255, 0.08);
+            color: var(--text-secondary);
+        }
+        html.dark .mode-toggle-btn.active {
+            background: var(--brand-gradient);
+            color: #fff;
+            border-color: var(--brand-primary);
+        }
+
+        /* AI図解（ダークテーマ時はそのまま維持、ライトテーマ時のみ調整） */
+        html.dark .ai-diagram-box {
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+        html.dark .ai-diagram-box.theme-light {
+            background: var(--bg-surface-raised);
+            color: var(--text-primary);
+            border-color: rgba(255, 255, 255, 0.06);
+        }
+        html.dark .ai-diagram-box.theme-light .ai-diagram-box-header {
+            border-bottom-color: rgba(255, 255, 255, 0.06);
+        }
+        html.dark .ai-diagram-box.theme-light .diagram-tool-btn {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-secondary);
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+
+        /* 目次モーダル */
+        html.dark .part-select-card {
+            background: var(--bg-surface);
+            border-color: rgba(255, 255, 255, 0.06);
+        }
+        html.dark .part-select-card.active {
+            border-color: var(--brand-primary);
+            background: rgba(52, 211, 153, 0.06);
+        }
+
+        /* 図解パネル */
+        html.dark .diagram-quick-panel {
+            background: var(--bg-surface);
+            border-color: rgba(52, 211, 153, 0.15);
+        }
+
+        /* ローディング */
+        html.dark .m-bubble-loading-badge {
+            background: rgba(52, 211, 153, 0.1);
+            border-color: rgba(52, 211, 153, 0.2);
+        }
+
+        /* 写真サムネイル */
+        html.dark .m-chat-thumb-item {
+            border-color: rgba(255, 255, 255, 0.08);
+        }
     </style>
+
 </head>
 <body>
 
@@ -1389,6 +1782,9 @@
     <header class="m-header">
         <button class="m-header-back" id="header-back-btn" onclick="location.href='index.html'">‹</button>
         <span class="m-header-title" id="header-title">📖 参考書 授業モード</span>
+        <button class="dark-mode-toggle" id="dark-mode-toggle" type="button" title="ダークモード切り替え" aria-label="ダークモード切り替え">
+            <span id="dark-mode-icon">🌙</span>
+        </button>
         <button class="m-btn m-btn-primary" id="open-create-modal-btn" style="padding:0.35rem 0.75rem; font-size:0.75rem; min-height:34px; border-radius:var(--radius-full);">
             ＋ 新規作成
         </button>
@@ -7169,6 +7565,61 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
         function escapeHtml(s) {
             return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         }
+    </script>
+
+    <!-- 🌙 ダークモード切り替えロジック -->
+    <script>
+    (function() {
+        const toggle = document.getElementById('dark-mode-toggle');
+        const icon = document.getElementById('dark-mode-icon');
+        const meta = document.getElementById('meta-theme-color');
+
+        function isDark() {
+            return document.documentElement.classList.contains('dark');
+        }
+
+        function updateIcon() {
+            if (icon) icon.textContent = isDark() ? '☀️' : '🌙';
+        }
+
+        function updateMeta() {
+            if (meta) meta.setAttribute('content', isDark() ? '#131314' : '#059669');
+        }
+
+        // 初期アイコン設定
+        updateIcon();
+
+        if (toggle) {
+            toggle.addEventListener('click', function() {
+                // スムーズ遷移
+                document.documentElement.classList.add('dark-transition');
+                setTimeout(function() {
+                    document.documentElement.classList.remove('dark-transition');
+                }, 350);
+
+                // テーマ切り替え
+                document.documentElement.classList.toggle('dark');
+                const nowDark = isDark();
+                localStorage.setItem('flora-dark-mode', nowDark ? 'true' : 'false');
+                updateIcon();
+                updateMeta();
+            });
+        }
+
+        // OSテーマ変更の自動追従（手動設定がない場合のみ）
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+            const stored = localStorage.getItem('flora-dark-mode');
+            if (!stored) {
+                if (e.matches) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+                updateIcon();
+                updateMeta();
+            }
+        });
+    })();
     </script>
 
 </body>

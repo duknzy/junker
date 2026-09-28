@@ -6,6 +6,19 @@
  */
 (function() {
     // ==========================================================================
+    // 🌙 ダークモード初期化（PC共通・チラつき防止）
+    // ==========================================================================
+    (function initDarkMode() {
+        const stored = localStorage.getItem('flora-dark-mode');
+        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (stored === 'true' || (!stored && prefersDark)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    })();
+
+    // ==========================================================================
     // 🗄️ IndexedDB 壁紙ストレージ（localStorage の容量枯渇対策）
     // localStorageは5〜10MB上限だが、IndexedDBは数百MB〜GB利用可能。
     // 壁紙DataURL(数MB)をlocalStorageに保存すると他のデータ(APIキー等)が
@@ -175,8 +188,12 @@
 
             <div class="sidebar-footer">
                 <div style="display: flex; gap: 0.4rem; margin-bottom: 0.4rem;">
+                    <button type="button" id="sidebar-dark-mode-btn" title="テーマ切り替え（ダーク / ライト）" class="sidebar-item" style="flex: 1; padding: 0.35rem 0.5rem; font-size: 0.74rem; background: var(--bg-subtle); justify-content: center; border: 1px solid var(--border-color); cursor: pointer;">
+                        <span id="sidebar-dark-mode-icon">🌙</span>
+                        <span id="sidebar-dark-mode-text" style="margin-left: 0.35rem;">ダーク</span>
+                    </button>
                     <button type="button" id="sidebar-wallpaper-btn" title="壁紙や透過度をカスタマイズ" class="sidebar-item" style="flex: 1; padding: 0.35rem 0.5rem; font-size: 0.74rem; background: var(--bg-subtle); justify-content: center; border: 1px solid var(--border-color);">
-                        <span>🖼️ 壁紙 & 透過設定</span>
+                        <span>🖼️ 壁紙設定</span>
                     </button>
                     <input type="file" id="sidebar-wallpaper-input" accept="image/*" style="display: none;">
                 </div>
@@ -196,9 +213,57 @@
             </div>
         `;
 
-        // ユーザー情報の同期 & 壁紙イベントのバインド
+        // ユーザー情報の同期 & 壁紙イベント & ダークモードイベントのバインド
         updateSidebarUser();
         setupWallpaperControls();
+        setupDarkModeControls();
+    }
+
+    // 🌙 ダークモード コントロール
+    function setupDarkModeControls() {
+        const btn = document.getElementById('sidebar-dark-mode-btn');
+        const icon = document.getElementById('sidebar-dark-mode-icon');
+        const text = document.getElementById('sidebar-dark-mode-text');
+        if (!btn) return;
+
+        function isDark() {
+            return document.documentElement.classList.contains('dark');
+        }
+
+        function updateUI() {
+            const dark = isDark();
+            if (icon) icon.textContent = dark ? '☀️' : '🌙';
+            if (text) text.textContent = dark ? 'ライト' : 'ダーク';
+            const meta = document.getElementById('meta-theme-color');
+            if (meta) meta.setAttribute('content', dark ? '#131314' : '#059669');
+        }
+
+        updateUI();
+
+        btn.onclick = () => {
+            document.documentElement.classList.add('dark-transition');
+            setTimeout(() => {
+                document.documentElement.classList.remove('dark-transition');
+            }, 350);
+
+            document.documentElement.classList.toggle('dark');
+            const nowDark = isDark();
+            localStorage.setItem('flora-dark-mode', nowDark ? 'true' : 'false');
+            updateUI();
+        };
+
+        // OSテーマ変更検知
+        window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+            const stored = localStorage.getItem('flora-dark-mode');
+            if (!stored) {
+                if (e.matches) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+                updateUI();
+            }
+        });
     }
 
     // 🖼️ 壁紙 & 透過カスタマイザー モーダル
