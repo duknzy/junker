@@ -25,11 +25,8 @@
         const basePath = getBasePath();
 
         const tabs = [
-            { file: 'index.html',       icon: '🧠', label: '誤答ノート', match: ['index.html', ''] },
-            { file: 'lesson.html',      icon: '📖', label: '授業',       match: ['lesson.html'] },
-            { file: 'refbook.html',     icon: '📚', label: '参考書',     match: ['refbook.html'] },
-            { file: 'insights.html',    icon: '🎴', label: '暗記',       match: ['insights.html', 'answer-check.html', 'timeline.html'] },
-            { file: 'ai-settings.html', icon: '⚙️', label: '設定',       match: ['ai-settings.html'] },
+            { file: 'lesson.html',      icon: '📖', label: '授業', match: ['lesson.html', 'index.html', ''] },
+            { file: 'insights.html',    icon: '🎴', label: '暗記', match: ['insights.html'] },
         ];
 
         const nav = document.createElement('nav');
@@ -50,11 +47,17 @@
                 align-items: stretch;
                 height: var(--bottom-nav-height, 64px);
                 padding-bottom: env(safe-area-inset-bottom, 0px);
-                background: rgba(255, 255, 255, 0.88);
+                background: rgba(255, 255, 255, 0.92);
                 backdrop-filter: blur(24px) saturate(180%);
                 -webkit-backdrop-filter: blur(24px) saturate(180%);
                 border-top: 1px solid rgba(226, 232, 240, 0.85);
                 box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.05);
+            }
+
+            html.dark #flora-bottom-nav {
+                background: rgba(19, 19, 20, 0.92);
+                border-top: 1px solid rgba(255, 255, 255, 0.1);
+                box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.35);
             }
 
             .bnav-tab {
@@ -63,11 +66,11 @@
                 flex-direction: column;
                 align-items: center;
                 justify-content: center;
-                gap: 0.2rem;
+                gap: 0.25rem;
                 text-decoration: none;
                 color: #64748B;
-                font-size: 0.68rem;
-                font-weight: 700;
+                font-size: 0.78rem;
+                font-weight: 750;
                 font-family: var(--font-heading, -apple-system, sans-serif);
                 transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
                 -webkit-tap-highlight-color: transparent;
@@ -76,13 +79,21 @@
                 position: relative;
             }
 
+            html.dark .bnav-tab {
+                color: #94A3B8;
+            }
+
             .bnav-tab:active {
-                transform: scale(0.92);
-                opacity: 0.8;
+                transform: scale(0.95);
+                opacity: 0.85;
             }
 
             .bnav-tab.active {
                 color: var(--brand-primary, #059669);
+            }
+
+            html.dark .bnav-tab.active {
+                color: #34D399;
             }
 
             .bnav-tab.active::before {
@@ -91,7 +102,7 @@
                 top: 0;
                 left: 50%;
                 transform: translateX(-50%);
-                width: 22px;
+                width: 38px;
                 height: 3.5px;
                 background: var(--brand-gradient, linear-gradient(135deg, #059669 0%, #10B981 100%));
                 border-radius: 9999px;
@@ -99,19 +110,19 @@
             }
 
             .bnav-icon {
-                font-size: 1.35rem;
+                font-size: 1.45rem;
                 line-height: 1;
                 transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
             }
 
             .bnav-tab.active .bnav-icon {
-                transform: translateY(-1.5px) scale(1.05);
+                transform: translateY(-1.5px) scale(1.08);
             }
 
             .bnav-label {
                 line-height: 1;
                 white-space: nowrap;
-                letter-spacing: 0.01em;
+                letter-spacing: 0.02em;
             }
 
             /* モバイルでは右下に被るAPIキーのフローティング黒丸ボタンを非表示にし、設定タブに集約 */

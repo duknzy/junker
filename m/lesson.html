@@ -1780,8 +1780,7 @@
 
     <!-- ヘッダー -->
     <header class="m-header">
-        <button class="m-header-back" id="header-back-btn" onclick="location.href='index.html'">‹</button>
-        <span class="m-header-title" id="header-title">📖 参考書 授業モード</span>
+        <span class="m-header-title" id="header-title">📖 授業</span>
         <button class="dark-mode-toggle" id="dark-mode-toggle" type="button" title="ダークモード切り替え" aria-label="ダークモード切り替え">
             <span id="dark-mode-icon">🌙</span>
         </button>
@@ -1853,9 +1852,6 @@
                         <button type="button" id="lesson-title-shorten-btn-m" style="background:none; border:none; color:#6366f1; font-size:0.75rem; cursor:pointer; padding:0 0.2rem;" title="タイトルを短縮・整理">🪄</button>
                     </div>
                     <div class="lecture-nav-right">
-                        <button type="button" class="m-bubble-action-btn" id="solve-related-problem-btn" style="display:none; color:var(--accent-cyan, #0284c7); font-weight:700;" title="元の誤答問題を開く">
-                            🎯 誤答ノート
-                        </button>
                         <button type="button" class="m-bubble-action-btn" id="m-btn-header-recreate" title="授業を再作成（暗記物をキープする柔軟設定）" style="color:var(--brand-primary); font-weight:750;">
                             🔄 再作成
                         </button>
@@ -2702,8 +2698,13 @@
             }
         });
 
-        document.getElementById("main-login-btn")?.addEventListener("click", () => {
-            window.location.href = "index.html";
+        document.getElementById("main-login-btn")?.addEventListener("click", async () => {
+            try {
+                await signInWithPopup(auth, provider);
+            } catch (err) {
+                console.error("Login failed:", err);
+                if (window.mToast) mToast("ログインに失敗しました: " + (err.message || err));
+            }
         });
 
         window.floraTestLogin = async function() {
@@ -3091,19 +3092,6 @@
             const titleEl = document.getElementById("lesson-header-title-text");
             if (badgeEl) badgeEl.textContent = `${icon} ${subj}`;
             if (titleEl) titleEl.textContent = lesson.title || "授業受講";
-
-            // 🎯 元の誤答ノート連携ボタン
-            const mistakeBtn = document.getElementById("solve-related-problem-btn");
-            if (mistakeBtn) {
-                if (lesson.sourceProblemId) {
-                    mistakeBtn.style.display = "inline-flex";
-                    mistakeBtn.onclick = () => {
-                        window.location.href = `problem-detail.html?id=${encodeURIComponent(lesson.sourceProblemId)}`;
-                    };
-                } else {
-                    mistakeBtn.style.display = "none";
-                }
-            }
 
             // URLパラメータを同期（リロード時にも該当授業が開くようにする）
             try {
@@ -4149,18 +4137,6 @@ ${subjectGuide}
                     });
                     lesson.status = "completed";
                     lesson.completedAt = nowIso;
-
-                    // 誤答ノート由来の授業の場合、誤答ノート側も復習完了として更新
-                    if (lesson.sourceProblemId) {
-                        try {
-                            await update(ref(database, `users/${currentUser.uid}/problems/${lesson.sourceProblemId}`), {
-                                lessonCompletedAt: nowIso,
-                                lastLessonReviewAt: nowIso
-                            });
-                        } catch(pe) {
-                            console.warn("誤答ノートステータス同期:", pe);
-                        }
-                    }
 
                     renderActiveLessonUI(false);
                     if (window.mToast) mToast("🎉 この授業の全パートを修了しました！お疲れ様でした！");
@@ -6287,7 +6263,7 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
                     
                     <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.8rem;">
                         <button type="button" class="m-btn" id="m-reveal-drill-ans-btn" style="background:var(--accent-yellow); color:#000; font-size:0.8rem; font-weight:800; padding:0.4rem 0.9rem;">👀 答え合わせをする</button>
-                        <button type="button" class="m-btn" id="m-save-drill-mistake-btn" style="background:rgba(244,63,94,0.15); border:1px solid var(--accent-coral); color:var(--accent-coral); font-size:0.8rem; padding:0.4rem 0.9rem; display:none;">📥 この問題を誤答ノートにストック</button>
+                        <button type="button" class="m-btn" id="m-save-drill-memorize-btn" style="background:rgba(5,150,105,0.12); border:1px solid var(--brand-primary); color:var(--brand-primary); font-size:0.8rem; padding:0.4rem 0.9rem; display:none;">🎴 暗記カードに登録</button>
                     </div>
 
                     <div class="m-drill-answer-box" id="m-drill-answer-reveal-box" style="display:none; margin-top:0.8rem; background:rgba(0,0,0,0.25); border-radius:8px; padding:0.8rem; border:1px solid rgba(255,255,255,0.1);">
@@ -6307,63 +6283,56 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
             document.getElementById("m-reveal-drill-ans-btn")?.addEventListener("click", () => {
                 const answerBox = document.getElementById("m-drill-answer-reveal-box");
                 if (answerBox) answerBox.style.display = "block";
-                const saveBtn = document.getElementById("m-save-drill-mistake-btn");
+                const saveBtn = document.getElementById("m-save-drill-memorize-btn");
                 if (saveBtn) saveBtn.style.display = "inline-flex";
                 if (window.MathJax && window.MathJax.typesetPromise) {
                     window.MathJax.typesetPromise([container]).catch(() => {});
                 }
             });
 
-            document.getElementById("m-save-drill-mistake-btn")?.addEventListener("click", saveMobileDrillToMistakes);
+            document.getElementById("m-save-drill-memorize-btn")?.addEventListener("click", saveMobileDrillToMemorize);
 
             if (window.MathJax && window.MathJax.typesetPromise) {
                 window.MathJax.typesetPromise([container]).catch(() => {});
             }
         }
 
-        async function saveMobileDrillToMistakes() {
+        async function saveMobileDrillToMemorize() {
             if (!activeLessonId || !currentUser || !currentActiveDrill) return;
             const lesson = lessonsCache[activeLessonId];
             if (!lesson) return;
 
-            const btn = document.getElementById("m-save-drill-mistake-btn");
+            const btn = document.getElementById("m-save-drill-memorize-btn");
             if (btn) {
                 btn.disabled = true;
                 btn.textContent = "⏳ 登録中...";
             }
 
             try {
-                const newId = "CUSTOM_" + Date.now();
                 const nowIso = new Date().toISOString();
                 const detectedSubject = getLessonSubject(lesson);
-
-                const newProblem = {
-                    id: newId,
-                    title: currentActiveDrill.problem_statement,
-                    short_title: currentActiveDrill.drill_title || "授業演習類題",
-                    subject: detectedSubject,
-                    field: lesson.topic || lesson.title || "授業演習",
-                    trap_description: currentActiveDrill.trap_description || "",
-                    strategyPattern: (currentActiveDrill.first_step_focus ? currentActiveDrill.first_step_focus + "\n" : "") + (currentActiveDrill.strategy_pattern || ""),
-                    errorCount: 1,
-                    lastAttemptAt: nowIso,
-                    lastResult: false,
-                    answerFormula: currentActiveDrill.model_answer || "解説データ",
+                const newPoint = {
+                    id: "drill_" + Date.now(),
+                    category: "演習のポイント",
+                    question: currentActiveDrill.problem_statement || currentActiveDrill.drill_title || "重要ポイント",
+                    answer: currentActiveDrill.first_step_focus ? (currentActiveDrill.first_step_focus + "\n\n" + (currentActiveDrill.model_answer || "")) : (currentActiveDrill.model_answer || ""),
+                    note: currentActiveDrill.trap_description || "",
                     createdAt: nowIso,
-                    sourceLessonId: lesson.id,
-                    sourceLessonTitle: lesson.title,
-                    sourceLessonText: lesson.extractedText || ""
+                    subject: detectedSubject
                 };
-
-                await set(ref(database, `users/${currentUser.uid}/problems/${newId}`), newProblem);
-                if (window.mToast) mToast("🎉 誤答ノートに登録しました！ダッシュボードから復習できます");
-                if (btn) btn.textContent = "✓ 誤答ノートに登録済み";
+                const points = Array.isArray(lesson.memorizationPoints) ? [...lesson.memorizationPoints, newPoint] : [newPoint];
+                await update(ref(database, `users/${currentUser.uid}/lessons/${activeLessonId}`), {
+                    memorizationPoints: points
+                });
+                lesson.memorizationPoints = points;
+                if (window.mToast) mToast("🎉 暗記カードに登録しました！「暗記」タブから復習できます");
+                if (btn) btn.textContent = "✓ 暗記カードに登録済み";
             } catch (err) {
                 console.error(err);
                 if (window.mToast) mToast("⚠️ 登録に失敗しました: " + err.message);
                 if (btn) {
                     btn.disabled = false;
-                    btn.textContent = "📥 この問題を誤答ノートにストック";
+                    btn.textContent = "🎴 暗記カードに登録";
                 }
             }
         }

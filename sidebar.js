@@ -404,7 +404,7 @@
                         <span>🌐</span>
                         <span id="sidebar-lang-text" style="margin-left: 0.35rem; font-weight: 600;">${t('langToggle')}</span>
                     </button>
-                    <a href="m/index.html" class="sidebar-item" style="flex: 1; padding: 0.35rem 0.5rem; font-size: 0.74rem; background: var(--bg-subtle); justify-content: center; border: 1px solid var(--border-color); text-decoration: none;">
+                    <a href="m/lesson.html" class="sidebar-item" style="flex: 1; padding: 0.35rem 0.5rem; font-size: 0.74rem; background: var(--bg-subtle); justify-content: center; border: 1px solid var(--border-color); text-decoration: none;">
                         <span>${t('btnMobile')}</span>
                     </a>
                 </div>
