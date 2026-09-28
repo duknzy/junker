@@ -1613,6 +1613,290 @@
             flex-grow: 1;
         }
 
+        /* 🔍 授業内画像検索パネル */
+        .img-search-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.72);
+            backdrop-filter: blur(8px);
+            z-index: 9990;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+        .img-search-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .img-search-panel {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            width: 100%;
+            max-width: 800px;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 24px 48px rgba(0,0,0,0.25);
+            transform: translateY(12px) scale(0.97);
+            transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .img-search-overlay.active .img-search-panel {
+            transform: translateY(0) scale(1);
+        }
+        .img-search-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.85rem 1.15rem;
+            border-bottom: 1px solid var(--border-color);
+            gap: 0.75rem;
+        }
+        .img-search-header-title {
+            font-weight: 800;
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            white-space: nowrap;
+        }
+        .img-search-input-wrap {
+            flex: 1;
+            display: flex;
+            gap: 0.4rem;
+        }
+        .img-search-input {
+            flex: 1;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.5rem 0.85rem;
+            border-radius: var(--radius-md);
+            font-size: 0.86rem;
+            transition: border-color 0.15s ease;
+        }
+        .img-search-input:focus {
+            border-color: var(--brand-primary);
+            outline: none;
+            box-shadow: 0 0 0 2px var(--brand-light);
+        }
+        .img-search-go-btn {
+            background: var(--brand-primary);
+            color: #fff;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-md);
+            font-weight: 700;
+            font-size: 0.84rem;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.15s ease;
+        }
+        .img-search-go-btn:hover { background: #047857; }
+        .img-search-go-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .img-search-close-btn {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            transition: all 0.15s ease;
+            flex-shrink: 0;
+        }
+        .img-search-close-btn:hover {
+            background: var(--error-bg);
+            color: var(--error);
+            border-color: #FECACA;
+        }
+        .img-search-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem 1.15rem;
+        }
+        .img-search-status {
+            text-align: center;
+            padding: 2rem 1rem;
+            color: var(--text-muted);
+            font-size: 0.88rem;
+        }
+        .img-search-status-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+        .img-search-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 0.75rem;
+        }
+        .img-search-card {
+            position: relative;
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            background: var(--bg-subtle);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            aspect-ratio: 4/3;
+        }
+        .img-search-card:hover {
+            border-color: var(--brand-primary);
+            box-shadow: 0 4px 12px rgba(5, 150, 105, 0.2);
+            transform: translateY(-2px);
+        }
+        .img-search-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transition: transform 0.3s ease;
+        }
+        .img-search-card:hover img {
+            transform: scale(1.05);
+        }
+        .img-search-card-label {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0,0,0,0.85));
+            color: #fff;
+            padding: 1.8rem 0.6rem 0.5rem 0.6rem;
+            font-size: 0.72rem;
+            line-height: 1.35;
+            font-weight: 600;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .img-search-footer {
+            padding: 0.65rem 1.15rem;
+            border-top: 1px solid var(--border-color);
+            background: var(--bg-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+        }
+        .img-search-footer a {
+            color: var(--brand-primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .img-search-footer a:hover { text-decoration: underline; }
+        .img-search-load-more-btn {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 0.45rem 1rem;
+            border-radius: var(--radius-md);
+            font-size: 0.78rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .img-search-load-more-btn:hover {
+            border-color: var(--brand-primary);
+            color: var(--brand-primary);
+            background: var(--brand-light);
+        }
+
+        /* 🖼️ 画像プレビュー・ライトボックス */
+        .img-preview-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.88);
+            backdrop-filter: blur(12px);
+            z-index: 9995;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+        .img-preview-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .img-preview-content {
+            max-width: 90vw;
+            max-height: 78vh;
+            object-fit: contain;
+            border-radius: var(--radius-md);
+            box-shadow: 0 16px 48px rgba(0,0,0,0.5);
+            transform: scale(0.92);
+            transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .img-preview-overlay.active .img-preview-content {
+            transform: scale(1);
+        }
+        .img-preview-info {
+            margin-top: 0.85rem;
+            text-align: center;
+            max-width: 600px;
+        }
+        .img-preview-title {
+            color: #fff;
+            font-weight: 700;
+            font-size: 0.92rem;
+            line-height: 1.45;
+            margin-bottom: 0.35rem;
+        }
+        .img-preview-meta {
+            color: rgba(255,255,255,0.65);
+            font-size: 0.76rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .img-preview-meta a {
+            color: #6ee7b7;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .img-preview-meta a:hover { text-decoration: underline; }
+        .img-preview-close-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.25);
+            color: #fff;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.1rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
+            backdrop-filter: blur(6px);
+        }
+        .img-preview-close-btn:hover {
+            background: rgba(255,255,255,0.25);
+        }
+
         .chat-input-wrap { display: flex; flex-direction: column; gap: 0.4rem; border-top: 1px solid var(--border-color); padding-top: 0.65rem; margin-top: 0.4rem; }
         .chat-input-row { display: flex; gap: 0.4rem; }
         .chat-input {
@@ -4576,6 +4860,7 @@
                                         <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="request-diagram-btn" style="padding: 0.3rem 0.6rem; font-size: 0.74rem;">🖼️ 図で説明してほしい</button>
                                         <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="trigger-drill-btn" style="color: var(--brand-primary); padding: 0.3rem 0.6rem; font-size: 0.74rem;">⚡ 類題で即時アウトプット</button>
                                         <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="add-custom-event-btn" style="color: #b45309; padding: 0.3rem 0.6rem; font-size: 0.74rem;" title="授業に補足出来事や自分用のメモを追記">📝 出来事・メモを追記</button>
+                                        <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="open-img-search-btn" style="color: #0284c7; padding: 0.3rem 0.6rem; font-size: 0.74rem;" title="Wikimedia Commonsから実物の写真・画像を検索して閲覧">🔍 画像検索</button>
                                     </div>
                                     <button type="button" class="flora-btn flora-btn-primary btn-sm" id="next-part-btn" style="padding: 0.3rem 0.8rem; font-size: 0.76rem;">▶ 次のパートへ進む</button>
                                 </div>
@@ -6064,6 +6349,41 @@
                     </button>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- 🔍 画像検索モーダル -->
+    <div class="img-search-overlay" id="img-search-overlay">
+        <div class="img-search-panel">
+            <div class="img-search-header">
+                <div class="img-search-header-title">🔍 画像検索</div>
+                <div class="img-search-input-wrap">
+                    <input type="text" class="img-search-input" id="img-search-input" placeholder="例: 鎌倉大仏, ベルサイユ宮殿, 大化の改新...">
+                    <button type="button" class="img-search-go-btn" id="img-search-go-btn">検索</button>
+                </div>
+                <button type="button" class="img-search-close-btn" id="img-search-close-btn" title="閉じる">✕</button>
+            </div>
+            <div class="img-search-body" id="img-search-body">
+                <div class="img-search-status" id="img-search-status">
+                    <span class="img-search-status-icon">🏛️</span>
+                    授業に関連するキーワードで検索すると、<br>Wikimedia Commonsの画像が表示されます。
+                </div>
+                <div class="img-search-grid" id="img-search-grid" style="display:none;"></div>
+            </div>
+            <div class="img-search-footer">
+                <span>画像は <a href="https://commons.wikimedia.org/" target="_blank" rel="noopener">Wikimedia Commons</a> より取得（CC / パブリックドメイン）</span>
+                <button type="button" class="img-search-load-more-btn" id="img-search-load-more-btn" style="display:none;">さらに読み込む</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🖼️ 画像プレビュー・ライトボックス -->
+    <div class="img-preview-overlay" id="img-preview-overlay">
+        <button type="button" class="img-preview-close-btn" id="img-preview-close-btn" title="閉じる">✕</button>
+        <img class="img-preview-content" id="img-preview-content" alt="">
+        <div class="img-preview-info">
+            <div class="img-preview-title" id="img-preview-title"></div>
+            <div class="img-preview-meta" id="img-preview-meta"></div>
         </div>
     </div>
 
@@ -13629,6 +13949,214 @@ ${socraticInstructionBlock}
                 addEventBtn.addEventListener("click", () => addNewLessonEventOrNote());
             }
         })();
+
+        // --------------------------------------------------------------
+        // 🔍 授業内画像検索（Wikimedia Commons API）
+        // --------------------------------------------------------------
+        const imgSearchState = {
+            query: "",
+            results: [],
+            offset: 0,
+            loading: false,
+            hasMore: false
+        };
+
+        function openImageSearch() {
+            const overlay = el("img-search-overlay");
+            if (!overlay) return;
+            overlay.classList.add("active");
+            // 授業のトピックを初期検索ワードとして提案
+            const input = el("img-search-input");
+            if (input && !input.value.trim() && currentLesson) {
+                const topic = currentLesson.topicKey || currentLesson.topic || currentLesson.title || "";
+                const currentPart = (currentLesson.parts || [])[currentLesson.currentPartIndex];
+                const partTitle = currentPart ? currentPart.title : "";
+                input.value = partTitle || topic;
+            }
+            setTimeout(() => { if (input) input.focus(); }, 100);
+        }
+
+        function closeImageSearch() {
+            const overlay = el("img-search-overlay");
+            if (overlay) overlay.classList.remove("active");
+        }
+
+        function openImagePreview(imgUrl, title, pageUrl) {
+            const overlay = el("img-preview-overlay");
+            const imgEl = el("img-preview-content");
+            const titleEl = el("img-preview-title");
+            const metaEl = el("img-preview-meta");
+            if (!overlay || !imgEl) return;
+            imgEl.src = imgUrl;
+            imgEl.alt = title || "";
+            if (titleEl) titleEl.textContent = title || "";
+            if (metaEl) {
+                metaEl.innerHTML = pageUrl
+                    ? `<a href="${pageUrl}" target="_blank" rel="noopener">Wikimedia Commons で詳細を見る ↗</a>`
+                    : "";
+            }
+            overlay.classList.add("active");
+        }
+
+        function closeImagePreview() {
+            const overlay = el("img-preview-overlay");
+            if (overlay) overlay.classList.remove("active");
+            const imgEl = el("img-preview-content");
+            if (imgEl) imgEl.src = "";
+        }
+
+        async function searchWikimediaImages(query, offset = 0) {
+            if (!query.trim()) return;
+            imgSearchState.loading = true;
+            imgSearchState.query = query.trim();
+
+            const statusEl = el("img-search-status");
+            const gridEl = el("img-search-grid");
+            const loadMoreBtn = el("img-search-load-more-btn");
+            const goBtn = el("img-search-go-btn");
+
+            if (offset === 0) {
+                imgSearchState.results = [];
+                imgSearchState.offset = 0;
+                if (gridEl) { gridEl.innerHTML = ""; gridEl.style.display = "none"; }
+                if (statusEl) {
+                    statusEl.style.display = "block";
+                    statusEl.innerHTML = `<span class="img-search-status-icon">⏳</span>「${escapeHtml(query)}」を検索中...`;
+                }
+            }
+            if (goBtn) { goBtn.disabled = true; goBtn.textContent = "検索中…"; }
+            if (loadMoreBtn) { loadMoreBtn.style.display = "none"; }
+
+            try {
+                // Wikimedia Commons API: search for image files
+                const searchParams = new URLSearchParams({
+                    action: "query",
+                    generator: "search",
+                    gsrsearch: `${query} filetype:bitmap`,
+                    gsrnamespace: "6",
+                    gsrlimit: "20",
+                    gsroffset: String(offset),
+                    prop: "imageinfo",
+                    iiprop: "url|extmetadata|size|mime",
+                    iiurlwidth: "400",
+                    format: "json",
+                    origin: "*"
+                });
+                const apiUrl = `https://commons.wikimedia.org/w/api.php?${searchParams.toString()}`;
+
+                const resp = await fetch(apiUrl);
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                const data = await resp.json();
+
+                const pages = data.query?.pages;
+                const newResults = [];
+                if (pages) {
+                    Object.values(pages).forEach(page => {
+                        const info = (page.imageinfo || [])[0];
+                        if (!info) return;
+                        const mime = info.mime || "";
+                        if (!mime.startsWith("image/")) return;
+                        const thumbUrl = info.thumburl || info.url;
+                        const fullUrl = info.url;
+                        const pageUrl = info.descriptionurl || `https://commons.wikimedia.org/wiki/${encodeURIComponent(page.title)}`;
+                        const ext = info.extmetadata || {};
+                        let title = page.title.replace(/^File:/, "").replace(/\.[^.]+$/, "").replace(/_/g, " ");
+                        // Try to get a better description
+                        const objName = ext.ObjectName?.value;
+                        if (objName && objName.length < 120) title = objName;
+                        newResults.push({ thumbUrl, fullUrl, pageUrl, title, width: info.width, height: info.height });
+                    });
+                }
+
+                imgSearchState.results = imgSearchState.results.concat(newResults);
+                imgSearchState.offset = offset + 20;
+                imgSearchState.hasMore = newResults.length >= 18; // heuristic
+
+                if (imgSearchState.results.length === 0) {
+                    if (statusEl) {
+                        statusEl.style.display = "block";
+                        statusEl.innerHTML = `<span class="img-search-status-icon">🔍</span>「${escapeHtml(query)}」に一致する画像は見つかりませんでした。<br>別のキーワードで試してみてください。`;
+                    }
+                    if (gridEl) gridEl.style.display = "none";
+                } else {
+                    if (statusEl) statusEl.style.display = "none";
+                    renderImageSearchGrid();
+                }
+                if (loadMoreBtn) {
+                    loadMoreBtn.style.display = imgSearchState.hasMore ? "inline-flex" : "none";
+                }
+            } catch (err) {
+                console.error("画像検索エラー:", err);
+                if (statusEl) {
+                    statusEl.style.display = "block";
+                    statusEl.innerHTML = `<span class="img-search-status-icon">⚠️</span>検索に失敗しました: ${escapeHtml(err.message)}<br>ネットワーク接続を確認してください。`;
+                }
+            } finally {
+                imgSearchState.loading = false;
+                if (goBtn) { goBtn.disabled = false; goBtn.textContent = "検索"; }
+            }
+        }
+
+        function renderImageSearchGrid() {
+            const gridEl = el("img-search-grid");
+            if (!gridEl) return;
+            gridEl.style.display = "grid";
+            gridEl.innerHTML = imgSearchState.results.map((r, i) => `
+                <div class="img-search-card" data-img-idx="${i}" title="${escapeHtml(r.title)}">
+                    <img src="${r.thumbUrl}" alt="${escapeHtml(r.title)}" loading="lazy"
+                         onerror="this.parentElement.style.display='none'">
+                    <div class="img-search-card-label">${escapeHtml(r.title)}</div>
+                </div>
+            `).join("");
+        }
+
+        // イベントリスナー
+        el("open-img-search-btn")?.addEventListener("click", openImageSearch);
+        el("img-search-close-btn")?.addEventListener("click", closeImageSearch);
+        el("img-preview-close-btn")?.addEventListener("click", closeImagePreview);
+
+        el("img-search-overlay")?.addEventListener("click", (e) => {
+            if (e.target === el("img-search-overlay")) closeImageSearch();
+        });
+        el("img-preview-overlay")?.addEventListener("click", (e) => {
+            if (e.target === el("img-preview-overlay")) closeImagePreview();
+        });
+
+        el("img-search-go-btn")?.addEventListener("click", () => {
+            const q = el("img-search-input")?.value?.trim();
+            if (q) searchWikimediaImages(q, 0);
+        });
+        el("img-search-input")?.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                const q = el("img-search-input")?.value?.trim();
+                if (q) searchWikimediaImages(q, 0);
+            }
+        });
+        el("img-search-load-more-btn")?.addEventListener("click", () => {
+            if (!imgSearchState.loading && imgSearchState.hasMore) {
+                searchWikimediaImages(imgSearchState.query, imgSearchState.offset);
+            }
+        });
+
+        // グリッドカードのクリックでプレビュー
+        el("img-search-grid")?.addEventListener("click", (e) => {
+            const card = e.target.closest(".img-search-card");
+            if (!card) return;
+            const idx = parseInt(card.dataset.imgIdx, 10);
+            const r = imgSearchState.results[idx];
+            if (r) openImagePreview(r.fullUrl, r.title, r.pageUrl);
+        });
+
+        // Escape キーで閉じる
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") {
+                if (el("img-preview-overlay")?.classList.contains("active")) {
+                    closeImagePreview();
+                } else if (el("img-search-overlay")?.classList.contains("active")) {
+                    closeImageSearch();
+                }
+            }
+        });
 
         // --------------------------------------------------------------
         // ⚡ 即時アウトプット演習（自動サニタイズ＆スクロール対応）
