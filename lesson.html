@@ -6849,6 +6849,22 @@
                 });
             }
 
+            // 🌐 Google Search Grounding トグル初期化 & イベント
+            const groundingToggle = el("ais-search-grounding-toggle");
+            if (groundingToggle) {
+                const storedGrounding = localStorage.getItem("flora_grounding_search");
+                // 未設定時はデフォルトON（最新時事・入試情報検索対応）
+                groundingToggle.checked = storedGrounding !== null ? storedGrounding === "true" : true;
+                if (storedGrounding === null) {
+                    localStorage.setItem("flora_grounding_search", "true");
+                }
+                groundingToggle.addEventListener("change", (e) => {
+                    const isEnabled = e.target.checked;
+                    localStorage.setItem("flora_grounding_search", isEnabled ? "true" : "false");
+                    showToast(isEnabled ? "🌐 Google検索グラウンディングを【有効】にしました（最新情報・参照リンクを連動）" : "🌐 Google検索グラウンディングを【無効】にしました（高速・参考書ベース解説）", "info", 2200);
+                });
+            }
+
             // 8. ドロワー開閉イベントバインド
             const closeBtn = el("close-lesson-ai-modal-btn");
             if (closeBtn) closeBtn.addEventListener("click", closeAiStudioDrawer);

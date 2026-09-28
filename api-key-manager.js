@@ -1347,6 +1347,15 @@ async function runGeminiFallbackLoop(contents, systemInstruction, options = {}) 
             systemInstruction: { parts: [{ text: systemInstructionText }] },
             generationConfig: generationConfig
         };
+
+        // 🌐 Google Search Grounding (Web検索連携)
+        const isGroundingRequested = options.groundingSearch !== undefined 
+            ? !!options.groundingSearch 
+            : (typeof localStorage !== "undefined" && localStorage.getItem("flora_grounding_search") === "true");
+        if (isGroundingRequested && !responseSchema && !wantsJson) {
+            requestBodyObj.tools = [{ googleSearch: {} }];
+        }
+
         const requestBody = JSON.stringify(requestBodyObj);
 
         let response;
@@ -1401,6 +1410,23 @@ async function runGeminiFallbackLoop(contents, systemInstruction, options = {}) 
 
         if (!candidateText) {
             return { ok: false, isFormatError: false, reason: "空応答（finishReason等が原因の可能性）", error: new Error(`Empty response: ${modelName}`) };
+        }
+
+        // 🌐 Grounding Metadata（Google検索の参照元リンク）の抽出・付加
+        const groundingMeta = candidateJson?.candidates?.[0]?.groundingMetadata;
+        if (groundingMeta && (rawText || responseMimeType === "text/plain")) {
+            const chunks = groundingMeta.groundingChunks || [];
+            const sources = [];
+            chunks.forEach(chunk => {
+                if (chunk.web?.uri) {
+                    const title = chunk.web.title || chunk.web.uri;
+                    sources.push(`- [${title}](${chunk.web.uri})`);
+                }
+            });
+            if (sources.length > 0) {
+                const uniqueSources = Array.from(new Set(sources)).slice(0, 4);
+                candidateText += `\n\n> 🌐 **Google検索参照元:**\n${uniqueSources.join('\n')}`;
+            }
         }
 
         if (!responseSchema && (rawText || responseMimeType === "text/plain")) {
