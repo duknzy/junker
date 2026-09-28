@@ -106,6 +106,206 @@
     }
 
     // ==========================================================================
+    // 🌐 多言語対応 (i18n) 管理
+    // ==========================================================================
+    const I18N = {
+        ja: {
+            brandSubtitle: '学習ワークスペース',
+            navSectionMain: 'メイン',
+            navSectionPractice: '演習・ツール',
+            navSectionSettings: '設定 & ツール',
+            navDashboard: 'ダッシュボード',
+            navProblem: '問題演習セッション',
+            navLesson: '参考書・授業モード',
+            navRefbook: '一問一答',
+            navDaily: 'デイリースプリント10',
+            navCustomSprint: 'カスタムスプリント',
+            navAnswerCheck: 'クイック答え合わせ',
+            navInsights: '質問・学びアーカイブ',
+            navTimelineQuiz: '共テ年代整序特訓',
+            navTimeline: '歴史 統合年表',
+            navAiSettings: 'AI設定',
+            badgeImportant: '重要',
+            btnDark: 'ダーク',
+            btnLight: 'ライト',
+            btnWallpaper: '🖼️ 壁紙設定',
+            btnMobile: '📱 モバイル表示',
+            syncingLocal: 'ローカル同期中',
+            notLoggedIn: '未ログイン',
+            logout: 'ログアウト',
+            langToggle: 'English',
+            langTitle: '英語に切り替え / Switch to English',
+
+            // ページヘッダー共通（lesson.html 等）
+            headerLessonTitle: '📖 参考書 授業モード',
+            headerLessonDocTitle: 'Flora | 参考書 授業モード',
+            headerLessonsLink: '📚 授業一覧・新しい授業',
+            headerBackDash: '← ダッシュボードに戻る',
+            headerHistoryBtn: '🕒 閲覧履歴 (10件)',
+            headerAiBtn: '✨ AIモデル設定',
+            headerPolicyBtn: '⚙️ 授業方針を編集',
+            headerLangToggle: 'English',
+            btnStartNewLesson: '🆕 新しい授業を始める',
+            recentLessonsTitle: '最近開いた授業 (過去10件)',
+            btnViewAll: 'すべて見る ➔',
+            btnClear: 'クリア',
+            searchLessonPlaceholder: '教科や単元名で絞り込み...',
+        },
+        en: {
+            brandSubtitle: 'Study Workspace',
+            navSectionMain: 'Main',
+            navSectionPractice: 'Practice & Tools',
+            navSectionSettings: 'Settings & Tools',
+            navDashboard: 'Dashboard',
+            navProblem: 'Practice Session',
+            navLesson: 'Reference & Lessons',
+            navRefbook: 'Flashcards / Q&A',
+            navDaily: 'Daily Sprint 10',
+            navCustomSprint: 'Custom Sprint',
+            navAnswerCheck: 'Quick Answer Check',
+            navInsights: 'Questions & Insights',
+            navTimelineQuiz: 'Chronology Drill',
+            navTimeline: 'History Timeline',
+            navAiSettings: 'AI Settings',
+            badgeImportant: 'Important',
+            btnDark: 'Dark',
+            btnLight: 'Light',
+            btnWallpaper: '🖼️ Wallpaper',
+            btnMobile: '📱 Mobile View',
+            syncingLocal: 'Syncing locally',
+            notLoggedIn: 'Not signed in',
+            logout: 'Log out',
+            langToggle: '日本語',
+            langTitle: '日本語に切り替え / Switch to Japanese',
+
+            // ページヘッダー共通（lesson.html 等）
+            headerLessonTitle: '📖 Reference & Lessons',
+            headerLessonDocTitle: 'Flora | Reference & Lessons',
+            headerLessonsLink: '📚 Lessons & New',
+            headerBackDash: '← Back to Dashboard',
+            headerHistoryBtn: '🕒 History (10)',
+            headerAiBtn: '✨ AI Model Settings',
+            headerPolicyBtn: '⚙️ Lesson Policy',
+            headerLangToggle: '日本語',
+            btnStartNewLesson: '🆕 Start New Lesson',
+            recentLessonsTitle: 'Recent Lessons (Last 10)',
+            btnViewAll: 'View All ➔',
+            btnClear: 'Clear',
+            searchLessonPlaceholder: 'Filter by subject or unit...',
+        }
+    };
+
+    function getLanguage() {
+        return localStorage.getItem('flora_lang') === 'en' ? 'en' : 'ja';
+    }
+
+    function t(key) {
+        const lang = getLanguage();
+        return (I18N[lang] && I18N[lang][key]) || (I18N.ja && I18N.ja[key]) || key;
+    }
+
+    function isDarkModeActive() {
+        return document.documentElement.classList.contains('dark');
+    }
+
+    function updatePageLanguage(lang) {
+        const currentLang = lang || getLanguage();
+        document.documentElement.lang = currentLang;
+
+        // data-i18n 属性を持つ要素の自動更新
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            const translation = I18N[currentLang]?.[key];
+            if (translation) {
+                if (el.dataset.i18nTarget === 'title') {
+                    el.title = translation;
+                } else if (el.dataset.i18nTarget === 'placeholder') {
+                    el.placeholder = translation;
+                } else {
+                    el.textContent = translation;
+                }
+            }
+        });
+
+        // lesson.html 向けのヘッダー要素をスマート連動
+        const isLessonPage = window.location.pathname.endsWith('lesson.html') || window.location.pathname.includes('/lesson');
+        if (isLessonPage) {
+            document.title = t('headerLessonDocTitle');
+            const pageTitleEl = document.querySelector('.page-title');
+            if (pageTitleEl) pageTitleEl.textContent = t('headerLessonTitle');
+
+            const lessonLink = document.querySelector('a.back-link[href="lesson.html"]');
+            if (lessonLink) lessonLink.textContent = t('headerLessonsLink');
+
+            const dashLink = document.querySelector('a.back-link[href="index.html"]');
+            if (dashLink) dashLink.textContent = t('headerBackDash');
+
+            const histBtn = document.getElementById('btn-recent-lessons-history');
+            if (histBtn) {
+                const labelSpan = histBtn.querySelector('span:last-child');
+                if (labelSpan) labelSpan.textContent = currentLang === 'en' ? 'History (10)' : '閲覧履歴 (10件)';
+            }
+
+            const aiBtn = document.getElementById('btn-open-ai-studio-settings');
+            if (aiBtn) {
+                const labelSpan = aiBtn.querySelector('span:last-child');
+                if (labelSpan) labelSpan.textContent = currentLang === 'en' ? 'AI Model Settings' : 'AIモデル設定';
+            }
+
+            const policyBtn = document.getElementById('open-settings-btn');
+            if (policyBtn) {
+                policyBtn.textContent = t('headerPolicyBtn');
+            }
+
+            const headerLangLabel = document.getElementById('header-lang-label');
+            if (headerLangLabel) {
+                headerLangLabel.textContent = t('headerLangToggle');
+            }
+
+            const headerLangBtn = document.getElementById('header-lang-btn');
+            if (headerLangBtn && !headerLangBtn._boundFloraLang) {
+                headerLangBtn._boundFloraLang = true;
+                headerLangBtn.onclick = () => {
+                    const next = getLanguage() === 'ja' ? 'en' : 'ja';
+                    setLanguage(next);
+                };
+            }
+
+            // 新規作成ボタンやツールバーのテキストも更新
+            const newLessonToggleText = document.querySelector('#new-lesson-toggle > span:first-child');
+            if (newLessonToggleText) {
+                newLessonToggleText.textContent = t('btnStartNewLesson');
+            }
+            const searchInput = document.querySelector('.lesson-search-input');
+            if (searchInput) {
+                searchInput.placeholder = t('searchLessonPlaceholder');
+            }
+            const viewAllLink = document.getElementById('btn-open-recent-modal-link');
+            if (viewAllLink) {
+                viewAllLink.textContent = t('btnViewAll');
+            }
+            const clearLink = document.getElementById('btn-clear-recent-history-inline');
+            if (clearLink) {
+                clearLink.textContent = t('btnClear');
+            }
+        }
+    }
+
+    function setLanguage(lang) {
+        localStorage.setItem('flora_lang', lang);
+        renderSidebar();
+        updatePageLanguage(lang);
+        window.dispatchEvent(new CustomEvent('flora-lang-change', { detail: { lang } }));
+    }
+
+    window.floraLang = {
+        get: getLanguage,
+        set: setLanguage,
+        t: t,
+        updatePage: updatePageLanguage
+    };
+
+    // ==========================================================================
 
     function renderSidebar() {
         const sidebarMount = document.getElementById('flora-sidebar');
@@ -115,29 +315,29 @@
 
         const navSections = [
             {
-                title: 'メイン',
+                title: t('navSectionMain'),
                 items: [
-                    { href: 'index.html', icon: '📊', label: 'ダッシュボード', match: ['index.html', ''] },
-                    { href: 'problem.html', icon: '✏️', label: '問題演習セッション', match: ['problem.html'] },
-                    { href: 'lesson.html', icon: '📖', label: '参考書・授業モード', match: ['lesson.html'] },
-                    { href: 'refbook.html', icon: '📝', label: '一問一答', match: ['refbook.html'] },
+                    { href: 'index.html', icon: '📊', label: t('navDashboard'), match: ['index.html', ''] },
+                    { href: 'problem.html', icon: '✏️', label: t('navProblem'), match: ['problem.html'] },
+                    { href: 'lesson.html', icon: '📖', label: t('navLesson'), match: ['lesson.html'] },
+                    { href: 'refbook.html', icon: '📝', label: t('navRefbook'), match: ['refbook.html'] },
                 ]
             },
             {
-                title: '演習・ツール',
+                title: t('navSectionPractice'),
                 items: [
-                    { href: 'daily.html', icon: '📅', label: 'デイリースプリント10', match: ['daily.html'] },
-                    { href: 'custom-sprint.html', icon: '⚡', label: 'カスタムスプリント', match: ['custom-sprint.html'] },
-                    { href: 'answer-check.html', icon: '✅', label: 'クイック答え合わせ', match: ['answer-check.html'] },
-                    { href: 'insights.html', icon: '💡', label: '質問・学びアーカイブ', match: ['insights.html'] },
-                    { href: 'timeline.html?quiz=true', icon: '🎯', label: '共テ年代整序特訓', badge: '重要', match: ['timeline.html?quiz=true'] },
-                    { href: 'timeline.html', icon: '🏛️', label: '歴史 統合年表', match: ['timeline.html'] },
+                    { href: 'daily.html', icon: '📅', label: t('navDaily'), match: ['daily.html'] },
+                    { href: 'custom-sprint.html', icon: '⚡', label: t('navCustomSprint'), match: ['custom-sprint.html'] },
+                    { href: 'answer-check.html', icon: '✅', label: t('navAnswerCheck'), match: ['answer-check.html'] },
+                    { href: 'insights.html', icon: '💡', label: t('navInsights'), match: ['insights.html'] },
+                    { href: 'timeline.html?quiz=true', icon: '🎯', label: t('navTimelineQuiz'), badge: t('badgeImportant'), match: ['timeline.html?quiz=true'] },
+                    { href: 'timeline.html', icon: '🏛️', label: t('navTimeline'), match: ['timeline.html'] },
                 ]
             },
             {
-                title: '設定 & ツール',
+                title: t('navSectionSettings'),
                 items: [
-                    { href: 'ai-settings.html', icon: '⚙️', label: 'AI設定', match: ['ai-settings.html'] },
+                    { href: 'ai-settings.html', icon: '⚙️', label: t('navAiSettings'), match: ['ai-settings.html'] },
                 ]
             }
         ];
@@ -170,6 +370,8 @@
             navHtml += `</div>`;
         });
 
+        const darkActive = isDarkModeActive();
+
         sidebarMount.className = 'app-sidebar';
         sidebarMount.innerHTML = `
             <div class="sidebar-header">
@@ -177,7 +379,7 @@
                     <div class="sidebar-brand-icon">🌱</div>
                     <div class="sidebar-brand-text">
                         <span class="sidebar-brand-title">Flora</span>
-                        <span class="sidebar-brand-badge">学習ワークスペース</span>
+                        <span class="sidebar-brand-badge">${t('brandSubtitle')}</span>
                     </div>
                 </a>
             </div>
@@ -188,35 +390,53 @@
 
             <div class="sidebar-footer">
                 <div style="display: flex; gap: 0.4rem; margin-bottom: 0.4rem;">
-                    <button type="button" id="sidebar-dark-mode-btn" title="テーマ切り替え（ダーク / ライト）" class="sidebar-item" style="flex: 1; padding: 0.35rem 0.5rem; font-size: 0.74rem; background: var(--bg-subtle); justify-content: center; border: 1px solid var(--border-color); cursor: pointer;">
-                        <span id="sidebar-dark-mode-icon">🌙</span>
-                        <span id="sidebar-dark-mode-text" style="margin-left: 0.35rem;">ダーク</span>
+                    <button type="button" id="sidebar-dark-mode-btn" title="テーマ切り替え / Toggle Theme" class="sidebar-item" style="flex: 1; padding: 0.35rem 0.5rem; font-size: 0.74rem; background: var(--bg-subtle); justify-content: center; border: 1px solid var(--border-color); cursor: pointer;">
+                        <span id="sidebar-dark-mode-icon">${darkActive ? '☀️' : '🌙'}</span>
+                        <span id="sidebar-dark-mode-text" style="margin-left: 0.35rem;">${darkActive ? t('btnLight') : t('btnDark')}</span>
                     </button>
                     <button type="button" id="sidebar-wallpaper-btn" title="壁紙や透過度をカスタマイズ" class="sidebar-item" style="flex: 1; padding: 0.35rem 0.5rem; font-size: 0.74rem; background: var(--bg-subtle); justify-content: center; border: 1px solid var(--border-color);">
-                        <span>🖼️ 壁紙設定</span>
+                        <span>${t('btnWallpaper')}</span>
                     </button>
                     <input type="file" id="sidebar-wallpaper-input" accept="image/*" style="display: none;">
                 </div>
-                <a href="m/index.html" class="sidebar-item" style="padding: 0.35rem 0.5rem; font-size: 0.74rem; background: var(--bg-subtle); justify-content: center; border: 1px solid var(--border-color); margin-bottom: 0.4rem; text-decoration: none;">
-                    <span>📱 モバイル表示</span>
-                </a>
+                <div style="display: flex; gap: 0.4rem; margin-bottom: 0.4rem;">
+                    <button type="button" id="sidebar-lang-btn" title="${t('langTitle')}" class="sidebar-item" style="flex: 1; padding: 0.35rem 0.5rem; font-size: 0.74rem; background: var(--bg-subtle); justify-content: center; border: 1px solid var(--border-color); cursor: pointer;">
+                        <span>🌐</span>
+                        <span id="sidebar-lang-text" style="margin-left: 0.35rem; font-weight: 600;">${t('langToggle')}</span>
+                    </button>
+                    <a href="m/index.html" class="sidebar-item" style="flex: 1; padding: 0.35rem 0.5rem; font-size: 0.74rem; background: var(--bg-subtle); justify-content: center; border: 1px solid var(--border-color); text-decoration: none;">
+                        <span>${t('btnMobile')}</span>
+                    </a>
+                </div>
                 <div class="sidebar-user-card" id="sidebar-user-container">
                     <div class="sidebar-user-avatar" id="sidebar-user-avatar">F</div>
                     <div style="flex: 1; min-width: 0;">
                         <div class="sidebar-user-name" id="sidebar-user-name">Flora Student</div>
-                        <div style="font-size: 0.68rem; color: var(--text-muted);">ローカル同期中</div>
+                        <div id="sidebar-sync-text" style="font-size: 0.68rem; color: var(--text-muted);">${t('syncingLocal')}</div>
                     </div>
-                    <button id="sidebar-logout-btn" onclick="if(window.handleFloraLogout){window.handleFloraLogout();}else{localStorage.removeItem('flora_user'); location.reload();}" title="ログアウト" style="background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 0.2rem 0.4rem; border-radius: 4px; font-size: 0.75rem;">
+                    <button id="sidebar-logout-btn" onclick="if(window.handleFloraLogout){window.handleFloraLogout();}else{localStorage.removeItem('flora_user'); location.reload();}" title="${t('logout')}" style="background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 0.2rem 0.4rem; border-radius: 4px; font-size: 0.75rem;">
                         🚪
                     </button>
                 </div>
             </div>
         `;
 
-        // ユーザー情報の同期 & 壁紙イベント & ダークモードイベントのバインド
+        // ユーザー情報の同期 & 壁紙イベント & ダークモードイベント & 言語切替イベントのバインド
         updateSidebarUser();
         setupWallpaperControls();
         setupDarkModeControls();
+        setupLanguageControls();
+        updatePageLanguage();
+    }
+
+    // 🌐 言語切替コントロール
+    function setupLanguageControls() {
+        const btn = document.getElementById('sidebar-lang-btn');
+        if (!btn) return;
+        btn.onclick = () => {
+            const nextLang = getLanguage() === 'ja' ? 'en' : 'ja';
+            setLanguage(nextLang);
+        };
     }
 
     // 🌙 ダークモード コントロール
@@ -226,14 +446,10 @@
         const text = document.getElementById('sidebar-dark-mode-text');
         if (!btn) return;
 
-        function isDark() {
-            return document.documentElement.classList.contains('dark');
-        }
-
         function updateUI() {
-            const dark = isDark();
+            const dark = isDarkModeActive();
             if (icon) icon.textContent = dark ? '☀️' : '🌙';
-            if (text) text.textContent = dark ? 'ライト' : 'ダーク';
+            if (text) text.textContent = dark ? t('btnLight') : t('btnDark');
             const meta = document.getElementById('meta-theme-color');
             if (meta) meta.setAttribute('content', dark ? '#131314' : '#059669');
         }
@@ -516,9 +732,11 @@
                     }
                 }
             } else {
-                if (nameEl) nameEl.textContent = '未ログイン';
+                if (nameEl) nameEl.textContent = t('notLoggedIn');
                 if (avatarEl) avatarEl.textContent = '👤';
             }
+            const syncEl = document.getElementById('sidebar-sync-text');
+            if (syncEl) syncEl.textContent = t('syncingLocal');
         } catch(e) {}
     }
 
