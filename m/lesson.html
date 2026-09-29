@@ -4439,7 +4439,13 @@ ${subjectGuide}
         })();
 
         // ==================== 🧠 暗記事項（Memorization Points）管理 ====================
-        const MEMORIZATION_SYSTEM_INSTRUCTION = `あなたは高校・大学受験の暗記項目抽出プロ講師AIです。
+        function getMobileMemorizationSystemInstruction(subjectName = "") {
+            const isScience = isMathOrScienceSubject(subjectName);
+            const mathRule = isScience
+                ? `5. 数学・物理・化学の数式や公式は必ず $ $ または $$ $$ で囲んでください。`
+                : `5. 【最重要：LaTeX記法禁止】社会・文系科目のため、$ や $$ や \\fbox や \\text などの LaTeX 記法は【一切使用禁止】です。穴埋めは【 】や [ ] を使い、すべて自然な日本語のプレーンテキストで記述してください。`;
+
+            return `あなたは高校・大学受験の暗記項目抽出プロ講師AIです。
 与えられた授業ノート・参考書テキストから、共通テスト・定期試験・二次試験で満点を取るために絶対に暗記すべき重要事項（専門用語、人名、事件名、制度名、法令名、条約、地名、公式、定理、解法の急所など）を1つも漏らさず全て抽出してください。
 
 【厳格ルール】
@@ -4447,7 +4453,8 @@ ${subjectGuide}
 2. question には「問い・重要用語・公式名」、answer には「答え・定義・公式・年号・概要」、note には「つまずきやすい罠・関連知識・覚え方」を簡潔に記述してください。
 3. 漢字の直後に（ひらがな）を付けないでください。正式な漢字表記のみで記述してください。
 4. category には「重要用語」「基本公式」「因果関係」「制度・条約」「解法急所」等の適切なカテゴリ名を付けてください。
-5. 数式は必ず $ $ または $$ $$ で囲んでください。`;
+${mathRule}`;
+        }
 
         const MEMORIZATION_RESPONSE_SCHEMA = {
             type: "OBJECT",
@@ -4517,11 +4524,13 @@ ${extractedText || "（本文なし）"}
 
 【抽出指令】
 上記の本文全体から、試験や入試で満点を取るために暗記すべき重要事項、専門用語、人名、事件名、制度名、法令名、条約、地名、文化財、年号、因果関係、公式、定理、反応式、解法急所を【1つも漏らさず全て】抽出してください。
-※漢字の後ろに括弧でひらがな（読み仮名）を付けることは【厳禁】です。正式な漢字表記のみでスッキリ記述してください。`;
+※漢字の後ろに括弧でひらがな（読み仮名）を付けることは【厳禁】です。正式な漢字表記のみでスッキリ記述してください。
+${!isMathOrScienceSubject(subjectName) ? '※LaTeX記法（$記号や\\fbox等）は一切使用禁止です。プレーンな日本語で出力してください。' : ''}`;
 
+            const systemInstruction = getMobileMemorizationSystemInstruction(subjectName);
             const result = await callGeminiJSON(
                 [{ text: singlePrompt }],
-                MEMORIZATION_SYSTEM_INSTRUCTION,
+                systemInstruction,
                 { responseSchema: MEMORIZATION_RESPONSE_SCHEMA, featureId: "memorization_points", silentFallback: true }
             );
 

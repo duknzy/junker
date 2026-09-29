@@ -9938,7 +9938,21 @@ ${subjectGuide}
             return s.trim();
         }
 
-        const MEMORIZATION_SYSTEM_INSTRUCTION = `あなたは生徒の暗記学習を支援するフラッシュカード・重要用語抽出専門AIです。
+        // 🧠 教科連動型・暗記事項抽出システムプロンプト生成関数
+        // 文系科目（社会・政経・歴史等）ではLaTeX（$や\fbox等）を完全禁止し、自然な日本語テキストで出力
+        // 理系科目（数学・理科等）では数式を $...$ で厳密に保護
+        function getMemorizationSystemInstruction(subjectName = "") {
+            const isScience = isMathOrScienceSubject(subjectName);
+
+            const mathRule = isScience
+                ? `【数式・理系記法ルール】
+- 数学・物理・化学の公式、定理、電離式、化学反応式、計算式は、途中で切らず完全な LaTeX 数式として必ず $ ... $ で囲んで記述してください（例: $P(\\bar{A}) = 1 - P(A)$）。`
+                : `【最重要：LaTeX記法の完全禁止（文系・社会科目ルール）】
+- この授業は社会・文系科目のため、$ や $$ や \\fbox や \\text などの LaTeX 記法・数式記号は【一切使用禁止】です！
+- 穴埋めや空欄の表記が必要な場合は、必ず通常の日本語記号【 】や [ ] を使用してください。
+- 人名、事件名、制度名、条約名、用語、年号などはすべて自然な日本語のプレーンテキストで記述してください。`;
+
+            return `あなたは生徒の暗記学習を支援するフラッシュカード・重要用語抽出専門AIです。
 渡された「授業ノート・教科書本文」を徹底的に精読し、この単元・パートの定期テストや入試で満点を取るために絶対に暗記すべき重要事項・専門用語・定義・人名・年代・事件・制度・公式を【1つも漏らさず全て】抽出して、フラッシュカード形式（表面＝問い、裏面＝答え）で出力してください。
 
 【最重要ルール1：個数の手加減・絞り込みの完全禁止（徹底網羅）】
@@ -9955,23 +9969,15 @@ ${subjectGuide}
 1. 表面（question）：フラッシュカードの表面に表示する「問い・公式名・問いかけ・キーワード」
    - 【絶対厳禁】表面（question）の中に答えとなる結論・定義・数式・具体的操作を絶対に書かないでください！
      × 悪い例: 「事象Aが起こらない事象を余事象といい、確率は P(A)=1-P(A) となる」
-     ○ 良い例: 「事象 $A$ が起こらない事象（余事象 $\bar{A}$）の定義とその確率の公式は？」
+     ○ 良い例: 「事象 A が起こらない事象（余事象）の定義とその確率の公式は？」
      × 悪い例: 「不況期（金融緩和）には買いオペ・金利引き下げ・準備率引き下げを行う」
      ○ 良い例: 「不況期（金融緩和）における日本銀行の3大政策（公開市場操作・政策金利・預金準備率）の操作方法は？」
-     × 悪い例: 「水酸化ナトリウムの電離式：NaOH → Na+ + OH-」
-     ○ 良い例: 「水酸化ナトリウムの電離式とその液性は？」
-2. 裏面（answer）：フラッシュカードの裏面に表示する「核心の答え・結論・正確な数式・定義」
-   - 数式は途中で切らず、完全な LaTeX 数式として $ ... $ で記述してください（例: $P(\bar{A}) = 1 - P(A)$）。
+2. 裏面（answer）：フラッシュカードの裏面に表示する「核心の答え・結論・正確な定義・公式」
 3. 補足・コツ（note）：
    - 覚え方のコツ、問題文での見分け方、注意点などがあれば記述してください（無ければ空文字）。
 
-対象にすべきもの:
-- 歴史・公民・社会：人名、事件名、政策名、法令名、条約名、年代、制度、機関名、因果関係
-- 数学・物理：公式・法則・定理・等式（覚えるべき結論の形）
-- 化学・生物：化学反応式・電離式・反応名・反応条件・現象（色の変化など）・器官名・ホルモン名
-- 英語・国語：重要構文、文法規則、文学史、重要語句の正確な定義
-
-数式は必ず $ $ で囲み、抜け漏れなく簡潔かつ正確に出力してください。`;
+${mathRule}`;
+        }
 
         // 【案A：パート別分割抽出方式】
         // extractedText: 授業ノート/参考書書き起こし全文, lessonTitle: 授業タイトル, subjectName: 教科名, lessonParts: パート配列
@@ -10006,9 +10012,10 @@ ${extractedText || "（本文なし）"}
 ※漢字の後ろに括弧でひらがな（読み仮名）を付けることは【厳禁】です。正式な漢字表記のみでスッキリ記述してください。`;
 
                     try {
+                        const systemInstruction = getMemorizationSystemInstruction(subjectName);
                         const result = await callGeminiJSON(
                             [{ text: partPrompt }],
-                            MEMORIZATION_SYSTEM_INSTRUCTION,
+                            systemInstruction,
                             { responseSchema: MEMORIZATION_RESPONSE_SCHEMA, featureId: "memorization_points", silentFallback: true, keyOffset: pIdx }
                         );
                         const list = Array.isArray(result?.memorization_points) ? result.memorization_points : [];
@@ -10076,7 +10083,7 @@ ${extractedText || "（本文なし）"}
 
             const result = await callGeminiJSON(
                 [{ text: singlePrompt }],
-                MEMORIZATION_SYSTEM_INSTRUCTION,
+                systemInstruction,
                 { responseSchema: MEMORIZATION_RESPONSE_SCHEMA, featureId: "memorization_points", silentFallback: true }
             );
             const list = Array.isArray(result?.memorization_points) ? result.memorization_points : [];
