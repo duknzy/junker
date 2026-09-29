@@ -4596,9 +4596,10 @@
             return items;
         }
 
-        // 🧹 暗記事項からふりがな（ひらがな）の括弧表記を徹底除去する関数
+        // 🧹 暗記事項からふりがな（ひらがな）の括弧表記を徹底除去する関数（高速ガード付き）
         function stripFurigana(text) {
             if (!text || typeof text !== "string") return text || "";
+            if (!text.includes('（') && !text.includes('(') && !text.includes('<ruby')) return text.trim();
             let s = text.replace(/<ruby>(.*?)<rt>.*?<\/rt><\/ruby>/g, '$1');
             let prev;
             let count = 0;
@@ -6516,7 +6517,6 @@
             // 単元・分類グループ表示（単語帳・辞書ビュー）
             if (memorizeViewMode === "grouped") {
                 renderMemorizeGrouped(container, items);
-                scheduleMathTypeset(container);
                 if (typeof window.updateBatchBarUI === "function") window.updateBatchBarUI();
                 return;
             }
@@ -6564,9 +6564,67 @@
             if (typeof window.updateBatchBarUI === "function") window.updateBatchBarUI();
         }
 
-        // 🧠 単元・教科別の辞書・単語帳ビュー（オンデマンド遅延描画で3000件超も爆速描画）
+        // 🧠 単元・教科別の辞書・単語帳ビュー（オンデマンド遅延描画＆チャンク化で4000件超も爆速描画）
+        const DICT_UNIT_PAGE_SIZE = 40;
+        let dictUnitRenderLimitMap = {};
         let dictUnitItemsDataMap = {};
         let expandedDictUnits = new Set();
+
+        function renderDictWordsChunkHtml(unitId, unitItems, limit) {
+            if (!unitItems || unitItems.length === 0) return "";
+            const visibleChunk = unitItems.slice(0, limit);
+            const hasMore = unitItems.length > limit;
+            const remaining = unitItems.length - limit;
+
+            let chunkHtml = visibleChunk.map(p => renderDictWordRow(p)).join("");
+            if (hasMore) {
+                chunkHtml += `
+                    <div class="dict-unit-load-more" id="dict-load-more-${unitId}" style="display:flex; justify-content:center; align-items:center; gap:0.5rem; flex-wrap:wrap; padding:0.75rem 0.5rem; margin-top:0.4rem; background:var(--bg-subtle); border:1px dashed var(--border-color); border-radius:var(--radius-md);">
+                        <button type="button" class="flora-btn flora-btn-secondary" style="font-size:0.75rem; font-weight:700; padding:0.3rem 0.85rem;" onclick="loadMoreUnitWords('${unitId}', event)">
+                            ▼ さらに ${Math.min(DICT_UNIT_PAGE_SIZE, remaining)} 件を表示（残り ${remaining} 件 / 全 ${unitItems.length} 件）
+                        </button>
+                        <button type="button" class="flora-btn flora-btn-secondary" style="font-size:0.74rem; font-weight:700; padding:0.3rem 0.65rem;" onclick="loadAllUnitWords('${unitId}', event)">
+                            ⚡ 全${unitItems.length}件を表示
+                        </button>
+                    </div>
+                `;
+            }
+            return chunkHtml;
+        }
+
+        window.loadMoreUnitWords = function(unitId, e) {
+            if (e) e.stopPropagation();
+            const items = dictUnitItemsDataMap[unitId] || [];
+            const currentLimit = dictUnitRenderLimitMap[unitId] || DICT_UNIT_PAGE_SIZE;
+            const newLimit = currentLimit + DICT_UNIT_PAGE_SIZE;
+            dictUnitRenderLimitMap[unitId] = newLimit;
+
+            const unitEl = document.getElementById(`dict-unit-${unitId}`);
+            if (!unitEl) return;
+            const listEl = unitEl.querySelector(".dict-word-list");
+            if (!listEl) return;
+
+            listEl.innerHTML = renderDictWordsChunkHtml(unitId, items, newLimit);
+            listEl.setAttribute("data-loaded", "true");
+            listEl.style.display = "flex";
+            scheduleMathTypeset(listEl);
+        };
+
+        window.loadAllUnitWords = function(unitId, e) {
+            if (e) e.stopPropagation();
+            const items = dictUnitItemsDataMap[unitId] || [];
+            dictUnitRenderLimitMap[unitId] = items.length;
+
+            const unitEl = document.getElementById(`dict-unit-${unitId}`);
+            if (!unitEl) return;
+            const listEl = unitEl.querySelector(".dict-word-list");
+            if (!listEl) return;
+
+            listEl.innerHTML = renderDictWordsChunkHtml(unitId, items, items.length);
+            listEl.setAttribute("data-loaded", "true");
+            listEl.style.display = "flex";
+            scheduleMathTypeset(listEl);
+        };
 
         function renderMemorizeGrouped(container, items) {
             dictUnitItemsDataMap = {};
@@ -6610,6 +6668,7 @@
 
             let isFirstUnit = true;
             const currentSort = sortSelect ? sortSelect.value : "custom";
+            const todayStr = getTodayStr();
 
             Object.entries(groupedBySubject).forEach(([subj, lessonMap]) => {
                 const subjectTotalWords = Object.values(lessonMap).reduce((sum, list) => sum + list.length, 0);
@@ -6620,8 +6679,30 @@
                     </div>
                 `;
 
-                // 📚 教科内での授業リストをソート
+                // 📚 教科内での授業リストをソート（大量データ対応：ソートキーを事前計算してO(N log N)比較の劇的高速化）
                 const lessonEntries = Object.entries(lessonMap);
+                const lessonMetrics = new Map();
+                lessonEntries.forEach(([lid, uItems]) => {
+                    let minTime = Infinity;
+                    let maxTime = 0;
+                    let masteredCount = 0;
+                    let dueCount = 0;
+                    for (let i = 0; i < uItems.length; i++) {
+                        const p = uItems[i];
+                        const t = new Date(p.insightUpdatedAt || p.createdAt || 0).getTime();
+                        if (t > maxTime) maxTime = t;
+                        if (t < minTime) minTime = t;
+                        if (p.status === "mastered") masteredCount++;
+                        if (p.status === "weak" || (p.nextReviewDate && p.nextReviewDate <= todayStr)) dueCount++;
+                    }
+                    lessonMetrics.set(lid, {
+                        minTime: minTime === Infinity ? 0 : minTime,
+                        maxTime,
+                        masteryRate: masteredCount / (uItems.length || 1),
+                        dueCount
+                    });
+                });
+
                 lessonEntries.sort(([lidA, itemsA], [lidB, itemsB]) => {
                     const lessonA = rawLessons[lidA] || {};
                     const lessonB = rawLessons[lidB] || {};
@@ -6647,30 +6728,19 @@
                         return itemsB.length - itemsA.length;
                     }
                     if (currentSort === "mastery_asc" || currentSort === "mastery_weak_first") {
-                        const mastA = itemsA.filter(p => p.status === "mastered").length / (itemsA.length || 1);
-                        const mastB = itemsB.filter(p => p.status === "mastered").length / (itemsB.length || 1);
-                        return mastA - mastB;
+                        return (lessonMetrics.get(lidA)?.masteryRate || 0) - (lessonMetrics.get(lidB)?.masteryRate || 0);
                     }
                     if (currentSort === "mastery_mastered_first") {
-                        const mastA = itemsA.filter(p => p.status === "mastered").length / (itemsA.length || 1);
-                        const mastB = itemsB.filter(p => p.status === "mastered").length / (itemsB.length || 1);
-                        return mastB - mastA;
+                        return (lessonMetrics.get(lidB)?.masteryRate || 0) - (lessonMetrics.get(lidA)?.masteryRate || 0);
                     }
                     if (currentSort === "srs_due") {
-                        const today = getTodayStr();
-                        const dueA = itemsA.filter(p => p.status === "weak" || (p.nextReviewDate && p.nextReviewDate <= today)).length;
-                        const dueB = itemsB.filter(p => p.status === "weak" || (p.nextReviewDate && p.nextReviewDate <= today)).length;
-                        return dueB - dueA;
+                        return (lessonMetrics.get(lidB)?.dueCount || 0) - (lessonMetrics.get(lidA)?.dueCount || 0);
                     }
                     if (currentSort === "oldest") {
-                        const timeA = Math.min(...itemsA.map(p => new Date(p.insightUpdatedAt || p.createdAt || 0).getTime()));
-                        const timeB = Math.min(...itemsB.map(p => new Date(p.insightUpdatedAt || p.createdAt || 0).getTime()));
-                        return timeA - timeB;
+                        return (lessonMetrics.get(lidA)?.minTime || 0) - (lessonMetrics.get(lidB)?.minTime || 0);
                     }
                     // newest
-                    const timeA = Math.max(...itemsA.map(p => new Date(p.insightUpdatedAt || p.createdAt || 0).getTime()));
-                    const timeB = Math.max(...itemsB.map(p => new Date(p.insightUpdatedAt || p.createdAt || 0).getTime()));
-                    return timeB - timeA;
+                    return (lessonMetrics.get(lidB)?.maxTime || 0) - (lessonMetrics.get(lidA)?.maxTime || 0);
                 });
 
                 const totalLessonsInSubj = lessonEntries.length;
@@ -6681,8 +6751,10 @@
                     unitItems.sort((a, b) => compareLessonItems(a, b, currentSort));
                     dictUnitItemsDataMap[unitId] = unitItems;
 
-                    // 初期展開フラグ：検索時は全開、または以前開いた単元、または最初の1単元のみ開く
-                    const isExpanded = autoExpandAll || expandedDictUnits.has(unitId) || (isFirstUnit && totalUnitsCount <= 3);
+                    // ⚡ 大量データ安全展開: 全単語数が150語を超える巨大データや1単元が50語を超える場合は、
+                    // 初期表示での自動全開を防止し、ユーザーが必要な単元をワンタップで開く仕様にしてフリーズを完全防止。
+                    const isHugeDataset = totalWordsCount > 150 || unitItems.length > 50;
+                    const isExpanded = autoExpandAll || expandedDictUnits.has(unitId) || (isFirstUnit && totalUnitsCount <= 3 && !isHugeDataset);
                     if (isExpanded) expandedDictUnits.add(unitId);
                     isFirstUnit = false;
 
@@ -6696,8 +6768,9 @@
                     const canMoveUp = lessonIdx > 0;
                     const canMoveDown = lessonIdx < totalLessonsInSubj - 1;
 
-                    // ⚡ 遅延描画（Lazy Render）：展開されている単元のみ初期HTMLを生成、折りたたみ単元は開いた時にオンデマンド生成
-                    const wordsHtml = isExpanded ? unitItems.map(p => renderDictWordRow(p)).join("") : "";
+                    // ⚡ 段階的チャンク描画（Lazy Render ＋ Pagination）：展開されている単元のみ初期表示チャンクを生成
+                    const currentLimit = dictUnitRenderLimitMap[unitId] || DICT_UNIT_PAGE_SIZE;
+                    const wordsHtml = isExpanded ? renderDictWordsChunkHtml(unitId, unitItems, currentLimit) : "";
 
                     html += `
                         <div class="dict-unit-item ${isExpanded ? '' : 'collapsed'}" id="dict-unit-${unitId}" data-unit-id="${unitId}">
@@ -6760,7 +6833,7 @@
             if (typeof window.updateBatchBarUI === "function") window.updateBatchBarUI();
         }
 
-        // 🧠 単語帳ビューの1行アイテム
+        // 🧠 単語帳ビューの1行アイテム（数式不要な通常テキストはMathJax完全バイパス）
         function renderDictWordRow(p) {
             let statusClass = "unlearned";
             let statusLabel = "🌱 未習得";
@@ -6797,6 +6870,10 @@
             const itemKey = `${p.lessonId}:${p.memoId}`;
             const isSelected = selectedMemorizeKeys.has(itemKey);
 
+            // ⚡ 数式記号が含まれる場合のみMathJaxの監視クラス(tex2jax_process)を付与（95%以上のテキストで不要なDOM走査を完全回避）
+            const qHasMath = containsMathSyntax(cleanQ);
+            const aHasMath = containsMathSyntax(cleanA) || (p.rawNote && containsMathSyntax(p.rawNote));
+
             return `
                 <div class="dict-word-row ${isBatchManageMode ? 'batch-mode' : ''} ${isSelected ? 'is-batch-selected' : ''}" data-item-key="${itemKey}">
                     ${isBatchManageMode ? `
@@ -6813,16 +6890,16 @@
                             <button type="button" class="dict-srs-quick-btn srs-good" onclick="rateCardDirectly('${p.progressKey}', 3, event)" title="覚えた！(次回3〜7日後 / Lv+1)">👌 覚えた</button>
                         </div>
                     </div>
-                    <div class="dict-q-box tex2jax_process" onclick="startEditMemorizeFromInsights('${p.lessonId}', '${p.memoId}', event)" title="クリックして編集">
-                        <span style="font-weight:800; color:#4338ca; font-size:0.75rem; margin-right:0.35rem; background:rgba(99,102,241,0.1); padding:0.15rem 0.35rem; border-radius:4px;">Q.</span>${normalizeMathSyntax(cleanQ)}
+                    <div class="dict-q-box ${qHasMath ? 'tex2jax_process' : ''}" onclick="startEditMemorizeFromInsights('${p.lessonId}', '${p.memoId}', event)" title="クリックして編集">
+                        <span style="font-weight:800; color:#4338ca; font-size:0.75rem; margin-right:0.35rem; background:rgba(99,102,241,0.1); padding:0.15rem 0.35rem; border-radius:4px;">Q.</span>${qHasMath ? normalizeMathSyntax(cleanQ) : escapeHtml(cleanQ)}
                     </div>
-                    <div class="dict-a-box tex2jax_process ${isCovered ? 'is-covered' : 'is-revealed'}" data-lesson-id="${p.lessonId}" data-memo-id="${p.memoId}" onclick="handleDictAnswerClick('${p.lessonId}', '${p.memoId}', event)" title="${aTitle}">
+                    <div class="dict-a-box ${aHasMath ? 'tex2jax_process' : ''} ${isCovered ? 'is-covered' : 'is-revealed'}" data-lesson-id="${p.lessonId}" data-memo-id="${p.memoId}" onclick="handleDictAnswerClick('${p.lessonId}', '${p.memoId}', event)" title="${aTitle}">
                         <div class="red-sheet-cover">
                             <span>📕 タップして解答を表示</span>
                         </div>
                         <div class="dict-a-content">
-                            <span style="font-weight:800; color:#059669; font-size:0.75rem; margin-right:0.35rem; background:rgba(16,185,129,0.12); padding:0.15rem 0.35rem; border-radius:4px;">A.</span>${normalizeMathSyntax(cleanA)}
-                            ${p.rawNote ? `<div style="font-size:0.75rem; color:#d97706; margin-top:0.3rem; background:rgba(245,158,11,0.08); padding:0.25rem 0.5rem; border-radius:4px;">💡 ${normalizeMathSyntax(p.rawNote)}</div>` : ''}
+                            <span style="font-weight:800; color:#059669; font-size:0.75rem; margin-right:0.35rem; background:rgba(16,185,129,0.12); padding:0.15rem 0.35rem; border-radius:4px;">A.</span>${aHasMath ? normalizeMathSyntax(cleanA) : escapeHtml(cleanA)}
+                            ${p.rawNote ? `<div style="font-size:0.75rem; color:#d97706; margin-top:0.3rem; background:rgba(245,158,11,0.08); padding:0.25rem 0.5rem; border-radius:4px;">💡 ${containsMathSyntax(p.rawNote) ? normalizeMathSyntax(p.rawNote) : escapeHtml(p.rawNote)}</div>` : ''}
                             ${userMemoText ? `<div style="font-size:0.75rem; color:#059669; margin-top:0.3rem; background:rgba(16,185,129,0.08); padding:0.25rem 0.5rem; border-radius:4px; border-left:3px solid #10B981;">📝 <strong>自分用メモ:</strong> ${escapeHtml(userMemoText)}</div>` : ''}
                         </div>
                         ${isRedSheetActive && isRevealed ? `<span class="red-sheet-peek-indicator" title="クリックで隠す">👁️ 表示中</span>` : ''}
@@ -6844,7 +6921,7 @@
             `;
         }
 
-        // 🧠 単元の開閉トグル（オンデマンドで単語リストを描画）
+        // 🧠 単元の開閉トグル（オンデマンドで単語リストを描画＆チャンク化）
         window.toggleDictUnitCollapse = function(unitId, e) {
             if (e) e.stopPropagation();
             const unitEl = document.getElementById(`dict-unit-${unitId}`);
@@ -6860,11 +6937,12 @@
                 unitEl.classList.remove("collapsed");
                 if (btnEl) btnEl.classList.remove("collapsed");
 
-                // まだ単語HTMLが未生成の場合はオンデマンド生成
+                // まだ単語HTMLが未生成の場合はオンデマンド生成（チャンク制限付き）
                 if (listEl) {
                     if (listEl.getAttribute("data-loaded") !== "true") {
                         const items = dictUnitItemsDataMap[unitId] || [];
-                        listEl.innerHTML = items.map(p => renderDictWordRow(p)).join("");
+                        const currentLimit = dictUnitRenderLimitMap[unitId] || DICT_UNIT_PAGE_SIZE;
+                        listEl.innerHTML = renderDictWordsChunkHtml(unitId, items, currentLimit);
                         listEl.setAttribute("data-loaded", "true");
                     }
                     listEl.style.display = "flex";
@@ -6880,7 +6958,7 @@
             }
         };
 
-        // 🧠 すべての単元を展開
+        // 🧠 すべての単元を展開（安全なチャンク制限で一括展開）
         window.expandAllDictUnits = function() {
             Object.keys(dictUnitItemsDataMap).forEach(unitId => {
                 expandedDictUnits.add(unitId);
@@ -6893,7 +6971,8 @@
                     if (listEl) {
                         if (listEl.getAttribute("data-loaded") !== "true") {
                             const items = dictUnitItemsDataMap[unitId] || [];
-                            listEl.innerHTML = items.map(p => renderDictWordRow(p)).join("");
+                            const currentLimit = dictUnitRenderLimitMap[unitId] || DICT_UNIT_PAGE_SIZE;
+                            listEl.innerHTML = renderDictWordsChunkHtml(unitId, items, currentLimit);
                             listEl.setAttribute("data-loaded", "true");
                         }
                         listEl.style.display = "flex";
