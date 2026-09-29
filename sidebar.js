@@ -695,23 +695,11 @@
                 });
                 return;
             }
-
-            // フォルダ内の wallpaper.jpg を自動プローブ
-            const probeImg = new Image();
-            probeImg.onload = () => {
-                applyWallpaper('./wallpaper.jpg');
-            };
-            probeImg.src = './wallpaper.jpg';
         }).catch(err => {
             console.warn('[Flora] IndexedDB wallpaper load failed, trying localStorage fallback:', err);
-            // IndexedDB が使えない場合は localStorage を試す
             const fallback = localStorage.getItem('flora_wallpaper');
             if (fallback) {
                 applyWallpaper(fallback);
-            } else {
-                const probeImg = new Image();
-                probeImg.onload = () => { applyWallpaper('./wallpaper.jpg'); };
-                probeImg.src = './wallpaper.jpg';
             }
         });
     }

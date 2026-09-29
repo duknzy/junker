@@ -276,21 +276,8 @@
                 }).catch(() => {});
                 return;
             }
-            // フォールバック wallpaper.jpg のプローブ
-            const probeImg = new Image();
-            probeImg.onload = () => {
-                applyWallpaper('../wallpaper.jpg');
-            };
-            probeImg.onerror = () => {
-                const probeImg2 = new Image();
-                probeImg2.onload = () => applyWallpaper('/wallpaper.jpg');
-                probeImg2.src = '/wallpaper.jpg';
-            };
-            probeImg.src = '../wallpaper.jpg';
         }).catch(err => {
-            console.warn('[Flora Mobile] Wallpaper DB load fallback:', err);
-            const legacy = localStorage.getItem('flora_wallpaper');
-            if (legacy) applyWallpaper(legacy);
+            console.warn('[Flora Mobile] Wallpaper DB load:', err);
         });
     }
 

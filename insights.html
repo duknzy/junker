@@ -3483,10 +3483,64 @@
         let rawQnaLogs = {};
         let rawLessons = {};
         let rawMemorizeProgress = {}; // users/${user.uid}/memorizeProgress のキャッシュ
+        try {
+            const cachedProg = localStorage.getItem("flora_srs_memorize_progress");
+            if (cachedProg) rawMemorizeProgress = JSON.parse(cachedProg);
+        } catch(_) {}
 
         // Firebaseキーのサニタイズ（. # $ [ ] / を安全化）
         function sanitizeDbKey(key) {
             return String(key || "").replace(/[.#$\[\]\/]/g, "_");
+        }
+
+        // 🛡️ SRS 進捗データの双方向安全マージ（端末間の進捗若返り・競合完全防御）
+        function mergeSrsProgressData(localMap, remoteMap) {
+            const result = { ...(localMap || {}) };
+            if (!remoteMap) return result;
+
+            for (const [key, remoteItem] of Object.entries(remoteMap)) {
+                if (!remoteItem || typeof remoteItem !== 'object') continue;
+                const safeK = sanitizeDbKey(key);
+                const localItem = result[safeK] || result[key];
+
+                if (!localItem) {
+                    result[safeK] = remoteItem;
+                    continue;
+                }
+
+                const remoteTime = remoteItem.updatedAt || remoteItem.lastReviewedAt || 0;
+                const localTime = localItem.updatedAt || localItem.lastReviewedAt || 0;
+
+                if (remoteTime > localTime) {
+                    // リモート（別端末）の進捗が新しい
+                    result[safeK] = remoteItem;
+                } else if (localTime > remoteTime) {
+                    // ローカルの進捗が新しい（未反映分を保持しFirebaseへ自動反映）
+                    result[safeK] = localItem;
+                    if (currentUser && currentUser.uid) {
+                        update(ref(database, `users/${currentUser.uid}/memorizeProgress/${safeK}`), localItem).catch(() => {});
+                    }
+                } else {
+                    // 同時またはタイムスタンプ不確定時：高い到達レベル・反復回数を厳格に保護
+                    const maxLevel = Math.max(localItem.boxLevel || 0, remoteItem.boxLevel || 0);
+                    const maxReps = Math.max(localItem.reps || 0, remoteItem.reps || 0);
+                    const maxLapses = Math.max(localItem.lapses || 0, remoteItem.lapses || 0);
+                    const chosenDate = (remoteItem.nextReviewDate && (!localItem.nextReviewDate || remoteItem.nextReviewDate > localItem.nextReviewDate))
+                        ? remoteItem.nextReviewDate
+                        : (localItem.nextReviewDate || remoteItem.nextReviewDate || getTodayStr());
+
+                    result[safeK] = {
+                        ...remoteItem,
+                        ...localItem,
+                        boxLevel: maxLevel,
+                        reps: maxReps,
+                        lapses: maxLapses,
+                        nextReviewDate: chosenDate,
+                        updatedAt: Math.max(localTime, remoteTime, Date.now())
+                    };
+                }
+            }
+            return result;
         }
 
         // 本日の日付文字列 YYYY-MM-DD
@@ -4831,9 +4885,21 @@
                 updatedAt: Date.now()
             };
             rawMemorizeProgress[pKey] = progressData;
+            try {
+                localStorage.setItem("flora_srs_memorize_progress", JSON.stringify(rawMemorizeProgress));
+            } catch(_) {}
 
             try {
-                await update(ref(database, `users/${currentUser.uid}/memorizeProgress/${pKey}`), progressData);
+                const targetRef = ref(database, `users/${currentUser.uid}/memorizeProgress/${pKey}`);
+                const snap = await get(targetRef);
+                const remote = snap.val();
+                if (remote && remote.updatedAt && remote.updatedAt > progressData.updatedAt) {
+                    console.info("[Flora PC SRS] 別端末で新しい進捗があるため上書きを防止しました:", pKey);
+                    rawMemorizeProgress[pKey] = remote;
+                    try { localStorage.setItem("flora_srs_memorize_progress", JSON.stringify(rawMemorizeProgress)); } catch(_) {}
+                } else {
+                    await update(targetRef, progressData);
+                }
             } catch (err) {
                 console.warn("Failed to persist progress:", err);
             }
@@ -8134,11 +8200,28 @@
         }
 
         function queueSrsUpdate(pKey, progressData) {
-            pendingSrsUpdates[pKey] = progressData;
-            // 🚀 PC・スマホ間でズレが生じないよう即時Firebase書き込み（WebSocket経由で超軽量）
+            const safeKey = sanitizeDbKey(pKey);
+            pendingSrsUpdates[safeKey] = progressData;
+            rawMemorizeProgress[safeKey] = progressData;
+            try {
+                localStorage.setItem("flora_srs_memorize_progress", JSON.stringify(rawMemorizeProgress));
+            } catch(_) {}
+
+            // 🚀 PC・スマホ間でズレが生じないよう即時Firebase書き込み（若返り完全防止）
             if (currentUser && currentUser.uid) {
-                update(ref(database, `users/${currentUser.uid}/memorizeProgress/${pKey}`), progressData)
-                    .catch(err => console.warn("[Flora SRS] Immediate progress save failed:", err));
+                const targetRef = ref(database, `users/${currentUser.uid}/memorizeProgress/${safeKey}`);
+                get(targetRef).then(snap => {
+                    const remote = snap.val();
+                    if (remote && remote.updatedAt && remote.updatedAt > progressData.updatedAt) {
+                        console.info("[Flora PC SRS] Remote is newer, skipping overwrite for:", safeKey);
+                        rawMemorizeProgress[safeKey] = remote;
+                        try { localStorage.setItem("flora_srs_memorize_progress", JSON.stringify(rawMemorizeProgress)); } catch(_) {}
+                        return;
+                    }
+                    update(targetRef, progressData).catch(err => console.warn("[Flora SRS] Immediate progress save failed:", err));
+                }).catch(() => {
+                    update(targetRef, progressData).catch(err => console.warn("[Flora SRS] Immediate progress save failed:", err));
+                });
             }
             if (srsFlushTimer) clearTimeout(srsFlushTimer);
             srsFlushTimer = setTimeout(() => {
@@ -8371,17 +8454,17 @@
         // カードIDの正規化取得
         function getCardProgressKey(card) {
             if (!card) return "";
-            if (card.progressKey) return card.progressKey;
+            if (card.progressKey) return sanitizeDbKey(card.progressKey);
             if (card.type === 'memorize') {
-                return `mem_${card.lessonId || 'l'}_${card.memoId || 'm'}`;
+                return sanitizeDbKey(`mem_${card.lessonId || 'l'}_${card.memoId || 'm'}`);
             } else if (card.type === 'lesson_memo') {
-                return `lm_${card.lessonId || 'l'}_${card.memoId || 'm'}`;
+                return sanitizeDbKey(`lm_${card.lessonId || 'l'}_${card.memoId || 'm'}`);
             } else if (card.type === 'problem') {
-                return `prob_${card.id || card.problemId || 'p'}`;
+                return sanitizeDbKey(`prob_${card.id || card.problemId || 'p'}`);
             } else if (card.type === 'qna') {
-                return `qna_${card.id || 'q'}`;
+                return sanitizeDbKey(`qna_${card.id || 'q'}`);
             } else if (card.type === 'mnemonic') {
-                return `mnem_${card.id || 'm'}`;
+                return sanitizeDbKey(`mnem_${card.id || 'm'}`);
             }
             return `item_${sanitizeDbKey(card.id || card.frontMain)}`;
         }
@@ -8448,7 +8531,7 @@
                     backNote: backNote,
                     lessonId: raw.lessonId,
                     memoId: raw.memoId,
-                    progressKey: `mem_${raw.lessonId || 'l'}_${raw.memoId || 'm'}`
+                    progressKey: sanitizeDbKey(`mem_${raw.lessonId || 'l'}_${raw.memoId || 'm'}`)
                 };
             } else if (type === 'problem') {
                 card = {
@@ -8465,7 +8548,7 @@
                     backAnswer: raw.insight || '',
                     backNote: raw.isPinned ? '⭐ スター付き重要メモ' : '',
                     problemId: raw.id,
-                    progressKey: `prob_${raw.id}`
+                    progressKey: sanitizeDbKey(`prob_${raw.id}`)
                 };
             } else if (type === 'lesson_memo') {
                 const part = raw.partTitle ? `第${(raw.partIndex || 0) + 1}回: ${raw.partTitle}` : '';
@@ -8484,7 +8567,7 @@
                     backNote: raw.pinned ? '⭐ ピン留め重要事項' : '',
                     lessonId: raw.lessonId,
                     memoId: raw.memoId,
-                    progressKey: `lm_${raw.lessonId || 'l'}_${raw.memoId || 'm'}`
+                    progressKey: sanitizeDbKey(`lm_${raw.lessonId || 'l'}_${raw.memoId || 'm'}`)
                 };
             } else if (type === 'qna') {
                 const msgs = raw.messages || [];
@@ -8506,7 +8589,7 @@
                     backAnswer: aText,
                     backNote: raw.shortTitle ? `元問題: ${raw.shortTitle}` : '',
                     problemId: raw.problemId,
-                    progressKey: `qna_${raw.id}`
+                    progressKey: sanitizeDbKey(`qna_${raw.id}`)
                 };
             } else if (type === 'mnemonic') {
                 card = {
@@ -8523,7 +8606,7 @@
                     backAnswer: raw.mnemonic || '',
                     backNote: raw.title ? `詳細: ${raw.title.slice(0, 80)}` : '',
                     problemId: raw.id,
-                    progressKey: `mnem_${raw.id}`
+                    progressKey: sanitizeDbKey(`mnem_${raw.id}`)
                 };
             }
 
@@ -10815,9 +10898,13 @@
                 handleFirebaseSync();
             });
 
-            // 🧠 間隔反復(SRS)の進捗データをリアルタイム購読（スマホ・PC相互同期）
+            // 🧠 間隔反復(SRS)の進捗データをリアルタイム購読（スマホ・PC相互同期・若返り完全防止）
             onValue(ref(database, 'users/' + user.uid + '/memorizeProgress'), (snapshot) => {
-                rawMemorizeProgress = snapshot.val() || {};
+                const remoteData = snapshot.val() || {};
+                rawMemorizeProgress = mergeSrsProgressData(rawMemorizeProgress, remoteData);
+                try {
+                    localStorage.setItem("flora_srs_memorize_progress", JSON.stringify(rawMemorizeProgress));
+                } catch(_) {}
                 // キャッシュを破棄して他端末での進捗変更を即時反映
                 invalidateInsightsDataCache();
 
