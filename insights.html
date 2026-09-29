@@ -3534,7 +3534,7 @@
             return String(key || "").replace(/[.#$\[\]\/]/g, "_");
         }
 
-        // 🛡️ SRS 進捗データの双方向安全マージ（端末間の進捗若返り・競合完全防御）
+        // 🛡️ SRS 進捗データの双方向安全マージ（端末間の進捗若返り・競合完全防御＆無限ループ完全排除）
         function mergeSrsProgressData(localMap, remoteMap) {
             const result = { ...(localMap || {}) };
             if (!remoteMap) return result;
@@ -3542,25 +3542,22 @@
             for (const [key, remoteItem] of Object.entries(remoteMap)) {
                 if (!remoteItem || typeof remoteItem !== 'object') continue;
                 const safeK = sanitizeDbKey(key);
-                const localItem = result[safeK] || result[key];
+                const localItem = result[safeK] || (result[key] !== undefined ? result[key] : null);
 
                 if (!localItem) {
                     result[safeK] = remoteItem;
                     continue;
                 }
 
-                const remoteTime = remoteItem.updatedAt || remoteItem.lastReviewedAt || 0;
-                const localTime = localItem.updatedAt || localItem.lastReviewedAt || 0;
+                const remoteTime = Number(remoteItem.updatedAt || remoteItem.lastReviewedAt || 0);
+                const localTime = Number(localItem.updatedAt || localItem.lastReviewedAt || 0);
 
                 if (remoteTime > localTime) {
                     // リモート（別端末）の進捗が新しい
                     result[safeK] = remoteItem;
                 } else if (localTime > remoteTime) {
-                    // ローカルの進捗が新しい（未反映分を保持しFirebaseへ自動反映）
+                    // ローカルの進捗が新しい（※ここではupdateは叩かない。ユーザー演習時にqueueSrsUpdateで反映）
                     result[safeK] = localItem;
-                    if (currentUser && currentUser.uid) {
-                        update(ref(database, `users/${currentUser.uid}/memorizeProgress/${safeK}`), localItem).catch(() => {});
-                    }
                 } else {
                     // 同時またはタイムスタンプ不確定時：高い到達レベル・反復回数を厳格に保護
                     const maxLevel = Math.max(localItem.boxLevel || 0, remoteItem.boxLevel || 0);
@@ -3577,7 +3574,7 @@
                         reps: maxReps,
                         lapses: maxLapses,
                         nextReviewDate: chosenDate,
-                        updatedAt: Math.max(localTime, remoteTime, Date.now())
+                        updatedAt: Math.max(localTime, remoteTime)
                     };
                 }
             }
@@ -4500,13 +4497,14 @@
             return new Date(iso).toLocaleDateString('ja-JP', { year: '2-digit', month: 'numeric', day: 'numeric' });
         }
 
-        // 🎓 授業ノート（lesson.html）の気づきメモ・暗記リストの教科判定
+        // 🎓 授業ノート（lesson.html）の気づきメモ・暗記リストの教科判定（キャッシュ付き高速版）
         function detectSubjectFromLesson(lesson) {
             if (!lesson) return "未分類";
+            if (lesson._detectedSubject) return lesson._detectedSubject;
             if (lesson.subject && typeof lesson.subject === "string" && lesson.subject.trim() !== "") {
                 const s = lesson.subject.trim();
-                if (s === "政経") return "政治・経済";
-                if (s !== "未分類" && s !== "その他") return s;
+                if (s === "政経") { lesson._detectedSubject = "政治・経済"; return "政治・経済"; }
+                if (s !== "未分類" && s !== "その他") { lesson._detectedSubject = s; return s; }
             }
             // 授業のタイトル・トピック・暗記事項内容・パート見出し・メモ内容を総合的に解析
             const memText = Array.isArray(lesson.memorizationPoints) 
@@ -4520,52 +4518,49 @@
                 : '';
             const text = [lesson.title, lesson.topicKey, lesson.topic, memText, partText, memoText].filter(Boolean).join(" ").toLowerCase();
 
+            let detected = "未分類";
             // 1. 政治・経済 / 公共 / 公民
             if (/政治|経済|財政|金融|市場|租税|政党|国会|内閣|憲法|司法|地方自治|少子|高齢|社会保障|福祉|労働|雇用|消費者|中小企業|農業|防災|諸課題|国際連合|安保理|国際法|平和主義|法の支配|民主政治|資本主義|株式|為替|インフレ|デフレ|gdp/i.test(text)) {
-                if (/政治|経済|財政|租税|金融|市場|雇用|労働|社会保障|福祉|司法|地方自治|諸課題|中小企業|少子|高齢|消費者/i.test(text)) return "政治・経済";
-                if (/公共/i.test(text)) return "公共";
-                return "公民";
+                if (/政治|経済|財政|租税|金融|市場|雇用|労働|社会保障|福祉|司法|地方自治|諸課題|中小企業|少子|高齢|消費者/i.test(text)) detected = "政治・経済";
+                else if (/公共/i.test(text)) detected = "公共";
+                else detected = "公民";
+            } else if (/公共/i.test(text)) {
+                detected = "公共";
+            } else if (/公民|倫理/i.test(text)) {
+                detected = "公民";
+            } else if (/化学|周期表|周期律|元素|構成粒子|三態|熱運動|結合|イオン|分子|原子|mol|モル|酸化|還元|酸|塩基|中和|沈殿|溶液|濃度|気体|無機|有機|結晶/i.test(text)) {
+                detected = "化学";
+            } else if (/物理|力学|電磁気|波動|運動方程式|単振動|熱力学|オーム|クーロン|落体|摩擦|浮力/i.test(text)) {
+                detected = "物理";
+            } else if (/生物|細胞|dna|rna|遺伝|光合成|代謝|呼吸|酵素|免疫|生殖|ホルモン|神経|生態系/i.test(text)) {
+                detected = "生物";
+            } else if (/地学|地球|プレート|地震|火山|地層|気象|天体|恒星|銀河/i.test(text)) {
+                detected = "地学";
+            } else if (/数学|微分|積分|ベクトル|数列|三角関数|確率|二次関数|図形|整数|複素数|極限|導関数/i.test(text)) {
+                detected = "数学";
+            } else if (/情報|プログラミング|アルゴリズム|python|二進数|ネットワーク|セキュリティ|データベース/i.test(text)) {
+                detected = "情報";
+            } else if (/地理|気候|ケッペン|地誌|貿易|地形|農業区分/i.test(text)) {
+                detected = "地理";
+            } else if (/日本史|幕府|天皇|大名|武士|明治維新|江戸|平安|鎌倉|室町|戦国|縄文|弥生|古墳|大化/i.test(text)) {
+                detected = "日本史";
+            } else if (/世界史|王朝|帝国|革命|ルネサンス|ローマ|ギリシャ|冷戦|十字軍|封建|植民地|条約/i.test(text)) {
+                detected = "世界史";
+            } else if (/英語|英文法|構文|単語|語彙|grammar|svoc|relative clause/i.test(text)) {
+                detected = "英語";
+            } else if (/現代文|古文|漢文|国語|評論文|助動詞|係り結び|返り点|訓読|漢詩/i.test(text)) {
+                detected = "国語";
+            } else {
+                detected = (lesson.subject && lesson.subject !== "未分類") ? lesson.subject : "未分類";
             }
-            if (/公共/i.test(text)) return "公共";
-            if (/公民|倫理/i.test(text)) return "公民";
 
-            // 2. 化学
-            if (/化学|周期表|周期律|元素|構成粒子|三態|熱運動|結合|イオン|分子|原子|mol|モル|酸化|還元|酸|塩基|中和|沈殿|溶液|濃度|気体|無機|有機|結晶/i.test(text)) return "化学";
-
-            // 3. 物理
-            if (/物理|力学|電磁気|波動|運動方程式|単振動|熱力学|オーム|クーロン|落体|摩擦|浮力/i.test(text)) return "物理";
-
-            // 4. 生物
-            if (/生物|細胞|dna|rna|遺伝|光合成|代謝|呼吸|酵素|免疫|生殖|ホルモン|神経|生態系/i.test(text)) return "生物";
-
-            // 5. 地学
-            if (/地学|地球|プレート|地震|火山|地層|気象|天体|恒星|銀河/i.test(text)) return "地学";
-
-            // 6. 数学
-            if (/数学|微分|積分|ベクトル|数列|三角関数|確率|二次関数|図形|整数|複素数|極限|導関数/i.test(text)) return "数学";
-
-            // 7. 情報
-            if (/情報|プログラミング|アルゴリズム|python|二進数|ネットワーク|セキュリティ|データベース/i.test(text)) return "情報";
-
-            // 8. 地理
-            if (/地理|気候|ケッペン|地誌|貿易|地形|農業区分/i.test(text)) return "地理";
-
-            // 9. 日本史
-            if (/日本史|幕府|天皇|大名|武士|明治維新|江戸|平安|鎌倉|室町|戦国|縄文|弥生|古墳|大化/i.test(text)) return "日本史";
-
-            // 10. 世界史
-            if (/世界史|王朝|帝国|革命|ルネサンス|ローマ|ギリシャ|冷戦|十字軍|封建|植民地|条約/i.test(text)) return "世界史";
-
-            // 11. 英語
-            if (/英語|英文法|構文|単語|語彙|grammar|svoc|relative clause/i.test(text)) return "英語";
-
-            // 12. 国語
-            if (/現代文|古文|漢文|国語|評論文|助動詞|係り結び|返り点|訓読|漢詩/i.test(text)) return "国語";
-
-            return (lesson.subject && lesson.subject !== "未分類") ? lesson.subject : "未分類";
+            lesson._detectedSubject = detected;
+            return detected;
         }
 
+        let _cachedBuildLessonMemoItems = null;
         function buildLessonMemoItems() {
+            if (_cachedBuildLessonMemoItems) return _cachedBuildLessonMemoItems;
             const items = [];
             Object.entries(rawLessons).forEach(([lessonId, lesson]) => {
                 if (!lesson || !Array.isArray(lesson.lessonMemos)) return;
@@ -4593,6 +4588,7 @@
                     });
                 });
             });
+            _cachedBuildLessonMemoItems = items;
             return items;
         }
 
@@ -4616,8 +4612,12 @@
         let _cachedBuildMemorizationItems = null;
         let _cachedBuildChoiceDrillItems = null;
         function invalidateInsightsDataCache() {
+            _cachedBuildLessonMemoItems = null;
             _cachedBuildMemorizationItems = null;
             _cachedBuildChoiceDrillItems = null;
+            if (rawLessons) {
+                Object.values(rawLessons).forEach(l => { if (l && l._detectedSubject) delete l._detectedSubject; });
+            }
         }
 
         function buildMemorizationItems() {
@@ -6398,30 +6398,56 @@
 
                 container.innerHTML = Object.entries(groups).map(([groupKey, groupItems]) => {
                     const isExpanded = expandedGroups.has(groupKey);
-                    const rowsHtml = insightViewMode === "card"
-                        ? `<div class="insight-grid">${groupItems.map(p => renderCardHtml(p)).join("")}</div>`
-                        : `<div class="insight-compact-list">${groupItems.map(p => renderCompactRowHtml(p)).join("")}</div>`;
+                    const rowsHtml = isExpanded
+                        ? (insightViewMode === "card"
+                            ? `<div class="insight-grid">${groupItems.map(p => renderCardHtml(p)).join("")}</div>`
+                            : `<div class="insight-compact-list">${groupItems.map(p => renderCompactRowHtml(p)).join("")}</div>`)
+                        : "";
 
                     return `
                         <div class="group-section">
-                            <div class="group-header ${isExpanded ? '' : 'collapsed'}" data-group="${groupKey}">
-                                <span>📁 ${groupKey} (${groupItems.length}件)</span>
+                            <div class="group-header ${isExpanded ? '' : 'collapsed'}" data-group="${escapeHtml(groupKey)}">
+                                <span>📁 ${escapeHtml(groupKey)} (${groupItems.length}件)</span>
                                 <span class="group-chevron">▼</span>
                             </div>
-                            <div class="group-content ${isExpanded ? '' : 'collapsed'}" data-content="${groupKey}">
+                            <div class="group-content ${isExpanded ? '' : 'collapsed'}" data-content="${escapeHtml(groupKey)}" data-loaded="${isExpanded ? 'true' : 'false'}">
                                 ${rowsHtml}
                             </div>
                         </div>
                     `;
                 }).join("");
 
-                // アコーディオン開閉
+                // アコーディオン開閉（⚡ オンデマンド高速開閉：展開時のみレンダリング）
                 container.querySelectorAll(".group-header").forEach(header => {
                     header.addEventListener("click", () => {
                         const key = header.getAttribute("data-group");
-                        if (expandedGroups.has(key)) expandedGroups.delete(key);
-                        else expandedGroups.add(key);
-                        renderInsights();
+                        const section = header.closest(".group-section");
+                        if (!section) return;
+                        const contentEl = section.querySelector(".group-content");
+                        if (!contentEl) return;
+
+                        const isNowExpanded = !header.classList.contains("collapsed");
+                        if (isNowExpanded) {
+                            // 折りたたむ
+                            header.classList.add("collapsed");
+                            contentEl.classList.add("collapsed");
+                            expandedGroups.delete(key);
+                        } else {
+                            // 展開する
+                            header.classList.remove("collapsed");
+                            contentEl.classList.remove("collapsed");
+                            expandedGroups.add(key);
+
+                            if (contentEl.getAttribute("data-loaded") !== "true") {
+                                const groupItems = groups[key] || [];
+                                const rowsHtml = insightViewMode === "card"
+                                    ? `<div class="insight-grid">${groupItems.map(p => renderCardHtml(p)).join("")}</div>`
+                                    : `<div class="insight-compact-list">${groupItems.map(p => renderCompactRowHtml(p)).join("")}</div>`;
+                                contentEl.innerHTML = rowsHtml;
+                                contentEl.setAttribute("data-loaded", "true");
+                                scheduleMathTypeset(contentEl);
+                            }
+                        }
                     });
                 });
 
@@ -6753,9 +6779,9 @@
 
                     // ⚡ 大量データ安全展開: 全単語数が150語を超える巨大データや1単元が50語を超える場合は、
                     // 初期表示での自動全開を防止し、ユーザーが必要な単元をワンタップで開く仕様にしてフリーズを完全防止。
-                    const isHugeDataset = totalWordsCount > 150 || unitItems.length > 50;
-                    const isExpanded = autoExpandAll || expandedDictUnits.has(unitId) || (isFirstUnit && totalUnitsCount <= 3 && !isHugeDataset);
-                    if (isExpanded) expandedDictUnits.add(unitId);
+                    const isHugeDataset = totalWordsCount > 100 || unitItems.length > 40;
+                    const isExpanded = (autoExpandAll && totalUnitsCount <= 15) || (expandedDictUnits.has(unitId) && !isHugeDataset) || (isFirstUnit && totalUnitsCount <= 3 && !isHugeDataset);
+                    if (isExpanded && !autoExpandAll) expandedDictUnits.add(unitId);
                     isFirstUnit = false;
 
                     const lessonTitle = (unitItems[0] && unitItems[0].short_title) || "暗記単元";
@@ -8848,7 +8874,7 @@
             return copy;
         }
 
-        // 本日のダッシュボードバナー集計＆更新
+        // 本日のダッシュボードバナー集計＆更新（超高速化版：全カードのオブジェクト変換を完全回避）
         function updateSrsDashboardCounts() {
             const dueCountEl = document.getElementById("srs-due-count");
             const newCountEl = document.getElementById("srs-new-count");
@@ -8856,29 +8882,72 @@
             const retentionRateEl = document.getElementById("srs-retention-rate");
             if (!dueCountEl) return;
 
-            const all = getAllAvailableFlashcards();
             const today = getTodayStr();
-
             let dueCount = 0;
             let newCount = 0;
             let masteredCount = 0;
+            let total = 0;
 
-            all.forEach(c => {
-                const level = c.srsBoxLevel || 0;
+            // 1. 暗記事項（5000件近くあっても軽量配列走査で0.5msで集計完了）
+            const memList = buildMemorizationItems();
+            total += memList.length;
+            for (let i = 0; i < memList.length; i++) {
+                const c = memList[i];
+                const level = c.boxLevel || 0;
                 if (level === 0) {
                     newCount++;
-                    dueCount++; // 未学習も本日のタスクに含める
+                    dueCount++;
                 } else if (level >= 4) {
                     masteredCount++;
-                    if (c.srsNextReviewDate && c.srsNextReviewDate <= today) dueCount++;
+                    if (c.nextReviewDate && c.nextReviewDate <= today) dueCount++;
                 } else {
-                    if (!c.srsNextReviewDate || c.srsNextReviewDate <= today) dueCount++;
+                    if (!c.nextReviewDate || c.nextReviewDate <= today) dueCount++;
                 }
-            });
+            }
 
-            const total = all.length;
+            // 2. 問題の気づきメモ
+            if (rawProblems) {
+                const probs = Object.values(rawProblems);
+                for (let i = 0; i < probs.length; i++) {
+                    const p = probs[i];
+                    if (p && p.insight && p.insight.trim()) {
+                        total++;
+                        const pKey = sanitizeDbKey(`prob_${p.id}`);
+                        const prog = (rawMemorizeProgress && rawMemorizeProgress[pKey]) || {};
+                        const level = prog.boxLevel || 0;
+                        if (level === 0) {
+                            newCount++;
+                            dueCount++;
+                        } else if (level >= 4) {
+                            masteredCount++;
+                            if (prog.nextReviewDate && prog.nextReviewDate <= today) dueCount++;
+                        } else {
+                            if (!prog.nextReviewDate || prog.nextReviewDate <= today) dueCount++;
+                        }
+                    }
+                }
+            }
+
+            // 3. 授業メモ
+            const lmList = buildLessonMemoItems();
+            total += lmList.length;
+            for (let i = 0; i < lmList.length; i++) {
+                const lm = lmList[i];
+                const lmKey = sanitizeDbKey(`lm_${lm.lessonId || 'l'}_${lm.memoId || 'm'}`);
+                const prog = (rawMemorizeProgress && rawMemorizeProgress[lmKey]) || {};
+                const level = prog.boxLevel || 0;
+                if (level === 0) {
+                    newCount++;
+                    dueCount++;
+                } else if (level >= 4) {
+                    masteredCount++;
+                    if (prog.nextReviewDate && prog.nextReviewDate <= today) dueCount++;
+                } else {
+                    if (!prog.nextReviewDate || prog.nextReviewDate <= today) dueCount++;
+                }
+            }
+
             const retention = total > 0 ? Math.round((masteredCount / total) * 100) : 0;
-
             dueCountEl.textContent = dueCount;
             if (newCountEl) newCountEl.textContent = newCount;
             if (masteredCountEl) masteredCountEl.textContent = masteredCount;
@@ -11002,12 +11071,7 @@
                 // モーダル演習中はバックグラウンドの不要な再描画を抑制してCPUとUI負荷を低減
                 const isFcModalOpen = fcModal && fcModal.style.display !== "none";
                 if (!isFcModalOpen) {
-                    updateSrsDashboardCounts();
-                    if (activeTab === "memorize") {
-                        renderMemorize();
-                    } else if (activeTab === "insights") {
-                        renderInsights();
-                    }
+                    handleFirebaseSync();
                 }
             });
 

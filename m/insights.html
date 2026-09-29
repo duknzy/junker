@@ -3112,7 +3112,7 @@
             return sanitizeDbKey(str);
         }
 
-        // 🛡️ SRS 進捗データの双方向安全マージ（端末間の進捗若返り・競合完全防御）
+        // 🛡️ SRS 進捗データの双方向安全マージ（端末間の進捗若返り・競合完全防御＆無限ループ完全排除）
         function mergeSrsProgressData(localMap, remoteMap) {
             const result = { ...(localMap || {}) };
             if (!remoteMap) return result;
@@ -3120,25 +3120,22 @@
             for (const [key, remoteItem] of Object.entries(remoteMap)) {
                 if (!remoteItem || typeof remoteItem !== 'object') continue;
                 const safeK = sanitizeDbKey(key);
-                const localItem = result[safeK] || result[key];
+                const localItem = result[safeK] || (result[key] !== undefined ? result[key] : null);
 
                 if (!localItem) {
                     result[safeK] = remoteItem;
                     continue;
                 }
 
-                const remoteTime = remoteItem.updatedAt || remoteItem.lastReviewedAt || 0;
-                const localTime = localItem.updatedAt || localItem.lastReviewedAt || 0;
+                const remoteTime = Number(remoteItem.updatedAt || remoteItem.lastReviewedAt || 0);
+                const localTime = Number(localItem.updatedAt || localItem.lastReviewedAt || 0);
 
                 if (remoteTime > localTime) {
                     // リモート（別端末）の進捗が新しい
                     result[safeK] = remoteItem;
                 } else if (localTime > remoteTime) {
-                    // ローカルの進捗が新しい（未反映分を保持しFirebaseへ自動反映）
+                    // ローカルの進捗が新しい（※ここではupdateは叩かない。ユーザー演習時に反映）
                     result[safeK] = localItem;
-                    if (currentUser && currentUser.uid) {
-                        update(ref(database, `users/${currentUser.uid}/memorizeProgress/${safeK}`), localItem).catch(() => {});
-                    }
                 } else {
                     // 同時またはタイムスタンプ不確定時：高い到達レベル・反復回数を厳格に保護
                     const maxLevel = Math.max(localItem.boxLevel || 0, remoteItem.boxLevel || 0);
@@ -3155,7 +3152,7 @@
                         reps: maxReps,
                         lapses: maxLapses,
                         nextReviewDate: chosenDate,
-                        updatedAt: Math.max(localTime, remoteTime, Date.now())
+                        updatedAt: Math.max(localTime, remoteTime)
                     };
                 }
             }
@@ -6110,16 +6107,23 @@
         onAuthStateChanged(auth, (user) => {
             currentUser = user;
             if (user) {
+                let mobileSyncTimer = null;
+                function handleMobileSync() {
+                    if (mobileSyncTimer) clearTimeout(mobileSyncTimer);
+                    mobileSyncTimer = setTimeout(() => {
+                        invalidateCardCache();
+                        renderDashboard();
+                    }, 80);
+                }
+
                 onValue(ref(database, `users/${user.uid}/lessons`), snap => {
                     allLessons = snap.val() || {};
                     try { localStorage.setItem("flora_offline_all_lessons", JSON.stringify(allLessons)); } catch(_) {}
-                    invalidateCardCache();
-                    renderDashboard();
+                    handleMobileSync();
                 });
                 onValue(ref(database, `users/${user.uid}/problems`), snap => {
                     allProblems = snap.val() || {};
-                    invalidateCardCache();
-                    renderDashboard();
+                    handleMobileSync();
                 });
                 onValue(ref(database, `users/${user.uid}/memorizeProgress`), snap => {
                     const remoteData = snap.val() || {};
@@ -6127,13 +6131,11 @@
                     try {
                         localStorage.setItem("flora_srs_memorize_progress", JSON.stringify(allMemorizeProgress));
                     } catch(_) {}
-                    invalidateCardCache();
-                    renderDashboard();
+                    handleMobileSync();
                 });
                 onValue(ref(database, `users/${user.uid}/qna_logs`), snap => {
                     allQnaLogs = snap.val() || {};
-                    invalidateCardCache();
-                    renderDashboard();
+                    handleMobileSync();
                 });
                 onValue(ref(database, `users/${user.uid}/card_memos`), snap => {
                     rawMobileCardUserMemos = snap.val() || {};
