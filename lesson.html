@@ -8509,6 +8509,13 @@
         function el(id) { return document.getElementById(id); }
 
         let mathJaxRenderTimer = null;
+        function containsMathSyntax(text) {
+            if (!text || typeof text !== 'string') return false;
+            const pure = text.replace(/<[^>]+>/g, '');
+            return /(\$\$|\\\(|\\\[|\\frac|\\sqrt|\\sum|\\int|\\prod|\\lim|\\alpha|\\beta|\\theta|\\gamma|\\omega|\\pm|\\times|\\div|\\neq|\\leqq|\\geqq|\\triangle|\\angle|[a-zA-Z0-9]\^[0-9a-zA-Z]|_[0-9a-zA-Z])/.test(pure)
+                || (/\$[^\$\n]+?\$/.test(pure) && /[\\^_+\-=/]/.test(pure));
+        }
+
         async function forceTriggerMathJax(targetElements) {
             if (!window.MathJax || !MathJax.typesetPromise) {
                 if (mathJaxRenderTimer) clearTimeout(mathJaxRenderTimer);
@@ -8516,21 +8523,32 @@
                 return;
             }
 
+            // ⚡ 対象要素群に本物の数式構文が存在しない場合は、無駄なLayout/MathJax計算を完全スキップ
+            let targets = [];
+            if (targetElements && Array.isArray(targetElements)) {
+                targets = targetElements.filter(Boolean);
+            } else if (targetElements instanceof HTMLElement) {
+                targets = [targetElements];
+            }
+
+            if (targets.length > 0) {
+                const hasAnyMath = targets.some(el => containsMathSyntax(el.textContent || el.innerText || ''));
+                if (!hasAnyMath) {
+                    return; // 数式なし：一瞬で終了
+                }
+            }
+
             try {
                 if (typeof MathJax.typesetClear === "function") {
-                    if (targetElements && Array.isArray(targetElements)) {
-                        MathJax.typesetClear(targetElements.filter(Boolean));
-                    } else if (targetElements instanceof HTMLElement) {
-                        MathJax.typesetClear([targetElements]);
+                    if (targets.length > 0) {
+                        MathJax.typesetClear(targets);
                     } else {
                         MathJax.typesetClear();
                     }
                 }
 
-                if (targetElements && Array.isArray(targetElements)) {
-                    await MathJax.typesetPromise(targetElements.filter(Boolean));
-                } else if (targetElements instanceof HTMLElement) {
-                    await MathJax.typesetPromise([targetElements]);
+                if (targets.length > 0) {
+                    await MathJax.typesetPromise(targets);
                 } else {
                     await MathJax.typesetPromise();
                 }
@@ -13247,56 +13265,69 @@ ${socraticInstructionBlock}
                 .replace(/\^([0-9a-zA-Z])(?![{0-9a-zA-Z])/g, '^{$1}');
         }
 
-        // 🧠【移植】insights.html/problem.htmlと共通の数式正規化＆穴埋め枠の修復処理。
-        //    AI生成の問題文で $...$ の外に \fbox{ア} 等が取り残されて生テキスト表示に
-        //    なってしまう不具合の対策（sanitizeMathTextとは別レイヤーの修復）。
-        function normalizeMathSyntax(str) {
+        // 🔬 理系・数学科目判定ヘルパー（数学・物理・化学は100%のLaTeX再現性を保証）
+        function isMathOrScienceSubject(subject) {
+            if (!subject || typeof subject !== 'string') return false;
+            return /数学|算数|物理|化学|理科|math|physics|chemistry/i.test(subject);
+        }
+
+        // 🧠【最適化】教科連動型・数式正規化＆穴埋め枠処理。
+        //    数学・物理・化学：MathJaxの完全な数式マクロとドル記号を100%維持（$x$ や \frac 穴埋め等も完全保護）
+        //    社会・政経・国語・英語等：穴埋め枠をネイティブHTML（.flora-blank）化＆不要な$を解除して0ms爆速描画
+        function normalizeMathSyntax(str, subject = "") {
             if (!str) return "";
             let s = String(str);
+            const activeSubject = subject || (typeof currentLessonData !== "undefined" && currentLessonData?.subject) || "";
+            const isScience = isMathOrScienceSubject(activeSubject);
 
-            s = s.replace(/\\bbox\s*\[[^\]]*\]\s*\{((?:[^{}]*|\{[^{}]*\})*)\}/g, (_, content) => {
-                let c = content.trim();
-                while (/^\\text\{([\s\S]*)\}$/.test(c)) {
-                    c = c.replace(/^\\text\{([\s\S]*)\}$/, "$1").trim();
+            const unwrapText = (text) => {
+                let res = text;
+                while (/\\text\{([^{}]*)\}/.test(res)) {
+                    res = res.replace(/\\text\{([^{}]*)\}/g, "$1");
                 }
-                if (!c) c = "\\quad";
-                return `\\bbox[2px,border:1px solid]{\\text{${c}}}`;
-            });
+                return res.trim();
+            };
 
-            s = s.replace(/\\bbox\s*\[[^\]]*\]\s*([0-9A-Za-zぁ-んァ-ヶー一-龠々]+)/g, (_, content) => {
-                let c = content.trim();
-                while (/^\\text\{([\s\S]*)\}$/.test(c)) {
-                    c = c.replace(/^\\text\{([\s\S]*)\}$/, "$1").trim();
-                }
-                if (!c) c = "\\quad";
-                return `\\bbox[2px,border:1px solid]{\\text{${c}}}`;
-            });
+            s = s.replace(/\\textbf\{([^{}]*)\}/g, '<strong>$1</strong>');
 
-            s = s.replace(/\\bbox\s*\[[^\]]*\](?!\s*\{)/g, `\\bbox[2px,border:1px solid]{\\text{\\quad}}`);
+            if (isScience) {
+                s = s.replace(/\\(?:fbox|boxed|framebox|bbox)(?:\s*\[[^\]]*\])?\s*\{((?:[^{}]*|\{[^{}]*\})*)\}/g, (_, content) => {
+                    let c = content.trim();
+                    if (!c) c = "\\quad";
+                    return `\\bbox[2px,border:1px solid]{\\text{${c}}}`;
+                });
+                s = s.replace(/\\(?:fbox|boxed|framebox|bbox)(?:\s*\[[^\]]*\])?\s+([0-9A-Za-z]+)/g, (_, content) => {
+                    return `\\bbox[2px,border:1px solid]{\\text{${content.trim()}}}`;
+                });
+            } else {
+                const makeBlankHtml = (content) => {
+                    let clean = unwrapText(content || "");
+                    if (!clean || clean === "\\quad") clean = "";
+                    return `<span class="flora-blank">${clean}</span>`;
+                };
 
-            s = s.replace(/\\(?:fbox|boxed|framebox)(?:\s*\[[^\]]*\])?\s*\{((?:[^{}]*|\{[^{}]*\})*)\}/g, (_, content) => {
-                let c = content.trim();
-                while (/^\\text\{([\s\S]*)\}$/.test(c)) {
-                    c = c.replace(/^\\text\{([\s\S]*)\}$/, "$1").trim();
-                }
-                if (!c) c = "\\quad";
-                return `\\bbox[2px,border:1px solid]{\\text{${c}}}`;
-            });
-            s = s.replace(/\\(?:fbox|boxed|framebox)(?:\s*\[[^\]]*\])?\s+([0-9A-Za-zぁ-んァ-ヶー一-龠々]+)/g, (_, content) => {
-                let c = content.trim();
-                while (/^\\text\{([\s\S]*)\}$/.test(c)) {
-                    c = c.replace(/^\\text\{([\s\S]*)\}$/, "$1").trim();
-                }
-                if (!c) c = "\\quad";
-                return `\\bbox[2px,border:1px solid]{\\text{${c}}}`;
-            });
-            s = s.replace(/\\(?:fbox|boxed|framebox)(?:\s*\[[^\]]*\])?(?!\s*\{)/g, `\\bbox[2px,border:1px solid]{\\text{\\quad}}`);
+                s = s.replace(/\\(?:bbox\s*\[[^\]]*\]|fbox|boxed|framebox(?:\s*\[[^\]]*\])?)\s*\{((?:[^{}]*|\{[^{}]*\})*)\}/g, (_, content) => makeBlankHtml(content));
+                s = s.replace(/\\(?:bbox\s*\[[^\]]*\]|fbox|boxed|framebox(?:\s*\[[^\]]*\])?)\s+([0-9A-Za-zぁ-んァ-ヶー一-龠々]+)/g, (_, content) => makeBlankHtml(content));
+                s = s.replace(/\\(?:bbox\s*\[[^\]]*\]|fbox|boxed|framebox(?:\s*\[[^\]]*\])?)(?!\s*\{)/g, () => makeBlankHtml(""));
+
+                s = s.replace(/\$\s*(<span class="flora-blank">[\s\S]*?<\/span>)\s*\$/g, '$1');
+
+                s = s.replace(/\$([^\$\n]+?)\$/g, (match, inner) => {
+                    const trimmed = inner.trim();
+                    if (!/[\\^_=+\-/*<>±×÷≠≦≧√∫∑π]/.test(trimmed)) {
+                        return unwrapText(trimmed);
+                    }
+                    return match;
+                });
+            }
 
             const parts = s.split(/(\$\$[\s\S]*?\$\$|\$[^\$\n]+?\$)/g);
             for (let i = 0; i < parts.length; i += 2) {
                 let chunk = parts[i];
                 if (!chunk) continue;
-                chunk = chunk.replace(/(\\bbox\[2px,border:1px solid\]\{\\text\{[^}]*\}\}(?:\^[0-9A-Za-z^\circ]+)?)/g, '$$$1$$');
+                if (isScience) {
+                    chunk = chunk.replace(/(\\bbox\[2px,border:1px solid\]\{\\text\{[^}]*\}\}(?:\^[0-9A-Za-z^\circ]+)?)/g, '$$$1$$');
+                }
                 chunk = chunk.replace(/(\\(?:triangle|angle|sqrt|frac|vec|alpha|beta|gamma|theta|pi|pm|mp|le|ge|leqq|geqq|neq|approx|sim|equiv|subset|supset|cap|cup|times|div|cdot|int|sum|lim|log|ln|sin|cos|tan)\b[^\s$、。,.)）]*)/g, '$$$1$$');
                 chunk = chunk.replace(/\$\s*\$/g, '');
                 parts[i] = chunk;
@@ -13304,10 +13335,10 @@ ${socraticInstructionBlock}
             return parts.join("");
         }
 
-        function renderFormattedMarkdown(text) {
+        function renderFormattedMarkdown(text, subject = "") {
             if (!text) return "";
 
-            let sanitized = sanitizeMathText(normalizeMathSyntax(text));
+            let sanitized = sanitizeMathText(normalizeMathSyntax(text, subject));
 
             // 1. 青空文庫ルビ記法 ｜漢字《よみ》 または 漢字《よみ》 を <ruby>漢字<rt>よみ</rt></ruby> に正規化
             sanitized = sanitized.replace(/[｜|]?([一-龠々〆ヵヶA-Za-z0-9]+)《([^》]+)》/g, '<ruby>$1<rt>$2</rt></ruby>');

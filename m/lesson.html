@@ -2600,6 +2600,47 @@
         let createMode = "topic"; // "topic" or "photo"
         let createSelectedImages = [];
 
+        // 🔬 理系・数学科目判定ヘルパー（数学・物理・化学は100%のLaTeX再現性を保証）
+        function isMathOrScienceSubject(subject) {
+            if (!subject || typeof subject !== 'string') return false;
+            return /数学|算数|物理|化学|理科|math|physics|chemistry/i.test(subject);
+        }
+
+        // ⚡ 教科連動型テキスト整形（文系科目は四角枠をネイティブHTML化してMathJax負荷を排除）
+        function formatLessonMathText(text, subject = "") {
+            if (!text || typeof text !== "string") return "";
+            const isScience = isMathOrScienceSubject(subject);
+            if (isScience) {
+                return escapeHtml(text);
+            }
+            let s = text;
+            const unwrapText = (t) => {
+                let res = t;
+                while (/\\text\{([^{}]*)\}/.test(res)) {
+                    res = res.replace(/\\text\{([^{}]*)\}/g, "$1");
+                }
+                return res.trim();
+            };
+            s = s.replace(/\\(?:bbox\s*\[[^\]]*\]|fbox|boxed|framebox(?:\s*\[[^\]]*\])?)\s*\{((?:[^{}]*|\{[^{}]*\})*)\}/g, (_, content) => {
+                let c = unwrapText(content || "");
+                if (!c || c === "\\quad") c = "";
+                return `<span class="flora-blank">${escapeHtml(c)}</span>`;
+            });
+            s = s.replace(/\\(?:bbox\s*\[[^\]]*\]|fbox|boxed|framebox(?:\s*\[[^\]]*\])?)\s+([0-9A-Za-zぁ-んァ-ヶー一-龠々]+)/g, (_, content) => {
+                let c = unwrapText(content || "");
+                if (!c || c === "\\quad") c = "";
+                return `<span class="flora-blank">${escapeHtml(c)}</span>`;
+            });
+            s = s.replace(/\$([^\$\n]+?)\$/g, (match, inner) => {
+                const trimmed = inner.trim();
+                if (!/[\\^_=+\-/*<>±×÷≠≦≧√∫∑π]/.test(trimmed)) {
+                    return escapeHtml(unwrapText(trimmed));
+                }
+                return match;
+            });
+            return s;
+        }
+
         // 🎯 URLパラメータから特定の授業IDを取得（暗記事項・タイムライン等からの直行用）
         const urlParams = new URLSearchParams(window.location.search);
         const requestedLessonId = urlParams.get('id') || urlParams.get('lessonId');
@@ -4564,18 +4605,18 @@ ${extractedText || "（本文なし）"}
                         </div>
                         <div class="m-memorize-q tex2jax_process">
                             <span style="color:var(--brand-primary); font-weight:800; margin-right:0.3rem;">Q.</span>
-                            ${escapeHtml(p.question || p.content || '')}
+                            ${formatLessonMathText(p.question || p.content || '', lesson.subject)}
                         </div>
                         <div class="m-memorize-a-wrap" data-reveal-wrap="${curId}">
                             <div class="m-memorize-a blurred tex2jax_process" data-reveal-target="${curId}">
                                 <span style="color:var(--accent-coral); font-weight:800; margin-right:0.3rem;">A.</span>
-                                ${escapeHtml(p.answer || p.content || '')}
+                                ${formatLessonMathText(p.answer || p.content || '', lesson.subject)}
                             </div>
                             <span class="m-memorize-hint-tap" data-hint-tap="${curId}">タップで答えを表示</span>
                         </div>
                         ${p.note ? `
                             <div class="m-memorize-note tex2jax_process">
-                                💡 <b>急所・罠:</b> ${escapeHtml(p.note)}
+                                💡 <b>急所・罠:</b> ${formatLessonMathText(p.note, lesson.subject)}
                             </div>
                         ` : ''}
                     </div>
@@ -4614,7 +4655,11 @@ ${extractedText || "（本文なし）"}
             });
 
             if (window.MathJax && window.MathJax.typesetPromise) {
-                window.MathJax.typesetPromise([container]).catch(() => {});
+                const isScience = isMathOrScienceSubject(lesson.subject);
+                const hasMath = isScience || /(\$\$|\\\(|\\\[|\\frac|\\sqrt|\\sum|\\int)/.test(container.textContent || "");
+                if (hasMath) {
+                    window.MathJax.typesetPromise([container]).catch(() => {});
+                }
             }
         }
 

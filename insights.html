@@ -6011,75 +6011,89 @@
             }
         };
 
-        // 🧠 数式正規化＆穴埋め枠の修復処理
-        function normalizeMathSyntax(str) {
+        // 🔬 理系・数学科目判定ヘルパー（数学・物理・化学は100%のLaTeX再現性を保証）
+        function isMathOrScienceSubject(subject) {
+            if (!subject || typeof subject !== 'string') return false;
+            return /数学|算数|物理|化学|理科|math|physics|chemistry/i.test(subject);
+        }
+
+        // 🧠 教科連動型・数式正規化＆穴埋め枠処理
+        // ・数学・物理・化学：MathJaxの完全な数式マクロとドル記号を100%維持（$x$ や \frac 穴埋め等も完全保護）
+        // ・社会・政経・国語・英語等：穴埋め枠をネイティブHTML（.flora-blank）化＆不要な$を解除して0ms爆速描画
+        function normalizeMathSyntax(str, subject = "") {
             if (!str) return "";
             let s = String(str);
+            const isScience = isMathOrScienceSubject(subject);
 
-            // 1. \bbox[...] または \bbox[...]{...} の波括弧抜け・表記ゆれを完全正規化
-            s = s.replace(/\\bbox\s*\[[^\]]*\]\s*\{((?:[^{}]*|\{[^{}]*\})*)\}/g, (_, content) => {
-                let c = content.trim();
-                while (/^\\text\{([\s\S]*)\}$/.test(c)) {
-                    c = c.replace(/^\\text\{([\s\S]*)\}$/, "$1").trim();
+            // 1. \text{...} のアンラップ（余計なLaTeX装飾の除去）
+            const unwrapText = (text) => {
+                let res = text;
+                while (/\\text\{([^{}]*)\}/.test(res)) {
+                    res = res.replace(/\\text\{([^{}]*)\}/g, "$1");
                 }
-                if (!c) c = "\\quad";
-                return `\\bbox[2px,border:1px solid]{\\text{${c}}}`;
-            });
+                return res.trim();
+            };
 
-            s = s.replace(/\\bbox\s*\[[^\]]*\]\s*([0-9A-Za-zぁ-んァ-ヶー一-龠々]+)/g, (_, content) => {
-                let c = content.trim();
-                while (/^\\text\{([\s\S]*)\}$/.test(c)) {
-                    c = c.replace(/^\\text\{([\s\S]*)\}$/, "$1").trim();
-                }
-                if (!c) c = "\\quad";
-                return `\\bbox[2px,border:1px solid]{\\text{${c}}}`;
-            });
+            // 2. \textbf{...} -> <strong>...</strong>
+            s = s.replace(/\\textbf\{([^{}]*)\}/g, '<strong>$1</strong>');
 
-            s = s.replace(/\\bbox\s*\[[^\]]*\](?!\s*\{)/g, `\\bbox[2px,border:1px solid]{\\text{\\quad}}`);
+            // 3. 穴埋め枠の処理
+            if (isScience) {
+                // 理系科目：MathJaxマクロ（\bbox）として維持
+                s = s.replace(/\\(?:fbox|boxed|framebox|bbox)(?:\s*\[[^\]]*\])?\s*\{((?:[^{}]*|\{[^{}]*\})*)\}/g, (_, content) => {
+                    let c = content.trim();
+                    if (!c) c = "\\quad";
+                    return `\\bbox[2px,border:1px solid]{\\text{${c}}}`;
+                });
+                s = s.replace(/\\(?:fbox|boxed|framebox|bbox)(?:\s*\[[^\]]*\])?\s+([0-9A-Za-z]+)/g, (_, content) => {
+                    return `\\bbox[2px,border:1px solid]{\\text{${content.trim()}}}`;
+                });
+            } else {
+                // 文系科目：ネイティブHTML穴埋め枠に変換（MathJaxを完全バイパス）
+                const makeBlankHtml = (content) => {
+                    let clean = unwrapText(content || "");
+                    if (!clean || clean === "\\quad") clean = "";
+                    return `<span class="flora-blank">${clean}</span>`;
+                };
 
-            // 2. \fbox, \boxed, \framebox の正規化
-            s = s.replace(/\\(?:fbox|boxed|framebox)(?:\s*\[[^\]]*\])?\s*\{((?:[^{}]*|\{[^{}]*\})*)\}/g, (_, content) => {
-                let c = content.trim();
-                while (/^\\text\{([\s\S]*)\}$/.test(c)) {
-                    c = c.replace(/^\\text\{([\s\S]*)\}$/, "$1").trim();
-                }
-                if (!c) c = "\\quad";
-                return `\\bbox[2px,border:1px solid]{\\text{${c}}}`;
-            });
-            s = s.replace(/\\(?:fbox|boxed|framebox)(?:\s*\[[^\]]*\])?\s+([0-9A-Za-zぁ-んァ-ヶー一-龠々]+)/g, (_, content) => {
-                let c = content.trim();
-                while (/^\\text\{([\s\S]*)\}$/.test(c)) {
-                    c = c.replace(/^\\text\{([\s\S]*)\}$/, "$1").trim();
-                }
-                if (!c) c = "\\quad";
-                return `\\bbox[2px,border:1px solid]{\\text{${c}}}`;
-            });
-            s = s.replace(/\\(?:fbox|boxed|framebox)(?:\s*\[[^\]]*\])?(?!\s*\{)/g, `\\bbox[2px,border:1px solid]{\\text{\\quad}}`);
+                s = s.replace(/\\(?:bbox\s*\[[^\]]*\]|fbox|boxed|framebox(?:\s*\[[^\]]*\])?)\s*\{((?:[^{}]*|\{[^{}]*\})*)\}/g, (_, content) => makeBlankHtml(content));
+                s = s.replace(/\\(?:bbox\s*\[[^\]]*\]|fbox|boxed|framebox(?:\s*\[[^\]]*\])?)\s+([0-9A-Za-zぁ-んァ-ヶー一-龠々]+)/g, (_, content) => makeBlankHtml(content));
+                s = s.replace(/\\(?:bbox\s*\[[^\]]*\]|fbox|boxed|framebox(?:\s*\[[^\]]*\])?)(?!\s*\{)/g, () => makeBlankHtml(""));
 
-            // 3. $...$ の外にある \bbox や孤立した TeX 記号を $...$ で保護
+                // $ <span class="flora-blank">...</span> $ のように、枠だけがドルに入っている場合はドルを解除
+                s = s.replace(/\$\s*(<span class="flora-blank">[\s\S]*?<\/span>)\s*\$/g, '$1');
+
+                // 本物の数式記号を含まないドル記号（文系の用語・年号など）をアンラップ
+                s = s.replace(/\$([^\$\n]+?)\$/g, (match, inner) => {
+                    const trimmed = inner.trim();
+                    if (!/[\\^_=+\-/*<>±×÷≠≦≧√∫∑π]/.test(trimmed)) {
+                        return unwrapText(trimmed);
+                    }
+                    return match;
+                });
+            }
+
+            // 4. $...$ の外にある孤立した TeX 記号・数式コマンドのみを $...$ で包む
             const parts = s.split(/(\$\$[\s\S]*?\$\$|\$[^\$\n]+?\$)/g);
             for (let i = 0; i < parts.length; i += 2) {
                 let chunk = parts[i];
                 if (!chunk) continue;
 
-                // \bbox が $ の外にある場合、$ で包む
-                chunk = chunk.replace(/(\\bbox\[2px,border:1px solid\]\{\\text\{[^}]*\}\}(?:\^[0-9A-Za-z^\circ]+)?)/g, '$$$1$$');
+                if (isScience) {
+                    chunk = chunk.replace(/(\\bbox\[2px,border:1px solid\]\{\\text\{[^}]*\}\}(?:\^[0-9A-Za-z^\circ]+)?)/g, '$$$1$$');
+                }
 
-                // 孤立した TeX 記号・数式コマンドを $...$ で包む
                 chunk = chunk.replace(/(\\(?:triangle|angle|sqrt|frac|vec|alpha|beta|gamma|theta|pi|pm|mp|le|ge|leqq|geqq|neq|approx|sim|equiv|subset|supset|cap|cup|times|div|cdot|int|sum|lim|log|ln|sin|cos|tan)\b[^\s$、。,.)）]*)/g, '$$$1$$');
-
-                // 不正な連続 $$ や 空の $$ を整理
                 chunk = chunk.replace(/\$\s*\$/g, '');
-
                 parts[i] = chunk;
             }
 
             return parts.join("");
         }
 
-        function formatQuestionText(raw) {
+        function formatQuestionText(raw, subject = "") {
             if (!raw) return "";
-            let t = normalizeMathSyntax(raw);
+            let t = normalizeMathSyntax(raw, subject);
             t = t.replace(/\\n/g, '\n').replace(/\r\n?/g, '\n').trim();
             const noWordBefore = "(?<![0-9A-Za-zぁ-んァ-ヶー一-龠々'’])";
             t = t.replace(new RegExp(noWordBefore + "\\(\\s*([1-9]|10)\\s*\\)(?!\\d)", "g"), "\n\n($1)");
@@ -6088,9 +6102,9 @@
         }
 
         // Markdown＆数式フォーマット関数
-        function renderFormattedMarkdown(text) {
+        function renderFormattedMarkdown(text, subject = "") {
             if (!text) return "";
-            let trimmed = normalizeMathSyntax(text).trim();
+            let trimmed = normalizeMathSyntax(text, subject).trim();
             const mathBlocks = [];
             let placeholderText = trimmed.replace(/(\$\$[\s\S]*?\$\$|\$[^\$\n]+?\$)/g, (match) => {
                 mathBlocks.push(match);
@@ -6106,10 +6120,17 @@
             return formatted.replace(/\n/g, '<br>');
         }
 
-        // ⚡ 数式検出・超軽量局所MathJaxスケジューラ（数式を含まない9割の通常カードは完全スキップ）
-        function containsMathSyntax(text) {
+        // ⚡ 数式検出・超軽量局所MathJaxスケジューラ（文系科目は真の数式がない限り完全スキップ）
+        function containsMathSyntax(text, subject = "") {
             if (!text || typeof text !== 'string') return false;
-            return /(\$|\\\(|\\\[|\\frac|\\sqrt|\\sum|\\int|\\bbox|\\boxed|\\alpha|\\beta|\\theta|\\pm|\\times|\\div|\\neq|\\leqq|\\geqq|\\triangle|\\angle)/.test(text);
+            const pure = text.replace(/<[^>]+>/g, '');
+            if (isMathOrScienceSubject(subject)) {
+                // 理系科目：変数 $x$ や \bbox も含めて MathJax レンダリング対象とする
+                return /(\$|\\\(|\\\[|\\frac|\\sqrt|\\sum|\\int|\\bbox|\\boxed|\\alpha|\\beta|\\theta|\\pm|\\times|\\div|\\neq|\\leqq|\\geqq|\\triangle|\\angle)/.test(pure);
+            }
+            // 文系科目・一般：真の数式記法のみを判定（四角枠や通常の単語はスキップ）
+            return /(\$\$|\\\(|\\\[|\\frac|\\sqrt|\\sum|\\int|\\prod|\\lim|\\alpha|\\beta|\\theta|\\gamma|\\omega|\\pm|\\times|\\div|\\neq|\\leqq|\\geqq|\\triangle|\\angle|[a-zA-Z0-9]\^[0-9a-zA-Z]|_[0-9a-zA-Z])/.test(pure)
+                || (/\$[^\$\n]+?\$/.test(pure) && /[\\^_+\-=/]/.test(pure));
         }
 
         let mathTypesetQueue = Promise.resolve();
@@ -7243,13 +7264,13 @@
                     </div>
                 </div>
             ` : hasQA ? `
-                <div class="insight-memorize-q tex2jax_process" onclick="${isRedSheetActive ? `handleDictAnswerClick('${p.lessonId}', '${p.memoId}', event)` : `startEditMemorizeFromInsights('${p.lessonId}', '${p.memoId}', event)`}" title="${isRedSheetActive ? 'クリックで解答を表示/非表示（赤シート）' : 'クリックしてその場で編集'}"><span class="insight-memorize-q-badge">Q.</span><span class="insight-memorize-q-text">${normalizeMathSyntax(cleanQ || p.question)}</span></div>
-                <div class="insight-memorize-a tex2jax_process ${isRevealed ? 'is-revealed' : ''} ${isCovered ? 'is-covered' : ''}" data-lesson-id="${p.lessonId}" data-memo-id="${p.memoId}" onclick="handleDictAnswerClick('${p.lessonId}', '${p.memoId}', event)" title="${aTitle}"><span class="insight-memorize-a-badge">A.</span><span class="insight-memorize-a-text">${normalizeMathSyntax(cleanA || p.answer)}</span>${isRedSheetActive && isRevealed ? `<span class="red-sheet-peek-indicator" title="クリックで隠す">👁️ 表示中</span>` : ''}</div>
-                ${p.rawNote ? `<div class="tex2jax_process" style="font-size:0.82rem; color:var(--accent-yellow); margin-top:0.45rem; padding-top:0.45rem; border-top:1px dashed rgba(255,255,255,0.08); word-break:break-word; line-height:1.5;">💡 ${normalizeMathSyntax(p.rawNote).trim()}</div>` : ''}
+                <div class="insight-memorize-q tex2jax_process" onclick="${isRedSheetActive ? `handleDictAnswerClick('${p.lessonId}', '${p.memoId}', event)` : `startEditMemorizeFromInsights('${p.lessonId}', '${p.memoId}', event)`}" title="${isRedSheetActive ? 'クリックで解答を表示/非表示（赤シート）' : 'クリックしてその場で編集'}"><span class="insight-memorize-q-badge">Q.</span><span class="insight-memorize-q-text">${normalizeMathSyntax(cleanQ || p.question, p.subject)}</span></div>
+                <div class="insight-memorize-a tex2jax_process ${isRevealed ? 'is-revealed' : ''} ${isCovered ? 'is-covered' : ''}" data-lesson-id="${p.lessonId}" data-memo-id="${p.memoId}" onclick="handleDictAnswerClick('${p.lessonId}', '${p.memoId}', event)" title="${aTitle}"><span class="insight-memorize-a-badge">A.</span><span class="insight-memorize-a-text">${normalizeMathSyntax(cleanA || p.answer, p.subject)}</span>${isRedSheetActive && isRevealed ? `<span class="red-sheet-peek-indicator" title="クリックで隠す">👁️ 表示中</span>` : ''}</div>
+                ${p.rawNote ? `<div class="tex2jax_process" style="font-size:0.82rem; color:var(--accent-yellow); margin-top:0.45rem; padding-top:0.45rem; border-top:1px dashed rgba(255,255,255,0.08); word-break:break-word; line-height:1.5;">💡 ${normalizeMathSyntax(p.rawNote, p.subject).trim()}</div>` : ''}
                 ${userMemoText ? `<div style="font-size:0.8rem; color:var(--accent-green, #10B981); margin-top:0.45rem; padding:0.35rem 0.6rem; background:rgba(16,185,129,0.08); border-radius:6px; border-left:3px solid #10B981; word-break:break-word; line-height:1.4;"><span style="font-weight:700;">📝 自分用メモ:</span> ${escapeHtml(userMemoText)}</div>` : ''}
             ` : `
-                <div class="insight-text tex2jax_process ${isRevealed ? 'is-revealed' : ''} ${isCovered ? 'is-covered' : ''}" data-lesson-id="${p.lessonId}" data-memo-id="${p.memoId}" onclick="handleDictAnswerClick('${p.lessonId}', '${p.memoId}', event)" title="${aTitle}">${normalizeMathSyntax(p.rawContent || p.insight).trim()}${isRedSheetActive && isRevealed ? `<span class="red-sheet-peek-indicator" title="クリックで隠す">👁️ 表示中</span>` : ''}</div>
-                ${p.rawNote ? `<div class="tex2jax_process" style="font-size:0.82rem; color:var(--accent-yellow); margin-top:0.45rem; padding-top:0.45rem; border-top:1px dashed rgba(255,255,255,0.08); word-break:break-word; line-height:1.5;">💡 ${normalizeMathSyntax(p.rawNote).trim()}</div>` : ''}
+                <div class="insight-text tex2jax_process ${isRevealed ? 'is-revealed' : ''} ${isCovered ? 'is-covered' : ''}" data-lesson-id="${p.lessonId}" data-memo-id="${p.memoId}" onclick="handleDictAnswerClick('${p.lessonId}', '${p.memoId}', event)" title="${aTitle}">${normalizeMathSyntax(p.rawContent || p.insight, p.subject).trim()}${isRedSheetActive && isRevealed ? `<span class="red-sheet-peek-indicator" title="クリックで隠す">👁️ 表示中</span>` : ''}</div>
+                ${p.rawNote ? `<div class="tex2jax_process" style="font-size:0.82rem; color:var(--accent-yellow); margin-top:0.45rem; padding-top:0.45rem; border-top:1px dashed rgba(255,255,255,0.08); word-break:break-word; line-height:1.5;">💡 ${normalizeMathSyntax(p.rawNote, p.subject).trim()}</div>` : ''}
                 ${userMemoText ? `<div style="font-size:0.8rem; color:var(--accent-green, #10B981); margin-top:0.45rem; padding:0.35rem 0.6rem; background:rgba(16,185,129,0.08); border-radius:6px; border-left:3px solid #10B981; word-break:break-word; line-height:1.4;"><span style="font-weight:700;">📝 自分用メモ:</span> ${escapeHtml(userMemoText)}</div>` : ''}
             `;
 
@@ -7317,7 +7338,7 @@
                     <button type="button" class="star-btn ${starClass}" onclick="togglePin('${p.id}', event)" title="スター">★</button>
                     <span class="badge badge-physics" style="font-size:0.68rem; flex-shrink:0; cursor:pointer;" onclick="openQuickSubjectModal('problem', '${p.id}', '${(p.short_title || p.field || '問題').replace(/'/g, "\\'")}', event)" title="クリックして教科を変更">${p.subject || "未分類"} // ${p.field || "未分類"} ▾</span>
                     <div class="compact-main">
-                        <div class="compact-text tex2jax_process">${normalizeMathSyntax(p.insight)}</div>
+                        <div class="compact-text tex2jax_process">${normalizeMathSyntax(p.insight, p.subject)}</div>
                         <div class="compact-sub">📌 ${p.short_title || "問題"} ｜ ${formatDate(p.insightUpdatedAt || p.createdAt)}</div>
                     </div>
                     <button type="button" onclick="startEditInsight('${p.id}', event)" style="flex-shrink:0; background:none; border:none; color:var(--accent-cyan); cursor:pointer; font-size:0.85rem;" title="編集">✏️</button>
@@ -7336,7 +7357,7 @@
                     <button type="button" class="star-btn ${starClass}" onclick="toggleLessonMemoPin('${p.lessonId}', '${p.memoId}', event)" title="スター">★</button>
                     <span class="badge badge-physics" style="font-size:0.68rem; flex-shrink:0; background: rgba(255,245,0,0.1); border-color: var(--accent-yellow); color: var(--accent-yellow); cursor:pointer;" onclick="openQuickSubjectModal('lesson', '${p.lessonId}', '${(p.short_title || '授業メモ').replace(/'/g, "\\'")}', event)" title="クリックして教科を変更">📖 ${p.subject || "未分類"} ▾</span>
                     <div class="compact-main">
-                        <div class="compact-text tex2jax_process">${normalizeMathSyntax(p.insight)}</div>
+                        <div class="compact-text tex2jax_process">${normalizeMathSyntax(p.insight, p.subject)}</div>
                         <div class="compact-sub">📘 ${p.short_title} ｜ ${formatDate(p.insightUpdatedAt || p.createdAt)}</div>
                     </div>
                     <button type="button" onclick="startEditLessonMemoFromInsights('${p.lessonId}', '${p.memoId}', event)" style="flex-shrink:0; background:none; border:none; color:var(--accent-cyan); cursor:pointer; font-size:0.85rem;" title="編集">✏️</button>

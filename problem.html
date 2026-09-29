@@ -1517,88 +1517,79 @@ extracted_textには、写真やテキストに含まれる問題文を一字一
         // 📝 模範解答（answerFormula）をチャット欄と同じルールでHTML整形する共通関数。
         // 初回表示時に呼ばれる。
         // 🧠【移植】insights.htmlで先に実装済みだった数式正規化＆穴埋め枠の修復処理。
-        //    AI生成の問題文で $...$ の外に \fbox{ア} 等が取り残されて生テキスト表示に
-        //    なってしまう不具合の根本原因はここ（MathJaxのfboxマクロ定義だけでは、
-        //    そもそも数式モードに入っていない箇所には効かないため）。
-        function normalizeMathSyntax(str) {
+        // 🔬 理系・数学科目判定ヘルパー（数学・物理・化学は100%のLaTeX再現性を保証）
+        function isMathOrScienceSubject(subject) {
+            if (!subject || typeof subject !== 'string') return false;
+            return /数学|算数|物理|化学|理科|math|physics|chemistry/i.test(subject);
+        }
+
+        // 🧠【最適化】教科連動型・数式正規化＆穴埋め枠処理。
+        //    数学・物理・化学：MathJaxの完全な数式マクロとドル記号を100%維持（$x$ や \frac 穴埋め等も完全保護）
+        //    社会・政経・国語・英語等：穴埋め枠をネイティブHTML（.flora-blank）化＆不要な$を解除して0ms爆速描画
+        function normalizeMathSyntax(str, subject = "") {
             if (!str) return "";
             let s = String(str);
+            const activeSubject = subject || (typeof currentProblem !== "undefined" && currentProblem?.subject) || "";
+            const isScience = isMathOrScienceSubject(activeSubject);
 
-            // 1. \bbox, \fbox, \boxed, \framebox の波括弧抜け・表記ゆれ・ネストを完全正規化
-            const macroRegex = /\\(?:bbox\s*\[[^\]]*\]|fbox|boxed|framebox(?:\s*\[[^\]]*\])?)/g;
-            let result = "";
-            let lastIndex = 0;
-            let match;
-            while ((match = macroRegex.exec(s)) !== null) {
-                let start = match.index;
-                let end = macroRegex.lastIndex;
-                result += s.substring(lastIndex, start);
-
-                let i = end;
-                while (i < s.length && /\s/.test(s[i])) i++;
-
-                if (i < s.length && s[i] === "{") {
-                    let braceCount = 1;
-                    let contentStart = i + 1;
-                    let j = contentStart;
-                    while (j < s.length && braceCount > 0) {
-                        if (s[j] === "\\") { j += 2; continue; }
-                        if (s[j] === "{") braceCount++;
-                        else if (s[j] === "}") braceCount--;
-                        j++;
-                    }
-                    if (braceCount === 0) {
-                        let content = s.substring(contentStart, j - 1).trim();
-                        while (/^\\text\{([\s\S]*)\}$/.test(content)) {
-                            content = content.replace(/^\\text\{([\s\S]*)\}$/, "$1").trim();
-                        }
-                        if (!content) content = "\\quad";
-                        result += `\\bbox[2px,border:1px solid]{\\text{${content}}}`;
-                        lastIndex = j;
-                        macroRegex.lastIndex = j;
-                        continue;
-                    }
+            const unwrapText = (text) => {
+                let res = text;
+                while (/\\text\{([^{}]*)\}/.test(res)) {
+                    res = res.replace(/\\text\{([^{}]*)\}/g, "$1");
                 }
+                return res.trim();
+            };
 
-                let wordMatch = s.substring(end).match(/^\s*([0-9A-Za-zぁ-んァ-ヶー一-龠々]+)/);
-                if (wordMatch) {
-                    let content = wordMatch[1].trim();
-                    while (/^\\text\{([\s\S]*)\}$/.test(content)) {
-                        content = content.replace(/^\\text\{([\s\S]*)\}$/, "$1").trim();
+            s = s.replace(/\\textbf\{([^{}]*)\}/g, '<strong>$1</strong>');
+
+            if (isScience) {
+                s = s.replace(/\\(?:fbox|boxed|framebox|bbox)(?:\s*\[[^\]]*\])?\s*\{((?:[^{}]*|\{[^{}]*\})*)\}/g, (_, content) => {
+                    let c = content.trim();
+                    if (!c) c = "\\quad";
+                    return `\\bbox[2px,border:1px solid]{\\text{${c}}}`;
+                });
+                s = s.replace(/\\(?:fbox|boxed|framebox|bbox)(?:\s*\[[^\]]*\])?\s+([0-9A-Za-z]+)/g, (_, content) => {
+                    return `\\bbox[2px,border:1px solid]{\\text{${content.trim()}}}`;
+                });
+            } else {
+                const makeBlankHtml = (content) => {
+                    let clean = unwrapText(content || "");
+                    if (!clean || clean === "\\quad") clean = "";
+                    return `<span class="flora-blank">${clean}</span>`;
+                };
+
+                s = s.replace(/\\(?:bbox\s*\[[^\]]*\]|fbox|boxed|framebox(?:\s*\[[^\]]*\])?)\s*\{((?:[^{}]*|\{[^{}]*\})*)\}/g, (_, content) => makeBlankHtml(content));
+                s = s.replace(/\\(?:bbox\s*\[[^\]]*\]|fbox|boxed|framebox(?:\s*\[[^\]]*\])?)\s+([0-9A-Za-zぁ-んァ-ヶー一-龠々]+)/g, (_, content) => makeBlankHtml(content));
+                s = s.replace(/\\(?:bbox\s*\[[^\]]*\]|fbox|boxed|framebox(?:\s*\[[^\]]*\])?)(?!\s*\{)/g, () => makeBlankHtml(""));
+
+                s = s.replace(/\$\s*(<span class="flora-blank">[\s\S]*?<\/span>)\s*\$/g, '$1');
+
+                s = s.replace(/\$([^\$\n]+?)\$/g, (match, inner) => {
+                    const trimmed = inner.trim();
+                    if (!/[\\^_=+\-/*<>±×÷≠≦≧√∫∑π]/.test(trimmed)) {
+                        return unwrapText(trimmed);
                     }
-                    if (!content) content = "\\quad";
-                    result += `\\bbox[2px,border:1px solid]{\\text{${content}}}`;
-                    lastIndex = end + wordMatch[0].length;
-                    macroRegex.lastIndex = lastIndex;
-                    continue;
-                }
-
-                result += `\\bbox[2px,border:1px solid]{\\text{\\quad}}`;
-                lastIndex = end;
+                    return match;
+                });
             }
-            result += s.substring(lastIndex);
-            s = result;
 
-            // 2. $...$ の外にある \bbox や孤立した TeX 記号を $...$ で保護
             const parts = s.split(/(\$\$[\s\S]*?\$\$|\$[^\$\n]+?\$)/g);
             for (let i = 0; i < parts.length; i += 2) {
                 let chunk = parts[i];
                 if (!chunk) continue;
-
-                chunk = chunk.replace(/(\\bbox\[2px,border:1px solid\]\{\\text\{[\s\S]*?\}\}(?:\^[0-9A-Za-z^\circ]+)?)/g, '$$$1$$');
-
+                if (isScience) {
+                    chunk = chunk.replace(/(\\bbox\[2px,border:1px solid\]\{\\text\{[^}]*\}\}(?:\^[0-9A-Za-z^\circ]+)?)/g, '$$$1$$');
+                }
                 chunk = chunk.replace(/(\\(?:triangle|angle|sqrt|frac|vec|alpha|beta|gamma|theta|pi|pm|mp|le|ge|leqq|geqq|neq|approx|sim|equiv|subset|supset|cap|cup|times|div|cdot|int|sum|lim|log|ln|sin|cos|tan)\b[^\s$、。,.)）]*)/g, '$$$1$$');
-
                 chunk = chunk.replace(/\$\s*\$/g, '');
-
                 parts[i] = chunk;
             }
 
             return parts.join("");
         }
 
-        function formatModelAnswerHtml(rawAnswer) {
-            let normalized = normalizeMathSyntax(String(rawAnswer || "解答データなし"));
+        function formatModelAnswerHtml(rawAnswer, subject = "") {
+            let normalized = normalizeMathSyntax(String(rawAnswer || "解答データなし"), subject);
 
             // 数式ブロックを退避してHTML安全処理と改行処理
             const mathBlocks = [];
