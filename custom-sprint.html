@@ -1109,6 +1109,7 @@
                                 <button type="button" class="mode-toggle-btn active" data-mode="ai" id="btn-mode-ai">⚡ 1問1答計算</button>
                                 <button type="button" class="mode-toggle-btn" data-mode="kyotsu" id="btn-mode-kyotsu">🏛️ 共通テスト実践（大問マーク）</button>
                                 <button type="button" class="mode-toggle-btn" data-mode="registered" id="btn-mode-registered">📚 登録済みの誤答</button>
+                                <button type="button" class="mode-toggle-btn" data-mode="science-trap" id="btn-mode-science-trap">🔬 共テ理科基礎 トラップスプリント</button>
                             </div>
                             <div id="setup-desc" style="font-size: 0.74rem; color: var(--text-secondary); margin-top: 0.35rem;">AIが分野と難易度に合わせた良問をその場で新規作成します。</div>
                         </div>
@@ -1318,6 +1319,67 @@
                                 </button>
                             </div>
                         </div>
+
+                        <!-- 🔬 【新設・ベース実装】共テ理科基礎 正誤判定トラップスプリント (Science Trap Buster) -->
+                        <!-- 
+                          ==========================================================================
+                          【開発メモ / 今後詳細実装する内容】
+                          - 機能名称: 共テ理科基礎 正誤判定トラップスプリント (Science Trap Buster)
+                          - 対象科目: 物理基礎 / 化学基礎 / 生物基礎 / 地学基礎 / 4科目シャッフル
+                          - 目的:
+                            共通テスト理科基礎の失点の大半を占める「正誤判定トラップ（主語すり替え、
+                            例外混同、可変値・定数誤認、実験手順の逆転）」を1問10〜15秒の反射スピードで
+                            見抜くタイムアタック特訓エンジン。
+                          - 今後追加する詳細仕様:
+                            1. 各科目別（物理・化学・生物・地学）の超頻出トラップデータベース（計120問以上）
+                               - 物理: つり合いvs反作用の主語、静止摩擦力(可変)vs最大摩擦力(定数)、浮力台秤反作用、v-tグラフ傾きと面積
+                               - 化学: SCOP同素体vs同位体、酸の価数vs強弱、滴定器具の共洗い理由、酸化数例外
+                               - 生物: ミクロメーター重複計算、シャルガフ比率、免疫1次vs2次応答、バイオーム気候グラフ
+                               - 地学: P波S波速度比と初期微動継続、SiO2量とマグマ粘性、柱状図鍵層対比、アイソスタシー浮力
+                            2. トラップ種別（主語すり替え / 数値・定義のズレ / 実験手順の逆転 / 例外の一般化）の自動分類タグ
+                            3. 各問ごとの「出題者の罠」ハイライト解説と即時復習カード生成
+                            4. 授業（Lesson）との双方向連携（学習直後に該当単元のトラップ5問を即時出題）
+                          ==========================================================================
+                        -->
+                        <div id="science-trap-mode-section" class="kyotsu-mode-section" style="display: none;">
+                            <div>
+                                <div class="setup-label">📚 対象科目の選択</div>
+                                <div class="subject-tab-group" id="science-trap-subject-group">
+                                    <button type="button" class="reg-subject-btn active" data-science-subj="物理基礎">⚡ 物理基礎</button>
+                                    <button type="button" class="reg-subject-btn" data-science-subj="化学基礎">🧪 化学基礎</button>
+                                    <button type="button" class="reg-subject-btn" data-science-subj="生物基礎">🧬 生物基礎</button>
+                                    <button type="button" class="reg-subject-btn" data-science-subj="地学基礎">🌍 地学基礎</button>
+                                    <button type="button" class="reg-subject-btn" data-science-subj="4科目ランダム">🎲 4科目ランダム</button>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="setup-label">🎯 頻出トラップ単元（タップで即選択）</div>
+                                <div class="kyotsu-field-grid" id="science-trap-field-grid">
+                                    <!-- JSで科目に応じて動的に展開 -->
+                                </div>
+                            </div>
+
+                            <div style="background: rgba(5, 150, 105, 0.06); border: 1px solid rgba(5, 150, 105, 0.25); border-radius: var(--radius-md); padding: 0.85rem 1rem;">
+                                <div style="font-size: 0.82rem; font-weight: 750; color: var(--brand-primary); margin-bottom: 0.25rem;">
+                                    💡 共通テスト理科基礎の「出題者の罠」を完全攻略
+                                </div>
+                                <div style="font-size: 0.74rem; color: var(--text-secondary); line-height: 1.55;">
+                                    共テ理科基礎で失点しやすい「主語のすり替え」「可変値と定数の混同」「例外の一般化」「器具の共洗い理由」を短時間で連続判定。反射的な正誤見極め力を鍛えます。
+                                </div>
+                            </div>
+
+                            <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.8rem; margin-top: 0.6rem; flex-wrap: wrap;">
+                                <div style="display: flex; align-items: center; gap: 0.4rem;">
+                                    <span style="font-size: 0.76rem; color: var(--text-secondary); font-weight: 600;">出題数:</span>
+                                    <button type="button" class="count-btn active" data-trap-count="5">5問</button>
+                                    <button type="button" class="count-btn" data-trap-count="10">10問</button>
+                                </div>
+                                <button type="button" class="flora-btn flora-btn-primary btn-lg" id="btn-start-science-trap" style="font-weight: 700; padding: 0.75rem 1.8rem;">
+                                    🚀 トラップスプリントを開始する
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- =============== STEP 2: 詳細条件設定 =============== -->
@@ -1489,16 +1551,31 @@
                     <div class="figure-gallery" id="sprint-figure-gallery"></div>
 
                     <div class="control-panel" id="action-trigger-zone">
+                        <!-- 🔬 共テ理科基礎トラップ特訓：即時○×判定ボタン -->
+                        <div id="science-trap-choice-panel" style="display:none; width: 100%; gap: 0.85rem; margin-bottom: 0.5rem;">
+                            <button type="button" class="flora-btn flora-btn-secondary btn-lg" id="btn-trap-choice-true" style="flex:1; font-size:1.15rem; font-weight:800; border:2px solid var(--brand-primary); color:var(--brand-primary); padding:0.85rem 1rem;">
+                                ⭕ 正しい
+                            </button>
+                            <button type="button" class="flora-btn flora-btn-secondary btn-lg" id="btn-trap-choice-false" style="flex:1; font-size:1.15rem; font-weight:800; border:2px solid #ef4444; color:#ef4444; padding:0.85rem 1rem;">
+                                ❌ 誤り
+                            </button>
+                        </div>
                         <button type="button" class="flora-btn flora-btn-primary btn-lg" id="btn-reveal-ans" style="display:none; width: 100%;">👁 答えを確認する</button>
                     </div>
 
                     <div class="reveal-zone" id="sprint-reveal-zone">
+                        <div id="sprint-trap-result-banner" style="display:none; width:100%; border-radius:var(--radius-md); padding:0.75rem 1rem; font-weight:800; font-size:0.95rem; margin-bottom:0.75rem;"></div>
                         <div style="font-size:0.76rem; color:var(--brand-primary); font-weight:700; text-transform: uppercase;">STEPS & EXPLANATION</div>
                         <div class="model-answer-text" id="sprint-steps-display" style="font-size:1rem; white-space:pre-wrap; line-height:1.7; color:var(--text-primary); margin-bottom:1rem;">---</div>
 
-                        <div class="control-panel">
+                        <div class="control-panel" id="sprint-standard-controls">
                             <button type="button" class="flora-btn btn-wrong btn-lg" id="btn-sprint-wrong">❌ ミスった（誤答ノートへ）</button>
                             <button type="button" class="flora-btn btn-correct btn-lg" id="btn-sprint-correct">🎉 解けた！(次へ)</button>
+                        </div>
+                        <div class="control-panel" id="sprint-trap-next-panel" style="display:none; width:100%;">
+                            <button type="button" class="flora-btn flora-btn-primary btn-lg" id="btn-trap-next-question" style="width:100%; font-weight:800; padding:0.85rem 1.2rem;">
+                                次のトラップ問題へ進む ▶
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -1823,33 +1900,341 @@
             const aiSection = document.getElementById("ai-mode-section");
             const kyotsuSection = document.getElementById("kyotsu-mode-section");
             const regSection = document.getElementById("registered-mode-section");
+            const scienceSection = document.getElementById("science-trap-mode-section");
             const descEl = document.getElementById("setup-desc");
             const btnAi = document.getElementById("btn-mode-ai");
             const btnKyotsu = document.getElementById("btn-mode-kyotsu");
             const btnReg = document.getElementById("btn-mode-registered");
+            const btnScience = document.getElementById("btn-mode-science-trap");
 
             btnAi.classList.toggle("active", mode === "ai");
             btnKyotsu.classList.toggle("active", mode === "kyotsu");
             btnReg.classList.toggle("active", mode === "registered");
+            if (btnScience) btnScience.classList.toggle("active", mode === "science-trap");
 
             if (mode === "ai") {
                 if (aiSection) aiSection.style.display = "block";
                 if (kyotsuSection) { kyotsuSection.classList.remove("visible"); kyotsuSection.style.display = "none"; }
                 if (regSection) { regSection.classList.remove("visible"); regSection.style.display = "none"; }
+                if (scienceSection) { scienceSection.classList.remove("visible"); scienceSection.style.display = "none"; }
                 descEl.textContent = "分野・難易度・問題数を指定して、AIにその場でタイムアタック問題を作らせます。（数学）";
             } else if (mode === "kyotsu") {
                 if (aiSection) aiSection.style.display = "none";
                 if (kyotsuSection) { kyotsuSection.classList.add("visible"); kyotsuSection.style.display = "flex"; }
                 if (regSection) { regSection.classList.remove("visible"); regSection.style.display = "none"; }
+                if (scienceSection) { scienceSection.classList.remove("visible"); scienceSection.style.display = "none"; }
                 descEl.textContent = "共通テスト特有の誘導式大問をAIが作問。オンスクリーンマークシートで解答し、即時採点・解説を確認します。";
                 renderKyotsuFieldButtons();
+            } else if (mode === "science-trap") {
+                if (aiSection) aiSection.style.display = "none";
+                if (kyotsuSection) { kyotsuSection.classList.remove("visible"); kyotsuSection.style.display = "none"; }
+                if (regSection) { regSection.classList.remove("visible"); regSection.style.display = "none"; }
+                if (scienceSection) { scienceSection.classList.add("visible"); scienceSection.style.display = "flex"; }
+                descEl.textContent = "共通テスト理科基礎の出題者の罠（正誤判定・主語すり替え・例外混同・実験操作理由）を反射的に見抜く特訓です。";
+                renderScienceTrapFieldButtons();
             } else {
                 if (aiSection) aiSection.style.display = "none";
                 if (kyotsuSection) { kyotsuSection.classList.remove("visible"); kyotsuSection.style.display = "none"; }
                 if (regSection) { regSection.classList.add("visible"); regSection.style.display = "flex"; }
+                if (scienceSection) { scienceSection.classList.remove("visible"); scienceSection.style.display = "none"; }
                 descEl.textContent = "LOLZに登録してある誤答問題からランダムで出題します。教科・分類で絞り込めます。";
                 buildRegisteredModeUI();
             }
+        }
+
+        // ==========================================================================
+        // 🔬 共テ理科基礎 トラップスプリント（Science Trap Buster）定義＆エンジン
+        // 【開発メモ / 今後詳細実装する内容】
+        // - 現在はベース実装として主要4科目の超頻出トラップ問題バンクを搭載。
+        // - 今後はGeminiを活用した「リアルタイム共テ誤文自動生成」と
+        //   「120問超の網羅的トラップDB」「正誤判定専用タイマーUI」へと拡張予定。
+        // ==========================================================================
+        let scienceSelectedSubj = "物理基礎";
+        let scienceSelectedField = "力のつり合いと作用反作用";
+        let scienceSelectedCount = 5;
+
+        const SCIENCE_FIELDS = {
+            "物理基礎": [
+                { name: "力のつり合い vs 作用反作用", sub: "主語と作用点のすり替え罠" },
+                { name: "静止摩擦力 vs 最大摩擦力", sub: "可変値と定数の混同罠" },
+                { name: "浮力と台秤の反作用実験", sub: "沈めた体積と目盛り変化" },
+                { name: "v-tグラフ・傾きと面積", sub: "加速度と変位の読解" },
+                { name: "豆電球の明るさと消費電力", sub: "直列・並列回路のP比較" },
+                { name: "熱量保存と比熱・潜熱", sub: "状態変化中の温度不変" }
+            ],
+            "化学基礎": [
+                { name: "同位体 vs SCOP同素体", sub: "陽子数と単体性質の混同" },
+                { name: "酸の価数 vs 強弱(電離度)", sub: "出せるH+数と電離度の混同" },
+                { name: "滴定器具の共洗い vs 水濡れOK", sub: "ビュレット・メスフラスコ理由" },
+                { name: "酸化数の例外と酸化還元", sub: "H2O2の-1、過酸化物の罠" },
+                { name: "結合の種類と結晶の性質", sub: "融点・電気伝導性の比較" },
+                { name: "物質量(mol)と気体体積", sub: "標準状態22.4Lの適用条件" }
+            ],
+            "生物基礎": [
+                { name: "ミクロメーター重複校正", sub: "対物10μmと倍率変更の罠" },
+                { name: "シャルガフの規則とDNA転写", sub: "A=T, G=C比率とコドン" },
+                { name: "自然免疫 vs 獲得免疫", sub: "1次・2次抗体濃度グラフ" },
+                { name: "血糖値調節とホルモンフィードバック", sub: "インスリン・グルカゴン・中枢" },
+                { name: "植生遷移とバイオーム気候グラフ", sub: "年降水量×気温10大分類" },
+                { name: "原核細胞 vs 真核細胞", sub: "大腸菌・シアノバクテリアの細胞小器官" }
+            ],
+            "地学基礎": [
+                { name: "地震波(P・S波)と走時曲線", sub: "初期微動継続時間と大森公式" },
+                { name: "地球構造とアイソスタシー", sub: "地殻・マントル浮力計算" },
+                { name: "SiO2量とマグマ・火成岩分類", sub: "粘性・有色無色鉱物比率" },
+                { name: "示準化石・示相化石と柱状図", sub: "鍵層(凝灰岩)と対比" },
+                { name: "大気循環と前線気象", sub: "ハドレー循環・温帯低気圧雲" },
+                { name: "恒星の明るさ・H-R図と星の進化", sub: "ポグソン式・5等級差100倍" }
+            ],
+            "4科目ランダム": [
+                { name: "理科基礎全科目シャッフル", sub: "物理・化学・生物・地学の盲点" }
+            ]
+        };
+
+        const SCIENCE_TRAP_DATABASE = [
+            // ===== ⚡ 物理基礎 =====
+            {
+                subject: "物理基礎",
+                field: "力のつり合い vs 作用反作用",
+                title: "【共通テスト正誤判定】水平な机の上に置かれた本に働く「重力（地球が本を引く力）」の反作用は、「机が本を押し上げる垂直抗力」である。",
+                options: ["○ 正しい", "× 誤り"],
+                answer: "× 誤り",
+                trap_type: "主語と目的語のすり替え罠",
+                explanation: "【誤り】\n重力（地球が本を引く力）の反作用は「本が地球を引く力」です。\n作用反作用は主語と目的語が反転し、作用点は別々の物体にあります。「重力」と「垂直抗力」は本という同一物体に働く2力なので【力のつり合い】の関係です。"
+            },
+            {
+                subject: "物理基礎",
+                field: "静止摩擦力 vs 最大摩擦力",
+                title: "【共通テスト正誤判定】水平面上にある静止摩擦係数μの物体に水平方向の力を加えているとき、物体が静止している間、物体に働く静止摩擦力の大きさは常に μN である。",
+                options: ["○ 正しい", "× 誤り"],
+                answer: "× 誤り",
+                trap_type: "可変値と定数の混同罠",
+                explanation: "【誤り】\n静止している間の静止摩擦力 f は、外力と釣り合う【可変値】です（f ≦ μN）。\nμN は物体が「今まさに動き出す瞬間」に働く【最大摩擦力】です。"
+            },
+            {
+                subject: "物理基礎",
+                field: "浮力と台秤の反作用実験",
+                title: "【共通テスト正誤判定】水を入れたビーカーを台秤に乗せ、バネばかりで吊るした金属塊をビーカーの底に触れずに水中に完全に沈めた。このとき台秤の目盛り値は変化しない。",
+                options: ["○ 正しい", "× 誤り"],
+                answer: "× 誤り",
+                trap_type: "浮力の反作用の盲点",
+                explanation: "【誤り】\n金属塊は水から上向きの浮力 F = ρVg を受けます。その反作用として、水（ビーカー）は金属塊から下向きに大きさ F の力を受けます。そのため台秤の目盛り値は浮力 F の分だけ【増加】します。"
+            },
+            {
+                subject: "物理基礎",
+                field: "v-tグラフ・傾きと面積",
+                title: "【共通テスト正誤判定】物体の運動を表す v-t グラフ（縦軸：速度 v、横軸：時刻 t）において、曲線の傾きは物体の変位を表し、グラフと時間軸で囲まれた面積は加速度を表す。",
+                options: ["○ 正しい", "× 誤り"],
+                answer: "× 誤り",
+                trap_type: "傾きと面積の定義逆転",
+                explanation: "【誤り】\nv-t グラフにおいて、【傾きが加速度 a】（a = Δv/Δt）を表し、【グラフと時間軸で囲まれた面積が変位 x】を表します。定義が逆転しています。"
+            },
+            {
+                subject: "物理基礎",
+                field: "豆電球の明るさと消費電力",
+                title: "【共通テスト正誤判定】抵抗値の異なる2個の電球 A（抵抗大）と B（抵抗小）を直列に接続して直流電源につないだとき、電球 B の方が電球 A よりも明るく点灯する。",
+                options: ["○ 正しい", "× 誤り"],
+                answer: "× 誤り",
+                trap_type: "直列回路における消費電力 P=I²R の誤認",
+                explanation: "【誤り】\n直列接続では各電球に流れる電流 I が共通です。消費電力は P = I²R と表されるため、抵抗 R が大きい電球 A の方が消費電力が大きく、【電球 A の方が明るく点灯】します。"
+            },
+            {
+                subject: "物理基礎",
+                field: "熱量保存と比熱・潜熱",
+                title: "【共通テスト正誤判定】0℃の氷に一定の熱を加え続けて加熱し、すべて融解して0℃の水になるまでの間、物質の温度は加熱時間とともに徐々に上昇し続ける。",
+                options: ["○ 正しい", "× 誤り"],
+                answer: "× 誤り",
+                trap_type: "状態変化（潜熱）中の温度一定の法則",
+                explanation: "【誤り】\n状態変化（融解）の間は、加えられた熱エネルギーは分子間の結合を緩める融解熱（潜熱）として消費されるため、【氷が完全に融け切るまで温度は0℃のまま一定】に保たれます。"
+            },
+
+            // ===== 🧪 化学基礎 =====
+            {
+                subject: "化学基礎",
+                field: "同位体 vs SCOP同素体",
+                title: "【共通テスト正誤判定】赤リンと黄リンは、互いに中性子の数が異なる「同位体」の関係である。",
+                options: ["○ 正しい", "× 誤り"],
+                answer: "× 誤り",
+                trap_type: "同素体と同位体の混同罠",
+                explanation: "【誤り】\n赤リンと黄リンは同一元素（P）の単体で性質が異なる【同素体（SCOP）】です。\n同位体は陽子数が等しく中性子数（質量数）が異なる原子同士の関係です。"
+            },
+            {
+                subject: "化学基礎",
+                field: "滴定器具の共洗い vs 水濡れOK",
+                title: "【共通テスト正誤判定】中和滴定の実験において、ビュレットとメスフラスコは、使用直前に内部を純水で洗い、濡れたままの状態で使用してよい。",
+                options: ["○ 正しい", "× 誤り"],
+                answer: "× 誤り",
+                trap_type: "器具の共洗い理由の混同",
+                explanation: "【誤り】\nメスフラスコは純水で濡れたまま使用できますが、ビュレットは滴定液を入れて滴下するため、水で濡れていると濃度が薄まってしまいます。したがってビュレットは【滴定液で共洗い】して使用しなければなりません。"
+            },
+            {
+                subject: "化学基礎",
+                field: "酸の価数 vs 強弱(電離度)",
+                title: "【共通テスト正誤判定】酢酸（CH3COOH）は分子中に4つの水素原子をもつため、4価の酸である。",
+                options: ["○ 正しい", "× 誤り"],
+                answer: "× 誤り",
+                trap_type: "価数の定義トラップ",
+                explanation: "【誤り】\n酸の価数は「水溶液中で電離して放出できる H+ の数」です。酢酸で電離できるのはカルボキシ基の水素1つだけなので【1価の弱酸】です。"
+            },
+            {
+                subject: "化学基礎",
+                field: "酸化数の例外と酸化還元",
+                title: "【共通テスト正誤判定】過酸化水素（H2O2）の分子に含まれる酸素原子（O）の酸化数は、通常の化合物中の酸素と同様に -2 である。",
+                options: ["○ 正しい", "× 誤り"],
+                answer: "× 誤り",
+                trap_type: "酸化数の頻出例外（過酸化物）",
+                explanation: "【誤り】\n化合物中の水素の酸化数は +1 です。過酸化水素 H2O2 全体で電荷は 0 なので、2×(+1) + 2×(Oの酸化数) = 0 より、O の酸化数は【-1】となります。"
+            },
+            {
+                subject: "化学基礎",
+                field: "結合の種類と結晶の性質",
+                title: "【共通テスト正誤判定】黒鉛（グラファイト）は共有結合結晶であるが、層状構造の面内に自由電子のように動ける電子が存在するため、例外的に電気を導く。",
+                options: ["○ 正しい", "× 誤り"],
+                answer: "○ 正しい",
+                trap_type: "非金属・共有結合結晶における電気伝導性の例外",
+                explanation: "【正しい】\n共有結合結晶（ダイヤモンドやケイ素など）は通常電気を通しませんが、黒鉛は各炭素原子が3つの炭素と共有結合し、余った1つの電子が層内を自由に移動できるため、非金属でありながら【優れた電気伝導性】を示します。"
+            },
+            {
+                subject: "化学基礎",
+                field: "物質量(mol)と気体体積",
+                title: "【共通テスト正誤判定】どのような温度・圧力のもとであっても、すべての気体 1 mol の体積は常に 22.4 L である。",
+                options: ["○ 正しい", "× 誤り"],
+                answer: "× 誤り",
+                trap_type: "標準状態（0℃、1.013×10^5 Pa）条件の脱落",
+                explanation: "【誤り】\n気体 1 mol の体積が 22.4 L になるのは【標準状態（0℃、1.013×10^5 Pa）】のときのみです。温度や圧力が変化すれば気体の体積も変化します。"
+            },
+
+            // ===== 🧬 生物基礎 =====
+            {
+                subject: "生物基礎",
+                field: "ミクロメーター重複校正",
+                title: "【共通テスト正誤判定】顕微鏡の対物レンズを10倍から40倍に切り替えたとき、視野内の接眼ミクロメーターの目盛りの間隔は4倍に拡大されて見える。",
+                options: ["○ 正しい", "× 誤り"],
+                answer: "× 誤り",
+                trap_type: "接眼ミクロメーターの視認不変罠",
+                explanation: "【誤り】\n接眼ミクロメーターは接眼レンズの内部に入っているため、対物レンズの倍率を変えても【目盛りの見た目の間隔は変化しません】。変化するのは「接眼ミクロメーター1目盛りが表す実際の長さ（1/4になる）」です。"
+            },
+            {
+                subject: "生物基礎",
+                field: "シャルガフの規則とDNA転写",
+                title: "【共通テスト正誤判定】2本鎖DNAにおいて、アデニン（A）の割合が24%であるとき、シトシン（C）の割合は26%である。",
+                options: ["○ 正しい", "× 誤り"],
+                answer: "○ 正しい",
+                trap_type: "シャルガフ比率計算",
+                explanation: "【正しい】\nシャルガフの規則より A = T = 24% なので、A + T = 48% です。残り 52% が G + C となり、G = C なので C = 52% ÷ 2 = 26% となります。"
+            },
+            {
+                subject: "生物基礎",
+                field: "自然免疫 vs 獲得免疫",
+                title: "【共通テスト正誤判定】血清療法は、弱毒化した抗原を体内に投与して長期間残る記憶細胞（メモリー細胞）を形成させる予防法である。",
+                options: ["○ 正しい", "× 誤り"],
+                answer: "× 誤り",
+                trap_type: "血清療法とワクチンの主語すり替え",
+                explanation: "【誤り】\n弱毒化した抗原を投与して記憶細胞を作らせるのは【ワクチン】です。\n血清療法は、あらかじめ他動物で作った「抗体そのもの」を直接注射して病原体を即座に中和する治療法であり、【記憶細胞は形成されず長期間の効果はありません】。"
+            },
+            {
+                subject: "生物基礎",
+                field: "血糖値調節とホルモンフィードバック",
+                title: "【共通テスト正誤判定】ヒトの体内で血糖値を下げる働きをもつホルモンは複数存在するが、血糖値を上昇させるホルモンはインスリン1種類のみである。",
+                options: ["○ 正しい", "× 誤り"],
+                answer: "× 誤り",
+                trap_type: "上昇と低下のホルモン関係の完全逆転",
+                explanation: "【誤り】\n血糖値を下げるホルモンが【インスリン1種類のみ】（すい臓ランゲルハンス島B細胞）です。逆に血糖値を上げるホルモンは、グルカゴン、アドレナリン、糖質コルチコイド、チロキシンなど複数存在します。"
+            },
+            {
+                subject: "生物基礎",
+                field: "植生遷移とバイオーム気候グラフ",
+                title: "【共通テスト正誤判定】日本の温帯地域において、森林伐採後の二次遷移が進行すると、最初にススキなどの先駆植物が現れ、極相（クライマックス）に達するとアカマツなどの陽樹林になる。",
+                options: ["○ 正しい", "× 誤り"],
+                answer: "× 誤り",
+                trap_type: "極相林（陰樹林）と先駆陽樹林の混同",
+                explanation: "【誤り】\nアカマツやコナラなどの陽樹は遷移の初期〜中期に繁栄する「陽樹林」を形成します。林床が暗くなると幼木が育たなくなり、最終的な極相（クライマックス）ではシイ・カシ・クスノキ・ブナなどの【陰樹林】になります。"
+            },
+            {
+                subject: "生物基礎",
+                field: "原核細胞 vs 真核細胞",
+                title: "【共通テスト正誤判定】ユレモやネンジュモなどのシアノバクテリアは光合成を行うため、真核細胞であり細胞内に葉緑体をもつ。",
+                options: ["○ 正しい", "× 誤り"],
+                answer: "× 誤り",
+                trap_type: "原核生物（細菌・シアノバクテリア）と真核生物の境界罠",
+                explanation: "【誤り】\nシアノバクテリア（ユレモ・ネンジュモ）は光合成を行いますが【原核生物】です。核膜をもたず、葉緑体やミトコンドリアなどの膜構造をもつ細胞小器官は存在しません（細胞膜が陥入したチラコイドで光合成を行います）。"
+            },
+
+            // ===== 🌍 地学基礎 =====
+            {
+                subject: "地学基礎",
+                field: "地震波(P・S波)と走時曲線",
+                title: "【共通テスト正誤判定】地震計で最初に観測されるP波は横波であり、液体中（外核）を伝わることができない。",
+                options: ["○ 正しい", "× 誤り"],
+                answer: "× 誤り",
+                trap_type: "P波・S波の縦横・伝播媒体の混同",
+                explanation: "【誤り】\nP波は進行方向と同方向に振動する【縦波（疎密波）】であり、固体・液体・気体のすべてを伝わります。横波で液体を伝わることができないのは【S波】です。"
+            },
+            {
+                subject: "地学基礎",
+                field: "SiO2量とマグマ・火成岩分類",
+                title: "【共通テスト正誤判定】玄武岩質のマグマはSiO2含有量が多く、粘性が高いため爆発的な噴火を起こしやすい。",
+                options: ["○ 正しい", "× 誤り"],
+                answer: "× 誤り",
+                trap_type: "SiO2量と粘性・噴火様式の逆転",
+                explanation: "【誤り】\n玄武岩質マグマはSiO2含有量が約50%前後と【少なく】、粘性が【低く（サラサラ）】、穏やかな噴火を起こします。SiO2が多く粘性が高く爆発的噴火を起こすのは流紋岩質マグマです。"
+            },
+            {
+                subject: "地学基礎",
+                field: "地球構造とアイソスタシー",
+                title: "【共通テスト正誤判定】海洋地殻は大陸地殻に比べて平均的な厚さが薄いが、花こう岩質の岩石から構成されているため密度は小さい。",
+                options: ["○ 正しい", "× 誤り"],
+                answer: "× 誤り",
+                trap_type: "海洋地殻（玄武岩質・大密度）と大陸地殻（花こう岩質）の混同",
+                explanation: "【誤り】\n海洋地殻（厚さ約5〜10km）は【玄武岩質】で密度が約3.0 g/cm³と【大きく】、大陸地殻（厚さ約30〜40km）は上部が【花こう岩質】で密度が約2.7 g/cm³と小さいです。"
+            },
+            {
+                subject: "地学基礎",
+                field: "示準化石・示相化石と柱状図",
+                title: "【共通テスト正誤判定】地層対比において、凝灰岩（火山灰）の層は、短期間に広範囲にわたって堆積するため、離れた地域の地層の時代を特定する鍵層として極めて重要である。",
+                options: ["○ 正しい", "× 誤り"],
+                answer: "○ 正しい",
+                trap_type: "鍵層（凝灰岩層）の対比原理",
+                explanation: "【正しい】\n火山の噴火による火山灰（凝灰岩）は地質学的に「一瞬」で広範囲に飛散・堆積するため、離れた地点の柱状図を対比する際の決定打（鍵層）となります。"
+            },
+            {
+                subject: "地学基礎",
+                field: "大気循環と前線気象",
+                title: "【共通テスト正誤判定】日本付近を通過する温帯低気圧に伴う寒冷前線が通過した後は、風向が南寄りから北寄りに変わり、気温が急激に低下する。",
+                options: ["○ 正しい", "× 誤り"],
+                answer: "○ 正しい",
+                trap_type: "寒冷前線通過後の気象変化",
+                explanation: "【正しい】\n寒冷前線は冷たい気団が暖かい気団を押し上げながら進むため、通過後は寒気団に覆われて風向が南寄りから北西寄りに変わり、【気温が急激に低下】します。"
+            },
+            {
+                subject: "地学基礎",
+                field: "恒星の明るさ・H-R図と星の進化",
+                title: "【共通テスト正誤判定】恒星の見かけの明るさにおいて、1等級の恒星は6等級の恒星のちょうど5倍明るい。",
+                options: ["○ 正しい", "× 誤り"],
+                answer: "× 誤り",
+                trap_type: "ポグソンの式の線形・対数誤認",
+                explanation: "【誤り】\nポグソンの式により、1等級の差は明るさで約 2.512 倍に相当し、5等級差（1等級と6等級）では明るさが【ちょうど100倍】異なります。5倍ではありません。"
+            }
+        ];
+
+        function renderScienceTrapFieldButtons() {
+            const grid = document.getElementById("science-trap-field-grid");
+            if (!grid) return;
+            const fields = SCIENCE_FIELDS[scienceSelectedSubj] || SCIENCE_FIELDS["物理基礎"];
+            grid.innerHTML = fields.map(f => `
+                <button type="button" class="kyotsu-field-btn ${f.name === scienceSelectedField ? 'active' : ''}" data-field-name="${escapeHtml(f.name)}">
+                    <span>${escapeHtml(f.name)}</span>
+                    <span class="field-sub">${escapeHtml(f.sub)}</span>
+                </button>
+            `).join("");
+
+            grid.querySelectorAll(".kyotsu-field-btn").forEach(btn => {
+                btn.onclick = () => {
+                    grid.querySelectorAll(".kyotsu-field-btn").forEach(b => b.classList.remove("active"));
+                    btn.classList.add("active");
+                    scienceSelectedField = btn.getAttribute("data-field-name");
+                };
+            });
         }
 
         function renderKyotsuFieldButtons() {
@@ -1878,12 +2263,101 @@
         document.getElementById("btn-mode-ai")?.addEventListener("click", () => switchMode("ai"));
         document.getElementById("btn-mode-kyotsu")?.addEventListener("click", () => switchMode("kyotsu"));
         document.getElementById("btn-mode-registered")?.addEventListener("click", () => switchMode("registered"));
+        document.getElementById("btn-mode-science-trap")?.addEventListener("click", () => switchMode("science-trap"));
 
         const urlParams = new URLSearchParams(window.location.search);
         const initialMode = urlParams.get("mode");
-        if (initialMode && ["ai", "kyotsu", "registered"].includes(initialMode)) {
+        const rawSubj = urlParams.get("subject") || urlParams.get("subj") || "";
+        const rawField = urlParams.get("field") || "";
+
+        if (initialMode && ["ai", "kyotsu", "registered", "science-trap"].includes(initialMode)) {
             switchMode(initialMode);
         }
+
+        if (initialMode === "science-trap" || rawSubj) {
+            let matchedSubj = null;
+            if (rawSubj.includes("物理")) matchedSubj = "物理基礎";
+            else if (rawSubj.includes("化学")) matchedSubj = "化学基礎";
+            else if (rawSubj.includes("生物")) matchedSubj = "生物基礎";
+            else if (rawSubj.includes("地学")) matchedSubj = "地学基礎";
+            else if (rawSubj.includes("ランダム") || rawSubj.includes("全")) matchedSubj = "4科目ランダム";
+
+            if (matchedSubj) {
+                scienceSelectedSubj = matchedSubj;
+                document.querySelectorAll("#science-trap-subject-group button").forEach(b => {
+                    const s = b.getAttribute("data-science-subj");
+                    b.classList.toggle("active", s === matchedSubj);
+                });
+            }
+
+            if (rawField) {
+                const available = SCIENCE_FIELDS[scienceSelectedSubj] || [];
+                const found = available.find(f => rawField.includes(f.name) || f.name.includes(rawField));
+                if (found) {
+                    scienceSelectedField = found.name;
+                }
+            }
+            renderScienceTrapFieldButtons();
+        }
+
+        // 🔬 共テ理科基礎トラップ 科目タブ切り替え
+        document.querySelectorAll("#science-trap-subject-group button").forEach(btn => {
+            btn.addEventListener("click", () => {
+                document.querySelectorAll("#science-trap-subject-group button").forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+                scienceSelectedSubj = btn.getAttribute("data-science-subj") || "物理基礎";
+                const firstField = (SCIENCE_FIELDS[scienceSelectedSubj] || [])[0]?.name || "力のつり合い vs 作用反作用";
+                scienceSelectedField = firstField;
+                renderScienceTrapFieldButtons();
+            });
+        });
+
+        // 🔬 共テ理科基礎 出題数切り替え
+        document.querySelectorAll("#science-trap-mode-section .count-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                document.querySelectorAll("#science-trap-mode-section .count-btn").forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+                scienceSelectedCount = parseInt(btn.getAttribute("data-trap-count") || "5", 10);
+            });
+        });
+
+        // 🔬 共テ理科基礎 トラップスプリント開始トリガー
+        document.getElementById("btn-start-science-trap")?.addEventListener("click", () => {
+            let pool = SCIENCE_TRAP_DATABASE;
+            if (scienceSelectedSubj !== "4科目ランダム") {
+                const filtered = pool.filter(q => q.subject === scienceSelectedSubj);
+                if (filtered.length > 0) pool = filtered;
+            }
+
+            // ユーザーが選択した単元（field）に合致する問題を最優先で選出し、残りを同じ科目から補充
+            const matchedField = pool.filter(q => q.field === scienceSelectedField);
+            const otherQuestions = pool.filter(q => q.field !== scienceSelectedField).sort(() => 0.5 - Math.random());
+            const orderedPool = [...matchedField, ...otherQuestions];
+
+            selectedQuestions = orderedPool.slice(0, scienceSelectedCount).map((q, idx) => ({
+                id: `SCIENCE_TRAP_${Date.now()}_${idx + 1}`,
+                title: q.title,
+                field: `${q.subject}：${q.field}`,
+                subject: q.subject,
+                options: q.options || ["○ 正しい", "× 誤り"],
+                answer: q.answer,
+                trap_type: q.trap_type,
+                steps: `【正解】${q.answer}\n\n【⚠️ 出題者の罠】${q.trap_type}\n\n【解説】\n${q.explanation}`,
+                explanation: q.explanation
+            }));
+
+            currentMode = "science-trap";
+            lastCondition = {
+                mode: "science-trap",
+                subject: scienceSelectedSubj,
+                field: scienceSelectedField,
+                count: selectedQuestions.length,
+                sprintTitle: `共テ理科基礎トラップ（${scienceSelectedSubj}）`
+            };
+
+            showToast(`🔬 ${scienceSelectedSubj}（${selectedQuestions.length}問）のトラップスプリントを開始します！`, "success", 2500);
+            launchSprintPlayZone();
+        });
 
         // 共通テスト科目タブの切り替え
         document.querySelectorAll("#kyotsu-subject-tab-group button").forEach(btn => {
@@ -4125,14 +4599,18 @@ selectedQuestions = shuffled.slice(0, count).map((q, idx) => ({
             }
 
             document.getElementById("sprint-reveal-zone").style.display = "none";
-            document.getElementById("btn-reveal-ans").style.display = "block";
+            document.getElementById("action-trigger-zone").style.display = "flex";
             document.getElementById("sprint-progress").textContent = `Q. ${currentQuestionIndex + 1} / ${selectedQuestions.length}`;
 
             const q = selectedQuestions[currentQuestionIndex];
+            const isScienceTrap = (currentMode === "science-trap" || q.id?.startsWith("SCIENCE_TRAP_"));
 
             // モードに応じたメタ表示
-            const modeLabel = currentMode === "registered" ? "登録済み誤答" : "AI生成";
-            document.getElementById("problem-meta").textContent = `${q.subject || "?"} // ${q.field || "?"} // ${modeLabel}`;
+            let modeLabel = "AI生成";
+            if (currentMode === "registered") modeLabel = "登録済み誤答";
+            else if (isScienceTrap) modeLabel = "🔬 共テ理科基礎トラップ特訓";
+
+            document.getElementById("problem-meta").textContent = `${q.subject || "理科基礎"} // ${q.field || "演習"} // ${modeLabel}`;
 
             const sprintTitle = lastCondition?.sprintTitle || "";
             const themeBadge = document.getElementById("sprint-theme-badge");
@@ -4148,13 +4626,44 @@ selectedQuestions = shuffled.slice(0, count).map((q, idx) => ({
             // 個別問題のテーマ・解法パターン名バッジ
             const subtopicBadge = document.getElementById("problem-subtopic-badge");
             if (subtopicBadge) {
-                const subtopicText = (q.theme || q.subtopic || "").trim();
+                const subtopicText = (q.trap_type ? `⚠️ 罠: ${q.trap_type}` : (q.theme || q.subtopic || "")).trim();
                 if (subtopicText) {
                     subtopicBadge.style.display = "inline-flex";
-                    subtopicBadge.textContent = `📌 ${subtopicText}`;
+                    subtopicBadge.textContent = subtopicText.startsWith("⚠️") ? subtopicText : `📌 ${subtopicText}`;
                 } else {
                     subtopicBadge.style.display = "none";
                 }
+            }
+
+            // 理科基礎トラップモードの専用コントロール表示切替
+            const choicePanel = document.getElementById("science-trap-choice-panel");
+            const revealBtn = document.getElementById("btn-reveal-ans");
+            const trapBanner = document.getElementById("sprint-trap-result-banner");
+            const trapNextPanel = document.getElementById("sprint-trap-next-panel");
+            const standardControls = document.getElementById("sprint-standard-controls");
+
+            if (trapBanner) trapBanner.style.display = "none";
+
+            if (isScienceTrap) {
+                if (choicePanel) choicePanel.style.display = "flex";
+                if (revealBtn) {
+                    revealBtn.style.display = "block";
+                    revealBtn.textContent = "👁 解説と解答を直接確認する";
+                    revealBtn.className = "flora-btn flora-btn-ghost btn-sm";
+                    revealBtn.style.marginTop = "0.4rem";
+                }
+                if (trapNextPanel) trapNextPanel.style.display = "none";
+                if (standardControls) standardControls.style.display = "flex";
+            } else {
+                if (choicePanel) choicePanel.style.display = "none";
+                if (revealBtn) {
+                    revealBtn.style.display = "block";
+                    revealBtn.textContent = "👁 答えを確認する";
+                    revealBtn.className = "flora-btn flora-btn-primary btn-lg";
+                    revealBtn.style.marginTop = "0";
+                }
+                if (trapNextPanel) trapNextPanel.style.display = "none";
+                if (standardControls) standardControls.style.display = "flex";
             }
 
             // 問題文本文の表示（questionTextを最優先、なければtitle）
@@ -4182,7 +4691,47 @@ selectedQuestions = shuffled.slice(0, count).map((q, idx) => ({
             cleanSteps = cleanSteps.replace(/\\n/g, '<br>').replace(/\n/g, '<br>');
             document.getElementById("sprint-steps-display").innerHTML = cleanSteps;
 
-            forceTriggerMathJax();
+            const playZone = document.getElementById("sprint-play-zone");
+            forceTriggerMathJax(playZone);
+        }
+
+        // 🔬 共テ理科基礎トラップ：即時○×判定ハンドラ
+        function handleTrapChoice(userPickIsPositive) {
+            const q = selectedQuestions[currentQuestionIndex];
+            if (!q) return;
+
+            const ans = String(q.answer || "");
+            const isCorrect = userPickIsPositive
+                ? (ans.includes("○") || ans.includes("正しい"))
+                : (ans.includes("×") || ans.includes("誤り"));
+
+            sprintResultsTracker.push({ question: q, isCorrect });
+
+            const banner = document.getElementById("sprint-trap-result-banner");
+            if (banner) {
+                banner.style.display = "block";
+                if (isCorrect) {
+                    banner.style.background = "rgba(16, 185, 129, 0.12)";
+                    banner.style.border = "1px solid #10b981";
+                    banner.style.color = "#059669";
+                    banner.innerHTML = `🎉 <strong>正解！</strong> 見事に出題者の罠を見破りました！<br><span style="font-size:0.82rem; font-weight:normal; color:var(--text-secondary);">正しい判定: <strong>${escapeHtml(q.answer)}</strong>（${escapeHtml(q.trap_type || 'トラップ攻略')}）</span>`;
+                    showToast("🎉 正解！罠を見破りました！", "success", 1800);
+                } else {
+                    banner.style.background = "rgba(239, 68, 68, 0.1)";
+                    banner.style.border = "1px solid #ef4444";
+                    banner.style.color = "#dc2626";
+                    banner.innerHTML = `⚠️ <strong>引っかかりました！</strong>【${escapeHtml(q.trap_type || '出題者の罠')}】<br><span style="font-size:0.82rem; font-weight:normal; color:var(--text-secondary);">正しい判定: <strong>${escapeHtml(q.answer)}</strong></span>`;
+                    showToast(`⚠️ 罠にかかりました！（${q.trap_type || ''}）`, "error", 2200);
+                    sendToMainRemindList(false);
+                }
+            }
+
+            document.getElementById("action-trigger-zone").style.display = "none";
+            document.getElementById("sprint-reveal-zone").style.display = "flex";
+            document.getElementById("sprint-standard-controls").style.display = "none";
+            document.getElementById("sprint-trap-next-panel").style.display = "flex";
+
+            forceTriggerMathJax(document.getElementById("sprint-reveal-zone"));
         }
 
         // 🖼️ 登録済み問題の写真・図を取得＆ギャラリー描画
@@ -4296,8 +4845,8 @@ selectedQuestions = shuffled.slice(0, count).map((q, idx) => ({
                 }
                 nextQuestion();
             } else {
-                // AIモード：従来通り Firebase に新規登録
-                await sendToMainRemindList();
+                // AIモード / 共テ理科基礎トラップモード：Firebase に新規登録
+                await sendToMainRemindList(true);
             }
         }
 
@@ -4327,45 +4876,53 @@ selectedQuestions = shuffled.slice(0, count).map((q, idx) => ({
             nextQuestion();
         }
 
-       async function sendToMainRemindList() {
-    if (!loginUid) return;
-    const q = selectedQuestions[currentQuestionIndex];
+        async function sendToMainRemindList(shouldAdvance = true) {
+            if (!loginUid) return;
+            const q = selectedQuestions[currentQuestionIndex];
+            if (!q) return;
 
-    const targetRef = ref(database, 'users/' + loginUid + '/problems/' + q.id);
-    const nowIso = new Date().toISOString();
+            const targetRef = ref(database, 'users/' + loginUid + '/problems/' + q.id);
+            const nowIso = new Date().toISOString();
 
-    const sprintTitle = lastCondition?.sprintTitle || "";
-    const shortTitle = sprintTitle ? `【CS】${sprintTitle.slice(0, 20)}` : `【CS】${q.field || "計算"}`;
-    const trapDesc = sprintTitle
-        ? `特訓スプリント『${sprintTitle}』でミスした問題。数式の展開や符号ミス、計算ルートの選定を見直してください。`
-        : "カスタムスプリントでミスした問題。数式の展開や符号ミス、計算ルートの選定を見直してください。";
+            const isScienceTrap = (currentMode === "science-trap" || q.id?.startsWith("SCIENCE_TRAP_"));
+            const sprintTitle = lastCondition?.sprintTitle || "";
+            const shortTitle = isScienceTrap
+                ? `【共テトラップ】${q.field || q.subject || "理科基礎"}`
+                : (sprintTitle ? `【CS】${sprintTitle.slice(0, 20)}` : `【CS】${q.field || "計算"}`);
+            const trapDesc = isScienceTrap
+                ? (q.trap_type ? `共通テスト理科基礎の罠【${q.trap_type}】` : "共通テスト理科基礎の正誤判定トラップ特訓")
+                : (sprintTitle
+                    ? `特訓スプリント『${sprintTitle}』でミスした問題。数式の展開や符号ミス、計算ルートの選定を見直してください。`
+                    : "カスタムスプリントでミスした問題。数式の展開や符号ミス、計算ルートの選定を見直してください。");
 
-    const remindProblem = {
-        id: q.id,
-        title: q.title,
-        short_title: shortTitle,
-        subject: q.subject || "数学",
-        field: q.field || "計算特訓",
-        trap_description: trapDesc,
-        strategyPattern: "",
-        errorCount: 1,
-        lastAttemptAt: nowIso,
-        createdAt: nowIso,
-        lastResult: false,
-        thumb: null,
-        imageCount: 0,
-        answerFormula: `${q.answer}\n\n【解説】\n${q.steps}`
-    };
+            const remindProblem = {
+                id: q.id,
+                title: q.title,
+                short_title: shortTitle,
+                subject: q.subject || (isScienceTrap ? "理科基礎" : "数学"),
+                field: q.field || (isScienceTrap ? "正誤判定トラップ" : "計算特訓"),
+                trap_description: trapDesc,
+                strategyPattern: q.trap_type || "",
+                errorCount: 1,
+                lastAttemptAt: nowIso,
+                createdAt: nowIso,
+                lastResult: false,
+                thumb: null,
+                imageCount: 0,
+                answerFormula: `${q.answer}\n\n【解説】\n${q.steps || q.explanation || ''}`
+            };
 
-    try {
-        await set(targetRef, remindProblem);
-        showToast("弱点としてロックオン！ダッシュボード（LOLZ）の復習リストに自動転送・同期しました！", "success", 3000);
-        nextQuestion();
-    } catch (e) {
-        console.error(e);
-        showToast("クラウドへの転送に失敗しました。", "error");
-    }
-}
+            try {
+                await set(targetRef, remindProblem);
+                showToast("弱点としてロックオン！ダッシュボード（LOLZ）の復習リストに自動転送・同期しました！", "success", 3000);
+                if (shouldAdvance) {
+                    nextQuestion();
+                }
+            } catch (e) {
+                console.error(e);
+                showToast("クラウドへの転送に失敗しました。", "error");
+            }
+        }
 
         function nextQuestion() {
             currentQuestionIndex++;
@@ -4383,6 +4940,8 @@ selectedQuestions = shuffled.slice(0, count).map((q, idx) => ({
                 return `「${subLabel}」×「${fldLabel}」から${cond.count}問をすべてクリアしました。`;
             } else if (cond.mode === "kyotsu") {
                 return `共通テスト実践大問『${cond.topic}』(${cond.subject}) を完走しました！`;
+            } else if (cond.mode === "science-trap") {
+                return `共テ理科基礎トラップ特訓『${cond.subject} - ${cond.field}』(${cond.count}問) を完走しました！`;
             } else {
                 const titlePart = cond.sprintTitle ? `『${cond.sprintTitle}』` : `「${cond.fieldText || "数学全範囲"}」`;
                 return `${titlePart} ×「${cond.levelText}」×${cond.count}問をすべてクリアしました！`;
@@ -4484,24 +5043,29 @@ selectedQuestions = shuffled.slice(0, count).map((q, idx) => ({
             const pid = q.id || `SPRINT_PROB_${Date.now()}_${idx}`;
             const isCorrect = r.isCorrect;
 
+            const isScienceTrap = (currentMode === "science-trap" || q.id?.startsWith("SCIENCE_TRAP_"));
             const sprintTitle = lastCondition?.sprintTitle || "";
-            const shortTitle = sprintTitle ? `【CS】${sprintTitle.slice(0, 20)}` : `【CS】${q.field || "演習"}`;
+            const shortTitle = isScienceTrap
+                ? `【共テトラップ】${q.field || q.subject || "理科基礎"}`
+                : (sprintTitle ? `【CS】${sprintTitle.slice(0, 20)}` : `【CS】${q.field || "演習"}`);
 
             const problemObj = {
                 id: pid,
                 title: q.questionText || q.title,
                 short_title: `${shortTitle}（${isCorrect ? '正解💮' : 'ミス'}）`,
-                subject: q.subject || "数学",
-                field: q.field || "カスタムスプリント",
-                trap_description: isCorrect ? "スプリントで解けた問題の記録です。" : "スプリントでミスした問題。解法の要点を復習してください。",
-                strategyPattern: "",
+                subject: q.subject || (isScienceTrap ? "理科基礎" : "数学"),
+                field: q.field || (isScienceTrap ? "正誤判定トラップ" : "カスタムスプリント"),
+                trap_description: isCorrect
+                    ? (isScienceTrap ? `共テ理科基礎トラップ特訓で正解した問題（${q.trap_type || ''}）` : "スプリントで解けた問題の記録です。")
+                    : (isScienceTrap ? `共テ理科基礎トラップ特訓でミスした問題（${q.trap_type || ''}）` : "スプリントでミスした問題。解法の要点を復習してください。"),
+                strategyPattern: q.trap_type || "",
                 errorCount: isCorrect ? 0 : 1,
                 lastAttemptAt: nowIso,
                 createdAt: nowIso,
                 lastResult: isCorrect,
                 thumb: null,
                 imageCount: 0,
-                answerFormula: `${q.answer || ''}\n\n【解説】\n${q.steps || ''}`
+                answerFormula: `${q.answer || ''}\n\n【解説】\n${q.steps || q.explanation || ''}`
             };
 
             try {
@@ -4544,23 +5108,28 @@ selectedQuestions = shuffled.slice(0, count).map((q, idx) => ({
                 const q = r.question;
                 const pid = q.id || `SPRINT_PROB_${Date.now()}_${i}`;
                 const isCorrect = r.isCorrect;
-                const shortTitle = sprintTitle ? `【CS】${sprintTitle.slice(0, 18)} #${i+1}` : `【CS】${q.field || "演習"} #${i+1}`;
+                const isScienceTrap = (currentMode === "science-trap" || q.id?.startsWith("SCIENCE_TRAP_"));
+                const shortTitle = isScienceTrap
+                    ? `【共テトラップ】${q.field || q.subject || "理科基礎"} #${i+1}`
+                    : (sprintTitle ? `【CS】${sprintTitle.slice(0, 18)} #${i+1}` : `【CS】${q.field || "演習"} #${i+1}`);
 
                 const problemObj = {
                     id: pid,
                     title: q.questionText || q.title,
                     short_title: `${shortTitle}（${isCorrect ? '正解💮' : 'ミス'}）`,
-                    subject: q.subject || "数学",
-                    field: q.field || "カスタムスプリント",
-                    trap_description: isCorrect ? "スプリントで解けた問題の記録です。" : "スプリントでミスした問題。解法の要点を復習してください。",
-                    strategyPattern: "",
+                    subject: q.subject || (isScienceTrap ? "理科基礎" : "数学"),
+                    field: q.field || (isScienceTrap ? "正誤判定トラップ" : "カスタムスプリント"),
+                    trap_description: isCorrect
+                        ? (isScienceTrap ? `共テ理科基礎トラップ特訓で正解した問題（${q.trap_type || ''}）` : "スプリントで解けた問題の記録です。")
+                        : (isScienceTrap ? `共テ理科基礎トラップ特訓でミスした問題（${q.trap_type || ''}）` : "スプリントでミスした問題。解法の要点を復習してください。"),
+                    strategyPattern: q.trap_type || "",
                     errorCount: isCorrect ? 0 : 1,
                     lastAttemptAt: nowIso,
                     createdAt: nowIso,
                     lastResult: isCorrect,
                     thumb: null,
                     imageCount: 0,
-                    answerFormula: `${q.answer || ''}\n\n【解説】\n${q.steps || ''}`
+                    answerFormula: `${q.answer || ''}\n\n【解説】\n${q.steps || q.explanation || ''}`
                 };
 
                 try {
@@ -4586,10 +5155,17 @@ selectedQuestions = shuffled.slice(0, count).map((q, idx) => ({
         // ==========================================================================
         // 📋【共通イベントリスナー登録群】
         // ==========================================================================
+        document.getElementById("btn-trap-choice-true")?.addEventListener("click", () => handleTrapChoice(true));
+        document.getElementById("btn-trap-choice-false")?.addEventListener("click", () => handleTrapChoice(false));
+        document.getElementById("btn-trap-next-question")?.addEventListener("click", () => {
+            document.getElementById("action-trigger-zone").style.display = "flex";
+            nextQuestion();
+        });
+
         document.getElementById("btn-reveal-ans").addEventListener("click", () => {
             document.getElementById("btn-reveal-ans").style.display = "none";
             document.getElementById("sprint-reveal-zone").style.display = "flex";
-            forceTriggerMathJax();
+            forceTriggerMathJax(document.getElementById("sprint-reveal-zone"));
         });
 
         document.getElementById("btn-sprint-correct").addEventListener("click", handleCorrect);
