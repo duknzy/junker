@@ -2041,6 +2041,12 @@
             border-left-color: #ef4444;
             background: linear-gradient(180deg, rgba(239,68,68,0.02) 0%, var(--bg-surface) 100%);
         }
+        .choice-drill-card.is-selected {
+            border-color: #6366f1 !important;
+            border-left-color: #4f46e5 !important;
+            background: rgba(99, 102, 241, 0.05) !important;
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.35);
+        }
         .choice-drill-header {
             display: flex;
             justify-content: space-between;
@@ -2773,12 +2779,48 @@
                             </div>
                         </div>
                         <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;">
+                            <button type="button" class="flora-btn flora-btn-secondary" id="btn-toggle-insight-drills-batch" style="font-size:0.72rem; padding:0.32rem 0.65rem; color:#4f46e5; border-color:rgba(99,102,241,0.4); background:rgba(99,102,241,0.06); font-weight:750; display:inline-flex; align-items:center; gap:0.3rem;" onclick="toggleInsightDrillsBatchMode()" title="選択問題を選択して一括削除や解答リセットを行います">
+                                ☑️ 一括管理
+                            </button>
                             <div id="drills-stats-badge" style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); background:var(--bg-subtle); padding:0.3rem 0.65rem; border-radius:var(--radius-sm); border:1px solid var(--border-color);">
                                 全 0 問
                             </div>
                             <button type="button" class="flora-btn flora-btn-secondary" id="btn-reset-all-drills" style="font-size:0.72rem; padding:0.32rem 0.65rem; border-color:var(--border-color); color:var(--text-secondary); display:inline-flex; align-items:center; gap:0.3rem;" onclick="resetAllInsightDrills()" title="現在の絞り込み対象の選択問題の回答状況を未解答にリセットします">
                                 🔄 解答リセット
                             </button>
+                        </div>
+                    </div>
+
+                    <!-- 🎯 選択問題専用一括管理アクションバー (insights) -->
+                    <div id="insight-drills-batch-bar" class="memorize-batch-bar" style="display:none; margin-top:0.75rem;">
+                        <div class="batch-bar-inner">
+                            <div class="batch-bar-left">
+                                <div class="batch-bar-title">
+                                    <span>🎯</span>
+                                    <span>選択問題 一括管理</span>
+                                </div>
+                                <span class="batch-bar-counter">
+                                    選択中: <strong id="insight-drills-selected-count" style="color:#00f3ff; font-weight:800;">0</strong> 問
+                                </span>
+                                <div class="batch-quick-selects">
+                                    <button type="button" class="batch-action-btn" onclick="selectAllInsightDrills(true)">全選択</button>
+                                    <button type="button" class="batch-action-btn" onclick="selectAllInsightDrills(false)">解除</button>
+                                    <button type="button" class="batch-action-btn" onclick="selectInsightDrillsByStatus('unanswered')">未解答</button>
+                                    <button type="button" class="batch-action-btn" onclick="selectInsightDrillsByStatus('wrong')">要復習</button>
+                                    <button type="button" class="batch-action-btn" onclick="selectInsightDrillsByStatus('correct')">正解</button>
+                                </div>
+                            </div>
+                            <div class="batch-bar-right" style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+                                <button type="button" class="batch-action-btn btn-batch-delete" onclick="batchDeleteInsightDrills()" title="選択した選択問題を一括削除します（授業データからも削除）">
+                                    🗑️ 一括削除
+                                </button>
+                                <button type="button" class="batch-action-btn" onclick="batchResetInsightDrills()" title="選択した問題の解答結果をリセットします">
+                                    🔄 解答リセット
+                                </button>
+                                <button type="button" class="batch-action-btn" onclick="toggleInsightDrillsBatchMode(false)" style="color:var(--text-muted);">
+                                    ✕ 閉じる
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -3708,6 +3750,8 @@
         const recentlyAnsweredDrillIds = new Set();
         // 🎯 回答後にユーザーが他の選択肢の解説や内容をじっくり確認するためのインスペクト状態
         const inspectedDrillOptions = new Map(); // key: "lessonId_drillId" -> optNumber
+        let isInsightDrillsBatchMode = false;
+        const selectedInsightDrillKeys = new Set();
 
         window.dismissRecentlyAnsweredDrill = function(lessonId, drillId) {
             const key = `${lessonId}_${drillId}`;
@@ -7704,8 +7748,16 @@
                     `;
                 }
 
+                const isDrillSelected = selectedInsightDrillKeys.has(drillKey);
+                const batchCheckboxHtml = isInsightDrillsBatchMode ? `
+                    <div style="display:inline-flex; align-items:center; margin-right:0.35rem;" onclick="event.stopPropagation();">
+                        <input type="checkbox" class="insight-drill-cb" onchange="toggleSelectInsightDrill('${escapeHtml(drillKey)}', this.checked)" ${isDrillSelected ? 'checked' : ''} style="width:17px; height:17px; cursor:pointer; accent-color:#4f46e5;">
+                    </div>
+                ` : '';
+                const cardClickAttr = isInsightDrillsBatchMode ? `onclick="toggleSelectInsightDrill('${escapeHtml(drillKey)}', !selectedInsightDrillKeys.has('${escapeHtml(drillKey)}'))" style="cursor:pointer;"` : '';
+
                 return `
-                    <div class="choice-drill-card ${cardStatusClass}" id="insight-drill-card-${escapeHtml(d.lessonId)}_${escapeHtml(d.id)}">
+                    <div class="choice-drill-card ${cardStatusClass} ${isDrillSelected ? 'is-selected' : ''}" id="insight-drill-card-${escapeHtml(d.lessonId)}_${escapeHtml(d.id)}" ${cardClickAttr}>
                         ${isRecentlyAnswered ? `
                             <div class="drill-recent-notice">
                                 <span>✨ 回答完了（解説・他の選択肢を確認中）</span>
@@ -7716,6 +7768,7 @@
                         ` : ''}
                         <div class="choice-drill-header">
                             <div style="display:flex; align-items:center; gap:0.45rem; flex-wrap:wrap;">
+                                ${batchCheckboxHtml}
                                 ${subjBadge}
                                 <span style="font-size:0.82rem; font-weight:700; color:var(--text-primary);">
                                     📘 ${escapeHtml(d.lessonTitle)}
@@ -7724,9 +7777,10 @@
                                     (${escapeHtml(d.partTitle)})
                                 </span>
                             </div>
-                            <div style="display:flex; align-items:center; gap:0.45rem;">
+                            <div style="display:flex; align-items:center; gap:0.45rem;" onclick="event.stopPropagation();">
                                 <span class="flora-badge ${typeInfo.class}" style="font-size:0.72rem; padding:0.15rem 0.5rem;">${typeInfo.label}</span>
                                 <span style="font-size:0.74rem; font-weight:700; color:var(--text-secondary);">問${index + 1}</span>
+                                <button type="button" class="flora-btn flora-btn-ghost btn-sm" onclick="deleteInsightChoiceDrill('${escapeHtml(d.lessonId)}', '${escapeHtml(d.id)}')" title="この選択問題を削除" style="font-size:0.75rem; padding:0.15rem 0.4rem; color:var(--text-muted); cursor:pointer;">🗑️</button>
                             </div>
                         </div>
 
@@ -7902,6 +7956,191 @@
             } catch (err) {
                 console.error("Reset drills error:", err);
                 showToast("リセットに失敗しました。", "error");
+            }
+        };
+
+        // 🎯 選択問題の個別削除
+        window.deleteInsightChoiceDrill = async function(lessonId, drillId) {
+            if (!currentUser || !rawLessons) return;
+            const lesson = rawLessons[lessonId];
+            if (!lesson || !Array.isArray(lesson.choiceDrills)) return;
+            const drill = lesson.choiceDrills.find(d => (d.id || "") === drillId);
+            const preview = drill && drill.lead_text ? drill.lead_text.slice(0, 25) + "..." : "この問題";
+            if (!confirm(`「${preview}」の選択問題を削除しますか？\n（授業データからも削除されます）`)) return;
+
+            lesson.choiceDrills = lesson.choiceDrills.filter(d => (d.id || "") !== drillId);
+            const drillKey = `${lessonId}_${drillId}`;
+            recentlyAnsweredDrillIds.delete(drillKey);
+            inspectedDrillOptions.delete(drillKey);
+            selectedInsightDrillKeys.delete(drillKey);
+
+            try {
+                await update(ref(database, `users/${currentUser.uid}/lessons/${lessonId}`), {
+                    choiceDrills: lesson.choiceDrills,
+                    updatedAt: new Date().toISOString()
+                });
+                _cachedBuildChoiceDrillItems = null;
+                showToast("選択問題を削除しました。", "success", 1500);
+                updateInsightDrillsBatchBar();
+                renderDrills();
+                updateCounts();
+            } catch (err) {
+                console.error("Delete drill error:", err);
+                showToast("削除に失敗しました。", "error");
+            }
+        };
+
+        // 🎯 選択問題の一括管理モード切替
+        window.toggleInsightDrillsBatchMode = function(forceVal) {
+            if (typeof forceVal === "boolean") {
+                isInsightDrillsBatchMode = forceVal;
+            } else {
+                isInsightDrillsBatchMode = !isInsightDrillsBatchMode;
+            }
+            if (!isInsightDrillsBatchMode) {
+                selectedInsightDrillKeys.clear();
+            }
+            const bar = document.getElementById("insight-drills-batch-bar");
+            if (bar) bar.style.display = isInsightDrillsBatchMode ? "block" : "none";
+            const btn = document.getElementById("btn-toggle-insight-drills-batch");
+            if (btn) {
+                btn.style.background = isInsightDrillsBatchMode ? "rgba(99,102,241,0.2)" : "rgba(99,102,241,0.06)";
+                btn.style.borderColor = isInsightDrillsBatchMode ? "#4f46e5" : "rgba(99,102,241,0.4)";
+                btn.textContent = isInsightDrillsBatchMode ? "✓ 選択管理中" : "☑️ 一括管理";
+            }
+            updateInsightDrillsBatchBar();
+            renderDrills();
+        };
+
+        window.updateInsightDrillsBatchBar = function() {
+            const countEl = document.getElementById("insight-drills-selected-count");
+            if (countEl) countEl.textContent = selectedInsightDrillKeys.size;
+        };
+
+        window.toggleSelectInsightDrill = function(drillKey, isSelected) {
+            if (isSelected) {
+                selectedInsightDrillKeys.add(drillKey);
+            } else {
+                selectedInsightDrillKeys.delete(drillKey);
+            }
+            const card = document.getElementById(`insight-drill-card-${drillKey}`);
+            if (card) {
+                card.classList.toggle("is-selected", isSelected);
+                const cb = card.querySelector(".insight-drill-cb");
+                if (cb) cb.checked = isSelected;
+            }
+            updateInsightDrillsBatchBar();
+        };
+
+        window.selectAllInsightDrills = function(select) {
+            if (!rawLessons) return;
+            selectedInsightDrillKeys.clear();
+            if (select) {
+                const drills = buildChoiceDrillItems();
+                drills.forEach(d => {
+                    selectedInsightDrillKeys.add(`${d.lessonId}_${d.id}`);
+                });
+            }
+            updateInsightDrillsBatchBar();
+            renderDrills();
+        };
+
+        window.selectInsightDrillsByStatus = function(status) {
+            selectedInsightDrillKeys.clear();
+            const drills = buildChoiceDrillItems();
+            drills.forEach(d => {
+                const key = `${d.lessonId}_${d.id}`;
+                if (status === 'unanswered' && !d.isAnswered) selectedInsightDrillKeys.add(key);
+                else if (status === 'wrong' && d.isAnswered && !d.isCorrect) selectedInsightDrillKeys.add(key);
+                else if (status === 'correct' && d.isAnswered && d.isCorrect) selectedInsightDrillKeys.add(key);
+            });
+            updateInsightDrillsBatchBar();
+            renderDrills();
+        };
+
+        window.batchDeleteInsightDrills = async function() {
+            if (!currentUser || !rawLessons) return;
+            const count = selectedInsightDrillKeys.size;
+            if (count === 0) {
+                showToast("削除する選択問題を選択してください。", "info", 2000);
+                return;
+            }
+            const ok = confirm(`選択した ${count} 問の選択問題を一括削除しますか？\n（それぞれの授業データからも削除されます）`);
+            if (!ok) return;
+
+            const lessonUpdates = {};
+            selectedInsightDrillKeys.forEach(key => {
+                const [lessonId, drillId] = key.split("_");
+                if (!lessonUpdates[lessonId]) lessonUpdates[lessonId] = new Set();
+                lessonUpdates[lessonId].add(drillId);
+            });
+
+            try {
+                const updates = {};
+                const now = new Date().toISOString();
+                for (const [lid, drillSet] of Object.entries(lessonUpdates)) {
+                    const lesson = rawLessons[lid];
+                    if (lesson && Array.isArray(lesson.choiceDrills)) {
+                        lesson.choiceDrills = lesson.choiceDrills.filter(d => !drillSet.has(d.id || ""));
+                        updates[`lessons/${lid}/choiceDrills`] = lesson.choiceDrills;
+                        updates[`lessons/${lid}/updatedAt`] = now;
+                    }
+                }
+
+                await update(ref(database, `users/${currentUser.uid}`), updates);
+                selectedInsightDrillKeys.clear();
+                _cachedBuildChoiceDrillItems = null;
+                showToast(`選択した ${count} 問を一括削除しました。`, "success", 2500);
+                updateInsightDrillsBatchBar();
+                renderDrills();
+                updateCounts();
+            } catch (err) {
+                console.error("Batch delete drills error:", err);
+                showToast("一括削除に失敗しました。", "error");
+            }
+        };
+
+        window.batchResetInsightDrills = async function() {
+            if (!currentUser || !rawLessons) return;
+            const count = selectedInsightDrillKeys.size;
+            if (count === 0) {
+                showToast("対象の選択問題を選択してください。", "info", 2000);
+                return;
+            }
+
+            const lessonUpdates = {};
+            selectedInsightDrillKeys.forEach(key => {
+                const [lessonId, drillId] = key.split("_");
+                if (!lessonUpdates[lessonId]) lessonUpdates[lessonId] = new Set();
+                lessonUpdates[lessonId].add(drillId);
+            });
+
+            try {
+                const updates = {};
+                const now = new Date().toISOString();
+                for (const [lid, drillSet] of Object.entries(lessonUpdates)) {
+                    const lesson = rawLessons[lid];
+                    if (lesson && Array.isArray(lesson.choiceDrills)) {
+                        lesson.choiceDrills.forEach(d => {
+                            if (drillSet.has(d.id || "")) {
+                                d.userAnswer = null;
+                                d.isCorrect = null;
+                                d.answeredAt = null;
+                            }
+                        });
+                        updates[`lessons/${lid}/choiceDrills`] = lesson.choiceDrills;
+                        updates[`lessons/${lid}/updatedAt`] = now;
+                    }
+                }
+
+                await update(ref(database, `users/${currentUser.uid}`), updates);
+                _cachedBuildChoiceDrillItems = null;
+                showToast(`選択した ${count} 問の解答をリセットしました！`, "success", 2000);
+                renderDrills();
+                updateCounts();
+            } catch (err) {
+                console.error("Batch reset drills error:", err);
+                showToast("解答リセットに失敗しました。", "error");
             }
         };
 

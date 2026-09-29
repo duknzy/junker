@@ -1954,6 +1954,79 @@
             background: var(--bg-surface); border: 1px solid var(--border-color);
             border-left: 3px solid var(--accent-cyan); border-radius: 0 var(--radius-md) var(--radius-md) 0;
             padding: 0.55rem 0.75rem; margin-bottom: 0.45rem; font-size: 0.8rem;
+            transition: all 0.15s ease;
+        }
+        .memorize-item.is-selected {
+            border-color: #6366f1 !important;
+            border-left-color: #4f46e5 !important;
+            background: rgba(99, 102, 241, 0.06) !important;
+            box-shadow: 0 0 0 1.5px rgba(99, 102, 241, 0.35);
+        }
+        .choice-drill-card.is-selected {
+            border-color: #6366f1 !important;
+            border-left-color: #4f46e5 !important;
+            background: rgba(99, 102, 241, 0.05) !important;
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.35);
+        }
+        .lesson-batch-bar {
+            position: sticky;
+            top: 0;
+            z-index: 25;
+            background: var(--bg-surface);
+            border: 1px solid rgba(99, 102, 241, 0.35);
+            border-radius: var(--radius-md);
+            padding: 0.6rem 0.75rem;
+            margin-bottom: 0.75rem;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+            display: flex;
+            flex-direction: column;
+            gap: 0.45rem;
+            animation: fadeInBatch 0.2s ease;
+        }
+        @keyframes fadeInBatch {
+            from { opacity: 0; transform: translateY(-4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .lesson-batch-btn {
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 0.25rem 0.6rem;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-color);
+            background: var(--bg-subtle);
+            color: var(--text-primary);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            transition: all 0.15s ease;
+        }
+        .lesson-batch-btn:hover {
+            filter: brightness(1.08);
+        }
+        .lesson-batch-btn-danger {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+        .lesson-batch-btn-danger:hover {
+            background: rgba(239, 68, 68, 0.2);
+        }
+        .lesson-batch-btn-primary {
+            background: #4f46e5;
+            color: #ffffff;
+            border-color: #4338ca;
+        }
+        .lesson-batch-btn-primary:hover {
+            background: #4338ca;
+        }
+        .lesson-batch-btn-success {
+            background: rgba(16, 185, 129, 0.12);
+            color: #059669;
+            border-color: rgba(16, 185, 129, 0.35);
+        }
+        .lesson-batch-btn-success:hover {
+            background: rgba(16, 185, 129, 0.22);
         }
 
         /* 🎯 選択問題（共通テスト形式・落とし穴演習）スタイル */
@@ -4917,11 +4990,35 @@
                                                 <select id="memorize-model-select" class="flora-select memorize-ai-select" title="暗記抽出モデル"></select>
                                                 <select id="memorize-thinking-select" class="flora-select memorize-ai-select" title="思考レベル"></select>
                                             </div>
+                                            <button type="button" id="btn-toggle-batch-memorize" class="flora-btn flora-btn-secondary btn-sm" onclick="toggleLessonMemorizeBatchMode()" style="padding: 0.2rem 0.55rem; font-size: 0.72rem; color: #4338CA; border: 1px dashed rgba(99,102,241,0.5); background: rgba(99,102,241,0.06); font-weight: 750;" title="暗記事項を選択して一括削除やステータス変更を行います">☑️ 一括管理</button>
                                             <button type="button" class="flora-btn flora-btn-secondary btn-sm" onclick="toggleAddMemorizePointForm(true)" style="padding: 0.2rem 0.5rem; font-size: 0.72rem;">＋項目追加</button>
                                             <button type="button" id="btn-open-byot-memorize-modal" class="flora-btn flora-btn-secondary btn-sm" style="padding: 0.2rem 0.55rem; font-size: 0.72rem; color: #4338CA; border: 1px dashed rgba(99,102,241,0.5); background: rgba(99,102,241,0.06); font-weight: 750;" title="Google AI Studio（構造化出力Structured outputs）で暗記カードを一括取り込み（API消費ゼロ＆パース崩れゼロ）">✨ AI Studioで抽出</button>
                                             <button type="button" id="btn-regen-memorize-points" class="flora-btn flora-btn-secondary btn-sm" onclick="regenerateLessonMemorizationPoints()" style="padding: 0.2rem 0.5rem; font-size: 0.72rem; color: var(--brand-primary); font-weight: 700;" title="この授業の暗記事項をAIで各パートごとに分割して漏れなく再生成します（ふりがななし・網羅）">🔄 AI再生成</button>
                                             <button type="button" id="btn-clean-furigana-points" class="flora-btn flora-btn-secondary btn-sm" onclick="cleanCurrentLessonFurigana()" style="padding: 0.2rem 0.5rem; font-size: 0.72rem; color: var(--text-secondary);" title="この授業の暗記事項から（ひらがな・ふりがな）の括弧表記を一括消去します">🧹 ふりがな消去</button>
                                             <button type="button" id="btn-clear-memorize-points" class="flora-btn flora-btn-secondary btn-sm" onclick="clearLessonMemorizationPoints()" style="padding: 0.2rem 0.5rem; font-size: 0.72rem; color: var(--error);" title="この授業の暗記事項をすべて削除します（暗記完了時のクリア用）">🗑️ 全削除</button>
+                                        </div>
+                                    </div>
+
+                                    <!-- 🧠 暗記事項一括管理アクションバー -->
+                                    <div id="lesson-memorize-batch-bar" class="lesson-batch-bar" style="display: none;">
+                                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.4rem;">
+                                            <div style="font-size:0.76rem; font-weight:700; color:var(--text-primary); display:flex; align-items:center; gap:0.4rem;">
+                                                <span>☑️ 暗記事項一括管理</span>
+                                                <span style="background:rgba(99,102,241,0.12); color:#4f46e5; padding:0.1rem 0.45rem; border-radius:12px; font-weight:800; font-size:0.72rem;">選択中: <strong id="lesson-memorize-selected-count">0</strong> 件</span>
+                                            </div>
+                                            <button type="button" class="lesson-batch-btn" onclick="toggleLessonMemorizeBatchMode(false)" style="font-size:0.7rem; padding:0.15rem 0.45rem;">✕ 終了</button>
+                                        </div>
+                                        <div style="display:flex; gap:0.3rem; align-items:center; flex-wrap:wrap;">
+                                            <button type="button" class="lesson-batch-btn" onclick="selectAllLessonMemorize(true)">全選択</button>
+                                            <button type="button" class="lesson-batch-btn" onclick="selectAllLessonMemorize(false)">選択解除</button>
+                                            <button type="button" class="lesson-batch-btn" onclick="selectLessonMemorizeByStatus('unlearned')">未習得のみ</button>
+                                            <button type="button" class="lesson-batch-btn" onclick="selectLessonMemorizeByStatus('mastered')">習得済のみ</button>
+                                        </div>
+                                        <div style="display:flex; gap:0.35rem; align-items:center; flex-wrap:wrap; margin-top:0.15rem; padding-top:0.35rem; border-top:1px dashed var(--border-color);">
+                                            <button type="button" class="lesson-batch-btn lesson-batch-btn-danger" onclick="batchDeleteLessonMemorize()" title="選択した暗記事項を一括削除します">🗑️ 一括削除</button>
+                                            <button type="button" class="lesson-batch-btn lesson-batch-btn-success" onclick="batchMarkLessonMemorizeMastered()" title="選択した項目をLv.5（習得済み）にします">⭐ 習得済みにする</button>
+                                            <button type="button" class="lesson-batch-btn" onclick="batchMarkLessonMemorizeUnlearned()" title="選択した項目をLv.0（未習得）に戻します">🔄 未習得に戻す</button>
+                                            <button type="button" class="lesson-batch-btn" onclick="batchCleanLessonMemorizeFurigana()" title="選択した項目のふりがな表記を一括消去します">🧹 ふりがな消去</button>
                                         </div>
                                     </div>
 
@@ -4969,10 +5066,35 @@
                                             🎯 共通テスト形式 実戦選択演習
                                         </div>
                                         <div style="display: flex; gap: 0.35rem; align-items: center; flex-wrap: wrap;">
+                                            <button type="button" id="btn-toggle-batch-drills" class="flora-btn flora-btn-secondary btn-sm" onclick="toggleLessonDrillsBatchMode()" style="padding: 0.2rem 0.55rem; font-size: 0.72rem; color: #4338CA; border: 1px dashed rgba(99,102,241,0.5); background: rgba(99,102,241,0.06); font-weight: 750;" title="選択問題を選択して一括削除や解答リセットを行います">☑️ 一括管理</button>
                                             <button type="button" id="btn-open-byot-drills-modal" class="flora-btn flora-btn-secondary btn-sm" style="padding: 0.2rem 0.55rem; font-size: 0.72rem; color: #4338CA; border: 1px dashed rgba(99,102,241,0.5); background: rgba(99,102,241,0.06); font-weight: 750;" title="Google AI Studio（構造化出力Structured outputs）で共通テスト形式問題を一括取り込み（API消費ゼロ＆パース崩れゼロ）">✨ AI Studioで作成</button>
                                             <button type="button" id="btn-add-more-choice-drills" class="flora-btn flora-btn-secondary btn-sm" onclick="addMoreChoiceDrills()" style="padding: 0.2rem 0.55rem; font-size: 0.72rem; color: var(--brand-primary); font-weight: 700;" title="さらに新しい視点の選択問題を5問追加します">＋ 5問追加生成</button>
                                             <button type="button" id="btn-regen-choice-drills" class="flora-btn flora-btn-secondary btn-sm" onclick="regenerateLessonChoiceDrills()" style="padding: 0.2rem 0.55rem; font-size: 0.72rem; color: var(--text-secondary);" title="全パートから選択問題を再生成します">🔄 再生成</button>
                                             <button type="button" id="btn-reset-choice-drills-answers" class="flora-btn flora-btn-secondary btn-sm" onclick="resetAllChoiceDrillAnswers()" style="padding: 0.2rem 0.55rem; font-size: 0.72rem; color: var(--text-muted);" title="解答結果をリセットして最初から解き直します">🧹 解答リセット</button>
+                                            <button type="button" id="btn-clear-all-drills" class="flora-btn flora-btn-secondary btn-sm" onclick="clearLessonChoiceDrills()" style="padding: 0.2rem 0.55rem; font-size: 0.72rem; color: var(--error);" title="この授業の選択問題をすべて削除します">🗑️ 全削除</button>
+                                        </div>
+                                    </div>
+
+                                    <!-- 🎯 選択問題一括管理アクションバー -->
+                                    <div id="lesson-drills-batch-bar" class="lesson-batch-bar" style="display: none;">
+                                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.4rem;">
+                                            <div style="font-size:0.76rem; font-weight:700; color:var(--text-primary); display:flex; align-items:center; gap:0.4rem;">
+                                                <span>☑️ 選択問題一括管理</span>
+                                                <span style="background:rgba(99,102,241,0.12); color:#4f46e5; padding:0.1rem 0.45rem; border-radius:12px; font-weight:800; font-size:0.72rem;">選択中: <strong id="lesson-drills-selected-count">0</strong> 問</span>
+                                            </div>
+                                            <button type="button" class="lesson-batch-btn" onclick="toggleLessonDrillsBatchMode(false)" style="font-size:0.7rem; padding:0.15rem 0.45rem;">✕ 終了</button>
+                                        </div>
+                                        <div style="display:flex; gap:0.3rem; align-items:center; flex-wrap:wrap;">
+                                            <button type="button" class="lesson-batch-btn" onclick="selectAllLessonDrills(true)">全選択</button>
+                                            <button type="button" class="lesson-batch-btn" onclick="selectAllLessonDrills(false)">選択解除</button>
+                                            <button type="button" class="lesson-batch-btn" onclick="selectLessonDrillsByStatus('unanswered')">未解答のみ</button>
+                                            <button type="button" class="lesson-batch-btn" onclick="selectLessonDrillsByStatus('wrong')">要復習のみ</button>
+                                            <button type="button" class="lesson-batch-btn" onclick="selectLessonDrillsByStatus('correct')">正解のみ</button>
+                                        </div>
+                                        <div style="display:flex; gap:0.35rem; align-items:center; flex-wrap:wrap; margin-top:0.15rem; padding-top:0.35rem; border-top:1px dashed var(--border-color);">
+                                            <button type="button" class="lesson-batch-btn lesson-batch-btn-danger" onclick="batchDeleteLessonDrills()" title="選択した問題を取り消し・一括削除します">🗑️ 一括削除</button>
+                                            <button type="button" class="lesson-batch-btn" onclick="batchResetLessonDrillsAnswers()" title="選択した問題の解答結果をリセットします">🧹 解答リセット</button>
+                                            <button type="button" class="lesson-batch-btn lesson-batch-btn-primary" onclick="batchSaveLessonDrillsToMistakeBook()" title="選択した問題を誤答ノートに一括登録します">📥 誤答ノートに保存</button>
                                         </div>
                                     </div>
 
@@ -10591,26 +10713,34 @@ ${extractedText || "（本文なし）"}
                 }
 
                 const hasQA = p.question && p.answer;
+                const isSelected = selectedLessonMemorizeIds.has(curId);
+                const batchCheckboxHtml = isLessonMemorizeBatchMode ? `
+                    <div style="display:inline-flex; align-items:center; margin-right:0.4rem;" onclick="event.stopPropagation();">
+                        <input type="checkbox" class="lesson-memorize-cb" onchange="toggleSelectLessonMemorize('${curId}', this.checked)" ${isSelected ? 'checked' : ''} style="width:17px; height:17px; cursor:pointer; accent-color:#4f46e5;">
+                    </div>
+                ` : '';
+                const cardClickAttr = isLessonMemorizeBatchMode ? `onclick="toggleSelectLessonMemorize('${curId}', !selectedLessonMemorizeIds.has('${curId}'))" style="cursor:pointer;"` : '';
 
                 return `
-                <div class="memorize-item">
+                <div class="memorize-item ${isSelected ? 'is-selected' : ''}" id="lesson-memo-item-${curId}" ${cardClickAttr}>
                     <div class="memorize-item-top" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem; gap:0.4rem;">
                         <div style="display:flex; align-items:center; gap:0.35rem; flex-wrap:wrap;">
+                            ${batchCheckboxHtml}
                             <span class="memorize-item-category">${(p.category || "重要事項").replace(/</g, "&lt;")}</span>
                             <span class="fc-level-badge fc-level-${boxLevel}" style="font-size:0.65rem; padding:0.06rem 0.4rem;">${boxLevel === 0 ? 'Lv.0 未習得' : (boxLevel >= 4 ? '⭐ Lv.' + boxLevel + ' 習得済' : 'Lv.' + boxLevel)}</span>
                             ${isDue ? `<span style="font-size:0.65rem; color:#dc2626; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.25); border-radius:4px; padding:0.05rem 0.35rem; font-weight:700;">🔥 復習期日</span>` : ''}
                             ${p.partTitle ? `<span style="font-size:0.68rem; color:var(--text-muted); background:var(--bg-subtle); padding:0.1rem 0.4rem; border-radius:4px; border:1px solid var(--border-color);">${(p.partTitle).replace(/</g, "&lt;")}</span>` : ''}
                         </div>
-                        <div class="lesson-memo-actions">
+                        <div class="lesson-memo-actions" onclick="event.stopPropagation();">
                             <button type="button" class="lesson-memo-edit-btn" onclick="startEditMemorizePoint('${curId}')" title="編集">✏️</button>
                             <button type="button" class="lesson-memo-del-btn" onclick="deleteMemorizePoint('${curId}')" title="削除">🗑</button>
                         </div>
                     </div>
                     ${hasQA ? `
-                        <div class="memorize-item-q tex2jax_process" onclick="startEditMemorizePoint('${curId}')" title="クリックして編集" style="font-size:0.84rem; font-weight:700; color:var(--text-primary); margin-bottom:0.35rem; line-height:1.5; display:flex; align-items:flex-start; gap:0.35rem;"><span style="color:var(--accent-cyan); font-weight:800; flex-shrink:0;">Q.</span><span style="flex:1; min-width:0; word-break:break-word;">${renderFormattedMarkdown(p.question)}</span></div>
-                        <div class="memorize-item-a tex2jax_process" onclick="startEditMemorizePoint('${curId}')" title="クリックして編集" style="font-size:0.82rem; color:var(--brand-primary); font-weight:600; padding:0.35rem 0.55rem; background:var(--bg-subtle); border-radius:var(--radius-sm); border-left:3px solid var(--brand-primary); line-height:1.5; display:flex; align-items:flex-start; gap:0.35rem;"><span style="color:var(--brand-primary); font-weight:800; flex-shrink:0;">A.</span><span style="flex:1; min-width:0; word-break:break-word;">${renderFormattedMarkdown(p.answer)}</span></div>
+                        <div class="memorize-item-q tex2jax_process" ${!isLessonMemorizeBatchMode ? `onclick="startEditMemorizePoint('${curId}')" title="クリックして編集"` : ''} style="font-size:0.84rem; font-weight:700; color:var(--text-primary); margin-bottom:0.35rem; line-height:1.5; display:flex; align-items:flex-start; gap:0.35rem;"><span style="color:var(--accent-cyan); font-weight:800; flex-shrink:0;">Q.</span><span style="flex:1; min-width:0; word-break:break-word;">${renderFormattedMarkdown(p.question)}</span></div>
+                        <div class="memorize-item-a tex2jax_process" ${!isLessonMemorizeBatchMode ? `onclick="startEditMemorizePoint('${curId}')" title="クリックして編集"` : ''} style="font-size:0.82rem; color:var(--brand-primary); font-weight:600; padding:0.35rem 0.55rem; background:var(--bg-subtle); border-radius:var(--radius-sm); border-left:3px solid var(--brand-primary); line-height:1.5; display:flex; align-items:flex-start; gap:0.35rem;"><span style="color:var(--brand-primary); font-weight:800; flex-shrink:0;">A.</span><span style="flex:1; min-width:0; word-break:break-word;">${renderFormattedMarkdown(p.answer)}</span></div>
                     ` : `
-                        <div class="memorize-item-content tex2jax_process" onclick="startEditMemorizePoint('${curId}')" title="クリックして編集">${renderFormattedMarkdown(p.content || "")}</div>
+                        <div class="memorize-item-content tex2jax_process" ${!isLessonMemorizeBatchMode ? `onclick="startEditMemorizePoint('${curId}')" title="クリックして編集"` : ''}>${renderFormattedMarkdown(p.content || "")}</div>
                     `}
                     ${p.note ? `<div class="memorize-item-note tex2jax_process" style="margin-top:0.35rem; padding-top:0.35rem; border-top:1px dashed var(--border-subtle); font-size:0.78rem; color:var(--accent-yellow);">💡 ${renderFormattedMarkdown(p.note)}</div>` : ""}
                 </div>
@@ -10720,6 +10850,8 @@ ${extractedText || "（本文なし）"}
         let choiceDrillStatusFilter = "all";
         const lessonRecentlyAnsweredDrillIds = new Set();
         const lessonInspectedDrillOptions = new Map();
+        let isLessonDrillsBatchMode = false;
+        const selectedLessonDrillIds = new Set();
 
         window.dismissLessonRecentlyAnsweredDrill = function(drillId) {
             lessonRecentlyAnsweredDrillIds.delete(drillId);
@@ -10947,6 +11079,201 @@ ${existingLeads}
             }
             currentLesson.choiceDrills = null;
             await ensureChoiceDrills();
+        };
+
+        // 1問削除
+        window.deleteSingleChoiceDrill = async function(drillId) {
+            if (!currentLesson || !Array.isArray(currentLesson.choiceDrills)) return;
+            const drill = currentLesson.choiceDrills.find(d => d.id === drillId);
+            const previewText = drill ? (drill.lead_text ? drill.lead_text.slice(0, 25) + '...' : 'この問題') : 'この問題';
+            if (!confirm(`「${previewText}」の選択問題を削除しますか？`)) return;
+
+            currentLesson.choiceDrills = currentLesson.choiceDrills.filter(d => d.id !== drillId);
+            lessonRecentlyAnsweredDrillIds.delete(drillId);
+            lessonInspectedDrillOptions.delete(drillId);
+            selectedLessonDrillIds.delete(drillId);
+
+            renderChoiceDrills();
+            await saveLesson();
+            showToast("選択問題を削除しました。", "success", 1500);
+        };
+
+        // 全選択問題の削除
+        window.clearLessonChoiceDrills = async function() {
+            if (!currentLesson || !Array.isArray(currentLesson.choiceDrills) || currentLesson.choiceDrills.length === 0) {
+                showToast("削除する選択問題がありません。", "info", 2000);
+                return;
+            }
+            const count = currentLesson.choiceDrills.length;
+            const ok = confirm(`この授業の選択問題（全${count}問）をすべて削除しますか？\n\n※いつでも「🔄 再生成」から最新ノートから作り直せます。`);
+            if (!ok) return;
+
+            currentLesson.choiceDrills = [];
+            lessonRecentlyAnsweredDrillIds.clear();
+            lessonInspectedDrillOptions.clear();
+            selectedLessonDrillIds.clear();
+
+            renderChoiceDrills();
+            await saveLesson();
+            showToast("選択問題をすべて削除しました。", "success", 2500);
+        };
+
+        // 🎯 選択問題の一括管理モード切替
+        window.toggleLessonDrillsBatchMode = function(forceVal) {
+            if (typeof forceVal === "boolean") {
+                isLessonDrillsBatchMode = forceVal;
+            } else {
+                isLessonDrillsBatchMode = !isLessonDrillsBatchMode;
+            }
+            if (!isLessonDrillsBatchMode) {
+                selectedLessonDrillIds.clear();
+            }
+            const bar = el("lesson-drills-batch-bar");
+            if (bar) bar.style.display = isLessonDrillsBatchMode ? "flex" : "none";
+            const btn = el("btn-toggle-batch-drills");
+            if (btn) {
+                btn.style.background = isLessonDrillsBatchMode ? "rgba(99,102,241,0.2)" : "rgba(99,102,241,0.06)";
+                btn.style.borderColor = isLessonDrillsBatchMode ? "#4f46e5" : "rgba(99,102,241,0.5)";
+                btn.textContent = isLessonDrillsBatchMode ? "✓ 選択管理中" : "☑️ 一括管理";
+            }
+            updateLessonDrillsBatchBar();
+            renderChoiceDrills();
+        };
+
+        window.updateLessonDrillsBatchBar = function() {
+            const countEl = el("lesson-drills-selected-count");
+            if (countEl) countEl.textContent = selectedLessonDrillIds.size;
+        };
+
+        window.toggleSelectLessonDrill = function(drillId, isSelected) {
+            if (isSelected) {
+                selectedLessonDrillIds.add(drillId);
+            } else {
+                selectedLessonDrillIds.delete(drillId);
+            }
+            const cardEl = el(`drill-card-${drillId}`);
+            if (cardEl) {
+                cardEl.classList.toggle("is-selected", isSelected);
+                const cb = cardEl.querySelector(".lesson-drill-cb");
+                if (cb) cb.checked = isSelected;
+            }
+            updateLessonDrillsBatchBar();
+        };
+
+        window.selectAllLessonDrills = function(select) {
+            if (!currentLesson || !Array.isArray(currentLesson.choiceDrills)) return;
+            if (select) {
+                currentLesson.choiceDrills.forEach(d => {
+                    selectedLessonDrillIds.add(d.id);
+                });
+            } else {
+                selectedLessonDrillIds.clear();
+            }
+            updateLessonDrillsBatchBar();
+            renderChoiceDrills();
+        };
+
+        window.selectLessonDrillsByStatus = function(status) {
+            if (!currentLesson || !Array.isArray(currentLesson.choiceDrills)) return;
+            selectedLessonDrillIds.clear();
+            currentLesson.choiceDrills.forEach(d => {
+                const isAnswered = d.userAnswer !== null && d.userAnswer !== undefined;
+                if (status === 'unanswered' && !isAnswered) selectedLessonDrillIds.add(d.id);
+                else if (status === 'wrong' && isAnswered && d.isCorrect === false) selectedLessonDrillIds.add(d.id);
+                else if (status === 'correct' && isAnswered && d.isCorrect === true) selectedLessonDrillIds.add(d.id);
+            });
+            updateLessonDrillsBatchBar();
+            renderChoiceDrills();
+        };
+
+        window.batchDeleteLessonDrills = async function() {
+            if (!currentLesson || !Array.isArray(currentLesson.choiceDrills)) return;
+            const count = selectedLessonDrillIds.size;
+            if (count === 0) {
+                showToast("削除する選択問題を選択してください。", "info", 2000);
+                return;
+            }
+            const ok = confirm(`選択した ${count} 問の選択問題を一括削除しますか？\n（削除後は再生成または復元できません）`);
+            if (!ok) return;
+
+            currentLesson.choiceDrills = currentLesson.choiceDrills.filter(d => !selectedLessonDrillIds.has(d.id));
+            selectedLessonDrillIds.forEach(id => {
+                lessonRecentlyAnsweredDrillIds.delete(id);
+                lessonInspectedDrillOptions.delete(id);
+            });
+            selectedLessonDrillIds.clear();
+
+            updateLessonDrillsBatchBar();
+            renderChoiceDrills();
+            await saveLesson();
+            showToast(`${count}問の選択問題を一括削除しました。`, "success", 2500);
+        };
+
+        window.batchResetLessonDrillsAnswers = async function() {
+            if (!currentLesson || !Array.isArray(currentLesson.choiceDrills)) return;
+            const count = selectedLessonDrillIds.size;
+            if (count === 0) {
+                showToast("対象の選択問題を選択してください。", "info", 2000);
+                return;
+            }
+            currentLesson.choiceDrills.forEach(d => {
+                if (selectedLessonDrillIds.has(d.id)) {
+                    d.userAnswer = null;
+                    d.isCorrect = null;
+                    d.answeredAt = null;
+                    lessonRecentlyAnsweredDrillIds.delete(d.id);
+                    lessonInspectedDrillOptions.delete(d.id);
+                }
+            });
+            renderChoiceDrills();
+            await saveLesson();
+            showToast(`選択した ${count} 問の解答をリセットしました！`, "info", 2500);
+        };
+
+        window.batchSaveLessonDrillsToMistakeBook = async function() {
+            if (!currentLesson || !Array.isArray(currentLesson.choiceDrills) || !loginUid) return;
+            const count = selectedLessonDrillIds.size;
+            if (count === 0) {
+                showToast("誤答ノートに保存する問題を選択してください。", "info", 2000);
+                return;
+            }
+            const nowIso = new Date().toISOString();
+            const detectedSubject = currentLesson.subject || detectLessonSubject(currentLesson) || "日本史";
+            const updates = {};
+            let savedCount = 0;
+
+            currentLesson.choiceDrills.forEach(drill => {
+                if (selectedLessonDrillIds.has(drill.id)) {
+                    const newId = "CUSTOM_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6);
+                    const fullProblemText = (drill.lead_text || "") +
+                        (drill.statements && drill.statements.length > 0 ? "\n\n" + drill.statements.join("\n") : "");
+
+                    updates[`users/${loginUid}/problems/${newId}`] = {
+                        id: newId,
+                        title: fullProblemText,
+                        short_title: `【共通テスト】${drill.partTitle || currentLesson.title}`,
+                        subject: detectedSubject,
+                        field: currentLesson.topicKey || currentLesson.title || "共通テスト選択演習",
+                        trap_description: (drill.trap_type ? `【罠タイプ: ${drill.trap_type}】\n` : "") + (drill.trap_explanation || ""),
+                        strategyPattern: (drill.options ? drill.options.map(o => `(${o.number}) ${o.text}`).join("\n") + "\n\n" : "") + (drill.explanation || ""),
+                        errorCount: 1,
+                        lastAttemptAt: nowIso,
+                        lastResult: false,
+                        answerFormula: `正解: (${drill.correct_option}) ${drill.options ? (drill.options.find(o => o.number === drill.correct_option)?.text || '') : ''}`,
+                        createdAt: nowIso,
+                        sourceLessonId: currentLesson.id,
+                        sourceLessonTitle: currentLesson.title,
+                        sourceLessonText: currentLesson.extractedText || "",
+                        sourceLessonKeyTerms: currentLesson.accumulatedKeyTerms || currentLesson.keyTerms || []
+                    };
+                    savedCount++;
+                }
+            });
+
+            if (savedCount > 0) {
+                await update(ref(database), updates);
+                showToast(`🎉 選択した ${savedCount} 問を誤答ノートに登録しました！`, "success", 3500);
+            }
         };
 
         // 解答リセット
@@ -11312,16 +11639,28 @@ ${existingLeads}
                     `;
                 }
 
+                const isSelected = selectedLessonDrillIds.has(d.id);
+                const batchCheckboxHtml = isLessonDrillsBatchMode ? `
+                    <div style="display:inline-flex; align-items:center; margin-right:0.35rem;" onclick="event.stopPropagation();">
+                        <input type="checkbox" class="lesson-drill-cb" onchange="toggleSelectLessonDrill('${d.id}', this.checked)" ${isSelected ? 'checked' : ''} style="width:17px; height:17px; cursor:pointer; accent-color:#4f46e5;">
+                    </div>
+                ` : '';
+                const cardClickAttr = isLessonDrillsBatchMode ? `onclick="toggleSelectLessonDrill('${d.id}', !selectedLessonDrillIds.has('${d.id}'))" style="cursor:pointer;"` : '';
+
                 return `
-                    <div class="choice-drill-card ${cardStatusClass}" id="drill-card-${d.id}">
+                    <div class="choice-drill-card ${cardStatusClass} ${isSelected ? 'is-selected' : ''}" id="drill-card-${d.id}" ${cardClickAttr}>
                         <div class="choice-drill-header">
                             <div style="display:flex; align-items:center; gap:0.35rem; flex-wrap:wrap;">
+                                ${batchCheckboxHtml}
                                 <span class="choice-drill-pill-type ${typeInfo.class}">${typeInfo.label}</span>
                                 ${d.partTitle ? `<span style="font-size:0.68rem; color:var(--text-muted); background:var(--bg-subtle); padding:0.1rem 0.4rem; border-radius:4px; border:1px solid var(--border-color);">${(d.partTitle).replace(/</g, "&lt;")}</span>` : ''}
                                 ${d.trap_type ? `<span style="font-size:0.68rem; color:#d97706; background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.25); padding:0.1rem 0.4rem; border-radius:4px;">罠: ${(d.trap_type).replace(/</g, "&lt;")}</span>` : ''}
                             </div>
-                            <div style="font-size:0.72rem; color:var(--text-muted); font-weight:700;">
-                                #${index + 1} / ${filteredDrills.length}
+                            <div style="display:flex; align-items:center; gap:0.4rem;" onclick="event.stopPropagation();">
+                                <button type="button" class="flora-btn flora-btn-ghost btn-sm" onclick="deleteSingleChoiceDrill('${d.id}')" title="この選択問題を削除" style="font-size:0.75rem; padding:0.15rem 0.4rem; color:var(--text-muted); cursor:pointer;">🗑️</button>
+                                <div style="font-size:0.72rem; color:var(--text-muted); font-weight:700;">
+                                    #${index + 1} / ${filteredDrills.length}
+                                </div>
                             </div>
                         </div>
 
@@ -14770,9 +15109,217 @@ ${subjectGuide}
                 const curId = p.id || `mp_${idx}`;
                 return curId !== id;
             });
+            selectedLessonMemorizeIds.delete(id);
+            updateLessonMemorizeBatchBar();
             renderMemorizationPoints();
             await saveLesson();
             showToast("暗記事項を削除しました。", "success", 1500);
+        };
+
+        // 🧠 暗記事項の一括管理モード切替
+        let isLessonMemorizeBatchMode = false;
+        const selectedLessonMemorizeIds = new Set();
+
+        window.toggleLessonMemorizeBatchMode = function(forceVal) {
+            if (typeof forceVal === "boolean") {
+                isLessonMemorizeBatchMode = forceVal;
+            } else {
+                isLessonMemorizeBatchMode = !isLessonMemorizeBatchMode;
+            }
+            if (!isLessonMemorizeBatchMode) {
+                selectedLessonMemorizeIds.clear();
+            }
+            const bar = el("lesson-memorize-batch-bar");
+            if (bar) bar.style.display = isLessonMemorizeBatchMode ? "flex" : "none";
+            const btn = el("btn-toggle-batch-memorize");
+            if (btn) {
+                btn.style.background = isLessonMemorizeBatchMode ? "rgba(99,102,241,0.2)" : "rgba(99,102,241,0.06)";
+                btn.style.borderColor = isLessonMemorizeBatchMode ? "#4f46e5" : "rgba(99,102,241,0.5)";
+                btn.textContent = isLessonMemorizeBatchMode ? "✓ 選択管理中" : "☑️ 一括管理";
+            }
+            updateLessonMemorizeBatchBar();
+            renderMemorizationPoints();
+        };
+
+        window.updateLessonMemorizeBatchBar = function() {
+            const countEl = el("lesson-memorize-selected-count");
+            if (countEl) countEl.textContent = selectedLessonMemorizeIds.size;
+        };
+
+        window.toggleSelectLessonMemorize = function(id, isSelected) {
+            if (isSelected) {
+                selectedLessonMemorizeIds.add(id);
+            } else {
+                selectedLessonMemorizeIds.delete(id);
+            }
+            const itemEl = el(`lesson-memo-item-${id}`);
+            if (itemEl) {
+                itemEl.classList.toggle("is-selected", isSelected);
+                const cb = itemEl.querySelector(".lesson-memorize-cb");
+                if (cb) cb.checked = isSelected;
+            }
+            updateLessonMemorizeBatchBar();
+        };
+
+        window.selectAllLessonMemorize = function(select) {
+            if (!currentLesson || !Array.isArray(currentLesson.memorizationPoints)) return;
+            if (select) {
+                currentLesson.memorizationPoints.forEach((p, idx) => {
+                    const curId = p.id || `mp_${idx}`;
+                    selectedLessonMemorizeIds.add(curId);
+                });
+            } else {
+                selectedLessonMemorizeIds.clear();
+            }
+            updateLessonMemorizeBatchBar();
+            renderMemorizationPoints();
+        };
+
+        window.selectLessonMemorizeByStatus = function(status) {
+            if (!currentLesson || !Array.isArray(currentLesson.memorizationPoints)) return;
+            selectedLessonMemorizeIds.clear();
+            currentLesson.memorizationPoints.forEach((p, idx) => {
+                const curId = p.id || `mp_${idx}`;
+                const pKey = sanitizeDbKey('mem_' + (currentLessonId || 'lesson') + '_' + curId);
+                const prog = (lessonMemorizeProgress && (lessonMemorizeProgress[pKey] || lessonMemorizeProgress[(currentLessonId || '') + ':' + curId])) || {};
+                const boxLevel = typeof prog.boxLevel === 'number' ? prog.boxLevel : 0;
+                if (status === 'unlearned' && boxLevel === 0) {
+                    selectedLessonMemorizeIds.add(curId);
+                } else if (status === 'mastered' && boxLevel >= 4) {
+                    selectedLessonMemorizeIds.add(curId);
+                }
+            });
+            updateLessonMemorizeBatchBar();
+            renderMemorizationPoints();
+        };
+
+        window.batchDeleteLessonMemorize = async function() {
+            if (!currentLesson || !Array.isArray(currentLesson.memorizationPoints)) return;
+            const count = selectedLessonMemorizeIds.size;
+            if (count === 0) {
+                showToast("削除する暗記事項を選択してください。", "info", 2000);
+                return;
+            }
+            const ok = confirm(`選択した ${count} 件の暗記事項を一括削除しますか？\n（削除後は「AI再生成」または手動追加で再作成できます）`);
+            if (!ok) return;
+
+            currentLesson.memorizationPoints = currentLesson.memorizationPoints.filter((p, idx) => {
+                const curId = p.id || `mp_${idx}`;
+                return !selectedLessonMemorizeIds.has(curId);
+            });
+
+            selectedLessonMemorizeIds.clear();
+            updateLessonMemorizeBatchBar();
+            renderMemorizationPoints();
+            await saveLesson();
+            showToast(`${count}件の暗記事項を一括削除しました。`, "success", 2500);
+        };
+
+        window.batchMarkLessonMemorizeMastered = async function() {
+            if (!currentLesson || !Array.isArray(currentLesson.memorizationPoints) || selectedLessonMemorizeIds.size === 0) {
+                showToast("対象の暗記事項を選択してください。", "info", 2000);
+                return;
+            }
+            const count = selectedLessonMemorizeIds.size;
+            const nextDate = getOffsetDateStr(30);
+            const now = Date.now();
+            const updates = {};
+
+            currentLesson.memorizationPoints.forEach((p, idx) => {
+                const curId = p.id || `mp_${idx}`;
+                if (selectedLessonMemorizeIds.has(curId)) {
+                    const pKey = sanitizeDbKey('mem_' + (currentLessonId || 'lesson') + '_' + curId);
+                    const updateData = {
+                        boxLevel: 5,
+                        reps: 5,
+                        lastReviewedAt: now,
+                        nextReviewDate: nextDate,
+                        updatedAt: now
+                    };
+                    lessonMemorizeProgress[pKey] = Object.assign({}, lessonMemorizeProgress[pKey] || {}, updateData);
+                    if (loginUid) {
+                        updates[`users/${loginUid}/memorizeProgress/${pKey}`] = lessonMemorizeProgress[pKey];
+                    }
+                }
+            });
+
+            if (loginUid && Object.keys(updates).length > 0) {
+                update(ref(database), updates).catch(e => console.warn(e));
+            }
+
+            updateLessonFcBanner();
+            renderMemorizationPoints();
+            showToast(`⭐ 選択した ${count} 件を習得済み（Lv.5）に設定しました！`, "success", 2500);
+        };
+
+        window.batchMarkLessonMemorizeUnlearned = async function() {
+            if (!currentLesson || !Array.isArray(currentLesson.memorizationPoints) || selectedLessonMemorizeIds.size === 0) {
+                showToast("対象の暗記事項を選択してください。", "info", 2000);
+                return;
+            }
+            const count = selectedLessonMemorizeIds.size;
+            const now = Date.now();
+            const updates = {};
+
+            currentLesson.memorizationPoints.forEach((p, idx) => {
+                const curId = p.id || `mp_${idx}`;
+                if (selectedLessonMemorizeIds.has(curId)) {
+                    const pKey = sanitizeDbKey('mem_' + (currentLessonId || 'lesson') + '_' + curId);
+                    const updateData = {
+                        boxLevel: 0,
+                        reps: 0,
+                        lastReviewedAt: now,
+                        nextReviewDate: getTodayStr(),
+                        updatedAt: now
+                    };
+                    lessonMemorizeProgress[pKey] = Object.assign({}, lessonMemorizeProgress[pKey] || {}, updateData);
+                    if (loginUid) {
+                        updates[`users/${loginUid}/memorizeProgress/${pKey}`] = lessonMemorizeProgress[pKey];
+                    }
+                }
+            });
+
+            if (loginUid && Object.keys(updates).length > 0) {
+                update(ref(database), updates).catch(e => console.warn(e));
+            }
+
+            updateLessonFcBanner();
+            renderMemorizationPoints();
+            showToast(`🔄 選択した ${count} 件を未習得（Lv.0）に戻しました。`, "info", 2500);
+        };
+
+        window.batchCleanLessonMemorizeFurigana = async function() {
+            if (!currentLesson || !Array.isArray(currentLesson.memorizationPoints) || selectedLessonMemorizeIds.size === 0) {
+                showToast("対象の暗記事項を選択してください。", "info", 2000);
+                return;
+            }
+            let cleanedCount = 0;
+            currentLesson.memorizationPoints = currentLesson.memorizationPoints.map((p, idx) => {
+                const curId = p.id || `mp_${idx}`;
+                if (selectedLessonMemorizeIds.has(curId)) {
+                    const cleanQ = stripFurigana(p.question);
+                    const cleanA = stripFurigana(p.answer);
+                    const cleanContent = stripFurigana(p.content);
+                    const cleanNote = stripFurigana(p.note);
+                    if (cleanQ !== p.question || cleanA !== p.answer || cleanContent !== p.content || cleanNote !== p.note) {
+                        cleanedCount++;
+                        return {
+                            ...p,
+                            question: cleanQ,
+                            answer: cleanA,
+                            content: (cleanQ && cleanA) ? `${cleanQ}：${cleanA}` : (cleanContent || cleanA || cleanQ),
+                            note: cleanNote,
+                            updatedAt: new Date().toISOString()
+                        };
+                    }
+                }
+                return p;
+            });
+
+            renderMemorizationPoints();
+            await forceTriggerMathJax();
+            await saveLesson();
+            showToast(`✨ ${cleanedCount}件の暗記事項から（ふりがな）を削除しました！`, "success", 2500);
         };
 
         window.toggleAddMemorizePointForm = function(show) {
