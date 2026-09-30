@@ -2256,16 +2256,7 @@
         const auth = getAuth(app);
         const database = getDatabase(app);
 
-        // 🔑 提供されたDeepSeekキーを自動登録（未登録なら配列に追加）
-        const USER_DEEPSEEK_KEY = "REMOVED_DEEPSEEK_KEY";
-        try {
-            const currentDsKeys = getDeepseekKeys();
-            if (!currentDsKeys.includes(USER_DEEPSEEK_KEY)) {
-                addKey("deepseek", USER_DEEPSEEK_KEY);
-            }
-        } catch (e) {
-            console.warn("DeepSeek key registration error:", e);
-        }
+        // 🔑 DeepSeekキーはlocalStorageで管理（APIキーマネージャーから登録）
 
         // 🔑【複数キー対応】index.html/problem.htmlと共通の管理UIを注入（Gemini & DeepSeek）
         initApiKeyManager({ needGemini: true, needDeepseek: true });
@@ -4253,7 +4244,10 @@
         // 🐋 DeepSeek 推論モデル（deepseek-reasoner: thinking high）による共通テスト大問作問
         async function callDeepSeekKyotsu(prompt) {
             const keys = getDeepseekKeys();
-            const apiKey = keys[0] || "REMOVED_DEEPSEEK_KEY";
+            const apiKey = keys[0];
+            if (!apiKey) {
+                throw new Error("DeepSeekのAPIキーが登録されていません。🔑ボタンからキーを登録してください。");
+            }
             const url = "https://api.deepseek.com/chat/completions";
             const body = {
                 model: "deepseek-reasoner",
