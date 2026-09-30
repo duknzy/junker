@@ -1293,8 +1293,9 @@
         /* 📖 単元辞書リストの列ヘッダー（完璧な整列ガイド） */
         .dict-word-header-bar {
             display: grid;
-            grid-template-columns: 135px minmax(0, 1.35fr) minmax(0, 1.15fr) 245px;
-            gap: 1rem;
+            /* ⚡ アクション列を305pxに確保し、タグや操作ボタンの被りを完全防止 */
+            grid-template-columns: 135px minmax(0, 1.25fr) minmax(0, 1.05fr) 305px;
+            gap: 1.1rem;
             align-items: center;
             padding: 0.55rem 1.2rem;
             background: var(--bg-subtle);
@@ -1306,7 +1307,7 @@
             user-select: none;
         }
         .dict-word-header-bar.batch-mode {
-            grid-template-columns: 28px 135px minmax(0, 1.35fr) minmax(0, 1.15fr) 245px;
+            grid-template-columns: 28px 135px minmax(0, 1.25fr) minmax(0, 1.05fr) 305px;
         }
         .dict-hdr-cell {
             white-space: nowrap;
@@ -1326,13 +1327,14 @@
         .dict-word-row {
             padding: 0.75rem 1.2rem;
             display: grid;
-            /* ⚡ 全行で答えの開始位置と横幅が完璧に一直線に揃う厳密なカラム同期 */
-            grid-template-columns: 135px minmax(0, 1.35fr) minmax(0, 1.15fr) 245px;
-            gap: 1rem;
+            /* ⚡ 全行で答えの開始位置と横幅が完全に縦一直線に揃い、右側アクションとの重なりも完全に解消 */
+            grid-template-columns: 135px minmax(0, 1.25fr) minmax(0, 1.05fr) 305px;
+            gap: 1.1rem;
             align-items: center;
             background: var(--bg-surface);
             border-bottom: 1px solid var(--border-color);
             transition: background 0.15s ease, border-color 0.15s ease;
+            position: relative;
         }
         .dict-word-item:last-child,
         .dict-word-row:last-child {
@@ -1343,23 +1345,23 @@
             background: var(--bg-subtle);
         }
         .dict-word-row.batch-mode {
-            grid-template-columns: 28px 135px minmax(0, 1.35fr) minmax(0, 1.15fr) 245px;
+            grid-template-columns: 28px 135px minmax(0, 1.25fr) minmax(0, 1.05fr) 305px;
         }
-        @media (max-width: 1200px) {
+        @media (max-width: 1280px) {
             .dict-word-header-bar {
-                grid-template-columns: 130px minmax(0, 1.3fr) minmax(0, 1.1fr) 230px;
-                gap: 0.75rem;
+                grid-template-columns: 130px minmax(0, 1.2fr) minmax(0, 1fr) 285px;
+                gap: 0.85rem;
             }
             .dict-word-header-bar.batch-mode {
-                grid-template-columns: 28px 130px minmax(0, 1.3fr) minmax(0, 1.1fr) 230px;
+                grid-template-columns: 28px 130px minmax(0, 1.2fr) minmax(0, 1fr) 285px;
             }
             .dict-word-item,
             .dict-word-row {
-                grid-template-columns: 130px minmax(0, 1.3fr) minmax(0, 1.1fr) 230px;
-                gap: 0.75rem;
+                grid-template-columns: 130px minmax(0, 1.2fr) minmax(0, 1fr) 285px;
+                gap: 0.85rem;
             }
             .dict-word-row.batch-mode {
-                grid-template-columns: 28px 130px minmax(0, 1.3fr) minmax(0, 1.1fr) 230px;
+                grid-template-columns: 28px 130px minmax(0, 1.2fr) minmax(0, 1fr) 285px;
             }
         }
         @media (max-width: 960px) {
@@ -1577,21 +1579,22 @@
         .dict-meta-actions-wrap {
             display: flex;
             align-items: center;
-            gap: 0.45rem;
+            gap: 0.4rem;
             justify-content: flex-end;
             width: 100%;
             box-sizing: border-box;
             flex-shrink: 0;
+            overflow: visible;
         }
         .dict-cat-tag {
-            font-size: 0.72rem;
+            font-size: 0.7rem;
             color: var(--text-muted);
             background: var(--bg-subtle);
-            padding: 0.22rem 0.5rem;
+            padding: 0.18rem 0.45rem;
             border-radius: var(--radius-sm);
             border: 1px solid var(--border-color);
             white-space: nowrap;
-            max-width: 95px;
+            max-width: 85px;
             overflow: hidden;
             text-overflow: ellipsis;
             flex-shrink: 0;
@@ -1601,9 +1604,71 @@
         .dict-item-actions {
             display: flex;
             align-items: center;
-            gap: 0.28rem;
+            gap: 0.25rem;
             justify-content: flex-end;
             flex-shrink: 0;
+        }
+        .dict-row-btn {
+            padding: 0.22rem 0.44rem;
+            font-size: 0.72rem;
+        }
+
+        /* 🔗 続きの授業・シリーズ識別バッジ */
+        .lesson-series-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.68rem;
+            font-weight: 800;
+            padding: 0.12rem 0.45rem;
+            border-radius: 9999px;
+            letter-spacing: 0.02em;
+            vertical-align: middle;
+            user-select: none;
+            white-space: nowrap;
+            line-height: 1.3;
+        }
+        .lesson-series-badge.continuation {
+            background: rgba(0, 243, 255, 0.12);
+            color: var(--accent-cyan, #00f3ff);
+            border: 1px solid rgba(0, 243, 255, 0.35);
+        }
+        .lesson-series-badge.parent {
+            background: rgba(168, 85, 247, 0.12);
+            color: #c084fc;
+            border: 1px solid rgba(168, 85, 247, 0.35);
+        }
+        [data-theme="light"] .lesson-series-badge.continuation {
+            background: rgba(2, 132, 199, 0.1);
+            color: #0284c7;
+            border-color: rgba(2, 132, 199, 0.3);
+        }
+        [data-theme="light"] .lesson-series-badge.parent {
+            background: rgba(147, 51, 234, 0.1);
+            color: #7e22ce;
+            border-color: rgba(147, 51, 234, 0.3);
+        }
+
+        /* ✏️ 単元名（授業タイトル）の編集トリガー */
+        .dict-unit-title {
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            transition: color 0.15s ease;
+        }
+        .dict-unit-title:hover {
+            color: var(--accent-cyan, #00f3ff);
+        }
+        .dict-title-edit-icon {
+            font-size: 0.74rem;
+            opacity: 0.55;
+            transition: all 0.15s ease;
+            display: inline-block;
+        }
+        .dict-unit-title:hover .dict-title-edit-icon {
+            opacity: 1;
+            transform: scale(1.15);
         }
         /* ステータスバッジ & ワンクリック覚えたトグルボタン */
         .dict-status-btn {
@@ -7060,7 +7125,7 @@
 
                 const totalLessonsInSubj = lessonEntries.length;
 
-                lessonEntries.forEach(([lid, unitItems], lessonIdx) => {
+                groupedEntries.forEach(([lid, unitItems], lessonIdx) => {
                     const unitId = `${subj}_${lid}`;
                     // 単元内の単語リストも指定のソート順（習得度順など）でソート
                     unitItems.sort((a, b) => compareLessonItems(a, b, currentSort));
@@ -7241,6 +7306,171 @@
         }
 
         // 🧠 単元の開閉トグル（オンデマンドで単語リストを描画＆チャンク化）
+        
+        // ==============================================================
+        // 🔗 授業タイトルからシリーズ情報（親タイトルと続き番号・ラベル）を抽出
+        // ==============================================================
+        window.parseLessonSeriesInfo = function(rawTitle) {
+            if (!rawTitle) return { baseTitle: "", partNum: 1, partLabel: "", isContinuation: false };
+            let clean = String(rawTitle).trim().replace(/^[『「【](.+)[』」】]$/, '$1').trim();
+            
+            // 1. (その2), （その２）, (その3) など
+            const sonoMatch = clean.match(/[（(]そのs*([0-9０-９]+)s*[）)]/i);
+            if (sonoMatch) {
+                const num = parseInt(sonoMatch[1].replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)), 10);
+                const base = clean.split(/[（(]そのs*[0-9０-９]+s*[）)]/i)[0].trim().replace(/[〜~：:].*$/, '').trim();
+                return {
+                    baseTitle: base || clean,
+                    partNum: num,
+                    partLabel: `その${num}`,
+                    isContinuation: num > 1
+                };
+            }
+            
+            // 2. Part 2, Part2, 第2回, 第2講 など
+            const partMatch = clean.match(/(?:Part|part|第)s*([0-9０-９]+)s*(?:回|講|話)?/i);
+            if (partMatch && !clean.match(/^第s*[0-9０-９]+s*章/)) {
+                const num = parseInt(partMatch[1].replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)), 10);
+                const base = clean.replace(/(?:Part|part|第)s*[0-9０-９]+s*(?:回|講|話)?.*$/i, '').trim().replace(/[〜~：:].*$/, '').trim();
+                return {
+                    baseTitle: base || clean,
+                    partNum: num,
+                    partLabel: `Part ${num}`,
+                    isContinuation: num > 1
+                };
+            }
+            
+            // 3. 後編, 中編
+            if (clean.includes("後編")) {
+                const base = clean.replace(/後編.*$/, '').trim().replace(/[〜~：:].*$/, '').trim();
+                return { baseTitle: base || clean, partNum: 2, partLabel: "後編", isContinuation: true };
+            }
+            if (clean.includes("中編")) {
+                const base = clean.replace(/中編.*$/, '').trim().replace(/[〜~：:].*$/, '').trim();
+                return { baseTitle: base || clean, partNum: 1.5, partLabel: "中編", isContinuation: true };
+            }
+
+            const base = clean.replace(/[〜~：:].*$/, '').trim();
+            return {
+                baseTitle: base || clean,
+                partNum: 1,
+                partLabel: "",
+                isContinuation: false
+            };
+        };
+
+        // 📚 続きの授業が必ず親・前作の直後（隣）に順番通り並ぶようにスマートグループ化するソート関数
+        window.groupSeriesLessons = function(sortedList, getTitleFn) {
+            if (!Array.isArray(sortedList) || sortedList.length <= 1) return sortedList;
+
+            const getTitle = getTitleFn || (item => {
+                if (!item) return "";
+                if (typeof item === 'string') return item;
+                if (item.title) return item.title;
+                if (Array.isArray(item) && item[1]) {
+                    const uItems = item[1];
+                    const first = Array.isArray(uItems) ? uItems[0] : null;
+                    return (first && (first.short_title || first.lessonTitle)) || (rawLessons[item[0]] && rawLessons[item[0]].title) || "";
+                }
+                return "";
+            });
+
+            const parsed = sortedList.map(item => ({
+                item,
+                series: window.parseLessonSeriesInfo(getTitle(item))
+            }));
+
+            // シリーズ全数を集計
+            const seriesCounts = new Map();
+            parsed.forEach(p => {
+                const key = p.series.baseTitle.toLowerCase();
+                seriesCounts.set(key, (seriesCounts.get(key) || 0) + 1);
+            });
+            parsed.forEach(p => {
+                const key = p.series.baseTitle.toLowerCase();
+                p.series.totalCount = seriesCounts.get(key) || 1;
+            });
+
+            const seriesGroups = new Map();
+            parsed.forEach(p => {
+                const key = p.series.baseTitle.toLowerCase();
+                if (!seriesGroups.has(key)) seriesGroups.set(key, []);
+                seriesGroups.get(key).push(p);
+            });
+
+            // シリーズ内はパート番号順
+            seriesGroups.forEach(items => {
+                if (items.length > 1) {
+                    items.sort((a, b) => a.series.partNum - b.series.partNum);
+                }
+            });
+
+            const result = [];
+            const emittedKeys = new Set();
+            parsed.forEach(p => {
+                const key = p.series.baseTitle.toLowerCase();
+                if (!emittedKeys.has(key)) {
+                    emittedKeys.add(key);
+                    const sItems = seriesGroups.get(key);
+                    sItems.forEach(s => result.push(s.item));
+                }
+            });
+
+            return result;
+        };
+
+        // ✏️ 単元名（授業タイトル）の編集モーダル
+        window.openRenameLessonFromInsights = async function(lessonId, event) {
+            if (event) event.stopPropagation();
+            const lesson = (typeof rawLessons !== "undefined" && rawLessons && rawLessons[lessonId]) ? rawLessons[lessonId] : null;
+            const initial = lesson?.title || "";
+            
+            const newTitle = prompt("新しい単元名・授業タイトルを入力してください:", initial);
+            if (newTitle === null) return;
+            const clean = newTitle.trim();
+            if (!clean) {
+                if (typeof showToast === "function") showToast("単元名を入力してください。", "error");
+                return;
+            }
+            if (clean === initial) return;
+
+            try {
+                const nowIso = new Date().toISOString();
+                if (lesson) {
+                    lesson.title = clean;
+                    lesson.updatedAt = nowIso;
+                }
+
+                if (typeof database !== "undefined" && typeof currentUser !== "undefined" && currentUser && currentUser.uid) {
+                    await update(ref(database, 'users/' + currentUser.uid + '/lessons/' + lessonId), {
+                        title: clean,
+                        updatedAt: nowIso
+                    });
+                }
+
+                try {
+                    const cached = JSON.parse(localStorage.getItem('cached_lessons') || '{}');
+                    if (cached[lessonId]) {
+                        cached[lessonId].title = clean;
+                        cached[lessonId].updatedAt = nowIso;
+                        localStorage.setItem('cached_lessons', JSON.stringify(cached));
+                    }
+                } catch (e) {}
+
+                if (typeof showToast === "function") {
+                    showToast(`✅ 単元名を「${clean}」に変更しました！`, "success");
+                }
+
+                if (typeof renderMemorize === "function") renderMemorize();
+                if (typeof renderDrills === "function") renderDrills();
+            } catch (err) {
+                console.error("Failed to rename lesson in insights:", err);
+                if (typeof showToast === "function") {
+                    showToast("単元名の変更に失敗しました: " + err.message, "error");
+                }
+            }
+        };
+
         window.toggleDictUnitCollapse = function(unitId, e) {
             if (e) e.stopPropagation();
             const unitEl = document.getElementById(`dict-unit-${unitId}`);
@@ -8170,7 +8400,10 @@
                     return (lessonA.createdAt || 0) - (lessonB.createdAt || 0);
                 });
 
-                lessonEntries.forEach(([lid, unitDrills]) => {
+                const groupedDrillEntries = window.groupSeriesLessons(lessonEntries, ([lid, uDrills]) => {
+                    return (rawLessons[lid] && rawLessons[lid].title) || (uDrills[0] && uDrills[0].lessonTitle) || "";
+                });
+                groupedDrillEntries.forEach(([lid, unitDrills]) => {
                     const unitId = `drill_${subj}_${lid}`;
                     drillUnitItemsDataMap[unitId] = unitDrills;
 
