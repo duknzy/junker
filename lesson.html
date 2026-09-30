@@ -869,28 +869,37 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 0.4rem;
+            gap: 0.5rem;
             margin-bottom: 1.25rem;
-            padding: 0.6rem 0.8rem;
+            padding: 0.5rem 0.8rem;
             background: var(--bg-subtle);
             border-radius: var(--radius-md);
             border: 1px solid var(--border-color);
         }
         .step-indicator-item {
-            display: flex;
+            display: inline-flex;
             align-items: center;
-            gap: 0.45rem;
-            font-size: var(--fs-xs);
+            gap: 0.5rem;
+            font-size: 0.8rem;
             font-weight: 700;
             color: var(--text-muted);
             cursor: pointer;
-            padding: 0.25rem 0.5rem;
-            border-radius: var(--radius-sm);
-            transition: all 0.15s ease;
+            padding: 0.32rem 0.75rem;
+            border-radius: 9999px;
+            transition: all 0.18s ease;
+            border: 1px solid transparent;
+            min-height: 32px;
+            box-sizing: border-box;
         }
         .step-indicator-item.active {
             color: var(--brand-primary);
             background: var(--brand-light);
+            border-color: rgba(16, 185, 129, 0.3);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        }
+        html.dark .step-indicator-item.active {
+            border-color: rgba(52, 211, 153, 0.28);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
         }
         .step-indicator-item.completed {
             color: var(--text-primary);
@@ -903,20 +912,37 @@
             align-items: center;
             justify-content: center;
             font-size: 0.72rem;
+            font-weight: 800;
+            line-height: 1;
             background: var(--border-color);
             color: var(--text-secondary);
+            flex-shrink: 0;
         }
         .step-indicator-item.active .step-num-badge {
             background: var(--brand-primary);
             color: #FFFFFF;
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.35);
+        }
+        html.dark .step-indicator-item.active .step-num-badge {
+            box-shadow: 0 0 8px rgba(52, 211, 153, 0.4);
         }
         .step-indicator-item.completed .step-num-badge {
             background: #10B981;
             color: #FFFFFF;
         }
+        .step-indicator-item > span:last-child {
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            transform: translateY(1px);
+            letter-spacing: 0.02em;
+        }
         .step-divider-arrow {
             color: var(--border-glow);
             font-size: 0.75rem;
+            display: inline-flex;
+            align-items: center;
+            transform: translateY(1px);
         }
 
         .subject-cards-grid {
@@ -5846,6 +5872,84 @@
                         💾 保存して更新
                     </button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ⚡ 授業作成・AI自動生成オプション選択モーダル -->
+    <div class="modal-overlay" id="direct-creation-modal" style="display: none; z-index: 100050;">
+        <div class="modal-content" style="max-width: 520px;">
+            <div class="modal-header">
+                <h3 class="modal-title">⚡ 授業作成・AI自動生成オプション</h3>
+                <button type="button" class="modal-close-btn" id="close-direct-creation-modal-btn">✕</button>
+            </div>
+            <p style="font-size:0.78rem; color:var(--text-secondary); margin-bottom:0.9rem; line-height:1.5;">
+                AIで自動生成する項目を選択してください。自分で作成する項目はチェックを外すことで、余計な生成をスキップして即座に授業枠を作成できます。
+            </p>
+
+            <div style="margin-bottom:0.9rem;">
+                <label for="direct-modal-title-input" style="font-size:0.8rem; font-weight:700; color:var(--text-primary); display:block; margin-bottom:0.35rem;">
+                    📝 授業タイトル
+                </label>
+                <input type="text" id="direct-modal-title-input" class="flora-input" style="width:100%; box-sizing:border-box; font-weight:600;" placeholder="例：二次関数の最大・最小">
+            </div>
+
+            <div id="direct-modal-text-status" style="margin-bottom:1rem; padding:0.55rem 0.8rem; background:var(--bg-subtle); border-radius:var(--radius-md); border:1px solid var(--border-color); font-size:0.75rem; color:var(--text-secondary); display:flex; justify-content:space-between; align-items:center;">
+                <span>📋 本文テキスト: <b id="direct-modal-char-count" style="color:var(--brand-primary);">0</b> 文字</span>
+                <span style="font-size:0.7rem; color:var(--text-muted);">※「📖 原文」タブに格納されます</span>
+            </div>
+
+            <div style="margin-bottom:1.1rem;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+                    <span style="font-size:0.82rem; font-weight:800; color:var(--text-primary); display:flex; align-items:center; gap:0.35rem;">
+                        <span>🤖</span> AI自動生成項目（自分で作る項目は外す）
+                    </span>
+                    <div style="display:flex; gap:0.4rem;">
+                        <button type="button" id="direct-modal-check-all-btn" class="flora-btn flora-btn-ghost btn-xs" style="font-size:0.7rem; padding:0.15rem 0.5rem;">すべて選択</button>
+                        <button type="button" id="direct-modal-uncheck-all-btn" class="flora-btn flora-btn-ghost btn-xs" style="font-size:0.7rem; padding:0.15rem 0.5rem; color:var(--text-muted);">すべて外す（完全手動）</button>
+                    </div>
+                </div>
+
+                <div style="display:flex; flex-direction:column; gap:0.55rem; background:rgba(99,102,241,0.06); border:1px solid rgba(99,102,241,0.22); border-radius:var(--radius-md); padding:0.85rem 1rem;">
+                    <label style="display:flex; align-items:flex-start; gap:0.6rem; cursor:pointer; user-select:none;">
+                        <input type="checkbox" id="direct-opt-lecture" style="margin-top:0.2rem; transform:scale(1.15); accent-color:var(--brand-primary);">
+                        <div>
+                            <div style="font-size:0.82rem; font-weight:750; color:var(--text-primary);">📖 第1回講義の自動解説</div>
+                            <div style="font-size:0.72rem; color:var(--text-secondary); margin-top:0.1rem;">AIが本文を解説する講義を作成します（AI Studio等から手動で貼る場合はOFF）</div>
+                        </div>
+                    </label>
+
+                    <label style="display:flex; align-items:flex-start; gap:0.6rem; cursor:pointer; user-select:none;">
+                        <input type="checkbox" id="direct-opt-memorize" style="margin-top:0.2rem; transform:scale(1.15); accent-color:var(--brand-primary);">
+                        <div>
+                            <div style="font-size:0.82rem; font-weight:750; color:var(--text-primary);">🧠 暗記事項（重要公式・用語）の自動抽出</div>
+                            <div style="font-size:0.72rem; color:var(--text-secondary); margin-top:0.1rem;">重要単語や公式をフラッシュカードとして抽出します（自分で作る場合はOFF）</div>
+                        </div>
+                    </label>
+
+                    <label style="display:flex; align-items:flex-start; gap:0.6rem; cursor:pointer; user-select:none;">
+                        <input type="checkbox" id="direct-opt-drills" style="margin-top:0.2rem; transform:scale(1.15); accent-color:var(--brand-primary);">
+                        <div>
+                            <div style="font-size:0.82rem; font-weight:750; color:var(--text-primary);">🎯 共通テスト形式選択問題の自動生成</div>
+                            <div style="font-size:0.72rem; color:var(--text-secondary); margin-top:0.1rem;">演習ドリル問題をAIが自動作成します（自分で作る場合はOFF）</div>
+                        </div>
+                    </label>
+
+                    <label style="display:flex; align-items:flex-start; gap:0.6rem; cursor:pointer; user-select:none; border-top:1px dashed rgba(99,102,241,0.25); padding-top:0.45rem;">
+                        <input type="checkbox" id="direct-opt-split-parts" style="margin-top:0.2rem; transform:scale(1.15); accent-color:var(--brand-primary);">
+                        <div>
+                            <div style="font-size:0.82rem; font-weight:750; color:var(--text-primary);">📑 本文の見出しからパートを自動分割</div>
+                            <div style="font-size:0.72rem; color:var(--text-secondary); margin-top:0.1rem;">本文中の「第○章」「■」「#」等の見出しで自動分割します（OFF時は全体で1パート）</div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 1.2rem;">
+                <button type="button" class="flora-btn flora-btn-secondary btn-md" id="cancel-direct-creation-modal-btn">キャンセル</button>
+                <button type="button" class="flora-btn flora-btn-primary btn-md" id="submit-direct-creation-modal-btn" style="font-weight:800; min-width:180px;">
+                    🚀 この設定で授業を作成
+                </button>
             </div>
         </div>
     </div>
@@ -12338,54 +12442,197 @@ ${existingLeads}
 
         setTimeout(initAutogenOptionsSync, 100);
 
-        // ⚡ AI生成をスキップして直接空の授業枠を作成するボタン（AI Studio外部作成用）
-        el("create-blank-lesson-direct-btn")?.addEventListener("click", async () => {
+                // ==============================================================
+        // ⚡ 直接作成・AI自動生成オプション選択モーダル制御
+        // ==============================================================
+        function getCurrentLessonDraftData() {
+            const subject = selectedSubject || "公共";
+            let extractedText = "";
+            let topicName = "";
+
+            const directTextInput = el("direct-text-input");
+            if (directTextInput && directTextInput.value.trim()) {
+                extractedText = directTextInput.value.trim();
+            }
+
+            const topicInput = el("topic-input");
+            if (topicInput && topicInput.value.trim()) {
+                topicName = topicInput.value.trim();
+            }
+
+            let titleCandidate = topicName;
+            if (!titleCandidate && extractedText) {
+                const firstLine = extractedText.split("\n")[0].replace(/^[#\s*・第\d+章節■【】\[\]]+/, "").trim();
+                if (firstLine.length > 0 && firstLine.length <= 40) {
+                    titleCandidate = firstLine;
+                } else if (firstLine.length > 40) {
+                    titleCandidate = firstLine.slice(0, 30) + "...";
+                }
+            }
+            if (!titleCandidate) {
+                titleCandidate = `${subject}の新規授業`;
+            }
+
+            return { subject, title: titleCandidate, extractedText, topicName };
+        }
+
+        function splitTextIntoParts(rawText, fallbackTitle) {
+            if (!rawText) return [{ title: fallbackTitle, summary: "手動・AI Studio作成パート" }];
+
+            const lines = rawText.split("\n");
+            const headingRegex = /^(?:#{1,3}\s+|第[0-9一二三四五六七八九十]+[章節回講]\s*|■\s*|[0-9]+[\.．]\s+|【(?:パート|Part|その)?\s*[0-9一二三四五六七八九十]+】\s*)(.+)$/i;
+
+            const parts = [];
+            let currentPartTitle = "";
+            let currentPartLines = [];
+
+            for (const line of lines) {
+                const match = line.trim().match(headingRegex);
+                if (match && currentPartLines.length > 3) {
+                    parts.push({
+                        title: cleanPartTitle(currentPartTitle || fallbackTitle, parts.length),
+                        summary: currentPartLines.slice(0, 3).join(" ").slice(0, 100) + "..."
+                    });
+                    currentPartTitle = match[1].trim();
+                    currentPartLines = [];
+                } else {
+                    if (!currentPartTitle && match) {
+                        currentPartTitle = match[1].trim();
+                    }
+                    currentPartLines.push(line);
+                }
+            }
+
+            if (currentPartLines.length > 0 || parts.length === 0) {
+                parts.push({
+                    title: cleanPartTitle(currentPartTitle || fallbackTitle, parts.length),
+                    summary: currentPartLines.slice(0, 3).join(" ").slice(0, 100) + "..."
+                });
+            }
+
+            if (parts.length > 8) parts.length = 8;
+            return parts.length > 0 ? parts : [{ title: fallbackTitle, summary: "手動・AI Studio作成パート" }];
+        }
+
+        function openDirectCreationModal() {
             if (!loginUid) {
                 showToast("ログインしてください", "warning");
                 return;
             }
-            const subject = selectedSubject || "公共";
-            const topicInput = el("topic-name-input") ? el("topic-name-input").value.trim() : "";
-            const title = topicInput || `${subject}の新規授業`;
-            const extractedText = (pendingExtractedText || (el("source-paste-input") ? el("source-paste-input").value : "")).trim();
-            const opts = getAutogenOptions();
-            saveAutogenOptions(opts);
 
-            const newId = "LESSON_" + Date.now();
-            const now = new Date().toISOString();
-            const lessonObj = {
-                id: newId,
-                title: title,
-                subject: subject,
-                extractedText: extractedText,
-                sourceMode: "text",
-                teachingStyle: "standard",
-                parts: [{ title: title, summary: "手動・AI Studio作成パート" }],
-                currentPartIndex: 0,
-                status: "teaching",
-                chatHistory: [],
-                createdAt: now,
-                updatedAt: now,
-                keyTerms: [],
-                inheritedKeyTerms: [],
-                accumulatedKeyTerms: [],
-                historicalEvents: [],
-                memorizationPoints: [],
-                choiceDrills: [],
-                autogenSettings: opts
-            };
+            const draft = getCurrentLessonDraftData();
+            const modal = el("direct-creation-modal");
+            if (!modal) return;
+
+            // タイトルセット
+            const titleInput = el("direct-modal-title-input");
+            if (titleInput) titleInput.value = draft.title;
+
+            // 文字数セット
+            const charCountEl = el("direct-modal-char-count");
+            if (charCountEl) charCountEl.textContent = draft.extractedText.length.toLocaleString();
+
+            // 直前の自動生成設定またはデフォルト（手動作成向け）を反映
+            const currentOpts = getAutogenOptions();
+            if (el("direct-opt-lecture")) el("direct-opt-lecture").checked = currentOpts.lecture;
+            if (el("direct-opt-memorize")) el("direct-opt-memorize").checked = currentOpts.memorize;
+            if (el("direct-opt-drills")) el("direct-opt-drills").checked = currentOpts.drills;
+            if (el("direct-opt-split-parts")) el("direct-opt-split-parts").checked = draft.extractedText.length > 200;
+
+            modal.style.display = "flex";
+            if (titleInput) {
+                setTimeout(() => titleInput.focus(), 100);
+            }
+        }
+
+        function closeDirectCreationModal() {
+            const modal = el("direct-creation-modal");
+            if (modal) modal.style.display = "none";
+        }
+
+        // イベントバインド
+        el("create-blank-lesson-direct-btn")?.addEventListener("click", openDirectCreationModal);
+        el("close-direct-creation-modal-btn")?.addEventListener("click", closeDirectCreationModal);
+        el("cancel-direct-creation-modal-btn")?.addEventListener("click", closeDirectCreationModal);
+        el("direct-creation-modal")?.addEventListener("click", (e) => {
+            if (e.target === el("direct-creation-modal")) closeDirectCreationModal();
+        });
+
+        // 全選択 / 全解除ボタン
+        el("direct-modal-check-all-btn")?.addEventListener("click", () => {
+            ["direct-opt-lecture", "direct-opt-memorize", "direct-opt-drills", "direct-opt-split-parts"].forEach(id => {
+                if (el(id)) el(id).checked = true;
+            });
+        });
+        el("direct-modal-uncheck-all-btn")?.addEventListener("click", () => {
+            ["direct-opt-lecture", "direct-opt-memorize", "direct-opt-drills", "direct-opt-split-parts"].forEach(id => {
+                if (el(id)) el(id).checked = false;
+            });
+        });
+
+        // 授業作成実行
+        el("submit-direct-creation-modal-btn")?.addEventListener("click", async () => {
+            if (!loginUid) {
+                showToast("ログインしてください", "warning");
+                return;
+            }
+
+            const btn = el("submit-direct-creation-modal-btn");
+            btn.disabled = true;
+            btn.textContent = "⏳ 授業枠を作成中...";
 
             try {
-                showToast("⚡ 空の授業枠を作成中...", "info");
+                const draft = getCurrentLessonDraftData();
+                const titleInput = el("direct-modal-title-input");
+                const title = (titleInput && titleInput.value.trim()) ? titleInput.value.trim() : draft.title;
+                const subject = draft.subject;
+                const extractedText = draft.extractedText;
+
+                const shouldSplit = el("direct-opt-split-parts") ? el("direct-opt-split-parts").checked : false;
+                const parts = shouldSplit && extractedText ? splitTextIntoParts(extractedText, title) : [{ title: title, summary: "手動・カスタム作成パート" }];
+
+                const opts = {
+                    lecture: el("direct-opt-lecture") ? el("direct-opt-lecture").checked : false,
+                    memorize: el("direct-opt-memorize") ? el("direct-opt-memorize").checked : false,
+                    drills: el("direct-opt-drills") ? el("direct-opt-drills").checked : false
+                };
+                saveAutogenOptions(opts);
+
+                const newId = "LESSON_" + Date.now();
+                const now = new Date().toISOString();
+                const lessonObj = {
+                    id: newId,
+                    title: title,
+                    subject: subject,
+                    extractedText: extractedText,
+                    sourceMode: "text",
+                    teachingStyle: selectedTeachingStyle || "standard",
+                    parts: parts,
+                    currentPartIndex: 0,
+                    status: "teaching",
+                    chatHistory: [],
+                    createdAt: now,
+                    updatedAt: now,
+                    keyTerms: [],
+                    inheritedKeyTerms: [],
+                    accumulatedKeyTerms: [],
+                    historicalEvents: [],
+                    memorizationPoints: opts.memorize ? undefined : [],
+                    choiceDrills: opts.drills ? undefined : [],
+                    autogenSettings: opts
+                };
+
+                showToast("⚡ 授業枠を作成しました！授業を開始します...", "success");
                 await set(ref(database, 'users/' + loginUid + '/lessons/' + newId), lessonObj);
                 window.location.href = `lesson.html?id=${newId}`;
             } catch(e) {
+                console.error(e);
                 showToast("作成に失敗しました: " + e.message, "error");
+                btn.disabled = false;
+                btn.textContent = "🚀 この設定で授業を作成";
             }
         });
 
-        // --------------------------------------------------------------
-        // プラン確定 → 授業開始
         // --------------------------------------------------------------
         el("confirm-plan-btn").addEventListener("click", async () => {
             if (!loginUid || !draftPlan) return;
