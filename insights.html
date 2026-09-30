@@ -7125,6 +7125,13 @@
 
                 const totalLessonsInSubj = lessonEntries.length;
 
+                // 🔗 続きの授業が必ず親の直後（隣）に連続して並ぶようにスマートグループ化！
+                const groupedEntries = (typeof window.groupSeriesLessons === "function")
+                    ? window.groupSeriesLessons(lessonEntries, ([lid, uItems]) => {
+                        return (rawLessons[lid] && rawLessons[lid].title) || (uItems[0] && uItems[0].short_title) || "";
+                    })
+                    : lessonEntries;
+
                 groupedEntries.forEach(([lid, unitItems], lessonIdx) => {
                     const unitId = `${subj}_${lid}`;
                     // 単元内の単語リストも指定のソート順（習得度順など）でソート
