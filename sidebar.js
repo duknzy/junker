@@ -344,6 +344,11 @@
             if (searchInput) {
                 searchInput.placeholder = t('searchInsightsPlaceholder');
             }
+
+            const btnDrillsGrouped = document.getElementById('btn-drills-view-grouped');
+            if (btnDrillsGrouped) btnDrillsGrouped.textContent = currentLang === 'en' ? '🗂 Group by Lesson' : '🗂 授業ごとにまとめる';
+            const btnDrillsCards = document.getElementById('btn-drills-view-cards');
+            if (btnDrillsCards) btnDrillsCards.textContent = currentLang === 'en' ? '📑 Card List' : '📑 カード一覧';
         }
 
         // 📖 lesson.html 向けのヘッダー要素をスマート連動
