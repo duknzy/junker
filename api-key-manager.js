@@ -544,7 +544,7 @@ if (typeof window !== "undefined") {
 // - ユーザーがタイムアウトを押した場合は次のキーへ切り替え
 // - ユーザーが中止を押した場合は即座に例外を送出して終了
 // --------------------------------------------------------------------------
-export async function fetchWithKeyRotation(keys, buildRequest, { requestTimeoutMs = null, startIndex = 0, modelName = "", featureId = null } = {}) {
+export async function fetchWithKeyRotation(keys, buildRequest, { requestTimeoutMs = null, startIndex = 0, modelName = "", featureId = null, signal = null } = {}) {
     if (!keys || keys.length === 0) {
         throw new Error("APIキーが1件も登録されていません。右下の🔑ボタンから登録してください。");
     }
@@ -581,6 +581,19 @@ export async function fetchWithKeyRotation(keys, buildRequest, { requestTimeoutM
         };
         activeRequestRegistry.set(reqId, reqEntry);
         updateActiveRequestUI();
+
+        // 外部シグナル（ユーザーによる生成キャンセル等）との同期
+        if (signal) {
+            if (signal.aborted) {
+                reqEntry.abortReason = "user_cancel";
+                try { controller.abort("user_cancel"); } catch (e) {}
+            } else {
+                signal.addEventListener("abort", () => {
+                    reqEntry.abortReason = "user_cancel";
+                    try { controller.abort("user_cancel"); } catch (e) {}
+                }, { once: true });
+            }
+        }
 
         let timeoutId = null;
         if (typeof requestTimeoutMs === "number" && requestTimeoutMs > 0 && Number.isFinite(requestTimeoutMs)) {
@@ -1357,6 +1370,10 @@ async function runGeminiFallbackLoop(contents, systemInstruction, options = {}) 
         }
 
         const requestBody = JSON.stringify(requestBodyObj);
+        const signal = options.signal || null;
+        if (signal && signal.aborted) {
+            throw new Error("ユーザーによりAIリクエストが中断されました。");
+        }
 
         let response;
         try {
@@ -1368,12 +1385,13 @@ async function runGeminiFallbackLoop(contents, systemInstruction, options = {}) 
                         headers: { "Content-Type": "application/json", "x-goog-api-key": key },
                         body: requestBody
                     }
-                }), { requestTimeoutMs, startIndex: keyOffset, modelName, featureId });
+                }), { requestTimeoutMs, startIndex: keyOffset, modelName, featureId, signal });
             } else {
                 response = await fetch("/api/gemini/generate", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ model: modelName, ...requestBodyObj })
+                    body: JSON.stringify({ model: modelName, ...requestBodyObj }),
+                    signal: signal || undefined
                 });
                 if (!response.ok) {
                     if (response.status === 404) {

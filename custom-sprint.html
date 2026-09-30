@@ -1,6 +1,7 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="ja" class="notranslate" translate="no">
 <head>
+    <meta name="google" content="notranslate">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#059669">
@@ -1370,10 +1371,16 @@
                             </div>
 
                             <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.8rem; margin-top: 0.6rem; flex-wrap: wrap;">
-                                <div style="display: flex; align-items: center; gap: 0.4rem;">
-                                    <span style="font-size: 0.76rem; color: var(--text-secondary); font-weight: 600;">出題数:</span>
-                                    <button type="button" class="count-btn active" data-trap-count="5">5問</button>
-                                    <button type="button" class="count-btn" data-trap-count="10">10問</button>
+                                <div style="display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap;">
+                                    <div style="display: flex; align-items: center; gap: 0.4rem;">
+                                        <span style="font-size: 0.76rem; color: var(--text-secondary); font-weight: 600;">出題数:</span>
+                                        <button type="button" class="count-btn active" data-trap-count="5">5問</button>
+                                        <button type="button" class="count-btn" data-trap-count="10">10問</button>
+                                    </div>
+                                    <label style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.8rem; font-weight: 700; color: var(--brand-primary); cursor: pointer; background: rgba(5, 150, 105, 0.08); padding: 0.3rem 0.65rem; border-radius: 6px; border: 1px solid rgba(5, 150, 105, 0.2);">
+                                        <input type="checkbox" id="science-trap-use-ai" checked style="accent-color: var(--brand-primary); cursor: pointer;">
+                                        <span>⚡ AIで新問を動的生成</span>
+                                    </label>
                                 </div>
                                 <button type="button" class="flora-btn flora-btn-primary btn-lg" id="btn-start-science-trap" style="font-weight: 700; padding: 0.75rem 1.8rem;">
                                     🚀 トラップスプリントを開始する
@@ -1550,9 +1557,9 @@
                     <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="sprint-figure-toggle-btn" style="display:none; width: fit-content; margin-bottom: 0.8rem;">🖼️ 元の写真・図を見る（図・表を確認）</button>
                     <div class="figure-gallery" id="sprint-figure-gallery"></div>
 
-                    <div class="control-panel" id="action-trigger-zone">
+                    <div class="control-panel" id="action-trigger-zone" style="flex-direction: column; gap: 0.75rem;">
                         <!-- 🔬 共テ理科基礎トラップ特訓：即時○×判定ボタン -->
-                        <div id="science-trap-choice-panel" style="display:none; width: 100%; gap: 0.85rem; margin-bottom: 0.5rem;">
+                        <div id="science-trap-choice-panel" style="display:none; width: 100%; gap: 0.85rem;">
                             <button type="button" class="flora-btn flora-btn-secondary btn-lg" id="btn-trap-choice-true" style="flex:1; font-size:1.15rem; font-weight:800; border:2px solid var(--brand-primary); color:var(--brand-primary); padding:0.85rem 1rem;">
                                 ⭕ 正しい
                             </button>
@@ -1560,6 +1567,18 @@
                                 ❌ 誤り
                             </button>
                         </div>
+
+                        <!-- ✏️ 数学・AIスプリント：答え入力フォーム & 自動判定 -->
+                        <div id="math-answer-input-panel" style="display:none; width: 100%; flex-direction: column; gap: 0.6rem;">
+                            <div style="display: flex; gap: 0.5rem; width: 100%;">
+                                <input type="text" id="sprint-answer-input" class="flora-input" placeholder="答えを入力 (例: 12, -3/2, 2√3 など)..." style="flex: 1; font-size: 1.05rem; font-weight: 600; padding: 0.75rem 1rem; border-radius: var(--radius-md);">
+                                <button type="button" class="flora-btn flora-btn-primary" id="btn-submit-math-answer" style="font-weight: 700; padding: 0.75rem 1.4rem; white-space: nowrap;">
+                                    🎯 判定
+                                </button>
+                            </div>
+                            <div id="math-answer-feedback" style="display:none; padding: 0.65rem 1rem; border-radius: var(--radius-md); font-weight: 700; font-size: 0.92rem; align-items: center; justify-content: space-between;"></div>
+                        </div>
+
                         <button type="button" class="flora-btn flora-btn-primary btn-lg" id="btn-reveal-ans" style="display:none; width: 100%;">👁 答えを確認する</button>
                     </div>
 
@@ -1753,22 +1772,38 @@
         let lastCondition = { mode: "ai", fieldText: "", levelText: "", count: 10, subject: "ALL", field: "ALL" };
 
         // ==========================================================================
-        // 💾【セッション永続化】AIモードのみ。登録済みモードはリロード後セットアップに戻る
+        // 💾【セッション永続化】AI / 共通テスト / 理科基礎 / 登録問題 すべての演習に対応
         // ==========================================================================
         const SESSION_STORAGE_KEY = "RE_MIND_CUSTOM_SPRINT_SESSION";
 
         function saveSession() {
-            if (currentMode !== "ai") return; // 登録済みモードは保存しない
+            if (!currentMode) return;
             try {
+                const isPlayZoneVisible = document.getElementById("sprint-play-zone")?.style.display === "flex";
+                const isKyotsuVisible = document.getElementById("kyotsu-play-zone")?.style.display === "flex";
+                if (!isPlayZoneVisible && !isKyotsuVisible) return;
+
                 const payload = {
                     finished: false,
-                    mode: "ai",
-                    questions: selectedQuestions,
-                    currentQuestionIndex: currentQuestionIndex,
+                    mode: currentMode,
                     lastCondition: lastCondition,
                     elapsedMs: Date.now() - startTime,
-                    revealed: document.getElementById("sprint-reveal-zone").style.display === "flex"
+                    sprintResultsTracker: sprintResultsTracker || []
                 };
+
+                if (currentMode === "kyotsu") {
+                    payload.kyotsuProblemData = kyotsuProblemData;
+                    payload.kyotsuUserAnswers = kyotsuUserAnswers;
+                    payload.kyotsuIsGraded = kyotsuIsGraded;
+                    payload.kyotsuActiveMarkId = kyotsuActiveMarkId;
+                    payload.kyotsuTargetTimeSec = kyotsuTargetTimeSec;
+                    payload.kyotsuTimerRemaining = kyotsuTimerRemaining;
+                } else {
+                    payload.questions = selectedQuestions;
+                    payload.currentQuestionIndex = currentQuestionIndex;
+                    payload.revealed = document.getElementById("sprint-reveal-zone")?.style.display === "flex";
+                }
+
                 localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(payload));
             } catch (e) {
                 console.warn("セッション保存に失敗しました", e);
@@ -1776,11 +1811,10 @@
         }
 
         function saveFinishedSession(finalTimeText) {
-            if (currentMode !== "ai") return;
             try {
                 const payload = {
                     finished: true,
-                    mode: "ai",
+                    mode: currentMode || "ai",
                     lastCondition: lastCondition,
                     finalTime: finalTimeText
                 };
@@ -1804,38 +1838,102 @@
             }
         }
 
-        // ページ表示時に、前回の続き（AIモード・未完了 or 直後の結果画面）があれば復元する
+        // ページ表示時に、前回の続き（未完了演習 or 直後の結果画面）があれば復元する
         function restoreSessionIfAny() {
             const session = loadSession();
-            if (!session || session.mode !== "ai") return false;
+            if (!session) return false;
 
             if (session.finished) {
                 lastCondition = session.lastCondition || lastCondition;
-                currentMode = "ai";
+                currentMode = session.mode || "ai";
                 document.getElementById("sprint-setup-zone").style.display = "none";
                 document.getElementById("sprint-header").style.display = "none";
                 document.getElementById("sprint-play-zone").style.display = "none";
+                const kyotsuPlay = document.getElementById("kyotsu-play-zone");
+                if (kyotsuPlay) kyotsuPlay.style.display = "none";
+                const kyotsuBottom = document.getElementById("kyotsu-bottom-controller");
+                if (kyotsuBottom) kyotsuBottom.style.display = "none";
+
                 document.getElementById("sprint-result-zone").style.display = "flex";
                 document.getElementById("final-time-display").textContent = session.finalTime || "00:00.00";
                 document.getElementById("result-summary-text").textContent = buildResultSummary(lastCondition);
                 return true;
             }
 
+            // 🏛️ 共通テスト実践モードの復元
+            if (session.mode === "kyotsu" && session.kyotsuProblemData) {
+                lastCondition = session.lastCondition || lastCondition;
+                currentMode = "kyotsu";
+                kyotsuProblemData = session.kyotsuProblemData;
+                kyotsuUserAnswers = session.kyotsuUserAnswers || {};
+                kyotsuIsGraded = !!session.kyotsuIsGraded;
+                kyotsuActiveMarkId = session.kyotsuActiveMarkId || null;
+                kyotsuTargetTimeSec = session.kyotsuTargetTimeSec || 0;
+                kyotsuTimerRemaining = session.kyotsuTimerRemaining || 0;
+                startTime = Date.now() - (session.elapsedMs || 0);
+
+                launchKyotsuPlayZone(kyotsuProblemData);
+
+                // 解答・スタイルの復元
+                const allMarks = getAllKyotsuMarks(kyotsuProblemData);
+                allMarks.forEach(m => {
+                    const ans = kyotsuUserAnswers[m.id];
+                    if (ans !== undefined) {
+                        const chipVal = document.getElementById(`chip-val-${m.id}`);
+                        if (chipVal) chipVal.textContent = ans || "_";
+                        const slot = document.getElementById(`slot-mark-${m.id}`);
+                        if (slot) {
+                            if (slot.tagName && slot.tagName.toLowerCase().startsWith('mjx')) {
+                                slot.classList.add("filled");
+                                slot.style.outline = "2px solid var(--brand-primary)";
+                                slot.style.outlineOffset = "1px";
+                            } else {
+                                slot.textContent = `[ ${ans} ]`;
+                                slot.classList.add("filled");
+                            }
+                        }
+                    }
+                });
+                updateKyotsuFilledCount();
+
+                if (kyotsuIsGraded) {
+                    submitKyotsuScore(true); // サイレント再採点
+                } else if (kyotsuActiveMarkId) {
+                    activateKyotsuMark(kyotsuActiveMarkId);
+                }
+
+                showToast("🏛️ 前回の共通テスト大問セッションを復元しました。", "info", 3500);
+                return true;
+            }
+
+            // ⚡ AI / 理科基礎 / プリセットモードの復元
             if (Array.isArray(session.questions) && session.questions.length > 0 && session.currentQuestionIndex < session.questions.length) {
                 selectedQuestions = session.questions;
                 currentQuestionIndex = session.currentQuestionIndex;
                 lastCondition = session.lastCondition || lastCondition;
-                currentMode = "ai";
+                currentMode = session.mode || "ai";
+                sprintResultsTracker = session.sprintResultsTracker || [];
                 startTime = Date.now() - (session.elapsedMs || 0);
 
                 document.getElementById("sprint-setup-zone").style.display = "none";
                 document.getElementById("sprint-result-zone").style.display = "none";
+                const kyotsuPlay = document.getElementById("kyotsu-play-zone");
+                if (kyotsuPlay) kyotsuPlay.style.display = "none";
+                const kyotsuBottom = document.getElementById("kyotsu-bottom-controller");
+                if (kyotsuBottom) kyotsuBottom.style.display = "none";
+
                 document.getElementById("sprint-header").style.display = "flex";
                 document.getElementById("sprint-play-zone").style.display = "flex";
 
                 clearInterval(timerInterval);
                 timerInterval = setInterval(updateTimer, 10);
                 renderQuestion();
+
+                if (session.revealed) {
+                    revealAnswer();
+                }
+
+                showToast("⚡ 前回の演習セッションを復元しました。", "info", 3500);
                 return true;
             }
 
@@ -1857,7 +1955,9 @@
 
         // タブを閉じる／別ページへ移動する直前にも、途中経過を確実に保存する
         window.addEventListener("pagehide", () => {
-            if (currentMode === "ai" && document.getElementById("sprint-play-zone").style.display !== "none") {
+            const isPlayZoneVisible = document.getElementById("sprint-play-zone")?.style.display === "flex";
+            const isKyotsuVisible = document.getElementById("kyotsu-play-zone")?.style.display === "flex";
+            if (isPlayZoneVisible || isKyotsuVisible) {
                 saveSession();
             }
         });
@@ -2322,19 +2422,37 @@
         });
 
         // 🔬 共テ理科基礎 トラップスプリント開始トリガー
-        document.getElementById("btn-start-science-trap")?.addEventListener("click", () => {
+        // ==========================================================================
+        // 🔬 共テ理科基礎 トラップスプリント（AI動的生成 ＆ 厳選DBフォールバック）
+        // ==========================================================================
+        const SCIENCE_TRAP_RESPONSE_SCHEMA = {
+            type: "ARRAY",
+            items: {
+                type: "OBJECT",
+                properties: {
+                    subject: { type: "STRING", description: "物理基礎、化学基礎、生物基礎、地学基礎のいずれか" },
+                    field: { type: "STRING", description: "出題単元名" },
+                    title: { type: "STRING", description: "【共通テスト正誤判定】から始まる設問文本文" },
+                    answer: { type: "STRING", description: "「○ 正しい」または「× 誤り」" },
+                    trap_type: { type: "STRING", description: "罠の種別（例: 主語と目的語のすり替え罠、可変値と定数の混同、例外の一般化、因果の逆転など）" },
+                    explanation: { type: "STRING", description: "根拠と解説（なぜ正しいか、あるいはどこが誤りか）" }
+                },
+                required: ["subject", "field", "title", "answer", "trap_type", "explanation"]
+            }
+        };
+
+        function startDatabaseScienceTrap(subject, field, count) {
             let pool = SCIENCE_TRAP_DATABASE;
-            if (scienceSelectedSubj !== "4科目ランダム") {
-                const filtered = pool.filter(q => q.subject === scienceSelectedSubj);
+            if (subject !== "4科目ランダム") {
+                const filtered = pool.filter(q => q.subject === subject);
                 if (filtered.length > 0) pool = filtered;
             }
 
-            // ユーザーが選択した単元（field）に合致する問題を最優先で選出し、残りを同じ科目から補充
-            const matchedField = pool.filter(q => q.field === scienceSelectedField);
-            const otherQuestions = pool.filter(q => q.field !== scienceSelectedField).sort(() => 0.5 - Math.random());
+            const matchedField = pool.filter(q => q.field === field);
+            const otherQuestions = pool.filter(q => q.field !== field).sort(() => 0.5 - Math.random());
             const orderedPool = [...matchedField, ...otherQuestions];
 
-            selectedQuestions = orderedPool.slice(0, scienceSelectedCount).map((q, idx) => ({
+            selectedQuestions = orderedPool.slice(0, count).map((q, idx) => ({
                 id: `SCIENCE_TRAP_${Date.now()}_${idx + 1}`,
                 title: q.title,
                 field: `${q.subject}：${q.field}`,
@@ -2349,14 +2467,136 @@
             currentMode = "science-trap";
             lastCondition = {
                 mode: "science-trap",
-                subject: scienceSelectedSubj,
-                field: scienceSelectedField,
+                subject: subject,
+                field: field,
                 count: selectedQuestions.length,
-                sprintTitle: `共テ理科基礎トラップ（${scienceSelectedSubj}）`
+                sprintTitle: `共テ理科基礎トラップ（${subject}）`
             };
 
-            showToast(`🔬 ${scienceSelectedSubj}（${selectedQuestions.length}問）のトラップスプリントを開始します！`, "success", 2500);
+            showToast(`🔬 ${subject}（${selectedQuestions.length}問）のトラップスプリントを開始します！`, "success", 2500);
             launchSprintPlayZone();
+        }
+
+        async function startAiScienceTrap(subject, field, count) {
+            clearSession();
+            currentMode = "science-trap";
+            isGeneratingSprint = true;
+
+            const iconEl = document.getElementById("progress-icon");
+            const phaseTitleEl = document.getElementById("progress-phase-title");
+            const phaseDescEl = document.getElementById("progress-phase-desc");
+            const fillBarEl = document.getElementById("progress-fill-bar");
+            const percentTextEl = document.getElementById("progress-percent-text");
+            const statusGridEl = document.getElementById("question-status-grid");
+
+            if (iconEl) iconEl.textContent = "🔬";
+            if (phaseTitleEl) phaseTitleEl.textContent = `共テ理科基礎 AIトラップ問題を生成中...`;
+            if (phaseDescEl) phaseDescEl.textContent = `${subject}（${field}）の盲点・落とし穴をAIが作問しています`;
+            if (fillBarEl) fillBarEl.style.width = "40%";
+            if (percentTextEl) percentTextEl.textContent = "40%";
+            if (statusGridEl) {
+                statusGridEl.innerHTML = `
+                    <div class="question-status-item done"><span><strong>科目:</strong> ${escapeHtml(subject)}</span><span class="status-indicator">✅</span></div>
+                    <div class="question-status-item done"><span><strong>分野:</strong> ${escapeHtml(field)}</span><span class="status-indicator">✅</span></div>
+                    <div class="question-status-item pending"><span><strong>AI作問:</strong> ${count}問生成中</span><span class="status-indicator">⏳</span></div>
+                `;
+            }
+
+            goToWizardStep(3);
+
+            if (generationAbortController) {
+                try { generationAbortController.abort(); } catch (e) {}
+            }
+            generationAbortController = new AbortController();
+            const currentSignal = generationAbortController.signal;
+
+            try {
+                if (getGeminiKeys().length === 0 && !window.__serverHasGeminiKey) {
+                    throw new Error("Gemini APIキーが未設定です。");
+                }
+
+                const prompt = `あなたは大学入学共通テスト理科（物理基礎、化学基礎、生物基礎、地学基礎）の極めて優秀な作問委員です。
+高校生が共通テスト本番で最も引っかかりやすい「出題者の罠が巧妙に仕組まれた正誤判定問題」を【厳密に${count}問】作成してください。
+
+【科目】${subject === "4科目ランダム" ? "物理基礎・化学基礎・生物基礎・地学基礎からバランスよく均等に出題" : subject}
+【重点単元】${field || "全般"}
+【設問数】${count}問
+
+【⚠️ 出題者の代表的トラップ手口（これらを各問に織り交ぜること）】
+1. 主語と目的語のすり替え（反作用の作用点、還元剤と酸化剤など）
+2. 可変値と定数の混同（静止摩擦力と最大摩擦力、電離度と平衡定数など）
+3. 例外を一般論と誤認させる罠（「すべての生物は〜」「常に〜」などの断定表現）
+4. 実験手順・因果関係の前後逆転（器具の共洗い、試薬の投入順序など）
+5. 日常感覚と科学的定義の乖離
+
+【必須ルール】
+- title は「【共通テスト正誤判定】...」の形式で、断定口調（〜である。〜となる。）の完結した文章にすること。
+- answer は「○ 正しい」または「× 誤り」のどちらかのみとすること。○と×が偏らないように適度に散らすこと。
+- trap_type にはその問題の罠の種類を簡潔に書くこと（例: 主語すり替え罠、可変値混同罠 など）。
+- explanation には正誤の判定理由と、受験生が陥りがちな盲点を論理的かつ分かりやすく解説すること。
+
+厳密に${count}件の要素を持つJSON配列のみを出力してください。`;
+
+                const aiQuestions = await callGeminiJSON(
+                    [{ text: prompt }],
+                    "あなたは優秀な共通テスト理科作問者です。指定されたJSON配列のみを出力してください。",
+                    { temperature: 0.35, arrayMode: true, responseSchema: SCIENCE_TRAP_RESPONSE_SCHEMA, featureId: "science_trap_ai", signal: currentSignal }
+                );
+
+                if (!isGeneratingSprint || currentSignal.aborted) return;
+
+                if (!Array.isArray(aiQuestions) || aiQuestions.length === 0) {
+                    throw new Error("AIの応答が空または不正な配列でした。");
+                }
+
+                selectedQuestions = aiQuestions.slice(0, count).map((q, idx) => ({
+                    id: `SCIENCE_TRAP_AI_${Date.now()}_${idx + 1}`,
+                    title: q.title || `【共通テスト正誤判定】${q.field}に関する考察`,
+                    field: `${q.subject || subject}：${q.field || field}`,
+                    subject: q.subject || subject,
+                    options: ["○ 正しい", "× 誤り"],
+                    answer: q.answer?.includes("○") ? "○ 正しい" : "× 誤り",
+                    trap_type: q.trap_type || "共通テスト盲点トラップ",
+                    steps: `【正解】${q.answer}\n\n【⚠️ 出題者の罠】${q.trap_type || '盲点トラップ'}\n\n【解説】\n${q.explanation || ''}`,
+                    explanation: q.explanation || ""
+                }));
+
+                lastCondition = {
+                    mode: "science-trap",
+                    subject: subject,
+                    field: field,
+                    count: selectedQuestions.length,
+                    sprintTitle: `共テ理科基礎 AIトラップ（${subject}）`
+                };
+
+                if (fillBarEl) fillBarEl.style.width = "100%";
+                if (percentTextEl) percentTextEl.textContent = "100%";
+                isGeneratingSprint = false;
+
+                showToast(`🔬 AI生成による ${subject}（${selectedQuestions.length}問）の最新トラップスプリントを開始します！`, "success", 2500);
+                setTimeout(() => launchSprintPlayZone(), 400);
+
+            } catch (err) {
+                if (!isGeneratingSprint || (generationAbortController && generationAbortController.signal.aborted)) {
+                    return;
+                }
+                console.warn("理科基礎AI作問失敗、既存データベースへフォールバック:", err);
+                isGeneratingSprint = false;
+                showToast(`AI作問に失敗したため、厳選データベースから出題を開始します。\n（${err.message}）`, "info", 4000);
+                startDatabaseScienceTrap(subject, field, count);
+            }
+        }
+
+        // 🔬 共テ理科基礎 トラップスプリント開始トリガー
+        document.getElementById("btn-start-science-trap")?.addEventListener("click", () => {
+            const useAi = document.getElementById("science-trap-use-ai")?.checked ?? true;
+            const hasKey = getGeminiKeys().length > 0 || window.__serverHasGeminiKey;
+
+            if (useAi && hasKey) {
+                startAiScienceTrap(scienceSelectedSubj, scienceSelectedField, scienceSelectedCount);
+            } else {
+                startDatabaseScienceTrap(scienceSelectedSubj, scienceSelectedField, scienceSelectedCount);
+            }
         });
 
         // 共通テスト科目タブの切り替え
@@ -2775,6 +3015,13 @@
         // 生成キャンセル
         document.getElementById("btn-cancel-generation")?.addEventListener("click", () => {
             isGeneratingSprint = false;
+            if (generationAbortController) {
+                try { generationAbortController.abort(); } catch (e) {}
+                generationAbortController = null;
+            }
+            if (typeof window !== "undefined" && typeof window.__apikmAbort === "function") {
+                try { window.__apikmAbort(); } catch (e) {}
+            }
             goToWizardStep(2);
             showToast("問題生成をキャンセルしました。", "info");
         });
@@ -3783,6 +4030,8 @@
                 const targetMark = allMarks.find(m => m.id === mid);
                 if (targetMark) renderKyotsuInputDeck(targetMark);
             }
+
+            saveSession();
         }
 
         // PCキーボード入力のバインド
@@ -3810,16 +4059,19 @@
             }
         });
 
-        // 採点処理
-        function submitKyotsuScore() {
-            if (kyotsuIsGraded || !kyotsuProblemData) return;
+        // 採点処理（isSilent: セッション復元時の自動再採点時はダイアログ・トーストをスキップ）
+        function submitKyotsuScore(isSilent = false) {
+            if (!kyotsuProblemData) return;
+            if (kyotsuIsGraded && !isSilent) return;
 
             const allMarks = getAllKyotsuMarks(kyotsuProblemData);
-            const unfilled = allMarks.filter(m => !kyotsuUserAnswers[m.id]);
-            if (unfilled.length > 0) {
-                if (!confirm(`未入力のマークが ${unfilled.length} 個あります。このまま採点しますか？`)) {
-                    activateKyotsuMark(unfilled[0].id);
-                    return;
+            if (!isSilent) {
+                const unfilled = allMarks.filter(m => !kyotsuUserAnswers[m.id]);
+                if (unfilled.length > 0) {
+                    if (!confirm(`未入力のマークが ${unfilled.length} 個あります。このまま採点しますか？`)) {
+                        activateKyotsuMark(unfilled[0].id);
+                        return;
+                    }
                 }
             }
 
@@ -3890,14 +4142,17 @@
                 submitBtn.textContent = "✅ 採点完了";
             }
 
-            // 画面トップへスムーススクロールして結果を確認
-            banner?.scrollIntoView({ behavior: "smooth", block: "center" });
+            if (!isSilent) {
+                // 画面トップへスムーススクロールして結果を確認
+                banner?.scrollIntoView({ behavior: "smooth", block: "center" });
+                showToast(`🎉 採点が完了しました！得点: ${earnedPoints}点（${percent}%）`, "success", 4000);
+            }
 
             forceTriggerMathJax();
-            showToast(`🎉 採点が完了しました！得点: ${earnedPoints}点（${percent}%）`, "success", 4000);
+            saveSession();
         }
 
-        document.getElementById("btn-kyotsu-submit-score")?.addEventListener("click", submitKyotsuScore);
+        document.getElementById("btn-kyotsu-submit-score")?.addEventListener("click", () => submitKyotsuScore(false));
 
         // 共通テスト：同じ大問をやり直す
         document.getElementById("btn-kyotsu-retry")?.addEventListener("click", () => {
@@ -4072,6 +4327,11 @@
             clearSession();
             currentMode = "ai";
             isGeneratingSprint = true;
+            if (generationAbortController) {
+                try { generationAbortController.abort(); } catch (e) {}
+            }
+            generationAbortController = new AbortController();
+            const currentSignal = generationAbortController.signal;
 
             const iconEl = document.getElementById("progress-icon");
             const phaseTitleEl = document.getElementById("progress-phase-title");
@@ -4109,10 +4369,10 @@
                 const outlineResult = await callGeminiJSON(
                     [{ text: outlinePrompt }],
                     "あなたは優秀な数学教育設計者です。JSON配列のみを出力してください。",
-                    { temperature: 0.3, arrayMode: true, responseSchema: SPRINT_OUTLINE_SCHEMA, featureId: "custom_sprint_outline", preferredModel }
+                    { temperature: 0.3, arrayMode: true, responseSchema: SPRINT_OUTLINE_SCHEMA, featureId: "custom_sprint_outline", preferredModel, signal: currentSignal }
                 );
 
-                if (!isGeneratingSprint) return; // キャンセルされた場合
+                if (!isGeneratingSprint || currentSignal.aborted) return; // キャンセルされた場合
 
                 let outline = Array.isArray(outlineResult) && outlineResult.length > 0
                     ? outlineResult.slice(0, count)
@@ -4170,7 +4430,7 @@
                         const qData = await callGeminiJSON(
                             [{ text: prompt }],
                             "あなたは優秀な数学教師です。単一のJSONオブジェクトのみを返してください。",
-                            { temperature: 0.4, responseSchema: SINGLE_QUESTION_SCHEMA, featureId: "custom_sprint_parallel", preferredModel }
+                            { temperature: 0.4, responseSchema: SINGLE_QUESTION_SCHEMA, featureId: "custom_sprint_parallel", preferredModel, signal: currentSignal }
                         );
 
                         completedCount++;
@@ -4207,6 +4467,9 @@
                             questionText: finalQuestionText
                         };
                     } catch (err) {
+                        if (!isGeneratingSprint || currentSignal.aborted) {
+                            return null;
+                        }
                         console.warn(`第${item.number}問の並列生成失敗、フォールバックを適用:`, err);
                         completedCount++;
                         const card = document.getElementById(`status-card-q${item.number}`);
@@ -4226,9 +4489,9 @@
 
                 const questions = await Promise.all(outline.map((item, idx) => generateSingleQuestion(item, idx)));
 
-                if (!isGeneratingSprint) return; // キャンセル確認
+                if (!isGeneratingSprint || currentSignal.aborted) return; // キャンセル確認
 
-                selectedQuestions = questions;
+                selectedQuestions = questions.filter(Boolean);
                 isGeneratingSprint = false;
 
                 // 完了演出後、プレイ画面へ突入
@@ -4243,6 +4506,10 @@
                 }, 600);
 
             } catch (err) {
+                if (!isGeneratingSprint || (generationAbortController && generationAbortController.signal.aborted)) {
+                    console.log("スプリント生成がユーザーにより中止されました。");
+                    return;
+                }
                 console.error("並列問題生成全体エラー:", err);
                 isGeneratingSprint = false;
                 showToast("AI問題生成に失敗しました: " + err.message + "\n※予備問題データベースから出題を開始します。", "error", 6000);
@@ -4340,155 +4607,12 @@
             startSprintTimer();
         }
 
-        // ==========================================================================
-        // 🔒 カスタムスプリント生成の「JSON配列」構造をAPI側で強制するためのスキーマ
-        // ==========================================================================
-        const CUSTOM_SPRINT_RESPONSE_SCHEMA = {
-            type: "ARRAY",
-            items: {
-                type: "OBJECT",
-                properties: {
-                    id: { type: "STRING" },
-                    subject: { type: "STRING" },
-                    field: { type: "STRING" },
-                    theme: { type: "STRING", description: "出題テーマ・解法パターン名（例: 同じものを含む順列と順序指定順列の融合問題）" },
-                    questionText: { type: "STRING", description: "具体的で完全な問題文全文（問いを含む）" },
-                    title: { type: "STRING", description: "問題文全文" },
-                    answer: { type: "STRING" },
-                    steps: { type: "STRING" }
-                },
-                required: ["id", "subject", "field", "questionText", "answer", "steps"]
-            }
-        };
-
-        // ✨ 指定条件でのAI（Gemini）問題作成処理
-        async function generateCustomSprintWithAI(fieldText, levelText, count, sprintTitle = "", focusNotes = "") {
-            const fieldInstruction = fieldText
-                ? `【出題分野】\n以下の分野・単元から出題してください（複数指定されている場合は満遍なく散らして出題すること）：${fieldText}`
-                : `【出題分野】\n特に指定はありません。数学I,A,II,B,Cの全範囲から、特定の分野に偏らないようバランスよく出題してください（数学IIIは対象外）。`;
-
-            const titleInstruction = sprintTitle
-                ? `【🎯 スプリント題名・特訓テーマ】\n${sprintTitle}\nこのテーマ・題名に直結する計算問題・思考力問題を厳選し、生徒がこの特訓で確実な成長とスピード向上を実感できるように作成してください。\n`
-                : '';
-
-            const focusInstruction = focusNotes
-                ? `【💡 重点対策・特訓のこだわり要望】\n${focusNotes}\nこの要望や着眼点（式変形の工夫、落とし穴の注意点など）を問題の選定や計算ステップに色濃く反映してください。\n`
-                : '';
-
-            const systemPrompt = `
-あなたは日本の高校数学の教育に精通した、極めて優秀なAI数学教師です。
-生徒がリクエストした条件に沿って、計算特訓タイムアタック問題を【厳密に${count}問】作成してください。数学IIIの範囲（微分法・積分法の発展的内容、極限、媒介変数・極座標、複素数平面など）は対象外とし、数学I,A,II,B,Cの範囲内で作成してください。
-
-${titleInstruction}
-${fieldInstruction}
-
-【🎚 難易度】
-${levelText}
-この難易度指定に厳密に従うこと。「最難関大学レベル」が指定された場合は、複数の解法・公式を組み合わせる必要がある、思考力を強く要求される歯応えのある問題にすること。逆に「教科書レベル」が指定された場合は、基本公式の定着を確認する素直な問題にすること。
-
-${focusInstruction}
-【🚫 禁止事項】
-- 「軌跡」「軌跡と領域」に関する問題は、明示的に指定されない限り避けること。
-- 「複素数」「複素数平面」「数学IIIの範囲」は、明示的に指定されない限り出題しないこと。
-- 紙とペンで1問あたり数分程度で完結する、計算・証明・評価が中心の問題にすること（実験や図示ツールが必須の問題は避ける）。
-
-【数式・解説ルール】
-1. 数式フォーマット：問題文(title)、答え(answer)、解説(steps)に含まれる数式や変数は、必ず前後に $ または $$ をつけて美しいLaTeX数式形式にしてください。
-2. 解説の構造化：steps（解説）は1行に詰め込まず、計算過程や使用した公式、思考のステップごとに必ず改行コード（\\\\n）を挟んで、論理の飛躍がない見やすい箇条書き形式にしてください。
-
-【⚠️ 最重要：問題文の完全な記述ルール】
-- 「questionText」および「title」には、生徒が問題を読んでその場で解くための【具体的かつ完全な問題文全文（条件設定・数値や変数・数式・そして「〜を求めよ」「〜の値を答えよ」などの明確な問い）】を必ず完全に記述してください。
-- テーマ名や見出しだけで終わらせることは厳格に禁止です。必ず具体的な問題文本文を書いてください。
-- 「theme」には、その問題の出題テーマや解法パターン名を入れてください。
-- 図やグラフを参照しなくても、問題文の文章と数式だけで100%状況が確定し、自己完結して解ける問題にしてください。
-
-【JSONフォーマット】
-[
-  {
-    "id": "AI_CUSTOM_${Date.now()}_1",
-    "subject": "数学II",
-    "field": "分野名（例: 三角関数）",
-    "theme": "解法パターン名・小見出し",
-    "questionText": "具体的で完全な問題文全文（〜を求めよ、など。数式は$ $で挟む）",
-    "title": "questionTextと同じ完全な問題文",
-    "answer": "最終的な正しい答え（数式は$ $で挟む）",
-    "steps": "ステップごとの解説（\\\\nで改行を挟む）"
-  }
-]
-出力は必ず上記フォーマットのJSON配列のみとし、厳密に${count}件の要素を含めてください。他の説明テキストは絶対に含めないでください。
-`;
-
-            try {
-                if (getGeminiKeys().length === 0 && !window.__serverHasGeminiKey) {
-                    throw new Error("GeminiのAPIキーがブラウザに設定されていません。右下の🔑ボタンから登録してください。");
-                }
-
-                const aiQuestions = await callGeminiJSON(
-                    [{ text: systemPrompt }],
-                    "あなたは優秀なAI数学教師です。指定されたJSONフォーマットの配列のみを厳密に返してください。",
-                    { temperature: 0.4, arrayMode: true, responseSchema: CUSTOM_SPRINT_RESPONSE_SCHEMA, featureId: "custom_sprint" }
-                );
-
-                if (!Array.isArray(aiQuestions) || aiQuestions.length === 0) {
-                    throw new Error("AIの応答が期待した配列形式ではありませんでした。");
-                }
-
-                selectedQuestions = aiQuestions.map((q, idx) => {
-                    const finalTheme = (q.theme || q.field || "").trim();
-                    let finalQuestionText = (q.questionText || q.title || "").trim();
-                    if (!finalQuestionText || finalQuestionText === finalTheme) {
-                        if (q.title && q.title.trim() !== finalTheme) {
-                            finalQuestionText = q.title.trim();
-                        } else {
-                            finalQuestionText = `${finalTheme}：次の条件を満たす値を求めよ。`;
-                        }
-                    }
-                    return {
-                        ...q,
-                        id: `AI_CUSTOM_${Date.now()}_${idx + 1}`,
-                        theme: finalTheme,
-                        title: finalQuestionText,
-                        questionText: finalQuestionText
-                    };
-                });
-                startSprintTimer();
-
-            } catch (error) {
-                console.error("AI問題生成エラー:", error);
-
-                // フィールド指定があれば予備問題バンクから部分一致で抽出、なければ全体からランダム
-                let pool = dailyProblemBank;
-                if (fieldText) {
-                    const keywords = fieldText.split(/[,、]/).map(s => s.trim()).filter(Boolean);
-                    const matched = dailyProblemBank.filter(q => keywords.some(kw => (q.field || "").includes(kw) || (q.title || "").includes(kw)));
-                    if (matched.length > 0) pool = matched;
-                }
-                showToast("Geminiによる問題生成に失敗しました。\n\n【エラー内容】" + error.message + "\n\n※予備問題データベースから条件に近いものをランダムに選出して特訓を開始します！", "error", 8000);
-
-                const shuffled = [...pool].sort(() => 0.5 - Math.random());
-selectedQuestions = shuffled.slice(0, count).map((q, idx) => ({
-    ...q,
-    id: `FALLBACK_CUSTOM_${Date.now()}_${idx + 1}`
-}));
-
-                if (selectedQuestions.length === 0) {
-                    showToast("条件に合う予備問題が見つかりませんでした。分野の指定を変えるか、再試行してください。", "error");
-                    document.getElementById("sprint-play-zone").style.display = "none";
-                    document.getElementById("sprint-header").style.display = "none";
-                    document.getElementById("sprint-setup-zone").style.display = "flex";
-                    return;
-                }
-
-                startSprintTimer();
-            }
-        }
-
         function startSprintTimer() {
             document.getElementById("btn-reveal-ans").style.display = "block";
             startTime = Date.now();
             timerInterval = setInterval(updateTimer, 10);
             renderQuestion();
-            if (currentMode === "ai") saveSession();
+            saveSession();
         }
 
         function updateTimer() {
@@ -4635,17 +4759,29 @@ selectedQuestions = shuffled.slice(0, count).map((q, idx) => ({
                 }
             }
 
-            // 理科基礎トラップモードの専用コントロール表示切替
+            // 理科基礎トラップモード / 数学スプリントの専用コントロール表示切替
             const choicePanel = document.getElementById("science-trap-choice-panel");
+            const mathInputPanel = document.getElementById("math-answer-input-panel");
+            const answerInput = document.getElementById("sprint-answer-input");
+            const feedbackEl = document.getElementById("math-answer-feedback");
             const revealBtn = document.getElementById("btn-reveal-ans");
             const trapBanner = document.getElementById("sprint-trap-result-banner");
             const trapNextPanel = document.getElementById("sprint-trap-next-panel");
             const standardControls = document.getElementById("sprint-standard-controls");
 
             if (trapBanner) trapBanner.style.display = "none";
+            if (answerInput) {
+                answerInput.value = "";
+                answerInput.disabled = false;
+            }
+            if (feedbackEl) {
+                feedbackEl.style.display = "none";
+                feedbackEl.innerHTML = "";
+            }
 
             if (isScienceTrap) {
                 if (choicePanel) choicePanel.style.display = "flex";
+                if (mathInputPanel) mathInputPanel.style.display = "none";
                 if (revealBtn) {
                     revealBtn.style.display = "block";
                     revealBtn.textContent = "👁 解説と解答を直接確認する";
@@ -4656,11 +4792,15 @@ selectedQuestions = shuffled.slice(0, count).map((q, idx) => ({
                 if (standardControls) standardControls.style.display = "flex";
             } else {
                 if (choicePanel) choicePanel.style.display = "none";
+                if (mathInputPanel) {
+                    mathInputPanel.style.display = "flex";
+                    setTimeout(() => answerInput?.focus(), 50);
+                }
                 if (revealBtn) {
                     revealBtn.style.display = "block";
-                    revealBtn.textContent = "👁 答えを確認する";
-                    revealBtn.className = "flora-btn flora-btn-primary btn-lg";
-                    revealBtn.style.marginTop = "0";
+                    revealBtn.textContent = "👁 答えと解説を直接確認する（自己申告）";
+                    revealBtn.className = "flora-btn flora-btn-ghost btn-sm";
+                    revealBtn.style.marginTop = "0.4rem";
                 }
                 if (trapNextPanel) trapNextPanel.style.display = "none";
                 if (standardControls) standardControls.style.display = "flex";
@@ -4731,6 +4871,121 @@ selectedQuestions = shuffled.slice(0, count).map((q, idx) => ({
             document.getElementById("sprint-standard-controls").style.display = "none";
             document.getElementById("sprint-trap-next-panel").style.display = "flex";
 
+            forceTriggerMathJax(document.getElementById("sprint-reveal-zone"));
+        }
+
+        // --------------------------------------------------------------------------
+        // 🎯 数学スプリント 答えの自動正規化＆判定
+        // --------------------------------------------------------------------------
+        function normalizeAnswerString(str) {
+            if (!str) return "";
+            return String(str)
+                .replace(/[！-～]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xfee0))
+                .replace(/　/g, " ")
+                .replace(/[＋]/g, "+")
+                .replace(/[−ー―]/g, "-")
+                .replace(/[×*]/g, "*")
+                .replace(/[÷／]/g, "/")
+                .replace(/[$￥]/g, "")
+                .replace(/\s+/g, "")
+                .replace(/^(x|y|a|n|k|Ans|ans|答え|解)[=:：]/i, "")
+                .trim();
+        }
+
+        function parseFractionOrNumber(str) {
+            const clean = normalizeAnswerString(str);
+            if (!clean) return NaN;
+            if (/^-?\d+(\.\d+)?$/.test(clean)) {
+                return parseFloat(clean);
+            }
+            const fracMatch = clean.match(/^(-?\d+)\/(\d+)$/);
+            if (fracMatch) {
+                const num = parseInt(fracMatch[1], 10);
+                const den = parseInt(fracMatch[2], 10);
+                if (den !== 0) return num / den;
+            }
+            return NaN;
+        }
+
+        function checkMathAnswer(userInput, modelAnswer) {
+            const uNorm = normalizeAnswerString(userInput);
+            const mNorm = normalizeAnswerString(modelAnswer);
+
+            if (!uNorm) return false;
+            if (uNorm.toLowerCase() === mNorm.toLowerCase()) return true;
+
+            // 数値としての完全・近似一致判定（1/2 と 0.5 など）
+            const uVal = parseFractionOrNumber(uNorm);
+            const mVal = parseFractionOrNumber(mNorm);
+            if (!isNaN(uVal) && !isNaN(mVal) && Math.abs(uVal - mVal) < 1e-5) {
+                return true;
+            }
+
+            // LaTeX形式の \frac{a}{b} と a/b の一致判定
+            let mFrac = mNorm.replace(/\\frac\{(-?\d+)\}\{(\d+)\}/g, "$1/$2");
+            if (uNorm === mFrac) return true;
+
+            // 根号 \sqrt{3} と √3 の一致判定
+            let uSqrt = uNorm.replace(/√/g, "\\sqrt").replace(/\\sqrt(\d+)/g, "\\sqrt{$1}");
+            let mSqrt = mNorm.replace(/√/g, "\\sqrt").replace(/\\sqrt(\d+)/g, "\\sqrt{$1}");
+            if (uSqrt === mSqrt) return true;
+
+            return false;
+        }
+
+        function handleMathAnswerSubmit() {
+            const q = selectedQuestions[currentQuestionIndex];
+            if (!q) return;
+
+            const inputEl = document.getElementById("sprint-answer-input");
+            const feedbackEl = document.getElementById("math-answer-feedback");
+            const userVal = inputEl ? inputEl.value.trim() : "";
+
+            if (!userVal) {
+                showToast("答えを入力してください", "warning", 2000);
+                inputEl?.focus();
+                return;
+            }
+
+            const isCorrect = checkMathAnswer(userVal, q.answer);
+
+            if (feedbackEl) {
+                feedbackEl.style.display = "flex";
+                if (isCorrect) {
+                    feedbackEl.style.background = "rgba(16, 185, 129, 0.12)";
+                    feedbackEl.style.border = "1px solid #10b981";
+                    feedbackEl.style.color = "#059669";
+                    feedbackEl.innerHTML = `
+                        <span>🎉 <strong>正解！お見事！</strong>（入力: ${escapeHtml(userVal)}）</span>
+                        <button type="button" class="flora-btn flora-btn-primary btn-sm" id="btn-quick-next-correct" style="font-weight:700;">次へ進む ▶</button>
+                    `;
+                    document.getElementById("btn-quick-next-correct")?.addEventListener("click", () => {
+                        handleCorrect();
+                    });
+                } else {
+                    feedbackEl.style.background = "rgba(239, 68, 68, 0.12)";
+                    feedbackEl.style.border = "1px solid #ef4444";
+                    feedbackEl.style.color = "#dc2626";
+                    feedbackEl.innerHTML = `
+                        <span>❌ <strong>惜しい！一致しませんでした</strong>（入力: ${escapeHtml(userVal)}）</span>
+                        <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="btn-check-steps-wrong" style="font-weight:700;">👁 解説を見る</button>
+                    `;
+                    document.getElementById("btn-check-steps-wrong")?.addEventListener("click", () => {
+                        revealAnswer();
+                    });
+                }
+            }
+
+            // 正解の場合は自動で解答・解説もオープン
+            if (isCorrect) {
+                revealAnswer();
+                showToast("🎉 正解！お見事です！", "success", 2000);
+            }
+        }
+
+        function revealAnswer() {
+            document.getElementById("btn-reveal-ans").style.display = "none";
+            document.getElementById("sprint-reveal-zone").style.display = "flex";
             forceTriggerMathJax(document.getElementById("sprint-reveal-zone"));
         }
 
@@ -4926,7 +5181,7 @@ selectedQuestions = shuffled.slice(0, count).map((q, idx) => ({
 
         function nextQuestion() {
             currentQuestionIndex++;
-            if (currentMode === "ai" && currentQuestionIndex < selectedQuestions.length) {
+            if (currentQuestionIndex < selectedQuestions.length) {
                 saveSession();
             }
             renderQuestion();
@@ -4957,8 +5212,8 @@ selectedQuestions = shuffled.slice(0, count).map((q, idx) => ({
             document.getElementById("final-time-display").textContent = finalTime;
             document.getElementById("result-summary-text").textContent = buildResultSummary(lastCondition);
 
-            // AIモードのみセッション保存
-            if (currentMode === "ai") saveFinishedSession(finalTime);
+            // 全モード共通で完了セッション保存
+            saveFinishedSession(finalTime);
 
             // ボタンラベルを元に戻す
             document.getElementById("btn-sprint-wrong").textContent = "❌ ミスった（LOLZへ送る）";
@@ -5162,14 +5417,25 @@ selectedQuestions = shuffled.slice(0, count).map((q, idx) => ({
             nextQuestion();
         });
 
-        document.getElementById("btn-reveal-ans").addEventListener("click", () => {
-            document.getElementById("btn-reveal-ans").style.display = "none";
-            document.getElementById("sprint-reveal-zone").style.display = "flex";
-            forceTriggerMathJax(document.getElementById("sprint-reveal-zone"));
+        // ✏️ 数学スプリント 答え判定ボタン & Enterキーバインド
+        document.getElementById("btn-submit-math-answer")?.addEventListener("click", handleMathAnswerSubmit);
+        document.getElementById("sprint-answer-input")?.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                handleMathAnswerSubmit();
+            }
         });
 
-        document.getElementById("btn-sprint-correct").addEventListener("click", handleCorrect);
-        document.getElementById("btn-sprint-wrong").addEventListener("click", handleWrong);
+        document.getElementById("btn-reveal-ans")?.addEventListener("click", revealAnswer);
+
+        document.getElementById("btn-sprint-correct").addEventListener("click", () => {
+            document.getElementById("action-trigger-zone").style.display = "flex";
+            handleCorrect();
+        });
+        document.getElementById("btn-sprint-wrong").addEventListener("click", () => {
+            document.getElementById("action-trigger-zone").style.display = "flex";
+            handleWrong();
+        });
 
 
         // ==========================================================================

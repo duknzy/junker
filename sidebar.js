@@ -150,6 +150,38 @@
             btnViewAll: 'すべて見る ➔',
             btnClear: 'クリア',
             searchLessonPlaceholder: '教科や単元名で絞り込み...',
+            pastLessonsTitle: '📚 過去の授業一覧',
+            btnBatchGenerateDrills: '🎯 選択問題を一括生成',
+            btnAutofixSubjects: '⚡ 過去の授業の教科を一括自動判別',
+            sortLabel: '並び順:',
+            sortCustom: '📌 自由並べ替え（ドラッグ＆ボタン）',
+            sortCreatedAsc: '📅 受講日（古い順・カリキュラム順）',
+            sortCreatedDesc: '📅 受講日（新しい順）',
+            sortUpdatedDesc: '⚡ 最終更新日順',
+            sortTitleAsc: '🔤 授業タイトル順',
+            filterAll: 'すべて',
+            customTabsTitle: '🏷️ マイタブ / コレクション',
+            btnCreateTab: '➕ 新規タブ作成',
+
+            // insights.html 用
+            headerInsightsTitle: '💡 ナレッジ＆質問アーカイブ',
+            headerInsightsSubtitle: 'これまでの演習で記録した「気づき・極意」「AI質問ログ」「暗記事項」の統合ナレッジベース',
+            btnAiTermAsk: '💬 教科書・単語 AI質問',
+            tabInsights: '🧠 気づき・極意メモ',
+            tabMemorize: '📌 暗記事項',
+            tabDrills: '🎯 授業 選択問題',
+            tabQna: '💬 AI質問ログ',
+            tabMnemonics: '🎴 世界史 語呂合わせ',
+            searchInsightsPlaceholder: 'キーワード・単元名・問題タイトルで検索...',
+
+            // プロフィール設定用
+            profileModalTitle: '👤 プロフィール設定',
+            profileNameLabel: '表示名',
+            profileAvatarType: 'アバターの種類',
+            profileInitialColor: 'イニシャル & カラー',
+            profileEmoji: '絵文字アイコン',
+            profileCustomImage: '画像アップロード',
+            profileSavedToast: '✅ プロフィールを更新しました！',
         },
         en: {
             brandSubtitle: 'Study Workspace',
@@ -192,6 +224,38 @@
             btnViewAll: 'View All ➔',
             btnClear: 'Clear',
             searchLessonPlaceholder: 'Filter by subject or unit...',
+            pastLessonsTitle: '📚 Past Lessons Archive',
+            btnBatchGenerateDrills: '🎯 Batch Generate Drills',
+            btnAutofixSubjects: '⚡ Auto-classify Subjects',
+            sortLabel: 'Sort:',
+            sortCustom: '📌 Custom Order (Drag & Buttons)',
+            sortCreatedAsc: '📅 Date (Oldest / Curriculum)',
+            sortCreatedDesc: '📅 Date (Newest)',
+            sortUpdatedDesc: '⚡ Recently Updated',
+            sortTitleAsc: '🔤 Lesson Title (A-Z)',
+            filterAll: 'All',
+            customTabsTitle: '🏷️ My Tabs / Collections',
+            btnCreateTab: '➕ Create New Tab',
+
+            // insights.html 用
+            headerInsightsTitle: '💡 Knowledge & Q&A Archive',
+            headerInsightsSubtitle: 'Integrated knowledge base for insights, AI Q&A logs, and memorization cards recorded during practice.',
+            btnAiTermAsk: '💬 Textbook & Term AI Q&A',
+            tabInsights: '🧠 Insights & Takeaways',
+            tabMemorize: '📌 Memorization Cards',
+            tabDrills: '🎯 Choice Drills',
+            tabQna: '💬 AI Q&A Logs',
+            tabMnemonics: '🎴 History Mnemonics',
+            searchInsightsPlaceholder: 'Search by keyword, unit, or question title...',
+
+            // プロフィール設定用
+            profileModalTitle: '👤 Profile Settings',
+            profileNameLabel: 'Display Name',
+            profileAvatarType: 'Avatar Type',
+            profileInitialColor: 'Initials & Color',
+            profileEmoji: 'Emoji Icon',
+            profileCustomImage: 'Upload Image',
+            profileSavedToast: '✅ Profile updated successfully!',
         }
     };
 
@@ -210,7 +274,18 @@
 
     function updatePageLanguage(lang) {
         const currentLang = lang || getLanguage();
-        document.documentElement.lang = currentLang;
+
+        // 🛡️ ブラウザの自動翻訳プロンプト（「翻訳しますか」）を確実に抑止
+        if (!document.querySelector('meta[name="google"][content="notranslate"]')) {
+            const meta = document.createElement('meta');
+            meta.name = 'google';
+            meta.content = 'notranslate';
+            document.head.appendChild(meta);
+        }
+        document.documentElement.classList.add('notranslate');
+        document.documentElement.setAttribute('translate', 'no');
+        // ブラウザに「外国語サイト」と誤認させないため lang="ja" を維持
+        document.documentElement.lang = 'ja';
 
         // data-i18n 属性を持つ要素の自動更新
         document.querySelectorAll('[data-i18n]').forEach(el => {
@@ -227,7 +302,51 @@
             }
         });
 
-        // lesson.html 向けのヘッダー要素をスマート連動
+        // 💡 insights.html 向けのヘッダー要素をスマート連動
+        const isInsightsPage = window.location.pathname.endsWith('insights.html') || window.location.pathname.includes('/insights');
+        if (isInsightsPage) {
+            document.title = currentLang === 'en' ? 'Flora | Knowledge & Q&A Archive' : 'Flora 学習ワークスペース - Flora | 質問・気づきアーカイブ';
+            const pageTitleEl = document.querySelector('.page-title');
+            if (pageTitleEl) pageTitleEl.textContent = t('headerInsightsTitle');
+            const pageSubEl = document.querySelector('.page-subtitle');
+            if (pageSubEl) pageSubEl.textContent = t('headerInsightsSubtitle');
+
+            const btnAiTermAsk = document.getElementById('btn-open-ai-term-ask');
+            if (btnAiTermAsk) btnAiTermAsk.textContent = t('btnAiTermAsk');
+
+            const tabInsights = document.getElementById('tab-btn-insights');
+            if (tabInsights) {
+                const count = document.getElementById('count-insights')?.textContent || '0';
+                tabInsights.innerHTML = `${t('tabInsights')} (<span id="count-insights">${count}</span>)`;
+            }
+            const tabMemorize = document.getElementById('tab-btn-memorize');
+            if (tabMemorize) {
+                const count = document.getElementById('count-memorize')?.textContent || '0';
+                tabMemorize.innerHTML = `${t('tabMemorize')} (<span id="count-memorize">${count}</span>)`;
+            }
+            const tabDrills = document.getElementById('tab-btn-drills');
+            if (tabDrills) {
+                const count = document.getElementById('count-drills')?.textContent || '0';
+                tabDrills.innerHTML = `${t('tabDrills')} (<span id="count-drills">${count}</span>)`;
+            }
+            const tabQna = document.getElementById('tab-btn-qna');
+            if (tabQna) {
+                const count = document.getElementById('count-qna')?.textContent || '0';
+                tabQna.innerHTML = `${t('tabQna')} (<span id="count-qna">${count}</span>)`;
+            }
+            const tabMnemonics = document.getElementById('tab-btn-mnemonics');
+            if (tabMnemonics) {
+                const count = document.getElementById('count-mnemonics')?.textContent || '0';
+                tabMnemonics.innerHTML = `${t('tabMnemonics')} (<span id="count-mnemonics">${count}</span>)`;
+            }
+
+            const searchInput = document.getElementById('search-input');
+            if (searchInput) {
+                searchInput.placeholder = t('searchInsightsPlaceholder');
+            }
+        }
+
+        // 📖 lesson.html 向けのヘッダー要素をスマート連動
         const isLessonPage = window.location.pathname.endsWith('lesson.html') || window.location.pathname.includes('/lesson');
         if (isLessonPage) {
             document.title = t('headerLessonDocTitle');
@@ -287,6 +406,33 @@
             const clearLink = document.getElementById('btn-clear-recent-history-inline');
             if (clearLink) {
                 clearLink.textContent = t('btnClear');
+            }
+
+            // 過去の授業一覧タイトル & 一括ボタン & 並び順
+            const pastLessonsTitle = document.getElementById('lesson-list-title-label') || document.querySelector('#lesson-list-wrap > div:first-child');
+            if (pastLessonsTitle) pastLessonsTitle.textContent = t('pastLessonsTitle');
+
+            const batchDrillsBtn = document.getElementById('btn-batch-generate-choice-drills');
+            if (batchDrillsBtn) {
+                batchDrillsBtn.textContent = t('btnBatchGenerateDrills');
+            }
+            const autofixBtn = document.getElementById('btn-autofix-lesson-subjects');
+            if (autofixBtn) {
+                autofixBtn.textContent = t('btnAutofixSubjects');
+            }
+
+            const sortSelect = document.getElementById('lesson-sort-select');
+            if (sortSelect) {
+                const sortOpts = {
+                    custom: t('sortCustom'),
+                    created_asc: t('sortCreatedAsc'),
+                    created_desc: t('sortCreatedDesc'),
+                    updated_desc: t('sortUpdatedDesc'),
+                    title_asc: t('sortTitleAsc')
+                };
+                Array.from(sortSelect.options).forEach(opt => {
+                    if (sortOpts[opt.value]) opt.textContent = sortOpts[opt.value];
+                });
             }
         }
     }
@@ -408,13 +554,16 @@
                         <span>${t('btnMobile')}</span>
                     </a>
                 </div>
-                <div class="sidebar-user-card" id="sidebar-user-container">
+                <div class="sidebar-user-card" id="sidebar-user-container" style="cursor: pointer;" title="${t('profileModalTitle')}">
                     <div class="sidebar-user-avatar" id="sidebar-user-avatar">F</div>
                     <div style="flex: 1; min-width: 0;">
                         <div class="sidebar-user-name" id="sidebar-user-name">Flora Student</div>
                         <div id="sidebar-sync-text" style="font-size: 0.68rem; color: var(--text-muted);">${t('syncingLocal')}</div>
                     </div>
-                    <button id="sidebar-logout-btn" onclick="if(window.handleFloraLogout){window.handleFloraLogout();}else{localStorage.removeItem('flora_user'); location.reload();}" title="${t('logout')}" style="background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 0.2rem 0.4rem; border-radius: 4px; font-size: 0.75rem;">
+                    <button id="sidebar-edit-profile-btn" type="button" title="${t('profileModalTitle')}" style="background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 0.2rem 0.35rem; border-radius: 4px; font-size: 0.8rem; line-height: 1; transition: opacity 0.15s ease;">
+                        ✏️
+                    </button>
+                    <button id="sidebar-logout-btn" type="button" onclick="event.stopPropagation(); if(window.handleFloraLogout){window.handleFloraLogout();}else{localStorage.removeItem('flora_user'); location.reload();}" title="${t('logout')}" style="background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 0.2rem 0.35rem; border-radius: 4px; font-size: 0.8rem; line-height: 1;">
                         🚪
                     </button>
                 </div>
@@ -426,6 +575,7 @@
         setupWallpaperControls();
         setupDarkModeControls();
         setupLanguageControls();
+        setupUserProfileControls();
         updatePageLanguage();
     }
 
@@ -704,33 +854,419 @@
         });
     }
 
+    // 👤 ユーザープロフィールの取得
+    function getCustomProfile() {
+        try {
+            const raw = localStorage.getItem('flora_custom_profile');
+            return raw ? JSON.parse(raw) : null;
+        } catch(e) {
+            return null;
+        }
+    }
+
     function updateSidebarUser() {
         try {
+            const custom = getCustomProfile();
             const userJson = localStorage.getItem('flora_user') || localStorage.getItem('lolz_user');
+            const defaultUser = userJson ? JSON.parse(userJson) : null;
+
             const nameEl = document.getElementById('sidebar-user-name');
             const avatarEl = document.getElementById('sidebar-user-avatar');
-            if (userJson) {
-                const user = JSON.parse(userJson);
-                if (nameEl && user.name) nameEl.textContent = user.name;
-                if (avatarEl) {
-                    if (user.avatar) {
-                        avatarEl.innerHTML = `<img src="${user.avatar}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
-                    } else if (user.name) {
-                        avatarEl.textContent = user.name.charAt(0).toUpperCase();
+
+            const name = custom?.name || defaultUser?.name || "Flora Student";
+            if (nameEl) nameEl.textContent = name;
+
+            if (avatarEl) {
+                avatarEl.style.display = 'inline-flex';
+                avatarEl.style.alignItems = 'center';
+                avatarEl.style.justifyContent = 'center';
+                avatarEl.style.borderRadius = '50%';
+                avatarEl.style.width = '36px';
+                avatarEl.style.height = '36px';
+                avatarEl.style.minWidth = '36px';
+                avatarEl.style.overflow = 'hidden';
+                avatarEl.style.fontWeight = '700';
+                avatarEl.style.color = '#ffffff';
+
+                if (custom) {
+                    if (custom.avatarType === 'image' && custom.avatarImage) {
+                        avatarEl.innerHTML = `<img src="${custom.avatarImage}" alt="${name}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;">`;
+                        avatarEl.style.background = 'transparent';
+                    } else if (custom.avatarType === 'emoji' && custom.avatarEmoji) {
+                        avatarEl.textContent = custom.avatarEmoji;
+                        avatarEl.style.fontSize = '1.25rem';
+                        avatarEl.style.background = custom.avatarBg || 'linear-gradient(135deg, #10B981, #059669)';
+                    } else {
+                        const init = (custom.avatarInitial || name.charAt(0) || 'F').toUpperCase();
+                        avatarEl.textContent = init;
+                        avatarEl.style.fontSize = '0.95rem';
+                        avatarEl.style.background = custom.avatarBg || 'linear-gradient(135deg, #10B981, #059669)';
                     }
+                } else if (defaultUser) {
+                    if (defaultUser.avatar) {
+                        avatarEl.innerHTML = `<img src="${defaultUser.avatar}" alt="${name}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;">`;
+                        avatarEl.style.background = 'transparent';
+                    } else {
+                        avatarEl.textContent = (name ? name.charAt(0) : 'F').toUpperCase();
+                        avatarEl.style.fontSize = '0.95rem';
+                        avatarEl.style.background = 'linear-gradient(135deg, #10B981, #059669)';
+                    }
+                } else {
+                    avatarEl.textContent = '👤';
+                    avatarEl.style.fontSize = '1.1rem';
+                    avatarEl.style.background = 'var(--bg-subtle)';
+                    avatarEl.style.color = 'var(--text-secondary)';
                 }
-            } else {
-                if (nameEl) nameEl.textContent = t('notLoggedIn');
-                if (avatarEl) avatarEl.textContent = '👤';
             }
+
             const syncEl = document.getElementById('sidebar-sync-text');
             if (syncEl) syncEl.textContent = t('syncingLocal');
-        } catch(e) {}
+        } catch(e) {
+            console.warn('[Flora] updateSidebarUser error:', e);
+        }
+    }
+
+    // 👤 プロフィール設定モーダル制御
+    function setupUserProfileControls() {
+        const userContainer = document.getElementById('sidebar-user-container');
+        const editBtn = document.getElementById('sidebar-edit-profile-btn');
+        if (!userContainer) return;
+
+        const openHandler = (e) => {
+            if (e.target.closest('#sidebar-logout-btn')) return;
+            openProfileModal();
+        };
+
+        userContainer.onclick = openHandler;
+        if (editBtn) editBtn.onclick = openHandler;
+    }
+
+    function openProfileModal() {
+        const existing = document.getElementById('flora-profile-modal-wrap');
+        if (existing) existing.remove();
+
+        const custom = getCustomProfile() || {};
+        const userJson = localStorage.getItem('flora_user') || localStorage.getItem('lolz_user');
+        const defaultUser = userJson ? JSON.parse(userJson) : null;
+
+        let curName = custom.name || defaultUser?.name || 'Flora Student';
+        let curType = custom.avatarType || (custom.avatarImage ? 'image' : (custom.avatarEmoji ? 'emoji' : 'initial'));
+        let curBg = custom.avatarBg || 'linear-gradient(135deg, #10B981, #059669)';
+        let curInitial = custom.avatarInitial || curName.charAt(0) || 'F';
+        let curEmoji = custom.avatarEmoji || '🎓';
+        let curImage = custom.avatarImage || defaultUser?.avatar || '';
+
+        const colorPalettes = [
+            { bg: 'linear-gradient(135deg, #10B981, #059669)', name: 'Flora Green' },
+            { bg: 'linear-gradient(135deg, #6366F1, #4F46E5)', name: 'Indigo' },
+            { bg: 'linear-gradient(135deg, #8B5CF6, #7C3AED)', name: 'Purple' },
+            { bg: 'linear-gradient(135deg, #EC4899, #DB2777)', name: 'Pink' },
+            { bg: 'linear-gradient(135deg, #F59E0B, #D97706)', name: 'Amber' },
+            { bg: 'linear-gradient(135deg, #06B6D4, #0891B2)', name: 'Cyan' },
+            { bg: 'linear-gradient(135deg, #EF4444, #DC2626)', name: 'Red' },
+            { bg: 'linear-gradient(135deg, #475569, #1E293B)', name: 'Slate' }
+        ];
+
+        const presetEmojis = ['🎓', '🌿', '🦉', '🦊', '🚀', '💻', '🧠', '⚡', '🌸', '☕', '📖', '🎯', '🎨', '🧪', '🏆', '🪐', '💎', '🐾', '🦁', '🌟'];
+
+        const modalWrap = document.createElement('div');
+        modalWrap.id = 'flora-profile-modal-wrap';
+        modalWrap.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.65);backdrop-filter:blur(6px);z-index:999999;display:flex;align-items:center;justify-content:center;padding:1rem;box-sizing:border-box;animation:floraFadeIn 0.2s ease;';
+
+        modalWrap.innerHTML = `
+            <div style="background:var(--bg-surface, #ffffff); border:1px solid var(--border-color, #e2e8f0); border-radius:18px; width:100%; max-width:460px; box-shadow:0 20px 40px rgba(0,0,0,0.3); overflow:hidden; display:flex; flex-direction:column; max-height:90vh; color:var(--text-primary, #1e293b); font-family:var(--font-base, sans-serif);">
+                <div style="padding:1.1rem 1.4rem; border-bottom:1px solid var(--border-color, #e2e8f0); display:flex; align-items:center; justify-content:space-between; background:var(--bg-subtle, #f8fafc);">
+                    <div style="font-weight:700; font-size:1.05rem; display:flex; align-items:center; gap:0.5rem;">
+                        <span>👤</span> <span>${t('profileModalTitle')}</span>
+                    </div>
+                    <button type="button" id="btn-close-prof-modal" style="background:none; border:none; font-size:1.3rem; color:var(--text-muted, #94a3b8); cursor:pointer; line-height:1; padding:0.2rem;">&times;</button>
+                </div>
+
+                <div style="padding:1.4rem; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:1.25rem;">
+                    <!-- ライブプレビュー -->
+                    <div style="display:flex; align-items:center; gap:1rem; padding:0.9rem 1.1rem; background:var(--bg-subtle, #f8fafc); border:1px solid var(--border-color, #e2e8f0); border-radius:14px;">
+                        <div id="prof-preview-avatar" style="width:54px; height:54px; min-width:54px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1.35rem; color:#fff; box-shadow:0 4px 12px rgba(0,0,0,0.15); overflow:hidden;"></div>
+                        <div style="flex:1; min-width:0;">
+                            <div style="font-size:0.75rem; color:var(--text-muted, #94a3b8); font-weight:600; margin-bottom:0.15rem;">プレビュー</div>
+                            <div id="prof-preview-name" style="font-weight:700; font-size:1.05rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"></div>
+                            <div style="font-size:0.7rem; color:var(--text-muted, #94a3b8);">${t('syncingLocal')}</div>
+                        </div>
+                    </div>
+
+                    <!-- 名前入力 -->
+                    <div>
+                        <label style="display:block; font-size:0.8rem; font-weight:700; margin-bottom:0.4rem; color:var(--text-secondary, #64748b);">${t('profileNameLabel')}</label>
+                        <input type="text" id="prof-input-name" value="${curName.replace(/"/g, '&quot;')}" style="width:100%; height:40px; border-radius:8px; border:1px solid var(--border-color, #cbd5e1); background:var(--bg-surface, #fff); color:var(--text-primary, #1e293b); padding:0 0.85rem; font-size:0.9rem; box-sizing:border-box;">
+                    </div>
+
+                    <!-- アバタータイプ選択タブ -->
+                    <div>
+                        <label style="display:block; font-size:0.8rem; font-weight:700; margin-bottom:0.5rem; color:var(--text-secondary, #64748b);">${t('profileAvatarType')}</label>
+                        <div style="display:flex; gap:0.4rem; background:var(--bg-subtle, #f1f5f9); padding:0.25rem; border-radius:10px;">
+                            <button type="button" id="tab-avatar-initial" style="flex:1; padding:0.45rem 0.5rem; border-radius:7px; font-size:0.76rem; font-weight:700; border:none; cursor:pointer; transition:all 0.15s ease;">${t('profileInitialColor')}</button>
+                            <button type="button" id="tab-avatar-emoji" style="flex:1; padding:0.45rem 0.5rem; border-radius:7px; font-size:0.76rem; font-weight:700; border:none; cursor:pointer; transition:all 0.15s ease;">${t('profileEmoji')}</button>
+                            <button type="button" id="tab-avatar-image" style="flex:1; padding:0.45rem 0.5rem; border-radius:7px; font-size:0.76rem; font-weight:700; border:none; cursor:pointer; transition:all 0.15s ease;">${t('profileCustomImage')}</button>
+                        </div>
+                    </div>
+
+                    <!-- 1. イニシャル設定セクション -->
+                    <div id="section-avatar-initial" style="display:none; flex-direction:column; gap:0.9rem;">
+                        <div>
+                            <label style="display:block; font-size:0.75rem; color:var(--text-muted, #94a3b8); margin-bottom:0.35rem;">イニシャル文字（1〜2文字）</label>
+                            <input type="text" id="prof-input-initial" maxlength="2" value="${(curInitial || '').replace(/"/g, '&quot;')}" style="width:80px; height:36px; border-radius:8px; border:1px solid var(--border-color, #cbd5e1); background:var(--bg-surface, #fff); color:var(--text-primary, #1e293b); text-align:center; font-weight:700; font-size:1rem; box-sizing:border-box;">
+                        </div>
+                        <div>
+                            <label style="display:block; font-size:0.75rem; color:var(--text-muted, #94a3b8); margin-bottom:0.45rem;">背景カラーパレット</label>
+                            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;" id="prof-color-list"></div>
+                        </div>
+                    </div>
+
+                    <!-- 2. 絵文字設定セクション -->
+                    <div id="section-avatar-emoji" style="display:none; flex-direction:column; gap:0.9rem;">
+                        <div>
+                            <label style="display:block; font-size:0.75rem; color:var(--text-muted, #94a3b8); margin-bottom:0.45rem;">お好みの絵文字を選択</label>
+                            <div style="display:grid; grid-template-columns:repeat(10, 1fr); gap:0.35rem;" id="prof-emoji-list"></div>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:0.6rem;">
+                            <label style="font-size:0.75rem; color:var(--text-muted, #94a3b8); white-space:nowrap;">または直接入力:</label>
+                            <input type="text" id="prof-input-emoji" value="${curEmoji}" maxlength="2" style="width:60px; height:34px; border-radius:8px; border:1px solid var(--border-color, #cbd5e1); background:var(--bg-surface, #fff); color:var(--text-primary, #1e293b); text-align:center; font-size:1.1rem; box-sizing:border-box;">
+                        </div>
+                        <div>
+                            <label style="display:block; font-size:0.75rem; color:var(--text-muted, #94a3b8); margin-bottom:0.45rem;">絵文字の背景色</label>
+                            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;" id="prof-emoji-color-list"></div>
+                        </div>
+                    </div>
+
+                    <!-- 3. 画像アップロードセクション -->
+                    <div id="section-avatar-image" style="display:none; flex-direction:column; gap:0.9rem;">
+                        <div style="border:2px dashed var(--border-color, #cbd5e1); border-radius:12px; padding:1.2rem; text-align:center; background:var(--bg-subtle, #f8fafc); cursor:pointer;" id="prof-drop-zone">
+                            <input type="file" id="prof-file-input" accept="image/*" style="display:none;">
+                            <div style="font-size:1.8rem; margin-bottom:0.35rem;">🖼️</div>
+                            <div style="font-size:0.82rem; font-weight:700; color:var(--brand-primary, #059669); margin-bottom:0.25rem;">画像ファイルを選択</div>
+                            <div style="font-size:0.72rem; color:var(--text-muted, #94a3b8);">PNG, JPG, WebP, GIF（自動で円形にトリミング＆最適化されます）</div>
+                        </div>
+                        ${curImage ? `<button type="button" id="btn-clear-custom-image" style="font-size:0.75rem; color:#ef4444; background:transparent; border:none; cursor:pointer; align-self:flex-start;">🗑️ 画像を削除する</button>` : ''}
+                    </div>
+                </div>
+
+                <div style="padding:1rem 1.4rem; border-top:1px solid var(--border-color, #e2e8f0); display:flex; align-items:center; justify-content:space-between; background:var(--bg-subtle, #f8fafc);">
+                    <button type="button" id="btn-reset-prof" style="font-size:0.75rem; color:var(--text-muted, #94a3b8); background:none; border:none; cursor:pointer; text-decoration:underline;">初期設定に戻す</button>
+                    <div style="display:flex; gap:0.5rem;">
+                        <button type="button" id="btn-cancel-prof" style="padding:0.45rem 0.9rem; border-radius:8px; border:1px solid var(--border-color, #cbd5e1); background:var(--bg-surface, #fff); color:var(--text-primary, #1e293b); font-size:0.82rem; font-weight:600; cursor:pointer;">${t('logout') === 'Log out' ? 'Cancel' : 'キャンセル'}</button>
+                        <button type="button" id="btn-save-prof" style="padding:0.45rem 1.15rem; border-radius:8px; border:none; background:var(--brand-primary, #059669); color:#fff; font-size:0.82rem; font-weight:700; cursor:pointer; box-shadow:0 2px 6px rgba(5,150,105,0.25);">${t('logout') === 'Log out' ? 'Save' : '保存する'}</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modalWrap);
+
+        // UIバインド
+        const nameInput = modalWrap.querySelector('#prof-input-name');
+        const initialInput = modalWrap.querySelector('#prof-input-initial');
+        const emojiInput = modalWrap.querySelector('#prof-input-emoji');
+        const fileInput = modalWrap.querySelector('#prof-file-input');
+        const dropZone = modalWrap.querySelector('#prof-drop-zone');
+        const previewAvatar = modalWrap.querySelector('#prof-preview-avatar');
+        const previewName = modalWrap.querySelector('#prof-preview-name');
+
+        const tabInitial = modalWrap.querySelector('#tab-avatar-initial');
+        const tabEmoji = modalWrap.querySelector('#tab-avatar-emoji');
+        const tabImage = modalWrap.querySelector('#tab-avatar-image');
+        const secInitial = modalWrap.querySelector('#section-avatar-initial');
+        const secEmoji = modalWrap.querySelector('#section-avatar-emoji');
+        const secImage = modalWrap.querySelector('#section-avatar-image');
+
+        function updatePreview() {
+            previewName.textContent = curName || 'Flora Student';
+            previewAvatar.style.background = '';
+            previewAvatar.style.color = '#ffffff';
+
+            if (curType === 'image' && curImage) {
+                previewAvatar.innerHTML = `<img src="${curImage}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;">`;
+                previewAvatar.style.background = 'transparent';
+            } else if (curType === 'emoji') {
+                previewAvatar.innerHTML = '';
+                previewAvatar.textContent = curEmoji || '🎓';
+                previewAvatar.style.fontSize = '1.75rem';
+                previewAvatar.style.background = curBg;
+            } else {
+                // initial
+                previewAvatar.innerHTML = '';
+                const init = (curInitial || curName.charAt(0) || 'F').toUpperCase();
+                previewAvatar.textContent = init;
+                previewAvatar.style.fontSize = '1.35rem';
+                previewAvatar.style.background = curBg;
+            }
+        }
+
+        function setTab(tab) {
+            curType = tab;
+            const activeStyle = 'background:var(--bg-surface, #ffffff); color:var(--brand-primary, #059669); box-shadow:0 1px 3px rgba(0,0,0,0.1);';
+            const inactiveStyle = 'background:transparent; color:var(--text-secondary, #64748b); box-shadow:none;';
+
+            tabInitial.style.cssText += (tab === 'initial' ? activeStyle : inactiveStyle);
+            tabEmoji.style.cssText += (tab === 'emoji' ? activeStyle : inactiveStyle);
+            tabImage.style.cssText += (tab === 'image' ? activeStyle : inactiveStyle);
+
+            secInitial.style.display = tab === 'initial' ? 'flex' : 'none';
+            secEmoji.style.display = tab === 'emoji' ? 'flex' : 'none';
+            secImage.style.display = tab === 'image' ? 'flex' : 'none';
+
+            updatePreview();
+        }
+
+        // カラーパレット描画
+        function renderColors(containerId) {
+            const container = modalWrap.querySelector(containerId);
+            if (!container) return;
+            container.innerHTML = colorPalettes.map((c, i) => `
+                <div data-bg="${c.bg}" style="width:28px; height:28px; border-radius:50%; background:${c.bg}; cursor:pointer; border:2px solid ${curBg === c.bg ? '#ffffff' : 'transparent'}; box-shadow:${curBg === c.bg ? '0 0 0 2px var(--brand-primary, #059669)' : '0 1px 3px rgba(0,0,0,0.15)'}; transition:all 0.15s ease;" title="${c.name}"></div>
+            `).join('');
+
+            container.querySelectorAll('div[data-bg]').forEach(div => {
+                div.onclick = () => {
+                    curBg = div.getAttribute('data-bg');
+                    renderColors('#prof-color-list');
+                    renderColors('#prof-emoji-color-list');
+                    updatePreview();
+                };
+            });
+        }
+
+        // 絵文字リスト描画
+        const emojiContainer = modalWrap.querySelector('#prof-emoji-list');
+        if (emojiContainer) {
+            emojiContainer.innerHTML = presetEmojis.map(em => `
+                <button type="button" data-emoji="${em}" style="background:var(--bg-subtle, #f8fafc); border:1px solid ${curEmoji === em ? 'var(--brand-primary, #059669)' : 'var(--border-color, #e2e8f0)'}; border-radius:8px; font-size:1.15rem; padding:0.35rem 0; cursor:pointer; transition:all 0.15s ease;">${em}</button>
+            `).join('');
+
+            emojiContainer.querySelectorAll('button[data-emoji]').forEach(btn => {
+                btn.onclick = () => {
+                    curEmoji = btn.getAttribute('data-emoji');
+                    if (emojiInput) emojiInput.value = curEmoji;
+                    updatePreview();
+                    emojiContainer.querySelectorAll('button[data-emoji]').forEach(b => {
+                        b.style.borderColor = b.getAttribute('data-emoji') === curEmoji ? 'var(--brand-primary, #059669)' : 'var(--border-color, #e2e8f0)';
+                    });
+                };
+            });
+        }
+
+        renderColors('#prof-color-list');
+        renderColors('#prof-emoji-color-list');
+        setTab(curType);
+
+        // イベントリスナー
+        nameInput.oninput = (e) => {
+            curName = e.target.value.trim();
+            if (!curInitial || curInitial === curName.charAt(0)) {
+                curInitial = curName.charAt(0) || 'F';
+                if (initialInput) initialInput.value = curInitial;
+            }
+            updatePreview();
+        };
+
+        if (initialInput) {
+            initialInput.oninput = (e) => {
+                curInitial = e.target.value.trim();
+                updatePreview();
+            };
+        }
+
+        if (emojiInput) {
+            emojiInput.oninput = (e) => {
+                curEmoji = e.target.value.trim();
+                updatePreview();
+            };
+        }
+
+        tabInitial.onclick = () => setTab('initial');
+        tabEmoji.onclick = () => setTab('emoji');
+        tabImage.onclick = () => setTab('image');
+
+        if (dropZone && fileInput) {
+            dropZone.onclick = () => fileInput.click();
+            fileInput.onchange = (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (evt) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const maxDim = 200;
+                        let w = img.width;
+                        let h = img.height;
+                        if (w > h) {
+                            if (w > maxDim) { h = Math.round(h * (maxDim / w)); w = maxDim; }
+                        } else {
+                            if (h > maxDim) { w = Math.round(w * (maxDim / h)); h = maxDim; }
+                        }
+                        canvas.width = w;
+                        canvas.height = h;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, w, h);
+                        curImage = canvas.toDataURL('image/jpeg', 0.85);
+                        curType = 'image';
+                        setTab('image');
+                    };
+                    img.src = evt.target.result;
+                };
+                reader.readAsDataURL(file);
+            };
+        }
+
+        const clearImgBtn = modalWrap.querySelector('#btn-clear-custom-image');
+        if (clearImgBtn) {
+            clearImgBtn.onclick = () => {
+                curImage = '';
+                curType = 'initial';
+                setTab('initial');
+            };
+        }
+
+        // 閉じる
+        const closeModal = () => modalWrap.remove();
+        modalWrap.querySelector('#btn-close-prof-modal').onclick = closeModal;
+        modalWrap.querySelector('#btn-cancel-prof').onclick = closeModal;
+        modalWrap.onclick = (e) => { if (e.target === modalWrap) closeModal(); };
+
+        // リセット
+        modalWrap.querySelector('#btn-reset-prof').onclick = () => {
+            if (confirm('プロフィール設定をリセットし、初期状態に戻しますか？')) {
+                localStorage.removeItem('flora_custom_profile');
+                updateSidebarUser();
+                closeModal();
+            }
+        };
+
+        // 保存
+        modalWrap.querySelector('#btn-save-prof').onclick = () => {
+            const profileData = {
+                name: curName || 'Flora Student',
+                avatarType: curType,
+                avatarBg: curBg,
+                avatarInitial: (curInitial || curName.charAt(0) || 'F').toUpperCase(),
+                avatarEmoji: curEmoji || '🎓',
+                avatarImage: curImage || ''
+            };
+            localStorage.setItem('flora_custom_profile', JSON.stringify(profileData));
+            updateSidebarUser();
+            closeModal();
+
+            // 簡易トースト表示
+            const toast = document.createElement('div');
+            toast.textContent = t('profileSavedToast');
+            toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#10B981;color:#fff;font-weight:700;font-size:0.85rem;padding:0.6rem 1.2rem;border-radius:30px;box-shadow:0 8px 24px rgba(0,0,0,0.25);z-index:9999999;animation:floraFadeIn 0.2s ease;';
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2500);
+        };
     }
 
     window.updateFloraSidebarUser = updateSidebarUser;
     window.addEventListener('storage', (e) => {
-        if (e.key === 'flora_user') updateSidebarUser();
+        if (e.key === 'flora_user' || e.key === 'flora_custom_profile') updateSidebarUser();
     });
 
     // 壁紙の即時適用
