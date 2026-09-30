@@ -53,9 +53,9 @@
             background: var(--bg-surface);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-xl);
-            box-shadow: var(--shadow-sm);
-            max-width: 900px;
-            margin: 0 auto;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+            max-width: 1440px;
+            margin: 0;
             width: 100%;
         }
 
@@ -105,13 +105,14 @@
             align-items: center;
             justify-content: center;
             text-align: center;
-            padding: 4rem 2rem;
+            padding: 4rem 2.5rem;
             border: 1px solid var(--border-color);
             background: var(--bg-surface);
             border-radius: var(--radius-xl);
-            box-shadow: var(--shadow-sm);
-            max-width: 800px;
-            margin: 0 auto;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+            max-width: 1440px;
+            margin: 0;
+            width: 100%;
         }
 
         /* 📋 スプリント終了後の全問題レビューカード */
@@ -266,27 +267,28 @@
 
         /* ===== セットアップフォーム ===== */
         .setup-card {
-            padding: 2.2rem;
+            padding: 2.2rem 2.6rem;
             display: flex;
             flex-direction: column;
-            gap: 1.4rem;
+            gap: 1.6rem;
             background: var(--bg-surface);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-xl);
-            box-shadow: var(--shadow-sm);
-            max-width: 800px;
-            margin: 0 auto;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+            max-width: 1440px;
+            margin: 0;
             width: 100%;
         }
 
         .setup-label {
-            font-size: 0.82rem;
+            font-size: 0.84rem;
             color: var(--text-secondary);
-            font-weight: 700;
+            font-weight: 800;
             display: flex;
             align-items: center;
-            gap: 0.4rem;
-            margin-bottom: 0.4rem;
+            gap: 0.45rem;
+            margin-bottom: 0.45rem;
+            letter-spacing: 0.02em;
         }
 
         .count-btn-group {
@@ -321,35 +323,58 @@
             border-color: var(--brand-primary);
         }
 
-        /* ===== モード切り替えトグル ===== */
+        /* ===== モード切り替えトグル（フルワイド・リッチグリッド） ===== */
         .mode-toggle-group {
-            display: flex;
-            border-radius: var(--radius-md);
-            overflow: hidden;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            border-radius: var(--radius-lg);
             border: 1px solid var(--border-color);
             background: var(--bg-subtle);
-            padding: 3px;
-            gap: 3px;
+            padding: 4px;
+            gap: 6px;
+        }
+
+        @media (max-width: 960px) {
+            .mode-toggle-group {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 580px) {
+            .mode-toggle-group {
+                grid-template-columns: 1fr;
+            }
         }
 
         .mode-toggle-btn {
-            flex: 1;
-            padding: 0.65rem 1rem;
+            padding: 0.8rem 1rem;
             background: transparent;
             color: var(--text-secondary);
-            border: none;
-            border-radius: var(--radius-sm);
+            border: 1px solid transparent;
+            border-radius: var(--radius-md);
             font-size: var(--fs-sm);
             font-weight: 700;
             cursor: pointer;
-            transition: all 150ms ease;
+            transition: all 180ms ease;
             text-align: center;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+        }
+
+        .mode-toggle-btn:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.45);
         }
 
         .mode-toggle-btn.active {
             background: var(--bg-surface);
             color: var(--brand-primary);
-            box-shadow: var(--shadow-xs);
+            border-color: var(--brand-border);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            font-weight: 800;
         }
 
         /* ===== 登録済みモード用UI ===== */
@@ -847,68 +872,110 @@
         .kyotsu-mode-section {
             display: none;
             flex-direction: column;
-            gap: 1.2rem;
+            gap: 1.4rem;
             animation: fadeIn 0.2s ease-out;
+            width: 100%;
         }
 
         .kyotsu-mode-section.visible {
             display: flex;
         }
 
+        /* 2カラム・スプリットスタジオ（フルワイド画面を最大限活用） */
+        .kyotsu-split-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 420px;
+            gap: 1.8rem;
+            align-items: start;
+            width: 100%;
+        }
+
+        @media (max-width: 1100px) {
+            .kyotsu-split-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .kyotsu-panel-left {
+            display: flex;
+            flex-direction: column;
+            gap: 1.4rem;
+            min-width: 0;
+        }
+
+        .kyotsu-panel-right {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-xl);
+            padding: 1.5rem;
+            position: sticky;
+            top: 1rem;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03);
+        }
+
         .kyotsu-field-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 0.5rem;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 0.75rem;
             margin-top: 0.4rem;
         }
 
         .kyotsu-field-btn {
-            background: var(--bg-subtle);
-            border: 1px solid var(--border-color);
-            color: var(--text-secondary);
-            padding: 0.65rem 0.85rem;
-            border-radius: var(--radius-md);
-            font-size: var(--fs-xs);
+            background: var(--bg-surface);
+            border: 1.5px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.9rem 1.15rem;
+            border-radius: var(--radius-lg);
+            font-size: 0.88rem;
             font-weight: 700;
             text-align: left;
             cursor: pointer;
-            transition: all 0.15s ease;
+            transition: all 0.16s ease;
             display: flex;
             flex-direction: column;
-            gap: 0.2rem;
+            gap: 0.35rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
         }
 
         .kyotsu-field-btn:hover {
             border-color: var(--brand-primary);
             color: var(--text-primary);
             background: var(--bg-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(5, 150, 105, 0.12);
         }
 
         .kyotsu-field-btn.active {
             background: var(--brand-light);
             border-color: var(--brand-primary);
             color: var(--brand-primary);
-            box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.15);
+            box-shadow: 0 0 0 2px var(--brand-primary), 0 4px 14px rgba(5, 150, 105, 0.2);
+            font-weight: 800;
         }
 
         .kyotsu-field-btn .field-sub {
-            font-size: 0.68rem;
+            font-size: 0.74rem;
             font-weight: 500;
-            color: var(--text-muted);
+            color: var(--text-secondary);
+            line-height: 1.35;
         }
 
         .kyotsu-field-btn.active .field-sub {
             color: var(--brand-primary);
-            opacity: 0.85;
+            opacity: 0.9;
+            font-weight: 600;
         }
 
-        /* 共通テスト大問プレイ画面 */
+        /* 共通テスト大問プレイ画面（フルワイド・見開き感） */
         .kyotsu-play-container {
             display: none;
             flex-direction: column;
             gap: 1.8rem;
-            max-width: 920px;
-            margin: 0 auto;
+            max-width: 1440px;
+            margin: 0;
             width: 100%;
             padding-bottom: 220px;
             /* マークシートバーの余白 */
@@ -918,11 +985,11 @@
             background: var(--bg-surface);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-xl);
-            box-shadow: var(--shadow-sm);
-            padding: 2.2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+            padding: 2.4rem 2.8rem;
             display: flex;
             flex-direction: column;
-            gap: 1.5rem;
+            gap: 1.6rem;
             position: relative;
         }
 
@@ -1286,6 +1353,41 @@
         .kyotsu-score-banner.visible {
             display: block;
         }
+
+        /* 🧠 AIエンジン選択トグル */
+        .engine-toggle-group {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+        }
+        .engine-toggle-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+        .engine-btn {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 0.3rem 0.75rem;
+            border-radius: var(--radius-full);
+            cursor: pointer;
+            transition: all 150ms ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        .engine-btn:hover { border-color: var(--brand-primary); color: var(--text-primary); }
+        .engine-btn.active {
+            background: var(--brand-light);
+            border-color: var(--brand-primary);
+            color: var(--brand-primary);
+            font-weight: 800;
+            box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.15);
+        }
     </style>
 </head>
 
@@ -1300,10 +1402,15 @@
             <div class="workspace-content-wrap">
 
                 <!-- ページヘッダー（セットアップ時） -->
-                <div class="page-header" id="page-header-setup">
+                <div class="page-header" id="page-header-setup" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.8rem;">
                     <div class="page-title-group">
                         <h1 class="page-title">🎯 カスタムスプリント</h1>
                         <p class="page-subtitle">分野・難易度・問題数を自由に設定して弱点を集中攻略する特訓モード</p>
+                    </div>
+                    <div class="engine-toggle-group" id="sprint-engine-toggle-group">
+                        <span class="engine-toggle-label">作問AI:</span>
+                        <button type="button" class="engine-btn active" id="engine-btn-deepseek" data-engine="deepseek">🐋 DeepSeek (共テ特化)</button>
+                        <button type="button" class="engine-btn" id="engine-btn-gemini" data-engine="gemini">✨ Gemini</button>
                     </div>
                 </div>
 
@@ -1543,53 +1650,69 @@
 
                         <!-- 🏛️ 共通テスト実践モードのテーマ決定 -->
                         <div id="kyotsu-mode-section" class="kyotsu-mode-section">
-                            <div>
-                                <div class="setup-label">📚 対象科目の選択</div>
-                                <div class="subject-tab-group" id="kyotsu-subject-tab-group">
-                                    <button type="button" class="reg-subject-btn active"
-                                        data-kyotsu-subject="数学I・A">数学I・A</button>
-                                    <button type="button" class="reg-subject-btn"
-                                        data-kyotsu-subject="数学II・B・C">数学II・B・C</button>
-                                    <button type="button" class="reg-subject-btn"
-                                        data-kyotsu-subject="数学全般">数学全般（ランダム）</button>
+                            <div class="kyotsu-split-layout">
+                                <!-- 左ペイン：科目選択 ＆ 頻出単元ワイドグリッド -->
+                                <div class="kyotsu-panel-left">
+                                    <div>
+                                        <div class="setup-label">📚 対象科目の選択</div>
+                                        <div class="subject-tab-group" id="kyotsu-subject-tab-group">
+                                            <button type="button" class="reg-subject-btn active"
+                                                data-kyotsu-subject="数学I・A">数学I・A</button>
+                                            <button type="button" class="reg-subject-btn"
+                                                data-kyotsu-subject="数学II・B・C">数学II・B・C</button>
+                                            <button type="button" class="reg-subject-btn"
+                                                data-kyotsu-subject="数学全般">数学全般（ランダム）</button>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <div class="setup-label">🎯 頻出単元・特訓したい分野（タップで即選択）</div>
+                                        <div class="kyotsu-field-grid" id="kyotsu-field-grid">
+                                            <!-- JSで科目に応じて動的にボタンを展開 -->
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
 
-                            <div>
-                                <div class="setup-label">🎯 頻出単元・特訓したい分野（タップで即選択）</div>
-                                <div class="kyotsu-field-grid" id="kyotsu-field-grid">
-                                    <!-- JSで科目に応じて動的にボタンを展開 -->
+                                <!-- 右ペイン：選択テーマ確認 ＆ こだわり要望 ＆ アクション -->
+                                <div class="kyotsu-panel-right">
+                                    <div>
+                                        <div class="setup-label">📝 選択中の大問テーマ・単元名</div>
+                                        <input type="text" id="kyotsu-topic-input" class="flora-input"
+                                            placeholder="例：三角関数の加法定理と和積の公式、2次関数の動く定義域と最大最小 など" value="2次関数の最大・最小とグラフの考察"
+                                            style="font-weight: 700; font-size: 0.92rem; background: var(--bg-surface);">
+                                    </div>
+
+                                    <div>
+                                        <div class="setup-label">💡 共通テスト特有の着眼点・こだわり要望（任意）</div>
+                                        <div style="display: flex; gap: 0.35rem; flex-wrap: wrap; margin-bottom: 0.45rem;">
+                                            <button type="button" class="counseling-chip kyotsu-focus-chip"
+                                                data-val="公式や解法の成り立ちを追体験させる誘導ステップ">公式導出の誘導</button>
+                                            <button type="button" class="counseling-chip kyotsu-focus-chip"
+                                                data-val="具体例の数値計算から文字定数aの一般化へ進む展開">具体から一般化へ</button>
+                                            <button type="button" class="counseling-chip kyotsu-focus-chip"
+                                                data-val="グラフの概形や領域図を解答群から選ばせる問い">グラフ・図の選択群</button>
+                                            <button type="button" class="counseling-chip kyotsu-focus-chip"
+                                                data-val="太郎さんと花子さんの対話的な考察と新アプローチ">対話的アプローチ</button>
+                                        </div>
+                                        <textarea id="kyotsu-notes-input" class="flora-textarea" rows="3"
+                                            style="font-size: 0.84rem; line-height: 1.55; background: var(--bg-surface);"
+                                            placeholder="例：(1)で頂点と軸を確認し、(2)(3)で文字定数の値による場合分けやグラフ概形の選択群を入れてほしい"></textarea>
+                                    </div>
+
+                                    <div style="background: rgba(5, 150, 105, 0.05); border: 1px dashed var(--brand-border); border-radius: var(--radius-md); padding: 0.85rem; font-size: 0.76rem; color: var(--text-secondary); line-height: 1.5;">
+                                        <div style="font-weight: 800; color: var(--brand-primary); margin-bottom: 0.2rem; display: flex; align-items: center; gap: 0.35rem;">
+                                            <span>✨ 新課程共テ誘導エンジン稼働中</span>
+                                        </div>
+                                        単元を選択すると、本番の出題パターン（太郎花子の探究対話・3段階展開・解答群）がプロンプトに自動注入されます。
+                                    </div>
+
+                                    <div style="margin-top: 0.4rem;">
+                                        <button type="button" class="flora-btn flora-btn-primary btn-lg"
+                                            id="btn-kyotsu-proceed-step2" style="font-weight: 800; padding: 0.85rem 1.6rem; width: 100%; justify-content: center; box-shadow: 0 4px 14px rgba(5, 150, 105, 0.25);">
+                                            👉 条件設定（Step 2）へ進む
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
-
-                            <div>
-                                <div class="setup-label">📝 大問のテーマ・出題単元名</div>
-                                <input type="text" id="kyotsu-topic-input" class="flora-input"
-                                    placeholder="例：三角関数の加法定理と和積の公式、2次関数の動く定義域と最大最小 など" value="2次関数の最大・最小とグラフの考察">
-                            </div>
-
-                            <div>
-                                <div class="setup-label">💡 共通テスト特有の着眼点・こだわり要望（任意）</div>
-                                <div style="display: flex; gap: 0.35rem; flex-wrap: wrap; margin-bottom: 0.4rem;">
-                                    <button type="button" class="counseling-chip kyotsu-focus-chip"
-                                        data-val="公式や解法の成り立ちを追体験させる誘導ステップ">公式導出の誘導</button>
-                                    <button type="button" class="counseling-chip kyotsu-focus-chip"
-                                        data-val="具体例の数値計算から文字定数aの一般化へ進む展開">具体から一般化へ</button>
-                                    <button type="button" class="counseling-chip kyotsu-focus-chip"
-                                        data-val="グラフの概形や領域図を解答群から選ばせる問い">グラフ・図の選択群</button>
-                                    <button type="button" class="counseling-chip kyotsu-focus-chip"
-                                        data-val="太郎さんと花子さんの対話的な考察と新アプローチ">対話的アプローチ</button>
-                                </div>
-                                <textarea id="kyotsu-notes-input" class="flora-textarea" rows="2"
-                                    placeholder="例：(1)で基本の式変形を確認し、(2)(3)で文字定数の値による場合分けやグラフ概形の選択群を入れてほしい"></textarea>
-                            </div>
-
-                            <div
-                                style="display: flex; justify-content: flex-end; align-items: center; gap: 0.8rem; margin-top: 0.8rem;">
-                                <button type="button" class="flora-btn flora-btn-primary btn-lg"
-                                    id="btn-kyotsu-proceed-step2" style="font-weight: 700; padding: 0.75rem 1.8rem;">
-                                    👉 条件設定（Step 2）へ進む
-                                </button>
                             </div>
                         </div>
 
@@ -1642,60 +1765,61 @@
                           ==========================================================================
                         -->
                         <div id="science-trap-mode-section" class="kyotsu-mode-section" style="display: none;">
-                            <div>
-                                <div class="setup-label">📚 対象科目の選択</div>
-                                <div class="subject-tab-group" id="science-trap-subject-group">
-                                    <button type="button" class="reg-subject-btn active" data-science-subj="物理基礎">⚡
-                                        物理基礎</button>
-                                    <button type="button" class="reg-subject-btn" data-science-subj="化学基礎">🧪
-                                        化学基礎</button>
-                                    <button type="button" class="reg-subject-btn" data-science-subj="生物基礎">🧬
-                                        生物基礎</button>
-                                    <button type="button" class="reg-subject-btn" data-science-subj="地学基礎">🌍
-                                        地学基礎</button>
-                                    <button type="button" class="reg-subject-btn" data-science-subj="4科目ランダム">🎲
-                                        4科目ランダム</button>
-                                </div>
-                            </div>
-
-                            <div>
-                                <div class="setup-label">🎯 頻出トラップ単元（タップで即選択）</div>
-                                <div class="kyotsu-field-grid" id="science-trap-field-grid">
-                                    <!-- JSで科目に応じて動的に展開 -->
-                                </div>
-                            </div>
-
-                            <div
-                                style="background: rgba(5, 150, 105, 0.06); border: 1px solid rgba(5, 150, 105, 0.25); border-radius: var(--radius-md); padding: 0.85rem 1rem;">
-                                <div
-                                    style="font-size: 0.82rem; font-weight: 750; color: var(--brand-primary); margin-bottom: 0.25rem;">
-                                    💡 共通テスト理科基礎の「出題者の罠」を完全攻略
-                                </div>
-                                <div style="font-size: 0.74rem; color: var(--text-secondary); line-height: 1.55;">
-                                    共テ理科基礎で失点しやすい「主語のすり替え」「可変値と定数の混同」「例外の一般化」「器具の共洗い理由」を短時間で連続判定。反射的な正誤見極め力を鍛えます。
-                                </div>
-                            </div>
-
-                            <div
-                                style="display: flex; justify-content: space-between; align-items: center; gap: 0.8rem; margin-top: 0.6rem; flex-wrap: wrap;">
-                                <div style="display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap;">
-                                    <div style="display: flex; align-items: center; gap: 0.4rem;">
-                                        <span
-                                            style="font-size: 0.76rem; color: var(--text-secondary); font-weight: 600;">出題数:</span>
-                                        <button type="button" class="count-btn active" data-trap-count="5">5問</button>
-                                        <button type="button" class="count-btn" data-trap-count="10">10問</button>
+                            <div class="kyotsu-split-layout">
+                                <!-- 左ペイン：科目選択 ＆ トラップ単元グリッド -->
+                                <div class="kyotsu-panel-left">
+                                    <div>
+                                        <div class="setup-label">📚 対象科目の選択</div>
+                                        <div class="subject-tab-group" id="science-trap-subject-group">
+                                            <button type="button" class="reg-subject-btn active" data-science-subj="物理基礎">⚡ 物理基礎</button>
+                                            <button type="button" class="reg-subject-btn" data-science-subj="化学基礎">🧪 化学基礎</button>
+                                            <button type="button" class="reg-subject-btn" data-science-subj="生物基礎">🧬 生物基礎</button>
+                                            <button type="button" class="reg-subject-btn" data-science-subj="地学基礎">🌍 地学基礎</button>
+                                            <button type="button" class="reg-subject-btn" data-science-subj="4科目ランダム">🎲 4科目ランダム</button>
+                                        </div>
                                     </div>
-                                    <label
-                                        style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.8rem; font-weight: 700; color: var(--brand-primary); cursor: pointer; background: rgba(5, 150, 105, 0.08); padding: 0.3rem 0.65rem; border-radius: 6px; border: 1px solid rgba(5, 150, 105, 0.2);">
-                                        <input type="checkbox" id="science-trap-use-ai" checked
-                                            style="accent-color: var(--brand-primary); cursor: pointer;">
-                                        <span>⚡ AIで新問を動的生成</span>
-                                    </label>
+
+                                    <div>
+                                        <div class="setup-label">🎯 頻出トラップ単元（タップで即選択）</div>
+                                        <div class="kyotsu-field-grid" id="science-trap-field-grid">
+                                            <!-- JSで科目に応じて動的に展開 -->
+                                        </div>
+                                    </div>
                                 </div>
-                                <button type="button" class="flora-btn flora-btn-primary btn-lg"
-                                    id="btn-start-science-trap" style="font-weight: 700; padding: 0.75rem 1.8rem;">
-                                    🚀 トラップスプリントを開始する
-                                </button>
+
+                                <!-- 右ペイン：トラップ攻略解説 ＆ 条件・出題ボタン -->
+                                <div class="kyotsu-panel-right">
+                                    <div style="background: rgba(5, 150, 105, 0.06); border: 1px solid rgba(5, 150, 105, 0.25); border-radius: var(--radius-md); padding: 1rem 1.1rem;">
+                                        <div style="font-size: 0.88rem; font-weight: 800; color: var(--brand-primary); margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.4rem;">
+                                            <span>💡 共テ理科基礎「出題者の罠」完全攻略</span>
+                                        </div>
+                                        <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.6;">
+                                            共テ理科基礎で失点しやすい「主語のすり替え」「可変値と定数の混同」「例外の一般化」「器具の共洗い理由」を短時間で連続判定。反射的な正誤見極め力を鍛えます。
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <div class="setup-label">🔢 出題数</div>
+                                        <div class="count-btn-group">
+                                            <button type="button" class="count-btn active" data-trap-count="5">5問（クイック）</button>
+                                            <button type="button" class="count-btn" data-trap-count="10">10問（標準）</button>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; font-weight: 700; color: var(--brand-primary); cursor: pointer; background: rgba(5, 150, 105, 0.08); padding: 0.6rem 0.85rem; border-radius: var(--radius-md); border: 1px solid rgba(5, 150, 105, 0.25);">
+                                            <input type="checkbox" id="science-trap-use-ai" checked style="accent-color: var(--brand-primary); cursor: pointer; width: 16px; height: 16px;">
+                                            <span>⚡ AIで新問を動的生成（未出題パターン）</span>
+                                        </label>
+                                    </div>
+
+                                    <div style="margin-top: 0.4rem;">
+                                        <button type="button" class="flora-btn flora-btn-primary btn-lg"
+                                            id="btn-start-science-trap" style="font-weight: 800; padding: 0.85rem 1.6rem; width: 100%; justify-content: center; box-shadow: 0 4px 14px rgba(5, 150, 105, 0.25);">
+                                            🚀 トラップスプリントを開始する
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1867,7 +1991,7 @@
 
                 <!-- ============ プレイ画面 ============ -->
                 <div id="sprint-header"
-                    style="display:none; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; max-width: 900px; margin-left: auto; margin-right: auto; width: 100%;">
+                    style="display:none; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; max-width: 1440px; margin-left: 0; margin-right: 0; width: 100%;">
                     <div style="display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap;">
                         <span class="flora-badge badge-primary" id="sprint-progress">ANALYZING...</span>
                         <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="btn-abandon-session">🎛
@@ -1993,6 +2117,7 @@
                                     <span class="flora-badge badge-primary" id="kyotsu-subject-badge">数学I・A</span>
                                     <span class="flora-badge badge-secondary" id="kyotsu-field-badge">2次関数</span>
                                     <span class="flora-badge badge-warning" id="kyotsu-level-badge">共通テスト標準</span>
+                                    <span class="flora-badge badge-safe" id="kyotsu-engine-badge" style="font-weight: 800;">🐋 DeepSeek</span>
                                 </div>
                                 <h2 class="kyotsu-title-main" id="kyotsu-title-display">大問タイトル</h2>
                             </div>
@@ -2058,7 +2183,7 @@
                         style="font-size: 3.2rem; margin-bottom: 2.5rem;">00:00.00</div>
                     <!-- 📋 今回解いた全問題の一覧・復習エリア -->
                     <div id="sprint-review-area"
-                        style="width: 100%; max-width: 760px; margin: 1.5rem auto 2rem; text-align: left; display: none;">
+                        style="width: 100%; max-width: 100%; margin: 1.5rem 0 2rem; text-align: left; display: none;">
                         <div
                             style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.8rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.8rem;">
                             <div>
@@ -2104,8 +2229,8 @@
     <script type="module">
         import { dailyProblemBank } from "./daily-data.js";
         import {
-            getGeminiKeys, initApiKeyManager,
-            showToast, callGeminiJSON
+            getGeminiKeys, getDeepseekKeys, addKey, initApiKeyManager,
+            showToast, callGeminiJSON, isStaticHostingEnvironment
         } from "./api-key-manager.js?v=3.5";
 
         const proto = "https" + "://";
@@ -2131,8 +2256,46 @@
         const auth = getAuth(app);
         const database = getDatabase(app);
 
-        // 🔑【複数キー対応】index.html/problem.htmlと共通の管理UIを注入（未登録なら自動で開く）
-        initApiKeyManager({ needGemini: true });
+        // 🔑 提供されたDeepSeekキーを自動登録（未登録なら配列に追加）
+        const USER_DEEPSEEK_KEY = "REMOVED_DEEPSEEK_KEY";
+        try {
+            const currentDsKeys = getDeepseekKeys();
+            if (!currentDsKeys.includes(USER_DEEPSEEK_KEY)) {
+                addKey("deepseek", USER_DEEPSEEK_KEY);
+            }
+        } catch (e) {
+            console.warn("DeepSeek key registration error:", e);
+        }
+
+        // 🔑【複数キー対応】index.html/problem.htmlと共通の管理UIを注入（Gemini & DeepSeek）
+        initApiKeyManager({ needGemini: true, needDeepseek: true });
+
+        // 🧠【AIエンジン選択】DeepSeek (thinking: high) / Gemini
+        let ACTIVE_ENGINE = localStorage.getItem("RE_MIND_ACTIVE_ENGINE") || "deepseek"; // ユーザー要望でDeepSeekを最優先
+
+        function getEngineLabel(engine) {
+            return engine === "deepseek" ? "🐋 DeepSeek" : "✨ Gemini";
+        }
+
+        function setActiveEngine(engine) {
+            ACTIVE_ENGINE = engine;
+            localStorage.setItem("RE_MIND_ACTIVE_ENGINE", engine);
+            updateEngineUI();
+        }
+
+        function updateEngineUI() {
+            const dsBtn = document.getElementById("engine-btn-deepseek");
+            const gemBtn = document.getElementById("engine-btn-gemini");
+            if (dsBtn) dsBtn.classList.toggle("active", ACTIVE_ENGINE === "deepseek");
+            if (gemBtn) gemBtn.classList.toggle("active", ACTIVE_ENGINE === "gemini");
+
+            const badge = document.getElementById("kyotsu-engine-badge");
+            if (badge) badge.textContent = getEngineLabel(ACTIVE_ENGINE);
+        }
+
+        document.getElementById("engine-btn-deepseek")?.addEventListener("click", () => setActiveEngine("deepseek"));
+        document.getElementById("engine-btn-gemini")?.addEventListener("click", () => setActiveEngine("gemini"));
+        updateEngineUI();
 
         // ==========================================================================
         // 🗂 状態変数
@@ -2389,6 +2552,153 @@
                 { name: "平面・空間ベクトル", sub: "数学C・位置ベクトル" }
             ]
         };
+
+        // 🎯 単元別・新課程共通テスト出題ガイドライン（専用プロンプト辞書）
+        const KYOTSU_TOPIC_GUIDELINES = [
+            {
+                pattern: /2次関数|二次関数|放物線|軸の移動|最大最小|頂点/,
+                name: "2次関数の最大・最小とグラフの考察",
+                dialogueTheme: "コンピュータソフト（GeoGebra等）で放物線を描画し、文字定数 a の変化に伴う頂点の動きやグラフの平行移動について考察する対話",
+                step1: "固定された具体的な係数の2次関数の頂点座標、軸の方程式、指定された定義域における最大値・最小値の計算 [ア], [イ] など",
+                step2: "文字定数 a を含む関数（または動く定義域）において、(1)の考え方を拡張し、頂点の位置関係による場合分けの境界値や最小値・最大値 m(a) の計算 [ウ], [エオ] など",
+                step3: "m(a) の関数のグラフ概形、または特定の値をとる a の個数、命題の真偽に関する考察。必ず選択肢群（⓪〜④）から選ばせること",
+                choiceType: "グラフ概形または命題判定の選択肢群（⓪〜④）"
+            },
+            {
+                pattern: /図形と計量|三角比|正弦定理|余弦定理|内接円|面積分割|三角形.*面積/,
+                name: "図形と計量（三角比・四角形の面積と幾何考察）",
+                dialogueTheme: "円に内接する四角形や三角形の作図において、太郎さんと花子さんが複数の補助線や別解（余弦定理による解法と初等幾何・方べきによる解法）を比較検討する対話",
+                step1: "与えられた辺の長さや角度から、余弦定理・正弦定理を用いて残りの辺の長さや cos/sin の値、および三角形の面積を算出する基本計算 [ア], [イ] など",
+                step2: "円に内接する四角形への拡張、内接円の半径 r や角の二等分線の長さ、または対角線の交点による面積比の計算 [ウ], [エオ] など",
+                step3: "外接円上の動点 P による面積の最大化、または太郎さんと花子の解法の比較考察・幾何的性質に関する正しい命題の判定。必ず選択肢群（⓪〜④）から選ばせること",
+                choiceType: "幾何的性質・面積変化に関する命題や正しい結論の選択肢群（⓪〜④）"
+            },
+            {
+                pattern: /場合の数|確率|反復試行|条件付き|サイコロ|コイン|ゲーム|期待値/,
+                name: "場合の数と確率（反復試行・ゲーム分析と条件付き確率）",
+                dialogueTheme: "ゲーム（コイン・くじ・カード・じゃんけん・すごろく）のルールにおいて、太郎さんと花子さんが勝敗の確率や公平性、戦略の違いについて考察する対話",
+                step1: "具体的な数回の試行（例: 3回目までに勝者が決まる確率など）における基本的な確率・場合の数の計算 [ア], [イ] など",
+                step2: "試行回数を n 回や特定条件（例: 引き分けを含む、Aが2連勝する等）に拡張し、特定の事象が起こった条件の下での「条件付き確率」の算出 [ウ], [エオ] など",
+                step3: "ルールの変更（例: 先攻後攻の有利不利、賞金や期待値）に関する比較考察、または不等式を満たす最小の試行回数に関する考察。必ず選択肢群（⓪〜④）から選ばせること",
+                choiceType: "確率の大小関係やゲームの有利性、推論に関する選択肢群（⓪〜④）"
+            },
+            {
+                pattern: /データ.*分析|箱ひげ|散布図|分散|標準偏差|相関|外れ値|四分位/,
+                name: "データの分析（散布図・箱ひげ図・分散と変量変換）",
+                dialogueTheme: "都道府県別や年度別の2つのデータ（気温と降水量、テストの得点等）について、太郎さんと花子さんが散布図や箱ひげ図を見ながらデータの傾向・外れ値の影響を議論する対話",
+                step1: "度数分布表や箱ひげ図から四分位数（第1・中央値・第3）、四分位範囲、平均値の基本数値を読み取る・計算する [ア], [イ] など",
+                step2: "変量変換（例: u = ax + b, w = cy + d）を行ったときの新しい平均値・分散・標準偏差・共分散、および相関係数の変化に関する数式計算 [ウ], [エオ] など",
+                step3: "外れ値を除去したときの影響、または散布図・箱ひげ図・ヒストグラムから正しく読み取れる複数の記述のうち正しい組み合わせの判定。必ず選択肢群（⓪〜⑤）から選ばせること",
+                choiceType: "散布図・箱ひげ図の読取や命題の正誤の組み合わせ選択肢群（⓪〜⑤）"
+            },
+            {
+                pattern: /整数の性質|互除法|不定方程式|ユークリッド|剰余|合同式|進法/,
+                name: "整数の性質（互除法・1次不定方程式と日常モデリング）",
+                dialogueTheme: "日常の周期問題（例: 時計の針の重なり、2種類の硬貨による支払い、異なる周期で点滅するライト）を方程式で表そうとする太郎さんと花子さんの対話",
+                step1: "ユークリッドの互除法を用いて、1次不定方程式 ax + by = 1 または ax + by = c の特殊解 (x_0, y_0) を求める基本計算 [ア], [イ] など",
+                step2: "整数解の一般形 (x, y) を文字 k で表し、指定された不等式条件（例: x, y がともに正、または x の絶対値が最小）を満たす解の個数や値を求める計算 [ウ], [エオ] など",
+                step3: "太郎さんと花子が考察している日常事象（タイル敷き詰め、周期の一致、n進法の性質など）への応用問題。解が存在する条件や最大・最小の考察を選択肢群（⓪〜④）から選ばせること",
+                choiceType: "整数条件・日常モデリングに関する命題判定の選択肢群（⓪〜④）"
+            },
+            {
+                pattern: /図形の性質|五心|方べき|円周角|メネラウス|チェバ|接弦/,
+                name: "図形の性質（五心・方べき・初等幾何と空間図形）",
+                dialogueTheme: "三角形と円の交わりについて、幾何ソフトで作図しながら方べきの定理や内心・外心の性質を発見していく太郎さんと花子さんの対話",
+                step1: "チェバの定理・メネラウスの定理や角の二等分線の性質を用いた線分比・面積比の計算 [ア], [イ] など",
+                step2: "円周角の定理、接弦定理、方べきの定理を用いて未知の線分の長さや、4点が同一円周上にある条件を導く計算 [ウ], [エオ] など",
+                step3: "作図ソフトで動点 P を動かしたときの角度の最大値や、空間図形（正四面体や球）への拡張。図形の配置や等式の成立に関する選択肢群（⓪〜④）から選ばせること",
+                choiceType: "幾何学的配置や同一円周上判定に関する選択肢群（⓪〜④）"
+            },
+            {
+                pattern: /三角関数|加法定理|和積|合成|二倍角/,
+                name: "三角関数（加法定理・和積・合成波形）",
+                dialogueTheme: "音の波形や振り子の運動など、2つの三角関数の重ね合わせについて、加法定理や三角関数の合成を用いて考察する太郎さんと花子さんの対話",
+                step1: "加法定理や2倍角・半角の公式を用いた三角関数の値の計算、または簡単な方程式・不等式の解 [ア], [イ] など",
+                step2: "三角関数の合成（a sinθ + b cosθ = r sin(θ + α)）を用いた最大値・最小値や周期、解の個数の算出 [ウ], [エオ] など",
+                step3: "合成波のグラフ概形、周期の変化、またはパラメータ α を変えたときのグラフの交点や対称性に関する考察。必ず選択肢群（⓪〜④）から選ばせること",
+                choiceType: "三角関数のグラフ概形や周期・対称性に関する選択肢群（⓪〜④）"
+            },
+            {
+                pattern: /指数|対数|常用対数|桁数|相加相乗/,
+                name: "指数関数・対数関数（方程式・不等式と常用対数）",
+                dialogueTheme: "放射性物質の減衰や人口増加、細菌の増殖、複利計算などの指数的現象について、対数をとって線形化して考察する太郎さんと花子さんの対話",
+                step1: "指数法則・対数の性質（底の変換公式等）を用いた基本計算、および指数・対数方程式の解 [ア], [イ] など",
+                step2: "常用対数 log10(2), log10(3) の値を用いた巨大な数・微小な数の桁数や最高位の数字の計算、または相加相乗平均を用いた最小値計算 [ウ], [エオ] など",
+                step3: "日常事象のモデリング（年数経過による倍率、片対数グラフの傾き）における不等式の評価。条件を満たす最小の年数や関係式のグラフを選択肢群（⓪〜④）から選ばせること",
+                choiceType: "対数グラフの概形やモデリング評価に関する選択肢群（⓪〜④）"
+            },
+            {
+                pattern: /図形と方程式|円と接線|軌跡|領域|共通弦/,
+                name: "図形と方程式（円と接線・領域の図示と軌跡）",
+                dialogueTheme: "円と直線の位置関係について、点と直線の距離の公式や判別式を用いた複数の解法を検証する太郎さんと花子さんの対話",
+                step1: "2点間の距離、直線の方程式、円の方程式の基本計算 [ア], [イ] など",
+                step2: "円の接線の方程式、円と直線の交点を通る図形（円束）、または不等式で表される領域の面積計算 [ウ], [エオ] など",
+                step3: "連立不等式で表される領域における線形計画法（ax + by の最大最小）、または動点の描く軌跡の概形を選択肢群（⓪〜④）から選ばせること",
+                choiceType: "領域の図示・軌跡のグラフ概形に関する選択肢群（⓪〜④）"
+            },
+            {
+                pattern: /微分|積分|微積分|極値|接線|3次関数|面積.*等しい|定積分/,
+                name: "微分法・積分法（3次関数の極値・接線と面積）",
+                dialogueTheme: "3次関数のグラフと直線（接線）の位置関係について、グラフソフトで接点を動かしながら囲まれる面積や交点の個数を考察する太郎さんと花子さんの対話",
+                step1: "導関数の計算、増減表の作成による極値の決定、曲線上の指定点における接線の方程式の算出 [ア], [イ] など",
+                step2: "定積分による曲線と直線で囲まれた部分の面積 S の計算（1/6公式等の活用）、または文字定数 a を含む面積の最小値の計算 [ウ], [エオ] など",
+                step3: "接線の本数の変化、または2つの部分の面積が等しくなる条件（∫(f-g)dx = 0）、あるいは速度と道のりのグラフ考察。該当するグラフ概形や条件式を選択肢群（⓪〜④）から選ばせること",
+                choiceType: "導関数・接線・面積等に関するグラフ概形や命題選択肢群（⓪〜④）"
+            },
+            {
+                pattern: /数列|漸化式|階差|等差|等比|群数列|数学的帰納法/,
+                name: "数列（階差・漸化式と和の誘導）",
+                dialogueTheme: "規則的に並ぶ図形（タイルの枚数、ハノイの塔、フラクタル）や借金返済の利息計算について、漸化式を立てて一般項を導こうとする太郎さんと花子さんの対話",
+                step1: "等差数列・等比数列の一般項、部分和 S_n、または階差数列を用いた基本計算 [ア], [イ] など",
+                step2: "漸化式（a_{n+1} = p a_n + q や a_{n+1} = a_n + f(n)）の変形による一般項の導出、および Σ 計算 [ウ], [エオ] など",
+                step3: "太郎さんと花子が発見した別解（例: 階差の階差、図形的なブロックの分割による和の視覚化）の妥当性検証。一般項の性質や不等式を満たす最小の n に関する選択肢群（⓪〜④）から選ばせること",
+                choiceType: "数列の誘導・別解の妥当性・不等式評価に関する選択肢群（⓪〜④）"
+            },
+            {
+                pattern: /ベクトル|内積|位置ベクトル|空間座標|正四面体/,
+                name: "平面・空間ベクトル（内積・正射影・位置ベクトル）",
+                dialogueTheme: "正四面体や直方体、空間内の点において、太郎さんと花子さんが始点を揃えた位置ベクトルや内積を用いて最短距離・正射影を考察する対話",
+                step1: "ベクトルの内積、大きさ、垂直条件（a・b = 0）を用いた基本的な未知数の計算 [ア], [イ] など",
+                step2: "空間内の三角形の面積、直線の交点（s, t の係数比較）、または点から平面に下ろした垂線の足のベクトル表示 [ウ], [エオ] など",
+                step3: "動点 P が直線や球面を動くときの線分の長さの最小値（光の反射モデル等）、またはベクトルの存在範囲の図形。条件を満たす図形や等式に関する選択肢群（⓪〜④）から選ばせること",
+                choiceType: "ベクトルの存在範囲・空間幾何の位置関係に関する選択肢群（⓪〜④）"
+            },
+            {
+                pattern: /統計.*推測|正規分布|仮説検定|標本平均|有意水準|信頼区間/,
+                name: "統計的な推測（正規分布・信頼区間・仮説検定）",
+                dialogueTheme: "新薬の効果やコインの表裏の確率について、太郎さんと花子さんが標本調査データをもとに仮説検定（帰無仮説と対立仮説）を議論する対話",
+                step1: "離散型確率変数の期待値・分散・標準偏差の計算、および二項分布の確率計算 [ア], [イ] など",
+                step2: "母平均 m に対する標本平均 X̄ の標準化（Z = (X̄ - m) / (σ / √n)）、正規分布表を用いた確率の算出、95%信頼区間の計算 [ウ], [エオ] など",
+                step3: "有意水準 5%（または 1%）における仮説検定の実施。棄却域と検定統計量の比較から、「有意差があるといえるか」の判断結果や統計的解釈を選択肢群（⓪〜④）から選ばせること",
+                choiceType: "仮説検定の結論や統計的解釈の妥当性に関する選択肢群（⓪〜④）"
+            },
+            {
+                pattern: /複素数平面|極形式|ド・モアブル|変換|軌跡/,
+                name: "複素数平面（極形式・回転と軌跡）",
+                dialogueTheme: "複素数の積による回転・拡大について、複素数平面上の三角形の形状や軌跡をグラフソフトで確認する太郎さんと花子さんの対話",
+                step1: "複素数の極形式表示、絶対値と偏角の計算、ド・モアブルの定理を用いた z^n の計算 [ア], [イ] など",
+                step2: "複素数の比 (γ - α) / (β - α) による角の大きさの決定、垂直・平行条件、または垂直二等分線・円の方程式 [ウ], [エオ] など",
+                step3: "変換 w = z + 1/z などの写像による図形の移動、または動点 z が動くときの w の描く軌跡の概形。正しい図形や命題を選択肢群（⓪〜④）から選ばせること",
+                choiceType: "複素数平面上の軌跡や図形概形に関する選択肢群（⓪〜④）"
+            }
+        ];
+
+        function getKyotsuTopicGuideline(subject, topic) {
+            const target = `${subject || ''} ${topic || ''}`;
+            for (const g of KYOTSU_TOPIC_GUIDELINES) {
+                if (g.pattern.test(target) || g.pattern.test(topic || '')) {
+                    return g;
+                }
+            }
+            return {
+                name: topic || "共通テスト数学大問",
+                dialogueTheme: "問題の背景にある数学的構造やコンピュータシミュレーションでの試行錯誤について考察する太郎さんと花子さんの対話",
+                step1: "基本公式・定理の確認や、具体的な数値による計算で取っ掛かりを与える計算 [ア], [イ] など",
+                step2: "(1)の結果を活用し、文字定数や新たな設定・一般化へ展開する応用計算 [ウ], [エオ] など",
+                step3: "グラフの概形、領域、極値、命題の真偽を考察させる発展問題。必ず choices_groups（⓪〜④等の選択肢群）を設けること",
+                choiceType: "グラフ概形または命題判定の選択肢群（⓪〜④）"
+            };
+        }
 
         function switchMode(mode) {
             currentMode = mode;
@@ -2732,6 +3042,35 @@
             });
         }
 
+        function updateKyotsuPlaceholder(topicName) {
+            const notesInput = document.getElementById("kyotsu-notes-input");
+            if (!notesInput) return;
+            const hints = {
+                "2次関数": "例：(1)で頂点と軸を確認し、(2)(3)で文字定数の値による場合分けやグラフ概形の選択群を入れてほしい",
+                "図形と計量": "例：(1)で余弦定理による辺と面積の算出、(2)で内接四角形への展開、(3)で太郎と花子の解法の比較選択肢",
+                "確率": "例：(1)で数回の試行の具体確率、(2)で条件付き確率、(3)でゲームの有利性や期待値を太郎と花子が議論",
+                "整数の性質": "例：(1)で互除法による不定方程式の解、(2)で正の解の個数、(3)で硬貨の支払い枚数などの日常モデリング",
+                "図形の性質": "例：(1)でメネラウス・チェバの比、(2)で方べきの定理、(3)で同一円周上の条件判定の選択肢群",
+                "データの分析": "例：(1)で箱ひげ図の四分位数を読み取り、(2)で変量変換後の平均・分散、(3)で散布図と外れ値の影響考察",
+                "三角関数": "例：(1)で加法定理の基本計算、(2)で三角関数の合成と最大最小、(3)で合成波の周期やグラフ概形選択群",
+                "指数": "例：(1)で底の変換、(2)で常用対数による桁数計算、(3)で日常現象（半減期等）のモデル考察",
+                "対数": "例：(1)で底の変換、(2)で常用対数による桁数計算、(3)で日常現象（半減期等）のモデル考察",
+                "微分": "例：(1)で接線の方程式、(2)で囲まれる面積の計算、(3)で面積が等しくなる条件やグラフ概形選択群",
+                "積分": "例：(1)で接線の方程式、(2)で囲まれる面積の計算、(3)で面積が等しくなる条件やグラフ概形選択群",
+                "数列": "例：(1)で等差・階差の計算、(2)で漸化式と一般項、(3)でタイルの敷き詰め等の日常モデリングと別解検証",
+                "統計": "例：(1)で確率変数の期待値・分散、(2)で標本平均の95%信頼区間、(3)で有意水準5%の仮説検定の結論判定",
+                "ベクトル": "例：(1)で内積の基本計算、(2)で空間内の交点・垂線の足、(3)で動点Pの最小距離や存在範囲の図形選択群",
+                "複素数": "例：(1)で極形式とド・モアブル、(2)で複素数の比による角度決定、(3)で変換w=z+1/zの軌跡概形選択群"
+            };
+            for (const [key, hint] of Object.entries(hints)) {
+                if (topicName.includes(key)) {
+                    notesInput.placeholder = hint;
+                    return;
+                }
+            }
+            notesInput.placeholder = "例：(1)で基本公式の確認、(2)で文字定数の応用展開、(3)でグラフ概形や命題判定の選択群を入れてほしい";
+        }
+
         function renderKyotsuFieldButtons() {
             const grid = document.getElementById("kyotsu-field-grid");
             if (!grid) return;
@@ -2751,6 +3090,7 @@
                     kyotsuSelectedField = name;
                     const topicInput = document.getElementById("kyotsu-topic-input");
                     if (topicInput) topicInput.value = name;
+                    updateKyotsuPlaceholder(name);
                 };
             });
         }
@@ -3214,12 +3554,14 @@
             const notesEl = document.getElementById("step2-summary-notes");
             const levelContainer = document.getElementById("step2-level-container");
             const countContainer = document.getElementById("step2-count-container");
+            const modelContainer = document.getElementById("step2-model-container");
             const kyotsuContainer = document.getElementById("step2-kyotsu-container");
             const startBtn = document.getElementById("btn-step2-start-generate");
 
             if (currentMode === "registered") {
                 if (levelContainer) levelContainer.style.display = "none";
                 if (countContainer) countContainer.style.display = "block";
+                if (modelContainer) modelContainer.style.display = "none";
                 if (kyotsuContainer) kyotsuContainer.style.display = "none";
 
                 if (titleEl) titleEl.textContent = "📚 登録済み誤答スプリント";
@@ -3237,6 +3579,7 @@
             } else if (currentMode === "kyotsu") {
                 if (levelContainer) levelContainer.style.display = "none";
                 if (countContainer) countContainer.style.display = "none";
+                if (modelContainer) modelContainer.style.display = "none";
                 if (kyotsuContainer) kyotsuContainer.style.display = "flex";
 
                 const topic = document.getElementById("kyotsu-topic-input")?.value.trim() || kyotsuSelectedField;
@@ -3250,6 +3593,7 @@
             } else {
                 if (levelContainer) levelContainer.style.display = "block";
                 if (countContainer) countContainer.style.display = "block";
+                if (modelContainer) modelContainer.style.display = "block";
                 if (kyotsuContainer) kyotsuContainer.style.display = "none";
 
                 if (startBtn) startBtn.textContent = "🚀 問題を生成してスタート（Step 3へ）";
@@ -3848,59 +4192,127 @@
                 overall_review: "共通テストでは公式を単に記憶するのではなく、導出の背景（対称性と加法定理の活用）を把握しているかが得点差に直結します。"
             },
             "2次関数": {
-                title: "数学I・A 第2問 2次関数の動く定義域と最大値・最小値の考察",
+                title: "2次関数の動的グラフと最大・最小",
                 subject: "数学I・A",
                 field: "2次関数",
                 total_points: 20,
-                context_text: "2次関数 $y = 2x^2 - 8x + 5$ のグラフについて考えよう。\n平方完成すると $y = 2(x - 2)^2 - 3$ となり、軸は直線 $x = 2$、頂点は $(2, -3)$ である。",
+                context_text: "実数 $a$ に対して、関数 $f_a(x) = x^2 - 2ax + 2a$ を考える。定義域は $0 \\le x \\le 2$ とする。\n太郎さんと花子さんは、コンピュータソフトで $a$ を動かしながら、$y = f_a(x)$ のグラフと、その定義域における最大値 $M(a)$、最小値 $m(a)$ の変化を調べている。\n太郎「$a$ を動かすと、放物線の軸が $x = a$ の位置で左右に動くなあ。」\n花子「定義域は $0 \\le x \\le 2$ だから、軸が区間の外にあるか、中にあるかで最小値をとる $x$ が変わりそう。」\n太郎「最大値も、軸が区間の真ん中 $x = 1$ より左か右かで変わりそうだね。」\n花子「まず $a = 1$ のときを計算して、コンピュータの表示と比べてみよう。」",
                 sections: [
                     {
                         section_id: "(1)",
-                        section_title: "固定区間での最大・最小",
-                        section_text: "2次関数 $y = 2x^2 - 8x + 5$ は、$0 \\le x \\le 3$ において、\n$x = [ア]$ で最大値 $[イ]$ をとり、$x = [ウ]$ で最小値 $[エオ]$ をとる。",
-                        choices_groups: [],
+                        section_title: "具体値による確認",
+                        section_text: "$a = 1$ のとき、$f_1(x) = x^2 - 2x + 2$ である。$0 \\le x \\le 2$ における $f_1(x)$ の最小値は [ア] であり、最大値は [イ] である。",
                         marks: [
-                            { id: "ア", label: "ア", type: "numeric", answer: "0", points: 2 },
-                            { id: "イ", label: "イ", type: "numeric", answer: "5", points: 2 },
-                            { id: "ウ", label: "ウ", type: "numeric", answer: "2", points: 2 },
-                            { id: "エオ", label: "エオ", type: "numeric", answer: "-3", points: 4 }
+                            { id: "ア", type: "numeric", answer: "1", points: 2, label: "ア" },
+                            { id: "イ", type: "numeric", answer: "2", points: 2, label: "イ" }
                         ],
-                        explanation: "軸 $x = 2$ は定義域 $0 \\le x \\le 3$ 内にあります。\n頂点 $x = 2$ で最小値 $-3$ をとります（ウ=2, エオ=-3）。\n端点は $f(0) = 5$, $f(3) = 2(1)^2 - 3 = -1$ なので、軸から遠い $x = 0$ で最大値 $5$ をとります（ア=0, イ=5）。"
+                        choices_groups: [],
+                        explanation: "$a=1$ のとき、$f_1(x) = x^2 - 2x + 2 = (x - 1)^2 + 1$ である。\n軸は $x = 1$ で、これは区間 $0 \\le x \\le 2$ の内部にある。\nよって最小値は頂点で $1$、最大値は端点で比べると $f_1(0) = 2$, $f_1(2) = 2$ より $2$ である。"
                     },
                     {
                         section_id: "(2)",
-                        section_title: "条件を満たす2次関数の逆算",
-                        section_text: "太郎さんと花子さんは、条件から2次関数を特定する問題について話している。\n2次関数 $y = g(x)$ は次の条件を満たすとする。\n【条件】$a$ を正の定数とし、$0 \\le x \\le a$ における $g(x)$ の最大値を $M$、最小値を $m$ とする。\n・$0 < a < 3$ ならば $m > -2$\n・$a \\ge 3$ ならば $m = -2$\n・$0 < a \\le 6$ ならば $M = 7$\n・$a > 6$ ならば $M > 7$\nこのとき、$g(x)$ のグラフは $[カ]$ の放物線であり、$g(x) = [キ]$ である。",
+                        section_title: "文字定数 $a$ を含む最大・最小",
+                        section_text: "以下、$0 \\le a \\le 2$ とする。このとき、$f_a(x) = x^2 - 2ax + 2a = (x - a)^2 - a^2 + 2a$ の定義域 $0 \\le x \\le 2$ における最小値 $m(a)$ は $m(a) = -[ウ]a^2 + [エ]a$ である。\nまた、最大値 $M(a)$ は $0 \\le a \\le 1$ のとき $M(a) = [オ] - [カ]a$、$1 \\le a \\le 2$ のとき $M(a) = [キ]a$ である。",
+                        marks: [
+                            { id: "ウ", type: "numeric", answer: "1", points: 2, label: "ウ" },
+                            { id: "エ", type: "numeric", answer: "2", points: 2, label: "エ" },
+                            { id: "オ", type: "numeric", answer: "4", points: 2, label: "オ" },
+                            { id: "カ", type: "numeric", answer: "2", points: 2, label: "カ" },
+                            { id: "キ", type: "numeric", answer: "2", points: 2, label: "キ" }
+                        ],
+                        choices_groups: [],
+                        explanation: "$f_a(x) = (x - a)^2 - a^2 + 2a$ である。$0 \\le a \\le 2$ では軸 $x = a$ が区間 $0 \\le x \\le 2$ の内部にあるので、最小値は頂点で $m(a) = -a^2 + 2a = -[ウ]a^2 + [エ]a$ となる。\n最大値は端点 $f_a(0) = 2a$ と $f_a(2) = 4 - 2a$ の比較で決まる。\n$2a \\ge 4 - 2a$ すなわち $a \\ge 1$ のとき、最大値は $f_a(0) = 2a = [キ]a$ である。\n$0 \\le a \\le 1$ のとき、最大値は $f_a(2) = 4 - 2a = [オ] - [カ]a$ である。"
+                    },
+                    {
+                        section_id: "(3)",
+                        section_title: "最大値と最小値の差のグラフ概形",
+                        section_text: "太郎さんと花子さんは、$0 \\le a \\le 2$ における最大値 $M(a)$ と最小値 $m(a)$ の差 $D(a) = M(a) - m(a)$ をコンピュータで表示し、そのグラフの概形を調べた。\n太郎「(2)の式を使うと、$0 \\le a \\le 1$ と $1 \\le a \\le 2$ で場合分けして $D(a)$ を書けそうだね。」\n花子「$a = 1$ の前後で式は変わるけれど、$D(1)$ の値はどちらでも同じになるはず。グラフ全体は左右対称に見えるかな。」\n太郎「端点では $D(0)$ と $D(2)$ の値も比べてみよう。」\n$0 \\le a \\le 2$ における $D(a)$ のグラフの概形として最も適当なものを、下の ⓪〜⑤ のうちから一つ選べ。 [ク]",
+                        marks: [
+                            { id: "ク", type: "choice", answer: "2", points: 6, label: "ク" }
+                        ],
                         choices_groups: [
                             {
-                                target_marks: "カ",
-                                options: ["⓪ 下に凸", "① 上に凸"]
-                            },
-                            {
-                                target_marks: "キ",
+                                target_marks: "ク",
                                 options: [
-                                    "⓪ $2x^2 - 12x + 16$",
-                                    "① $-2x^2 + 12x - 16$",
-                                    "② $x^2 - 6x + 7$",
-                                    "③ $-x^2 + 6x - 2$",
-                                    "④ $x^2 - 7$",
-                                    "⑤ $-x^2 + 7$"
+                                    "⓪ $0 \\le a \\le 2$ で単調に増加し、$(0,0)$ から $(2,4)$ へ直線的に増加する。",
+                                    "① $0 \\le a \\le 2$ で単調に減少し、$(0,4)$ から $(2,0)$ へ直線的に減少する。",
+                                    "② $a = 1$ で最小値 $1$ をとり、$(0,4)$, $(1,1)$, $(2,4)$ を通る。$0 \\le a \\le 1$ では下に凸、$1 \\le a \\le 2$ でも下に凸で、$a = 1$ で折れ曲がる。",
+                                    "③ $a = 1$ で最大値 $1$ をとり、$(0,0)$, $(1,1)$, $(2,0)$ を通る上に凸の放物線である。",
+                                    "④ $a = 1$ で最小値 $1$ をとるが、$(0,2)$, $(1,1)$, $(2,2)$ を通る下に凸の放物線である。",
+                                    "⑤ $0 \\le a \\le 2$ で一定値 $2$ をとる。"
                                 ]
                             }
                         ],
-                        marks: [
-                            { id: "カ", label: "カ", type: "choice", answer: "0", points: 4 },
-                            { id: "キ", label: "キ", type: "choice", answer: "2", points: 6 }
-                        ],
-                        explanation: "定義域の右端 $a$ が3以上になると最小値が $-2$ で一定になることから、軸は直線 $x = 3$ で頂点の $y$ 座標は $-2$、下に凸（カ=0）であることがわかります。\nまた、$a$ が $0 < a \\le 6$ で最大値 $M = 7$ 一定であることから、$x=0$ で最大値 $g(0)=7$ をとります。\n頂点 $(3, -2)$ より $g(x) = k(x-3)^2 - 2$ とおけ、$g(0) = 9k - 2 = 7$ から $k = 1$。\nよって $g(x) = (x-3)^2 - 2 = x^2 - 6x + 7$（キ=2）となります。"
+                        explanation: "$0 \\le a \\le 1$ のとき、$M(a) = 4 - 2a$、$m(a) = -a^2 + 2a$ より $D(a) = (4 - 2a) - (-a^2 + 2a) = a^2 - 4a + 4 = (a - 2)^2$ である。\n$1 \\le a \\le 2$ のとき、$M(a) = 2a$ より $D(a) = 2a - (-a^2 + 2a) = a^2$ である。\nしたがって $D(0) = 4$, $D(1) = 1$, $D(2) = 4$ となり、$a = 1$ で最小値 $1$ をとる。\n左側は $(a - 2)^2$、右側は $a^2$ の放物線の一部で、$a = 1$ で折れ曲がる。よって ② が正しい。"
                     }
                 ],
-                overall_review: "動く区間の最大・最小は、軸の位置関係と端点での対称性（軸からの距離）に着目することが最短攻略の鍵です。"
+                overall_review: "本問は、2次関数の軸と定義域の位置関係を、文字定数 $a$ を動かしながら考察する共通テスト頻出の大問です。(1)で具体値を確認し、(2)で場合分けして最大値・最小値を表し、(3)でそれらの差のグラフの概形を判断します。コンピュータ表示と対話を手がかりに、式とグラフを往復する新課程共通テストの思考力を鍛えます。"
             }
         };
 
+        // 🐋 DeepSeek 推論モデル（deepseek-reasoner: thinking high）による共通テスト大問作問
+        async function callDeepSeekKyotsu(prompt) {
+            const keys = getDeepseekKeys();
+            const apiKey = keys[0] || "REMOVED_DEEPSEEK_KEY";
+            const url = "https://api.deepseek.com/chat/completions";
+            const body = {
+                model: "deepseek-reasoner",
+                messages: [
+                    { role: "user", content: prompt }
+                ],
+                max_tokens: 16000
+            };
+
+            let response;
+            try {
+                if (!isStaticHostingEnvironment() && window.__serverHasDeepseekKey) {
+                    response = await fetch('/api/deepseek/chat', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(body)
+                    });
+                } else {
+                    response = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${apiKey}`
+                        },
+                        body: JSON.stringify(body)
+                    });
+                }
+            } catch (netErr) {
+                response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify(body)
+                });
+            }
+
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}));
+                throw new Error(errData?.error?.message || `DeepSeek APIエラー (HTTP ${response.status})`);
+            }
+
+            const data = await response.json();
+            const choice = data.choices?.[0];
+            if (!choice || !choice.message) {
+                throw new Error("DeepSeek から有効な応答が得られませんでした。");
+            }
+
+            let content = (choice.message.content || "").trim();
+            const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+            if (jsonMatch) {
+                content = jsonMatch[1].trim();
+            }
+            return JSON.parse(content);
+        }
+
         async function startKyotsuSprint(subject, topic, level, scale, focusNotes, preferredModel = null) {
-            lastCondition = { mode: "kyotsu", subject, topic, level, scale, focusNotes, model: preferredModel };
+            lastCondition = { mode: "kyotsu", subject, topic, level, scale, focusNotes, model: preferredModel, engine: ACTIVE_ENGINE };
             clearSession();
             currentMode = "kyotsu";
             isGeneratingSprint = true;
@@ -3912,59 +4324,113 @@
             const percentTextEl = document.getElementById("progress-percent-text");
             const statusGridEl = document.getElementById("question-status-grid");
 
-            if (iconEl) iconEl.textContent = "🏛️";
-            if (phaseTitleEl) phaseTitleEl.textContent = "共通テスト大問の誘導ストーリーを構築中...";
-            if (phaseDescEl) phaseDescEl.textContent = "過去問の出題傾向に準拠した美しい論理展開・マーク枠を設計しています";
+            if (iconEl) iconEl.textContent = ACTIVE_ENGINE === "deepseek" ? "🐋" : "🏛️";
+            if (phaseTitleEl) phaseTitleEl.textContent = `${getEngineLabel(ACTIVE_ENGINE)} が共通テスト大問の誘導ストーリーを思考中...`;
+            if (phaseDescEl) phaseDescEl.textContent = "太郎・花子の対話、グラフ考察、解答群の選択肢など、新課程本番レベルの論理展開を設計しています";
             if (fillBarEl) fillBarEl.style.width = "25%";
             if (percentTextEl) percentTextEl.textContent = "25%";
             if (statusGridEl) {
                 statusGridEl.innerHTML = `
                     <div class="question-status-item done"><span><strong>科目:</strong> ${escapeHtml(subject)}</span><span class="status-indicator">✅</span></div>
                     <div class="question-status-item done"><span><strong>単元:</strong> ${escapeHtml(topic)}</span><span class="status-indicator">✅</span></div>
-                    <div class="question-status-item pending" id="kyotsu-gen-status"><span><strong>大問生成:</strong> AI作問中</span><span class="status-indicator">⏳</span></div>
+                    <div class="question-status-item pending" id="kyotsu-gen-status"><span><strong>${getEngineLabel(ACTIVE_ENGINE)}作問:</strong> 思考・生成中</span><span class="status-indicator">⏳</span></div>
                 `;
             }
 
             const targetMarks = scale === "full" ? "8〜10マーク（小問3〜4ステップ）" : "6〜8マーク（小問2〜3ステップ）";
+            const guideline = getKyotsuTopicGuideline(subject, topic);
 
-            const prompt = `あなたは日本の大学入学共通テスト数学（数I・A、数II・B・C）の作問責任者です。
-生徒が集中特訓できるように、本番の共通テスト大問【厳密に1題（${targetMarks}）】を作成してください。
+            const prompt = `あなたは大学入学共通テスト数学（${subject}）の国家作問委員長です。
+最新の新課程・大学入学共通テスト本番さながらの極めて高品質な大問【厳密に1大問（小問3ステップ、計${targetMarks}）】を作成してください。
 
 【出題設定】
-・対象科目: ${subject}
-・単元・テーマ: ${topic}
+・科目: ${subject}
+・指定単元: ${topic}
 ・難易度: ${level}
-・重点要望: ${focusNotes || "過去問に準拠した段階的な誘導思考問題"}
+・重点要望: ${focusNotes || "過去問に準拠した段階的な誘導思考問題、太郎と花子の対話形式"}
 
-【⚠️ 最重要：共通テスト大問の作問ルール】
-1. 誘導の論理構造（過去問の再現）：
-   - 小問 (1): 基本公式・定理の確認や、具体的な数値による計算で取っ掛かりを与える（マーク [ア], [イ] など）。
-   - 小問 (2): (1)の結果を活用し、文字定数や新たな発想・設定へ展開する応用計算（マーク [ウ], [エオ] など）。
-   - 小問 (3): グラフの概形、領域、極値、命題の正誤などを考察させる発展的問い。必要に応じて解答群（⓪〜⑤などから選択）を配置。
-2. 数式（LaTeX）とマーク枠の厳格な記法【絶対厳守】：
-   - 数式は必ず $ ... $ で囲み、日本語の説明（「のとき」「において」「となる」「より」など）や箇条書きの記号（・）を決して $ ... $ の中に含めないこと。
-   - 場合分けや箇条書きを書くときは、必ず行ごとに $...$ を独立して完結させること（例: 「・$a < 0$ のとき、$M(a) = -a^2 + [キ]a$」）。
-   - 分数や根号の空欄マークも、$a = \\frac{[シ]}{[ス]}$ や $a = [セ] + \\sqrt{[ソ]}$ のように必ず数式全体を $...$ で正しく囲むこと。
-   - 問題文中の空欄マーク記号は必ず [ア], [イ], [ウエ], [オ], [カ] などのように大括弧で囲み、各マークの id は問題文中の記号（"ア", "イ", "ウエ"など）と1対1で完全一致させること。
-3. 数値整合性の絶対厳守：
-   - AIの計算ミスは厳禁。(1)で求めた値が(2)(3)で矛盾なく綺麗に成立するよう、確実に整合性を保つこと。
-4. 解答群（choices_groups）のルール：
-   - 選択式のマーク（グラフ概形、不等号、選択肢など）には、choices_groups に選択肢一覧（"⓪ ...", "① ..."）を含め、マークの type を "choice" にすること。正解 answer は選択肢の番号（"0", "1" など）にすること。
-   - 通常の数字マークは type を "numeric" にし、answer は "3", "-2", "15" などの半角文字列にすること。
-5. 解説（explanation）の充実：
-   - 各小問の解説には、公式・着眼点・式変形のステップを \\n で改行を挟んで丁寧に記述すること。
+【🎯 本単元（${guideline.name}）専用・共通テスト出題展開ルール】
+本単元の出題にあたっては、以下の共通テスト本番の出題パターンと誘導設計を【必ず】踏襲してください：
+1. 太郎・花子の対話と探究テーマ：
+   ${guideline.dialogueTheme}
+2. 小問 (1) の設計方針：
+   ${guideline.step1}
+3. 小問 (2) の設計方針：
+   ${guideline.step2}
+4. 小問 (3) の設計方針：
+   ${guideline.step3}
+5. 小問 (3) の選択肢群（choices_groups）：
+   ${guideline.choiceType}。必ず choices_groups を定義し、マークの type を "choice" にすること。
 
-指定されたJSONオブジェクトのみを返してください。`;
+【⚠️ 最重要：共通テスト形式・厳格ルール（本番過去問の完全再現）】
+1. 太郎・花子の対話と探究プロセス：
+   - context_text または (2)(3) の問題文中に、コンピュータソフトでの描画・シミュレーションや、別解の検討を行う太郎さんと花子さんの生き生きとした対話を含めること。
+2. choices_groups の完全記述【絶対厳守】：
+   - 小問 (3)（または選択式の小問）では、必ず choices_groups 配列に target_marks と options（"⓪ ...", "① ...", "② ..." 等）を記述すること。
+   - マークの answer は選択肢のインデックス（"0", "1", "2" など、半角数字1文字）にすること。
+3. 数式（LaTeX）とマーク記法の厳格な分離【絶対厳守】：
+   - 数式は必ず $ ... $ で囲むこと。日本語の説明（「のとき」「において」「となる」「より」など）や箇条書きの記号（・）を決して $ ... $ の中に含めないこと。
+   - マーク記号（[ア], [イ], [ウエ] 等）は必ず大括弧で囲み、各 mark の id と完全一致させること。マーク枠を $ ... $ の中に埋め込んではいけません。
+4. 計算の完全な整合性：
+   - AIの計算ミス・誤謬は一切許されません。(1)で得た数値、(2)の一般化・立式、(3)の選択肢の正誤判定が数学的に100%正確であること。
+
+【出力フォーマット】
+以下のJSONスキーマに従った純粋なJSONオブジェクトのみを出力してください（Markdownコードブロック \`\`\`json ... \`\`\` 可）：
+{
+  "title": "大問タイトル",
+  "subject": "${subject}",
+  "field": "${topic}",
+  "context_text": "大問の導入文や前提条件。太郎さんと花子さんの会話など。",
+  "sections": [
+    {
+      "section_id": "(1)",
+      "section_title": "具体値による導入",
+      "section_text": "問題文。マーク枠は [ア], [イ] などの形式で記述。",
+      "marks": [
+        { "id": "ア", "type": "numeric", "answer": "1", "points": 2, "label": "ア" }
+      ],
+      "choices_groups": [],
+      "explanation": "詳細な計算・解説ステップ。"
+    },
+    {
+      "section_id": "(3)",
+      "section_title": "発展考察とグラフ概形",
+      "section_text": "問題文。選択マーク [ク] を含む。",
+      "marks": [
+        { "id": "ク", "type": "choice", "answer": "2", "points": 6, "label": "ク" }
+      ],
+      "choices_groups": [
+        {
+          "target_marks": "ク",
+          "options": [
+            "⓪ 選択肢A",
+            "① 選択肢B",
+            "② 選択肢C",
+            "③ 選択肢D"
+          ]
+        }
+      ],
+      "explanation": "解説文。"
+    }
+  ],
+  "overall_review": "大問全体の講評と共通テストの出題意図・攻略ポイント",
+  "total_points": 20
+}`;
 
             try {
                 if (fillBarEl) fillBarEl.style.width = "50%";
                 if (percentTextEl) percentTextEl.textContent = "50%";
 
-                const result = await callGeminiJSON(
-                    [{ text: prompt }],
-                    "あなたは優秀な大学入試共通テスト数学の作問責任者です。指定されたJSONオブジェクトのみを返してください。",
-                    { temperature: 0.35, responseSchema: KYOTSU_SPRINT_SCHEMA, featureId: "kyotsu_sprint", preferredModel }
-                );
+                let result = null;
+                if (ACTIVE_ENGINE === "deepseek") {
+                    result = await callDeepSeekKyotsu(prompt);
+                } else {
+                    result = await callGeminiJSON(
+                        [{ text: prompt }],
+                        "あなたは優秀な大学入試共通テスト数学の作問責任者です。指定されたJSONオブジェクトのみを返してください。",
+                        { temperature: 0.35, responseSchema: KYOTSU_SPRINT_SCHEMA, featureId: "kyotsu_sprint", preferredModel }
+                    );
+                }
 
                 if (!isGeneratingSprint) return;
 
@@ -4386,27 +4852,32 @@
                 kyotsuUserAnswers[mid] = String(val);
             }
 
-            // 表示更新
+            // 表示更新（下部マークシートチップ）
             const chipVal = document.getElementById(`chip-val-${mid}`);
             if (chipVal) chipVal.textContent = kyotsuUserAnswers[mid] || "_";
 
+            // 問題文中の枠表示更新（HTMLスパン & MathJax両対応）
             const slot = document.getElementById(`slot-mark-${mid}`);
             if (slot) {
                 const isMjx = slot.tagName && slot.tagName.toLowerCase().startsWith('mjx');
                 if (isMjx) {
-                    // MathJax要素はクラス切り替えだけでスタイルを変える
+                    const uText = slot.querySelector('mjx-utext') || slot;
                     if (kyotsuUserAnswers[mid]) {
                         slot.classList.add("filled");
                         slot.style.outline = "2px solid var(--brand-primary)";
                         slot.style.outlineOffset = "1px";
-                        slot.title = `入力値: ${kyotsuUserAnswers[mid]}`;
+                        slot.style.background = "rgba(5, 150, 105, 0.15)";
+                        slot.title = `[ ${mid} ]: ${kyotsuUserAnswers[mid]}`;
+                        if (uText) uText.textContent = kyotsuUserAnswers[mid];
                     } else {
                         slot.classList.remove("filled");
                         slot.style.outline = "";
+                        slot.style.outlineOffset = "";
+                        slot.style.background = "";
                         slot.title = "";
+                        if (uText) uText.textContent = mid;
                     }
                 } else {
-                    // HTMLスパン要素はテキストも更新
                     if (kyotsuUserAnswers[mid]) {
                         slot.textContent = `[ ${kyotsuUserAnswers[mid]} ]`;
                         slot.classList.add("filled");
@@ -4419,17 +4890,31 @@
 
             updateKyotsuFilledCount();
 
-            // 自動的に次のマークへ移動
-            const allMarks = getAllKyotsuMarks(kyotsuProblemData);
-            const currIdx = allMarks.findIndex(m => m.id === mid);
-            if (val !== "" && currIdx < allMarks.length - 1) {
-                setTimeout(() => {
-                    activateKyotsuMark(allMarks[currIdx + 1].id);
-                }, 100);
-            } else if (val !== "") {
-                // 最後のマークを入力した場合はデッキの選択状態を更新
-                const targetMark = allMarks.find(m => m.id === mid);
-                if (targetMark) renderKyotsuInputDeck(targetMark);
+            // 🚀【スマートオートアドバンス】値が入力されたら自動で次の未入力マーク枠へスムーズにフォーカス
+            if (val !== "") {
+                const allMarks = getAllKyotsuMarks(kyotsuProblemData);
+                const currIdx = allMarks.findIndex(m => m.id === mid);
+
+                // 1. 現在位置より後ろの未入力枠を探す
+                let nextTarget = allMarks.slice(currIdx + 1).find(m => !kyotsuUserAnswers[m.id]);
+                // 2. なければ先頭から全体の未入力枠を探す
+                if (!nextTarget) {
+                    nextTarget = allMarks.find(m => !kyotsuUserAnswers[m.id]);
+                }
+                // 3. 全て埋まったなら直後の枠へ（最後ならそのまま）
+                if (!nextTarget && currIdx < allMarks.length - 1) {
+                    nextTarget = allMarks[currIdx + 1];
+                }
+
+                if (nextTarget && nextTarget.id !== mid) {
+                    setTimeout(() => {
+                        activateKyotsuMark(nextTarget.id);
+                    }, 80);
+                } else {
+                    // 同じ枠に留まる場合は入力デッキの選択状態（active）を更新
+                    const targetMark = allMarks.find(m => m.id === mid);
+                    if (targetMark) renderKyotsuInputDeck(targetMark);
+                }
             }
 
             saveSession();
