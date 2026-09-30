@@ -11,6 +11,8 @@
     box-sizing: border-box;
     margin: 0;
     padding: 0;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
 }
 
 /* ==========================================================================
@@ -128,8 +130,38 @@ html {
     -webkit-text-size-adjust: 100%;
 }
 
-button, a, input, select, textarea, .m-chip, .p-row, .m-nav-item, .m-fab {
+button, a, input, select, textarea,
+.m-chip, .p-row, .m-nav-item, .m-fab, .bnav-tab,
+.m-lesson-card, .recent-resume-card, .subject-group-header,
+.qa-card, .qa-action-btn, .paper-action-btn, .lecture-step-item,
+.item-card, .m-srs-btn, .m-memorize-card, .m-memorize-a-wrap,
+.red-sheet-answer-box, .red-sheet-remask-btn, [role="button"], [data-reveal-wrap],
+[data-toggle-subject], [data-step-idx], [data-lesson-tab],
+.lesson-subtab-btn, .m-btn, .m-card-delete-btn, .item-act-btn,
+.box-lvl-tag, .m-header-action-btn, .m-header-back {
     touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* ⚡ 即時0ms タッチフィードバック（指が触れた瞬間に視覚反応して遅延感をゼロに） */
+.m-lesson-card:active,
+.recent-resume-card:active,
+.subject-group-header:active,
+.lecture-step-item:active,
+.m-chip:active,
+.m-btn:active,
+.qa-action-btn:active,
+.paper-action-btn:active,
+.m-srs-btn:active,
+.m-memorize-card:active,
+.bnav-tab:active,
+.item-act-btn:active,
+.lesson-subtab-btn:active,
+.m-header-action-btn:active,
+.m-header-back:active {
+    transform: scale(0.972);
+    opacity: 0.88;
+    transition: transform 0.04s ease-out, opacity 0.04s ease-out !important;
 }
 
 .m-content, .section-rows, #problem-list {
@@ -159,7 +191,7 @@ body {
 .hidden { display: none !important; }
 
 /* ==========================================================================
-   モバイルヘッダー（上部固定バー — 洗練されたフロストガラス）
+   モバイルヘッダー（上部固定バー — 洗練された高視認ヘッダー）
    ========================================================================== */
 .m-header {
     position: sticky;
@@ -170,9 +202,7 @@ body {
     gap: 0.75rem;
     height: var(--header-height);
     padding: 0 var(--content-padding);
-    background: rgba(247, 249, 248, 0.85);
-    backdrop-filter: blur(24px) saturate(180%);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    background: rgba(247, 249, 248, 0.96);
     border-bottom: 1px solid var(--border-color);
     box-shadow: 0 1px 3px rgba(15, 23, 42, 0.02);
 }
@@ -805,25 +835,20 @@ body.has-custom-wallpaper::after {
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(248, 250, 252, var(--wp-overlay-opacity, 0.22));
-    backdrop-filter: blur(var(--wp-blur, 8px));
-    -webkit-backdrop-filter: blur(var(--wp-blur, 8px));
+    background-color: rgba(248, 250, 252, var(--wp-overlay-opacity, 0.45));
+    /* 🚀 GPUボトルネック完全解消: 全画面のbackdrop-filterブラーを撤廃し、常時60fps描画を確保 */
     z-index: -1;
     pointer-events: none;
 }
 
 body.has-custom-wallpaper .m-header,
 body.has-custom-wallpaper .memo-app-header {
-    background: rgba(247, 249, 248, calc(var(--wp-card-opacity, 0.85) * 0.92)) !important;
-    backdrop-filter: blur(var(--wp-blur, 8px));
-    -webkit-backdrop-filter: blur(var(--wp-blur, 8px));
+    background: rgba(247, 249, 248, calc(var(--wp-card-opacity, 0.85) * 0.94)) !important;
     border-bottom-color: rgba(226, 232, 240, 0.7) !important;
 }
 
 body.has-custom-wallpaper #flora-bottom-nav {
-    background: rgba(255, 255, 255, calc(var(--wp-card-opacity, 0.85) * 0.92)) !important;
-    backdrop-filter: blur(var(--wp-blur, 8px));
-    -webkit-backdrop-filter: blur(var(--wp-blur, 8px));
+    background: rgba(255, 255, 255, calc(var(--wp-card-opacity, 0.85) * 0.94)) !important;
     border-top-color: rgba(226, 232, 240, 0.7) !important;
 }
 
@@ -862,22 +887,18 @@ body.has-custom-wallpaper .quiz-overlay {
 
 body.has-custom-wallpaper .session-top-bar {
     background: rgba(247, 249, 248, calc(var(--wp-card-opacity, 0.85) * 0.94)) !important;
-    backdrop-filter: blur(var(--wp-blur, 8px));
-    -webkit-backdrop-filter: blur(var(--wp-blur, 8px));
     border-bottom: 1px solid rgba(226, 232, 240, 0.8) !important;
     color: var(--text-primary) !important;
 }
 
 body.has-custom-wallpaper .card-face {
-    background: rgba(255, 255, 255, var(--wp-card-opacity, 0.85)) !important;
-    backdrop-filter: blur(var(--wp-blur, 8px));
-    -webkit-backdrop-filter: blur(var(--wp-blur, 8px));
+    background: rgba(255, 255, 255, var(--wp-card-opacity, 0.92)) !important;
     border: 2px solid rgba(16, 185, 129, 0.35) !important;
-    box-shadow: 0 20px 45px -10px rgba(15, 23, 42, 0.12), 0 0 0 1px rgba(255, 255, 255, 0.6) !important;
+    box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.6) !important;
 }
 
 body.has-custom-wallpaper .card-back {
-    background: rgba(255, 255, 255, var(--wp-card-opacity, 0.85)) !important;
+    background: rgba(255, 255, 255, var(--wp-card-opacity, 0.92)) !important;
     border-color: rgba(5, 150, 105, 0.45) !important;
 }
 

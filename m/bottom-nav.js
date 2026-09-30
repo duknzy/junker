@@ -47,17 +47,16 @@
                 align-items: stretch;
                 height: var(--bottom-nav-height, 64px);
                 padding-bottom: env(safe-area-inset-bottom, 0px);
-                background: rgba(255, 255, 255, 0.92);
-                backdrop-filter: blur(24px) saturate(180%);
-                -webkit-backdrop-filter: blur(24px) saturate(180%);
+                background: rgba(255, 255, 255, 0.96);
                 border-top: 1px solid rgba(226, 232, 240, 0.85);
-                box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.05);
+                box-shadow: 0 -2px 12px rgba(15, 23, 42, 0.05);
+                touch-action: manipulation;
             }
 
             html.dark #flora-bottom-nav {
-                background: rgba(19, 19, 20, 0.92);
+                background: rgba(19, 19, 20, 0.96);
                 border-top: 1px solid rgba(255, 255, 255, 0.1);
-                box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.35);
+                box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.35);
             }
 
             .bnav-tab {
@@ -144,9 +143,28 @@
                     <span class="bnav-label">${tab.label}</span>
                 </a>
             `;
+
+            // 🚀 他タブの事前プリフェッチ（切り替え時の白画面と待ち時間を激減）
+            if (!isActive) {
+                try {
+                    const prefetchLink = document.createElement('link');
+                    prefetchLink.rel = 'prefetch';
+                    prefetchLink.href = targetUrl;
+                    document.head.appendChild(prefetchLink);
+                } catch(_) {}
+            }
         });
 
         nav.innerHTML = tabsHtml;
+
+        // ⚡ 指が触れた瞬間にアクティブインジケーターを即時移動（0msフィードバック）
+        nav.querySelectorAll('.bnav-tab').forEach(tabEl => {
+            tabEl.addEventListener('touchstart', () => {
+                nav.querySelectorAll('.bnav-tab').forEach(t => t.classList.remove('active'));
+                tabEl.classList.add('active');
+            }, { passive: true });
+        });
+
         document.body.appendChild(nav);
     }
 

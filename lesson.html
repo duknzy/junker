@@ -7046,6 +7046,22 @@
         // ==============================================================
         // ✂️ 授業タイトル・パートタイトルの短縮・クレンジングユーティリティ
         // ==============================================================
+        
+        // ==============================================================
+        // 🛡️ Firebase RTDB undefined 除外ユーティリティ（set/updateでのクラッシュ完全防止）
+        // ==============================================================
+        function removeUndefinedFields(obj) {
+            if (obj === undefined) return null;
+            if (obj === null || typeof obj !== 'object') return obj;
+            if (Array.isArray(obj)) return obj.map(removeUndefinedFields);
+            const cleaned = {};
+            for (const [key, val] of Object.entries(obj)) {
+                if (val !== undefined) {
+                    cleaned[key] = (val && typeof val === 'object') ? removeUndefinedFields(val) : val;
+                }
+            }
+            return cleaned;
+        }
         function cleanPartTitle(rawTitle, partIndex = 0) {
             if (!rawTitle || typeof rawTitle !== "string") {
                 return `パート${partIndex + 1}`;
@@ -12617,13 +12633,14 @@ ${existingLeads}
                     inheritedKeyTerms: [],
                     accumulatedKeyTerms: [],
                     historicalEvents: [],
-                    memorizationPoints: opts.memorize ? undefined : [],
-                    choiceDrills: opts.drills ? undefined : [],
+                    memorizationPoints: opts.memorize ? null : [],
+                    choiceDrills: opts.drills ? null : [],
                     autogenSettings: opts
                 };
 
+                const cleanLessonObj = removeUndefinedFields(lessonObj);
                 showToast("⚡ 授業枠を作成しました！授業を開始します...", "success");
-                await set(ref(database, 'users/' + loginUid + '/lessons/' + newId), lessonObj);
+                await set(ref(database, 'users/' + loginUid + '/lessons/' + newId), cleanLessonObj);
                 window.location.href = `lesson.html?id=${newId}`;
             } catch(e) {
                 console.error(e);
@@ -12697,15 +12714,16 @@ ${existingLeads}
                     accumulatedKeyTerms: mergedKeyTerms,
                     historicalEvents: mergedHistoricalEvents,
                     autogenSettings: autogenOpts,
-                    memorizationPoints: autogenOpts.memorize ? undefined : [],
-                    choiceDrills: autogenOpts.drills ? undefined : [],
-                    ...(continuationId ? { previousLessonId: continuationId, previousLessonTitle } : {}),
-                    ...(pendingSourceProblem ? { sourceProblemId: pendingSourceProblem.id, sourceProblemTitle: pendingSourceProblem.title } : {}),
-                    ...(draftPlan.level ? { level: draftPlan.level, levelIndex } : {}),
+                    memorizationPoints: autogenOpts.memorize ? null : [],
+                    choiceDrills: autogenOpts.drills ? null : [],
+                    ...(continuationId ? { previousLessonId: continuationId, previousLessonTitle: previousLessonTitle || "" } : {}),
+                    ...(pendingSourceProblem ? { sourceProblemId: pendingSourceProblem.id, sourceProblemTitle: pendingSourceProblem.title || "" } : {}),
+                    ...(draftPlan.level ? { level: draftPlan.level, levelIndex: levelIndex ?? 0 } : {}),
                     ...(draftPlan.topicKey ? { topicKey: draftPlan.topicKey } : {}),
-                    ...(pendingLevelUp ? { levelUpFromLessonId: pendingLevelUp.fromLessonId } : {})
+                    ...(pendingLevelUp && pendingLevelUp.fromLessonId ? { levelUpFromLessonId: pendingLevelUp.fromLessonId } : {})
                 };
-                await set(ref(database, 'users/' + loginUid + '/lessons/' + newId), lessonObj);
+                const cleanLessonObj = removeUndefinedFields(lessonObj);
+                await set(ref(database, 'users/' + loginUid + '/lessons/' + newId), cleanLessonObj);
 
                 if (continuationId) {
                     try {
@@ -17529,7 +17547,7 @@ ${updatedSourceText}`;
                 currentActiveDrill = null;
 
                 // Firebase に保存
-                await set(ref(database, 'users/' + loginUid + '/lessons/' + currentLessonId), currentLesson);
+                await set(ref(database, 'users/' + loginUid + '/lessons/' + currentLessonId), removeUndefinedFields(currentLesson));
 
                 // モーダルを閉じる
                 modalRecreate.style.display = "none";
@@ -18965,7 +18983,7 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
                 currentLesson.createdAt = currentLesson.updatedAt || new Date().toISOString();
             }
             currentLesson.updatedAt = new Date().toISOString();
-            await set(ref(database, 'users/' + loginUid + '/lessons/' + currentLessonId), currentLesson);
+            await set(ref(database, 'users/' + loginUid + '/lessons/' + currentLessonId), removeUndefinedFields(currentLesson));
         }
 
         async function sendTurn(userDisplayText, hiddenInstructionOverride, turnImages) {
