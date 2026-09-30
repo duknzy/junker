@@ -6001,6 +6001,143 @@
         };
 
         // 🗑️ 単元内の全暗記事項を一括削除
+        
+        // ⚡ 単元アコーディオンからの授業＆関連データ（暗記事項・演習問題・年表等）の完全徹底削除
+        window.deleteLessonFromInsights = async function(lessonId, lessonTitle, event) {
+            if (event) event.stopPropagation();
+            if (!currentUser) {
+                showToast("ログインが必要です。", "error");
+                return;
+            }
+            const lesson = (typeof rawLessons !== "undefined" && rawLessons && rawLessons[lessonId]) ? rawLessons[lessonId] : null;
+            const title = lessonTitle || lesson?.title || "この授業";
+
+            const ok = confirm(`【⚠️ 授業と関連データの完全徹底削除】\n\n「${title}」を完全に削除します。\n\nこれに伴い、以下の関連データも完全に消去されます：\n✅ 授業本体（講義テキスト・受講進捗）\n✅ 紐づくすべての暗記事項 ＆ SRS復習進捗（memorizeProgress）\n✅ 選択問題・復習演習データ（problems）\n✅ 暗記カードの自分用メモ（card_memos）\n✅ 関連する年表メモ・自作語呂合わせ（timelineNotes）\n✅ 誤答履歴（mistakes）\n\nこの操作は取り消せません。本当に削除しますか？`);
+            if (!ok) return;
+
+            showToast("🗑️ 授業と関連データを徹底削除中...", "info", 10000);
+
+            try {
+                const updates = {};
+                const lid = lessonId;
+
+                // 1. 授業本体
+                updates[`users/${currentUser.uid}/lessons/${lid}`] = null;
+
+                // 2. 暗記事項 & SRS進捗
+                try {
+                    const memSnap = await get(ref(database, `users/${currentUser.uid}/memorizeProgress`));
+                    if (memSnap.exists()) {
+                        const memData = memSnap.val();
+                        Object.keys(memData).forEach(pKey => {
+                            if (pKey === lid || pKey.startsWith(`mem_${lid}_`) || pKey.startsWith(`${lid}_`) || pKey.startsWith(`${lid}:`) || pKey.includes(lid)) {
+                                updates[`users/${currentUser.uid}/memorizeProgress/${pKey}`] = null;
+                                if (typeof rawMemorizeProgress !== "undefined") delete rawMemorizeProgress[pKey];
+                            }
+                        });
+                    }
+                } catch (e) {}
+
+                // 3. 自分用メモ
+                try {
+                    const cmSnap = await get(ref(database, `users/${currentUser.uid}/card_memos`));
+                    if (cmSnap.exists()) {
+                        const cmData = cmSnap.val();
+                        Object.keys(cmData).forEach(cKey => {
+                            if (cKey === lid || cKey.startsWith(`mem_${lid}_`) || cKey.startsWith(`${lid}_`) || cKey.startsWith(`${lid}:`) || cKey.startsWith(`memorize_${lid}_`) || cKey.includes(lid)) {
+                                updates[`users/${currentUser.uid}/card_memos/${cKey}`] = null;
+                            }
+                        });
+                    }
+                } catch (e) {}
+
+                // 4. 演習問題
+                try {
+                    const probSnap = await get(ref(database, `users/${currentUser.uid}/problems`));
+                    if (probSnap.exists()) {
+                        const probData = probSnap.val();
+                        Object.entries(probData).forEach(([probId, pVal]) => {
+                            if (pVal && pVal.lessonId === lid) {
+                                updates[`users/${currentUser.uid}/problems/${probId}`] = null;
+                            }
+                        });
+                    }
+                } catch (e) {}
+
+                // 5. 誤答履歴
+                try {
+                    const misSnap = await get(ref(database, `users/${currentUser.uid}/mistakes`));
+                    if (misSnap.exists()) {
+                        const misData = misSnap.val();
+                        Object.entries(misData).forEach(([mId, mVal]) => {
+                            if (mVal && mVal.lessonId === lid) {
+                                updates[`users/${currentUser.uid}/mistakes/${mId}`] = null;
+                            }
+                        });
+                    }
+                } catch (e) {}
+
+                // 6. 年表データ
+                if (lesson && Array.isArray(lesson.historicalEvents) && lesson.historicalEvents.length > 0) {
+                    try {
+                        const tlSnap = await get(ref(database, `users/${currentUser.uid}/timelineNotes`));
+                        if (tlSnap.exists()) {
+                            const tlData = tlSnap.val();
+                            lesson.historicalEvents.forEach(ev => {
+                                if (ev && ev.name) {
+                                    const evKey = `${ev.name}_${ev.year || ""}`;
+                                    const safeKey = sanitizeDbKey(evKey);
+                                    if (tlData[safeKey] !== undefined) {
+                                        updates[`users/${currentUser.uid}/timelineNotes/${safeKey}`] = null;
+                                    }
+                                    if (tlData[evKey] !== undefined) {
+                                        updates[`users/${currentUser.uid}/timelineNotes/${evKey}`] = null;
+                                    }
+                                }
+                            });
+                        }
+                    } catch (e) {}
+
+                    // localStorage の flora_timeline_user_notes からも削除
+                    try {
+                        const localNotes = JSON.parse(localStorage.getItem("flora_timeline_user_notes") || "{}");
+                        let modified = false;
+                        lesson.historicalEvents.forEach(ev => {
+                            if (ev && ev.name) {
+                                const evKey = `${ev.name}_${ev.year || ""}`;
+                                if (localNotes[evKey]) {
+                                    delete localNotes[evKey];
+                                    modified = true;
+                                }
+                            }
+                        });
+                        if (modified) {
+                            localStorage.setItem("flora_timeline_user_notes", JSON.stringify(localNotes));
+                        }
+                    } catch (e) {}
+                }
+
+                // 7. ローカルキャッシュ
+                if (typeof rawLessons !== "undefined" && rawLessons && rawLessons[lid]) delete rawLessons[lid];
+                try {
+                    const cached = JSON.parse(localStorage.getItem('cached_lessons') || '{}');
+                    delete cached[lid];
+                    localStorage.setItem('cached_lessons', JSON.stringify(cached));
+                } catch (e) {}
+
+                await update(ref(database), updates);
+
+                showToast(`🎉 「${title}」と関連データ（暗記・問題・年表等）を完全に徹底削除しました！`, "success", 3500);
+
+                if (typeof invalidateInsightsDataCache === "function") invalidateInsightsDataCache();
+                if (typeof updateSrsDashboardCounts === "function") updateSrsDashboardCounts();
+                if (typeof renderActiveView === "function") renderActiveView();
+            } catch (err) {
+                console.error("Failed to purge lesson:", err);
+                showToast("削除に失敗しました: " + err.message, "error", 5000);
+            }
+        };
+
         window.deleteUnitAllMemorize = async function(lessonId, lessonTitle, e) {
             if (e) e.stopPropagation();
             if (!currentUser) {
@@ -7194,6 +7331,12 @@
                                         </button>
                                         <button type="button" class="flora-btn flora-btn-secondary" style="font-size:0.75rem; font-weight:700; padding:0.28rem 0.65rem;" onclick="openAddWordModal('${lid}', '${escapeHtml(subj)}', event)" title="この単元に新しい単語を追加">
                                             ＋ 単語追加
+                                        </button>
+                                        <button type="button" class="flora-btn flora-btn-secondary" style="font-size:0.75rem; font-weight:700; padding:0.28rem 0.6rem; color:var(--text-secondary);" onclick="openRenameLessonFromInsights('${lid}', event)" title="この単元の名前（授業タイトル）を変更">
+                                            ✏️ 名前変更
+                                        </button>
+                                        <button type="button" class="flora-btn flora-btn-secondary" style="font-size:0.75rem; font-weight:700; padding:0.28rem 0.55rem; color:var(--error); border-color:rgba(239,68,68,0.35);" onclick="deleteLessonFromInsights('${lid}', '${escapeHtml(lessonTitle)}', event)" title="この授業と関連するすべてのデータ（暗記事項・問題・年表等）を完全徹底削除">
+                                            🗑 授業削除
                                         </button>
                                         <button type="button" class="dict-unit-collapse-btn ${isExpanded ? '' : 'collapsed'}" onclick="toggleDictUnitCollapse('${unitId}', event)" title="開閉">
                                             ▼
@@ -8446,6 +8589,12 @@
                                     <div style="display:flex; align-items:center; gap:0.4rem;" onclick="event.stopPropagation();">
                                         <button type="button" class="flora-btn flora-btn-secondary" style="font-size:0.75rem; font-weight:700; padding:0.28rem 0.65rem; color:#4f46e5; border-color:rgba(99,102,241,0.4);" onclick="openDrillLessonNote('${lid}', event)" title="授業ノートを開く">
                                             📖 授業ノート
+                                        </button>
+                                        <button type="button" class="flora-btn flora-btn-secondary" style="font-size:0.75rem; font-weight:700; padding:0.28rem 0.6rem; color:var(--text-secondary);" onclick="openRenameLessonFromInsights('${lid}', event)" title="この単元の名前（授業タイトル）を変更">
+                                            ✏️ 名前変更
+                                        </button>
+                                        <button type="button" class="flora-btn flora-btn-secondary" style="font-size:0.75rem; font-weight:700; padding:0.28rem 0.55rem; color:var(--error); border-color:rgba(239,68,68,0.35);" onclick="deleteLessonFromInsights('${lid}', '${escapeHtml(lessonTitle)}', event)" title="この授業と関連するすべてのデータ（暗記事項・問題・年表等）を完全徹底削除">
+                                            🗑 授業削除
                                         </button>
                                         <button type="button" class="dict-unit-collapse-btn ${isExpanded ? '' : 'collapsed'}" onclick="toggleDrillUnitCollapse('${unitId}', event)" title="開閉">
                                             ▼

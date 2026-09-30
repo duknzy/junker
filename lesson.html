@@ -213,6 +213,142 @@
             transform: scale(0.97);
             box-shadow: none !important;
         }
+        
+        /* 🗑️ 授業一括削除モード & フローティングバーのスタイル */
+        .lesson-grid-card.is-batch-delete-selected {
+            border-color: #ef4444 !important;
+            box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.4), 0 8px 24px rgba(239, 68, 68, 0.22) !important;
+            background: rgba(239, 68, 68, 0.05) !important;
+        }
+        .lesson-card-select-wrap {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-surface);
+            border: 2px solid #ef4444;
+            border-radius: 6px;
+            padding: 3px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            cursor: pointer;
+        }
+        .lesson-card-checkbox {
+            width: 18px;
+            height: 18px;
+            accent-color: #ef4444;
+            cursor: pointer;
+            margin: 0;
+            display: block;
+        }
+        .lesson-batch-bar {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100060;
+            width: min(calc(100vw - 32px), 880px);
+            background: rgba(15, 23, 42, 0.96);
+            border: 1.5px solid #ef4444;
+            border-radius: 16px;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65), 0 0 30px rgba(239, 68, 68, 0.3);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            padding: 0.8rem 1.25rem;
+            color: #fff;
+            box-sizing: border-box;
+            animation: lesson-batch-slide-up 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes lesson-batch-slide-up {
+            from { opacity: 0; transform: translate(-50%, 25px); }
+            to { opacity: 1; transform: translate(-50%, 0); }
+        }
+        .lesson-batch-bar-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .lesson-batch-bar-left {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            flex-wrap: wrap;
+        }
+        .lesson-batch-bar-title {
+            font-size: 0.95rem;
+            font-weight: 800;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        .lesson-batch-bar-counter {
+            font-size: 0.82rem;
+            color: #cbd5e1;
+            background: rgba(255, 255, 255, 0.12);
+            padding: 0.2rem 0.65rem;
+            border-radius: 9999px;
+            font-family: ui-monospace, SFMono-Regular, monospace;
+            font-weight: 700;
+        }
+        .lesson-batch-quick-btns {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        .lesson-batch-btn {
+            border: none;
+            border-radius: 8px;
+            padding: 0.45rem 0.85rem;
+            font-size: 0.8rem;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            white-space: nowrap;
+        }
+        .lesson-batch-btn.btn-secondary {
+            background: rgba(255, 255, 255, 0.12);
+            color: #e2e8f0;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .lesson-batch-btn.btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.24);
+            color: #fff;
+        }
+        .lesson-batch-btn.btn-danger {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            color: #ffffff;
+            border: 1px solid #ef4444;
+            box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
+        }
+        .lesson-batch-btn.btn-danger:hover:not(:disabled) {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            box-shadow: 0 6px 18px rgba(239, 68, 68, 0.6);
+            transform: translateY(-1px);
+        }
+        .lesson-batch-btn.btn-danger:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .lesson-batch-btn.btn-close {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            color: #94a3b8;
+        }
+        .lesson-batch-btn.btn-close:hover {
+            background: rgba(255, 255, 255, 0.18);
+            color: #fff;
+        }
+
         .lesson-grid-card.drag-over {
             border-color: var(--brand-primary) !important;
             box-shadow: 0 0 0 2px var(--brand-light), var(--shadow-md) !important;
@@ -4940,6 +5076,9 @@
                                         <option value="title_asc">🔤 授業タイトル順</option>
                                     </select>
                                 </div>
+                                <button type="button" class="tactile-btn" id="btn-toggle-batch-lesson-delete" style="font-size:0.75rem; font-weight:700; padding:0.4rem 0.85rem; height:36px; background:rgba(239, 68, 68, 0.08); color:#dc2626; border:1px solid rgba(239, 68, 68, 0.35); border-radius:var(--radius-full); white-space:nowrap; display:inline-flex; align-items:center; gap:0.35rem; cursor:pointer;" title="授業を複数選択して一括削除（暗記事項・問題・年表等のデータも完全徹底パージ）します">
+                                    🗑️ 授業を一括削除
+                                </button>
                                 <button type="button" class="tactile-btn" id="btn-batch-generate-choice-drills" style="font-size:0.75rem; font-weight:700; padding:0.4rem 0.85rem; height:36px; background:#EEF2FF; color:#4F46E5; border:1px solid #C7D2FE; border-radius:var(--radius-full); white-space:nowrap; display:inline-flex; align-items:center; gap:0.35rem; cursor:pointer;" title="選択問題（共通テスト形式）が未作成の過去授業を検出し、API制限に配慮しながら段階的に一括作成します">
                                     🎯 選択問題を一括生成
                                 </button>
@@ -8673,6 +8812,8 @@
         let chatSelectedImages = [];
         let draftPlan = null;
         let lastLessonsSnapshot = {};
+        let isBatchLessonDeleteMode = false;
+        const selectedLessonDeleteIds = new Set();
         let customPolicyPrompt = DEFAULT_POLICY_PROMPT;
         let currentLesson = null;
         let currentLessonId = null;
@@ -12914,7 +13055,15 @@ ${existingLeads}
             const canMoveNext = typeof index === "number" && typeof totalInGroup === "number" && index < totalInGroup - 1;
 
             return `
-                <div class="squircle-tile lesson-grid-card" data-lesson-id="${l.id}" data-subject-group="${subjectGroup || subj}" draggable="true">
+                ${(() => {
+                    const isSelected = selectedLessonDeleteIds.has(l.id);
+                    return `<div class="squircle-tile lesson-grid-card ${isSelected ? 'is-batch-delete-selected' : ''}" data-lesson-id="${l.id}" data-subject-group="${subjectGroup || subj}" draggable="${!isBatchLessonDeleteMode}">
+                        ${isBatchLessonDeleteMode ? `
+                            <div class="lesson-card-select-wrap" onclick="event.stopPropagation();" title="この授業を選択">
+                                <input type="checkbox" class="lesson-card-checkbox" data-lesson-id="${l.id}" ${isSelected ? 'checked' : ''} onchange="toggleSelectLessonForDelete('${l.id}', this.checked, event)">
+                            </div>
+                        ` : ''}`;
+                })()}
                     <div class="lesson-grid-card-top">
                         <div style="display:flex; align-items:center; gap:0.35rem; flex-wrap:wrap;">
                             <span class="lesson-progress-badge ${badgeClass}">${badgeText}</span>
@@ -13187,8 +13336,14 @@ ${existingLeads}
             listEl.querySelectorAll("[data-lesson-id]").forEach(card => {
                 card.addEventListener("click", (e) => {
                     if (isDraggingLessonCard) return;
-                    if (e.target.closest("button") || e.target.closest(".lesson-drag-handle")) return;
-                    window.location.href = `lesson.html?id=${card.getAttribute("data-lesson-id")}`;
+                    if (e.target.closest("button") || e.target.closest(".lesson-drag-handle") || e.target.closest(".lesson-card-select-wrap")) return;
+                    const cardLessonId = card.getAttribute("data-lesson-id");
+                    if (isBatchLessonDeleteMode) {
+                        const willSelect = !selectedLessonDeleteIds.has(cardLessonId);
+                        toggleSelectLessonForDelete(cardLessonId, willSelect, e);
+                        return;
+                    }
+                    window.location.href = `lesson.html?id=${cardLessonId}`;
                 });
 
                 // 🖐️ HTML5 ドラッグ＆ドロップ（PC・タブレット）
@@ -13809,7 +13964,27 @@ ${existingLeads}
             }
         });
 
-        const lessonSearchInputEl = el("lesson-search-input");
+        
+            // 🗑️ 授業一括削除バー イベントリスナー
+            el("btn-toggle-batch-lesson-delete")?.addEventListener("click", () => {
+                toggleBatchLessonDeleteMode();
+            });
+            el("btn-close-batch-delete-bar")?.addEventListener("click", () => {
+                toggleBatchLessonDeleteMode(false);
+            });
+            el("btn-batch-select-all-lessons")?.addEventListener("click", () => {
+                selectAllLessonsForDelete(true);
+            });
+            el("btn-batch-deselect-all-lessons")?.addEventListener("click", () => {
+                selectAllLessonsForDelete(false);
+            });
+            el("btn-execute-batch-delete-lessons")?.addEventListener("click", () => {
+                if (selectedLessonDeleteIds.size > 0) {
+                    purgeLessonsAndRelatedData(Array.from(selectedLessonDeleteIds));
+                }
+            });
+
+            const lessonSearchInputEl = el("lesson-search-input");
         if (lessonSearchInputEl) {
             let searchDebounce = null;
             lessonSearchInputEl.addEventListener("input", (e) => {
@@ -13819,20 +13994,387 @@ ${existingLeads}
             });
         }
 
-        async function deleteLesson(lessonId) {
-            if (!loginUid) return;
-            const lesson = (lastLessonsSnapshot || {})[lessonId];
-            const title = lesson ? (lesson.title || "無題の授業") : "この授業";
-            const ok = confirm(`「${title}」を削除します。\nこの授業の説明・質問履歴はすべて消え、元に戻せません。よろしいですか？`);
+                // ==============================================================
+        // 🗑️ 授業一括削除モード＆UI管理
+        // ==============================================================
+        function toggleBatchLessonDeleteMode(forceState) {
+            if (typeof forceState === "boolean") {
+                isBatchLessonDeleteMode = forceState;
+            } else {
+                isBatchLessonDeleteMode = !isBatchLessonDeleteMode;
+            }
+
+            const bar = el("lesson-batch-delete-bar");
+            const btn = el("btn-toggle-batch-lesson-delete");
+
+            if (!isBatchLessonDeleteMode) {
+                selectedLessonDeleteIds.clear();
+                if (bar) bar.style.display = "none";
+                if (btn) {
+                    btn.style.background = "rgba(239, 68, 68, 0.08)";
+                    btn.style.color = "#dc2626";
+                    btn.innerHTML = "🗑️ 授業を一括削除";
+                }
+            } else {
+                if (bar) bar.style.display = "block";
+                if (btn) {
+                    btn.style.background = "#dc2626";
+                    btn.style.color = "#ffffff";
+                    btn.innerHTML = "✕ 一括削除を終了";
+                }
+            }
+
+            updateLessonBatchBarUI();
+            renderLessonList(lastLessonsSnapshot);
+        }
+
+        function toggleSelectLessonForDelete(lessonId, isChecked, event) {
+            if (event) event.stopPropagation();
+            if (!lessonId) return;
+
+            if (isChecked) {
+                selectedLessonDeleteIds.add(lessonId);
+            } else {
+                selectedLessonDeleteIds.delete(lessonId);
+            }
+
+            // DOM上のカードおよびチェックボックスの状態を即時同期
+            const card = document.querySelector(`.lesson-grid-card[data-lesson-id="${lessonId}"]`);
+            if (card) {
+                if (isChecked) {
+                    card.classList.add("is-batch-delete-selected");
+                } else {
+                    card.classList.remove("is-batch-delete-selected");
+                }
+                const chk = card.querySelector(".lesson-card-checkbox");
+                if (chk) chk.checked = isChecked;
+            }
+
+            updateLessonBatchBarUI();
+        }
+
+        function selectAllLessonsForDelete(selectAll) {
+            const listEl = el("lesson-list");
+            if (!listEl) return;
+            const cards = listEl.querySelectorAll(".lesson-grid-card[data-lesson-id]");
+
+            cards.forEach(card => {
+                const lid = card.getAttribute("data-lesson-id");
+                if (!lid) return;
+                if (selectAll) {
+                    selectedLessonDeleteIds.add(lid);
+                    card.classList.add("is-batch-delete-selected");
+                } else {
+                    selectedLessonDeleteIds.delete(lid);
+                    card.classList.remove("is-batch-delete-selected");
+                }
+                const chk = card.querySelector(".lesson-card-checkbox");
+                if (chk) chk.checked = selectAll;
+            });
+
+            if (!selectAll) {
+                selectedLessonDeleteIds.clear();
+            }
+
+            updateLessonBatchBarUI();
+        }
+
+        function updateLessonBatchBarUI() {
+            const bar = el("lesson-batch-delete-bar");
+            const counter = el("lesson-batch-selected-count");
+            const execBtn = el("btn-execute-batch-delete-lessons");
+
+            const count = selectedLessonDeleteIds.size;
+            if (counter) counter.textContent = `${count} 件選択中`;
+            if (execBtn) {
+                execBtn.disabled = (count === 0);
+                execBtn.innerHTML = count > 0 
+                    ? `🗑️ 選択した ${count} 件の授業を一括削除` 
+                    : `🗑️ 選択した授業を一括削除`;
+            }
+        }
+
+        // ==============================================================
+        // ⚡ 授業と関連データ（暗記・問題・年表等）の完全徹底パージエンジン
+        // ==============================================================
+        async function purgeLessonsAndRelatedData(lessonIdList) {
+            if (!loginUid) {
+                showToast("ログインが必要です。", "error");
+                return;
+            }
+            if (!Array.isArray(lessonIdList) || lessonIdList.length === 0) {
+                showToast("削除する授業が選択されていません。", "warning");
+                return;
+            }
+
+            const targetLids = new Set(lessonIdList);
+            const count = targetLids.size;
+
+            // タイトル案内文の生成
+            let titleDesc = "";
+            if (count === 1) {
+                const singleId = lessonIdList[0];
+                const lesson = (lastLessonsSnapshot || {})[singleId];
+                titleDesc = `「${lesson?.title || "この授業"}」`;
+            } else {
+                const firstId = lessonIdList[0];
+                const firstLesson = (lastLessonsSnapshot || {})[firstId];
+                titleDesc = `「${firstLesson?.title || "授業"}」ほか計 ${count} 件の授業`;
+            }
+
+            const ok = confirm(`【⚠️ 授業と関連データの完全徹底削除】\n\n${titleDesc}を完全に削除します。\n\nこれに伴い、以下の関連データも完全に消去されます：\n✅ 授業本体（講義テキスト・構成パート・受講進捗）\n✅ 紐づくすべての暗記事項 ＆ SRS復習進捗（memorizeProgress）\n✅ 選択問題・復習演習データ（problems）\n✅ 暗記カードの自分用メモ（card_memos）\n✅ 関連する年表メモ・自作語呂合わせ（timelineNotes）\n✅ 誤答履歴（mistakes）＆ 質問ログ（qna_logs）\n✅ カスタムタブの登録情報\n\nこの操作は取り消せません。本当に削除しますか？`);
             if (!ok) return;
 
+            showToast("🗑️ 授業と関連データを徹底削除中...", "info", 10000);
+
             try {
-                await set(ref(database, 'users/' + loginUid + '/lessons/' + lessonId), null);
-                showToast("授業を削除しました。", "success", 2000);
-            } catch (error) {
-                console.error(error);
-                showToast("削除に失敗しました。原因: " + error.message, "error", 8000);
+                const updates = {};
+
+                // 1. 授業本体の削除設定
+                targetLids.forEach(lid => {
+                    updates[`users/${loginUid}/lessons/${lid}`] = null;
+                });
+
+                // 2. 暗記事項 ＆ SRS進捗 (memorizeProgress) の完全パージ
+                try {
+                    const memSnap = await get(ref(database, `users/${loginUid}/memorizeProgress`));
+                    if (memSnap.exists()) {
+                        const memData = memSnap.val();
+                        Object.entries(memData).forEach(([pKey, pVal]) => {
+                            let shouldDelete = false;
+                            for (const lid of targetLids) {
+                                if (
+                                    pKey === lid ||
+                                    pKey.startsWith(`mem_${lid}_`) ||
+                                    pKey.startsWith(`${lid}_`) ||
+                                    pKey.startsWith(`${lid}:`) ||
+                                    pKey.includes(lid) ||
+                                    (pVal && pVal.lessonId === lid)
+                                ) {
+                                    shouldDelete = true;
+                                    break;
+                                }
+                            }
+                            if (shouldDelete) {
+                                updates[`users/${loginUid}/memorizeProgress/${pKey}`] = null;
+                                if (typeof lessonMemorizeProgress !== "undefined") {
+                                    delete lessonMemorizeProgress[pKey];
+                                }
+                            }
+                        });
+                    }
+                } catch (e) {
+                    console.warn("Failed to fetch memorizeProgress for purge:", e);
+                }
+
+                // 3. 自分用メモ (card_memos) の完全パージ
+                try {
+                    const cmSnap = await get(ref(database, `users/${loginUid}/card_memos`));
+                    if (cmSnap.exists()) {
+                        const cmData = cmSnap.val();
+                        Object.keys(cmData).forEach(cKey => {
+                            let shouldDelete = false;
+                            for (const lid of targetLids) {
+                                if (
+                                    cKey === lid ||
+                                    cKey.startsWith(`mem_${lid}_`) ||
+                                    cKey.startsWith(`memorize_${lid}_`) ||
+                                    cKey.startsWith(`${lid}_`) ||
+                                    cKey.startsWith(`${lid}:`) ||
+                                    cKey.includes(lid)
+                                ) {
+                                    shouldDelete = true;
+                                    break;
+                                }
+                            }
+                            if (shouldDelete) {
+                                updates[`users/${loginUid}/card_memos/${cKey}`] = null;
+                            }
+                        });
+                    }
+                } catch (e) {
+                    console.warn("Failed to fetch card_memos for purge:", e);
+                }
+
+                // 4. 演習問題 (problems) の完全パージ
+                try {
+                    const probSnap = await get(ref(database, `users/${loginUid}/problems`));
+                    if (probSnap.exists()) {
+                        const probData = probSnap.val();
+                        Object.entries(probData).forEach(([probId, pVal]) => {
+                            if (pVal && pVal.lessonId && targetLids.has(pVal.lessonId)) {
+                                updates[`users/${loginUid}/problems/${probId}`] = null;
+                            }
+                        });
+                    }
+                } catch (e) {
+                    console.warn("Failed to fetch problems for purge:", e);
+                }
+
+                // 5. 誤答履歴 (mistakes) の完全パージ
+                try {
+                    const misSnap = await get(ref(database, `users/${loginUid}/mistakes`));
+                    if (misSnap.exists()) {
+                        const misData = misSnap.val();
+                        Object.entries(misData).forEach(([mId, mVal]) => {
+                            if (mVal && mVal.lessonId && targetLids.has(mVal.lessonId)) {
+                                updates[`users/${loginUid}/mistakes/${mId}`] = null;
+                            }
+                        });
+                    }
+                } catch (e) {
+                    console.warn("Failed to fetch mistakes for purge:", e);
+                }
+
+                // 6. 質問履歴・Q&Aログ (qna_logs) の完全パージ
+                try {
+                    const qnaSnap = await get(ref(database, `users/${loginUid}/qna_logs`));
+                    if (qnaSnap.exists()) {
+                        const qnaData = qnaSnap.val();
+                        Object.entries(qnaData).forEach(([qId, qVal]) => {
+                            if (qVal && qVal.lessonId && targetLids.has(qVal.lessonId)) {
+                                updates[`users/${loginUid}/qna_logs/${qId}`] = null;
+                            }
+                        });
+                    }
+                } catch (e) {
+                    console.warn("Failed to fetch qna_logs for purge:", e);
+                }
+
+                // 7. 年表データ (timelineNotes & localStorage) の完全パージ
+                const candidateEvents = [];
+                targetLids.forEach(lid => {
+                    const l = (lastLessonsSnapshot || {})[lid];
+                    if (l && Array.isArray(l.historicalEvents)) {
+                        candidateEvents.push(...l.historicalEvents);
+                    }
+                });
+
+                if (candidateEvents.length > 0) {
+                    // 残る授業に含まれるイベントキーのセットを作成
+                    const remainingEventKeys = new Set();
+                    Object.entries(lastLessonsSnapshot || {}).forEach(([lid, l]) => {
+                        if (!targetLids.has(lid) && l && Array.isArray(l.historicalEvents)) {
+                            l.historicalEvents.forEach(ev => {
+                                if (ev && ev.name) {
+                                    remainingEventKeys.add(`${ev.name}_${ev.year || ""}`);
+                                }
+                            });
+                        }
+                    });
+
+                    // 削除対象のイベントキーのうち、残る授業にはないキーを特定
+                    const orphanEventKeys = new Set();
+                    candidateEvents.forEach(ev => {
+                        if (ev && ev.name) {
+                            const rawKey = `${ev.name}_${ev.year || ""}`;
+                            if (!remainingEventKeys.has(rawKey)) {
+                                orphanEventKeys.add(rawKey);
+                            }
+                        }
+                    });
+
+                    if (orphanEventKeys.size > 0) {
+                        try {
+                            const tlSnap = await get(ref(database, `users/${loginUid}/timelineNotes`));
+                            if (tlSnap.exists()) {
+                                const tlData = tlSnap.val();
+                                orphanEventKeys.forEach(rawKey => {
+                                    const safeKey = sanitizeDbKey(rawKey);
+                                    if (tlData[safeKey] !== undefined) {
+                                        updates[`users/${loginUid}/timelineNotes/${safeKey}`] = null;
+                                    }
+                                    if (tlData[rawKey] !== undefined) {
+                                        updates[`users/${loginUid}/timelineNotes/${rawKey}`] = null;
+                                    }
+                                });
+                            }
+                        } catch (e) {
+                            console.warn("Failed to fetch timelineNotes for purge:", e);
+                        }
+
+                        // localStorage の flora_timeline_user_notes からも削除
+                        try {
+                            const localNotes = JSON.parse(localStorage.getItem("flora_timeline_user_notes") || "{}");
+                            let modified = false;
+                            orphanEventKeys.forEach(rawKey => {
+                                if (localNotes[rawKey]) {
+                                    delete localNotes[rawKey];
+                                    modified = true;
+                                }
+                            });
+                            if (modified) {
+                                localStorage.setItem("flora_timeline_user_notes", JSON.stringify(localNotes));
+                            }
+                        } catch (e) {}
+                    }
+                }
+
+                // 8. カスタムタブの登録から該当授業を除去
+                try {
+                    const tabs = JSON.parse(localStorage.getItem("flora_lesson_tabs") || "[]");
+                    let tabsModified = false;
+                    tabs.forEach(t => {
+                        if (Array.isArray(t.lessonIds)) {
+                            const initialLen = t.lessonIds.length;
+                            t.lessonIds = t.lessonIds.filter(id => !targetLids.has(id));
+                            if (t.lessonIds.length !== initialLen) tabsModified = true;
+                        }
+                    });
+                    if (tabsModified) {
+                        localStorage.setItem("flora_lesson_tabs", JSON.stringify(tabs));
+                        if (typeof renderLessonTabsBar === "function") renderLessonTabsBar();
+                    }
+                } catch (e) {}
+
+                // 9. ローカルキャッシュの更新
+                targetLids.forEach(lid => {
+                    if (lastLessonsSnapshot && lastLessonsSnapshot[lid]) {
+                        delete lastLessonsSnapshot[lid];
+                    }
+                });
+                try {
+                    const cached = JSON.parse(localStorage.getItem('cached_lessons') || '{}');
+                    let cacheModified = false;
+                    targetLids.forEach(lid => {
+                        if (cached[lid]) {
+                            delete cached[lid];
+                            cacheModified = true;
+                        }
+                    });
+                    if (cacheModified) {
+                        localStorage.setItem('cached_lessons', JSON.stringify(cached));
+                    }
+                } catch (e) {}
+
+                // 10. Firebase Realtime Database アトミック更新の実行！
+                await update(ref(database), updates);
+
+                // 11. 後処理 & UI同期
+                selectedLessonDeleteIds.clear();
+                updateLessonBatchBarUI();
+                renderLessonList(lastLessonsSnapshot);
+
+                // もし現在受講中画面で削除された授業を表示していた場合は一覧へ戻す
+                if (currentLessonId && targetLids.has(currentLessonId)) {
+                    currentLesson = null;
+                    currentLessonId = null;
+                    window.history.replaceState({}, document.title, "lesson.html");
+                    if (el("view-lesson-run")) el("view-lesson-run").classList.add("hidden");
+                    if (el("view-lesson-home")) el("view-lesson-home").classList.remove("hidden");
+                }
+
+                showToast(`🎉 ${count}件の授業と関連データ（暗記事項・問題・年表等）を完全に徹底削除しました！`, "success", 4000);
+            } catch (err) {
+                console.error("Failed to purge lessons and related data:", err);
+                showToast("削除に失敗しました: " + err.message, "error", 8000);
             }
+        }
+
+        // 単一授業削除（完全徹底削除エンジンを共用）
+        async function deleteLesson(lessonId) {
+            if (!lessonId) return;
+            await purgeLessonsAndRelatedData([lessonId]);
         }
 
         function renderTopicRoadmap(lessonsObj) {
@@ -19717,5 +20259,26 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
             }
         }
    </script>
+
+    <!-- 🗑️ 授業一括削除フローティングバー -->
+    <div id="lesson-batch-delete-bar" class="lesson-batch-bar" style="display:none;">
+        <div class="lesson-batch-bar-inner">
+            <div class="lesson-batch-bar-left">
+                <span class="lesson-batch-bar-title">🗑️ 授業の一括削除</span>
+                <span class="lesson-batch-bar-counter" id="lesson-batch-selected-count">0 件選択中</span>
+                <div class="lesson-batch-quick-btns">
+                    <button type="button" class="lesson-batch-btn btn-secondary" id="btn-batch-select-all-lessons">全選択</button>
+                    <button type="button" class="lesson-batch-btn btn-secondary" id="btn-batch-deselect-all-lessons">選択解除</button>
+                </div>
+            </div>
+            <div class="lesson-batch-bar-actions">
+                <button type="button" class="lesson-batch-btn btn-danger" id="btn-execute-batch-delete-lessons" disabled>
+                    🗑️ 選択した授業を一括削除
+                </button>
+                <button type="button" class="lesson-batch-btn btn-close" id="btn-close-batch-delete-bar">✕ 終了</button>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>
