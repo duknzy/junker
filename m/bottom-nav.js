@@ -183,6 +183,128 @@
     };
 
     // ==========================================================================
+    // 🧹 モバイル版 localStorage 緊急サニタイズ & 空き容量復旧 (強制ログアウト防止)
+    // ==========================================================================
+    (function sanitizeLocalStorage() {
+        try {
+            const heavyKeys = [
+                'flora_wallpaper',
+                'cached_lessons',
+                'flora_offline_all_lessons',
+                'flora_srs_memorize_progress',
+                'local_card_user_memos',
+                'flora_timeline_user_notes'
+            ];
+            heavyKeys.forEach(k => {
+                try { localStorage.removeItem(k); } catch(_) {}
+            });
+
+            for (let i = localStorage.length - 1; i >= 0; i--) {
+                const k = localStorage.key(i);
+                if (k && (k.startsWith('flora_cached_lessons_') || k.startsWith('flora_cache_'))) {
+                    try { localStorage.removeItem(k); } catch(_) {}
+                }
+            }
+        } catch(e) {
+            console.warn('[Flora Mobile] sanitizeLocalStorage error:', e);
+        }
+    })();
+
+    // ==========================================================================
+    // 🗄️ IndexedDB 汎用キャッシュストレージ (flora_cache_db)
+    // ==========================================================================
+    const CACHE_DB_NAME = 'flora_cache_db';
+    const CACHE_DB_VERSION = 1;
+    const CACHE_STORE_NAME = 'cache';
+
+    function openCacheDB() {
+        return new Promise((resolve, reject) => {
+            if (!window.indexedDB) {
+                return reject(new Error('IndexedDB not supported'));
+            }
+            const request = indexedDB.open(CACHE_DB_NAME, CACHE_DB_VERSION);
+            request.onupgradeneeded = (event) => {
+                const db = event.target.result;
+                if (!db.objectStoreNames.contains(CACHE_STORE_NAME)) {
+                    db.createObjectStore(CACHE_STORE_NAME);
+                }
+            };
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    if (!window.floraCacheDB) {
+        window.floraCacheDB = {
+            async get(key) {
+                try {
+                    const db = await openCacheDB();
+                    return new Promise((resolve, reject) => {
+                        const tx = db.transaction(CACHE_STORE_NAME, 'readonly');
+                        const store = tx.objectStore(CACHE_STORE_NAME);
+                        const req = store.get(key);
+                        req.onsuccess = () => { db.close(); resolve(req.result !== undefined ? req.result : null); };
+                        req.onerror = () => { db.close(); reject(req.error); };
+                    });
+                } catch(e) {
+                    return null;
+                }
+            },
+            async set(key, value) {
+                try {
+                    const db = await openCacheDB();
+                    return new Promise((resolve, reject) => {
+                        const tx = db.transaction(CACHE_STORE_NAME, 'readwrite');
+                        const store = tx.objectStore(CACHE_STORE_NAME);
+                        store.put(value, key);
+                        tx.oncomplete = () => { db.close(); resolve(); };
+                        tx.onerror = () => { db.close(); reject(tx.error); };
+                    });
+                } catch(e) {
+                    console.warn('[FloraCacheDB Mobile] set error:', key, e);
+                }
+            },
+            async delete(key) {
+                try {
+                    const db = await openCacheDB();
+                    return new Promise((resolve, reject) => {
+                        const tx = db.transaction(CACHE_STORE_NAME, 'readwrite');
+                        const store = tx.objectStore(CACHE_STORE_NAME);
+                        store.delete(key);
+                        tx.oncomplete = () => { db.close(); resolve(); };
+                        tx.onerror = () => { db.close(); reject(tx.error); };
+                    });
+                } catch(e) {
+                    console.warn('[FloraCacheDB Mobile] delete error:', key, e);
+                }
+            }
+        };
+    }
+
+    if (!window.safeLocalStorageSet) {
+        window.safeLocalStorageSet = function(key, value) {
+            try {
+                localStorage.setItem(key, value);
+            } catch(e) {
+                console.warn('[Flora Mobile] localStorage.setItem failed, attempting quota recovery for key:', key, e);
+                try {
+                    for (let i = localStorage.length - 1; i >= 0; i--) {
+                        const k = localStorage.key(i);
+                        if (k && k !== 'flora_user' && !k.startsWith('firebase:')) {
+                            if (k.includes('cache') || k.includes('notes') || k.includes('progress') || k.includes('events')) {
+                                localStorage.removeItem(k);
+                            }
+                        }
+                    }
+                    localStorage.setItem(key, value);
+                } catch(e2) {
+                    console.error('[Flora Mobile] Critical storage exhaustion:', e2);
+                }
+            }
+        };
+    }
+
+    // ==========================================================================
     // 🗄️ モバイル版 壁紙 & グラスモーフィズム透過マネージャ (IndexedDB)
     // PC版 (sidebar.js / ai-settings.html) と完全に同一のDB & localStorageキーでシームレス共有
     // ==========================================================================

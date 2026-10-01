@@ -22610,25 +22610,31 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
             if (REQUESTED_ID) {
                 await loadLessonView(loginUid, REQUESTED_ID);
             } else {
-                // ⚡ SWR（Stale-While-Revalidate）：ローカルキャッシュから即時0秒描画
+                // ⚡ SWR（Stale-While-Revalidate）：IndexedDBキャッシュから即時0秒描画 (localStorage容量を一切圧迫しない)
                 try {
-                    const cachedRaw = localStorage.getItem('flora_cached_lessons_' + loginUid);
-                    if (cachedRaw) {
-                        const cachedObj = JSON.parse(cachedRaw);
-                        lastLessonsSnapshot = cachedObj;
-                        renderContinueCard(cachedObj);
-                        renderLessonList(cachedObj);
-                        renderContinuationOptions(cachedObj);
-                        renderTopicRoadmap(cachedObj);
-                    }
+                    // 旧localStorageの残骸があれば即座に削除して容量解放
+                    localStorage.removeItem('flora_cached_lessons_' + loginUid);
                 } catch(e) {}
+
+                if (window.floraCacheDB) {
+                    try {
+                        const cachedObj = await window.floraCacheDB.get('flora_cached_lessons_' + loginUid);
+                        if (cachedObj && !lastLessonsSnapshot) {
+                            lastLessonsSnapshot = cachedObj;
+                            renderContinueCard(cachedObj);
+                            renderLessonList(cachedObj);
+                            renderContinuationOptions(cachedObj);
+                            renderTopicRoadmap(cachedObj);
+                        }
+                    } catch(e) {}
+                }
 
                 // Firebase同期
                 onValue(ref(database, 'users/' + loginUid + '/lessons'), (snapshot) => {
                     lastLessonsSnapshot = snapshot.val() || {};
-                    try {
-                        localStorage.setItem('flora_cached_lessons_' + loginUid, JSON.stringify(lastLessonsSnapshot));
-                    } catch(e) {}
+                    if (window.floraCacheDB) {
+                        window.floraCacheDB.set('flora_cached_lessons_' + loginUid, lastLessonsSnapshot).catch(() => {});
+                    }
                     renderContinueCard(lastLessonsSnapshot);
                     renderLessonList(lastLessonsSnapshot);
                     renderContinuationOptions(lastLessonsSnapshot);

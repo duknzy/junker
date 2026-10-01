@@ -822,12 +822,8 @@ document.getElementById("io-import-file").addEventListener("change", async (e) =
                 const dataUrl = ev.target.result;
                 if (window.floraWallpaperDB) {
                     window.floraWallpaperDB.save(dataUrl).catch(err => console.warn("IndexedDB wallpaper save error:", err));
-                    try { localStorage.removeItem('flora_wallpaper'); } catch(e) {}
-                } else {
-                    try {
-                        localStorage.setItem('flora_wallpaper', dataUrl);
-                    } catch(err) {}
                 }
+                try { localStorage.removeItem('flora_wallpaper'); } catch(e) {}
                 document.body.style.setProperty('--user-wallpaper', `url("${dataUrl}")`);
                 document.body.classList.add('has-custom-wallpaper');
                 showToast("🖼️ 壁紙を設定しました", "success");

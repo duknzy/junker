@@ -3858,10 +3858,29 @@
         let rawQnaLogs = {};
         let rawLessons = {};
         let rawMemorizeProgress = {}; // users/${user.uid}/memorizeProgress のキャッシュ
-        try {
-            const cachedProg = localStorage.getItem("flora_srs_memorize_progress");
-            if (cachedProg) rawMemorizeProgress = JSON.parse(cachedProg);
-        } catch(_) {}
+        // 🗄️ IndexedDB (floraCacheDB) 連携で localStorage の容量枯渇・強制ログアウトを根本防止
+        if (window.floraCacheDB) {
+            window.floraCacheDB.get("flora_srs_memorize_progress").then(cachedProg => {
+                if (cachedProg && Object.keys(rawMemorizeProgress).length === 0) {
+                    rawMemorizeProgress = cachedProg;
+                    if (typeof invalidateInsightsDataCache === "function") invalidateInsightsDataCache();
+                    if (typeof updateSrsDashboardCounts === "function") updateSrsDashboardCounts();
+                    if (typeof renderActiveView === "function") renderActiveView();
+                }
+            }).catch(() => {});
+        }
+
+        function saveMemorizeProgressLocally() {
+            if (window.floraCacheDB) {
+                window.floraCacheDB.set("flora_srs_memorize_progress", rawMemorizeProgress).catch(() => {});
+            }
+        }
+
+        function saveCardUserMemosLocally() {
+            if (window.floraCacheDB) {
+                window.floraCacheDB.set("local_card_user_memos", rawCardUserMemos).catch(() => {});
+            }
+        }
 
         function escapeHtml(str) {
             if (str === null || str === undefined) return "";
@@ -5399,9 +5418,7 @@
                 updatedAt: Date.now()
             };
             rawMemorizeProgress[pKey] = progressData;
-            try {
-                localStorage.setItem("flora_srs_memorize_progress", JSON.stringify(rawMemorizeProgress));
-            } catch(_) {}
+            saveMemorizeProgressLocally();
 
             // 🛡️ Firebase onValue の再描画抑制タイムスタンプを async 操作の前に設定
             // （await 中に onValue が発火しても renderActiveView を抑制してアコーディオン閉じを防止）
@@ -5420,7 +5437,7 @@
                 if (remote && remote.updatedAt && remote.updatedAt > progressData.updatedAt) {
                     console.info("[Flora PC SRS] 別端末で新しい進捗があるため上書きを防止しました:", pKey);
                     rawMemorizeProgress[pKey] = remote;
-                    try { localStorage.setItem("flora_srs_memorize_progress", JSON.stringify(rawMemorizeProgress)); } catch(_) {}
+                    saveMemorizeProgressLocally();
                 } else {
                     await update(targetRef, progressData);
                 }
@@ -6128,7 +6145,7 @@
 
             try {
                 await update(ref(database), updates);
-                try { localStorage.setItem("flora_srs_memorize_progress", JSON.stringify(rawMemorizeProgress)); } catch(_) {}
+                saveMemorizeProgressLocally();
                 selectedMemorizeKeys.clear();
                 invalidateInsightsDataCache();
                 updateSrsDashboardCounts();
@@ -6310,7 +6327,7 @@
 
             try {
                 await update(ref(database), updates);
-                try { localStorage.setItem("flora_srs_memorize_progress", JSON.stringify(rawMemorizeProgress)); } catch(_) {}
+                saveMemorizeProgressLocally();
                 invalidateInsightsDataCache();
                 updateSrsDashboardCounts();
                 renderActiveView();
@@ -6360,7 +6377,7 @@
 
             try {
                 await update(ref(database), updates);
-                try { localStorage.setItem("flora_srs_memorize_progress", JSON.stringify(rawMemorizeProgress)); } catch(_) {}
+                saveMemorizeProgressLocally();
                 invalidateInsightsDataCache();
                 updateSrsDashboardCounts();
                 renderActiveView();
@@ -6453,7 +6470,7 @@
                 updates[`users/${currentUser.uid}/lessons/${lessonId}/updatedAt`] = new Date().toISOString();
                 updates[`users/${currentUser.uid}/memorizeProgress/${pKey}`] = null;
                 await update(ref(database), updates);
-                try { localStorage.setItem("flora_srs_memorize_progress", JSON.stringify(rawMemorizeProgress)); } catch(_) {}
+                saveMemorizeProgressLocally();
                 lesson.memorizationPoints = newPoints;
                 invalidateInsightsDataCache();
                 updateSrsDashboardCounts();
@@ -9392,9 +9409,7 @@
             const safeKey = sanitizeDbKey(pKey);
             pendingSrsUpdates[safeKey] = progressData;
             rawMemorizeProgress[safeKey] = progressData;
-            try {
-                localStorage.setItem("flora_srs_memorize_progress", JSON.stringify(rawMemorizeProgress));
-            } catch(_) {}
+            saveMemorizeProgressLocally();
 
             // 🚀 PC・スマホ間でズレが生じないよう即時Firebase書き込み（若返り完全防止）
             if (currentUser && currentUser.uid) {
@@ -9404,7 +9419,7 @@
                     if (remote && remote.updatedAt && remote.updatedAt > progressData.updatedAt) {
                         console.info("[Flora PC SRS] Remote is newer, skipping overwrite for:", safeKey);
                         rawMemorizeProgress[safeKey] = remote;
-                        try { localStorage.setItem("flora_srs_memorize_progress", JSON.stringify(rawMemorizeProgress)); } catch(_) {}
+                        saveMemorizeProgressLocally();
                         return;
                     }
                     update(targetRef, progressData).catch(err => console.warn("[Flora SRS] Immediate progress save failed:", err));
@@ -10686,10 +10701,14 @@
         // 📝 単語追加メモ（自分用メモ）ロジック
         // ==========================================
         let rawCardUserMemos = {};
-        try {
-            const savedMemos = localStorage.getItem("local_card_user_memos");
-            if (savedMemos) rawCardUserMemos = JSON.parse(savedMemos);
-        } catch(e) {}
+        if (window.floraCacheDB) {
+            window.floraCacheDB.get("local_card_user_memos").then(savedMemos => {
+                if (savedMemos && Object.keys(rawCardUserMemos).length === 0) {
+                    rawCardUserMemos = savedMemos;
+                    if (typeof updateFcUserMemoDisplay === "function") updateFcUserMemoDisplay();
+                }
+            }).catch(() => {});
+        }
 
         function getCardMemoKey(card) {
             if (!card) return "";
@@ -10743,9 +10762,7 @@
                 fcCurrentCard.userMemo = "";
             }
 
-            try {
-                localStorage.setItem("local_card_user_memos", JSON.stringify(rawCardUserMemos));
-            } catch(e) {}
+            saveCardUserMemosLocally();
 
             if (currentUser) {
                 try {
@@ -12134,9 +12151,7 @@
             onValue(ref(database, 'users/' + user.uid + '/memorizeProgress'), (snapshot) => {
                 const remoteData = snapshot.val() || {};
                 rawMemorizeProgress = mergeSrsProgressData(rawMemorizeProgress, remoteData);
-                try {
-                    localStorage.setItem("flora_srs_memorize_progress", JSON.stringify(rawMemorizeProgress));
-                } catch(_) {}
+                saveMemorizeProgressLocally();
                 // キャッシュを破棄して他端末での進捗変更を即時反映
                 invalidateInsightsDataCache();
 
@@ -12153,9 +12168,7 @@
             // 📝 単語・カードのユーザー追加メモをリアルタイム購読
             onValue(ref(database, 'users/' + user.uid + '/card_memos'), (snapshot) => {
                 rawCardUserMemos = snapshot.val() || {};
-                try {
-                    localStorage.setItem("local_card_user_memos", JSON.stringify(rawCardUserMemos));
-                } catch(e) {}
+                saveCardUserMemosLocally();
                 if (typeof updateFcUserMemoDisplay === "function") {
                     updateFcUserMemoDisplay();
                 }

@@ -1283,7 +1283,8 @@ async function checkAndLoadLinkedLesson(uid) {
             if (user) {
                 currentUser = user;
                 try {
-                    localStorage.setItem('flora_user', JSON.stringify({
+                    const saveFn = window.safeLocalStorageSet || ((k, v) => localStorage.setItem(k, v));
+                    saveFn('flora_user', JSON.stringify({
                         uid: user.uid,
                         name: user.displayName || user.email?.split('@')[0] || "Flora Student",
                         email: user.email || "",

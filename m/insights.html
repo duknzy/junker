@@ -3054,29 +3054,48 @@
         // 状態
         let currentUser = null;
         let allLessons = {};
-        try {
-            const cached = localStorage.getItem("flora_offline_all_lessons");
-            if (cached) allLessons = JSON.parse(cached);
-        } catch(_) {}
         let allProblems = {};
         let allQnaLogs = {};
         let allMemorizeProgress = {};
-        try {
-            const cachedProg = localStorage.getItem("flora_srs_memorize_progress");
-            if (cachedProg) allMemorizeProgress = JSON.parse(cachedProg);
-        } catch(_) {}
+
+        // 🗄️ IndexedDB (floraCacheDB) から安全にオフラインキャッシュを復旧
+        if (window.floraCacheDB) {
+            Promise.all([
+                window.floraCacheDB.get("flora_offline_all_lessons"),
+                window.floraCacheDB.get("flora_srs_memorize_progress"),
+                window.floraCacheDB.get("local_card_user_memos")
+            ]).then(([cachedLessons, cachedProg, cachedMemos]) => {
+                let needUpdate = false;
+                if (cachedLessons && Object.keys(allLessons).length === 0) {
+                    allLessons = cachedLessons;
+                    needUpdate = true;
+                }
+                if (cachedProg && Object.keys(allMemorizeProgress).length === 0) {
+                    allMemorizeProgress = cachedProg;
+                    needUpdate = true;
+                }
+                if (cachedMemos && (!rawMobileCardUserMemos || Object.keys(rawMobileCardUserMemos).length === 0)) {
+                    rawMobileCardUserMemos = cachedMemos;
+                    needUpdate = true;
+                }
+                if (needUpdate) {
+                    invalidateCardCache();
+                    renderDashboard();
+                }
+            }).catch(() => {});
+        }
         let currentSubjectFilter = "ALL";
         let searchQuery = "";
         let currentCardStatusFilter = "all"; // 'all' | 'unlearned' | 'weak' | 'mastered'
 
-        // ⚡ メインスレッドブロック防止: localStorage非同期デバウンス保存
+        // ⚡ メインスレッドブロック防止: IndexedDB非同期デバウンス保存 (localStorage容量ゼロ消費)
         const _offlineSaveTimers = {};
         function debouncedSaveOffline(key, data, delay = 500) {
             if (_offlineSaveTimers[key]) clearTimeout(_offlineSaveTimers[key]);
             _offlineSaveTimers[key] = setTimeout(() => {
-                try {
-                    localStorage.setItem(key, JSON.stringify(data));
-                } catch(_) {}
+                if (window.floraCacheDB) {
+                    window.floraCacheDB.set(key, data).catch(() => {});
+                }
             }, delay);
         }
 
@@ -5745,9 +5764,9 @@
                 sessionCurrentCard.userMemo = "";
             }
 
-            try {
-                localStorage.setItem("local_card_user_memos", JSON.stringify(rawMobileCardUserMemos));
-            } catch(_) {}
+            if (window.floraCacheDB) {
+                window.floraCacheDB.set("local_card_user_memos", rawMobileCardUserMemos).catch(() => {});
+            }
 
             if (currentUser) {
                 try {
@@ -6190,7 +6209,9 @@
                 }
             });
 
-            try { localStorage.setItem("flora_offline_all_lessons", JSON.stringify(allLessons)); } catch(_) {}
+            if (window.floraCacheDB) {
+                window.floraCacheDB.set("flora_offline_all_lessons", allLessons).catch(() => {});
+            }
             showToast("✨ サンプル暗記カード（8問）を読み込みました！");
             invalidateCardCache();
             renderDashboard();

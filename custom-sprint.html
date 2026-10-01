@@ -2606,7 +2606,7 @@
                         </div>
 
                         <!-- リード文（前提条件） -->
-                        <div class="kyotsu-lead-box" id="kyotsu-context-display"></div>
+                        <div class="kyotsu-lead-box tex2jax_process" id="kyotsu-context-display"></div>
 
                         <!-- 小問セクションコンテナ -->
                         <div id="kyotsu-sections-container" style="display: flex; flex-direction: column; gap: 1.4rem;">
@@ -4948,7 +4948,8 @@
    - 小問 (3)（または選択式の小問）では、必ず choices_groups 配列に target_marks と options（"⓪ ...", "① ...", "② ..." 等）を記述すること。
    - マークの answer は選択肢のインデックス（"0", "1", "2" など、半角数字1文字）にすること。
 3. 数式（LaTeX）とマーク記法の厳格な分離【絶対厳守】：
-   - 数式は必ず $ ... $ で囲むこと。日本語の説明（「のとき」「において」「となる」「より」など）や箇条書きの記号（・）を決して $ ... $ の中に含めないこと。
+   - context_text（導入文・対話文）や各設問・選択肢に含まれるすべての数式・数学記号・文字変数（例: $a_n$, $S_n$, $n$, $a_1=1$, $2^{n-1}$ 等）は、必ず漏れなく $ ... $ で囲んでLaTeX数式として出力すること。
+   - 日本語の説明（「のとき」「において」「となる」「より」など）や箇条書きの記号（・）を決して $ ... $ の中に含めないこと。
    - マーク記号（[ア], [イ], [ウエ] 等）は必ず大括弧で囲み、各 mark の id と完全一致させること。マーク枠を $ ... $ の中に埋め込んではいけません。
 4. 計算の完全な整合性：
    - AIの計算ミス・誤謬は一切許されません。(1)で得た数値、(2)の一般化・立式、(3)の選択肢の正誤判定が数学的に100%正確であること。
@@ -4959,7 +4960,7 @@
   "title": "大問タイトル",
   "subject": "${subject}",
   "field": "${topic}",
-  "context_text": "大問の導入文や前提条件。太郎さんと花子さんの会話など。",
+  "context_text": "大問の導入文や前提条件。太郎さんと花子さんの会話など。※数式・文字変数（例: $a_n$, $S_n$, $a_1=1$, $a_{n+1}=2a_n+n+1$ 等）は対話文の中であっても必ず $...$ で囲んでLaTeX表記にすること。",
   "sections": [
     {
       "section_id": "(1)",
@@ -5119,11 +5120,73 @@
             return list;
         }
 
+                // 🧠 数式自動検出＆LaTeX（$ ... $）ラップ処理
+        // AIが導入文や対話文などでドル記号を付けずに出力した数式・変数（a_n, a_1=1, a_{n+1}=2a_n+n+1, S_n 等）を自動認識して安全に数式化
+        function autoWrapMathExpressions(text) {
+            if (!text) return "";
+            let s = String(text);
+
+            // 1. \( ... \) -> $ ... $, \[ ... \] -> $$ ... $$
+            s = s.replace(/\\\(([sS]*?)\\\)/g, (_, c) => '$' + c + '$');
+            s = s.replace(/\\\(([sS]*?)\\\)/g, (_, c) => '$$' + c + '$$');
+            s = s.replace(/\\\(([sS]*?)\\\)/g, (_, c) => '$' + c + '$');
+            s = s.replace(/\\\(([sS]*?)\\\)/g, (_, c) => '$$' + c + '$$');
+            s = s.replace(/\\\(([sS]*?)\\\)/g, (_, c) => '$' + c + '$');
+            s = s.replace(/\\(([sS]*?)\\)/g, (_, c) => '$' + c + '$');
+            s = s.replace(/\\(([sS]*?)\\)/g, (_, c) => '$$' + c + '$$');
+            s = s.replace(/\(([sS]*?)\)/g, (_, c) => '$' + c + '$');
+            s = s.replace(/\[([sS]*?)\]/g, (_, c) => '$$' + c + '$$');
+
+            // 2. 既存の数式ブロックを安全に退避
+            const mathBlocks = [];
+            const stash = (str) => {
+                return str.replace(/(\$\$[\s\S]*?\$\$|\$[^\$\n]+?\$)/g, m => {
+                    mathBlocks.push(m);
+                    return '@@@MATH' + (mathBlocks.length - 1) + '@@@';
+                });
+            };
+
+            s = stash(s);
+
+            // 3. LaTeXコマンド（\frac, \sqrt, \sum, \int, \vec, \cdot, \times 等）を含む数式
+            s = s.replace(/(\\[a-zA-Z]+(?:\{[^{}]*\}|\[[^\]]*\])*[0-9a-zA-Z_{}^+\-*/().=<>≠≦≧\\・\s]*)/g, (_, c) => {
+                let t = c.trim().replace(/・/g, '\\cdot ');
+                return '$' + t + '$';
+            });
+            s = stash(s);
+
+            // 4. 等式・関係式（例: a_{n+1}=2a_n+n+1, a_1=1, a_2=4, a_3=11, c_n=a_n+n+2, c_{n+1}=2c_n, S_n > 2025 等）
+            s = s.replace(/([a-zA-Z][0-9a-zA-Z_{}^+\-*/()\\・]*\s*(?:=|≠|≒|≈|≦|≧|<=|>=|<|>)\s*[0-9a-zA-Z_{}^+\-*/()\\\[\]ア-ン±・]+)/g, (_, c) => {
+                let t = c.trim().replace(/・/g, '\\cdot ');
+                return '$' + t + '$';
+            });
+            s = stash(s);
+
+            // 5. 添字付き変数・指数表現（例: a_n, a_{n+1}, S_n, c_1, a_n+n+2, 2^{n+2}, 2^{n-1}）
+            s = s.replace(/([a-zA-Z]_[0-9a-zA-Z{}]+(?:\s*[+\-*/]\s*[0-9a-zA-Z_{}]+)*)/g, (_, c) => '$' + c.trim() + '$');
+            s = s.replace(/([0-9a-zA-Z]\^\{?[0-9a-zA-Z+\-]+(?:[+\-][0-9a-zA-Z]+)?\}?)/g, (_, c) => '$' + c.trim() + '$');
+            s = stash(s);
+
+            // 6. 「図n」「図n+1」「n+1枚」などの変数表現
+            s = s.replace(/図([a-zA-Z](?:\s*[+\-]\s*[0-9a-zA-Z]+)?)/g, (_, c) => '図$' + c.trim() + '$');
+            s = s.replace(/([a-zA-Z]\s*[+\-]\s*[0-9]+)枚/g, (_, c) => '$' + c.trim() + '$枚');
+            s = stash(s);
+
+            // 7. 助詞等に挟まれた単独の数学変数（例: 「自然数nを」「整数p,qを」「値xの」）
+            s = s.replace(/(?<=[ぁ-んァ-ヶー一-龠々「（、。\s])([a-zA-Z])(?=[ぁ-んァ-ヶー一-龠々」）、。\s])/g, (_, c) => '$' + c + '$');
+
+            // 8. 退避した数式を復元
+            s = s.replace(/@@@MATH(\d+)@@@/g, (_, idx) => mathBlocks[idx]);
+            return s;
+        }
+
         // 数式内のマーク[ア]をMathJax互換形式に、数式外はHTMLスパンに変換
         function formatKyotsuSectionText(rawText) {
             if (!rawText) return "";
             // 文字列リテラルの \n を実際の改行コードに変換（\neq などのTeXコマンドの \n を壊さないよう英字が後続しないもののみ対象）
             let s = String(rawText).replace(/\\n(?![a-zA-Z])/g, "\n");
+            s = autoWrapMathExpressions(s);
+            s = normalizeMathSyntax(s);
 
             // $$ ... $$ と $ ... $ を安全に分割
             const parts = s.split(/(\$\$[\s\S]*?\$\$|\$[^\$\n]+?\$)/g);
@@ -5135,7 +5198,7 @@
                     let delim = isDisplay ? "$$" : "$";
                     let mathContent = inner.slice(delim.length, -delim.length);
                     mathContent = mathContent.replace(/\[\s*([ア-ンa-zA-Z0-9±]{1,4})\s*\]/g, (match, markId) => {
-                        return `\\cssId{slot-mark-${markId}}{\\class{kyotsu-mark-slot}{\\bbox[border:1.5px solid #059669]{\\text{${markId}}}}}`;
+                        return `\\cssId{slot-mark-${markId}}{\\class{kyotsu-mark-slot}{\\bbox[border:1.5px solid #059669]{\\text{${markId}}}}};
                     });
                     parts[i] = delim + mathContent + delim;
                 } else {
@@ -5187,7 +5250,7 @@
                         <span>🏛️</span>
                         <span>探究の文脈・前提対話（導入）</span>
                     </div>
-                    <div>${leadContent}</div>
+                    <div class="tex2jax_process" style="line-height: 1.8;">${leadContent}</div>
                 `;
             }
 
@@ -6130,6 +6193,10 @@
         async function forceTriggerMathJax(targetElement = null) {
             if (window.MathJax && MathJax.typesetPromise) {
                 try {
+                    if (typeof MathJax.typesetClear === "function") {
+                        if (targetElement) MathJax.typesetClear([targetElement]);
+                        else MathJax.typesetClear();
+                    }
                     if (targetElement) {
                         await MathJax.typesetPromise([targetElement]);
                     } else {
