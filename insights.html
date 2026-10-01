@@ -5220,11 +5220,11 @@
                 nextReview = getTodayStr();
                 showToast("「未習得」に戻しました", "info", 1500);
             } else {
-                newLevel = 5;
-                nextReview = addDaysToDate(getTodayStr(), 35);
+                newLevel = 4;
+                nextReview = addDaysToDate(getTodayStr(), 16);
                 reps++;
                 playFcSound("mastered");
-                showToast("「覚えた！」に登録しました 🎉", "success", 1800);
+                showToast("「覚えた！」に登録しました 🎉 (Lv.4 / 16日後)", "success", 1800);
             }
 
             const progressData = {
@@ -5237,16 +5237,18 @@
             };
             rawMemorizeProgress[pKey] = progressData;
 
+            // 🛡️ Firebase onValue の再描画抑制タイムスタンプを async 操作の前に設定
+            // （await 中に onValue が発火しても renderActiveView を抑制してアコーディオン閉じを防止）
+            window._lastLocalSrsUpdateTimestamp = Date.now();
+            invalidateInsightsDataCache();
+            updateSrsDashboardCounts();
+            updateCardSrsDomInPlace(pKey, progressData);
+
             try {
                 await update(ref(database, `users/${currentUser.uid}/memorizeProgress/${pKey}`), progressData);
             } catch (err) {
                 console.warn("Failed to persist progress:", err);
             }
-
-            window._lastLocalSrsUpdateTimestamp = Date.now();
-            invalidateInsightsDataCache();
-            updateSrsDashboardCounts();
-            updateCardSrsDomInPlace(pKey, progressData);
         };
 
         window._lastLocalSrsUpdateTimestamp = 0;
@@ -5401,6 +5403,16 @@
                 localStorage.setItem("flora_srs_memorize_progress", JSON.stringify(rawMemorizeProgress));
             } catch(_) {}
 
+            // 🛡️ Firebase onValue の再描画抑制タイムスタンプを async 操作の前に設定
+            // （await 中に onValue が発火しても renderActiveView を抑制してアコーディオン閉じを防止）
+            window._lastLocalSrsUpdateTimestamp = Date.now();
+
+            // キャッシュ無効化
+            _cachedBuildMemorizationItems = null;
+
+            // DOMを破棄・再描画せず、該当カードのバッジとボタン状態のみを即座にインプレース更新（画面のチラつき・スクロール飛びを完全防止）
+            updateCardSrsDomInPlace(pKey, progressData);
+
             try {
                 const targetRef = ref(database, `users/${currentUser.uid}/memorizeProgress/${pKey}`);
                 const snap = await get(targetRef);
@@ -5415,14 +5427,6 @@
             } catch (err) {
                 console.warn("Failed to persist progress:", err);
             }
-
-            window._lastLocalSrsUpdateTimestamp = Date.now();
-
-            // キャッシュ無効化
-            _cachedBuildMemorizationItems = null;
-
-            // DOMを破棄・再描画せず、該当カードのバッジとボタン状態のみを即座にインプレース更新（画面のチラつき・スクロール飛びを完全防止）
-            updateCardSrsDomInPlace(pKey, progressData);
         };
 
         // 🧠 カード上での期日バッジHTML生成
@@ -6333,8 +6337,8 @@
             const updates = {};
             const now = Date.now();
             const todayStr = getTodayStr();
-            const nextReview = isMastered ? addDaysToDate(todayStr, 35) : todayStr;
-            const newLevel = isMastered ? 5 : 0;
+            const nextReview = isMastered ? addDaysToDate(todayStr, 16) : todayStr;
+            const newLevel = isMastered ? 4 : 0;
 
             selectedMemorizeKeys.forEach(key => {
                 const [lid, mpId] = key.split(":");
@@ -6351,6 +6355,8 @@
                 rawMemorizeProgress[pKey] = progressData;
                 updates[`users/${currentUser.uid}/memorizeProgress/${pKey}`] = progressData;
             });
+
+            window._lastLocalSrsUpdateTimestamp = Date.now();
 
             try {
                 await update(ref(database), updates);
