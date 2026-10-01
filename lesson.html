@@ -8961,6 +8961,25 @@
             if (counselingLevelItem) {
                 counselingLevelItem.style.display = (track === "single") ? "none" : "block";
             }
+
+            // 🧠 数学・現代文のときは暗記事項自動生成オプションをスマートに調整
+            const cbMemo = el("opt-autogen-memorize");
+            const labelMemo = cbMemo ? cbMemo.closest("label") : null;
+            if (cbMemo && labelMemo) {
+                const isNoMemo = (selectedSubject === "数学" || selectedSubject === "現代文");
+                if (isNoMemo) {
+                    cbMemo.checked = false;
+                    cbMemo.disabled = true;
+                    labelMemo.style.opacity = "0.6";
+                    const titleSpan = labelMemo.querySelector("span[style*='font-weight:750']");
+                    if (titleSpan) titleSpan.textContent = `🧠 暗記事項（暗記カード）作成：${selectedSubject}は思考・演習重視のため自動スキップ`;
+                } else {
+                    cbMemo.disabled = false;
+                    labelMemo.style.opacity = "1";
+                    const titleSpan = labelMemo.querySelector("span[style*='font-weight:750']");
+                    if (titleSpan) titleSpan.textContent = "🧠 暗記事項（暗記カード）を自動抽出・作成する";
+                }
+            }
         }
 
         function setupSubjectCardSelection() {
@@ -11320,11 +11339,16 @@ ${subjectGuide}
                     if (continuationInfoText) basePrompt += `\n\n${continuationInfoText}`;
                     if (topicLevelUpText) basePrompt += `\n\n${topicLevelUpText}`;
 
-                    // 🚀 3つのAIを完全並列 (Promise.all) で同時ディスパッチ！（キーをローテーションしつつlesson_planの設定モデルを適用）
+                    // 🚀 必要最小限のAIのみを完全並列 (Promise.all) でディスパッチ！（数学・現代文は暗記カードを完全スキップしAPI浪費を防止）
+                    const shouldExtractMemorize = (selectedSubject !== "数学" && selectedSubject !== "現代文") && (el("opt-autogen-memorize") ? el("opt-autogen-memorize").checked : true);
+                    const memorizePromise = shouldExtractMemorize
+                        ? callGeminiJSON([{ text: basePrompt + "\n\n暗記すべき重要公式・用語リストをJSONで出力してください。" }], memorizeSystemPrompt, { responseSchema: MEMORIZE_SCHEMA, featureId: "lesson_plan", keyOffset: 2 })
+                        : Promise.resolve({ key_terms: [] });
+
                     const [resStructure, resLecture, resMemorize] = await Promise.all([
                         callGeminiJSON([{ text: basePrompt + "\n\nカリキュラム構成をJSONで出力してください。" }], structureSystemPrompt, { responseSchema: STRUCTURE_SCHEMA, featureId: "lesson_plan", keyOffset: 0 }),
                         callGeminiJSON([{ text: basePrompt + "\n\n超詳細な講義ノート全文をJSONで出力してください。" }], lectureSystemPrompt, { responseSchema: LECTURE_SCHEMA, featureId: "lesson_plan", keyOffset: 1 }),
-                        callGeminiJSON([{ text: basePrompt + "\n\n暗記すべき重要公式・用語リストをJSONで出力してください。" }], memorizeSystemPrompt, { responseSchema: MEMORIZE_SCHEMA, featureId: "lesson_plan", keyOffset: 2 })
+                        memorizePromise
                     ]);
 
                     draftPlan = {
@@ -11465,46 +11489,38 @@ ${curriculumRule}
 ・【📐 数学】：増減表は必ず Markdown 表形式で図示し、同値変形・場合分け・定義域・真数条件の減点防止トラップを徹底網羅すること。
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-【暗記事項 (key_terms) 抽出ルール】
+【講義ノート全文 (extracted_text) 執筆の厳格ルール】
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-・試験で満点を取るために絶対に暗記すべき重要公式・定理・専門用語・定義・反応式を漏れなく抽出してください。
-・※【絶対厳禁】nameには漢字の後ろに括弧書きでふりがな（ひらがな）を付けず、正式表記のみで記述してください。
-${historyInstruction}
+・本プロンプトの最重要責務は、この単元の「参考書1章分に匹敵する超詳細・極上の講義ノート全文」を一切の妥協なく徹底的に書き下ろすことです。
+・数式は必ず $ $ または $$ $$ で囲むこと
+・途中式、定義の成り立ち、直感的なたとえ話、思考プロセスを一切妥協せず網羅的に執筆すること（要約・省略は厳禁）
+・【🚨 難しい漢字の読み仮名徹底】社会系科目（日本史・地理・公民・公共・政治経済等）の歴史用語、人名、地名、制度名、重要概念や、初見で読みにくい漢字には、必ず「漢字（よみがな）」または「<ruby>漢字<rt>よみがな</rt></ruby>」で読み仮名を徹底して付記すること。
+・【🔬 理科基礎（物理・化学・生物・地学）の必修指示：共通テスト実験・探究・思考考察ブロック】：理科基礎科目では、各パート内に必ず以下の『共通テスト実験・探究・思考考察ブロック』を構造的に書き下ろしてください：
+  ①【実験・観察の目的と仮説】
+  ②【対照実験（コントロール）と条件制御（何を一定に保ち、何を変化させたか）】
+  ③【データ・グラフの読み解き急所（傾き・切片・面積・変曲点・ピーク値）】
+  ④【実験手順・器具の理由（共洗い、メニスカス、手順の必然性）】
+  ⑤【共テ頻出！正誤判定トラップ（主語すり替え、例外混同の盲点攻略）】
+・【📐 数学】：増減表は必ず Markdown 表形式で図示し、同値変形・場合分け・定義域・真数条件の減点防止トラップを徹底網羅すること。
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 【🚨 出力形式：以下のJSONスキーマに完全準拠したJSONオブジェクトのみを出力してください（Markdownコードブロック \`\`\`json ... \`\`\` 可）】
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 {
-  "lesson_title": "授業全体の簡潔・明快なタイトル（12〜22文字以内）",
+  "lesson_title": "授業全体の簡潔・明快なタイトル（12〜22文字以内。サブタイトル・煽り文・『〜まで』・『――』・読み仮名括弧は一切禁止）",
   "parts": [
     {
-      "title": "各パートの簡潔な単元名（8〜16文字以内）",
-      "summary": "そのパートで伝えるべきエッセンス・落とし穴・重要概念の要約"
+      "title": "各パートの簡潔な単元名（8〜16文字以内。『Part 1』等の回数番号、サブタイトル『――』、読み仮名括弧は完全禁止）",
+      "summary": "そのパートで伝えるべきエッセンス・落とし穴・重要概念の要約（難しい漢字には読み仮名を併記）"
     }
   ],
-  "extracted_text": "参考書1章分に匹敵する超詳細な講義ノート全文（数式は $ $、読み仮名徹底、実験考察等を含む完全版テキスト）",
-  "key_terms": [
-    {
-      "name": "公式・用語の正式名称",
-      "definition": "定義、公式の適用条件、解法の急所"
-    }
-  ]${isHistoryOrCivics ? `,
-  "historical_events": [
-    {
-      "name": "出来事・事件・法制・判例・条約などの名称",
-      "year": "年代表記（例: 1946年, 645年）",
-      "year_sort": 1946,
-      "region": "分野区分または時代区分",
-      "description": "背景・原因・結果・影響の簡潔な解説（1〜2文）"
-    }
-  ]` : ""}
+  "extracted_text": "参考書1章分に匹敵する超詳細な講義ノート全文（数式は $ $、読み仮名徹底、実験考察等を含む完全版テキスト）"
 }`;
             return prompt;
         }
 
         function getTopicLessonSchema(subject) {
-            const isHistoryOrCivics = (subject === "日本史" || subject === "歴史" || subject === "公共" || subject === "政治・経済" || subject === "政経" || subject === "公民");
-            const schema = {
+            return {
                 type: "OBJECT",
                 properties: {
                     lesson_title: {
@@ -11531,39 +11547,10 @@ ${historyInstruction}
                     extracted_text: {
                         type: "STRING",
                         description: "参考書1章分に匹敵する超詳細な講義ノート全文（数式は $ $、読み仮名徹底、実験考察等を含む完全版テキスト）"
-                    },
-                    key_terms: {
-                        type: "ARRAY",
-                        items: {
-                            type: "OBJECT",
-                            properties: {
-                                name: { type: "STRING", description: "重要公式・用語名（ふりがな括弧なし）" },
-                                definition: { type: "STRING", description: "定義・急所" }
-                            },
-                            required: ["name", "definition"]
-                        }
                     }
                 },
                 required: ["lesson_title", "parts", "extracted_text"]
             };
-
-            if (isHistoryOrCivics) {
-                schema.properties.historical_events = {
-                    type: "ARRAY",
-                    items: {
-                        type: "OBJECT",
-                        properties: {
-                            name: { type: "STRING" },
-                            year: { type: "STRING" },
-                            year_sort: { type: "INTEGER" },
-                            region: { type: "STRING" },
-                            description: { type: "STRING" }
-                        },
-                        required: ["name", "year", "year_sort"]
-                    }
-                };
-            }
-            return schema;
         }
 
         async function submitByotTopicLesson() {
@@ -11974,6 +11961,15 @@ ${extractedText || "（本文なし）"}
         // 授業のチャット進行やプラン確認フローをブロックしない。
         async function ensureMemorizationPoints() {
             if (!currentLesson) return;
+            const subject = currentLesson.subject || (typeof detectLessonSubject === "function" ? detectLessonSubject(currentLesson) : "") || "その他";
+            // 🚫 数学・現代文は暗記カードを自動抽出しない（思考プロセス・演習特化のためAPI浪費を防止）
+            if (subject === "数学" || subject === "現代文") {
+                if (!Array.isArray(currentLesson.memorizationPoints)) {
+                    currentLesson.memorizationPoints = [];
+                }
+                renderMemorizationPoints();
+                return;
+            }
             if (Array.isArray(currentLesson.memorizationPoints)) {
                 renderMemorizationPoints();
                 return;
@@ -12992,11 +12988,17 @@ ${extractedText.slice(0, 15000)}`;
             updateLessonFcBanner();
 
             if (points.length === 0) {
+                const sub = currentLesson?.subject || (typeof detectLessonSubject === "function" ? detectLessonSubject(currentLesson) : "") || "";
+                const isNoMemorizeSubject = (sub === "数学" || sub === "現代文");
+                const emptyIcon = isNoMemorizeSubject ? (sub === "数学" ? "📐" : "📖") : "🧠";
+                const desc = isNoMemorizeSubject
+                    ? `この教科（${sub}）は「丸暗記」ではなく「思考プロセス・論理読解・類題演習」が本質のため、暗記カードの自動抽出はスキップされています。<br>「📖 講義」での本質理解や「🎯 選択問題」「📝 類題演習」をご活用ください。`
+                    : `この単元には暗記事項がまだありません。<br>「完璧に覚えたため削除済み」か「未作成」です。`;
                 container.innerHTML = `
                     <div class="memorize-empty" style="padding:1.5rem 1rem; text-align:center;">
-                        <div style="font-size:1.2rem; margin-bottom:0.4rem;">🧠</div>
+                        <div style="font-size:1.2rem; margin-bottom:0.4rem;">${emptyIcon}</div>
                         <div style="font-size:0.82rem; color:var(--text-secondary); line-height:1.5; margin-bottom:0.8rem;">
-                            この単元には暗記事項がまだありません。<br>「完璧に覚えたため削除済み」か「未作成」です。
+                            ${desc}
                         </div>
                         <div style="display:flex; justify-content:center; gap:0.4rem; flex-wrap:wrap;">
                             <button type="button" class="tactile-btn" style="font-size:0.74rem; padding:0.35rem 0.75rem; background:var(--brand-primary); color:#fff; font-weight:600;" onclick="regenerateLessonMemorizationPoints()">🔄 AIで暗記事項を生成</button>
