@@ -1014,26 +1014,26 @@
         .plan-part-item b { color: var(--brand-primary); font-size: 0.95rem; }
         .plan-part-item p { font-size: 0.86rem; color: var(--text-secondary); margin-top: 0.25rem; line-height: 1.5; }
 
-        /* 💻 PC用 2カラムGrid構成（画面全体を有効活用し、左右の無駄な余白を排除） */
+        /* 💻 PC用 2カラムGrid構成（左右ドラッグリサイズ & 5:5分割対応） */
         .lesson-layout-grid {
             display: grid;
-            grid-template-columns: minmax(0, 1fr) 380px;
-            gap: 1.25rem;
+            grid-template-columns: minmax(0, 1fr) 10px var(--lesson-sidebar-width, 380px);
+            gap: 0.5rem;
             align-items: stretch;
             height: calc(100vh - 195px);
             min-height: 540px;
             width: 100%;
-        }
-        @media (min-width: 1600px) {
-            .lesson-layout-grid {
-                grid-template-columns: minmax(0, 1fr) 420px;
-            }
+            position: relative;
         }
         @media (max-width: 1100px) {
             .lesson-layout-grid {
                 grid-template-columns: 1fr;
                 height: auto;
                 min-height: unset;
+                gap: 1.25rem;
+            }
+            .lesson-split-resizer {
+                display: none !important;
             }
         }
         .lesson-main-card {
@@ -2122,6 +2122,400 @@
         .chat-input {
             flex-grow: 1; background: var(--bg-surface); border: 1px solid var(--border-color);
             padding: 0.55rem 0.85rem; color: var(--text-primary); border-radius: var(--radius-md); font-size: 0.86rem;
+        }
+
+        /* ==========================================================================
+           📝 授業ノート ワークスペース（右画面50%・リッチドキュメント・AIアシスト対応）
+           ========================================================================== */
+
+        /* 左右スプリットリサイザー */
+        .lesson-split-resizer {
+            width: 10px;
+            margin: 0 -2px;
+            cursor: col-resize;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            border-radius: 4px;
+            z-index: 20;
+            transition: background 0.15s ease;
+        }
+        .lesson-split-resizer:hover, .lesson-split-resizer.is-dragging {
+            background: rgba(99, 102, 241, 0.15);
+        }
+        .split-resizer-line {
+            width: 2px;
+            height: 44px;
+            background: var(--border-color);
+            border-radius: 2px;
+            transition: all 0.2s ease;
+        }
+        .lesson-split-resizer:hover .split-resizer-line, .lesson-split-resizer.is-dragging .split-resizer-line {
+            background: var(--brand-primary);
+            height: 84px;
+            box-shadow: 0 0 8px rgba(5, 150, 105, 0.45);
+        }
+
+        /* ノートコンテナ全般 */
+        #tab-notes {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+            min-height: 0;
+            gap: 0.5rem;
+            overflow: hidden;
+            padding-right: 0.1rem;
+        }
+        #tab-notes.active {
+            display: flex;
+        }
+
+        /* ノートヘッダー */
+        .lesson-note-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.45rem;
+            flex-shrink: 0;
+        }
+        .note-header-left {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .note-header-title {
+            font-size: 0.88rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            letter-spacing: -0.01em;
+        }
+        .note-save-badge {
+            font-size: 0.7rem;
+            font-weight: 650;
+            color: var(--text-muted);
+            padding: 0.12rem 0.45rem;
+            background: var(--bg-subtle);
+            border-radius: var(--radius-sm);
+            transition: all 0.2s ease;
+        }
+        .note-save-badge.saved {
+            color: #059669;
+            background: rgba(16, 185, 129, 0.12);
+        }
+        .note-save-badge.saving {
+            color: #d97706;
+            background: rgba(245, 158, 11, 0.12);
+        }
+
+        /* 画面幅プリセット & ビュー切替 */
+        .note-header-right {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+        }
+        .note-width-presets, .note-view-switcher {
+            display: inline-flex;
+            background: var(--bg-subtle);
+            padding: 2px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-color);
+        }
+        .note-preset-btn, .note-view-btn {
+            background: none;
+            border: none;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 0.2rem 0.5rem;
+            border-radius: calc(var(--radius-sm) - 2px);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+        }
+        .note-preset-btn:hover, .note-view-btn:hover {
+            color: var(--text-primary);
+        }
+        .note-preset-btn.active, .note-view-btn.active {
+            background: var(--bg-surface);
+            color: var(--brand-primary);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+
+        /* アクションバー（AI & エクスポート） */
+        .lesson-note-actions-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+            flex-shrink: 0;
+        }
+        .note-ai-group, .note-export-group {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            flex-wrap: wrap;
+        }
+        .note-action-btn {
+            font-size: 0.72rem !important;
+            padding: 0.22rem 0.55rem !important;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        /* リッチ記法装飾ツールバー */
+        .lesson-note-formatting-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            padding: 0.25rem 0.4rem;
+            border-radius: var(--radius-sm);
+            overflow-x: auto;
+            scrollbar-width: none;
+            flex-shrink: 0;
+        }
+        .lesson-note-formatting-bar::-webkit-scrollbar { display: none; }
+        .format-btn-group {
+            display: inline-flex;
+            align-items: center;
+            gap: 2px;
+        }
+        .format-divider {
+            width: 1px;
+            height: 16px;
+            background: var(--border-color);
+            margin: 0 3px;
+            flex-shrink: 0;
+        }
+        .note-fmt-btn {
+            background: transparent;
+            border: 1px solid transparent;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.73rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .note-fmt-btn:hover {
+            background: var(--bg-surface);
+            border-color: var(--border-color);
+            color: var(--text-primary);
+        }
+
+        /* ワークスペース本体 */
+        .lesson-note-workspace {
+            flex: 1 1 auto;
+            min-height: 0;
+            display: flex;
+            position: relative;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            background: var(--bg-surface);
+            overflow: hidden;
+        }
+        .note-editor-pane, .note-preview-pane {
+            flex: 1 1 100%;
+            min-width: 0;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+        .note-main-textarea {
+            width: 100%;
+            height: 100%;
+            border: none;
+            outline: none;
+            resize: none;
+            padding: 0.85rem 1rem;
+            font-size: 0.88rem;
+            line-height: 1.75;
+            color: var(--text-primary);
+            background: transparent;
+            font-family: inherit;
+            box-sizing: border-box;
+        }
+        .note-preview-pane {
+            padding: 0.85rem 1rem;
+            box-sizing: border-box;
+            display: none;
+        }
+        .note-preview-content {
+            font-size: 0.88rem;
+            line-height: 1.75;
+            color: var(--text-primary);
+            word-break: break-word;
+        }
+
+        /* レイアウトモード切替 */
+        .lesson-note-workspace.mode-edit .note-editor-pane { display: flex; }
+        .lesson-note-workspace.mode-edit .note-preview-pane { display: none; }
+
+        .lesson-note-workspace.mode-preview .note-editor-pane { display: none; }
+        .lesson-note-workspace.mode-preview .note-preview-pane { display: block; }
+
+        .lesson-note-workspace.mode-dual {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+        }
+        .lesson-note-workspace.mode-dual .note-editor-pane {
+            display: flex;
+            border-right: 1px solid var(--border-color);
+        }
+        .lesson-note-workspace.mode-dual .note-preview-pane {
+            display: block;
+        }
+
+        /* プレビュー内のノート装飾スタイル */
+        .note-preview-content h2 {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: var(--brand-primary);
+            border-bottom: 2px solid var(--brand-border);
+            padding-bottom: 0.3rem;
+            margin: 1rem 0 0.5rem 0;
+        }
+        .note-preview-content h2:first-child { margin-top: 0; }
+        .note-preview-content h3 {
+            font-size: 0.98rem;
+            font-weight: 750;
+            color: var(--text-primary);
+            margin: 0.85rem 0 0.35rem 0;
+            border-left: 3px solid var(--brand-primary);
+            padding-left: 0.45rem;
+        }
+        .note-preview-content p {
+            margin-bottom: 0.6rem;
+        }
+        .note-preview-content mark, .flora-marker {
+            background: #fef08a;
+            color: #854d0e;
+            padding: 0.05rem 0.3rem;
+            border-radius: 3px;
+            font-weight: 600;
+        }
+        .theme-dark .note-preview-content mark, .theme-dark .flora-marker {
+            background: rgba(234, 179, 8, 0.28);
+            color: #fef08a;
+        }
+        .note-preview-content blockquote {
+            border-left: 3px solid var(--brand-primary);
+            background: var(--bg-subtle);
+            padding: 0.5rem 0.8rem;
+            margin: 0.6rem 0;
+            border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+            color: var(--text-secondary);
+            font-size: 0.84rem;
+        }
+        .note-preview-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0.8rem 0;
+            font-size: 0.82rem;
+        }
+        .note-preview-content th, .note-preview-content td {
+            border: 1px solid var(--border-color);
+            padding: 0.45rem 0.65rem;
+            text-align: left;
+        }
+        .note-preview-content th {
+            background: var(--bg-subtle);
+            font-weight: 700;
+        }
+
+        /* 下部バー */
+        .note-bottom-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+            padding-top: 0.15rem;
+        }
+        .note-stats-text {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+        }
+        .note-legacy-toggle-btn {
+            background: none;
+            border: none;
+            font-size: 0.73rem;
+            font-weight: 700;
+            color: var(--brand-primary);
+            cursor: pointer;
+            padding: 0.15rem 0.35rem;
+            border-radius: 4px;
+        }
+        .note-legacy-toggle-btn:hover {
+            background: var(--brand-light);
+        }
+
+        /* レガシーメモ折りたたみセクション */
+        .note-legacy-section {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: 0.6rem;
+            max-height: 220px;
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+        .legacy-memo-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.4rem;
+        }
+
+        /* 講義吹き出しの引用ボタン & フローティング引用ツールチップ */
+        .bubble-action-btn.quote-btn {
+            color: #4338ca;
+            background: rgba(99, 102, 241, 0.08);
+            border: 1px solid rgba(99, 102, 241, 0.25);
+            font-weight: 700;
+        }
+        .bubble-action-btn.quote-btn:hover {
+            background: rgba(99, 102, 241, 0.16);
+            border-color: #6366f1;
+        }
+
+        .lesson-selection-quote-tooltip {
+            position: fixed;
+            z-index: 99999;
+            background: #1e1b4b;
+            color: #ffffff;
+            padding: 0.35rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.74rem;
+            font-weight: 700;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            animation: tooltipPop 0.15s ease-out;
+            pointer-events: auto;
+        }
+        .lesson-selection-quote-tooltip:hover {
+            background: #312e81;
+            transform: translateY(-1px);
+        }
+        @keyframes tooltipPop {
+            from { opacity: 0; transform: translateY(4px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
         }
 
         .lesson-memo-item {
@@ -5262,6 +5656,11 @@
                                 </div>
                             </div>
 
+                            <!-- ⚡ 左右ドラッグ分割リサイザー（30%〜70%調整・5:5リセット） -->
+                            <div class="lesson-split-resizer" id="lesson-split-resizer" title="左右にドラッグして分割比率を調整（ダブルクリックで左右半分 5:5 にリセット）">
+                                <div class="split-resizer-line"></div>
+                            </div>
+
                             <!-- 右サイドバー：目次・ノート・原本参照 -->
                             <aside class="lesson-sidebar-card">
                                 <div class="sidebar-tab-group">
@@ -5280,18 +5679,121 @@
                                     <div id="lesson-parts-toc-list" class="parts-toc-container"></div>
                                 </div>
 
-                                <!-- パネル2: 授業メモ一覧 -->
+                                <!-- パネル2: 📝 授業ノート（本格リッチドキュメント・AIアシスト対応） -->
                                 <div class="sidebar-panel" id="tab-notes">
-                                    <div style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 0.6rem; font-weight: 600;">
-                                        ✏️ 授業で気づいたことをその場でメモ
-                                    </div>
-                                    <div class="memo-add-row" style="margin-bottom: 0.8rem;">
-                                        <textarea class="flora-textarea" id="memo-add-input" rows="3" placeholder="気づいたことを入力（Ctrl+Enterで追加）" style="font-size: var(--fs-xs);"></textarea>
-                                        <div style="display: flex; justify-content: flex-end; margin-top: 0.4rem;">
-                                            <button type="button" class="flora-btn flora-btn-primary btn-sm" id="memo-add-btn">＋追加</button>
+                                    <!-- ノート上部ヘッダー＆コントロールバー -->
+                                    <div class="lesson-note-header">
+                                        <div class="note-header-left">
+                                            <span class="note-header-title">📝 授業ノート &amp; まとめ</span>
+                                            <span class="note-save-badge saved" id="note-save-status">✓ 保存済み</span>
+                                        </div>
+                                        <div class="note-header-right">
+                                            <!-- 幅プリセット切替 -->
+                                            <div class="note-width-presets" title="画面分割比率">
+                                                <button type="button" class="note-preset-btn" onclick="setSidebarWidthPreset('split')" id="btn-preset-split" title="画面を左右半分（5:5）に分割">5:5</button>
+                                                <button type="button" class="note-preset-btn" onclick="setSidebarWidthPreset('wide')" id="btn-preset-wide" title="ノートを70%にワイド拡大">7:3</button>
+                                                <button type="button" class="note-preset-btn" onclick="setSidebarWidthPreset('standard')" id="btn-preset-standard" title="標準幅（380px）に戻す">標準</button>
+                                            </div>
+                                            
+                                            <!-- 表示モード切替（編集 / プレビュー / 左右スプリット） -->
+                                            <div class="note-view-switcher">
+                                                <button type="button" class="note-view-btn active" id="note-view-edit-btn" onclick="switchNoteView('edit')" title="エディタ入力">✏️ 編集</button>
+                                                <button type="button" class="note-view-btn" id="note-view-preview-btn" onclick="switchNoteView('preview')" title="整形プレビュー">👁️ プレビュー</button>
+                                                <button type="button" class="note-view-btn" id="note-view-dual-btn" onclick="switchNoteView('dual')" title="左右並列エディタ＆プレビュー">⚡ 2ペイン</button>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div id="lesson-memo-list" class="lesson-memo-list"></div>
+
+                                    <!-- アクション＆AIツールバー -->
+                                    <div class="lesson-note-actions-bar">
+                                        <div class="note-ai-group">
+                                            <button type="button" class="flora-btn flora-btn-secondary btn-xs note-action-btn" id="btn-ai-summarize-part" onclick="aiSummarizePartToNote()" title="AIが現在の講義パートから重要ポイント・試験の急所をまとめたノートを自動追記します">
+                                                ✨ このパートの要点をAIまとめ
+                                            </button>
+                                            <button type="button" class="flora-btn flora-btn-secondary btn-xs note-action-btn" id="btn-ai-beautify-note" onclick="aiBeautifyLessonNote()" title="雑に書いたメモや箇条書きを、AIが美しい見出し・重要語句・急所付きノートに清書します">
+                                                🪄 AIでノートを清書・整理
+                                            </button>
+                                        </div>
+                                        <div class="note-export-group">
+                                            <button type="button" class="flora-btn flora-btn-ghost btn-xs note-action-btn" onclick="exportNoteMarkdown()" title="Markdownファイル（.md）としてダウンロード">
+                                                ⬇️ .md保存
+                                            </button>
+                                            <button type="button" class="flora-btn flora-btn-ghost btn-xs note-action-btn" onclick="printLessonNote()" title="A4学習プリント用に綺麗に印刷 / PDF保存">
+                                                🖨️ 印刷/PDF
+                                            </button>
+                                            <button type="button" class="flora-btn flora-btn-ghost btn-xs note-action-btn" onclick="copyNoteMarkdown()" title="ノート全文をクリップボードにコピー">
+                                                📋 コピー
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- リッチ記法装飾ツールバー -->
+                                    <div class="lesson-note-formatting-bar" id="note-formatting-bar">
+                                        <div class="format-btn-group">
+                                            <button type="button" class="note-fmt-btn" onclick="insertNoteFormat('h2')" title="大見出し (## )"><b>H2</b></button>
+                                            <button type="button" class="note-fmt-btn" onclick="insertNoteFormat('h3')" title="中見出し (### )"><b>H3</b></button>
+                                        </div>
+                                        <div class="format-divider"></div>
+                                        <div class="format-btn-group">
+                                            <button type="button" class="note-fmt-btn" onclick="insertNoteFormat('bold')" title="太字 (**太字**)"><b>B</b></button>
+                                            <button type="button" class="note-fmt-btn" onclick="insertNoteFormat('marker')" title="蛍光マーカー (==強調==)"><mark style="background:#fef08a; padding:0 2px;">==印==</mark></button>
+                                            <button type="button" class="note-fmt-btn" onclick="insertNoteFormat('bracket')" title="重要用語 【用語】">【用語】</button>
+                                        </div>
+                                        <div class="format-divider"></div>
+                                        <div class="format-btn-group">
+                                            <button type="button" class="note-fmt-btn" onclick="insertNoteFormat('bullet')" title="箇条書きリスト">• リスト</button>
+                                            <button type="button" class="note-fmt-btn" onclick="insertNoteFormat('number')" title="番号付きリスト">1. リスト</button>
+                                            <button type="button" class="note-fmt-btn" onclick="insertNoteFormat('task')" title="ToDo/チェックリスト (☑ )">☑ チェック</button>
+                                        </div>
+                                        <div class="format-divider"></div>
+                                        <div class="format-btn-group">
+                                            <button type="button" class="note-fmt-btn" onclick="insertNoteFormat('trap')" title="⚠️ 共通テストの急所・注意喚起">⚠️ 急所</button>
+                                            <button type="button" class="note-fmt-btn" onclick="insertNoteFormat('point')" title="💡 要点・重要ポイント">💡 要点</button>
+                                            <button type="button" class="note-fmt-btn" onclick="insertNoteFormat('math')" title="LaTeX数式 ($ ... $)">$ 数式 $</button>
+                                            <button type="button" class="note-fmt-btn" onclick="insertNoteFormat('ruby')" title="ルビ（ふりがな）">漢字《よみ》</button>
+                                            <button type="button" class="note-fmt-btn" onclick="insertNoteFormat('table')" title="表・テーブル挿入">📊 表</button>
+                                            <button type="button" class="note-fmt-btn" onclick="insertNoteFormat('hr')" title="水平区切り線">──</button>
+                                        </div>
+                                    </div>
+
+                                    <!-- ノート本体ワークスペース -->
+                                    <div class="lesson-note-workspace mode-edit" id="lesson-note-workspace">
+                                        <!-- エディタ側 -->
+                                        <div class="note-editor-pane" id="note-editor-pane">
+                                            <textarea class="note-main-textarea" id="lesson-note-textarea" placeholder="ここに授業ノートを自由に記入してください...（Markdown / LaTeX / ルビ 対応&#10;※ 左側の講義吹き出しの「📝 ノートに引用」を押すと講義の解説を直接取り込めます）"></textarea>
+                                        </div>
+                                        <!-- プレビュー側 -->
+                                        <div class="note-preview-pane tex2jax_process" id="note-preview-pane">
+                                            <div id="note-preview-content" class="note-preview-content"></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 下部ステータス＆クイックメモ互換アコーディオン -->
+                                    <div class="note-bottom-bar">
+                                        <div class="note-stats-text" id="note-stats-display">0 文字 | 0 行</div>
+                                        <div style="display:flex; align-items:center; gap:0.5rem;">
+                                            <button type="button" class="note-legacy-toggle-btn" id="btn-toggle-legacy-memos" onclick="toggleLegacyMemosSection()">
+                                                📌 気づきメモ一覧 (<span id="legacy-memos-count">0</span>) ▾
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- 旧メモ互換エリア（折りたたみ可能） -->
+                                    <div class="note-legacy-section" id="note-legacy-section" style="display:none;">
+                                        <div class="legacy-memo-header">
+                                            <span style="font-size:0.75rem; font-weight:700; color:var(--text-secondary);">過去の単発メモ・気づき</span>
+                                            <button type="button" class="flora-btn flora-btn-ghost btn-xs" onclick="importLegacyMemosToNotebook()" style="font-size:0.72rem; color:var(--brand-primary); font-weight:700;">
+                                                📥 このメモをすべてノート本文に転記
+                                            </button>
+                                        </div>
+                                        <div class="memo-add-row" style="margin-bottom: 0.6rem;">
+                                            <textarea class="flora-textarea" id="memo-add-input" rows="2" placeholder="サッと一言だけメモを追加..." style="font-size: var(--fs-xs);"></textarea>
+                                            <div style="display: flex; justify-content: flex-end; margin-top: 0.3rem;">
+                                                <button type="button" class="flora-btn flora-btn-primary btn-xs" id="memo-add-btn">＋追加</button>
+                                            </div>
+                                        </div>
+                                        <div id="lesson-memo-list" class="lesson-memo-list"></div>
+                                    </div>
                                 </div>
 
                                 <!-- パネル3: 暗記事項リスト -->
@@ -15273,6 +15775,9 @@ ${socraticInstructionBlock}
                     ? ""
                     : `
                         <div class="bubble-actions">
+                            <button type="button" class="bubble-action-btn quote-btn" onclick="quoteLessonMsgToNote(${idx})" title="この講義解説を授業ノートに引用・挿入する">
+                                📝 ノートに引用
+                            </button>
                             <button type="button" class="bubble-action-btn edit-btn" data-edit-msg="${idx}" title="この授業内容を自分で直接編集・追記する">
                                 ✏️ 編集
                             </button>
@@ -16703,26 +17208,736 @@ ${subjectGuide}
             el.style.height = (el.scrollHeight + 2) + "px";
         }
 
+        // ==========================================================================
+        // 📝 授業ノート（本格学習ノート ＆ 左右分割リサイザー）管理サブシステム
+        // ==========================================================================
+        let noteSaveDebounceTimer = null;
+        let noteActiveView = "edit"; // 'edit' | 'preview' | 'dual'
+
         function initLessonNotes() {
+            initLessonSplitResizer();
+            loadLessonNotebook();
             renderLessonMemos();
+
+            const noteTa = el("lesson-note-textarea");
+            if (noteTa) {
+                noteTa.removeEventListener("input", handleLessonNoteInput);
+                noteTa.removeEventListener("keydown", handleLessonNoteKeydown);
+                noteTa.addEventListener("input", handleLessonNoteInput);
+                noteTa.addEventListener("keydown", handleLessonNoteKeydown);
+            }
 
             const addInput = el("memo-add-input");
             const addBtn = el("memo-add-btn");
-            if (!addInput || !addBtn) return;
+            if (addBtn && addInput) {
+                addBtn.onclick = () => addLessonMemo();
+                addInput.oninput = () => autoGrowTextarea(addInput);
+                addInput.onkeydown = (e) => {
+                    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+                        e.preventDefault();
+                        addLessonMemo();
+                    }
+                };
+            }
 
-            addBtn.addEventListener("click", () => addLessonMemo());
-            addInput.addEventListener("input", () => autoGrowTextarea(addInput));
-            addInput.addEventListener("keydown", (e) => {
-                if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-                    e.preventDefault();
-                    addLessonMemo();
+            initChatSelectionQuoteListener();
+        }
+
+        // 左右分割リサイザーの初期化（30%〜70%対応 ＆ 永続保存）
+        function initLessonSplitResizer() {
+            const resizer = el("lesson-split-resizer");
+            const grid = el("lesson-layout-grid");
+            if (!resizer || !grid) return;
+
+            // 保存された幅の復元
+            const savedWidth = localStorage.getItem("flora_lesson_sidebar_width");
+            if (savedWidth) {
+                grid.style.setProperty("--lesson-sidebar-width", savedWidth);
+            }
+
+            let isDragging = false;
+
+            resizer.onmousedown = (e) => {
+                e.preventDefault();
+                isDragging = true;
+                resizer.classList.add("is-dragging");
+                document.body.style.userSelect = "none";
+                document.body.style.cursor = "col-resize";
+
+                const onMouseMove = (moveEvent) => {
+                    if (!isDragging) return;
+                    const gridRect = grid.getBoundingClientRect();
+                    let newWidth = gridRect.right - moveEvent.clientX;
+                    const minWidth = Math.max(320, gridRect.width * 0.25);
+                    const maxWidth = Math.min(gridRect.width - 340, gridRect.width * 0.75);
+
+                    if (newWidth < minWidth) newWidth = minWidth;
+                    if (newWidth > maxWidth) newWidth = maxWidth;
+
+                    const widthStr = `${Math.round(newWidth)}px`;
+                    grid.style.setProperty("--lesson-sidebar-width", widthStr);
+                    localStorage.setItem("flora_lesson_sidebar_width", widthStr);
+                    updateWidthPresetButtonState();
+                };
+
+                const onMouseUp = () => {
+                    isDragging = false;
+                    resizer.classList.remove("is-dragging");
+                    document.body.style.userSelect = "";
+                    document.body.style.cursor = "";
+                    document.removeEventListener("mousemove", onMouseMove);
+                    document.removeEventListener("mouseup", onMouseUp);
+                };
+
+                document.addEventListener("mousemove", onMouseMove);
+                document.addEventListener("mouseup", onMouseUp);
+            };
+
+            // ダブルクリックで左右半分（5:5）または標準幅にトグル
+            resizer.ondblclick = () => {
+                const currentWidth = grid.style.getPropertyValue("--lesson-sidebar-width") || "";
+                const gridWidth = grid.getBoundingClientRect().width;
+                const isAroundHalf = currentWidth.includes("%") || (parseInt(currentWidth, 10) > gridWidth * 0.42 && parseInt(currentWidth, 10) < gridWidth * 0.58);
+
+                if (isAroundHalf) {
+                    setSidebarWidthPreset("standard");
+                } else {
+                    setSidebarWidthPreset("split");
+                }
+            };
+
+            updateWidthPresetButtonState();
+        }
+
+        // 幅プリセット切替（5:5 / 7:3 / 標準）
+        window.setSidebarWidthPreset = function(preset) {
+            const grid = el("lesson-layout-grid");
+            if (!grid) return;
+            const gridWidth = grid.getBoundingClientRect().width || 1200;
+
+            let targetWidth = "380px";
+            if (preset === "split") {
+                targetWidth = `${Math.round(gridWidth * 0.5)}px`;
+            } else if (preset === "wide") {
+                targetWidth = `${Math.round(gridWidth * 0.7)}px`;
+            } else if (preset === "standard") {
+                targetWidth = "380px";
+            }
+
+            grid.style.setProperty("--lesson-sidebar-width", targetWidth);
+            localStorage.setItem("flora_lesson_sidebar_width", targetWidth);
+            updateWidthPresetButtonState();
+        };
+
+        function updateWidthPresetButtonState() {
+            const grid = el("lesson-layout-grid");
+            if (!grid) return;
+            const gridWidth = grid.getBoundingClientRect().width || 1200;
+            const currentStr = grid.style.getPropertyValue("--lesson-sidebar-width") || "380px";
+            const currentPx = parseInt(currentStr, 10) || 380;
+            const ratio = currentPx / gridWidth;
+
+            const btnSplit = el("btn-preset-split");
+            const btnWide = el("btn-preset-wide");
+            const btnStandard = el("btn-preset-standard");
+
+            [btnSplit, btnWide, btnStandard].forEach(b => b && b.classList.remove("active"));
+
+            if (ratio >= 0.62) {
+                if (btnWide) btnWide.classList.add("active");
+            } else if (ratio >= 0.44 && ratio <= 0.58) {
+                if (btnSplit) btnSplit.classList.add("active");
+            } else if (currentPx <= 420) {
+                if (btnStandard) btnStandard.classList.add("active");
+            }
+        }
+
+        // ノートタブがアクティブになった際の自動展開＆プレビュー同期
+        window.onLessonNotesTabActivated = function() {
+            const grid = el("lesson-layout-grid");
+            if (grid) {
+                const currentStr = grid.style.getPropertyValue("--lesson-sidebar-width") || "";
+                const currentPx = parseInt(currentStr, 10);
+                // まだ狭い標準幅（380px以下）の場合、自動で右半分（50%）にスムーズ展開！
+                if (!currentPx || currentPx <= 420) {
+                    setSidebarWidthPreset("split");
+                }
+            }
+            loadLessonNotebook();
+            updateNoteStats();
+            if (noteActiveView !== "edit") {
+                updateNotePreview();
+            }
+        };
+
+        // ノートの読み込み（過去のメモがある場合は自動で初期ノートへ変換して保護）
+        function loadLessonNotebook() {
+            if (!currentLesson) return;
+            const noteTa = el("lesson-note-textarea");
+            if (!noteTa) return;
+
+            // 既存のlessonNotebookがあればそれを使用
+            if (typeof currentLesson.lessonNotebook === "string" && currentLesson.lessonNotebook.trim()) {
+                noteTa.value = currentLesson.lessonNotebook;
+            } else {
+                // 初回で既存メモ（lessonMemos）がある場合、自動で構造化ノートを生成して引き継ぎ
+                const memos = Array.isArray(currentLesson.lessonMemos) ? currentLesson.lessonMemos : [];
+                if (memos.length > 0) {
+                    const title = currentLesson.title || "授業";
+                    let initialMd = `## 📝 【${title}】学習ノート\n\n`;
+                    memos.forEach(m => {
+                        const partStr = (typeof m.partIndex === "number") ? `*(第${m.partIndex + 1}回)* ` : "";
+                        initialMd += `- ${partStr}${m.text.trim()}\n`;
+                    });
+                    initialMd += `\n---\n\n### 💡 補足・気づき\n`;
+                    currentLesson.lessonNotebook = initialMd;
+                    noteTa.value = initialMd;
+                } else {
+                    const title = currentLesson.title || "授業";
+                    noteTa.value = `## 📝 【${title}】学習ノート\n\nここに見出しや重要ポイント、気づいた解法の急所を自由に書き留めましょう。\n\n- 左の講義吹き出しの「📝 ノートに引用」を押すと、重要解説をワンタップで取り込めます。\n- 上の「✨ このパートの要点をAIまとめ」でAIに自動整理させることもできます。\n`;
+                    currentLesson.lessonNotebook = noteTa.value;
+                }
+            }
+
+            updateNoteStats();
+            updateNotePreview();
+        }
+
+        function handleLessonNoteInput() {
+            updateNoteStats();
+            setNoteSaveStatus("saving");
+
+            if (noteActiveView !== "edit") {
+                updateNotePreview();
+            }
+
+            if (noteSaveDebounceTimer) clearTimeout(noteSaveDebounceTimer);
+            noteSaveDebounceTimer = setTimeout(async () => {
+                await persistLessonNotebook();
+            }, 800);
+        }
+
+        function handleLessonNoteKeydown(e) {
+            // Tabキーでインデント（2スペース）
+            if (e.key === "Tab") {
+                e.preventDefault();
+                const ta = e.target;
+                const start = ta.selectionStart;
+                const end = ta.selectionEnd;
+                ta.value = ta.value.substring(0, start) + "  " + ta.value.substring(end);
+                ta.selectionStart = ta.selectionEnd = start + 2;
+                handleLessonNoteInput();
+            } else if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+                e.preventDefault();
+                persistLessonNotebook(true);
+            }
+        }
+
+        async function persistLessonNotebook(showSavedToast = false) {
+            if (!currentLesson) return;
+            const noteTa = el("lesson-note-textarea");
+            if (!noteTa) return;
+
+            currentLesson.lessonNotebook = noteTa.value;
+            setNoteSaveStatus("saving");
+
+            try {
+                await saveLesson();
+                setNoteSaveStatus("saved");
+                if (showSavedToast) {
+                    showToast("ノートを即時保存しました！", "success", 1500);
+                }
+            } catch (err) {
+                console.error("Failed to save lesson notebook:", err);
+                setNoteSaveStatus("error");
+            }
+        }
+
+        function setNoteSaveStatus(status) {
+            const badge = el("note-save-status");
+            if (!badge) return;
+            badge.className = "note-save-badge";
+            if (status === "saved") {
+                badge.classList.add("saved");
+                badge.textContent = "✓ 保存済み";
+            } else if (status === "saving") {
+                badge.classList.add("saving");
+                badge.textContent = "💾 保存中...";
+            } else if (status === "error") {
+                badge.textContent = "⚠️ 保存エラー";
+            }
+        }
+
+        function updateNoteStats() {
+            const noteTa = el("lesson-note-textarea");
+            const stats = el("note-stats-display");
+            if (!noteTa || !stats) return;
+            const val = noteTa.value || "";
+            const chars = val.length;
+            const lines = val ? val.split("\n").length : 0;
+            stats.textContent = `${chars.toLocaleString()} 文字 | ${lines.toLocaleString()} 行`;
+        }
+
+        // 表示モード切替（編集 / プレビュー / 2ペイン）
+        window.switchNoteView = function(view) {
+            noteActiveView = view;
+            const workspace = el("lesson-note-workspace");
+            if (!workspace) return;
+
+            workspace.classList.remove("mode-edit", "mode-preview", "mode-dual");
+            workspace.classList.add(`mode-${view}`);
+
+            const btnEdit = el("note-view-edit-btn");
+            const btnPrev = el("note-view-preview-btn");
+            const btnDual = el("note-view-dual-btn");
+            [btnEdit, btnPrev, btnDual].forEach(b => b && b.classList.remove("active"));
+
+            if (view === "edit" && btnEdit) btnEdit.classList.add("active");
+            if (view === "preview" && btnPrev) btnPrev.classList.add("active");
+            if (view === "dual" && btnDual) btnDual.classList.add("active");
+
+            if (view !== "edit") {
+                updateNotePreview();
+            }
+        };
+
+        // プレビューのレンダリング
+        function updateNotePreview() {
+            const noteTa = el("lesson-note-textarea");
+            const previewEl = el("note-preview-content");
+            if (!noteTa || !previewEl) return;
+            const md = noteTa.value || "";
+            previewEl.innerHTML = renderEnhancedNoteMarkdown(md);
+            forceTriggerMathJax(previewEl);
+        }
+
+        // 学習ノート向け強化Markdownレンダラー
+        function renderEnhancedNoteMarkdown(text) {
+            if (!text) return '<span style="color:var(--text-muted); font-size:0.85rem;">（ノートの内容がまだありません）</span>';
+
+            // 基本整形（ルビ・数式対応）
+            let html = renderFormattedMarkdown(text, currentLesson?.subject || "");
+
+            // H2 大見出し
+            html = html.replace(/^##\s+(.+)$/gm, '<h2>$1</h2>');
+
+            // 蛍光マーカー ==強調==
+            html = html.replace(/==([^=\n]+)==/g, '<mark class="flora-marker">$1</mark>');
+
+            // チェックリスト - [ ] / - [x]
+            html = html.replace(/•\s*\[\s*\]\s*(.+)/g, '<div style="display:flex; align-items:flex-start; gap:0.4rem; margin:0.25rem 0;"><input type="checkbox" disabled style="margin-top:0.25rem;"> <span>$1</span></div>');
+            html = html.replace(/•\s*\[[xX]\]\s*(.+)/g, '<div style="display:flex; align-items:flex-start; gap:0.4rem; margin:0.25rem 0; opacity:0.65; text-decoration:line-through;"><input type="checkbox" checked disabled style="margin-top:0.25rem;"> <span>$1</span></div>');
+
+            // 急所・要点・講義引用ブロック
+            html = html.replace(/^&gt;\s*⚠️\s*(.+)$/gm, '<blockquote style="border-left:3px solid #f59e0b; background:rgba(245,158,11,0.08); color:var(--text-primary);">⚠️ $1</blockquote>');
+            html = html.replace(/^&gt;\s*💡\s*(.+)$/gm, '<blockquote style="border-left:3px solid #059669; background:rgba(5,150,105,0.08); color:var(--text-primary);">💡 $1</blockquote>');
+            html = html.replace(/^&gt;\s*📖\s*(.+)$/gm, '<blockquote style="border-left:3px solid #6366f1; background:rgba(99,102,241,0.08); color:var(--text-primary);">📖 $1</blockquote>');
+            html = html.replace(/^&gt;\s*(.+)$/gm, '<blockquote>$1</blockquote>');
+
+            return html;
+        }
+
+        // リッチツールバーの装飾挿入
+        window.insertNoteFormat = function(tool) {
+            const ta = el("lesson-note-textarea");
+            if (!ta) return;
+
+            const start = ta.selectionStart;
+            const end = ta.selectionEnd;
+            const text = ta.value;
+            const sel = text.substring(start, end);
+
+            let insertText = "";
+            let cursorOffset = 0;
+
+            switch (tool) {
+                case "h2":
+                    insertText = `\n## ${sel || "大見出し"}\n`;
+                    cursorOffset = insertText.length;
+                    break;
+                case "h3":
+                    insertText = `\n### ${sel || "中見出し"}\n`;
+                    cursorOffset = insertText.length;
+                    break;
+                case "bold":
+                    insertText = `**${sel || "太字"}**`;
+                    cursorOffset = insertText.length;
+                    break;
+                case "marker":
+                    insertText = `==${sel || "重要強調"}==`;
+                    cursorOffset = insertText.length;
+                    break;
+                case "bracket":
+                    insertText = `【${sel || "重要用語"}】`;
+                    cursorOffset = insertText.length;
+                    break;
+                case "bullet":
+                    insertText = `\n- ${sel || "箇条書き項目"}`;
+                    cursorOffset = insertText.length;
+                    break;
+                case "number":
+                    insertText = `\n1. ${sel || "リスト項目"}`;
+                    cursorOffset = insertText.length;
+                    break;
+                case "task":
+                    insertText = `\n- [ ] ${sel || "確認・復習タスク"}`;
+                    cursorOffset = insertText.length;
+                    break;
+                case "trap":
+                    insertText = `\n> ⚠️ **【共通テストの急所】** ${sel || "ここに引っかけポイント・盲点を記入"}\n`;
+                    cursorOffset = insertText.length;
+                    break;
+                case "point":
+                    insertText = `\n> 💡 **【ポイント】** ${sel || "ここに対比・因果関係を記入"}\n`;
+                    cursorOffset = insertText.length;
+                    break;
+                case "math":
+                    insertText = `$${sel || "E = mc^2"}$`;
+                    cursorOffset = insertText.length;
+                    break;
+                case "ruby":
+                    insertText = `漢字《よみ》`;
+                    cursorOffset = insertText.length;
+                    break;
+                case "table":
+                    insertText = `\n| 項目 | 特徴・意義 |\n| :--- | :--- |\n| 項目A | 説明A |\n| 項目B | 説明B |\n`;
+                    cursorOffset = insertText.length;
+                    break;
+                case "hr":
+                    insertText = `\n\n---\n\n`;
+                    cursorOffset = insertText.length;
+                    break;
+                default:
+                    return;
+            }
+
+            ta.value = text.substring(0, start) + insertText + text.substring(end);
+            ta.focus();
+            ta.selectionStart = ta.selectionEnd = start + cursorOffset;
+            handleLessonNoteInput();
+        };
+
+        // 講義吹き出しのワンクリック引用
+        window.quoteLessonMsgToNote = function(msgIdx) {
+            if (!currentLesson || !Array.isArray(currentLesson.chatHistory) || !currentLesson.chatHistory[msgIdx]) return;
+            const msg = currentLesson.chatHistory[msgIdx];
+
+            // 選択テキストがあればそれを優先、なければ吹き出し全文（SVG等除去）
+            let quoteText = "";
+            const sel = window.getSelection ? window.getSelection().toString().trim() : "";
+            if (sel) {
+                quoteText = sel;
+            } else {
+                quoteText = (msg.content || "")
+                    .replace(/<svg[\s\S]*?<\/svg>/gi, "")
+                    .replace(/<[^>]+>/g, "")
+                    .trim();
+            }
+
+            if (!quoteText) return;
+
+            const partNum = (typeof currentLesson.currentPartIndex === "number") ? currentLesson.currentPartIndex + 1 : 1;
+            const quoteMd = `\n> 📖 **第${partNum}回 講義より引用:**\n> ${quoteText.split("\n").join("\n> ")}\n\n`;
+
+            appendContentToNote(quoteMd, "📝 講義の解説を授業ノートに引用しました！");
+        };
+
+        // 講義チャット選択時のフローティング引用ツールチップ
+        function initChatSelectionQuoteListener() {
+            const transcript = el("chat-transcript");
+            if (!transcript) return;
+
+            let tooltip = null;
+
+            const removeTooltip = () => {
+                if (tooltip && tooltip.parentNode) {
+                    tooltip.parentNode.removeChild(tooltip);
+                    tooltip = null;
+                }
+            };
+
+            document.addEventListener("mouseup", (e) => {
+                if (e.target.closest(".lesson-selection-quote-tooltip")) return;
+
+                const sel = window.getSelection();
+                if (!sel || sel.isCollapsed) {
+                    removeTooltip();
+                    return;
+                }
+
+                const selText = sel.toString().trim();
+                if (!selText || selText.length < 2) {
+                    removeTooltip();
+                    return;
+                }
+
+                // 選択範囲がチャット本文内にあるか判定
+                const anchorNode = sel.anchorNode;
+                if (!transcript.contains(anchorNode)) {
+                    removeTooltip();
+                    return;
+                }
+
+                const range = sel.getRangeAt(0);
+                const rect = range.getBoundingClientRect();
+                if (!rect || rect.width === 0) return;
+
+                removeTooltip();
+
+                tooltip = document.createElement("div");
+                tooltip.className = "lesson-selection-quote-tooltip";
+                tooltip.innerHTML = `<span>📝 選択部分をノートに引用</span>`;
+                tooltip.style.left = `${Math.max(10, rect.left + (rect.width / 2) - 80)}px`;
+                tooltip.style.top = `${Math.max(10, rect.top - 36)}px`;
+
+                tooltip.onmousedown = (te) => {
+                    te.preventDefault();
+                    te.stopPropagation();
+                    const partNum = (typeof currentLesson?.currentPartIndex === "number") ? currentLesson.currentPartIndex + 1 : 1;
+                    const quoteMd = `\n> 📖 **第${partNum}回 講義より抜粋:**\n> ${selText.split("\n").join("\n> ")}\n\n`;
+                    appendContentToNote(quoteMd, "📝 選択した解説をノートに引用しました！");
+                    removeTooltip();
+                    if (window.getSelection) window.getSelection().removeAllRanges();
+                };
+
+                document.body.appendChild(tooltip);
+            });
+
+            document.addEventListener("mousedown", (e) => {
+                if (!e.target.closest(".lesson-selection-quote-tooltip")) {
+                    removeTooltip();
                 }
             });
         }
 
+        // ノート末尾またはカーソル位置への追記共通関数
+        function appendContentToNote(content, toastMsg = "") {
+            // ノートタブに自動切り替え
+            const notesTabBtn = document.querySelector('.sidebar-tab-btn[data-tab="tab-notes"]');
+            if (notesTabBtn && !notesTabBtn.classList.contains("active")) {
+                notesTabBtn.click();
+            }
+
+            const ta = el("lesson-note-textarea");
+            if (!ta) return;
+
+            const start = ta.selectionStart || ta.value.length;
+            const end = ta.selectionEnd || ta.value.length;
+            const text = ta.value;
+
+            ta.value = text.substring(0, start) + content + text.substring(end);
+            ta.selectionStart = ta.selectionEnd = start + content.length;
+            handleLessonNoteInput();
+
+            if (toastMsg) {
+                showToast(toastMsg, "success", 2000);
+            }
+        }
+
+        // ✨ AIでこのパートの要点をまとめ
+        window.aiSummarizePartToNote = async function() {
+            if (!currentLesson) return;
+            const btn = el("btn-ai-summarize-part");
+            const partIdx = currentLesson.currentPartIndex || 0;
+            const part = currentLesson.parts && currentLesson.parts[partIdx] ? currentLesson.parts[partIdx] : null;
+            const partTitle = part ? (part.title || `第${partIdx + 1}回`) : `第${partIdx + 1}回`;
+
+            // チャット履歴から現在のパートの発言を収集
+            const history = Array.isArray(currentLesson.chatHistory) ? currentLesson.chatHistory : [];
+            const aiMsgs = history.filter(m => m.role === "assistant" && m.content).map(m => m.content).join("\n\n");
+
+            if (!aiMsgs.trim()) {
+                showToast("講義内容がまだありません。まずは先生の解説を聞いてから実行してください。", "warning");
+                return;
+            }
+
+            const oldText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `⏳ AIまとめ中...`;
+
+            try {
+                const systemPrompt = `あなたは共通テスト・二次試験対策で抜群の合格実績を誇る超一流の指導講師です。
+提示された授業講義の内容から、受験生が試験直前まで手放せない【最強の授業要点まとめノート】を作成してください。
+【必須構成】:
+1. 要点箇条書き（因果関係や論理展開を整理）
+2. 必須キーワード・用語（【重要用語】や==マーカー==表記を使用）
+3. 共通テスト・入試で絶対に間違えてはならない盲点・急所（> ⚠️ **【試験の急所】** 表記を使用）
+
+※ 挨拶、前置き、結びの言葉（「はい、まとめました」など）は一切含めず、純粋なMarkdownノートのみを出力してください。`;
+
+                const userPrompt = `【教科】${currentLesson.subject || "全般"}\n【授業タイトル】${currentLesson.title}\n【パート】第${partIdx + 1}回: ${partTitle}\n\n【講義内容】:\n${aiMsgs.slice(-4000)}`;
+
+                const result = await callGeminiChat([{ role: "user", parts: [{ text: userPrompt }] }], systemPrompt, { rawText: true, featureId: "lesson_teach" });
+
+                const cleaned = (result || "").trim();
+                if (cleaned) {
+                    const appendMd = `\n\n### 📌 【第${partIdx + 1}回 要点まとめ】${partTitle}\n\n${cleaned}\n\n---\n`;
+                    appendContentToNote(appendMd, `✨ 第${partIdx + 1}回の要点まとめをノートに追記しました！`);
+                } else {
+                    showToast("要点まとめの生成に失敗しました。", "error");
+                }
+            } catch (err) {
+                console.error("AI summarize error:", err);
+                showToast("AIまとめの生成中にエラーが発生しました: " + (err.message || "通信エラー"), "error");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = oldText;
+            }
+        };
+
+        // 🪄 AIでノートを清書・整理
+        window.aiBeautifyLessonNote = async function() {
+            if (!currentLesson) return;
+            const ta = el("lesson-note-textarea");
+            if (!ta || !ta.value.trim()) {
+                showToast("清書するノートの内容がありません。メモや箇条書きを入力してください。", "warning");
+                return;
+            }
+
+            const btn = el("btn-ai-beautify-note");
+            const oldText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `🪄 AI清書中...`;
+
+            try {
+                const systemPrompt = `あなたは学習ノートの清書・構造化のエキスパートです。
+ユーザーが入力した授業メモやノートの断片を、内容を変えずに読みやすく洗練されたMarkdownノートへ再構成・清書してください。
+- ユーザーのメモした意図や気づきを100%保持すること
+- 適切な見出し（##, ###）、箇条書き、太字、重要語句【用語】、蛍光マーカー==強調==を適用すること
+- 前置きや解説は一切出力せず、清書後のMarkdownのみを出力すること`;
+
+                const result = await callGeminiChat([{ role: "user", parts: [{ text: ta.value }] }], systemPrompt, { rawText: true, featureId: "lesson_teach" });
+
+                const cleaned = (result || "").trim();
+                if (cleaned) {
+                    ta.value = cleaned;
+                    handleLessonNoteInput();
+                    showToast("🪄 ノートを美しく清書・構造化しました！", "success", 3000);
+                }
+            } catch (err) {
+                console.error("AI beautify error:", err);
+                showToast("ノートの清書中にエラーが発生しました。", "error");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = oldText;
+            }
+        };
+
+        // ⬇️ Markdownエクスポート（.mdダウンロード）
+        window.exportNoteMarkdown = function() {
+            const ta = el("lesson-note-textarea");
+            if (!ta || !ta.value.trim()) {
+                showToast("保存するノートの内容がありません。", "warning");
+                return;
+            }
+            const title = (currentLesson?.title || "授業ノート").replace(/[\\/:*?"<>|]/g, "_");
+            const blob = new Blob([ta.value], { type: "text/markdown;charset=utf-8" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `${title}_学習ノート_${new Date().toISOString().slice(0, 10)}.md`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast("⬇️ Markdownファイルをダウンロードしました！", "success");
+        };
+
+        // 🖨️ A4プリント・PDF印刷
+        window.printLessonNote = function() {
+            const ta = el("lesson-note-textarea");
+            if (!ta || !ta.value.trim()) {
+                showToast("印刷するノートの内容がありません。", "warning");
+                return;
+            }
+            const title = currentLesson?.title || "授業ノート";
+            const subject = currentLesson?.subject || "";
+            const renderedHtml = renderEnhancedNoteMarkdown(ta.value);
+
+            const printWin = window.open("", "_blank");
+            if (!printWin) {
+                showToast("ポップアップがブロックされました。ブラウザのポップアップ許可をご確認ください。", "error");
+                return;
+            }
+
+            printWin.document.write(`
+                <!DOCTYPE html>
+                <html lang="ja">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>${title} - 授業ノート</title>
+                    <style>
+                        body { font-family: 'Noto Sans JP', -apple-system, sans-serif; padding: 32px 40px; color: #1e293b; line-height: 1.8; background: #fff; }
+                        h1 { font-size: 22px; font-weight: 800; color: #059669; border-bottom: 2.5px solid #059669; padding-bottom: 8px; margin-bottom: 12px; }
+                        .print-meta { font-size: 12px; color: #64748b; margin-bottom: 24px; }
+                        h2 { font-size: 17px; font-weight: 750; color: #059669; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px; margin-top: 24px; }
+                        h3 { font-size: 14px; font-weight: 750; border-left: 3px solid #059669; padding-left: 8px; margin-top: 18px; }
+                        mark { background: #fef08a; padding: 1px 4px; border-radius: 2px; }
+                        blockquote { border-left: 3px solid #059669; background: #f8fafc; padding: 8px 14px; margin: 12px 0; border-radius: 0 4px 4px 0; font-size: 13px; }
+                        table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; }
+                        th, td { border: 1px solid #cbd5e1; padding: 6px 10px; }
+                        th { background: #f1f5f9; font-weight: bold; }
+                        @media print { body { padding: 0; } }
+                    </style>
+                </head>
+                <body>
+                    <h1>📘 ${title} 授業ノート</h1>
+                    <div class="print-meta">教科: ${subject} ｜ 作成日: ${new Date().toLocaleDateString('ja-JP')} ｜ Flora Study Workspace</div>
+                    <div>${renderedHtml}</div>
+                    <script>
+                        window.onload = function() {
+                            setTimeout(() => { window.print(); }, 250);
+                        };
+                    <\/script>
+                </body>
+                </html>
+            `);
+            printWin.document.close();
+        };
+
+        // 📋 全文コピー
+        window.copyNoteMarkdown = async function() {
+            const ta = el("lesson-note-textarea");
+            if (!ta || !ta.value.trim()) {
+                showToast("コピーするノートの内容がありません。", "warning");
+                return;
+            }
+            try {
+                await navigator.clipboard.writeText(ta.value);
+                showToast("📋 ノート全文をクリップボードにコピーしました！", "success");
+            } catch (e) {
+                showToast("クリップボードへのコピーに失敗しました。", "error");
+            }
+        };
+
+        // レガシーメモアコーディオン切替
+        window.toggleLegacyMemosSection = function() {
+            const sec = el("note-legacy-section");
+            const btn = el("btn-toggle-legacy-memos");
+            if (!sec) return;
+            const isHidden = sec.style.display === "none";
+            sec.style.display = isHidden ? "block" : "none";
+            if (btn) {
+                const count = Array.isArray(currentLesson?.lessonMemos) ? currentLesson.lessonMemos.length : 0;
+                btn.innerHTML = isHidden ? `📌 気づきメモ一覧 (${count}) ▴` : `📌 気づきメモ一覧 (${count}) ▾`;
+            }
+        };
+
+        // レガシーメモを一括でノート本文へインポート
+        window.importLegacyMemosToNotebook = function() {
+            if (!currentLesson || !Array.isArray(currentLesson.lessonMemos) || currentLesson.lessonMemos.length === 0) {
+                showToast("転記するメモがありません。", "warning");
+                return;
+            }
+            let appendMd = `\n\n### 📌 【メモ一覧から転記】\n`;
+            currentLesson.lessonMemos.forEach(m => {
+                const partStr = (typeof m.partIndex === "number") ? `*(第${m.partIndex + 1}回)* ` : "";
+                appendMd += `- ${partStr}${m.text.trim()}\n`;
+            });
+            appendContentToNote(appendMd, "📥 メモをノート本文に転記しました！");
+        };
+
         async function addLessonMemo() {
             const input = el("memo-add-input");
-            const text = input.value.trim();
+            const text = input ? input.value.trim() : "";
             if (!text || !currentLesson) return;
 
             if (!Array.isArray(currentLesson.lessonMemos)) currentLesson.lessonMemos = [];
@@ -16730,7 +17945,7 @@ ${subjectGuide}
                 id: "memo_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7),
                 text,
                 createdAt: new Date().toISOString(),
-                partIndex: currentLesson.currentPartIndex
+                partIndex: currentLesson.currentPartIndex || 0
             });
 
             input.value = "";
@@ -16740,6 +17955,7 @@ ${subjectGuide}
             if (typeof renderVscodeEditorContent === "function" && vscodeActiveFile === "notes") renderVscodeEditorContent();
             await forceTriggerMathJax();
             await saveLesson();
+            showToast("気づきメモを追加しました！", "success", 1500);
         }
 
         window.deleteLessonMemo = async function(memoId) {
@@ -16788,11 +18004,13 @@ ${subjectGuide}
 
         function renderLessonMemos() {
             const container = el("lesson-memo-list");
+            const countEl = el("legacy-memos-count");
             if (!container || !currentLesson) return;
             const memos = Array.isArray(currentLesson.lessonMemos) ? currentLesson.lessonMemos : [];
+            if (countEl) countEl.textContent = memos.length;
 
             if (memos.length === 0) {
-                container.innerHTML = `<div class="lesson-memo-empty">まだメモがありません。<br>授業中に気づいたことを書き留めましょう。</div>`;
+                container.innerHTML = `<div class="lesson-memo-empty" style="padding:0.6rem; font-size:0.75rem; color:var(--text-muted); text-align:center;">過去のメモはありません。</div>`;
                 return;
             }
 
@@ -18765,6 +19983,10 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
                 if (tabId === "tab-source" || tabId === "tab-memorize" || tabId === "tab-drills") {
                     if (tabId === "tab-drills") renderChoiceDrills();
                     forceTriggerMathJax();
+                } else if (tabId === "tab-notes") {
+                    if (typeof onLessonNotesTabActivated === "function") {
+                        onLessonNotesTabActivated();
+                    }
                 }
             });
         });
