@@ -2060,8 +2060,21 @@
             };
         });
 
-        // URLパラメータからの自動起動サポート（例: timeline.html?quiz=true または ?mode=era_close）
+        function switchHistoryType(type) {
+            if (type === 'japan') {
+                const btn = document.getElementById('type-btn-japan');
+                if (btn) btn.click();
+            } else if (type === 'world') {
+                const btn = document.getElementById('type-btn-world');
+                if (btn) btn.click();
+            }
+        }
+
+        // URLパラメータからの自動起動サポート（例: timeline.html?quiz=true または ?mode=era_close または ?type=japan）
         const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('type')) {
+            switchHistoryType(urlParams.get('type'));
+        }
         if (urlParams.has("quiz") || urlParams.has("drill")) {
             const requestedMode = urlParams.get("mode") || "era_close";
             setTimeout(() => {

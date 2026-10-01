@@ -1024,6 +1024,10 @@
             min-height: 540px;
             width: 100%;
             position: relative;
+            transition: grid-template-columns 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .lesson-layout-grid.is-resizing {
+            transition: none !important;
         }
         @media (max-width: 1100px) {
             .lesson-layout-grid {
@@ -5493,25 +5497,46 @@
                                         </div>
                                     </div>
                                     <!-- ⚡ 自動生成項目の選択オプション -->
-                                    <div class="lesson-autogen-options-box" style="margin-top:0.85rem; padding:0.75rem 0.95rem; background:rgba(99,102,241,0.06); border:1px solid rgba(99,102,241,0.22); border-radius:var(--radius-md);">
-                                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.45rem; flex-wrap:wrap; gap:0.3rem;">
-                                            <span style="font-size:0.78rem; font-weight:800; color:#4338CA; display:flex; align-items:center; gap:0.35rem;">
-                                                ⚡ 授業開始時の自動生成項目（選択可能）
+                                    <div class="lesson-autogen-options-box" style="margin-top:0.85rem; padding:0.85rem 1rem; background:rgba(99,102,241,0.06); border:1px solid rgba(99,102,241,0.22); border-radius:var(--radius-md);">
+                                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem; flex-wrap:wrap; gap:0.3rem;">
+                                            <span style="font-size:0.82rem; font-weight:800; color:#4338CA; display:flex; align-items:center; gap:0.35rem;">
+                                                ⚙️ AI自動生成の設定（暗記物・問題の作成有無）
                                             </span>
-                                            <span style="font-size:0.68rem; color:var(--text-muted);">※AI Studioで手動作成する場合はチェックを外して即座に枠を作成できます</span>
+                                            <span style="font-size:0.7rem; color:var(--text-muted);">※パート分けと講義はAIが自動で論理的に行います</span>
                                         </div>
-                                        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:0.45rem; font-size:0.75rem;">
-                                            <label style="display:flex; align-items:center; gap:0.35rem; cursor:pointer; color:var(--text-primary); user-select:none;">
-                                                <input type="checkbox" id="opt-autogen-lecture" checked>
-                                                <span>📖 第1回講義の自動解説</span>
+                                        <div style="display:flex; flex-direction:column; gap:0.65rem; font-size:0.78rem;">
+                                            <label style="display:flex; align-items:flex-start; gap:0.55rem; cursor:pointer; color:var(--text-primary); user-select:none;">
+                                                <input type="checkbox" id="opt-autogen-memorize" checked style="margin-top:0.18rem; transform:scale(1.2); accent-color:var(--brand-primary);">
+                                                <div>
+                                                    <span style="font-weight:750;">🧠 暗記事項（暗記カード）を自動抽出・作成する</span>
+                                                    <div style="font-size:0.72rem; color:var(--text-secondary); margin-top:0.1rem; line-height:1.4;">
+                                                        チェックを外すと、授業・パート分割はAIが完全自動生成し、<b>暗記カードのみ未作成（白紙枠）</b>にします。自分で後から手動作成・AI Studioから取り込みたい場合に最適です。
+                                                    </div>
+                                                </div>
                                             </label>
-                                            <label style="display:flex; align-items:center; gap:0.35rem; cursor:pointer; color:var(--text-primary); user-select:none;">
-                                                <input type="checkbox" id="opt-autogen-memorize" checked>
-                                                <span>🧠 暗記事項の自動抽出</span>
+                                            <label style="display:flex; align-items:flex-start; gap:0.55rem; cursor:pointer; color:var(--text-primary); user-select:none;">
+                                                <input type="checkbox" id="opt-autogen-drills" checked style="margin-top:0.18rem; transform:scale(1.2); accent-color:var(--brand-primary);">
+                                                <div>
+                                                    <span style="font-weight:750;">🎯 共通テスト形式選択問題を自動生成する</span>
+                                                    <div style="font-size:0.72rem; color:var(--text-secondary); margin-top:0.1rem; line-height:1.4;">
+                                                        チェックを外すと、選択問題の生成をスキップします。
+                                                    </div>
+                                                </div>
                                             </label>
-                                            <label style="display:flex; align-items:center; gap:0.35rem; cursor:pointer; color:var(--text-primary); user-select:none;">
-                                                <input type="checkbox" id="opt-autogen-drills" checked>
-                                                <span>🎯 選択問題の自動生成</span>
+                                            <label style="display:flex; align-items:flex-start; gap:0.55rem; cursor:pointer; color:var(--text-primary); user-select:none;">
+                                                <input type="checkbox" id="opt-autogen-timeline" checked style="margin-top:0.18rem; transform:scale(1.2); accent-color:var(--brand-primary);">
+                                                <div>
+                                                    <span style="font-weight:750;">⏳ 歴史年表・年代（出来事・年号）を自動作成する（日本史・世界史等）</span>
+                                                    <div style="font-size:0.72rem; color:var(--text-secondary); margin-top:0.1rem; line-height:1.4;">
+                                                        チェックを入れると、本文中の年号・出来事・時代順リストをAIが自動抽出して「歴史統合年表」および「共テ年代整序特訓」に即時登録します。
+                                                    </div>
+                                                </div>
+                                            </label>
+                                            <label style="display:flex; align-items:flex-start; gap:0.55rem; cursor:pointer; color:var(--text-primary); user-select:none;">
+                                                <input type="checkbox" id="opt-autogen-lecture" checked style="margin-top:0.18rem; transform:scale(1.2); accent-color:var(--brand-primary);">
+                                                <div>
+                                                    <span style="font-weight:750;">📖 第1回講義の自動解説から開始する</span>
+                                                </div>
                                             </label>
                                         </div>
                                     </div>
@@ -5522,11 +5547,11 @@
                                         ← 方式選択に戻る
                                     </button>
                                     <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
-                                        <button type="button" class="flora-btn flora-btn-secondary btn-md" id="create-blank-lesson-direct-btn" style="border:1px dashed #4F46E5; color:#4338CA; font-weight:750;" title="プラン分割や自動生成をスキップし、空の授業枠を即座に作成します（AI Studioで作成した内容を直接貼り付けるのに最適）">
-                                            ⚡ AI生成をスキップして直接作成
+                                        <button type="button" class="flora-btn flora-btn-secondary btn-md" id="create-blank-lesson-direct-btn" style="border:1px dashed #64748b; color:var(--text-secondary); font-weight:700;" title="AIを一切使わず、白紙の空授業枠を手動で作成します（AI Studio等から全文自作する場合）">
+                                            📝 完全手動で空の授業枠を作成
                                         </button>
-                                        <button type="button" class="flora-btn flora-btn-primary btn-lg" id="generate-plan-btn">
-                                            🧑‍🏫 AI並列エンジンで授業プランを生成
+                                        <button type="button" class="flora-btn flora-btn-primary btn-lg" id="generate-plan-btn" style="font-weight:800;">
+                                            🧑‍🏫 AIで授業を作成する（パート自動分割・講義準備）
                                         </button>
                                     </div>
                                 </div>
@@ -5633,7 +5658,7 @@
 
                     <!-- 1️⃣ 通常ビュー（標準参考書レイアウト） -->
                     <div id="lesson-standard-container">
-                        <div class="lesson-layout-grid">
+                        <div class="lesson-layout-grid" id="lesson-layout-grid">
                             <!-- 左メイン：授業チャット -->
                             <div class="lesson-main-card">
                                 <div class="lesson-main-card-header" id="lesson-main-card-header">
@@ -5726,13 +5751,17 @@
                                     <button type="button" class="sidebar-tab-btn" data-tab="tab-notes">📝 授業ノート</button>
                                     <button type="button" class="sidebar-tab-btn" data-tab="tab-memorize">🧠 暗記事項</button>
                                     <button type="button" class="sidebar-tab-btn" data-tab="tab-drills">🎯 選択問題 <span id="drills-tab-badge" style="display:none; font-size:0.68rem; background:rgba(16,185,129,0.15); color:#059669; border:1px solid rgba(16,185,129,0.3); padding:0.05rem 0.35rem; border-radius:10px; margin-left:2px;"></span></button>
+                                    <button type="button" class="sidebar-tab-btn" data-tab="tab-timeline" id="tab-btn-timeline">⏳ 歴史年表 <span id="timeline-tab-badge" style="display:none; font-size:0.68rem; background:rgba(245,158,11,0.15); color:#d97706; border:1px solid rgba(245,158,11,0.3); padding:0.05rem 0.35rem; border-radius:10px; margin-left:2px;"></span></button>
                                     <button type="button" class="sidebar-tab-btn" data-tab="tab-source">📖 原本テキスト</button>
                                 </div>
 
                                 <!-- パネル1: パート目次 -->
                                 <div class="sidebar-panel active" id="tab-parts">
-                                    <div style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 0.6rem; font-weight: 600;">
-                                        💡 全パートの構成一覧
+                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.6rem; flex-wrap:wrap; gap:0.4rem;">
+                                        <span style="font-size: 0.78rem; color: var(--text-secondary); font-weight: 700;">💡 全パートの構成一覧</span>
+                                        <button type="button" class="flora-btn flora-btn-secondary btn-xs" id="btn-replan-parts-ai" onclick="replanLessonPartsWithAI()" style="font-size:0.72rem; padding:0.2rem 0.55rem; color:var(--brand-primary); font-weight:700;" title="原本テキストからAIで適切なパート構成（見出し・単元）を自動再分割します">
+                                            🤖 AIでパート構成を再設計
+                                        </button>
                                     </div>
                                     <div id="lesson-parts-toc-list" class="parts-toc-container"></div>
                                 </div>
@@ -5747,9 +5776,10 @@
                                         </div>
                                         <div class="note-header-right">
                                             <!-- 幅プリセット切替 -->
-                                            <div class="note-width-presets" title="画面分割比率">
-                                                <button type="button" class="note-preset-btn" onclick="setSidebarWidthPreset('split')" id="btn-preset-split" title="画面を左右半分（5:5）に分割">5:5</button>
-                                                <button type="button" class="note-preset-btn" onclick="setSidebarWidthPreset('wide')" id="btn-preset-wide" title="ノートを70%にワイド拡大">7:3</button>
+                                            <div class="note-width-presets" title="授業画面とノート画面の比率（クリックで即時リサイズ）">
+                                                <button type="button" class="note-preset-btn" onclick="setSidebarWidthPreset('7:3')" id="btn-preset-7-3" title="授業 70% : ノート 30%（授業優先）">7:3</button>
+                                                <button type="button" class="note-preset-btn" onclick="setSidebarWidthPreset('5:5')" id="btn-preset-split" title="授業 50% : ノート 50%（左右均等）">5:5</button>
+                                                <button type="button" class="note-preset-btn" onclick="setSidebarWidthPreset('3:7')" id="btn-preset-3-7" title="授業 30% : ノート 70%（ノート拡大）">3:7</button>
                                                 <button type="button" class="note-preset-btn" onclick="setSidebarWidthPreset('standard')" id="btn-preset-standard" title="標準幅（380px）に戻す">標準</button>
                                             </div>
                                             
@@ -6008,6 +6038,32 @@
                                     </div>
 
                                     <div id="lesson-choice-drills-list" class="choice-drills-list tex2jax_process"></div>
+                                </div>
+
+                                <!-- パネル: ⏳ 歴史年表・年代出来事リスト（日本史・世界史等） -->
+                                <div class="sidebar-panel" id="tab-timeline">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem; flex-wrap:wrap; gap:0.4rem; border-bottom:1px solid var(--border-color); padding-bottom:0.5rem;">
+                                        <div style="display:flex; align-items:center; gap:0.45rem;">
+                                            <span style="font-size:0.86rem; font-weight:800; color:var(--text-primary); display:flex; align-items:center; gap:0.35rem;">
+                                                ⏳ 歴史年表 &amp; 年代
+                                            </span>
+                                            <span id="timeline-count-badge" style="font-size:0.7rem; color:#d97706; background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.3); padding:0.1rem 0.45rem; border-radius:10px; font-weight:750;">0件</span>
+                                        </div>
+                                        <div style="display:flex; gap:0.35rem; align-items:center; flex-wrap:wrap;">
+                                            <a href="timeline.html?type=japan&quiz=true" id="btn-open-timeline-quiz" target="_blank" class="flora-btn flora-btn-secondary btn-xs" style="font-size:0.72rem; padding:0.25rem 0.6rem; color:#d97706; font-weight:750; text-decoration:none; display:inline-flex; align-items:center; gap:0.25rem; border-color:rgba(245,158,11,0.4);" title="この授業の年代で年代整序特訓（並べ替えクイズ）を開始">
+                                                🎯 年代整序特訓
+                                            </a>
+                                            <a href="timeline.html?type=japan" id="btn-open-history-timeline" target="_blank" class="flora-btn flora-btn-ghost btn-xs" style="font-size:0.72rem; padding:0.25rem 0.55rem; color:var(--text-secondary); text-decoration:none; display:inline-flex; align-items:center; gap:0.25rem;" title="全体の歴史統合年表を開く">
+                                                🏛️ 統合年表
+                                            </a>
+                                            <button type="button" class="flora-btn flora-btn-secondary btn-xs" id="btn-reextract-timeline-ai" onclick="ensureHistoricalEvents(true)" style="font-size:0.72rem; padding:0.25rem 0.55rem; color:var(--brand-primary); font-weight:700;" title="授業本文からAIで年号・出来事を自動再抽出します">
+                                                🤖 AI自動再抽出
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div id="lesson-timeline-container" style="flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:0.6rem; padding-right:0.2rem;">
+                                        <div id="lesson-timeline-list"></div>
+                                    </div>
                                 </div>
 
                                 <!-- パネル4: 原本テキスト -->
@@ -6492,6 +6548,14 @@
                         <div>
                             <div style="font-size:0.82rem; font-weight:750; color:var(--text-primary);">🎯 共通テスト形式選択問題の自動生成</div>
                             <div style="font-size:0.72rem; color:var(--text-secondary); margin-top:0.1rem;">演習ドリル問題をAIが自動作成します（自分で作る場合はOFF）</div>
+                        </div>
+                    </label>
+
+                    <label style="display:flex; align-items:flex-start; gap:0.6rem; cursor:pointer; user-select:none;">
+                        <input type="checkbox" id="direct-opt-timeline" checked style="margin-top:0.2rem; transform:scale(1.15); accent-color:var(--brand-primary);">
+                        <div>
+                            <div style="font-size:0.82rem; font-weight:750; color:var(--text-primary);">⏳ 歴史年代・年表の自動作成（日本史・世界史等）</div>
+                            <div style="font-size:0.72rem; color:var(--text-secondary); margin-top:0.1rem;">年号・出来事・時代順リストをAIが自動抽出して年代整序ドリルに登録します（自分で作る場合はOFF）</div>
                         </div>
                     </label>
 
@@ -9126,6 +9190,8 @@
 
         // 🆕 新しい授業を始める：アコーディオン開閉
         function setNewLessonFormOpen(open) {
+            window.setNewLessonFormOpen = setNewLessonFormOpen;
+            window.toggleNewLessonPanel = setNewLessonFormOpen;
             el("new-lesson-body").classList.toggle("hidden", !open);
             el("new-lesson-toggle").classList.toggle("open", open);
             if (open) goToWizardStep(1);
@@ -11353,6 +11419,237 @@ ${extractedText || "（本文なし）"}
             }
         }
 
+        
+        // ==============================================================
+        // ⏳ 歴史年表・年代出来事（historicalEvents）自動作成＆管理エンジン
+        // ==============================================================
+        const HISTORICAL_EVENTS_SCHEMA = {
+            type: "OBJECT",
+            properties: {
+                historical_events: {
+                    type: "ARRAY",
+                    items: {
+                        type: "OBJECT",
+                        properties: {
+                            name: { type: "STRING", description: "出来事・事件・法制・戦乱・制度・条約・文化などの名称（例: 白村江の戦い, 大化の改新, 武家諸法度, 版籍奉還）" },
+                            year: { type: "STRING", description: "年代表記（例: 663年, 1603年, 前4世紀頃, 1869年）" },
+                            year_sort: { type: "INTEGER", description: "並べ替え用の西暦整数値（紀元前はマイナス数値。例: 663, 1603, -400, 1869）" },
+                            era: { type: "STRING", description: "日本史の時代区分（弥生・古墳, 飛鳥, 奈良, 平安, 鎌倉, 室町・戦国, 安土桃山, 江戸, 明治・大正, 昭和・現代）" },
+                            region: { type: "STRING", description: "世界史の場合は地域区分（東アジア, 西アジア・イスラーム, ヨーロッパ, 南アジア, アメリカ, その他）" },
+                            description: { type: "STRING", description: "その出来事の背景、原因、重要点、影響・結果の簡潔な解説（1〜2文）" }
+                        },
+                        required: ["name", "year", "year_sort"]
+                    }
+                }
+            },
+            required: ["historical_events"]
+        };
+
+        function isHistoryLesson(lesson) {
+            if (!lesson) return false;
+            const s = lesson.subject || (typeof detectLessonSubject === "function" ? detectLessonSubject(lesson) : "");
+            if (s === "日本史" || s === "世界史" || s === "歴史") return true;
+            if (Array.isArray(lesson.historicalEvents) && lesson.historicalEvents.length > 0) return true;
+            const text = `${lesson.title || ""} ${lesson.topic || ""} ${lesson.topicKey || ""} ${(lesson.extractedText || "").slice(0, 1200)}`;
+            return /(時代|幕府|天皇|将軍|戦争|事件|条約|改革|年表|乱|の変|条約|開国|遣隋使|遣唐使|縄文|弥生|古墳|飛鳥|奈良|平安|鎌倉|室町|戦国|安土桃山|江戸|明治|大正|昭和)/.test(text);
+        }
+
+        async function generateHistoricalEvents(extractedText, lessonTitle, subjectName) {
+            if (!extractedText && !lessonTitle) return [];
+            const isWorld = subjectName === "世界史";
+            const promptText = `【教科：${subjectName || "日本史"}】
+【単元名】${lessonTitle}
+
+以下の授業原本テキスト・講義ノートを詳細に解析し、高校日本史・世界史および共通テスト・入試で必須となる【年号・年代・出来事・事件・法制・条約・政権交代・戦乱・文化の動き】を【漏れなく全て】抽出してください。
+
+【厳格ルール】
+1. 年代（西暦・世紀・元号）が伴う歴史的イベントを最優先で抽出すること。
+2. name: 正式な教科書用語（例: 「白村江の戦い」「三内丸山遺跡」「大化の改新」「武家諸法度」「関ヶ原の戦い」）。ふりがな括弧や煽り文句は付けないこと。
+3. year: 覚えやすい標準年代表記（例: 「前4世紀頃」「663年」「1600年」「1867年」）。
+4. year_sort: 並び替え用の西暦整数値（紀元前はマイナス数値。例: -400, 663, 1600, 1867）。
+5. era: 日本史の場合は時代区分（「弥生・古墳」「飛鳥」「奈良」「平安」「鎌倉」「室町・戦国」「安土桃山」「江戸」「明治・大正」「昭和・現代」から最も適切なものを選択）。
+6. description: その出来事の背景、何が起きたか、その後の歴史に与えた影響を1〜2文で明快に要約。
+
+【授業原本テキスト】
+${extractedText.slice(0, 15000)}`;
+
+            const systemPrompt = `あなたは高校・大学受験の歴史（日本史・世界史）専門プロ講師です。提供された原本テキストから、年代整序ドリルおよび歴史統合年表に必要な出来事リスト（historical_events）を網羅的に抽出し、指定のJSON形式で出力してください。`;
+
+            const res = await callGeminiJSON([{ text: promptText }], systemPrompt, {
+                responseSchema: HISTORICAL_EVENTS_SCHEMA,
+                featureId: "lesson_plan"
+            });
+            return Array.isArray(res.historical_events) ? res.historical_events : [];
+        }
+
+        async function ensureHistoricalEvents(force = false) {
+            if (!currentLesson) return;
+            const subject = currentLesson.subject || (typeof detectLessonSubject === "function" ? detectLessonSubject(currentLesson) : "日本史");
+            const isHist = isHistoryLesson(currentLesson);
+
+            // 歴史科目でなく、かつ強制でもない場合は何もしない
+            if (!isHist && !force) {
+                renderHistoricalEvents();
+                return;
+            }
+
+            // すでに出来事データがあり、強制再抽出ではない場合はレンダリングのみ
+            if (!force && Array.isArray(currentLesson.historicalEvents) && currentLesson.historicalEvents.length > 0) {
+                renderHistoricalEvents();
+                return;
+            }
+
+            const rawText = currentLesson.extractedText || 
+                            (currentLesson.parts || []).map(p => `${p.title}: ${p.summary || ""}`).join("\n") || 
+                            currentLesson.title || "";
+            if (!rawText.trim()) {
+                currentLesson.historicalEvents = currentLesson.historicalEvents || [];
+                renderHistoricalEvents();
+                return;
+            }
+
+            renderHistoricalEvents("loading", "⏳ AIが授業本文から歴史年代・重要出来事（年表データ）を自動作成中...");
+
+            try {
+                const events = await generateHistoricalEvents(rawText, currentLesson.title, subject);
+                const prevEvents = (force ? [] : (Array.isArray(currentLesson.historicalEvents) ? currentLesson.historicalEvents : []));
+                const merged = mergeAndDeduplicateHistoricalEvents(prevEvents, events);
+                currentLesson.historicalEvents = merged;
+                await saveLesson();
+                renderHistoricalEvents();
+                if (merged.length > 0) {
+                    showToast(`⏳ 歴史年表に${merged.length}件の年代・出来事を自動登録しました！`, "success", 3500);
+                } else {
+                    showToast("ℹ️ 本文から特定の年号・出来事は検出されませんでした", "info", 3000);
+                }
+            } catch (err) {
+                console.error("⚠️ 年代・年表の自動作成に失敗しました:", err);
+                renderHistoricalEvents("error", err.message);
+            }
+        }
+
+        function renderHistoricalEvents(state, errorMessage) {
+            const container = el("lesson-timeline-list");
+            if (!container) return;
+
+            const badge = el("timeline-tab-badge");
+            const countBadge = el("timeline-count-badge");
+            const tabBtn = el("tab-btn-timeline");
+            const allEvents = Array.isArray(currentLesson?.historicalEvents) ? currentLesson.historicalEvents : [];
+
+            // 歴史科目または出来事が存在する場合はタブボタンをアクティブ表示
+            if (tabBtn && currentLesson) {
+                const isHist = isHistoryLesson(currentLesson);
+                if (isHist || allEvents.length > 0) {
+                    tabBtn.style.display = "inline-flex";
+                } else {
+                    tabBtn.style.display = "none";
+                }
+            }
+
+            // バッジ更新
+            if (badge) {
+                if (allEvents.length > 0) {
+                    badge.textContent = `${allEvents.length}件`;
+                    badge.style.display = "inline-block";
+                } else {
+                    badge.style.display = "none";
+                }
+            }
+            if (countBadge) {
+                countBadge.textContent = `${allEvents.length}件`;
+            }
+
+            // クイズ/統合年表リンクの更新
+            const quizBtn = el("btn-open-timeline-quiz");
+            const historyBtn = el("btn-open-history-timeline");
+            const isWorld = (currentLesson?.subject === "世界史");
+            const historyType = isWorld ? "world" : "japan";
+            if (quizBtn && currentLesson) {
+                quizBtn.href = `timeline.html?type=${historyType}&quiz=true&lessonId=${encodeURIComponent(currentLesson.id)}`;
+            }
+            if (historyBtn) {
+                historyBtn.href = `timeline.html?type=${historyType}`;
+            }
+
+            if (state === "loading") {
+                container.innerHTML = `
+                    <div style="padding:2rem 1rem; text-align:center; color:var(--text-secondary);">
+                        <div class="memorize-loading" style="font-size:0.86rem; font-weight:700; margin-bottom:0.5rem; color:#d97706;">
+                            ${errorMessage || "⏳ AIが授業原本から歴史年代・出来事を自動抽出中..."}
+                        </div>
+                        <div style="font-size:0.75rem; color:var(--text-muted);">共通テスト年代整序特訓・歴史統合年表にシームレスに同期されます</div>
+                    </div>
+                `;
+                return;
+            }
+
+            if (state === "error") {
+                container.innerHTML = `
+                    <div style="padding:1.5rem 1rem; text-align:center; background:rgba(239, 68, 68, 0.06); border:1px solid rgba(239, 68, 68, 0.25); border-radius:var(--radius-md);">
+                        <div style="color:var(--error); margin-bottom:0.4rem; font-weight:750; font-size:0.86rem;">⚠️ 年代・年表の作成に失敗しました</div>
+                        <div style="font-size:0.75rem; color:var(--text-secondary); margin-bottom:0.8rem;">${errorMessage || "通信エラー等が発生しました"}</div>
+                        <button type="button" class="flora-btn flora-btn-primary btn-xs" onclick="ensureHistoricalEvents(true)">🔄 もう一度AI抽出する</button>
+                    </div>
+                `;
+                return;
+            }
+
+            if (allEvents.length === 0) {
+                container.innerHTML = `
+                    <div style="padding:2rem 1rem; text-align:center; background:var(--bg-subtle); border:1px dashed var(--border-color); border-radius:var(--radius-md);">
+                        <div style="font-size:1.8rem; margin-bottom:0.5rem;">⏳</div>
+                        <div style="font-size:0.88rem; font-weight:750; color:var(--text-primary); margin-bottom:0.3rem;">歴史年表・年代データがまだありません</div>
+                        <div style="font-size:0.75rem; color:var(--text-secondary); margin-bottom:1rem; line-height:1.5;">
+                            日本史・世界史の本文から、年号や出来事をAIが自動抽出して「歴史統合年表」や「年代整序特訓」に即時登録できます。
+                        </div>
+                        <button type="button" class="flora-btn flora-btn-primary btn-sm" onclick="ensureHistoricalEvents(true)" style="font-weight:750;">
+                            🤖 AIで年代・年表を自動作成する
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            // 年代順にソート
+            const sortedEvents = [...allEvents].sort((a, b) => {
+                const ya = (typeof a.year_sort === "number" && !isNaN(a.year_sort)) ? a.year_sort : 9999;
+                const yb = (typeof b.year_sort === "number" && !isNaN(b.year_sort)) ? b.year_sort : 9999;
+                return ya - yb;
+            });
+
+            let html = '<div style="display:flex; flex-direction:column; gap:0.55rem;">';
+            sortedEvents.forEach((ev, idx) => {
+                const yearText = ev.year || (ev.year_sort ? `${ev.year_sort}年` : "年代未詳");
+                const eraBadge = ev.era ? `<span style="font-size:0.68rem; font-weight:700; color:#4338CA; background:rgba(99,102,241,0.1); border:1px solid rgba(99,102,241,0.25); padding:0.1rem 0.4rem; border-radius:var(--radius-sm); white-space:nowrap;">${ev.era}</span>` : "";
+                const regionBadge = ev.region ? `<span style="font-size:0.68rem; font-weight:700; color:#059669; background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.25); padding:0.1rem 0.4rem; border-radius:var(--radius-sm); white-space:nowrap;">${ev.region}</span>` : "";
+                const descText = ev.description ? `<div style="font-size:0.76rem; color:var(--text-secondary); margin-top:0.25rem; line-height:1.45;">${ev.description}</div>` : "";
+
+                html += `
+                    <div class="historical-event-card" style="background:var(--bg-surface); border:1px solid var(--border-color); border-left:3px solid #d97706; border-radius:var(--radius-md); padding:0.65rem 0.85rem; box-shadow:var(--shadow-xs); transition:all 0.15s ease;">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:0.4rem; flex-wrap:wrap;">
+                            <div style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap;">
+                                <span style="font-size:0.72rem; font-weight:800; color:#b45309; background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.35); padding:0.15rem 0.5rem; border-radius:var(--radius-full); white-space:nowrap;">
+                                    ⏳ ${yearText}
+                                </span>
+                                ${eraBadge}
+                                ${regionBadge}
+                            </div>
+                            <span style="font-size:0.68rem; color:var(--text-muted); font-weight:600;">#${idx + 1}</span>
+                        </div>
+                        <div style="font-weight:750; font-size:0.88rem; color:var(--text-primary); margin-top:0.35rem;">
+                            ${ev.name}
+                        </div>
+                        ${descText}
+                    </div>
+                `;
+            });
+            html += '</div>';
+
+            container.innerHTML = html;
+        }
+
+
         // --------------------------------------------------------------
         // 🎴 暗記フラッシュカード演習 & 🕒 閲覧履歴（10件）エンジン
         // --------------------------------------------------------------
@@ -13052,42 +13349,61 @@ ${existingLeads}
             return { subject, title: titleCandidate, extractedText, topicName };
         }
 
+        // 📑 本文テキストからのスマートパート分割（「本文」「注釈」「史料」等の小見出し混入を完全除外）
         function splitTextIntoParts(rawText, fallbackTitle) {
-            if (!rawText) return [{ title: fallbackTitle, summary: "手動・AI Studio作成パート" }];
+            if (!rawText) return [{ title: fallbackTitle, summary: "手動・AI作成パート" }];
 
-            const lines = rawText.split("\n");
-            const headingRegex = /^(?:#{1,3}\s+|第[0-9一二三四五六七八九十]+[章節回講]\s*|■\s*|[0-9]+[\.．]\s+|【(?:パート|Part|その)?\s*[0-9一二三四五六七八九十]+】\s*)(.+)$/i;
+            const lines = rawText.split(/\r?\n/);
+            const IGNORED_HEADINGS = /^(本文|注釈|史料|図版解説|解説|まとめ|第[0-9一二三四五六七八九十]+章のまとめ|問い?|問[0-9]+|設問|解答|答え|参考|コラム|補足|NOTE|Point|Q&A|FAQ|重要|要約|前書き|はじめに|おわりに)$/i;
+
+            // ## 見出し（H2）が複数存在する場合は、最優先でH2を見出し境界として採用
+            const h2Count = lines.filter(l => /^##\s+/.test(l.trim())).length;
+            let headingRegex;
+            if (h2Count >= 2) {
+                headingRegex = /^##\s+(.+)$/;
+            } else {
+                headingRegex = /^(?:#{1,2}\s+|第[0-9一二三四五六七八九十]+[章節回講]\s*|■\s*|【(?:パート|Part|その)?\s*[0-9一二三四五六七八九十]+】\s*)(.+)$/i;
+            }
 
             const parts = [];
             let currentPartTitle = "";
             let currentPartLines = [];
 
             for (const line of lines) {
-                const match = line.trim().match(headingRegex);
-                if (match && currentPartLines.length > 3) {
-                    parts.push({
-                        title: cleanPartTitle(currentPartTitle || fallbackTitle, parts.length),
-                        summary: currentPartLines.slice(0, 3).join(" ").slice(0, 100) + "..."
-                    });
-                    currentPartTitle = match[1].trim();
-                    currentPartLines = [];
-                } else {
-                    if (!currentPartTitle && match) {
-                        currentPartTitle = match[1].trim();
+                const trimmed = line.trim();
+                const match = trimmed.match(headingRegex);
+                if (match) {
+                    const rawTitle = match[1].replace(/^[#\s]+/, "").trim();
+                    // 「本文」「注釈」などの小見出しはパート境界にせず内部テキストとして保持
+                    if (IGNORED_HEADINGS.test(rawTitle)) {
+                        currentPartLines.push(line);
+                        continue;
                     }
-                    currentPartLines.push(line);
+                    if (currentPartLines.join("").trim().length > 30 && currentPartTitle) {
+                        parts.push({
+                            title: cleanPartTitle(currentPartTitle, parts.length),
+                            summary: currentPartLines.filter(l => l.trim() && !l.startsWith("#")).slice(0, 3).join(" ").slice(0, 100) + "..."
+                        });
+                        currentPartTitle = rawTitle;
+                        currentPartLines = [];
+                        continue;
+                    } else if (!currentPartTitle) {
+                        currentPartTitle = rawTitle;
+                        continue;
+                    }
                 }
+                currentPartLines.push(line);
             }
 
-            if (currentPartLines.length > 0 || parts.length === 0) {
+            if (currentPartTitle || currentPartLines.length > 0) {
                 parts.push({
                     title: cleanPartTitle(currentPartTitle || fallbackTitle, parts.length),
-                    summary: currentPartLines.slice(0, 3).join(" ").slice(0, 100) + "..."
+                    summary: currentPartLines.filter(l => l.trim() && !l.startsWith("#")).slice(0, 3).join(" ").slice(0, 100) + "..."
                 });
             }
 
             if (parts.length > 8) parts.length = 8;
-            return parts.length > 0 ? parts : [{ title: fallbackTitle, summary: "手動・AI Studio作成パート" }];
+            return parts.length > 0 ? parts : [{ title: fallbackTitle, summary: "手動・AI作成パート" }];
         }
 
         function openDirectCreationModal() {
@@ -13165,13 +13481,35 @@ ${existingLeads}
                 const extractedText = draft.extractedText;
 
                 const shouldSplit = el("direct-opt-split-parts") ? el("direct-opt-split-parts").checked : false;
-                const parts = shouldSplit && extractedText ? splitTextIntoParts(extractedText, title) : [{ title: title, summary: "手動・カスタム作成パート" }];
-
                 const opts = {
                     lecture: el("direct-opt-lecture") ? el("direct-opt-lecture").checked : false,
                     memorize: el("direct-opt-memorize") ? el("direct-opt-memorize").checked : false,
-                    drills: el("direct-opt-drills") ? el("direct-opt-drills").checked : false
+                    drills: el("direct-opt-drills") ? el("direct-opt-drills").checked : false,
+                    timeline: el("direct-opt-timeline") ? el("direct-opt-timeline").checked : true
                 };
+
+                let parts = [];
+                // AIキーが利用可能でパート分割が有効な場合は、AIで論理的なパート構成を自動設計
+                if (shouldSplit && extractedText) {
+                    if (typeof hasAvailableGeminiKey === "function" && hasAvailableGeminiKey()) {
+                        btn.textContent = "🤖 AIが最適なパート構成を設計中...";
+                        try {
+                            const planPrompt = `【教科：${subject}】\n以下の原本テキストの内容量を踏まえ、生徒が理解しやすい論理的な区切りのパート構成（目安2〜5パート）を設計してください。\n※「本文」「注釈」「史料」等の小見出し単位ではなく、単元テーマごとに体系的に分割してください。\n\n【原本テキスト】\n${extractedText.slice(0, 15000)}`;
+                            const planSys = `あなたは高校・大学受験のプロ講師です。提供された本文から論理的なパート構成（parts: [{title: string, summary: string}]）をJSON形式で設計してください。出力スキーマ: {"type":"OBJECT","properties":{"parts":{"type":"ARRAY","items":{"type":"OBJECT","properties":{"title":{"type":"STRING"},"summary":{"type":"STRING"}},"required":["title","summary"]}}},"required":["parts"]}`;
+                            const res = await callGeminiJSON([{ text: planPrompt }], planSys, { responseSchema: { type: "OBJECT", properties: { parts: { type: "ARRAY", items: { type: "OBJECT", properties: { title: { type: "STRING" }, summary: { type: "STRING" } }, required: ["title", "summary"] } } }, required: ["parts"] }, featureId: "lesson_plan" });
+                            if (res && Array.isArray(res.parts) && res.parts.length > 0) {
+                                parts = res.parts.map((p, idx) => ({ ...p, title: cleanPartTitle(p.title, idx) }));
+                            }
+                        } catch(planErr) {
+                            console.warn("AIパート分割失敗、スマート分割にフォールバック:", planErr);
+                        }
+                    }
+                    if (parts.length === 0) {
+                        parts = splitTextIntoParts(extractedText, title);
+                    }
+                } else {
+                    parts = [{ title: title, summary: "手動・カスタム作成パート" }];
+                }
                 saveAutogenOptions(opts);
 
                 const newId = "LESSON_" + Date.now();
@@ -13192,7 +13530,7 @@ ${existingLeads}
                     keyTerms: [],
                     inheritedKeyTerms: [],
                     accumulatedKeyTerms: [],
-                    historicalEvents: [],
+                    historicalEvents: (opts.timeline !== false && (subject === "日本史" || subject === "世界史" || subject === "歴史")) ? null : [],
                     memorizationPoints: opts.memorize ? null : [],
                     choiceDrills: opts.drills ? null : [],
                     autogenSettings: opts
@@ -13272,7 +13610,7 @@ ${existingLeads}
                     keyTerms: thisLessonKeyTerms,
                     inheritedKeyTerms: inheritedKeyTerms,
                     accumulatedKeyTerms: mergedKeyTerms,
-                    historicalEvents: mergedHistoricalEvents,
+                    historicalEvents: (mergedHistoricalEvents && mergedHistoricalEvents.length > 0) ? mergedHistoricalEvents : ((autogenOpts.timeline !== false && (lessonSubject === "日本史" || lessonSubject === "世界史" || lessonSubject === "歴史")) ? null : []),
                     autogenSettings: autogenOpts,
                     memorizationPoints: autogenOpts.memorize ? null : [],
                     choiceDrills: autogenOpts.drills ? null : [],
@@ -17097,6 +17435,109 @@ ${subjectGuide}
             forceTriggerMathJax(container);
         }
 
+        // 🤖 原本テキストを基にAIで論理的なパート構成を再設計（本文・注釈等の小見出し崩れを美しく解消）
+        window.replanLessonPartsWithAI = async function() {
+            if (!currentLesson || !loginUid) return;
+            const fullText = (currentLesson.extractedText || "").trim();
+            if (!fullText) {
+                showToast("原本テキストがありません。「📖 原本テキスト」タブにテキストを登録してください。", "warning");
+                return;
+            }
+
+            const ok = confirm(`【🤖 AIパート構成の再設計】\n\n現在の原本テキストを解析し、AIが論理的・体系的な単元区切り（目安2〜5パート）に自動で美しく再構成します。\n\n※「本文」「注釈」などの小見出し単位ではなく、単元テーマごとに整理されます。\n※暗記事項はそのまま維持されます。\n\nパート構成を再構築しますか？`);
+            if (!ok) return;
+
+            const replanBtn = el("btn-replan-parts-ai");
+            if (replanBtn) {
+                replanBtn.disabled = true;
+                replanBtn.textContent = "⏳ AIがパート再設計中...";
+            }
+
+            showToast("🤖 AIがテキストを解析し、最適なパート構成を再設計しています...", "info", 6000);
+
+            try {
+                const subject = currentLesson.subject || detectLessonSubject(currentLesson) || "その他";
+                const subjectGuide = SUBJECT_PROMPT_GUIDES[subject] || "";
+
+                const PLAN_SYS = `あなたは高校・大学受験のプロ講師です。
+提供された教科書・参考書のテキストを解析し、生徒が学びやすい論理的・体系的なパート構成（目安2〜5パート）を設計してください。
+【厳守ルール】
+1. 「本文」「注釈」「史料」「図版解説」「解説」等の小見出しをパート名にすることは絶対に禁止します。
+2. 歴史や理論の因果関係・トピック（単元テーマ）ごとに、区切りの良いパートを設計してください。
+3. parts[].title: 各回のテーマを【8〜18文字程度】で短くスッキリ命名してください。『第1回』等の回数表記は含めず、タイトル名のみにしてください。
+4. parts[].summary: そのパートで何を学ぶのか、因果関係や重要ポイントを2〜3行（80〜150文字程度）でまとめてください。
+出力は指定のJSON形式のみで返してください。`;
+
+                const promptText = `【教科：${subject}】\n以下の原本テキストを解析し、論理的な全パート構成（parts: [{title, summary}]）をJSON形式で作成してください。\n\n【原本テキスト全文】\n${fullText.slice(0, 16000)}`;
+
+                const SCHEMA = {
+                    type: "OBJECT",
+                    properties: {
+                        lesson_title: { type: "STRING" },
+                        parts: {
+                            type: "ARRAY",
+                            items: {
+                                type: "OBJECT",
+                                properties: {
+                                    title: { type: "STRING" },
+                                    summary: { type: "STRING" }
+                                },
+                                required: ["title", "summary"]
+                            }
+                        }
+                    },
+                    required: ["parts"]
+                };
+
+                const result = await callGeminiJSON([{ text: promptText }], PLAN_SYS, { responseSchema: SCHEMA, featureId: "lesson_plan" });
+
+                if (!result || !Array.isArray(result.parts) || result.parts.length === 0) {
+                    throw new Error("パート情報の生成に失敗しました。");
+                }
+
+                const newParts = result.parts.map((p, idx) => ({
+                    title: cleanPartTitle(p.title, idx),
+                    summary: p.summary || ""
+                }));
+
+                currentLesson.parts = newParts;
+                if (result.lesson_title && (!currentLesson.title || currentLesson.title.includes("新規授業"))) {
+                    currentLesson.title = cleanLessonTitle(result.lesson_title);
+                }
+                currentLesson.currentPartIndex = 0;
+                currentLesson.chatHistory = [
+                    { role: "divider", content: `第1回: ${newParts[0].title}` }
+                ];
+                currentLesson.updatedAt = new Date().toISOString();
+
+                await saveLesson();
+
+                renderPartsTOC();
+                updateProgressStrip();
+                renderChatTranscript();
+                renderVscodeMode();
+                initLessonTitleEditor();
+
+                showToast(`🎉 AIが全${newParts.length}パート（${newParts.map(p => p.title).join("、")}）に美しく再構成しました！`, "success", 5000);
+
+                // 第1回講義の自動スタート
+                try {
+                    await sendTurn(null, "第1回の授業を始めてください。");
+                } catch(e) {
+                    console.warn(e);
+                }
+
+            } catch(err) {
+                console.error("AIパート再設計エラー:", err);
+                showToast("パート再設計に失敗しました: " + err.message, "error", 5000);
+            } finally {
+                if (replanBtn) {
+                    replanBtn.disabled = false;
+                    replanBtn.textContent = "🤖 AIでパート構成を再設計";
+                }
+            }
+        };
+
         // パートのチャット内位置（divider）へジャンプする関数
         function scrollToPartDivider(partIndex) {
             const wrap = el("chat-transcript");
@@ -17332,6 +17773,7 @@ ${subjectGuide}
                 e.preventDefault();
                 isDragging = true;
                 resizer.classList.add("is-dragging");
+                grid.classList.add("is-resizing");
                 document.body.style.userSelect = "none";
                 document.body.style.cursor = "col-resize";
 
@@ -17354,6 +17796,7 @@ ${subjectGuide}
                 const onMouseUp = () => {
                     isDragging = false;
                     resizer.classList.remove("is-dragging");
+                    grid.classList.remove("is-resizing");
                     document.body.style.userSelect = "";
                     document.body.style.cursor = "";
                     document.removeEventListener("mousemove", onMouseMove);
@@ -17380,17 +17823,19 @@ ${subjectGuide}
             updateWidthPresetButtonState();
         }
 
-        // 幅プリセット切替（5:5 / 7:3 / 標準）
+        // 幅プリセット切替（7:3 / 5:5 / 3:7 / 標準）
         window.setSidebarWidthPreset = function(preset) {
-            const grid = el("lesson-layout-grid");
+            const grid = el("lesson-layout-grid") || document.querySelector(".lesson-layout-grid");
             if (!grid) return;
-            const gridWidth = grid.getBoundingClientRect().width || 1200;
+            const gridWidth = grid.getBoundingClientRect().width || window.innerWidth;
 
             let targetWidth = "380px";
-            if (preset === "split") {
-                targetWidth = `${Math.round(gridWidth * 0.5)}px`;
-            } else if (preset === "wide") {
-                targetWidth = `${Math.round(gridWidth * 0.7)}px`;
+            if (preset === "7:3" || preset === "ratio-7-3") {
+                targetWidth = `${Math.round(gridWidth * 0.30)}px`;
+            } else if (preset === "split" || preset === "5:5") {
+                targetWidth = `${Math.round(gridWidth * 0.50)}px`;
+            } else if (preset === "wide" || preset === "3:7" || preset === "ratio-3-7") {
+                targetWidth = `${Math.round(gridWidth * 0.70)}px`;
             } else if (preset === "standard") {
                 targetWidth = "380px";
             }
@@ -17401,23 +17846,26 @@ ${subjectGuide}
         };
 
         function updateWidthPresetButtonState() {
-            const grid = el("lesson-layout-grid");
+            const grid = el("lesson-layout-grid") || document.querySelector(".lesson-layout-grid");
             if (!grid) return;
             const gridWidth = grid.getBoundingClientRect().width || 1200;
             const currentStr = grid.style.getPropertyValue("--lesson-sidebar-width") || "380px";
             const currentPx = parseInt(currentStr, 10) || 380;
             const ratio = currentPx / gridWidth;
 
+            const btn73 = el("btn-preset-7-3");
             const btnSplit = el("btn-preset-split");
-            const btnWide = el("btn-preset-wide");
+            const btn37 = el("btn-preset-3-7") || el("btn-preset-wide");
             const btnStandard = el("btn-preset-standard");
 
-            [btnSplit, btnWide, btnStandard].forEach(b => b && b.classList.remove("active"));
+            [btn73, btnSplit, btn37, btnStandard].forEach(b => b && b.classList.remove("active"));
 
             if (ratio >= 0.62) {
-                if (btnWide) btnWide.classList.add("active");
-            } else if (ratio >= 0.44 && ratio <= 0.58) {
+                if (btn37) btn37.classList.add("active");
+            } else if (ratio >= 0.42 && ratio <= 0.58) {
                 if (btnSplit) btnSplit.classList.add("active");
+            } else if (ratio >= 0.22 && ratio <= 0.38) {
+                if (btn73) btn73.classList.add("active");
             } else if (currentPx <= 420) {
                 if (btnStandard) btnStandard.classList.add("active");
             }
@@ -20214,8 +20662,9 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
                 const tabId = btn.getAttribute("data-tab");
                 const panel = el(tabId);
                 if (panel) panel.classList.add("active");
-                if (tabId === "tab-source" || tabId === "tab-memorize" || tabId === "tab-drills") {
+                if (tabId === "tab-source" || tabId === "tab-memorize" || tabId === "tab-drills" || tabId === "tab-timeline") {
                     if (tabId === "tab-drills") renderChoiceDrills();
+                    if (tabId === "tab-timeline") renderHistoricalEvents();
                     forceTriggerMathJax();
                 } else if (tabId === "tab-notes") {
                     if (typeof onLessonNotesTabActivated === "function") {
@@ -21764,6 +22213,13 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
                 renderChoiceDrills();
             }
 
+            if (autogen.timeline !== false) {
+                ensureHistoricalEvents(); // ⏳ 日本史・世界史等の歴史年表・年代もバックグラウンドで自動生成（ブロックしない）
+            } else {
+                currentLesson.historicalEvents = currentLesson.historicalEvents || [];
+                renderHistoricalEvents();
+            }
+
             switchLessonViewMode(currentLessonViewMode);
 
             if (currentLesson.chatHistory.length === 0) {
@@ -21910,14 +22366,14 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
                 if (select) {
                     select.value = handoff.continuationId;
                 }
-                toggleNewLessonPanel(true);
+                setNewLessonFormOpen(true);
                 goToWizardStep(2);
                 showToast(`🔗 「${handoff.continuationTitle || "前回の授業"}」の続きを作成します。入力方式（写真または単元名）を選んでください！`, "info", 5000);
                 return;
             }
 
             if (!handoff.topic) {
-                toggleNewLessonPanel(true);
+                setNewLessonFormOpen(true);
                 goToWizardStep(2);
                 return;
             }
