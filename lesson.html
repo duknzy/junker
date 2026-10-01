@@ -4524,7 +4524,7 @@
             background: var(--bg-surface);
             position: relative;
             box-shadow: 0 24px 48px rgba(0,0,0,0.18);
-            transition: max-width 0.2s ease, padding 0.2s ease;
+            transition: max-width 0.25s cubic-bezier(0.16, 1, 0.3, 1), padding 0.25s ease, transform 0.25s ease, width 0.25s ease;
         }
         @media (min-width: 1024px) {
             .fc-modal-dialog {
@@ -4532,6 +4532,95 @@
                 width: 90vw;
                 padding: 1.8rem 2.4rem;
             }
+        }
+
+        /* 🖼️ ピクチャー・イン・ピクチャー（PIP / フローティング）モード: 画面を覆わず本文や他操作を邪魔しない */
+        #lesson-fc-drill-modal.fc-mode-pip {
+            position: fixed !important;
+            top: auto !important;
+            left: auto !important;
+            right: 20px !important;
+            bottom: 20px !important;
+            width: auto !important;
+            height: auto !important;
+            background: transparent !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            pointer-events: none !important;
+            padding: 0 !important;
+            z-index: 100060 !important;
+        }
+        #lesson-fc-drill-modal.fc-mode-pip .fc-modal-dialog {
+            pointer-events: auto !important;
+            width: 440px !important;
+            max-width: calc(100vw - 32px) !important;
+            max-height: 86vh !important;
+            padding: 1rem 1.15rem !important;
+            border-radius: var(--radius-lg) !important;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28), 0 0 0 1.5px var(--brand-primary) !important;
+            border: 1px solid var(--border-color) !important;
+        }
+        #lesson-fc-drill-modal.fc-mode-pip .fc-card-inner,
+        #lesson-fc-drill-modal.fc-mode-pip .fc-card-face {
+            min-height: 280px !important;
+            padding: 1rem 1.1rem !important;
+        }
+        #lesson-fc-drill-modal.fc-mode-pip .fc-prompt-body,
+        #lesson-fc-drill-modal.fc-mode-pip .fc-answer-body {
+            min-height: 140px !important;
+            padding: 0.6rem 0.4rem !important;
+        }
+        #lesson-fc-drill-modal.fc-mode-pip .fc-main-term {
+            font-size: 1.12rem !important;
+            line-height: 1.5 !important;
+        }
+        #lesson-fc-drill-modal.fc-mode-pip .fc-main-answer {
+            font-size: 1rem !important;
+            line-height: 1.55 !important;
+        }
+        #lesson-fc-drill-modal.fc-mode-pip .fc-shortcut-hints {
+            display: none !important;
+        }
+        #lesson-fc-drill-modal.fc-mode-pip .fc-srs-keyhint {
+            display: none !important;
+        }
+        #lesson-fc-drill-modal.fc-mode-pip .fc-srs-btn {
+            padding: 0.45rem 0.35rem !important;
+            font-size: 0.76rem !important;
+        }
+
+        /* 🗕 最小化モード */
+        #lesson-fc-drill-modal.fc-mode-minimized {
+            position: fixed !important;
+            top: auto !important;
+            left: auto !important;
+            right: 20px !important;
+            bottom: 20px !important;
+            width: auto !important;
+            height: auto !important;
+            background: transparent !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            pointer-events: none !important;
+            padding: 0 !important;
+            z-index: 100060 !important;
+        }
+        #lesson-fc-drill-modal.fc-mode-minimized .fc-modal-dialog {
+            pointer-events: auto !important;
+            width: 320px !important;
+            max-width: calc(100vw - 32px) !important;
+            padding: 0.6rem 0.9rem !important;
+            border-radius: var(--radius-md) !important;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22), 0 0 0 1.5px #10B981 !important;
+        }
+        #lesson-fc-drill-modal.fc-mode-minimized #lesson-fc-active-container,
+        #lesson-fc-drill-modal.fc-mode-minimized #lesson-fc-finish-view {
+            display: none !important;
+        }
+        #lesson-fc-drill-modal.fc-mode-minimized .fc-modal-header {
+            margin-bottom: 0 !important;
+            padding-bottom: 0 !important;
+            border-bottom: none !important;
         }
         .fc-stage {
             perspective: 1200px;
@@ -5957,9 +6046,14 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <button type="button" id="btn-start-lesson-flashcards" class="tactile-btn" style="background: linear-gradient(135deg, #059669 0%, #0d9488 100%); color: #fff; font-weight: 800; font-size: 0.78rem; padding: 0.45rem 0.9rem; border-radius: var(--radius-md); box-shadow: 0 2px 8px rgba(5,150,105,0.25); border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem;">
-                                            <span>▶ カード演習開始</span>
-                                        </button>
+                                        <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
+                                            <button type="button" id="btn-start-lesson-flashcards-reset" class="tactile-btn tactile-btn-secondary" style="font-size: 0.74rem; padding: 0.42rem 0.65rem; border-radius: var(--radius-md); display: none;" title="進捗をリセットして1問目からやり直す">
+                                                <span>最初から</span>
+                                            </button>
+                                            <button type="button" id="btn-start-lesson-flashcards" class="tactile-btn" style="background: linear-gradient(135deg, #059669 0%, #0d9488 100%); color: #fff; font-weight: 800; font-size: 0.78rem; padding: 0.45rem 0.9rem; border-radius: var(--radius-md); box-shadow: 0 2px 8px rgba(5,150,105,0.25); border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem;">
+                                                <span id="btn-start-lesson-flashcards-text">▶ カード演習開始</span>
+                                            </button>
+                                        </div>
                                     </div>
 
                                     <div id="lesson-memorization-list" class="memorize-list tex2jax_process"></div>
@@ -7352,20 +7446,23 @@
         </div>
     </div>
 
-    <!-- 🎴 この授業の暗記フラッシュカード演習モーダル -->
+    <!-- 🎴 この授業の暗記フラッシュカード演習モーダル（全画面/右下PIP/最小化 切替対応） -->
     <div id="lesson-fc-drill-modal" class="modal-overlay" style="display:none; z-index:100050;">
         <div class="modal-content fc-modal-dialog">
             <!-- モーダルヘッダー -->
-            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-color); padding-bottom:0.75rem; margin-bottom:0.9rem; flex-wrap:wrap; gap:0.6rem;">
-                <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;">
-                    <span style="font-size:1.2rem;">🎴</span>
-                    <span id="lesson-fc-modal-title" style="font-size:0.92rem; font-weight:800; color:var(--text-primary); max-width:320px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">授業暗記カード</span>
+            <div class="fc-modal-header" style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-color); padding-bottom:0.75rem; margin-bottom:0.9rem; flex-wrap:wrap; gap:0.6rem;">
+                <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap; min-width:0; flex:1;">
+                    <span style="font-size:1.2rem; flex-shrink:0;">🎴</span>
+                    <span id="lesson-fc-modal-title" style="font-size:0.92rem; font-weight:800; color:var(--text-primary); max-width:240px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">授業暗記カード</span>
                     <span id="lesson-fc-subject-badge" class="fc-subject-pill">教科</span>
+                    <span id="lesson-fc-minimized-hint" style="display:none; font-size:0.72rem; color:var(--text-muted); font-weight:700;">（最小化中 - クリックで復元）</span>
                 </div>
-                <div style="display:flex; align-items:center; gap:0.55rem; flex-wrap:wrap;">
-                    <button type="button" id="lesson-fc-sound-toggle" class="flora-btn flora-btn-ghost btn-sm" style="padding:0.25rem 0.55rem; font-size:0.74rem; font-weight:700;" title="効果音ON/OFF">🔊 音ON</button>
-                    <button type="button" id="lesson-fc-shuffle-toggle" class="flora-btn flora-btn-ghost btn-sm" style="padding:0.25rem 0.55rem; font-size:0.74rem; font-weight:700;" title="出題順シャッフル">🔀 シャッフル</button>
-                    <button type="button" class="star-btn" id="lesson-fc-modal-close" style="font-size:1.5rem; line-height:1; color:var(--text-muted); padding:0 0.4rem; cursor:pointer;" title="閉じる [Esc]">×</button>
+                <div style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap; flex-shrink:0;">
+                    <button type="button" id="lesson-fc-sound-toggle" class="flora-btn flora-btn-ghost btn-sm" style="padding:0.25rem 0.5rem; font-size:0.74rem; font-weight:700;" title="効果音ON/OFF">🔊 音ON</button>
+                    <button type="button" id="lesson-fc-shuffle-toggle" class="flora-btn flora-btn-ghost btn-sm" style="padding:0.25rem 0.5rem; font-size:0.74rem; font-weight:700;" title="出題順シャッフル">🔀 シャッフル</button>
+                    <button type="button" id="lesson-fc-pip-toggle" class="flora-btn flora-btn-ghost btn-sm" style="padding:0.25rem 0.5rem; font-size:0.74rem; font-weight:700; color:var(--brand-primary);" title="右下フロート（画面を覆わず他操作を並行可能）切替">🖼️ フロート</button>
+                    <button type="button" id="lesson-fc-minimize-toggle" class="flora-btn flora-btn-ghost btn-sm" style="padding:0.25rem 0.45rem; font-size:0.85rem; font-weight:700;" title="最小化 / 展開">🗕</button>
+                    <button type="button" class="star-btn" id="lesson-fc-modal-close" style="font-size:1.4rem; line-height:1; color:var(--text-muted); padding:0 0.35rem; cursor:pointer;" title="閉じる（進捗は保持されます）">×</button>
                 </div>
             </div>
 
@@ -7456,7 +7553,7 @@
                 </div>
 
                 <!-- ショートカットキー案内 -->
-                <div style="display:flex; justify-content:center; gap:1.2rem; margin-top:0.8rem; font-size:0.72rem; color:var(--text-muted); border-top:1px dashed var(--border-color); padding-top:0.6rem; flex-wrap:wrap;">
+                <div class="fc-shortcut-hints" style="display:flex; justify-content:center; gap:1.2rem; margin-top:0.8rem; font-size:0.72rem; color:var(--text-muted); border-top:1px dashed var(--border-color); padding-top:0.6rem; flex-wrap:wrap;">
                     <span><kbd style="background:var(--bg-subtle); padding:0.1rem 0.4rem; border-radius:4px; border:1px solid var(--border-color); font-weight:700;">Space</kbd> / クリック: 表裏切替</span>
                     <span><kbd style="background:var(--bg-subtle); padding:0.1rem 0.4rem; border-radius:4px; border:1px solid var(--border-color); font-weight:700;">1</kbd>〜<kbd style="background:var(--bg-subtle); padding:0.1rem 0.4rem; border-radius:4px; border:1px solid var(--border-color); font-weight:700;">4</kbd>: 評価</span>
                     <span><kbd style="background:var(--bg-subtle); padding:0.1rem 0.4rem; border-radius:4px; border:1px solid var(--border-color); font-weight:700;">Esc</kbd>: 閉じる</span>
@@ -11665,6 +11762,9 @@ ${extractedText.slice(0, 15000)}`;
         let lessonFcSoundEnabled = true;
         let lessonFcShuffleEnabled = false;
         let lessonFcAudioCtx = null;
+        let lessonFcIsPip = false;
+        let lessonFcIsMinimized = false;
+        const LESSON_FC_SESSION_KEY_PREFIX = "flora_lesson_fc_session_";
 
         function sanitizeDbKey(key) {
             return String(key || "").replace(/[.#$\[\]\/]/g, "_");
@@ -11773,6 +11873,147 @@ ${extractedText.slice(0, 15000)}`;
             } catch(e) {}
         }
 
+        function getLessonFcSessionKey(lessonId) {
+            return LESSON_FC_SESSION_KEY_PREFIX + (lessonId || currentLessonId || "default");
+        }
+
+        function saveLessonFcSession() {
+            if (!currentLessonId || !lessonFcCards || lessonFcCards.length === 0) return;
+            try {
+                // すでに完了している場合はセッションをクリア
+                if (lessonFcIndex >= lessonFcCards.length) {
+                    clearLessonFcSession(currentLessonId);
+                    return;
+                }
+                const data = {
+                    lessonId: currentLessonId,
+                    index: lessonFcIndex,
+                    stats: lessonFcStats,
+                    cards: lessonFcCards.map(c => ({
+                        id: c.id,
+                        progressKey: c.progressKey,
+                        category: c.category,
+                        question: c.question,
+                        answer: c.answer,
+                        content: c.content,
+                        note: c.note,
+                        boxLevel: c.boxLevel,
+                        reps: c.reps,
+                        lapses: c.lapses,
+                        isRetryCard: !!c.isRetryCard,
+                        lastReviewedAt: c.lastReviewedAt,
+                        nextReviewDate: c.nextReviewDate
+                    })),
+                    wrongCards: lessonFcWrongCards.map(c => ({
+                        id: c.id,
+                        progressKey: c.progressKey,
+                        category: c.category,
+                        question: c.question,
+                        answer: c.answer,
+                        content: c.content,
+                        note: c.note,
+                        boxLevel: c.boxLevel,
+                        reps: c.reps,
+                        lapses: c.lapses,
+                        isRetryCard: true,
+                        lastReviewedAt: c.lastReviewedAt,
+                        nextReviewDate: c.nextReviewDate
+                    })),
+                    savedAt: Date.now()
+                };
+                localStorage.setItem(getLessonFcSessionKey(currentLessonId), JSON.stringify(data));
+            } catch(e) {
+                console.warn("Failed to save lesson flashcard session:", e);
+            }
+        }
+
+        function loadLessonFcSession(lessonId) {
+            try {
+                const raw = localStorage.getItem(getLessonFcSessionKey(lessonId || currentLessonId));
+                if (!raw) return null;
+                const data = JSON.parse(raw);
+                if (data && Array.isArray(data.cards) && data.cards.length > 0 && typeof data.index === 'number') {
+                    // 24時間以上古いセッションは無効化
+                    if (data.savedAt && (Date.now() - data.savedAt > 24 * 60 * 60 * 1000)) {
+                        clearLessonFcSession(lessonId);
+                        return null;
+                    }
+                    if (data.index < data.cards.length) {
+                        return data;
+                    }
+                }
+                return null;
+            } catch(e) {
+                return null;
+            }
+        }
+
+        function clearLessonFcSession(lessonId) {
+            try {
+                localStorage.removeItem(getLessonFcSessionKey(lessonId || currentLessonId));
+            } catch(e) {}
+        }
+
+        function setLessonFcPipMode(enable) {
+            const modal = el("lesson-fc-drill-modal");
+            const pipBtn = el("lesson-fc-pip-toggle");
+            lessonFcIsPip = !!enable;
+            if (!modal) return;
+            if (lessonFcIsPip) {
+                modal.classList.add("fc-mode-pip");
+                modal.classList.remove("fc-mode-minimized");
+                lessonFcIsMinimized = false;
+                if (pipBtn) {
+                    pipBtn.textContent = "🗖 全画面";
+                    pipBtn.title = "全画面モーダルに戻す";
+                }
+            } else {
+                modal.classList.remove("fc-mode-pip");
+                if (pipBtn) {
+                    pipBtn.textContent = "🖼️ フロート";
+                    pipBtn.title = "右下フロート（画面を覆わず他操作を並行可能）切替";
+                }
+            }
+            updateLessonFcMinimizeUI();
+        }
+
+        function toggleLessonFcPipMode() {
+            setLessonFcPipMode(!lessonFcIsPip);
+            showToast(lessonFcIsPip ? "🖼️ フロート表示に切り替えました（本文や他画面を自由に操作できます）" : "🗖 全画面表示に戻しました", "info", 2000);
+        }
+
+        function toggleLessonFcMinimized() {
+            const modal = el("lesson-fc-drill-modal");
+            if (!modal) return;
+            lessonFcIsMinimized = !lessonFcIsMinimized;
+            if (lessonFcIsMinimized) {
+                modal.classList.add("fc-mode-minimized");
+            } else {
+                modal.classList.remove("fc-mode-minimized");
+            }
+            updateLessonFcMinimizeUI();
+        }
+
+        function updateLessonFcMinimizeUI() {
+            const modal = el("lesson-fc-drill-modal");
+            const minBtn = el("lesson-fc-minimize-toggle");
+            const minHint = el("lesson-fc-minimized-hint");
+            if (!modal) return;
+            if (lessonFcIsMinimized) {
+                if (minBtn) {
+                    minBtn.textContent = "🗖";
+                    minBtn.title = "演習画面を展開";
+                }
+                if (minHint) minHint.style.display = "inline";
+            } else {
+                if (minBtn) {
+                    minBtn.textContent = "🗕";
+                    minBtn.title = "最小化";
+                }
+                if (minHint) minHint.style.display = "none";
+            }
+        }
+
         function updateLessonFcBanner() {
             const banner = el("lesson-memorize-fc-banner");
             if (!banner) return;
@@ -11800,8 +12041,28 @@ ${extractedText.slice(0, 15000)}`;
                 if (lvl > 0 && (!prog.nextReviewDate || prog.nextReviewDate <= today)) due++;
             });
 
+            // 前回の途中セッションの確認
+            const savedSession = loadLessonFcSession(currentLessonId);
+            const startBtnText = el("btn-start-lesson-flashcards-text");
+            const resetBtn = el("btn-start-lesson-flashcards-reset");
+
+            if (savedSession && savedSession.index > 0 && savedSession.index < savedSession.cards.length) {
+                if (startBtnText) {
+                    startBtnText.textContent = `▶ 続きから再開 (${savedSession.index + 1}/${savedSession.cards.length}問目)`;
+                }
+                if (resetBtn) resetBtn.style.display = "inline-flex";
+            } else {
+                if (startBtnText) {
+                    startBtnText.textContent = "▶ カード演習開始";
+                }
+                if (resetBtn) resetBtn.style.display = "none";
+            }
+
             if (statLabel) {
-                statLabel.textContent = `未復習: ${unlearned}問 / 習得済: ${mastered}問${due > 0 ? ` (🔥 期日: ${due}問)` : ''}`;
+                const resumeNotice = (savedSession && savedSession.index > 0 && savedSession.index < savedSession.cards.length)
+                    ? ` • ⏳ 進行中: ${savedSession.index}/${savedSession.cards.length}問`
+                    : "";
+                statLabel.textContent = `未復習: ${unlearned}問 / 習得済: ${mastered}問${due > 0 ? ` (🔥 期日: ${due}問)` : ''}${resumeNotice}`;
             }
         }
 
@@ -11945,7 +12206,7 @@ ${extractedText.slice(0, 15000)}`;
             }
         };
 
-        function openLessonFlashcardModal(onlyWrong = false) {
+        function openLessonFlashcardModal(onlyWrong = false, forceReset = false) {
             const points = Array.isArray(currentLesson?.memorizationPoints) ? currentLesson.memorizationPoints : [];
             if (points.length === 0) {
                 showToast("この授業にはまだ暗記事項がありません。「AI再生成」または「＋項目追加」を行ってください。", "warning");
@@ -11955,43 +12216,60 @@ ${extractedText.slice(0, 15000)}`;
             const modal = el("lesson-fc-drill-modal");
             if (!modal) return;
 
-            let pool = [];
-            if (onlyWrong && lessonFcWrongCards.length > 0) {
-                pool = [...lessonFcWrongCards];
+            // 途中再開セッションの確認
+            const savedSession = (!onlyWrong && !forceReset) ? loadLessonFcSession(currentLessonId) : null;
+            let resumedFromSession = false;
+
+            if (savedSession && Array.isArray(savedSession.cards) && savedSession.cards.length > 0) {
+                lessonFcCards = savedSession.cards;
+                lessonFcIndex = Math.min(savedSession.index, savedSession.cards.length - 1);
+                lessonFcWrongCards = Array.isArray(savedSession.wrongCards) ? savedSession.wrongCards : [];
+                lessonFcStats = savedSession.stats || { total: savedSession.cards.length, mastered: 0, retries: 0, levelups: 0 };
+                resumedFromSession = true;
             } else {
-                pool = points.map((p, idx) => {
-                    const curId = p.id || `mp_${idx}`;
-                    const pKey = sanitizeDbKey('mem_' + (currentLessonId || 'lesson') + '_' + curId);
-                    const prog = (lessonMemorizeProgress && (lessonMemorizeProgress[pKey] || lessonMemorizeProgress[(currentLessonId || '') + ':' + curId])) || {};
-                    return {
-                        id: curId,
-                        progressKey: pKey,
-                        category: p.category || "重要事項",
-                        question: p.question || "",
-                        answer: p.answer || "",
-                        content: p.content || (p.question && p.answer ? `${p.question}：${p.answer}` : (p.answer || p.question || "")),
-                        note: p.note || "",
-                        boxLevel: typeof prog.boxLevel === 'number' ? prog.boxLevel : 0,
-                        reps: prog.reps || 0,
-                        lapses: prog.lapses || 0,
-                        lastReviewedAt: prog.lastReviewedAt || null,
-                        nextReviewDate: prog.nextReviewDate || null
-                    };
-                });
-            }
-
-            if (lessonFcShuffleEnabled) {
-                for (let i = pool.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [pool[i], pool[j]] = [pool[j], pool[i]];
+                if (forceReset) {
+                    clearLessonFcSession(currentLessonId);
                 }
+                let pool = [];
+                if (onlyWrong && lessonFcWrongCards.length > 0) {
+                    pool = [...lessonFcWrongCards];
+                } else {
+                    pool = points.map((p, idx) => {
+                        const curId = p.id || `mp_${idx}`;
+                        const pKey = sanitizeDbKey('mem_' + (currentLessonId || 'lesson') + '_' + curId);
+                        const prog = (lessonMemorizeProgress && (lessonMemorizeProgress[pKey] || lessonMemorizeProgress[(currentLessonId || '') + ':' + curId])) || {};
+                        return {
+                            id: curId,
+                            progressKey: pKey,
+                            category: p.category || "重要事項",
+                            question: p.question || "",
+                            answer: p.answer || "",
+                            content: p.content || (p.question && p.answer ? `${p.question}：${p.answer}` : (p.answer || p.question || "")),
+                            note: p.note || "",
+                            boxLevel: typeof prog.boxLevel === 'number' ? prog.boxLevel : 0,
+                            reps: prog.reps || 0,
+                            lapses: prog.lapses || 0,
+                            lastReviewedAt: prog.lastReviewedAt || null,
+                            nextReviewDate: prog.nextReviewDate || null
+                        };
+                    });
+                }
+
+                if (lessonFcShuffleEnabled) {
+                    for (let i = pool.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [pool[i], pool[j]] = [pool[j], pool[i]];
+                    }
+                }
+
+                lessonFcCards = pool;
+                lessonFcIndex = 0;
+                lessonFcIsFlipped = false;
+                lessonFcWrongCards = [];
+                lessonFcStats = { total: pool.length, mastered: 0, retries: 0, levelups: 0 };
             }
 
-            lessonFcCards = pool;
-            lessonFcIndex = 0;
             lessonFcIsFlipped = false;
-            lessonFcWrongCards = [];
-            lessonFcStats = { total: pool.length, mastered: 0, retries: 0, levelups: 0 };
 
             const titleEl = el("lesson-fc-modal-title");
             const subjBadge = el("lesson-fc-subject-badge");
@@ -12001,11 +12279,29 @@ ${extractedText.slice(0, 15000)}`;
             if (el("lesson-fc-active-container")) el("lesson-fc-active-container").style.display = "block";
             if (el("lesson-fc-finish-view")) el("lesson-fc-finish-view").style.display = "none";
 
+            // PIPモードが有効ならPIPとして表示、そうでなければ標準フレックス表示
+            if (lessonFcIsPip) {
+                modal.classList.add("fc-mode-pip");
+            } else {
+                modal.classList.remove("fc-mode-pip");
+            }
+            if (lessonFcIsMinimized) {
+                modal.classList.add("fc-mode-minimized");
+            } else {
+                modal.classList.remove("fc-mode-minimized");
+            }
+            updateLessonFcMinimizeUI();
+
             modal.style.display = "flex";
             renderLessonFcCard();
+
+            if (resumedFromSession) {
+                showToast(`⏳ 前回の続き（${lessonFcIndex + 1}/${lessonFcCards.length}問目）から再開しました`, "info", 2000);
+            }
         }
 
         function closeLessonFlashcardModal() {
+            saveLessonFcSession();
             const modal = el("lesson-fc-drill-modal");
             if (modal) modal.style.display = "none";
             if ('speechSynthesis' in window) {
@@ -12076,6 +12372,8 @@ ${extractedText.slice(0, 15000)}`;
             if (window.MathJax && MathJax.typesetPromise) {
                 MathJax.typesetPromise([el("lesson-fc-stage")]).catch(() => {});
             }
+
+            saveLessonFcSession();
         }
 
         function flipLessonFcCard() {
@@ -12145,6 +12443,8 @@ ${extractedText.slice(0, 15000)}`;
             }
 
             lessonFcIndex++;
+            saveLessonFcSession();
+
             if (lessonFcIndex >= lessonFcCards.length) {
                 showLessonFcFinish();
             } else {
@@ -12153,6 +12453,7 @@ ${extractedText.slice(0, 15000)}`;
         }
 
         function showLessonFcFinish() {
+            clearLessonFcSession(currentLessonId);
             if (el("lesson-fc-active-container")) el("lesson-fc-active-container").style.display = "none";
             const finishView = el("lesson-fc-finish-view");
             if (finishView) finishView.style.display = "block";
@@ -22036,7 +22337,16 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
             const soundToggle = el("lesson-fc-sound-toggle");
             const shuffleToggle = el("lesson-fc-shuffle-toggle");
 
-            if (btnStartFc) btnStartFc.addEventListener("click", () => openLessonFlashcardModal(false));
+            const pipToggle = el("lesson-fc-pip-toggle");
+            const minimizeToggle = el("lesson-fc-minimize-toggle");
+            const btnResetFc = el("btn-start-lesson-flashcards-reset");
+
+            if (btnStartFc) btnStartFc.addEventListener("click", () => openLessonFlashcardModal(false, false));
+            if (btnResetFc) btnResetFc.addEventListener("click", () => {
+                if (confirm("現在の演習進捗をリセットして1問目からやり直しますか？")) {
+                    openLessonFlashcardModal(false, true);
+                }
+            });
             if (btnCloseFc) btnCloseFc.addEventListener("click", closeLessonFlashcardModal);
 
             if (fcStage) {
@@ -22107,11 +22417,26 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
             const btnFinishWeak = el("lesson-fc-btn-finish-weak");
 
             if (btnFinishClose) btnFinishClose.addEventListener("click", closeLessonFlashcardModal);
-            if (btnFinishRestart) btnFinishRestart.addEventListener("click", () => openLessonFlashcardModal(false));
-            if (btnFinishWeak) btnFinishWeak.addEventListener("click", () => openLessonFlashcardModal(true));
+            if (btnFinishRestart) btnFinishRestart.addEventListener("click", () => openLessonFlashcardModal(false, true));
+            if (btnFinishWeak) btnFinishWeak.addEventListener("click", () => openLessonFlashcardModal(true, false));
+
+            if (pipToggle) pipToggle.addEventListener("click", toggleLessonFcPipMode);
+            if (minimizeToggle) minimizeToggle.addEventListener("click", toggleLessonFcMinimized);
+
+            // 最小化時にヘッダーやダイアログをクリックした場合は復元
+            const fcDialog = document.querySelector("#lesson-fc-drill-modal .fc-modal-dialog");
+            if (fcDialog) {
+                fcDialog.addEventListener("click", (e) => {
+                    if (lessonFcIsMinimized && !e.target.closest("button") && !e.target.closest(".star-btn")) {
+                        toggleLessonFcMinimized();
+                    }
+                });
+            }
 
             if (fcModal) {
                 fcModal.addEventListener("click", (e) => {
+                    // PIPモード中や最小化中は背景クリックによるクローズを行わない
+                    if (lessonFcIsPip || lessonFcIsMinimized) return;
                     if (e.target === fcModal) closeLessonFlashcardModal();
                 });
             }
