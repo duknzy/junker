@@ -1833,6 +1833,54 @@
         .card-srs-rate-btn .rate-title {
             line-height: 1;
         }
+        .card-srs-rate-btn.is-current {
+            box-shadow: 0 0 0 1.5px currentColor inset;
+            font-weight: 800;
+        }
+        .card-srs-rate-btn.srs-rate-again.is-current {
+            background: rgba(239, 68, 68, 0.16);
+            color: #dc2626;
+            border-color: #f87171;
+        }
+        .card-srs-rate-btn.srs-rate-hard.is-current {
+            background: rgba(59, 130, 246, 0.16);
+            color: #2563eb;
+            border-color: #3b82f6;
+        }
+        .card-srs-rate-btn.srs-rate-good.is-current {
+            background: rgba(16, 185, 129, 0.18);
+            color: #047857;
+            border-color: #10b981;
+        }
+        .card-srs-rate-btn.srs-rate-easy.is-current {
+            background: rgba(245, 158, 11, 0.18);
+            color: #d97706;
+            border-color: #f59e0b;
+        }
+        .theme-dark .card-srs-rate-btn.srs-rate-good.is-current {
+            background: rgba(16, 185, 129, 0.25);
+            color: #34d399;
+        }
+        .theme-dark .card-srs-rate-btn.srs-rate-again.is-current {
+            background: rgba(239, 68, 68, 0.25);
+            color: #f87171;
+        }
+        .theme-dark .card-srs-rate-btn.srs-rate-hard.is-current {
+            background: rgba(59, 130, 246, 0.25);
+            color: #60a5fa;
+        }
+        .theme-dark .card-srs-rate-btn.srs-rate-easy.is-current {
+            background: rgba(245, 158, 11, 0.25);
+            color: #fbbf24;
+        }
+        @keyframes srsBtnPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); filter: brightness(1.2); }
+            100% { transform: scale(1); }
+        }
+        .btn-pulsed {
+            animation: srsBtnPulse 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
         .dict-srs-quick-btn {
             padding: 0.2rem 0.5rem;
             font-size: 0.72rem;
@@ -3781,7 +3829,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-        import { getDatabase, ref, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+        import { getDatabase, ref, onValue, update, remove, get, set, push } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
         import { showToast, initApiKeyManager, callGeminiChat, hasAvailableGeminiKey, isStaticHostingEnvironment } from "./api-key-manager.js?v=3.5";
 
         const firebaseConfig = {
@@ -5195,11 +5243,103 @@
                 console.warn("Failed to persist progress:", err);
             }
 
+            window._lastLocalSrsUpdateTimestamp = Date.now();
             invalidateInsightsDataCache();
             updateSrsDashboardCounts();
-            if (activeTab === "memorize") {
-                renderMemorize();
+            updateCardSrsDomInPlace(pKey, progressData);
+        };
+
+        window._lastLocalSrsUpdateTimestamp = 0;
+
+        // 🧠 カードDOMを破壊せずに該当カードのバッジ・評価ボタン・習得状態のみを即座にインプレース更新
+        // （画面全体の再描画によるチラつき・スクロール飛びを完全防止）
+        function updateCardSrsDomInPlace(progressKey, progressData) {
+            const pKey = sanitizeDbKey(progressKey);
+            const boxLevel = typeof progressData.boxLevel === 'number' ? progressData.boxLevel : 0;
+            const nextReviewDate = progressData.nextReviewDate || '';
+
+            // 対象要素の探索キー（pKey, progressKey, および mem_LID_MID -> LID:MID）
+            let itemKey = '';
+            if (pKey.startsWith('mem_')) {
+                const parts = pKey.slice(4).split('_');
+                if (parts.length >= 2) {
+                    const memoId = parts.pop();
+                    const lessonId = parts.join('_');
+                    itemKey = `${lessonId}:${memoId}`;
+                }
             }
+
+            // 1. インラインSRSボックス（カード内の評価バー）の更新
+            const srsBoxes = document.querySelectorAll(`.card-inline-srs-box[data-srs-key="${pKey}"]`);
+            srsBoxes.forEach(box => {
+                const metaRow = box.querySelector('.card-srs-meta-row');
+                if (metaRow) {
+                    const oldBadge = metaRow.querySelector('.card-srs-due-badge');
+                    const newBadgeHtml = renderCardSrsDueBadge(nextReviewDate, boxLevel);
+                    if (oldBadge) {
+                        oldBadge.outerHTML = newBadgeHtml;
+                    } else {
+                        metaRow.insertAdjacentHTML('beforeend', newBadgeHtml);
+                    }
+                }
+                const btnAgain = box.querySelector('.srs-rate-again');
+                const btnHard = box.querySelector('.srs-rate-hard');
+                const btnGood = box.querySelector('.srs-rate-good');
+                const btnEasy = box.querySelector('.srs-rate-easy');
+
+                [btnAgain, btnHard, btnGood, btnEasy].forEach(b => b && b.classList.remove('is-current'));
+
+                if (boxLevel === 1 && btnAgain) btnAgain.classList.add('is-current');
+                else if (boxLevel === 2 && btnHard) btnHard.classList.add('is-current');
+                else if (boxLevel >= 2 && boxLevel < 5 && btnGood) btnGood.classList.add('is-current');
+                else if (boxLevel >= 5 && btnEasy) btnEasy.classList.add('is-current');
+            });
+
+            // 2. 該当カード・行の全体要素を取得してステータスボタン・クイックボタンを更新
+            const selector = [
+                `[data-srs-key="${pKey}"]`,
+                `[data-progress-key="${pKey}"]`,
+                itemKey ? `[data-item-key="${itemKey}"]` : ''
+            ].filter(Boolean).join(', ');
+
+            const rows = document.querySelectorAll(selector);
+            rows.forEach(row => {
+                // ステータスボタン（✅ 覚えた / 🌱 未習得 など）
+                const statusBtn = row.querySelector('.dict-status-btn');
+                if (statusBtn) {
+                    statusBtn.classList.remove('unlearned', 'weak', 'learning', 'mastered');
+                    if (boxLevel >= 4) {
+                        statusBtn.classList.add('mastered');
+                        statusBtn.textContent = `✅ 覚えた (Lv.${boxLevel})`;
+                        statusBtn.title = "クリックで未習得に戻す";
+                    } else if (boxLevel === 1) {
+                        statusBtn.classList.add('weak');
+                        statusBtn.textContent = "🔄 要復習";
+                        statusBtn.title = "クリックで「覚えた！」に変更";
+                    } else if (boxLevel > 1) {
+                        statusBtn.classList.add('learning');
+                        statusBtn.textContent = `⚡ 復習中 (Lv.${boxLevel})`;
+                        statusBtn.title = "クリックで「覚えた！」に変更";
+                    } else {
+                        statusBtn.classList.add('unlearned');
+                        statusBtn.textContent = "🌱 未習得";
+                        statusBtn.title = "クリックで「覚えた！」に変更";
+                    }
+                }
+
+                // クイックボタンのフィードバック演出（パルス）
+                const quickBtns = row.querySelectorAll('.dict-srs-quick-btn');
+                quickBtns.forEach(qb => {
+                    qb.classList.remove('btn-pulsed');
+                    void qb.offsetWidth;
+                    qb.classList.add('btn-pulsed');
+                    setTimeout(() => qb.classList.remove('btn-pulsed'), 350);
+                });
+            });
+
+            // 3. 上部サマリー（SRSバッジ・件数・定着率）の即時再集計（カードDOMには触れず数字のみ更新）
+            updateSrsDashboardCounts();
+            if (typeof updateCounts === 'function') updateCounts();
         };
 
         // SRS 間隔テーブル（日数）
@@ -5276,16 +5416,13 @@
                 console.warn("Failed to persist progress:", err);
             }
 
+            window._lastLocalSrsUpdateTimestamp = Date.now();
+
             // キャッシュ無効化
             _cachedBuildMemorizationItems = null;
 
-            updateSrsDashboardCounts();
-
-            if (activeTab === "memorize") {
-                renderMemorize();
-            } else if (activeTab === "insights") {
-                renderInsights();
-            }
+            // DOMを破棄・再描画せず、該当カードのバッジとボタン状態のみを即座にインプレース更新（画面のチラつき・スクロール飛びを完全防止）
+            updateCardSrsDomInPlace(pKey, progressData);
         };
 
         // 🧠 カード上での期日バッジHTML生成
@@ -5317,7 +5454,7 @@
             const badgeHtml = renderCardSrsDueBadge(nextDate, boxLevel);
 
             return `
-                <div class="card-inline-srs-box" onclick="event.stopPropagation()">
+                <div class="card-inline-srs-box" data-srs-key="${pKey}" onclick="event.stopPropagation()">
                     <div class="card-srs-meta-row">
                         <span style="font-weight:700; color:var(--text-muted); font-size:0.72rem;">⏱️ 暗記定着度 (SRS評価):</span>
                         ${badgeHtml}
@@ -7405,7 +7542,7 @@
             const aHasMath = containsMathSyntax(cleanA) || (p.rawNote && containsMathSyntax(p.rawNote));
 
             return `
-                <div class="dict-word-row ${isBatchManageMode ? 'batch-mode' : ''} ${isSelected ? 'is-batch-selected' : ''}" data-item-key="${itemKey}">
+                <div class="dict-word-row ${isBatchManageMode ? 'batch-mode' : ''} ${isSelected ? 'is-batch-selected' : ''}" data-item-key="${itemKey}" data-progress-key="${p.progressKey}" data-srs-key="${p.progressKey}">
                     ${isBatchManageMode ? `
                         <div class="dict-select-cell" onclick="event.stopPropagation();">
                             <input type="checkbox" class="memorize-item-checkbox" data-key="${itemKey}" ${isSelected ? 'checked' : ''} onchange="toggleSelectMemorizeItem('${p.lessonId}', '${p.memoId}', this.checked, event)" title="この暗記事項を選択">
@@ -7930,7 +8067,7 @@
             const isSelected = selectedMemorizeKeys.has(itemKey);
 
             return `
-                <div class="insight-card ${isSelected ? 'is-batch-selected' : ''}" data-item-key="${itemKey}" style="border-left-color: var(--accent-cyan);">
+                <div class="insight-card ${isSelected ? 'is-batch-selected' : ''}" data-item-key="${itemKey}" data-progress-key="${p.progressKey}" data-srs-key="${p.progressKey}" style="border-left-color: var(--accent-cyan);">
                     <div>
                         <div style="display:flex; justify-content:space-between; align-items:center; gap:0.4rem; margin-bottom:0.6rem; flex-wrap:wrap;">
                             <div style="display:flex; align-items:center; gap:0.45rem;">
@@ -8045,7 +8182,7 @@
             const isSelected = selectedMemorizeKeys.has(itemKey);
 
             return `
-                <div class="insight-compact-row ${isSelected ? 'is-batch-selected' : ''}" data-item-key="${itemKey}">
+                <div class="insight-compact-row ${isSelected ? 'is-batch-selected' : ''}" data-item-key="${itemKey}" data-progress-key="${p.progressKey}" data-srs-key="${p.progressKey}">
                     ${isBatchManageMode ? `
                         <div style="display:flex; align-items:center; margin-right:0.35rem;" onclick="event.stopPropagation();">
                             <input type="checkbox" class="memorize-item-checkbox" data-key="${itemKey}" ${isSelected ? 'checked' : ''} onchange="toggleSelectMemorizeItem('${p.lessonId}', '${p.memoId}', this.checked, event)" title="この行を選択">
@@ -11997,10 +12134,13 @@
                 // キャッシュを破棄して他端末での進捗変更を即時反映
                 invalidateInsightsDataCache();
 
-                // モーダル演習中はバックグラウンドの不要な再描画を抑制してCPUとUI負荷を低減
+                // 自端末での評価クリック直後（3.5秒以内）またはモーダル演習中は画面全体の再描画を抑制してスクロール飛びとチラつきを完全防止
                 const isFcModalOpen = fcModal && fcModal.style.display !== "none";
-                if (!isFcModalOpen) {
+                const isRecentLocalAction = (Date.now() - (window._lastLocalSrsUpdateTimestamp || 0)) < 3500;
+                if (!isFcModalOpen && !isRecentLocalAction) {
                     handleFirebaseSync();
+                } else {
+                    updateSrsDashboardCounts();
                 }
             });
 

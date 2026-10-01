@@ -1035,6 +1035,10 @@
             .lesson-split-resizer {
                 display: none !important;
             }
+            .lesson-sidebar-card {
+                min-height: 560px;
+                height: 620px;
+            }
         }
         .lesson-main-card {
             background: var(--bg-surface);
@@ -2435,6 +2439,60 @@
         .note-preview-content th {
             background: var(--bg-subtle);
             font-weight: 700;
+        }
+        .note-table-wrap {
+            width: 100%;
+            overflow-x: auto;
+            margin: 0.75rem 0;
+        }
+        .note-task-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.45rem;
+            margin: 0.25rem 0;
+            line-height: 1.55;
+        }
+        .note-task-item input[type="checkbox"] {
+            margin-top: 0.25rem;
+            cursor: default;
+        }
+        .note-task-item.is-checked {
+            text-decoration: line-through;
+            opacity: 0.65;
+        }
+        blockquote.note-trap-quote {
+            border-left: 3.5px solid #f59e0b;
+            background: rgba(245, 158, 11, 0.08);
+            color: var(--text-primary);
+        }
+        blockquote.note-point-quote {
+            border-left: 3.5px solid #059669;
+            background: rgba(5, 150, 105, 0.08);
+            color: var(--text-primary);
+        }
+        blockquote.note-lecture-quote {
+            border-left: 3.5px solid #6366f1;
+            background: rgba(99, 102, 241, 0.08);
+            color: var(--text-primary);
+        }
+        .theme-dark .note-preview-content table th {
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text-primary);
+        }
+        .theme-dark .note-preview-content table th, .theme-dark .note-preview-content table td {
+            border-color: var(--border-color);
+        }
+        .theme-dark blockquote.note-trap-quote {
+            background: rgba(245, 158, 11, 0.14);
+            border-left-color: #f59e0b;
+        }
+        .theme-dark blockquote.note-point-quote {
+            background: rgba(5, 150, 105, 0.14);
+            border-left-color: #10b981;
+        }
+        .theme-dark blockquote.note-lecture-quote {
+            background: rgba(99, 102, 241, 0.14);
+            border-left-color: #818cf8;
         }
 
         /* 下部バー */
@@ -17213,6 +17271,7 @@ ${subjectGuide}
         // ==========================================================================
         let noteSaveDebounceTimer = null;
         let noteActiveView = "edit"; // 'edit' | 'preview' | 'dual'
+        let hasInitSelectionQuoteListener = false;
 
         function initLessonNotes() {
             initLessonSplitResizer();
@@ -17241,6 +17300,18 @@ ${subjectGuide}
             }
 
             initChatSelectionQuoteListener();
+
+            // ページ離脱時の即時保存フラッシュ（未保存タイマーの救済）
+            window.removeEventListener("beforeunload", flushPendingNoteSave);
+            window.addEventListener("beforeunload", flushPendingNoteSave);
+        }
+
+        function flushPendingNoteSave() {
+            if (noteSaveDebounceTimer) {
+                clearTimeout(noteSaveDebounceTimer);
+                noteSaveDebounceTimer = null;
+                persistLessonNotebook(false);
+            }
         }
 
         // 左右分割リサイザーの初期化（30%〜70%対応 ＆ 永続保存）
@@ -17376,8 +17447,8 @@ ${subjectGuide}
             const noteTa = el("lesson-note-textarea");
             if (!noteTa) return;
 
-            // 既存のlessonNotebookがあればそれを使用
-            if (typeof currentLesson.lessonNotebook === "string" && currentLesson.lessonNotebook.trim()) {
+            // ユーザーが明示的に保存したデータ（空文字列を含む）があれば尊重
+            if (currentLesson.lessonNotebook !== undefined && currentLesson.lessonNotebook !== null) {
                 noteTa.value = currentLesson.lessonNotebook;
             } else {
                 // 初回で既存メモ（lessonMemos）がある場合、自動で構造化ノートを生成して引き継ぎ
@@ -17418,14 +17489,18 @@ ${subjectGuide}
         }
 
         function handleLessonNoteKeydown(e) {
-            // Tabキーでインデント（2スペース）
+            // Tabキーでインデント（2スペース） - setRangeTextでUndo履歴を保護
             if (e.key === "Tab") {
                 e.preventDefault();
                 const ta = e.target;
                 const start = ta.selectionStart;
                 const end = ta.selectionEnd;
-                ta.value = ta.value.substring(0, start) + "  " + ta.value.substring(end);
-                ta.selectionStart = ta.selectionEnd = start + 2;
+                if (typeof ta.setRangeText === "function") {
+                    ta.setRangeText("  ", start, end, "end");
+                } else {
+                    ta.value = ta.value.substring(0, start) + "  " + ta.value.substring(end);
+                    ta.selectionStart = ta.selectionEnd = start + 2;
+                }
                 handleLessonNoteInput();
             } else if ((e.ctrlKey || e.metaKey) && e.key === "s") {
                 e.preventDefault();
@@ -17511,33 +17586,104 @@ ${subjectGuide}
             forceTriggerMathJax(previewEl);
         }
 
-        // 学習ノート向け強化Markdownレンダラー
+        // 学習ノート向け強化Markdownレンダラー（テーブル・見出し・引用・タスク完全対応）
         function renderEnhancedNoteMarkdown(text) {
             if (!text) return '<span style="color:var(--text-muted); font-size:0.85rem;">（ノートの内容がまだありません）</span>';
 
-            // 基本整形（ルビ・数式対応）
-            let html = renderFormattedMarkdown(text, currentLesson?.subject || "");
+            const blocks = [];
+            let src = text.replace(/\r\n/g, '\n');
 
-            // H2 大見出し
-            html = html.replace(/^##\s+(.+)$/gm, '<h2>$1</h2>');
+            // 1. Markdown テーブル解析
+            const tableRegex = /(?:^|\n)((?:\|[^\n]+\|\n?)+)/g;
+            src = src.replace(tableRegex, (match, block) => {
+                const lines = block.trim().split('\n').map(l => l.trim()).filter(Boolean);
+                if (lines.length < 2) return match;
+                let html = '<div class="note-table-wrap"><table class="note-table">';
+                let isHeader = true;
+                for (const line of lines) {
+                    const cells = line.split('|').slice(1, -1).map(c => c.trim());
+                    const isSeparator = cells.length > 0 && cells.every(c => /^[\s\-:]+$/.test(c));
+                    if (isSeparator) {
+                        isHeader = false;
+                        continue;
+                    }
+                    html += '<tr>';
+                    for (const c of cells) {
+                        const cellFormatted = renderFormattedMarkdown(c, currentLesson?.subject || "");
+                        html += isHeader ? `<th>${cellFormatted}</th>` : `<td>${cellFormatted}</td>`;
+                    }
+                    html += '</tr>';
+                }
+                html += '</table></div>';
+                const idx = blocks.length;
+                blocks.push(html);
+                return `\n%%%NOTE_BLOCK_${idx}%%%\n`;
+            });
 
-            // 蛍光マーカー ==強調==
-            html = html.replace(/==([^=\n]+)==/g, '<mark class="flora-marker">$1</mark>');
+            // 2. チェックリスト - [ ] / - [x]
+            src = src.replace(/^-\s*\[\s*\]\s*(.+)$/gm, (_, item) => {
+                const itemFormatted = renderFormattedMarkdown(item, currentLesson?.subject || "");
+                const idx = blocks.length;
+                blocks.push(`<div class="note-task-item"><input type="checkbox" disabled> <span>${itemFormatted}</span></div>`);
+                return `%%%NOTE_BLOCK_${idx}%%%`;
+            });
+            src = src.replace(/^-\s*\[[xX]\]\s*(.+)$/gm, (_, item) => {
+                const itemFormatted = renderFormattedMarkdown(item, currentLesson?.subject || "");
+                const idx = blocks.length;
+                blocks.push(`<div class="note-task-item is-checked"><input type="checkbox" checked disabled> <span>${itemFormatted}</span></div>`);
+                return `%%%NOTE_BLOCK_${idx}%%%`;
+            });
 
-            // チェックリスト - [ ] / - [x]
-            html = html.replace(/•\s*\[\s*\]\s*(.+)/g, '<div style="display:flex; align-items:flex-start; gap:0.4rem; margin:0.25rem 0;"><input type="checkbox" disabled style="margin-top:0.25rem;"> <span>$1</span></div>');
-            html = html.replace(/•\s*\[[xX]\]\s*(.+)/g, '<div style="display:flex; align-items:flex-start; gap:0.4rem; margin:0.25rem 0; opacity:0.65; text-decoration:line-through;"><input type="checkbox" checked disabled style="margin-top:0.25rem;"> <span>$1</span></div>');
+            // 3. H2 大見出し
+            src = src.replace(/^##\s+(.+)$/gm, (_, h) => {
+                const hFormatted = renderFormattedMarkdown(h, currentLesson?.subject || "");
+                const idx = blocks.length;
+                blocks.push(`<h2 class="note-h2">${hFormatted}</h2>`);
+                return `%%%NOTE_BLOCK_${idx}%%%`;
+            });
 
-            // 急所・要点・講義引用ブロック
-            html = html.replace(/^&gt;\s*⚠️\s*(.+)$/gm, '<blockquote style="border-left:3px solid #f59e0b; background:rgba(245,158,11,0.08); color:var(--text-primary);">⚠️ $1</blockquote>');
-            html = html.replace(/^&gt;\s*💡\s*(.+)$/gm, '<blockquote style="border-left:3px solid #059669; background:rgba(5,150,105,0.08); color:var(--text-primary);">💡 $1</blockquote>');
-            html = html.replace(/^&gt;\s*📖\s*(.+)$/gm, '<blockquote style="border-left:3px solid #6366f1; background:rgba(99,102,241,0.08); color:var(--text-primary);">📖 $1</blockquote>');
-            html = html.replace(/^&gt;\s*(.+)$/gm, '<blockquote>$1</blockquote>');
+            // 4. 急所・要点・講義引用・標準引用ブロック
+            src = src.replace(/^>\s*⚠️\s*(.+)$/gm, (_, q) => {
+                const qFormatted = renderFormattedMarkdown(q, currentLesson?.subject || "");
+                const idx = blocks.length;
+                blocks.push(`<blockquote class="note-trap-quote">⚠️ <b>【試験の急所】</b> ${qFormatted}</blockquote>`);
+                return `%%%NOTE_BLOCK_${idx}%%%`;
+            });
+            src = src.replace(/^>\s*💡\s*(.+)$/gm, (_, q) => {
+                const qFormatted = renderFormattedMarkdown(q, currentLesson?.subject || "");
+                const idx = blocks.length;
+                blocks.push(`<blockquote class="note-point-quote">💡 <b>【重要要点】</b> ${qFormatted}</blockquote>`);
+                return `%%%NOTE_BLOCK_${idx}%%%`;
+            });
+            src = src.replace(/^>\s*📖\s*(.+)$/gm, (_, q) => {
+                const qFormatted = renderFormattedMarkdown(q, currentLesson?.subject || "");
+                const idx = blocks.length;
+                blocks.push(`<blockquote class="note-lecture-quote">📖 <b>【講義引用】</b> ${qFormatted}</blockquote>`);
+                return `%%%NOTE_BLOCK_${idx}%%%`;
+            });
+            src = src.replace(/^>\s*(.+)$/gm, (_, q) => {
+                const qFormatted = renderFormattedMarkdown(q, currentLesson?.subject || "");
+                const idx = blocks.length;
+                blocks.push(`<blockquote class="note-quote">${qFormatted}</blockquote>`);
+                return `%%%NOTE_BLOCK_${idx}%%%`;
+            });
+
+            // 5. 基本整形（ルビ・LaTeX数式・太字・H3見出し等）
+            let html = renderFormattedMarkdown(src, currentLesson?.subject || "");
+
+            // 6. 蛍光マーカー ==強調==
+            html = html.replace(/==([^=\n<]+)==/g, '<mark class="flora-marker">$1</mark>');
+
+            // 7. 特殊ブロックの復元
+            html = html.replace(/%%%NOTE_BLOCK_(\d+)%%%/g, (_, i) => blocks[parseInt(i, 10)] || '');
+
+            // 8. 余計なブロック後<br>のクリーンアップ
+            html = html.replace(/(<\/h2>|<\/blockquote>|<\/div>|<\/table>)\s*<br\s*\/?>/gi, '$1');
 
             return html;
         }
 
-        // リッチツールバーの装飾挿入
+        // リッチツールバーの装飾挿入（Undoスタック保護 ＆ 選択位置スマート調整）
         window.insertNoteFormat = function(tool) {
             const ta = el("lesson-note-textarea");
             if (!ta) return;
@@ -17547,73 +17693,112 @@ ${subjectGuide}
             const text = ta.value;
             const sel = text.substring(start, end);
 
-            let insertText = "";
-            let cursorOffset = 0;
+            let prefix = "";
+            let suffix = "";
+            let defaultPlaceholder = "";
 
             switch (tool) {
                 case "h2":
-                    insertText = `\n## ${sel || "大見出し"}\n`;
-                    cursorOffset = insertText.length;
+                    prefix = "\n## ";
+                    suffix = "\n";
+                    defaultPlaceholder = "大見出し";
                     break;
                 case "h3":
-                    insertText = `\n### ${sel || "中見出し"}\n`;
-                    cursorOffset = insertText.length;
+                    prefix = "\n### ";
+                    suffix = "\n";
+                    defaultPlaceholder = "中見出し";
                     break;
                 case "bold":
-                    insertText = `**${sel || "太字"}**`;
-                    cursorOffset = insertText.length;
+                    prefix = "**";
+                    suffix = "**";
+                    defaultPlaceholder = "太字";
                     break;
                 case "marker":
-                    insertText = `==${sel || "重要強調"}==`;
-                    cursorOffset = insertText.length;
+                    prefix = "==";
+                    suffix = "==";
+                    defaultPlaceholder = "強調";
                     break;
                 case "bracket":
-                    insertText = `【${sel || "重要用語"}】`;
-                    cursorOffset = insertText.length;
+                    prefix = "【";
+                    suffix = "】";
+                    defaultPlaceholder = "重要用語";
                     break;
                 case "bullet":
-                    insertText = `\n- ${sel || "箇条書き項目"}`;
-                    cursorOffset = insertText.length;
+                    prefix = "\n- ";
+                    suffix = "";
+                    defaultPlaceholder = "項目";
                     break;
                 case "number":
-                    insertText = `\n1. ${sel || "リスト項目"}`;
-                    cursorOffset = insertText.length;
+                    prefix = "\n1. ";
+                    suffix = "";
+                    defaultPlaceholder = "項目";
                     break;
                 case "task":
-                    insertText = `\n- [ ] ${sel || "確認・復習タスク"}`;
-                    cursorOffset = insertText.length;
+                    prefix = "\n- [ ] ";
+                    suffix = "";
+                    defaultPlaceholder = "復習タスク";
                     break;
                 case "trap":
-                    insertText = `\n> ⚠️ **【共通テストの急所】** ${sel || "ここに引っかけポイント・盲点を記入"}\n`;
-                    cursorOffset = insertText.length;
+                    prefix = "\n> ⚠️ **【共通テストの急所】** ";
+                    suffix = "\n";
+                    defaultPlaceholder = "引っかけポイントを記入";
                     break;
                 case "point":
-                    insertText = `\n> 💡 **【ポイント】** ${sel || "ここに対比・因果関係を記入"}\n`;
-                    cursorOffset = insertText.length;
+                    prefix = "\n> 💡 **【ポイント】** ";
+                    suffix = "\n";
+                    defaultPlaceholder = "対比・因果関係を記入";
                     break;
                 case "math":
-                    insertText = `$${sel || "E = mc^2"}$`;
-                    cursorOffset = insertText.length;
+                    prefix = "$ ";
+                    suffix = " $";
+                    defaultPlaceholder = "E = mc^2";
                     break;
                 case "ruby":
-                    insertText = `漢字《よみ》`;
-                    cursorOffset = insertText.length;
+                    prefix = "";
+                    suffix = "";
+                    defaultPlaceholder = "漢字《よみ》";
                     break;
                 case "table":
-                    insertText = `\n| 項目 | 特徴・意義 |\n| :--- | :--- |\n| 項目A | 説明A |\n| 項目B | 説明B |\n`;
-                    cursorOffset = insertText.length;
+                    prefix = "\n| 項目 | 特徴・意義 |\n| :--- | :--- |\n| 項目A | 説明A |\n| 項目B | 説明B |\n";
+                    suffix = "";
+                    defaultPlaceholder = "";
                     break;
                 case "hr":
-                    insertText = `\n\n---\n\n`;
-                    cursorOffset = insertText.length;
+                    prefix = "\n\n---\n\n";
+                    suffix = "";
+                    defaultPlaceholder = "";
                     break;
                 default:
                     return;
             }
 
-            ta.value = text.substring(0, start) + insertText + text.substring(end);
             ta.focus();
-            ta.selectionStart = ta.selectionEnd = start + cursorOffset;
+
+            let replacement = "";
+            let selectStart = 0;
+            let selectEnd = 0;
+
+            if (sel) {
+                replacement = prefix + sel + suffix;
+                selectStart = start + prefix.length;
+                selectEnd = selectStart + sel.length;
+            } else {
+                replacement = prefix + defaultPlaceholder + suffix;
+                selectStart = start + prefix.length;
+                selectEnd = defaultPlaceholder ? (selectStart + defaultPlaceholder.length) : selectStart;
+            }
+
+            // setRangeTextでブラウザのCtrl+Z履歴を壊さずにテキスト挿入
+            if (typeof ta.setRangeText === "function") {
+                ta.setRangeText(replacement, start, end, "select");
+                ta.selectionStart = selectStart;
+                ta.selectionEnd = selectEnd;
+            } else {
+                ta.value = text.substring(0, start) + replacement + text.substring(end);
+                ta.selectionStart = selectStart;
+                ta.selectionEnd = selectEnd;
+            }
+
             handleLessonNoteInput();
         };
 
@@ -17644,6 +17829,9 @@ ${subjectGuide}
 
         // 講義チャット選択時のフローティング引用ツールチップ
         function initChatSelectionQuoteListener() {
+            if (hasInitSelectionQuoteListener) return;
+            hasInitSelectionQuoteListener = true;
+
             const transcript = el("chat-transcript");
             if (!transcript) return;
 
@@ -17656,8 +17844,11 @@ ${subjectGuide}
                 }
             };
 
+            // チャットスクロール時にフローティングツールチップを安全に非表示化
+            transcript.addEventListener("scroll", removeTooltip, { passive: true });
+
             document.addEventListener("mouseup", (e) => {
-                if (e.target.closest(".lesson-selection-quote-tooltip")) return;
+                if (e.target.closest(".lesson-selection-quote-tooltip") || e.target.closest("button, input, textarea")) return;
 
                 const sel = window.getSelection();
                 if (!sel || sel.isCollapsed) {
@@ -17711,7 +17902,7 @@ ${subjectGuide}
         }
 
         // ノート末尾またはカーソル位置への追記共通関数
-        function appendContentToNote(content, toastMsg = "") {
+        function appendContentToNote(content, toastMsg = "", forceAppendEnd = true) {
             // ノートタブに自動切り替え
             const notesTabBtn = document.querySelector('.sidebar-tab-btn[data-tab="tab-notes"]');
             if (notesTabBtn && !notesTabBtn.classList.contains("active")) {
@@ -17721,12 +17912,29 @@ ${subjectGuide}
             const ta = el("lesson-note-textarea");
             if (!ta) return;
 
-            const start = ta.selectionStart || ta.value.length;
-            const end = ta.selectionEnd || ta.value.length;
-            const text = ta.value;
+            let textToInsert = content;
+            let start = ta.value.length;
+            let end = ta.value.length;
 
-            ta.value = text.substring(0, start) + content + text.substring(end);
-            ta.selectionStart = ta.selectionEnd = start + content.length;
+            if (!forceAppendEnd && typeof ta.selectionStart === "number" && document.activeElement === ta) {
+                start = ta.selectionStart;
+                end = ta.selectionEnd;
+            } else {
+                // 末尾追記の場合、直前が改行でなければ自動で改行を補完して読みやすく連結
+                if (ta.value.length > 0 && !ta.value.endsWith("\n")) {
+                    textToInsert = "\n\n" + textToInsert.replace(/^\n+/, "");
+                }
+            }
+
+            if (typeof ta.setRangeText === "function") {
+                ta.setRangeText(textToInsert, start, end, "end");
+            } else {
+                ta.value = ta.value.substring(0, start) + textToInsert + ta.value.substring(end);
+                ta.selectionStart = ta.selectionEnd = start + textToInsert.length;
+            }
+
+            ta.focus();
+            ta.scrollTop = ta.scrollHeight;
             handleLessonNoteInput();
 
             if (toastMsg) {
@@ -17734,7 +17942,7 @@ ${subjectGuide}
             }
         }
 
-        // ✨ AIでこのパートの要点をまとめ
+        // ✨ AIでこのパートの要点をまとめ（現在パートのメッセージを精密抽出）
         window.aiSummarizePartToNote = async function() {
             if (!currentLesson) return;
             const btn = el("btn-ai-summarize-part");
@@ -17742,11 +17950,30 @@ ${subjectGuide}
             const part = currentLesson.parts && currentLesson.parts[partIdx] ? currentLesson.parts[partIdx] : null;
             const partTitle = part ? (part.title || `第${partIdx + 1}回`) : `第${partIdx + 1}回`;
 
-            // チャット履歴から現在のパートの発言を収集
+            // チャット履歴から現在のパートの発言のみを収集（divider区切り対応）
             const history = Array.isArray(currentLesson.chatHistory) ? currentLesson.chatHistory : [];
-            const aiMsgs = history.filter(m => m.role === "assistant" && m.content).map(m => m.content).join("\n\n");
+            let partMsgs = [];
+            let currentDividerCount = 0;
 
-            if (!aiMsgs.trim()) {
+            for (const m of history) {
+                if (m.role === "divider") {
+                    currentDividerCount++;
+                    continue;
+                }
+                if (m.role === "assistant" && m.content) {
+                    if (currentDividerCount === partIdx || history.filter(h => h.role === "divider").length === 0) {
+                        partMsgs.push(m.content);
+                    }
+                }
+            }
+
+            if (partMsgs.length === 0) {
+                partMsgs = history.filter(m => m.role === "assistant" && m.content).map(m => m.content);
+            }
+
+            const lectureContext = partMsgs.join("\n\n").trim();
+
+            if (!lectureContext) {
                 showToast("講義内容がまだありません。まずは先生の解説を聞いてから実行してください。", "warning");
                 return;
             }
@@ -17765,7 +17992,7 @@ ${subjectGuide}
 
 ※ 挨拶、前置き、結びの言葉（「はい、まとめました」など）は一切含めず、純粋なMarkdownノートのみを出力してください。`;
 
-                const userPrompt = `【教科】${currentLesson.subject || "全般"}\n【授業タイトル】${currentLesson.title}\n【パート】第${partIdx + 1}回: ${partTitle}\n\n【講義内容】:\n${aiMsgs.slice(-4000)}`;
+                const userPrompt = `【教科】${currentLesson.subject || "全般"}\n【授業タイトル】${currentLesson.title}\n【パート】第${partIdx + 1}回: ${partTitle}\n\n【講義内容】:\n${lectureContext.slice(-4000)}`;
 
                 const result = await callGeminiChat([{ role: "user", parts: [{ text: userPrompt }] }], systemPrompt, { rawText: true, featureId: "lesson_teach" });
 
@@ -17841,7 +18068,7 @@ ${subjectGuide}
             showToast("⬇️ Markdownファイルをダウンロードしました！", "success");
         };
 
-        // 🖨️ A4プリント・PDF印刷
+        // 🖨️ A4プリント・PDF印刷（MathJax数式 ＆ スタイル完全適用）
         window.printLessonNote = function() {
             const ta = el("lesson-note-textarea");
             if (!ta || !ta.value.trim()) {
@@ -17864,17 +18091,24 @@ ${subjectGuide}
                 <head>
                     <meta charset="UTF-8">
                     <title>${title} - 授業ノート</title>
+                    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700;800&display=swap">
+                    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async><\/script>
                     <style>
                         body { font-family: 'Noto Sans JP', -apple-system, sans-serif; padding: 32px 40px; color: #1e293b; line-height: 1.8; background: #fff; }
                         h1 { font-size: 22px; font-weight: 800; color: #059669; border-bottom: 2.5px solid #059669; padding-bottom: 8px; margin-bottom: 12px; }
-                        .print-meta { font-size: 12px; color: #64748b; margin-bottom: 24px; }
-                        h2 { font-size: 17px; font-weight: 750; color: #059669; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px; margin-top: 24px; }
-                        h3 { font-size: 14px; font-weight: 750; border-left: 3px solid #059669; padding-left: 8px; margin-top: 18px; }
+                        .print-meta { font-size: 12px; color: #64748b; margin-bottom: 24px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px; }
+                        h2 { font-size: 17px; font-weight: 750; color: #059669; border-bottom: 1.5px solid #cbd5e1; padding-bottom: 4px; margin-top: 24px; margin-bottom: 10px; }
+                        h3 { font-size: 14px; font-weight: 750; border-left: 3.5px solid #059669; padding-left: 8px; margin-top: 18px; margin-bottom: 8px; }
                         mark { background: #fef08a; padding: 1px 4px; border-radius: 2px; }
-                        blockquote { border-left: 3px solid #059669; background: #f8fafc; padding: 8px 14px; margin: 12px 0; border-radius: 0 4px 4px 0; font-size: 13px; }
+                        blockquote { border-left: 3.5px solid #059669; background: #f8fafc; padding: 8px 14px; margin: 12px 0; border-radius: 0 4px 4px 0; font-size: 13px; }
+                        blockquote.note-trap-quote { border-left-color: #f59e0b; background: #fffbeb; }
+                        blockquote.note-point-quote { border-left-color: #059669; background: #ecfdf5; }
+                        blockquote.note-lecture-quote { border-left-color: #6366f1; background: #eef2ff; }
                         table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; }
-                        th, td { border: 1px solid #cbd5e1; padding: 6px 10px; }
+                        th, td { border: 1px solid #cbd5e1; padding: 8px 12px; text-align: left; }
                         th { background: #f1f5f9; font-weight: bold; }
+                        .note-task-item { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
+                        .note-task-item.is-checked { text-decoration: line-through; opacity: 0.7; }
                         @media print { body { padding: 0; } }
                     </style>
                 </head>
@@ -17884,7 +18118,7 @@ ${subjectGuide}
                     <div>${renderedHtml}</div>
                     <script>
                         window.onload = function() {
-                            setTimeout(() => { window.print(); }, 250);
+                            setTimeout(() => { window.print(); }, 400);
                         };
                     <\/script>
                 </body>
