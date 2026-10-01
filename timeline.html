@@ -8,7 +8,7 @@
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="icons/icon.png">
     <link rel="apple-touch-icon" href="icons/icon.png">
-    <title>Flora | 歴史 統合年表（世界史・日本史）</title>
+    <title>Flora | 歴史・公共 統合年表（日本史・公共・政治経済）</title>
     <link rel="stylesheet" href="style.css?v=3.5">
 
     <style>
@@ -687,13 +687,13 @@
                     </div>
                 </div>
 
-                <!-- 🌍 世界史 / ⛩️ 日本史 切替大型タブ -->
+                <!-- ⛩️ 日本史 / ⚖️ 公共・政治経済 切替大型タブ -->
                 <div class="history-type-switch">
-                    <button type="button" class="history-type-btn active" id="type-btn-world" data-type="world">
-                        🌍 世界史 年表
-                    </button>
-                    <button type="button" class="history-type-btn" id="type-btn-japan" data-type="japan">
+                    <button type="button" class="history-type-btn active" id="type-btn-japan" data-type="japan">
                         ⛩️ 日本史 年表
+                    </button>
+                    <button type="button" class="history-type-btn" id="type-btn-civics" data-type="civics">
+                        ⚖️ 公共・政治経済 年表
                     </button>
                 </div>
 
@@ -911,17 +911,13 @@
         const auth = getAuth(app);
         const database = getDatabase(app);
 
-        // 世界史カテゴリー（地域）
-        const WORLD_REGIONS = [
+        // 公共・政治経済カテゴリー（高校公共・政治経済の主要分野）
+        const CIVICS_CATEGORIES = [
             "ALL",
-            "東アジア",
-            "東南アジア",
-            "南アジア",
-            "西アジア・中央アジア",
-            "ヨーロッパ",
-            "アメリカ大陸",
-            "アフリカ",
-            "地域をまたぐ／世界全体"
+            "思想・哲学・人権宣言",
+            "日本国憲法・法制度・判例",
+            "政治・統治機構・国際情勢",
+            "経済・金融・社会保障・環境"
         ];
 
         // 日本史カテゴリー（高校日本史・共通テスト対応の正式な時代区分）
@@ -939,27 +935,30 @@
             "昭和・現代"
         ];
 
-        // 🏛️ 共通テスト・高校歴史 頻出重要出来事プリセット（データが少ない時でも即座に並べ替えや赤シートが使える）
-        const PRESET_WORLD_EVENTS = [
-            { name: "前漢の武帝が即位・塩鉄専売制", year: "前141年", year_sort: -141, category: "東アジア", mnemonics: ["前141年: い(14)よ(1)いよ武帝即位"], note: "シルクロードの開拓、儒教の官学化" },
-            { name: "アクティウムの海戦（プトレマイオス朝滅亡）", year: "前31年", year_sort: -31, category: "ヨーロッパ", mnemonics: ["前31年: オクタヴィアヌス勝利、ローマ内乱終結"], note: "地中海世界がオクタヴィアヌスにより統一される" },
-            { name: "ミラノ勅令（キリスト教公認）", year: "313年", year_sort: 313, category: "ヨーロッパ", mnemonics: ["313年: さい(31)さん(3)迫害されたキリスト教公認"], note: "コンスタンティヌス帝が発布" },
-            { name: "ニケーア公会議（アタナシウス派を正統認定）", year: "325年", year_sort: 325, category: "ヨーロッパ", mnemonics: ["325年: 三ツ子(325)が争う三位一体説"], note: "アリウス派は異端とされた" },
-            { name: "ヒジュラ（イスラーム暦元年・聖遷）", year: "622年", year_sort: 622, category: "西アジア・中央アジア", mnemonics: ["622年: む(6)に(2)むに(2)移動メッカからメディナへ"], note: "ムハンマドがメディナへ逃れた年" },
-            { name: "タラス河畔の戦い（製紙法の西伝）", year: "751年", year_sort: 751, category: "西アジア・中央アジア", mnemonics: ["751年: な(7)ご(5)い(1)紙の製法西へ伝わる"], note: "アッバース朝が高仙芝率いる唐軍を破る" },
-            { name: "カノッサの屈辱（叙任権闘争）", year: "1077年", year_sort: 1077, category: "ヨーロッパ", mnemonics: ["1077年: 人を(10)なな(77)める教皇グレゴリウス7世"], note: "皇帝ハインリヒ4世が教皇に謝罪" },
-            { name: "第1回十字軍の遠征開始", year: "1096年", year_sort: 1096, category: "ヨーロッパ", mnemonics: ["1096年: と(10)く(9)ろう(6)する十字軍"], note: "ウルバヌス2世のクレルモン公会議の呼びかけ" },
-            { name: "マグナ・カルタ（大憲章）承認", year: "1215年", year_sort: 1215, category: "ヨーロッパ", mnemonics: ["1215年: 人に(12)い(1)こ(5)う大憲章"], note: "イギリスのジョン王が貴族に屈服" },
-            { name: "ルターが95か条の論題を発表（宗教改革）", year: "1517年", year_sort: 1517, category: "ヨーロッパ", mnemonics: ["1517年: 以後(15)人(1)な(7)み宗教改革"], note: "免罪符（贖宥状）批判から始まる" },
-            { name: "マゼラン艦隊の世界周航達成", year: "1522年", year_sort: 1522, category: "地域をまたぐ／世界全体", mnemonics: ["1522年: 以後(15)つ(2)つ(2)がなく世界一周"], note: "地球球体説が実証される" },
-            { name: "アルマダ海戦（無敵艦隊の敗北）", year: "1588年", year_sort: 1588, category: "ヨーロッパ", mnemonics: ["1588年: い(1)ご(5)は(8)は(8)無敵艦隊敗北"], note: "イギリス海軍がスペイン無敵艦隊を破る" },
-            { name: "ウェストファリア条約締結（主権国家体制の確立）", year: "1648年", year_sort: 1648, category: "ヨーロッパ", mnemonics: ["1648年: 人類(16)し(4)あ(8)わせ三十年戦争終結"], note: "国際法・近代主権国家体制の基礎となる" },
-            { name: "名誉革命と権利の章典", year: "1689年", year_sort: 1689, category: "ヨーロッパ", mnemonics: ["1689年: い(1)ろ(6)は(8)き(9)まった権利の章典"], note: "立憲君主制・議会政治の確立" },
-            { name: "アメリカ独立宣言", year: "1776年", year_sort: 1776, category: "アメリカ大陸", mnemonics: ["1776年: い(1)な(7)な(7)ろ(6)う自由のアメリカ独立"], note: "ジェファソンらが起草" },
-            { name: "フランス革命勃発（バスティーユ牢獄襲撃）", year: "1789年", year_sort: 1789, category: "ヨーロッパ", mnemonics: ["1789年: 火(1789)の粉散るフランス革命"], note: "自由・平等・友愛と人権宣言" },
-            { name: "アヘン戦争勃発", year: "1840年", year_sort: 1840, category: "東アジア", mnemonics: ["1840年: いや(18)よ(4)お(0)アヘン戦争"], note: "南京条約で香港割譲・開港へ" },
-            { name: "サラエボ事件（第一次世界大戦勃発）", year: "1914年", year_sort: 1914, category: "ヨーロッパ", mnemonics: ["1914年: 行く(19)い(1)よ(4)第一次世界大戦"], note: "オーストリア皇太子夫妻が暗殺される" },
-            { name: "世界恐慌（ニューヨーク株価大暴落）", year: "1929年", year_sort: 1929, category: "アメリカ大陸", mnemonics: ["1929年: ひ(1)ど(9)く(2)苦(9)しい世界恐慌"], note: "ブロック経済化から第二次大戦へ" }
+        // 🏛️ 共通テスト・高校公共＆政治経済 頻出重要出来事プリセット
+        const PRESET_CIVICS_EVENTS = [
+            { name: "マグナ・カルタ（大憲章）承認", year: "1215年", year_sort: 1215, category: "思想・哲学・人権宣言", mnemonics: ["1215年: 人に(12)い(1)こ(5)う大憲章"], note: "イギリス・法の支配の原点。国王の専横を貴族が制限" },
+            { name: "権利請願（エドワード・コーク起草）", year: "1628年", year_sort: 1628, category: "思想・哲学・人権宣言", mnemonics: ["1628年: 色(16)つや(28)請願チャールズ1世へ"], note: "議会の同意なき課税禁止、不法逮捕の否定" },
+            { name: "ウェストファリア条約締結（主権国家体制の成立）", year: "1648年", year_sort: 1648, category: "政治・統治機構・国際情勢", mnemonics: ["1648年: 人類(16)し(4)あ(8)わせ三十年戦争終結"], note: "国家主権の平等、近代的国際秩序の原点" },
+            { name: "権利章典の制定（名誉革命）", year: "1689年", year_sort: 1689, category: "思想・哲学・人権宣言", mnemonics: ["1689年: い(1)ろ(6)は(8)き(9)まった権利の章典"], note: "立憲君主制と議会主義の確立" },
+            { name: "バージニア権利章典", year: "1776年", year_sort: 1776, category: "思想・哲学・人権宣言", mnemonics: ["1776年: い(1)な(7)な(7)ろ(6)う自由の権利宣言"], note: "世界初の成文憲法における基本的人権の宣言" },
+            { name: "アメリカ独立宣言", year: "1776年", year_sort: 1776, category: "思想・哲学・人権宣言", mnemonics: ["1776年: 自由の鐘が鳴るアメリカ独立"], note: "ロックの自然権思想・抵抗権の影響を強く反映" },
+            { name: "フランス人権宣言（人間と市民の権利の宣言）", year: "1789年", year_sort: 1789, category: "思想・哲学・人権宣言", mnemonics: ["1789年: 火(1789)の粉散るフランス人権宣言"], note: "自由・平等・国民主権・所有権の不可侵を規定" },
+            { name: "ワイマール憲法の制定（世界初の社会権保障）", year: "1919年", year_sort: 1919, category: "思想・哲学・人権宣言", mnemonics: ["1919年: 行く(19)行く(19)ワイマール社会権"], note: "「人間に値する生存」の保障、生存権の明文化" },
+            { name: "国際連盟の創設（ヴェルサイユ条約発効）", year: "1920年", year_sort: 1920, category: "政治・統治機構・国際情勢", mnemonics: ["1920年: 行く(19)つ(2)も(0)の国結ぶ連盟発足"], note: "ウィルソンの十四カ条が提唱。全会一致制が弱点" },
+            { name: "ブレトンウッズ協定（IMF・IBRD設立）", year: "1944年", year_sort: 1944, category: "経済・金融・社会保障・環境", mnemonics: ["1944年: 行く(19)よ(4)よ(4)金ドル固定相場制"], note: "ドルを基軸通貨とする戦後国際通貨体制の構築" },
+            { name: "国際連合の正式発足（サンフランシスコ会議）", year: "1945年", year_sort: 1945, category: "政治・統治機構・国際情勢", mnemonics: ["1945年: 行く(19)よ(4)GO(5)国際連合"], note: "安全保障理事会の大国一致の原則（拒否権）" },
+            { name: "日本国憲法の公布（1947年5月3日施行）", year: "1946年", year_sort: 1946, category: "日本国憲法・法制度・判例", mnemonics: ["1946年: 行く(19)よ(4)ろ(6)しく新憲法公布"], note: "国民主権・平和主義・基本的人権の尊重（三大原理）" },
+            { name: "世界人権宣言の採択（国連総会）", year: "1948年", year_sort: 1948, category: "思想・哲学・人権宣言", mnemonics: ["1948年: 行く(19)し(4)あ(8)わせ世界人権宣言"], note: "法的所有力はないが国際的な人権基準を確立" },
+            { name: "サンフランシスコ平和条約・旧日米安保条約調印", year: "1951年", year_sort: 1951, category: "政治・統治機構・国際情勢", mnemonics: ["1951年: 行く(19)こ(5)い(1)独立平和条約"], note: "日本の主権回復と西側陣営への組み込み" },
+            { name: "日本の国際連合加盟", year: "1956年", year_sort: 1956, category: "政治・統治機構・国際情勢", mnemonics: ["1956年: 行く(19)こ(5)ろ(6)世界へ国連加盟"], note: "日ソ共同宣言によりソ連の支持を得て加盟実現" },
+            { name: "国際人権規約の採択（国連総会）", year: "1966年", year_sort: 1966, category: "思想・哲学・人権宣言", mnemonics: ["1966年: 行く(19)ろ(6)く(6)法的拘束力のある人権規約"], note: "世界人権宣言に法的拘束力を持たせた規約（A規約・B規約）" },
+            { name: "ニクソン・ショック（ドル・金兌換停止）", year: "1971年", year_sort: 1971, category: "経済・金融・社会保障・環境", mnemonics: ["1971年: 行く(19)な(7)い(1)金交換ドル停止"], note: "スミソニアン体制を経て1973年に変動為替相場制へ移行" },
+            { name: "プラザ合意（急速な円高ドル安の誘導）", year: "1985年", year_sort: 1985, category: "経済・金融・社会保障・環境", mnemonics: ["1985年: 行く(19)や(8)こ(5)円高プラザ合意"], note: "先進5カ国蔵相・中央銀行総裁会議。バブル経済の契機" },
+            { name: "男女雇用機会均等法の施行", year: "1986年", year_sort: 1986, category: "日本国憲法・法制度・判例", mnemonics: ["1986年: 行く(19)は(8)ろ(6)う平等の雇用均等法"], note: "募集・採用・配置・昇進における女性差別の禁止" },
+            { name: "気候変動枠組条約（地球サミット・リオ）", year: "1992年", year_sort: 1992, category: "経済・金融・社会保障・環境", mnemonics: ["1992年: 行く(19)く(9)に(2)地球環境サミット"], note: "温室効果ガスの濃度安定化を目的とする条約" },
+            { name: "裁判員制度の施行", year: "2009年", year_sort: 2009, category: "日本国憲法・法制度・判例", mnemonics: ["2009年: 2009年市民参加の裁判員"], note: "重大な刑事事件の第一審に市民が参加" },
+            { name: "民法上の成年年齢が18歳に引き下げ", year: "2022年", year_sort: 2022, category: "日本国憲法・法制度・判例", mnemonics: ["2022年: 18歳成年の新時代"], note: "契約の締結が可能に。飲酒・喫煙・競馬等は20歳維持" }
         ];
 
         const PRESET_JAPAN_EVENTS = [
@@ -982,7 +981,7 @@
             { name: "日露戦争勃発", year: "1904年", year_sort: 1904, category: "明治・大正", mnemonics: ["1904年: 行く(19)わ(04)よ日露戦争"], note: "ポーツマス条約で講和" }
         ];
 
-        let activeHistoryType = "world"; // "world" or "japan"
+        let activeHistoryType = "japan"; // "japan" or "civics"
         let currentViewMode = "stream"; // "stream" (タイムライン) or "table" (年代表)
         let currentCategoryFilter = "ALL";
         let currentSearchQuery = "";
@@ -1143,7 +1142,7 @@
             const ev = allEvents.find(e => `${e.name}_${e.year}` === eventKey) || {
                 name: eventKey,
                 year: "",
-                category: activeHistoryType === "world" ? "世界史" : "日本史",
+                category: activeHistoryType === "civics" ? "公共" : "日本史",
                 note: "",
                 userNote: "",
                 userMnemonic: ""
@@ -1162,7 +1161,7 @@
             const btnDelete = document.getElementById("btn-delete-note");
             const modal = document.getElementById("timeline-note-modal");
 
-            if (categoryEl) categoryEl.textContent = ev.category || (activeHistoryType === "world" ? "世界史" : "日本史");
+            if (categoryEl) categoryEl.textContent = ev.category || (activeHistoryType === "civics" ? "公共" : "日本史");
             if (yearEl) yearEl.textContent = ev.year || "年代未詳";
             if (nameEl) nameEl.textContent = ev.name || eventKey;
             if (noteInput) noteInput.value = existingUserNote;
@@ -1212,7 +1211,7 @@
         function openCustomEventModal() {
             const modal = document.getElementById("timeline-custom-event-modal");
             const catSelect = document.getElementById("custom-ev-category");
-            const categories = activeHistoryType === "world" ? WORLD_REGIONS : JAPAN_ERAS;
+            const categories = activeHistoryType === "civics" ? CIVICS_CATEGORIES : JAPAN_ERAS;
             if (catSelect) {
                 catSelect.innerHTML = categories.filter(c => c !== "ALL").map(c => `
                     <option value="${escapeHtml(c)}">${escapeHtml(c)}</option>
@@ -1279,9 +1278,9 @@
         function rebuildCategoryFilters() {
             const container = document.getElementById("region-filter-container");
             const labelEl = document.getElementById("filter-category-label");
-            const categories = activeHistoryType === "world" ? WORLD_REGIONS : JAPAN_ERAS;
+            const categories = activeHistoryType === "civics" ? CIVICS_CATEGORIES : JAPAN_ERAS;
             
-            labelEl.textContent = activeHistoryType === "world" ? "🌍 地域：" : "⛩️ 時代：";
+            labelEl.textContent = activeHistoryType === "civics" ? "⚖️ 分野：" : "⛩️ 時代：";
 
             container.innerHTML = categories.map(c => `
                 <button type="button" class="region-tab-btn ${c === currentCategoryFilter ? 'active' : ''}" data-category="${c}">
@@ -1299,28 +1298,37 @@
             });
         }
 
-        // 世界史 / 日本史 切替
-        document.getElementById("type-btn-world").addEventListener("click", () => {
-            if (activeHistoryType === "world") return;
-            activeHistoryType = "world";
-            currentCategoryFilter = "ALL";
-            document.getElementById("type-btn-world").classList.add("active");
-            document.getElementById("type-btn-japan").classList.remove("active");
-            document.getElementById("page-main-title").textContent = "🌍 世界史 統合年表";
-            rebuildCategoryFilters();
-            renderTimeline();
-        });
+        // 公共・政治経済 / 日本史 切替
+        const typeBtnCivics = document.getElementById("type-btn-civics");
+        const typeBtnJapan = document.getElementById("type-btn-japan");
 
-        document.getElementById("type-btn-japan").addEventListener("click", () => {
-            if (activeHistoryType === "japan") return;
-            activeHistoryType = "japan";
-            currentCategoryFilter = "ALL";
-            document.getElementById("type-btn-japan").classList.add("active");
-            document.getElementById("type-btn-world").classList.remove("active");
-            document.getElementById("page-main-title").textContent = "⛩️ 日本史 統合年表";
-            rebuildCategoryFilters();
-            renderTimeline();
-        });
+        if (typeBtnCivics) {
+            typeBtnCivics.addEventListener("click", () => {
+                if (activeHistoryType === "civics") return;
+                activeHistoryType = "civics";
+                currentCategoryFilter = "ALL";
+                typeBtnCivics.classList.add("active");
+                if (typeBtnJapan) typeBtnJapan.classList.remove("active");
+                const titleEl = document.getElementById("page-main-title");
+                if (titleEl) titleEl.textContent = "⚖️ 公共・政治経済 統合年表";
+                rebuildCategoryFilters();
+                renderTimeline();
+            });
+        }
+
+        if (typeBtnJapan) {
+            typeBtnJapan.addEventListener("click", () => {
+                if (activeHistoryType === "japan") return;
+                activeHistoryType = "japan";
+                currentCategoryFilter = "ALL";
+                typeBtnJapan.classList.add("active");
+                if (typeBtnCivics) typeBtnCivics.classList.remove("active");
+                const titleEl = document.getElementById("page-main-title");
+                if (titleEl) titleEl.textContent = "⛩️ 日本史 統合年表";
+                rebuildCategoryFilters();
+                renderTimeline();
+            });
+        }
 
         // 検索入力リスナー
         const searchInput = document.getElementById("search-input");
@@ -1476,10 +1484,10 @@
         // Firebaseデータ収集＆マージ（プリセットフォールバック付き）
         function collectAllEvents() {
             const eventsMap = new Map(); // key: "出来事名_年" -> 統合オブジェクト
-            const isWorld = activeHistoryType === "world";
+            const isCivics = activeHistoryType === "civics";
 
             // 0. プリセット出来事を初期登録
-            const presets = isWorld ? PRESET_WORLD_EVENTS : PRESET_JAPAN_EVENTS;
+            const presets = isCivics ? PRESET_CIVICS_EVENTS : PRESET_JAPAN_EVENTS;
             presets.forEach(ev => {
                 const key = `${ev.name}_${ev.year}`;
                 eventsMap.set(key, {
@@ -1508,7 +1516,7 @@
                 if (!matchHistory) return;
                 const key = `${cev.name}_${cev.year}`;
                 const yearSort = parseYearSort(cev.year, cev.year_sort);
-                const category = cev.category || (isWorld ? "世界史" : getJapanEraCategory(yearSort));
+                const category = cev.category || (isCivics ? "公共" : getJapanEraCategory(yearSort));
                 if (!eventsMap.has(key)) {
                     eventsMap.set(key, {
                         name: cev.name,
@@ -1543,9 +1551,9 @@
             // 2. 誤答問題 (problems) から抽出（ユーザー実データをマージ）
             Object.values(rawProblems).forEach(p => {
                 if (!p) return;
-                const isMatchSubject = isWorld
-                    ? (p.subject === "世界史" || (!p.subject && Array.isArray(p.events)))
-                    : (p.subject === "日本史");
+                const isMatchSubject = isCivics
+                    ? (p.subject === "公共" || p.subject === "政治・経済" || p.subject === "政経" || p.subject === "公民")
+                    : (p.subject === "日本史" || p.subject === "歴史");
                 if (!isMatchSubject) return;
 
                 const problemEvents = Array.isArray(p.events) ? p.events : [];
@@ -1555,8 +1563,8 @@
                 problemEvents.forEach(ev => {
                     if (!ev || !ev.name) return;
                     const yearSort = parseYearSort(ev.year, ev.year_sort);
-                    const category = isWorld 
-                        ? (ev.region || "地域をまたぐ／世界全体")
+                    const category = isCivics 
+                        ? (ev.category || ev.field || "日本国憲法・法制度・判例")
                         : (ev.era || getJapanEraCategory(yearSort));
 
                     const key = `${ev.name}_${ev.year || ""}`;
@@ -1600,16 +1608,16 @@
             // 3. 参考書授業 (lessons) から抽出
             Object.values(rawLessons).forEach(l => {
                 if (!l || !Array.isArray(l.historicalEvents)) return;
-                const isMatchSubject = isWorld
-                    ? (l.subject === "世界史" || (!l.subject && l.historicalEvents.length > 0))
-                    : (l.subject === "日本史");
+                const isMatchSubject = isCivics
+                    ? (l.subject === "公共" || l.subject === "政治・経済" || l.subject === "政経" || l.subject === "公民")
+                    : (l.subject === "日本史" || l.subject === "歴史");
                 if (!isMatchSubject) return;
 
                 l.historicalEvents.forEach(ev => {
                     if (!ev || !ev.name) return;
                     const yearSort = parseYearSort(ev.year, ev.year_sort);
-                    const category = isWorld 
-                        ? (ev.region || "地域をまたぐ／世界全体")
+                    const category = isCivics 
+                        ? (ev.category || ev.field || "日本国憲法・法制度・判例")
                         : (ev.era || getJapanEraCategory(yearSort));
 
                     const key = `${ev.name}_${ev.year || ""}`;
@@ -1858,7 +1866,7 @@
                 streamEl.style.display = "none";
                 tableContainerEl.style.display = "block";
 
-                const isWorld = activeHistoryType === "world";
+                const isCivics = activeHistoryType === "civics";
                 let currentEra = null;
                 let rowsHtml = "";
 
@@ -2064,8 +2072,8 @@
             if (type === 'japan') {
                 const btn = document.getElementById('type-btn-japan');
                 if (btn) btn.click();
-            } else if (type === 'world') {
-                const btn = document.getElementById('type-btn-world');
+            } else if (type === 'civics' || type === 'public' || type === 'world') {
+                const btn = document.getElementById('type-btn-civics');
                 if (btn) btn.click();
             }
         }
