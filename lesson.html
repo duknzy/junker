@@ -5565,6 +5565,51 @@
                                         ⚡ 複数キーを並列稼働させ、カリキュラム・超詳細解説・暗記ポイントを同時生成します！
                                     </div>
 
+                                    <!-- 💡 単元名BYOT：Google AI Studio / 外部AIプロンプト送信＆結果取り込み -->
+                                    <div id="topic-byot-container" style="margin-top:0.85rem; background:linear-gradient(135deg, rgba(99,102,241,0.06) 0%, rgba(139,92,246,0.06) 100%); border:1px solid rgba(129,140,248,0.45); border-radius:var(--radius-md); padding:0.9rem 1.05rem;">
+                                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.45rem; flex-wrap:wrap; gap:0.4rem;">
+                                            <div style="font-weight:750; color:#3730A3; font-size:0.86rem; display:flex; align-items:center; gap:0.4rem;">
+                                                <span>💡</span>
+                                                <span>Google AI Studio / 外部AIで授業を作成（プロンプト送信方式）</span>
+                                            </div>
+                                            <span style="font-size:0.7rem; background:rgba(99,102,241,0.15); color:#4338CA; padding:0.15rem 0.5rem; border-radius:var(--radius-full); font-weight:700;">API制限・クォータなし</span>
+                                        </div>
+                                        <div style="font-size:0.76rem; color:var(--text-secondary); line-height:1.5; margin-bottom:0.65rem;">
+                                            APIキーを使わずに、単元の統合生成プロンプトをGoogle AI Studio（aistudio.google.com）やWeb版Geminiに送信し、出力結果（JSON）を貼り付けて授業を作成できます。
+                                        </div>
+                                        
+                                        <div style="display:flex; gap:0.45rem; flex-wrap:wrap; margin-bottom:0.75rem;">
+                                            <button type="button" id="byot-topic-copy-prompt-btn" class="tactile-btn" style="font-size:0.75rem; font-weight:700; padding:0.4rem 0.75rem; background:#4F46E5; color:#fff; border:none; border-radius:var(--radius-sm); cursor:pointer; display:inline-flex; align-items:center; gap:0.35rem;">
+                                                📋 プロンプトをコピー
+                                            </button>
+                                            <button type="button" id="byot-topic-copy-schema-btn" class="tactile-btn" style="font-size:0.75rem; font-weight:600; padding:0.4rem 0.75rem; background:#fff; color:#4338CA; border:1px solid rgba(129,140,248,0.5); border-radius:var(--radius-sm); cursor:pointer; display:inline-flex; align-items:center; gap:0.35rem;">
+                                                ⚙️ JSONスキーマをコピー (AI Studio用)
+                                            </button>
+                                            <button type="button" id="byot-topic-toggle-preview-btn" class="tactile-btn" style="font-size:0.75rem; font-weight:600; padding:0.4rem 0.75rem; background:transparent; color:var(--text-secondary); border:1px solid var(--border-color); border-radius:var(--radius-sm); cursor:pointer;">
+                                                👁️ プロンプト確認
+                                            </button>
+                                        </div>
+
+                                        <!-- プレビュー枠（初期非表示） -->
+                                        <div id="byot-topic-preview-wrap" style="display:none; margin-bottom:0.75rem;">
+                                            <textarea id="byot-topic-preview-text" class="note-textarea" readonly rows="6" style="font-size:0.72rem; line-height:1.45; background:var(--bg-secondary); color:var(--text-secondary); font-family:monospace;" placeholder="プロンプトプレビューがここに表示されます"></textarea>
+                                        </div>
+
+                                        <label for="byot-topic-result-input" style="font-size:0.8rem; font-weight:700; color:var(--text-primary); display:block; margin-bottom:0.35rem;">
+                                            📥 AI Studio / Geminiの出力結果（JSON）を貼り付け
+                                        </label>
+                                        <textarea class="note-textarea" id="byot-topic-result-input" rows="5" placeholder="ここにGoogle AI StudioやGemini等から出力されたJSON（または ```json ... ``` のブロック）を貼り付けてください..." style="min-height:110px; font-family:inherit; line-height:1.5; font-size:0.78rem; margin-bottom:0.45rem;"></textarea>
+                                        
+                                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.45rem;">
+                                            <button type="button" id="byot-topic-paste-btn" class="tactile-btn" style="font-size:0.72rem; padding:0.25rem 0.6rem; border-radius:var(--radius-sm); background:var(--bg-surface); border:1px solid var(--border-color); color:var(--text-primary); cursor:pointer;">
+                                                📋 クリップボードから貼り付け
+                                            </button>
+                                            <button type="button" id="byot-topic-submit-btn" class="tactile-btn" style="font-size:0.78rem; font-weight:750; padding:0.42rem 0.95rem; background:linear-gradient(135deg, #10B981, #059669); color:#fff; border:none; border-radius:var(--radius-sm); cursor:pointer; display:inline-flex; align-items:center; gap:0.35rem; box-shadow:0 2px 4px rgba(16,185,129,0.25);">
+                                                🚀 貼り付けた結果から授業プランを作成
+                                            </button>
+                                        </div>
+                                    </div>
+
                                     <!-- 🤖 授業プラン生成 AI設定セレクター -->
                                     <div class="lesson-ai-picker-box" id="lesson-plan-ai-picker-box">
                                         <div class="lesson-ai-picker-header">
@@ -11311,6 +11356,400 @@ ${subjectGuide}
                 btn.disabled = false;
                 if (regenBtn) regenBtn.disabled = false;
             }
+        }
+
+        // ==============================================================
+        // 💡【単元名BYOT】Google AI Studio / 外部AIプロンプト生成＆取り込み
+        // ==============================================================
+        function buildTopicLessonByotPrompt() {
+            const topicText = el("topic-input") ? el("topic-input").value.trim() : "";
+            const subject = selectedSubject || "数学";
+            const track = getSubjectLearningTrack(subject);
+            let levelText = "";
+            if (track === "single") {
+                levelText = "完全網羅マスター（基礎・因果関係・入試頻出を1回で習得）";
+            } else {
+                const rawLevel = el("topic-level-select") ? el("topic-level-select").value : "";
+                const defaultLevel = TRACK_LEVELS[track]?.[0]?.value || "基礎・概念理解";
+                levelText = rawLevel || defaultLevel;
+            }
+            const topicNoteText = el("topic-note-input") ? el("topic-note-input").value.trim() : "";
+            const isSocratic = selectedTeachingStyle === "socratic";
+            const socraticAddon = isSocratic ? `
+【特記事項：ソクラテス対話ゼミ】
+この授業は「多角的アプローチ（別解比較）」「あえて間違える落とし穴の見破り」「対話式問答」を重視するスタイルです。
+各パートの要約(summary)には、単なる解説範囲だけでなく「生徒に投げかけるべき核心の問いや、比較検討すべき別解の視点」を盛り込んで計画してください。` : "";
+
+            const subjectGuide = SUBJECT_PROMPT_GUIDES[subject] || "";
+
+            let curriculumRule = "";
+            if (track === "single") {
+                curriculumRule = `・【1回完結型】数学のような「基礎→典型→応用」といった難易度分断は厳禁です。
+・単元の規模に応じ、1〜3パート程度（標準は2パート、コンパクトなら1〜2パート）で、背景・原因から重要展開、入試頻出ポイント・重要用語まで因果関係や論理の流れに沿って一気に網羅してください。`;
+            } else if (track === "phys-base") {
+                curriculumRule = `・【⚡ 共通テスト物理基礎特化型：現在「${levelText}」】
+・【絶対厳守スコープ】：発展物理の範囲（剛体のつり合い・モーメント、円運動、単振動、気体の状態方程式PV=nRT・熱力学第1法則計算、光波全般、ドップラー効果、コンデンサー過渡現象、キルヒホッフ、電磁気発展、原子物理等）の出題・解説は絶対禁止。
+・物理基礎の共通テスト（30〜50点満点）の試験範囲（運動とエネルギー、熱、波、電気）に100%特化した2〜3パートに分割してください。
+・基礎・原理理解なら物理現象の直感と基本法則（v-tグラフ・つり合い/反作用・仕事）、定石なら頻出典型問題（浮力・保存則・熱量保存・オームの法則）、満点対策なら実験・探究問題（気柱共鳴、弦の振動、台秤実験、グラフ疎密判定）の盲点攻略を各パートの主眼にしてください。`;
+            } else if (track === "chem-base") {
+                curriculumRule = `・【🧪 共通テスト化学基礎特化型：現在「${levelText}」】
+・【絶対厳守】：発展化学（理系個別入試：気体状態方程式、化学平衡・ルシャトリエ、緩衝液、溶解度積、熱化学、有機化学、錯イオン等）の出題・解説は絶対禁止。化学基礎の共通テスト（30〜50点満点）の試験範囲に100%特化した2〜3パートに分割してください。
+・基礎・概念理解なら原子構造・結合・周期表の原理、頻出ならmol計算・中和・酸化還元の定石と量的関係、満点対策なら実験器具（共洗い理由等）や正誤判定トラップの盲点攻略を各パートの主眼にしてください。`;
+            } else if (track === "bio-base") {
+                curriculumRule = `・【🧬 共通テスト生物基礎特化型：現在「${levelText}」】
+・【絶対厳守スコープ】：発展生物（動物発生、受容器、神経伝達、DNA複製詳細、バイオテクノロジー等）の出題・解説は絶対禁止。生物基礎（30〜50点満点）の試験範囲（細胞と代謝、遺伝子の本体とその働き、体内環境の維持、植生の多様性と生態系）に100%特化した2〜3パートに分割してください。
+・各パート内に必ず【🔬 共通テスト実験・探究・思考考察ブロック】を組み込み、基礎・概念理解なら細胞・代謝・恒常性の直感イメージ、頻出なら計算・グラフ読解（ミクロメーター校正・シャルガフ比率・抗体濃度グラフ・バイオーム判定）、満点対策なら対照実験や正誤判定トラップの盲点攻略を各パートの主眼にしてください。`;
+            } else if (track === "geo-base") {
+                curriculumRule = `・【🌍 共通テスト地学基礎特化型：現在「${levelText}」】
+・【絶対厳守スコープ】：発展地学（ケプラー計算、コリオリ力計算等）の出題・解説は絶対禁止。地学基礎（30〜50点満点）の試験範囲（固体地球・プレート・火山と岩石・地層と化石・大気海洋・宇宙と太陽系）に100%特化した2〜3パートに分割してください。
+・各パート内に必ず【🔬 共通テスト実験・探究・思考考察ブロック】を組み込み、基礎・概念理解なら地球・宇宙現象の直感と基本構造、頻出なら計算・作図読解（走時曲線・大森公式・柱状図対比・鉱物分類・前線）、満点対策ならアイソスタシー計算・熱収支・H-R図や正誤判定トラップの盲点攻略を各パートの主眼にしてください。`;
+            } else if (subject === "数学") {
+                curriculumRule = `・【📐 数学科ステップ型：現在「${levelText}」】
+・初心者や未修者が記号や文字の羅列に圧倒されて脱落しないよう、以下のストーリーに沿って論理的に2〜3パートに分割してください：
+  ・第1パート：【世界観・日常応用と文字の正体】なぜこの単元を学ぶのか、実社会や日常でどう役立つのかのストーリーを語り、登場する文字・記号（英単語の由来・日本語訳）の正体を身近な数字で解き明かして直感を掴む。
+  ・第2パート：【公式の必然性と定石アルゴリズム】なぜその計算手順を踏むのか（たとえ話で必然性を納得）を提示し、基本〜標準的な典型例題を通して解法の流れを自力で再現できるようにする。
+  ・第3パート：【入試・実戦の盲点と落とし穴攻略】${levelText.includes("難関") ? "難関大特有の融合問題や別解比較" : "受験生がつまずきやすい場合分け・定義域・符号ミス・引っかかりやすい罠"}を完全撃破する。`;
+            } else if (track === "two-step") {
+                curriculumRule = `・【2段階スマート型：現在「${levelText}」】
+・本レベルに焦点を当て、2〜3パートで過不足なくマスターできる構成にしてください。
+・基礎・本質理解ならルールの根本理由や現象の仕組みを直感的に、入試実戦なら頻出の盲点・典型引っかけ・考察対策を重点的に。`;
+            } else {
+                curriculumRule = `・【段階ステップ型：現在「${levelText}」】
+・本レベル（${levelText}）に特化し、生徒が確実に解法・思考力を身につけられる2〜4パートに論理的に分割してください。`;
+            }
+
+            const isHistoryOrCivics = (subject === "日本史" || subject === "歴史" || subject === "公共" || subject === "政治・経済" || subject === "政経" || subject === "公民");
+
+            let historyInstruction = "";
+            if (isHistoryOrCivics) {
+                historyInstruction = `
+・【重要：年表・年代イベントの抽出】
+  historical_events 配列に、この単元で入試・共通テスト頻出となる重要年号・出来事・法制・条約・重要判例（name, year, year_sort, region, description）を漏れなく抽出してください。
+  ※regionは公共なら「思想・哲学・人権宣言」「日本国憲法・法制度・判例」「政治・統治機構・国際情勢」「経済・金融・社会保障・環境」、日本史なら時代区分を指定。`;
+            }
+
+            const prompt = `あなたは大学受験・高校学習の最高峰プロ講師AIです。
+指定された単元について、生徒が最高効率で習得できる「体系的なカリキュラム構成」「参考書1章分に匹敵する超詳細講義ノート全文」「暗記すべき重要公式・用語」を統合して作成してください。
+
+【対象教科：${subject}】
+【単元名】${topicText || "（指定単元名）"}
+【レベル】${levelText}
+${topicNoteText ? `【生徒からの重点リクエスト】${topicNoteText}\n` : ""}${subjectGuide}
+${socraticAddon}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+【カリキュラム構成の設計指針】
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${curriculumRule}
+
+・【🚨 最重要厳格指示：タイトル命名の短縮・簡潔化ルール】
+  ・lesson_title（授業全体タイトル）: 教科書・入試の標準的な単元名に基づき、簡潔・明快に【12〜22文字以内】で命名すること。
+    ※サブタイトル（「――」「〜まで」）、煽り文句、比喩表現、読み仮名括弧「（よみがな）」は一切禁止。
+  ・parts[].title（各パートタイトル）: 各回のテーマを【8〜16文字程度】で短くスッキリ命名すること。
+    ※『Part 1』『第1回』『その1』などの番号プレフィックスは入れないこと。
+    ※サブタイトル（「――」「〜まで」）、煽り文句、比喩表現、読み仮名括弧「（よみがな）」は【完全禁止】。
+・各パートで伝えるべきエッセンス・落とし穴は要約 summary に記述すること。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+【講義ノート全文 (extracted_text) 執筆の厳格ルール】
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+・数式は必ず $ $ または $$ $$ で囲むこと
+・途中式、定義の成り立ち、直感的なたとえ話、思考プロセスを一切妥協せず網羅的に執筆すること
+・【🚨 難しい漢字の読み仮名徹底】社会系科目（日本史・地理・公民・公共・政治経済等）の歴史用語、人名、地名、制度名、重要概念や、初見で読みにくい漢字には、必ず「漢字（よみがな）」または「<ruby>漢字<rt>よみがな</rt></ruby>」で読み仮名を徹底して付記すること。
+・【🔬 理科基礎（物理・化学・生物・地学）の必修指示：共通テスト実験・探究・思考考察ブロック】：理科基礎科目では、各パート内に必ず以下の『共通テスト実験・探究・思考考察ブロック』を構造的に書き下ろしてください：
+  ①【実験・観察の目的と仮説】
+  ②【対照実験（コントロール）と条件制御（何を一定に保ち、何を変化させたか）】
+  ③【データ・グラフの読み解き急所（傾き・切片・面積・変曲点・ピーク値）】
+  ④【実験手順・器具の理由（共洗い、メニスカス、手順の必然性）】
+  ⑤【共テ頻出！正誤判定トラップ（主語すり替え、例外混同の盲点攻略）】
+・【📐 数学】：増減表は必ず Markdown 表形式で図示し、同値変形・場合分け・定義域・真数条件の減点防止トラップを徹底網羅すること。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+【暗記事項 (key_terms) 抽出ルール】
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+・試験で満点を取るために絶対に暗記すべき重要公式・定理・専門用語・定義・反応式を漏れなく抽出してください。
+・※【絶対厳禁】nameには漢字の後ろに括弧書きでふりがな（ひらがな）を付けず、正式表記のみで記述してください。
+${historyInstruction}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+【🚨 出力形式：以下のJSONスキーマに完全準拠したJSONオブジェクトのみを出力してください（Markdownコードブロック \`\`\`json ... \`\`\` 可）】
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+{
+  "lesson_title": "授業全体の簡潔・明快なタイトル（12〜22文字以内）",
+  "parts": [
+    {
+      "title": "各パートの簡潔な単元名（8〜16文字以内）",
+      "summary": "そのパートで伝えるべきエッセンス・落とし穴・重要概念の要約"
+    }
+  ],
+  "extracted_text": "参考書1章分に匹敵する超詳細な講義ノート全文（数式は $ $、読み仮名徹底、実験考察等を含む完全版テキスト）",
+  "key_terms": [
+    {
+      "name": "公式・用語の正式名称",
+      "definition": "定義、公式の適用条件、解法の急所"
+    }
+  ]${isHistoryOrCivics ? `,
+  "historical_events": [
+    {
+      "name": "出来事・事件・法制・判例・条約などの名称",
+      "year": "年代表記（例: 1946年, 645年）",
+      "year_sort": 1946,
+      "region": "分野区分または時代区分",
+      "description": "背景・原因・結果・影響の簡潔な解説（1〜2文）"
+    }
+  ]` : ""}
+}`;
+            return prompt;
+        }
+
+        function getTopicLessonSchema(subject) {
+            const isHistoryOrCivics = (subject === "日本史" || subject === "歴史" || subject === "公共" || subject === "政治・経済" || subject === "政経" || subject === "公民");
+            const schema = {
+                type: "OBJECT",
+                properties: {
+                    lesson_title: {
+                        type: "STRING",
+                        description: "授業全体の簡潔・明快なタイトル（12〜22文字以内。サブタイトル・煽り文・『〜まで』・『――』・読み仮名括弧は一切禁止）"
+                    },
+                    parts: {
+                        type: "ARRAY",
+                        items: {
+                            type: "OBJECT",
+                            properties: {
+                                title: {
+                                    type: "STRING",
+                                    description: "各パートの簡潔な単元名（8〜16文字以内。『Part 1』等の回数番号、サブタイトル『――』、読み仮名括弧は完全禁止）"
+                                },
+                                summary: {
+                                    type: "STRING",
+                                    description: "そのパートで伝えるべきエッセンス・落とし穴・重要概念の要約（難しい漢字には読み仮名を併記）"
+                                }
+                            },
+                            required: ["title", "summary"]
+                        }
+                    },
+                    extracted_text: {
+                        type: "STRING",
+                        description: "参考書1章分に匹敵する超詳細な講義ノート全文（数式は $ $、読み仮名徹底、実験考察等を含む完全版テキスト）"
+                    },
+                    key_terms: {
+                        type: "ARRAY",
+                        items: {
+                            type: "OBJECT",
+                            properties: {
+                                name: { type: "STRING", description: "重要公式・用語名（ふりがな括弧なし）" },
+                                definition: { type: "STRING", description: "定義・急所" }
+                            },
+                            required: ["name", "definition"]
+                        }
+                    }
+                },
+                required: ["lesson_title", "parts", "extracted_text"]
+            };
+
+            if (isHistoryOrCivics) {
+                schema.properties.historical_events = {
+                    type: "ARRAY",
+                    items: {
+                        type: "OBJECT",
+                        properties: {
+                            name: { type: "STRING" },
+                            year: { type: "STRING" },
+                            year_sort: { type: "INTEGER" },
+                            region: { type: "STRING" },
+                            description: { type: "STRING" }
+                        },
+                        required: ["name", "year", "year_sort"]
+                    }
+                };
+            }
+            return schema;
+        }
+
+        async function submitByotTopicLesson() {
+            const resultInput = el("byot-topic-result-input");
+            const rawText = resultInput ? resultInput.value.trim() : "";
+            if (!rawText) {
+                showToast("Google AI StudioやGeminiの出力結果（JSON）を貼り付けてください。", "warning", 3500);
+                if (resultInput) resultInput.focus();
+                return;
+            }
+
+            let parsed = null;
+            // 1. Direct JSON parse
+            try {
+                parsed = JSON.parse(rawText);
+            } catch(e1) {
+                // 2. Clean markdown code blocks
+                try {
+                    let clean = rawText.replace(/```json\s*/gi, "").replace(/```\s*$/g, "").trim();
+                    const firstBrace = clean.indexOf("{");
+                    const lastBrace = clean.lastIndexOf("}");
+                    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+                        clean = clean.substring(firstBrace, lastBrace + 1);
+                    }
+                    parsed = JSON.parse(clean);
+                } catch(e2) {
+                    console.error("BYOT単元JSONパースエラー:", e2);
+                }
+            }
+
+            if (!parsed || (typeof parsed !== "object")) {
+                showToast("JSONデータの解析に失敗しました。正しいJSON形式（または ```json ... ```）であることを確認してください。", "error", 5000);
+                return;
+            }
+
+            const topicText = (el("topic-input") ? el("topic-input").value.trim() : "") || parsed.lesson_title || "単元学習";
+            const subject = selectedSubject || "その他";
+            const track = getSubjectLearningTrack(subject);
+            let levelText = "";
+            if (track === "single") {
+                levelText = "完全網羅マスター（基礎・因果関係・入試頻出を1回で習得）";
+            } else {
+                const rawLevel = el("topic-level-select") ? el("topic-level-select").value : "";
+                const defaultLevel = TRACK_LEVELS[track]?.[0]?.value || "基礎・概念理解";
+                levelText = rawLevel || defaultLevel;
+            }
+
+            let parts = Array.isArray(parsed.parts) ? parsed.parts : [];
+            if (parts.length === 0) {
+                parts = [{ title: "本質講義", summary: "単元の基礎概念と全体像を解説" }];
+            }
+
+            const continuationId = el("continuation-select") ? el("continuation-select").value : "";
+
+            draftPlan = {
+                subject: subject,
+                lesson_title: cleanLessonTitle(parsed.lesson_title || `【${subject}】${topicText}`),
+                parts: parts.map((p, idx) => ({ ...p, title: cleanPartTitle(p.title || `第${idx+1}回`, idx) })),
+                historical_events: Array.isArray(parsed.historical_events) ? parsed.historical_events : [],
+                extracted_text: parsed.extracted_text || "",
+                key_terms: Array.isArray(parsed.key_terms) ? parsed.key_terms : [],
+                sourceMode: "topic",
+                teachingStyle: selectedTeachingStyle,
+                topicKey: topicText,
+                level: levelText
+            };
+            if (continuationId) draftPlan.continuationId = continuationId;
+
+            renderPlanPreview();
+            el("view-list").classList.add("hidden");
+            el("view-plan-preview").classList.remove("hidden");
+            await forceTriggerMathJax();
+            showToast(`⚡ ${subject}の授業プランを取り込みました！内容を確認して「この内容で授業を始める」を押してください`, "success", 4500);
+        }
+
+        // 単元名BYOTのUIイベントハンドラー初期化
+        const btnByotTopicCopyPrompt = el("byot-topic-copy-prompt-btn");
+        const btnByotTopicCopySchema = el("byot-topic-copy-schema-btn");
+        const btnByotTopicTogglePreview = el("byot-topic-toggle-preview-btn");
+        const btnByotTopicPaste = el("byot-topic-paste-btn");
+        const btnByotTopicSubmit = el("byot-topic-submit-btn");
+
+        if (btnByotTopicCopyPrompt) {
+            btnByotTopicCopyPrompt.addEventListener("click", async () => {
+                const topic = el("topic-input") ? el("topic-input").value.trim() : "";
+                if (!topic) {
+                    showToast("学びたい単元名を入力してください（例：二次関数の最大最小）。", "warning", 3000);
+                    if (el("topic-input")) el("topic-input").focus();
+                    return;
+                }
+                const prompt = buildTopicLessonByotPrompt();
+                try {
+                    await navigator.clipboard.writeText(prompt);
+                    const origHtml = btnByotTopicCopyPrompt.innerHTML;
+                    btnByotTopicCopyPrompt.innerHTML = "✅ コピー完了！";
+                    showToast("📋 外部AI（Google AI Studio等）用の統合プロンプトをコピーしました！貼り付けて実行してください", "success", 4000);
+                    setTimeout(() => { btnByotTopicCopyPrompt.innerHTML = origHtml; }, 2500);
+                } catch(e) {
+                    showToast("コピーに失敗しました。プロンプト確認枠から手動でコピーしてください。", "error");
+                }
+            });
+        }
+
+        if (btnByotTopicCopySchema) {
+            btnByotTopicCopySchema.addEventListener("click", async () => {
+                const schema = getTopicLessonSchema(selectedSubject);
+                try {
+                    await navigator.clipboard.writeText(JSON.stringify(schema, null, 2));
+                    const origHtml = btnByotTopicCopySchema.innerHTML;
+                    btnByotTopicCopySchema.innerHTML = "✅ スキーマコピー完了！";
+                    showToast("⚙️ AI StudioのStructured outputs用JSONスキーマをコピーしました！", "success", 3500);
+                    setTimeout(() => { btnByotTopicCopySchema.innerHTML = origHtml; }, 2500);
+                } catch(e) {
+                    showToast("スキーマのコピーに失敗しました。", "error");
+                }
+            });
+        }
+
+        if (btnByotTopicTogglePreview) {
+            btnByotTopicTogglePreview.addEventListener("click", () => {
+                const wrap = el("byot-topic-preview-wrap");
+                const ta = el("byot-topic-preview-text");
+                if (!wrap) return;
+                const isHidden = (wrap.style.display === "none" || !wrap.style.display);
+                if (isHidden) {
+                    if (ta) ta.value = buildTopicLessonByotPrompt();
+                    wrap.style.display = "block";
+                    btnByotTopicTogglePreview.textContent = "🙈 プレビューを閉じる";
+                } else {
+                    wrap.style.display = "none";
+                    btnByotTopicTogglePreview.textContent = "👁️ プロンプト確認";
+                }
+            });
+        }
+
+        if (btnByotTopicPaste) {
+            btnByotTopicPaste.addEventListener("click", async () => {
+                const input = el("byot-topic-result-input");
+                if (!input) return;
+                try {
+                    const text = await navigator.clipboard.readText();
+                    if (text && text.trim()) {
+                        input.value = text.trim();
+                        showToast("📋 クリップボードから貼り付けました！", "success", 2500);
+                    } else {
+                        showToast("クリップボードが空かテキストではありません。", "warning", 2500);
+                    }
+                } catch(e) {
+                    input.focus();
+                    showToast("入力枠内で Ctrl+V (Cmd+V) を押して貼り付けてください。", "info", 3000);
+                }
+            });
+        }
+
+        if (btnByotTopicSubmit) {
+            btnByotTopicSubmit.addEventListener("click", submitByotTopicLesson);
+        }
+
+        // 単元名入力やプリセット選択時のプレビュー自動更新
+        if (el("topic-input")) {
+            el("topic-input").addEventListener("input", () => {
+                const wrap = el("byot-topic-preview-wrap");
+                const ta = el("byot-topic-preview-text");
+                if (wrap && wrap.style.display !== "none" && ta) {
+                    ta.value = buildTopicLessonByotPrompt();
+                }
+            });
+        }
+
+        function updateByotTopicPreviewIfOpen() {
+            const wrap = el("byot-topic-preview-wrap");
+            const ta = el("byot-topic-preview-text");
+            if (wrap && wrap.style.display !== "none" && ta) {
+                ta.value = buildTopicLessonByotPrompt();
+            }
+        }
+        document.addEventListener("click", (e) => {
+            if (e.target.closest && (e.target.closest(".math-preset-btn, .phys-preset-btn, .chem-preset-btn, .bio-preset-btn, .geo-preset-btn") || e.target.closest(".subject-card"))) {
+                setTimeout(updateByotTopicPreviewIfOpen, 50);
+            }
+        });
+        if (el("topic-level-select")) {
+            el("topic-level-select").addEventListener("change", updateByotTopicPreviewIfOpen);
+        }
+        if (el("topic-note-input")) {
+            el("topic-note-input").addEventListener("input", updateByotTopicPreviewIfOpen);
         }
 
         // --------------------------------------------------------------
