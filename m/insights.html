@@ -176,6 +176,29 @@
             background: var(--bg-subtle);
         }
 
+        /* 📅 モバイル版 暗記ペースメーカー */
+        .mobile-planner-card {
+            background: #FFFFFF;
+            border: 1px solid var(--memo-border);
+            border-radius: 18px;
+            padding: 1.1rem 1.15rem;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 0.9rem;
+        }
+        .theme-dark .mobile-planner-card {
+            background: #1E293B;
+            border-color: #334155;
+        }
+        .mobile-planner-card::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #10B981, #06B6D4);
+        }
+
         /* 🌟 デイリースマートバナー（今日のノルマ & 一発スタート） */
         .daily-hero-card {
             margin: 0.85rem 1rem;
@@ -2549,6 +2572,9 @@
             </div>
         </section>
 
+        <!-- 📅 暗記ペースメーカー（学習計画＆デイリーノルマ） -->
+        <div id="mobile-planner-container" style="margin: 0 1rem 0.9rem 1rem;"></div>
+
         <!-- 📚 教科別デッキセレクター -->
         <div class="section-wrap" style="display:flex; justify-content:space-between; align-items:center;">
             <div class="section-title">
@@ -4632,6 +4658,12 @@
 
             const result = saveCardSrsRating(card, rating);
             const isPassed = result ? result.isPassed : (rating !== "again");
+
+            // 📅 暗記ペースメーカーのデイリー進捗反映
+            if (typeof handleMobilePlannerCardAnswered === "function") {
+                handleMobilePlannerCardAnswered(card, rating);
+            }
+
             const reinsertOffset = Math.min(3, sessionQueue.length);
 
             // 履歴に保存（前のカードに戻る機能用）
@@ -6260,11 +6292,235 @@
                         updateMobileCardUserMemoDisplay();
                     }
                 });
+
+                // 📅 暗記ペースメーカーの同期（全端末共有）
+                onValue(ref(database, `users/${user.uid}/memorizePlans`), snap => {
+                    rawMobileMemorizePlans = snap.val() || {};
+                    renderMobilePlannerUI();
+                });
+                onValue(ref(database, `users/${user.uid}/memorizePlanLogs`), snap => {
+                    rawMobileMemorizePlanLogs = snap.val() || {};
+                    renderMobilePlannerUI();
+                });
+                onValue(ref(database, `users/${user.uid}/memorizeActivePlanId`), snap => {
+                    const pVal = snap.val();
+                    if (pVal) {
+                        activeMobilePlanId = pVal;
+                        localStorage.setItem("flora_active_memorize_plan_id", pVal);
+                    }
+                    renderMobilePlannerUI();
+                });
             } else {
                 invalidateCardCache();
                 renderDashboard();
             }
         });
+
+        // ==========================================
+        // 📅 モバイル版 暗記ペースメーカー
+        // ==========================================
+        let rawMobileMemorizePlans = {};
+        let rawMobileMemorizePlanLogs = {};
+        let activeMobilePlanId = localStorage.getItem("flora_active_memorize_plan_id") || null;
+        let mobileCurrentQuotaCards = [];
+        window._activeMobilePlannerSession = null;
+
+        function getMobilePlanTargetCards(plan) {
+            if (!plan) return [];
+            let items = buildAllFlashcards().filter(c => c && c.sourceType === "memorize");
+            if (plan.subject && plan.subject !== "ALL") {
+                items = items.filter(c => (c.subject || "未分類") === plan.subject);
+            }
+            if (Array.isArray(plan.lessonIds) && plan.lessonIds.length > 0) {
+                const s = new Set(plan.lessonIds);
+                items = items.filter(c => s.has(c.lessonId));
+            }
+            if (plan.orderType === "srs_priority") {
+                items.sort((a, b) => {
+                    const la = a.srsBoxLevel || 0;
+                    const lb = b.srsBoxLevel || 0;
+                    if (la !== lb) return la - lb;
+                    return (a.srsNextReviewDate || "") < (b.srsNextReviewDate || "") ? -1 : 1;
+                });
+            } else {
+                items.sort((a, b) => {
+                    const la = allLessons[a.lessonId];
+                    const lb = allLessons[b.lessonId];
+                    const ta = la ? (la.createdAt || 0) : 0;
+                    const tb = lb ? (lb.createdAt || 0) : 0;
+                    if (ta !== tb) return ta - tb;
+                    if (a.lessonId !== b.lessonId) return a.lessonId.localeCompare(b.lessonId);
+                    return (a.id || "").localeCompare(b.id || "");
+                });
+            }
+            return items;
+        }
+
+        function renderMobilePlannerUI() {
+            const container = document.getElementById("mobile-planner-container");
+            if (!container) return;
+
+            const planKeys = Object.keys(rawMobileMemorizePlans || {});
+            if (planKeys.length === 0) {
+                container.style.display = "none";
+                return;
+            }
+            container.style.display = "block";
+
+            if (!activeMobilePlanId || !rawMobileMemorizePlans[activeMobilePlanId]) {
+                activeMobilePlanId = planKeys[0];
+            }
+            const plan = rawMobileMemorizePlans[activeMobilePlanId];
+            if (!plan) return;
+
+            const cards = getMobilePlanTargetCards(plan);
+            const today = getTodayStr();
+            const yesterday = addDaysToDate(today, -1);
+            const total = cards.length;
+            const target = Math.max(1, parseInt(plan.dailyTarget, 10) || 20);
+
+            const todayLog = rawMobileMemorizePlanLogs[`${plan.id}_${today}`];
+            let startIdx = 0;
+            let endIdx = 0;
+            if (todayLog && typeof todayLog.rangeStart === "number") {
+                startIdx = Math.max(0, todayLog.rangeStart - 1);
+                endIdx = Math.min(total, todayLog.rangeEnd);
+            } else {
+                startIdx = Math.min(total, Math.max(0, parseInt(plan.currentIndex, 10) || 0));
+                endIdx = Math.min(total, startIdx + target);
+            }
+
+            const quotaCards = cards.slice(startIdx, endIdx);
+            mobileCurrentQuotaCards = quotaCards;
+            const quotaCount = quotaCards.length;
+
+            const completedSet = new Set((todayLog && Array.isArray(todayLog.completedIds)) ? todayLog.completedIds : []);
+            let doneCount = 0;
+            quotaCards.forEach(c => {
+                const k1 = c.progressKey || c.id;
+                if (completedSet.has(k1) || (c.srsBoxLevel && c.srsBoxLevel >= 1)) doneCount++;
+            });
+
+            const isFin = quotaCount > 0 && doneCount >= quotaCount;
+            const pct = quotaCount > 0 ? Math.min(100, Math.round((doneCount / quotaCount) * 100)) : 100;
+            const overallDone = Math.min(total, parseInt(plan.currentIndex, 10) || 0);
+
+            const yLog = rawMobileMemorizePlanLogs[`${plan.id}_${yesterday}`];
+            let yText = "";
+            if (yLog) {
+                const yDone = yLog.completedCount || 0;
+                const yTarget = yLog.targetCount || target;
+                yText = `<div style="font-size:0.73rem; color:var(--memo-text-sub); margin-top:0.4rem; padding:0.35rem 0.5rem; background:rgba(16,185,129,0.06); border-radius:6px; display:flex; justify-content:space-between; align-items:center;">
+                    <span>🗓️ 昨日: #${yLog.rangeStart || 1}〜#${yLog.rangeEnd || yTarget}</span>
+                    <span style="font-weight:800; color:#059669;">${yDone}/${yTarget}完了 ${yLog.isFinished ? '💮' : ''}</span>
+                </div>`;
+            }
+
+            container.innerHTML = `
+                <div class="mobile-planner-card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem;">
+                        <div style="font-weight:800; font-size:0.92rem; color:var(--memo-text-main); display:flex; align-items:center; gap:0.35rem;">
+                            <span>📅</span> <span>${escapeHtml(plan.title || "学習計画")}</span>
+                        </div>
+                        <span style="font-size:0.72rem; font-weight:700; color:#059669; background:#D1FAE5; padding:0.15rem 0.5rem; border-radius:9999px;">
+                            ${escapeHtml(plan.subject || "全般")}
+                        </span>
+                    </div>
+
+                    <div style="background:rgba(16,185,129,0.06); border:1px solid rgba(16,185,129,0.2); border-radius:12px; padding:0.75rem 0.85rem; margin-bottom:0.6rem;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem;">
+                            <span style="font-size:0.8rem; font-weight:800; color:var(--memo-text-main);">
+                                🎯 本日のノルマ: 【 #${total > 0 ? startIdx + 1 : 0} 〜 #${endIdx} 】
+                            </span>
+                            <span style="font-size:0.75rem; font-weight:800; color:${isFin ? '#059669' : 'var(--memo-primary)'};">
+                                ${isFin ? '💮 達成！' : `${doneCount}/${quotaCount}個`}
+                            </span>
+                        </div>
+                        <div style="width:100%; height:6px; background:rgba(0,0,0,0.06); border-radius:9999px; overflow:hidden;">
+                            <div style="width:${pct}%; height:100%; background:linear-gradient(90deg, #10B981, #06B6D4); transition:width 0.3s ease;"></div>
+                        </div>
+                    </div>
+
+                    <button type="button" id="btn-mobile-start-quota" style="width:100%; background:linear-gradient(135deg, #10B981, #059669); color:#fff; border:none; border-radius:10px; font-weight:800; font-size:0.84rem; padding:0.55rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:0.4rem; box-shadow:0 2px 8px rgba(16,185,129,0.3);">
+                        <span>▶ 本日のノルマ (${quotaCount}問) を開始</span>
+                    </button>
+
+                    ${yText}
+
+                    <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.72rem; color:var(--memo-text-sub); margin-top:0.55rem; border-top:1px dashed var(--memo-border); padding-top:0.45rem;">
+                        <span>全体進捗: <strong style="color:var(--memo-text-main);">${overallDone}/${total}個</strong> (${total > 0 ? Math.round((overallDone/total)*100) : 0}%)</span>
+                        <span>毎日 ${plan.dailyTarget || 20}個ペース</span>
+                    </div>
+                </div>
+            `;
+
+            const btnStart = document.getElementById("btn-mobile-start-quota");
+            if (btnStart) {
+                btnStart.onclick = () => {
+                    if (quotaCards.length === 0) {
+                        showToast("出題対象のカードがありません");
+                        return;
+                    }
+                    window._activeMobilePlannerSession = {
+                        planId: plan.id,
+                        date: today,
+                        rangeStart: startIdx + 1,
+                        rangeEnd: endIdx,
+                        targetCount: quotaCount
+                    };
+                    startSession(quotaCards, `🎯 本日ノルマ (#${startIdx + 1}〜#${endIdx})`);
+                };
+            }
+        }
+
+        function handleMobilePlannerCardAnswered(card, rating) {
+            if (!window._activeMobilePlannerSession) return;
+            const sess = window._activeMobilePlannerSession;
+            const plan = rawMobileMemorizePlans[sess.planId];
+            if (!plan) return;
+
+            const today = sess.date;
+            const logKey = `${plan.id}_${today}`;
+            const log = rawMobileMemorizePlanLogs[logKey] || {
+                planId: plan.id,
+                date: today,
+                rangeStart: sess.rangeStart,
+                rangeEnd: sess.rangeEnd,
+                targetCount: sess.targetCount,
+                completedIds: [],
+                completedCount: 0,
+                isFinished: false,
+                updatedAt: new Date().toISOString()
+            };
+
+            const k = card.progressKey || card.id;
+            if (k && !log.completedIds.includes(k)) {
+                log.completedIds.push(k);
+            }
+            log.completedCount = log.completedIds.length;
+
+            if (log.completedCount >= log.targetCount && !log.isFinished) {
+                log.isFinished = true;
+                const totalCards = getMobilePlanTargetCards(plan).length;
+                plan.currentIndex = Math.min(totalCards, sess.rangeEnd);
+                plan.updatedAt = new Date().toISOString();
+                if (auth.currentUser) {
+                    update(ref(database, `users/${auth.currentUser.uid}/memorizePlans/${plan.id}`), {
+                        currentIndex: plan.currentIndex,
+                        updatedAt: plan.updatedAt
+                    });
+                }
+                showToast("🎉 本日の暗記ノルマ完全達成！💮");
+            }
+
+            log.updatedAt = new Date().toISOString();
+            rawMobileMemorizePlanLogs[logKey] = log;
+
+            if (auth.currentUser) {
+                set(ref(database, `users/${auth.currentUser.uid}/memorizePlanLogs/${logKey}`), log);
+            }
+            renderMobilePlannerUI();
+        }
 
         // テスト用自動ログイン対応
         if (new URLSearchParams(location.search).has("autologin")) {
