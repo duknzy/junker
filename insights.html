@@ -4054,19 +4054,6 @@
                     </label>
                     <select id="planner-form-subject" class="flora-select" style="width:100%; box-sizing:border-box; padding:0.5rem 0.85rem; font-size:0.85rem;">
                         <option value="ALL">すべての教科・科目（全体から集約）</option>
-                        <option value="日本史">日本史</option>
-                        <option value="世界史">世界史</option>
-                        <option value="地理">地理</option>
-                        <option value="公民">公民・公共・政治経済・倫理</option>
-                        <option value="国語">国語・古文・漢文</option>
-                        <option value="物理">物理</option>
-                        <option value="化学">化学</option>
-                        <option value="生物">生物</option>
-                        <option value="地学">地学</option>
-                        <option value="数学">数学</option>
-                        <option value="英語">英語</option>
-                        <option value="情報">情報</option>
-                        <option value="その他">その他</option>
                     </select>
                 </div>
 
@@ -12952,7 +12939,30 @@
             if (titleEl) titleEl.textContent = isEdit ? "暗記ペースメーカー：計画を編集" : "暗記ペースメーカー：新しい学習計画を作成";
             if (idInput) idInput.value = isEdit ? plan.id : `plan_${Date.now()}`;
             if (titleInput) titleInput.value = isEdit ? (plan.title || "") : "";
-            if (subjSelect) subjSelect.value = isEdit ? (plan.subject || "ALL") : "ALL";
+
+            // 🎯 実際に暗記事項（カード）が存在する教科・科目のみを動的抽出して選択肢を生成
+            const allMemsForSubj = buildMemorizationItems();
+            const subjectCardCounts = {};
+            allMemsForSubj.forEach(m => {
+                const s = m.subject || "未分類";
+                subjectCardCounts[s] = (subjectCardCounts[s] || 0) + 1;
+            });
+
+            if (subjSelect) {
+                const targetSubj = isEdit ? (plan.subject || "ALL") : "ALL";
+                let optionsHtml = `<option value="ALL">すべての教科・科目（全体: ${allMemsForSubj.length}個）</option>`;
+                
+                const sortedSubjects = Object.keys(subjectCardCounts).sort((a, b) => a.localeCompare(b, "ja"));
+                sortedSubjects.forEach(s => {
+                    const count = subjectCardCounts[s];
+                    optionsHtml += `<option value="${escapeHtml(s)}">${escapeHtml(s)} (${count}個)</option>`;
+                });
+
+                subjSelect.innerHTML = optionsHtml;
+                subjSelect.value = targetSubj;
+                if (!subjSelect.value) subjSelect.value = "ALL";
+            }
+
             if (dailyTargetInput) dailyTargetInput.value = isEdit ? (plan.dailyTarget || 20) : 20;
             if (orderSelect) orderSelect.value = isEdit ? (plan.orderType || "sequential") : "sequential";
             if (currentIndexInput) currentIndexInput.value = isEdit ? (plan.currentIndex || 0) : 0;
