@@ -6325,35 +6325,134 @@
         let mobileCurrentQuotaCards = [];
         window._activeMobilePlannerSession = null;
 
-        function getMobilePlanTargetCards(plan) {
-            if (!plan) return [];
-            let items = buildAllFlashcards().filter(c => c && c.sourceType === "memorize");
-            if (plan.subject && plan.subject !== "ALL") {
-                items = items.filter(c => (c.subject || "未分類") === plan.subject);
-            }
-            if (Array.isArray(plan.lessonIds) && plan.lessonIds.length > 0) {
-                const s = new Set(plan.lessonIds);
-                items = items.filter(c => s.has(c.lessonId));
-            }
+        function getMobilePlanTargetLessons(plan) {
+            if (!plan) return { targetLessons: [], allPlanCards: [] };
+            const allCards = buildAllFlashcards().filter(c => c && c.sourceType === "memorize");
+            
+            const cardsByLesson = {};
+            allCards.forEach(c => {
+                if (!c.lessonId) return;
+                if (!cardsByLesson[c.lessonId]) cardsByLesson[c.lessonId] = [];
+                cardsByLesson[c.lessonId].push(c);
+            });
+
+            let lessonEntries = Object.entries(allLessons || {}).filter(([lid, les]) => {
+                if (!les) return false;
+                const cards = cardsByLesson[lid] || [];
+                if (cards.length === 0) return false;
+                const subj = les.subject || (cards[0] ? cards[0].subject : "未分類");
+                if (plan.subject && plan.subject !== "ALL" && subj !== plan.subject) return false;
+                if (Array.isArray(plan.lessonIds) && plan.lessonIds.length > 0) {
+                    if (!plan.lessonIds.includes(lid)) return false;
+                }
+                return true;
+            });
+
             if (plan.orderType === "srs_priority") {
-                items.sort((a, b) => {
-                    const la = a.srsBoxLevel || 0;
-                    const lb = b.srsBoxLevel || 0;
-                    if (la !== lb) return la - lb;
-                    return (a.srsNextReviewDate || "") < (b.srsNextReviewDate || "") ? -1 : 1;
+                lessonEntries.sort(([idA, lesA], [idB, lesB]) => {
+                    const cardsA = cardsByLesson[idA] || [];
+                    const cardsB = cardsByLesson[idB] || [];
+                    const unlearnedA = cardsA.filter(c => (c.srsBoxLevel || 0) === 0).length;
+                    const unlearnedB = cardsB.filter(c => (c.srsBoxLevel || 0) === 0).length;
+                    if (unlearnedA !== unlearnedB) return unlearnedB - unlearnedA;
+                    return cardsB.length - cardsA.length;
                 });
             } else {
-                items.sort((a, b) => {
-                    const la = allLessons[a.lessonId];
-                    const lb = allLessons[b.lessonId];
-                    const ta = la ? (la.createdAt || 0) : 0;
-                    const tb = lb ? (lb.createdAt || 0) : 0;
-                    if (ta !== tb) return ta - tb;
-                    if (a.lessonId !== b.lessonId) return a.lessonId.localeCompare(b.lessonId);
-                    return (a.id || "").localeCompare(b.id || "");
+                lessonEntries.sort(([idA, lesA], [idB, lesB]) => {
+                    const ordA = typeof lesA.orderIndex === "number" ? lesA.orderIndex : 999999;
+                    const ordB = typeof lesB.orderIndex === "number" ? lesB.orderIndex : 999999;
+                    if (ordA !== ordB) return ordA - ordB;
+                    const timeA = lesA.createdAt || 0;
+                    const timeB = lesB.createdAt || 0;
+                    if (timeA !== timeB) return timeA - timeB;
+                    return idA.localeCompare(idB);
                 });
             }
-            return items;
+
+            const targetLessons = [];
+            const allPlanCards = [];
+            lessonEntries.forEach(([lid, les]) => {
+                const cards = cardsByLesson[lid] || [];
+                if (cards.length > 0) {
+                    const seq = targetLessons.length + 1;
+                    const lObj = {
+                        lessonId: lid,
+                        title: les.title || lid,
+                        subject: les.subject || (cards[0] ? cards[0].subject : "未分類"),
+                        cards: cards,
+                        cardCount: cards.length,
+                        seqNumber: seq
+                    };
+                    targetLessons.push(lObj);
+                    cards.forEach(c => allPlanCards.push(c));
+                }
+            });
+
+            return { targetLessons, allPlanCards };
+        }
+
+        function calculateMobilePlanQuota(plan, planData) {
+            const today = getTodayStr();
+            const yesterday = addDaysToDate(today, -1);
+            const { targetLessons, allPlanCards } = planData;
+            const totalLessons = targetLessons.length;
+            const totalCards = allPlanCards.length;
+            const dailyTargetLessons = Math.max(1, parseInt(plan.dailyTarget, 10) || 1);
+
+            const todayLogKey = `${plan.id}_${today}`;
+            const todayLog = rawMobileMemorizePlanLogs[todayLogKey] || null;
+
+            let startLessonIdx = 0;
+            let endLessonIdx = 0;
+
+            if (todayLog && typeof todayLog.startLessonIdx === "number" && typeof todayLog.endLessonIdx === "number") {
+                startLessonIdx = Math.max(0, todayLog.startLessonIdx);
+                endLessonIdx = Math.min(totalLessons, todayLog.endLessonIdx);
+            } else {
+                startLessonIdx = Math.min(totalLessons, Math.max(0, parseInt(plan.currentIndex, 10) || 0));
+                endLessonIdx = Math.min(totalLessons, startLessonIdx + dailyTargetLessons);
+            }
+
+            const quotaLessons = targetLessons.slice(startLessonIdx, endLessonIdx);
+            const quotaCards = [];
+            quotaLessons.forEach(l => quotaCards.push(...l.cards));
+            const quotaCount = quotaCards.length;
+
+            const completedSet = new Set((todayLog && Array.isArray(todayLog.completedIds)) ? todayLog.completedIds : []);
+            let doneCount = 0;
+            quotaCards.forEach(c => {
+                const k = c.progressKey || c.id;
+                if (completedSet.has(k) || (c.srsBoxLevel && c.srsBoxLevel >= 1)) doneCount++;
+            });
+
+            const isFin = quotaCount > 0 && doneCount >= quotaCount;
+            const pct = quotaCount > 0 ? Math.min(100, Math.round((doneCount / quotaCount) * 100)) : 100;
+            const doneLessons = Math.min(totalLessons, parseInt(plan.currentIndex, 10) || 0);
+            const overallPct = totalLessons > 0 ? Math.min(100, Math.round((doneLessons / totalLessons) * 100)) : 100;
+
+            const yesterdayLogKey = `${plan.id}_${yesterday}`;
+            const yesterdayLog = rawMobileMemorizePlanLogs[yesterdayLogKey] || null;
+
+            return {
+                today,
+                yesterday,
+                totalLessons,
+                totalCards,
+                dailyTargetLessons,
+                startLessonIdx,
+                endLessonIdx,
+                startLessonNum: totalLessons > 0 ? startLessonIdx + 1 : 0,
+                endLessonNum: endLessonIdx,
+                quotaLessons,
+                quotaCards,
+                quotaCount,
+                doneCount,
+                isFin,
+                pct,
+                doneLessons,
+                overallPct,
+                yesterdayLog
+            };
         }
 
         function renderMobilePlannerUI() {
@@ -6373,47 +6472,36 @@
             const plan = rawMobileMemorizePlans[activeMobilePlanId];
             if (!plan) return;
 
-            const cards = getMobilePlanTargetCards(plan);
-            const today = getTodayStr();
-            const yesterday = addDaysToDate(today, -1);
-            const total = cards.length;
-            const target = Math.max(1, parseInt(plan.dailyTarget, 10) || 20);
+            const planData = getMobilePlanTargetLessons(plan);
+            const q = calculateMobilePlanQuota(plan, planData);
+            mobileCurrentQuotaCards = q.quotaCards;
 
-            const todayLog = rawMobileMemorizePlanLogs[`${plan.id}_${today}`];
-            let startIdx = 0;
-            let endIdx = 0;
-            if (todayLog && typeof todayLog.rangeStart === "number") {
-                startIdx = Math.max(0, todayLog.rangeStart - 1);
-                endIdx = Math.min(total, todayLog.rangeEnd);
-            } else {
-                startIdx = Math.min(total, Math.max(0, parseInt(plan.currentIndex, 10) || 0));
-                endIdx = Math.min(total, startIdx + target);
+            let lessonTitleHtml = "本日の対象授業はありません（全授業制覇！）";
+            let lessonTitleSummary = "全授業制覇！";
+            if (q.quotaLessons.length === 1) {
+                lessonTitleHtml = `【 授業 #${q.startLessonNum}: ${escapeHtml(q.quotaLessons[0].title)} 】`;
+                lessonTitleSummary = q.quotaLessons[0].title;
+            } else if (q.quotaLessons.length > 1) {
+                lessonTitleHtml = `【 授業 #${q.startLessonNum} 〜 #${q.endLessonNum} (計${q.quotaLessons.length}授業) 】`;
+                lessonTitleSummary = `${q.quotaLessons[0].title} ほか計${q.quotaLessons.length}授業`;
             }
 
-            const quotaCards = cards.slice(startIdx, endIdx);
-            mobileCurrentQuotaCards = quotaCards;
-            const quotaCount = quotaCards.length;
-
-            const completedSet = new Set((todayLog && Array.isArray(todayLog.completedIds)) ? todayLog.completedIds : []);
-            let doneCount = 0;
-            quotaCards.forEach(c => {
-                const k1 = c.progressKey || c.id;
-                if (completedSet.has(k1) || (c.srsBoxLevel && c.srsBoxLevel >= 1)) doneCount++;
-            });
-
-            const isFin = quotaCount > 0 && doneCount >= quotaCount;
-            const pct = quotaCount > 0 ? Math.min(100, Math.round((doneCount / quotaCount) * 100)) : 100;
-            const overallDone = Math.min(total, parseInt(plan.currentIndex, 10) || 0);
-
-            const yLog = rawMobileMemorizePlanLogs[`${plan.id}_${yesterday}`];
-            let yText = "";
-            if (yLog) {
-                const yDone = yLog.completedCount || 0;
-                const yTarget = yLog.targetCount || target;
-                yText = `<div style="font-size:0.73rem; color:var(--memo-text-sub); margin-top:0.4rem; padding:0.35rem 0.5rem; background:rgba(16,185,129,0.06); border-radius:6px; display:flex; justify-content:space-between; align-items:center;">
-                    <span>🗓️ 昨日: #${yLog.rangeStart || 1}〜#${yLog.rangeEnd || yTarget}</span>
-                    <span style="font-weight:800; color:#059669;">${yDone}/${yTarget}完了 ${yLog.isFinished ? '💮' : ''}</span>
-                </div>`;
+            let yesterdayHtml = "";
+            if (q.yesterdayLog) {
+                const yTitle = q.yesterdayLog.lessonTitle || `授業 #${q.yesterdayLog.startLessonNum || 1}`;
+                const yDone = q.yesterdayLog.completedCount || 0;
+                const yTarget = q.yesterdayLog.targetCount || 0;
+                const isYFinished = q.yesterdayLog.isFinished || (yDone >= yTarget);
+                yesterdayHtml = `
+                    <div style="font-size:0.73rem; color:var(--memo-text-sub); margin-top:0.4rem; padding:0.35rem 0.55rem; background:rgba(16,185,129,0.06); border:1px solid rgba(16,185,129,0.2); border-radius:8px; display:flex; justify-content:space-between; align-items:center; gap:0.4rem;">
+                        <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;">
+                            🗓️ 昨日: <strong>${escapeHtml(yTitle)}</strong>
+                        </span>
+                        <span style="font-weight:800; color:#059669; flex-shrink:0;">
+                            ${yDone} / ${yTarget}問 ${isYFinished ? '💮' : ''}
+                        </span>
+                    </div>
+                `;
             }
 
             container.innerHTML = `
@@ -6427,29 +6515,33 @@
                         </span>
                     </div>
 
+                    <!-- 🎯 本日の授業ノルマ（授業単位） -->
                     <div style="background:rgba(16,185,129,0.06); border:1px solid rgba(16,185,129,0.2); border-radius:12px; padding:0.75rem 0.85rem; margin-bottom:0.6rem;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem;">
-                            <span style="font-size:0.8rem; font-weight:800; color:var(--memo-text-main);">
-                                🎯 本日のノルマ: 【 #${total > 0 ? startIdx + 1 : 0} 〜 #${endIdx} 】
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.25rem;">
+                            <span style="font-size:0.72rem; font-weight:800; color:var(--memo-primary); text-transform:uppercase;">
+                                🎯 本日の授業ノルマ (1日 ${q.dailyTargetLessons} 授業)
                             </span>
-                            <span style="font-size:0.75rem; font-weight:800; color:${isFin ? '#059669' : 'var(--memo-primary)'};">
-                                ${isFin ? '💮 達成！' : `${doneCount}/${quotaCount}個`}
+                            <span style="font-size:0.75rem; font-weight:800; color:${q.isFin ? '#059669' : 'var(--memo-primary)'};">
+                                ${q.isFin ? '💮 達成！' : `${q.doneCount} / ${q.quotaCount} 問完了`}
                             </span>
                         </div>
+                        <div style="font-size:0.86rem; font-weight:800; color:var(--memo-text-main); margin-bottom:0.35rem; line-height:1.35;">
+                            ${lessonTitleHtml}
+                        </div>
                         <div style="width:100%; height:6px; background:rgba(0,0,0,0.06); border-radius:9999px; overflow:hidden;">
-                            <div style="width:${pct}%; height:100%; background:linear-gradient(90deg, #10B981, #06B6D4); transition:width 0.3s ease;"></div>
+                            <div style="width:${q.pct}%; height:100%; background:linear-gradient(90deg, #10B981, #06B6D4); transition:width 0.3s ease;"></div>
                         </div>
                     </div>
 
-                    <button type="button" id="btn-mobile-start-quota" style="width:100%; background:linear-gradient(135deg, #10B981, #059669); color:#fff; border:none; border-radius:10px; font-weight:800; font-size:0.84rem; padding:0.55rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:0.4rem; box-shadow:0 2px 8px rgba(16,185,129,0.3);">
-                        <span>▶ 本日のノルマ (${quotaCount}問) を開始</span>
+                    <button type="button" id="btn-mobile-start-quota" style="width:100%; background:linear-gradient(135deg, #10B981, #059669); color:#fff; border:none; border-radius:10px; font-weight:800; font-size:0.84rem; padding:0.55rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:0.4rem; box-shadow:0 2px 8px rgba(16,185,129,0.3);" ${q.quotaCount === 0 ? 'disabled style="opacity:0.6;"' : ''}>
+                        <span>▶ 今日の授業 (${q.quotaCount}問) を開始</span>
                     </button>
 
-                    ${yText}
+                    ${yesterdayHtml}
 
                     <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.72rem; color:var(--memo-text-sub); margin-top:0.55rem; border-top:1px dashed var(--memo-border); padding-top:0.45rem;">
-                        <span>全体進捗: <strong style="color:var(--memo-text-main);">${overallDone}/${total}個</strong> (${total > 0 ? Math.round((overallDone/total)*100) : 0}%)</span>
-                        <span>毎日 ${plan.dailyTarget || 20}個ペース</span>
+                        <span>全体進捗: <strong style="color:var(--memo-text-main);">${q.doneLessons} / ${q.totalLessons} 授業完了</strong> (${q.overallPct}%)</span>
+                        <span>毎日 ${q.dailyTargetLessons} 授業ペース</span>
                     </div>
                 </div>
             `;
@@ -6457,18 +6549,21 @@
             const btnStart = document.getElementById("btn-mobile-start-quota");
             if (btnStart) {
                 btnStart.onclick = () => {
-                    if (quotaCards.length === 0) {
-                        showToast("出題対象のカードがありません");
+                    if (q.quotaCards.length === 0) {
+                        showToast("出題対象の暗記事項がありません");
                         return;
                     }
                     window._activeMobilePlannerSession = {
                         planId: plan.id,
-                        date: today,
-                        rangeStart: startIdx + 1,
-                        rangeEnd: endIdx,
-                        targetCount: quotaCount
+                        date: q.today,
+                        startLessonIdx: q.startLessonIdx,
+                        endLessonIdx: q.endLessonIdx,
+                        startLessonNum: q.startLessonNum,
+                        endLessonNum: q.endLessonNum,
+                        lessonTitle: lessonTitleSummary,
+                        targetCount: q.quotaCount
                     };
-                    startSession(quotaCards, `🎯 本日ノルマ (#${startIdx + 1}〜#${endIdx})`);
+                    startSession(q.quotaCards, `🎯 ${lessonTitleSummary}`);
                 };
             }
         }
@@ -6484,8 +6579,11 @@
             const log = rawMobileMemorizePlanLogs[logKey] || {
                 planId: plan.id,
                 date: today,
-                rangeStart: sess.rangeStart,
-                rangeEnd: sess.rangeEnd,
+                startLessonIdx: sess.startLessonIdx,
+                endLessonIdx: sess.endLessonIdx,
+                startLessonNum: sess.startLessonNum,
+                endLessonNum: sess.endLessonNum,
+                lessonTitle: sess.lessonTitle,
                 targetCount: sess.targetCount,
                 completedIds: [],
                 completedCount: 0,
@@ -6501,8 +6599,8 @@
 
             if (log.completedCount >= log.targetCount && !log.isFinished) {
                 log.isFinished = true;
-                const totalCards = getMobilePlanTargetCards(plan).length;
-                plan.currentIndex = Math.min(totalCards, sess.rangeEnd);
+                const totalLessons = getMobilePlanTargetLessons(plan).targetLessons.length;
+                plan.currentIndex = Math.min(totalLessons, sess.endLessonIdx);
                 plan.updatedAt = new Date().toISOString();
                 if (auth.currentUser) {
                     update(ref(database, `users/${auth.currentUser.uid}/memorizePlans/${plan.id}`), {
@@ -6510,7 +6608,7 @@
                         updatedAt: plan.updatedAt
                     });
                 }
-                showToast("🎉 本日の暗記ノルマ完全達成！💮");
+                showToast("🎉 本日の授業ノルマ完全達成！💮");
             }
 
             log.updatedAt = new Date().toISOString();
