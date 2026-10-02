@@ -661,25 +661,6 @@
             </div>
 
             <div class="sidebar-footer">
-                <div style="display: flex; gap: 0.4rem; margin-bottom: 0.4rem;">
-                    <button type="button" id="sidebar-dark-mode-btn" title="テーマ切り替え / Toggle Theme" class="sidebar-item" style="flex: 1; padding: 0.35rem 0.5rem; font-size: 0.74rem; background: var(--bg-subtle); justify-content: center; border: 1px solid var(--border-color); cursor: pointer;">
-                        <span id="sidebar-dark-mode-icon">${darkActive ? '☀️' : '🌙'}</span>
-                        <span id="sidebar-dark-mode-text" style="margin-left: 0.35rem;">${darkActive ? t('btnLight') : t('btnDark')}</span>
-                    </button>
-                    <button type="button" id="sidebar-wallpaper-btn" title="壁紙や透過度をカスタマイズ" class="sidebar-item" style="flex: 1; padding: 0.35rem 0.5rem; font-size: 0.74rem; background: var(--bg-subtle); justify-content: center; border: 1px solid var(--border-color);">
-                        <span>${t('btnWallpaper')}</span>
-                    </button>
-                    <input type="file" id="sidebar-wallpaper-input" accept="image/*" style="display: none;">
-                </div>
-                <div style="display: flex; gap: 0.4rem; margin-bottom: 0.4rem;">
-                    <button type="button" id="sidebar-lang-btn" title="${t('langTitle')}" class="sidebar-item" style="flex: 1; padding: 0.35rem 0.5rem; font-size: 0.74rem; background: var(--bg-subtle); justify-content: center; border: 1px solid var(--border-color); cursor: pointer;">
-                        <span>🌐</span>
-                        <span id="sidebar-lang-text" style="margin-left: 0.35rem; font-weight: 600;">${t('langToggle')}</span>
-                    </button>
-                    <a href="m/lesson.html" class="sidebar-item" style="flex: 1; padding: 0.35rem 0.5rem; font-size: 0.74rem; background: var(--bg-subtle); justify-content: center; border: 1px solid var(--border-color); text-decoration: none;">
-                        <span>${t('btnMobile')}</span>
-                    </a>
-                </div>
                 <div class="sidebar-user-card" id="sidebar-user-container" style="cursor: pointer;" title="${t('profileModalTitle')}">
                     <div class="sidebar-user-avatar" id="sidebar-user-avatar">F</div>
                     <div style="flex: 1; min-width: 0;">
@@ -705,13 +686,47 @@
         updatePageLanguage();
     }
 
+    // 🌐 グローバル公開関数（設定画面 ai-settings.html 等から呼び出し可能）
+    window.toggleFloraDarkMode = function() {
+        document.documentElement.classList.add('dark-transition');
+        setTimeout(() => {
+            document.documentElement.classList.remove('dark-transition');
+        }, 350);
+
+        document.documentElement.classList.toggle('dark');
+        const nowDark = isDark();
+        localStorage.setItem('flora-dark-mode', nowDark ? 'true' : 'false');
+        const meta = document.getElementById('meta-theme-color');
+        if (meta) meta.setAttribute('content', nowDark ? '#131314' : '#059669');
+        window.dispatchEvent(new CustomEvent('flora-theme-changed', { detail: { isDark: nowDark } }));
+        return nowDark;
+    };
+
+    window.toggleFloraLanguage = function() {
+        const nextLang = getLanguage() === 'ja' ? 'en' : 'ja';
+        setLanguage(nextLang);
+        window.dispatchEvent(new CustomEvent('flora-lang-changed', { detail: { lang: nextLang } }));
+        return nextLang;
+    };
+
+    window.openFloraWallpaperModal = function() {
+        openWallpaperCustomizerModal();
+    };
+
+    window.isFloraDarkMode = function() {
+        return isDarkModeActive();
+    };
+
+    window.getFloraLanguage = function() {
+        return getLanguage();
+    };
+
     // 🌐 言語切替コントロール
     function setupLanguageControls() {
         const btn = document.getElementById('sidebar-lang-btn');
         if (!btn) return;
         btn.onclick = () => {
-            const nextLang = getLanguage() === 'ja' ? 'en' : 'ja';
-            setLanguage(nextLang);
+            window.toggleFloraLanguage();
         };
     }
 
@@ -720,7 +735,6 @@
         const btn = document.getElementById('sidebar-dark-mode-btn');
         const icon = document.getElementById('sidebar-dark-mode-icon');
         const text = document.getElementById('sidebar-dark-mode-text');
-        if (!btn) return;
 
         function updateUI() {
             const dark = isDarkModeActive();
@@ -730,19 +744,13 @@
             if (meta) meta.setAttribute('content', dark ? '#131314' : '#059669');
         }
 
-        updateUI();
-
-        btn.onclick = () => {
-            document.documentElement.classList.add('dark-transition');
-            setTimeout(() => {
-                document.documentElement.classList.remove('dark-transition');
-            }, 350);
-
-            document.documentElement.classList.toggle('dark');
-            const nowDark = isDark();
-            localStorage.setItem('flora-dark-mode', nowDark ? 'true' : 'false');
+        if (btn) {
             updateUI();
-        };
+            btn.onclick = () => {
+                window.toggleFloraDarkMode();
+                updateUI();
+            };
+        }
 
         // OSテーマ変更検知
         window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
@@ -875,7 +883,28 @@
         const saveBtn = document.getElementById('wp-save-btn');
         const changeImgBtn = document.getElementById('wp-change-img-btn');
         const removeBtn = document.getElementById('wp-remove-btn');
-        const fileInput = document.getElementById('sidebar-wallpaper-input');
+        let fileInput = document.getElementById('sidebar-wallpaper-input');
+        if (!fileInput) {
+            fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.id = 'sidebar-wallpaper-input';
+            fileInput.accept = 'image/*';
+            fileInput.style.display = 'none';
+            document.body.appendChild(fileInput);
+            fileInput.onchange = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    const dataUrl = ev.target.result;
+                    saveWallpaperToDB(dataUrl).catch(err => {
+                        console.warn("IndexedDB wallpaper save failed:", err);
+                    });
+                    applyWallpaper(dataUrl);
+                };
+                reader.readAsDataURL(file);
+            };
+        }
 
         const rangeOverlay = document.getElementById('wp-range-overlay');
         const rangeCard = document.getElementById('wp-range-card');

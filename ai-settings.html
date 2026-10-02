@@ -224,6 +224,81 @@
             </div>
 
             <!-- ============================== -->
+            <!-- 🎨 システム & 表示基本設定（テーマ・壁紙・言語・モバイル表示） -->
+            <!-- ============================== -->
+            <section class="settings-section">
+                <div class="settings-section-title">🎨 システム & 表示基本設定</div>
+                <div class="settings-section-sub">
+                    外観テーマ（ライト/ダーク）、背景壁紙、表示言語、モバイル専用ビューの切り替えを一元管理できます。
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-top: 0.5rem;">
+                    <!-- 1. テーマ切り替え -->
+                    <div class="flora-card" style="padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between; gap: 0.85rem;">
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 0.5rem; font-weight: 800; font-size: 0.95rem; color: var(--text-primary); margin-bottom: 0.35rem;">
+                                <span id="settings-theme-icon" style="font-size: 1.25rem;">🌙</span>
+                                <span>外観テーマ</span>
+                            </div>
+                            <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.5;">
+                                ダークモードとライトモードを瞬時に切り替えます。
+                            </div>
+                        </div>
+                        <button type="button" id="btn-settings-toggle-theme" class="flora-btn flora-btn-primary btn-sm" style="width: 100%; justify-content: center; font-weight: 700;">
+                            <span id="settings-theme-btn-text">☀️ ライトモードに切り替え</span>
+                        </button>
+                    </div>
+
+                    <!-- 2. 壁紙カスタマイズ -->
+                    <div class="flora-card" style="padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between; gap: 0.85rem;">
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 0.5rem; font-weight: 800; font-size: 0.95rem; color: var(--text-primary); margin-bottom: 0.35rem;">
+                                <span style="font-size: 1.25rem;">🖼️</span>
+                                <span>背景壁紙 & 透過度</span>
+                            </div>
+                            <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.5;">
+                                好きな画像を背景に設定し、すりガラスのぼかしや透過度を調整します。
+                            </div>
+                        </div>
+                        <button type="button" id="btn-settings-open-wallpaper" class="flora-btn flora-btn-secondary btn-sm" style="width: 100%; justify-content: center; font-weight: 700;">
+                            🖼️ 壁紙ダイアログを開く
+                        </button>
+                    </div>
+
+                    <!-- 3. 表示言語切り替え -->
+                    <div class="flora-card" style="padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between; gap: 0.85rem;">
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 0.5rem; font-weight: 800; font-size: 0.95rem; color: var(--text-primary); margin-bottom: 0.35rem;">
+                                <span style="font-size: 1.25rem;">🌐</span>
+                                <span>表示言語 (Language)</span>
+                            </div>
+                            <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.5;">
+                                アプリ全体の言語を日本語と英語の間で切り替えます。
+                            </div>
+                        </div>
+                        <button type="button" id="btn-settings-toggle-lang" class="flora-btn flora-btn-secondary btn-sm" style="width: 100%; justify-content: center; font-weight: 700;">
+                            <span id="settings-lang-btn-text">🌐 English に切り替え</span>
+                        </button>
+                    </div>
+
+                    <!-- 4. モバイル専用表示 -->
+                    <div class="flora-card" style="padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between; gap: 0.85rem;">
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 0.5rem; font-weight: 800; font-size: 0.95rem; color: var(--text-primary); margin-bottom: 0.35rem;">
+                                <span style="font-size: 1.25rem;">📱</span>
+                                <span>モバイル専用ビュー</span>
+                            </div>
+                            <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.5;">
+                                スマートフォン・タブレット向けの高速・特化型UIに切り替えます。
+                            </div>
+                        </div>
+                        <a href="m/lesson.html" class="flora-btn flora-btn-secondary btn-sm" style="width: 100%; justify-content: center; font-weight: 700; text-decoration: none; box-sizing: border-box;">
+                            📱 モバイル版を開く
+                        </a>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ============================== -->
             <!-- 🖼️ 壁紙 & 表示カスタマイズ -->
             <!-- ============================== -->
             <section class="settings-section">
@@ -832,6 +907,73 @@ document.getElementById("io-import-file").addEventListener("change", async (e) =
         };
     }
 })();
+
+function initGeneralSettingsControls() {
+    const themeBtn = document.getElementById('btn-settings-toggle-theme');
+    const themeIcon = document.getElementById('settings-theme-icon');
+    const themeText = document.getElementById('settings-theme-btn-text');
+
+    function updateThemeUI() {
+        const isDark = typeof window.isFloraDarkMode === "function" 
+            ? window.isFloraDarkMode() 
+            : document.documentElement.classList.contains('dark');
+        if (themeIcon) themeIcon.textContent = isDark ? '🌙' : '☀️';
+        if (themeText) themeText.textContent = isDark ? '☀️ ライトモードに切り替え' : '🌙 ダークモードに切り替え';
+    }
+    updateThemeUI();
+
+    if (themeBtn) {
+        themeBtn.onclick = () => {
+            if (typeof window.toggleFloraDarkMode === "function") {
+                window.toggleFloraDarkMode();
+            } else {
+                document.documentElement.classList.toggle('dark');
+                localStorage.setItem('flora-dark-mode', document.documentElement.classList.contains('dark') ? 'true' : 'false');
+            }
+            updateThemeUI();
+        };
+    }
+
+    const langBtn = document.getElementById('btn-settings-toggle-lang');
+    const langText = document.getElementById('settings-lang-btn-text');
+    function updateLangUI() {
+        const curLang = typeof window.getFloraLanguage === "function"
+            ? window.getFloraLanguage()
+            : (localStorage.getItem('flora_lang') || 'ja');
+        if (langText) {
+            langText.textContent = curLang === 'ja' ? '🌐 English に切り替え' : '🌐 日本語に切り替え';
+        }
+    }
+    updateLangUI();
+
+    if (langBtn) {
+        langBtn.onclick = () => {
+            if (typeof window.toggleFloraLanguage === "function") {
+                window.toggleFloraLanguage();
+            } else {
+                const next = (localStorage.getItem('flora_lang') || 'ja') === 'ja' ? 'en' : 'ja';
+                localStorage.setItem('flora_lang', next);
+                location.reload();
+            }
+            updateLangUI();
+        };
+    }
+
+    const wpBtn = document.getElementById('btn-settings-open-wallpaper');
+    if (wpBtn) {
+        wpBtn.onclick = () => {
+            if (typeof window.openFloraWallpaperModal === "function") {
+                window.openFloraWallpaperModal();
+            } else {
+                document.getElementById('ai-set-wp-input')?.click();
+            }
+        };
+    }
+
+    window.addEventListener('flora-theme-changed', updateThemeUI);
+    window.addEventListener('flora-lang-changed', updateLangUI);
+}
+initGeneralSettingsControls();
 
 renderAllKeyLists();
 renderFeatureUI();
