@@ -12,7 +12,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = 3000;
+const PORT = parseInt(process.env.PORT, 10) || 3000;
 
 app.use(express.json({ limit: '20mb' }));
 
@@ -104,19 +104,7 @@ app.use((req, res) => {
   res.status(404).sendFile(path.join(__dirname, '404.html'));
 });
 
-const PRIMARY_PORT = process.env.PORT || 8085;
-const SECONDARY_PORT = 3000;
-
-app.listen(PRIMARY_PORT, '0.0.0.0', () => {
-  console.log(`Flora workspace server running at http://localhost:${PRIMARY_PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Flora workspace server running at http://0.0.0.0:${PORT}`);
 });
 
-if (PRIMARY_PORT !== SECONDARY_PORT) {
-  try {
-    app.listen(SECONDARY_PORT, '0.0.0.0', () => {
-      console.log(`Flora workspace server also running at http://localhost:${SECONDARY_PORT}`);
-    });
-  } catch (e) {
-    // 3000が使用中ならスルー
-  }
-}
