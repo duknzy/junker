@@ -1293,8 +1293,8 @@
         /* 📖 単元辞書リストの列ヘッダー（完璧な整列ガイド） */
         .dict-word-header-bar {
             display: grid;
-            /* ⚡ アクション列を上下2段化して190pxに最適化し、Q/A領域を大幅拡大して被りを完全解消 */
-            grid-template-columns: 130px minmax(0, 1.25fr) minmax(0, 1.15fr) 190px;
+            /* ⚡ 操作ボタン群（めくる・テスト・編集・削除）が重ならず余裕をもって収まるよう240pxに最適化 */
+            grid-template-columns: 130px minmax(0, 1.25fr) minmax(0, 1.15fr) 240px;
             gap: 1rem;
             align-items: center;
             padding: 0.55rem 1.2rem;
@@ -1307,7 +1307,7 @@
             user-select: none;
         }
         .dict-word-header-bar.batch-mode {
-            grid-template-columns: 28px 130px minmax(0, 1.25fr) minmax(0, 1.15fr) 190px;
+            grid-template-columns: 28px 130px minmax(0, 1.25fr) minmax(0, 1.15fr) 240px;
         }
         .dict-hdr-cell {
             white-space: nowrap;
@@ -1327,8 +1327,8 @@
         .dict-word-row {
             padding: 0.75rem 1.2rem;
             display: grid;
-            /* ⚡ 全行で答えの開始位置と横幅が縦一直線に揃い、アクション列をスリム化してQ/Aの被りを根本解消 */
-            grid-template-columns: 130px minmax(0, 1.25fr) minmax(0, 1.15fr) 190px;
+            /* ⚡ 全行で解答枠と操作ボタン群が絶対に被らないよう240pxを確保 */
+            grid-template-columns: 130px minmax(0, 1.25fr) minmax(0, 1.15fr) 240px;
             gap: 1rem;
             align-items: center;
             background: var(--bg-surface);
@@ -1345,23 +1345,23 @@
             background: var(--bg-subtle);
         }
         .dict-word-row.batch-mode {
-            grid-template-columns: 28px 130px minmax(0, 1.25fr) minmax(0, 1.15fr) 190px;
+            grid-template-columns: 28px 130px minmax(0, 1.25fr) minmax(0, 1.15fr) 240px;
         }
         @media (max-width: 1280px) {
             .dict-word-header-bar {
-                grid-template-columns: 125px minmax(0, 1.2fr) minmax(0, 1.1fr) 185px;
+                grid-template-columns: 125px minmax(0, 1.2fr) minmax(0, 1.1fr) 235px;
                 gap: 0.75rem;
             }
             .dict-word-header-bar.batch-mode {
-                grid-template-columns: 28px 125px minmax(0, 1.2fr) minmax(0, 1.1fr) 185px;
+                grid-template-columns: 28px 125px minmax(0, 1.2fr) minmax(0, 1.1fr) 235px;
             }
             .dict-word-item,
             .dict-word-row {
-                grid-template-columns: 125px minmax(0, 1.2fr) minmax(0, 1.1fr) 185px;
+                grid-template-columns: 125px minmax(0, 1.2fr) minmax(0, 1.1fr) 235px;
                 gap: 0.75rem;
             }
             .dict-word-row.batch-mode {
-                grid-template-columns: 28px 125px minmax(0, 1.2fr) minmax(0, 1.1fr) 185px;
+                grid-template-columns: 28px 125px minmax(0, 1.2fr) minmax(0, 1.1fr) 235px;
             }
         }
         @media (max-width: 960px) {
@@ -1584,6 +1584,7 @@
             gap: 0.3rem;
             width: 100%;
             min-width: 0;
+            max-width: 100%;
             box-sizing: border-box;
             flex-shrink: 0;
         }
@@ -1610,12 +1611,20 @@
             justify-content: flex-end;
             flex-shrink: 0;
             flex-wrap: nowrap;
+            max-width: 100%;
         }
         .dict-row-btn {
             padding: 0.22rem 0.44rem;
             font-size: 0.72rem;
             white-space: nowrap;
             flex-shrink: 0;
+        }
+        .dict-row-actions .dict-row-btn {
+            padding: 0.22rem 0.42rem;
+            font-size: 0.72rem;
+            white-space: nowrap;
+            flex-shrink: 0;
+            box-sizing: border-box;
         }
 
         /* 🔗 続きの授業・シリーズ識別バッジ */
