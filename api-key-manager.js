@@ -1397,6 +1397,31 @@ async function runDeepseekFallbackLoop(contents, systemInstruction, options = {}
     return runGeminiFallbackLoop(contents, systemInstruction, { ...options, preferredModel: null });
 }
 
+// 💡 Gemini APIの仕様（マルチターンは user と model が交互である必要がある）に準拠し、
+// 同一ロールの連続を自動マージ・空パートを除外するサニタイザー
+function sanitizeGeminiContents(rawContents) {
+    if (!Array.isArray(rawContents) || rawContents.length === 0) return rawContents;
+    const merged = [];
+    for (const item of rawContents) {
+        if (!item) continue;
+        const role = (item.role === "assistant" || item.role === "model") ? "model" : "user";
+        let parts = [];
+        if (Array.isArray(item.parts)) {
+            parts = item.parts.filter(p => p && (typeof p.text === "string" ? p.text.trim().length > 0 : (p.inlineData || p.inline_data)));
+        } else if (typeof item.text === "string" && item.text.trim()) {
+            parts = [{ text: item.text }];
+        }
+        if (parts.length === 0) continue;
+
+        if (merged.length > 0 && merged[merged.length - 1].role === role) {
+            merged[merged.length - 1].parts.push(...parts);
+        } else {
+            merged.push({ role, parts });
+        }
+    }
+    return merged.length > 0 ? merged : rawContents;
+}
+
 // --------------------------------------------------------------------------
 // 🧠 Gemini フォールバック実行ループ
 // --------------------------------------------------------------------------
@@ -1463,8 +1488,17 @@ async function runGeminiFallbackLoop(contents, systemInstruction, options = {}) 
         if (effectiveResponseMimeType) generationConfig.responseMimeType = effectiveResponseMimeType;
         if (responseSchema) generationConfig.responseSchema = responseSchema;
 
+        // 💡 Gemini 2.5 / 3.0 での思考トークン消費による回答切断（finishReason: MAX_TOKENS）を防止するため
+        // 十分な出力トークン枠（65,536）を確保
+        if (!generationConfig.maxOutputTokens) {
+            generationConfig.maxOutputTokens = options.maxOutputTokens || 65536;
+        }
+
+        // 💡 マルチターンチャットで同一ロール（user→user等）が連続してHTTP 400になるのを防止
+        const sanitizedContents = sanitizeGeminiContents(contents);
+
         const requestBodyObj = {
-            contents: contents,
+            contents: sanitizedContents,
             systemInstruction: { parts: [{ text: systemInstructionText }] },
             generationConfig: generationConfig
         };
@@ -1534,8 +1568,12 @@ async function runGeminiFallbackLoop(contents, systemInstruction, options = {}) 
             candidateText = candidateJson.text;
         }
 
+        const candidate = candidateJson?.candidates?.[0];
+        const finishReason = candidate?.finishReason;
+
         if (!candidateText) {
-            return { ok: false, isFormatError: false, reason: "空応答（finishReason等が原因の可能性）", error: new Error(`Empty response: ${modelName}`) };
+            const reasonStr = finishReason ? `空応答 (finishReason: ${finishReason})` : "空応答（本文なし）";
+            return { ok: false, isFormatError: false, reason: reasonStr, error: new Error(`Empty response from ${modelName}: ${reasonStr}`) };
         }
 
         // 🌐 Grounding Metadata（Google検索の参照元リンク）の抽出・付加
