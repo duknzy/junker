@@ -262,6 +262,7 @@
             headerLessonDocTitle: 'Flora | 参考書 授業モード',
             headerLessonsLink: '📚 授業一覧・新しい授業',
             headerBackDash: '← ダッシュボードに戻る',
+            headerSearchBtn: '授業内を検索',
             headerHistoryBtn: '🕒 閲覧履歴 (10件)',
             headerAiBtn: '✨ AIモデル設定',
             headerPolicyBtn: '⚙️ 授業方針を編集',
@@ -336,6 +337,7 @@
             headerLessonDocTitle: 'Flora | Reference & Lessons',
             headerLessonsLink: '📚 Lessons & New',
             headerBackDash: '← Back to Dashboard',
+            headerSearchBtn: 'Search Lessons',
             headerHistoryBtn: '🕒 History (10)',
             headerAiBtn: '✨ AI Model Settings',
             headerPolicyBtn: '⚙️ Lesson Policy',
@@ -484,6 +486,11 @@
 
             const dashLink = document.querySelector('a.back-link[href="index.html"]');
             if (dashLink) dashLink.textContent = t('headerBackDash');
+
+            const searchBtnLabel = document.getElementById('header-search-btn-label');
+            if (searchBtnLabel) {
+                searchBtnLabel.textContent = t('headerSearchBtn');
+            }
 
             const histBtn = document.getElementById('btn-recent-lessons-history');
             if (histBtn) {

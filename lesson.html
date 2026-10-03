@@ -5035,6 +5035,275 @@
             border-color: rgba(255, 255, 255, 0.08);
             color: var(--text-primary);
         }
+
+        /* 🔍 全授業キーワード横断検索モーダル (Spotlight / Omni Search) */
+        .omni-search-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            z-index: 10000;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 4.5rem 1rem 2rem 1rem;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.18s ease;
+        }
+        .omni-search-backdrop.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .omni-search-modal {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            width: 100%;
+            max-width: 760px;
+            max-height: 82vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05);
+            transform: translateY(-10px) scale(0.985);
+            transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+            overflow: hidden;
+        }
+        .omni-search-backdrop.active .omni-search-modal {
+            transform: translateY(0) scale(1);
+        }
+        .omni-search-header {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--bg-surface);
+        }
+        .omni-search-icon {
+            font-size: 1.25rem;
+            color: var(--brand-primary);
+            flex-shrink: 0;
+        }
+        .omni-search-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-family: inherit;
+        }
+        .omni-search-input::placeholder {
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+        .omni-search-clear-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.25rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            transition: color 0.15s ease;
+        }
+        .omni-search-clear-btn:hover {
+            color: var(--text-primary);
+        }
+        .omni-search-esc-badge {
+            font-size: 0.68rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            padding: 0.15rem 0.45rem;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .omni-search-filters {
+            display: flex;
+            gap: 0.4rem;
+            padding: 0.55rem 1.25rem;
+            background: var(--bg-subtle);
+            border-bottom: 1px solid var(--border-color);
+            overflow-x: auto;
+            scrollbar-width: thin;
+        }
+        .omni-filter-chip {
+            font-size: 0.74rem;
+            font-weight: 600;
+            padding: 0.2rem 0.65rem;
+            border-radius: var(--radius-full);
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.15s ease;
+        }
+        .omni-filter-chip:hover {
+            color: var(--text-primary);
+            border-color: var(--brand-border);
+        }
+        .omni-filter-chip.active {
+            background: var(--brand-primary);
+            color: #ffffff;
+            border-color: var(--brand-primary);
+        }
+        .omni-search-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+        }
+        .omni-search-summary-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.76rem;
+            color: var(--text-secondary);
+            padding-bottom: 0.2rem;
+        }
+        .omni-lesson-group {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            box-shadow: var(--shadow-xs);
+            transition: border-color 0.15s ease;
+        }
+        .omni-lesson-group:hover {
+            border-color: var(--brand-border);
+        }
+        .omni-lesson-header {
+            padding: 0.6rem 0.9rem;
+            background: var(--bg-subtle);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .omni-lesson-title {
+            font-weight: 700;
+            font-size: 0.88rem;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .omni-lesson-title:hover {
+            color: var(--brand-primary);
+        }
+        .omni-match-list {
+            display: flex;
+            flex-direction: column;
+        }
+        .omni-match-item {
+            padding: 0.65rem 0.9rem;
+            border-bottom: 1px solid var(--border-subtle, rgba(0,0,0,0.05));
+            cursor: pointer;
+            transition: background 0.12s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+            text-decoration: none;
+        }
+        .omni-match-item:last-child {
+            border-bottom: none;
+        }
+        .omni-match-item:hover,
+        .omni-match-item.focused {
+            background: rgba(16, 185, 129, 0.08);
+        }
+        .omni-match-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+        }
+        .omni-match-type-badge {
+            font-size: 0.68rem;
+            font-weight: 700;
+            padding: 0.12rem 0.45rem;
+            border-radius: 4px;
+            background: rgba(16, 185, 129, 0.12);
+            color: var(--brand-primary);
+            border: 1px solid var(--brand-border);
+        }
+        .omni-match-type-badge.memorize {
+            background: rgba(168, 85, 247, 0.12);
+            color: #9333ea;
+            border-color: rgba(168, 85, 247, 0.3);
+        }
+        .omni-match-type-badge.timeline {
+            background: rgba(245, 158, 11, 0.12);
+            color: #d97706;
+            border-color: rgba(245, 158, 11, 0.3);
+        }
+        .omni-match-snippet {
+            font-size: 0.82rem;
+            line-height: 1.5;
+            color: var(--text-primary);
+            word-break: break-word;
+        }
+        .omni-match-snippet mark,
+        .search-target-highlight {
+            background: #fde047;
+            color: #854d0e;
+            font-weight: 750;
+            padding: 0.1rem 0.25rem;
+            border-radius: 3px;
+        }
+        html.dark .omni-match-snippet mark,
+        html.dark .search-target-highlight {
+            background: #ca8a04;
+            color: #fef9c3;
+        }
+        .omni-search-footer {
+            padding: 0.65rem 1.25rem;
+            background: var(--bg-subtle);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+        }
+        .omni-empty-box {
+            text-align: center;
+            padding: 2.5rem 1rem;
+            color: var(--text-secondary);
+        }
+
+        /* 💥 ジャンプ時のハイライト発光アニメーション */
+        @keyframes omniPulseHighlight {
+            0% {
+                outline: 3px solid var(--brand-primary);
+                background-color: rgba(16, 185, 129, 0.25);
+            }
+            50% {
+                outline: 4px solid var(--warning, #f59e0b);
+                background-color: rgba(245, 158, 11, 0.2);
+            }
+            100% {
+                outline: 1px solid transparent;
+                background-color: transparent;
+            }
+        }
+        .omni-jump-target-flash {
+            animation: omniPulseHighlight 2.4s ease forwards !important;
+            border-radius: 8px;
+        }
     </style>
 </head>
 
@@ -5059,6 +5328,10 @@
                         </div>
                     </div>
                     <div class="page-actions" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                        <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="btn-open-omni-search" style="font-weight: 700; display: inline-flex; align-items: center; gap: 0.35rem; border-color: var(--brand-border);" title="全授業の本文・暗記事項を横断検索 (Ctrl+K)">
+                            <span>🔍</span><span id="header-search-btn-label">授業内を検索</span>
+                            <kbd style="font-size:0.65rem; background:var(--bg-subtle); padding:0.1rem 0.35rem; border-radius:4px; border:1px solid var(--border-color); color:var(--text-secondary); font-family:inherit;">Ctrl+K</kbd>
+                        </button>
                         <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="header-lang-btn" title="言語切替 / Switch Language" style="font-weight: 700; display: inline-flex; align-items: center; gap: 0.35rem; border: 1px solid var(--border-color);">
                             <span>🌐</span><span id="header-lang-label">English</span>
                         </button>
@@ -5699,7 +5972,12 @@
                         <div style="font-family: var(--font-heading); font-weight:700; font-size:1.05rem; margin-bottom: 0.8rem;">📚 過去の授業一覧</div>
                         <div class="lesson-list-toolbar">
                             <div class="lesson-toolbar-top-row">
-                                <input type="text" class="lesson-search-input" id="lesson-search-input" placeholder="🔍 授業名で検索...">
+                                <div style="display:flex; gap:0.4rem; align-items:center; flex:1; min-width:280px;">
+                                    <input type="text" class="lesson-search-input" id="lesson-search-input" placeholder="🔍 授業タイトルで絞り込み..." style="flex:1;">
+                                    <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="btn-quick-open-omni-search" style="font-size:0.75rem; white-space:nowrap; font-weight:700; color:var(--brand-primary); border:1px dashed var(--brand-border); padding:0.4rem 0.65rem; height:36px; display:inline-flex; align-items:center; gap:0.3rem;" title="授業の講義本文や暗記カードも丸ごと全文検索 (Ctrl+K)">
+                                        <span>🔍</span><span>本文も横断検索</span>
+                                    </button>
+                                </div>
                                 <div class="lesson-sort-control">
                                     <label for="lesson-sort-select" style="font-size:0.75rem; color:var(--text-secondary); white-space:nowrap; font-weight:600;">並び順:</label>
                                     <select id="lesson-sort-select" class="flora-select" style="font-size:0.75rem; padding:0.4rem 0.65rem; height:36px; width:auto; border-radius:var(--radius-md); background:var(--bg-surface); border:1px solid var(--border-color); color:var(--text-primary); cursor:pointer;">
@@ -23068,6 +23346,13 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
                 renderVscodeMode();
                 await forceTriggerMathJax();
             }
+
+            // 🔍 授業内キーワード検索等からのジャンプ＆ハイライト連携
+            setTimeout(() => {
+                if (typeof checkUrlSearchHighlightParams === "function") {
+                    checkUrlSearchHighlightParams();
+                }
+            }, 350);
         }
 
         window.floraTestLogin = async function() {
@@ -23268,6 +23553,677 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
                 handleLessonHandoff();
             }
         }
+
+        // ==============================================================
+        // 🔍 全授業キーワード横断検索システム (Omni Search / Spotlight)
+        // ==============================================================
+        let omniSearchCurrentFilter = "all";
+        let omniSearchResultsCache = [];
+        let omniSearchFlatItems = []; // キーボード操作用フラット化リスト
+        let omniSearchActiveItemIndex = -1;
+        let omniSearchDebounceTimer = null;
+
+        // メッセージが属するパート番号を安全に特定
+        function findPartIndexForMessage(lesson, msgIndex) {
+            if (!lesson || !Array.isArray(lesson.chatHistory)) return 0;
+            let dividerCount = 0;
+            for (let i = 0; i <= msgIndex && i < lesson.chatHistory.length; i++) {
+                if (lesson.chatHistory[i] && lesson.chatHistory[i].role === "divider") {
+                    dividerCount++;
+                }
+            }
+            return Math.max(0, dividerCount - 1);
+        }
+
+        // モーダルを開く
+        window.openLessonOmniSearch = async function(initialKeyword = "") {
+            const modal = el("lesson-omni-search-modal");
+            const input = el("omni-search-input");
+            if (!modal || !input) return;
+
+            modal.classList.add("active");
+            omniSearchCurrentFilter = "all";
+            updateOmniFilterChipsUI();
+
+            if (initialKeyword && typeof initialKeyword === "string" && initialKeyword.trim()) {
+                input.value = initialKeyword.trim();
+                triggerOmniSearch(input.value);
+            } else if (!input.value.trim()) {
+                renderOmniSearchInitialState();
+            } else {
+                triggerOmniSearch(input.value);
+            }
+
+            setTimeout(() => {
+                input.focus();
+                input.select();
+            }, 60);
+        };
+
+        // モーダルを閉じる
+        window.closeLessonOmniSearch = function() {
+            const modal = el("lesson-omni-search-modal");
+            if (modal) modal.classList.remove("active");
+            omniSearchActiveItemIndex = -1;
+        };
+
+        // 初期ガイダンス画面（最近開いた授業やヒント）
+        function renderOmniSearchInitialState() {
+            const container = el("omni-search-results");
+            if (!container) return;
+
+            resetOmniCounts();
+
+            // 直近の閲覧履歴
+            let recent = [];
+            if (typeof getRecentLessonsHistory === "function") {
+                recent = getRecentLessonsHistory() || [];
+            }
+            let recentHtml = "";
+            if (recent && recent.length > 0) {
+                recentHtml = `
+                    <div style="margin-top:1rem; text-align:left;">
+                        <div style="font-size:0.75rem; font-weight:750; color:var(--text-secondary); margin-bottom:0.45rem; display:flex; align-items:center; gap:0.3rem;">
+                            <span>🕒 最近開いた授業</span>
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:0.35rem;">
+                            ${recent.slice(0, 5).map(r => `
+                                <div class="omni-match-item" style="padding:0.5rem 0.75rem; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--bg-subtle);" onclick="jumpToOmniTarget('${r.id}', {})">
+                                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                                        <span style="font-weight:600; font-size:0.84rem; color:var(--text-primary);">${escapeHtml(r.title || '無題の授業')}</span>
+                                        <span style="font-size:0.7rem; color:var(--text-secondary);">${escapeHtml(r.subject || '')}</span>
+                                    </div>
+                                </div>
+                            `).join("")}
+                        </div>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = `
+                <div class="omni-empty-box" style="padding: 1.5rem 1rem;">
+                    <div style="font-size: 2.2rem; margin-bottom: 0.6rem;">🔍</div>
+                    <div style="font-size: 0.98rem; font-weight: 750; color: var(--text-primary); margin-bottom: 0.4rem;">全授業の本文・暗記事項を横断検索</div>
+                    <div style="font-size: 0.8rem; color: var(--text-secondary); max-width: 500px; margin: 0 auto; line-height: 1.6;">
+                        「承和の変」「酸化還元」「微分積分」などのキーワードを入力すると、<br>
+                        過去の全授業の<b>講義解説・パート目次・暗記カード・年表</b>から瞬時に検索して該当箇所へジャンプします。
+                    </div>
+                    <div style="display:flex; gap:0.45rem; justify-content:center; flex-wrap:wrap; margin-top:1.1rem;">
+                        <button type="button" class="flora-btn flora-btn-ghost btn-xs" style="font-size:0.74rem; border:1px solid var(--border-color); font-weight:600;" onclick="fillOmniSearchKeyword('承和の変')">🏷️ 承和の変</button>
+                        <button type="button" class="flora-btn flora-btn-ghost btn-xs" style="font-size:0.74rem; border:1px solid var(--border-color); font-weight:600;" onclick="fillOmniSearchKeyword('摂関政治')">🏷️ 摂関政治</button>
+                        <button type="button" class="flora-btn flora-btn-ghost btn-xs" style="font-size:0.74rem; border:1px solid var(--border-color); font-weight:600;" onclick="fillOmniSearchKeyword('酸化還元')">🏷️ 酸化還元</button>
+                    </div>
+                    ${recentHtml}
+                </div>
+            `;
+        }
+
+        window.fillOmniSearchKeyword = function(kw) {
+            const input = el("omni-search-input");
+            if (input) {
+                input.value = kw;
+                triggerOmniSearch(kw);
+            }
+        };
+
+        function resetOmniCounts() {
+            ["all", "lecture", "memorize", "timeline", "title"].forEach(k => {
+                const elCount = el(`omni-count-${k}`);
+                if (elCount) elCount.textContent = "0";
+            });
+        }
+
+        // デバウンス付き検索トリガー
+        function triggerOmniSearch(query) {
+            clearTimeout(omniSearchDebounceTimer);
+            const clearBtn = el("btn-clear-omni-search");
+            if (clearBtn) clearBtn.style.display = query ? "inline-block" : "none";
+
+            if (!query || !query.trim()) {
+                renderOmniSearchInitialState();
+                return;
+            }
+
+            omniSearchDebounceTimer = setTimeout(() => {
+                executeOmniSearch(query.trim());
+            }, 100);
+        }
+
+        // 全文検索の実行（IndexedDB / メモリキャッシュ走査）
+        async function executeOmniSearch(keyword) {
+            const container = el("omni-search-results");
+            if (!container) return;
+
+            const startTime = performance.now();
+            const q = keyword.toLowerCase();
+
+            // データソース確保
+            let lessonsObj = lastLessonsSnapshot;
+            if (!lessonsObj && window.floraCacheDB && loginUid) {
+                try {
+                    lessonsObj = await window.floraCacheDB.get("flora_cached_lessons_" + loginUid);
+                } catch(e) {}
+            }
+            if (!lessonsObj) {
+                container.innerHTML = `<div class="omni-empty-box">⏳ 授業データを読み込み中です。しばらくお待ちください...</div>`;
+                return;
+            }
+
+            const lessons = Object.values(lessonsObj);
+            const groupedResults = [];
+            let totalMatchCount = 0;
+            let countLecture = 0;
+            let countMemorize = 0;
+            let countTimeline = 0;
+            let countTitle = 0;
+
+            for (const lesson of lessons) {
+                if (!lesson || !lesson.id) continue;
+
+                const matches = [];
+
+                // 1. 授業タイトル & 単元名
+                const titleMatch = (lesson.title || "").toLowerCase().includes(q) || (lesson.topicKey || "").toLowerCase().includes(q) || (lesson.topic || "").toLowerCase().includes(q);
+                if (titleMatch) {
+                    countTitle++;
+                    matches.push({
+                        type: "title",
+                        label: "📚 授業タイトル・単元",
+                        snippet: highlightKeywordInSnippet(lesson.title || lesson.topicKey || "無題の授業", keyword),
+                        actionOpt: { keyword }
+                    });
+                }
+
+                // 2. パート目次 (parts)
+                if (Array.isArray(lesson.parts)) {
+                    lesson.parts.forEach((p, pIdx) => {
+                        if (!p) return;
+                        const matchPartTitle = (p.title || "").toLowerCase().includes(q);
+                        const matchPartSummary = (p.summary || "").toLowerCase().includes(q);
+                        if (matchPartTitle || matchPartSummary) {
+                            countTitle++;
+                            matches.push({
+                                type: "title",
+                                label: `第${pIdx + 1}回: ${cleanPartTitle(p.title || '', pIdx)}`,
+                                snippet: highlightKeywordInSnippet(p.summary || p.title || '', keyword),
+                                actionOpt: { partIndex: pIdx, keyword }
+                            });
+                        }
+                    });
+                }
+
+                // 3. 講義チャット本文 (chatHistory) - 最重要！
+                if (Array.isArray(lesson.chatHistory)) {
+                    let currentPartIndex = 0;
+                    lesson.chatHistory.forEach((msg, mIdx) => {
+                        if (!msg) return;
+                        if (msg.role === "divider") {
+                            currentPartIndex = findPartIndexForMessage(lesson, mIdx);
+                            return;
+                        }
+                        if (msg.content && msg.content.toLowerCase().includes(q)) {
+                            countLecture++;
+                            const partTitle = (lesson.parts && lesson.parts[currentPartIndex] && lesson.parts[currentPartIndex].title)
+                                ? cleanPartTitle(lesson.parts[currentPartIndex].title, currentPartIndex)
+                                : `パート ${currentPartIndex + 1}`;
+
+                            matches.push({
+                                type: "lecture",
+                                label: `💬 第${currentPartIndex + 1}回 (${partTitle}) 講義解説`,
+                                snippet: createSearchSnippet(msg.content, keyword),
+                                actionOpt: { partIndex: currentPartIndex, msgIndex: mIdx, keyword }
+                            });
+                        }
+                    });
+                }
+
+                // 4. 暗記事項 (memorizationPoints)
+                if (Array.isArray(lesson.memorizationPoints)) {
+                    lesson.memorizationPoints.forEach((pt) => {
+                        if (!pt) return;
+                        const fullText = (pt.term || "") + " " + (pt.explanation || "");
+                        if (fullText.toLowerCase().includes(q)) {
+                            countMemorize++;
+                            matches.push({
+                                type: "memorize",
+                                label: `🧠 暗記カード: ${pt.term || '重要用語'}`,
+                                snippet: createSearchSnippet(`${pt.term}: ${pt.explanation}`, keyword),
+                                actionOpt: { tabName: "tab-memorize", keyword }
+                            });
+                        }
+                    });
+                }
+
+                // 5. 歴史年表 (historicalEvents)
+                if (Array.isArray(lesson.historicalEvents)) {
+                    lesson.historicalEvents.forEach((ev) => {
+                        if (!ev) return;
+                        const fullText = `${ev.year || ''}年 ${ev.event || ''} ${ev.details || ''}`;
+                        if (fullText.toLowerCase().includes(q)) {
+                            countTimeline++;
+                            matches.push({
+                                type: "timeline",
+                                label: `⏳ 年表: ${ev.year || ''}年 ${ev.event || ''}`,
+                                snippet: createSearchSnippet(fullText, keyword),
+                                actionOpt: { tabName: "tab-timeline", keyword }
+                            });
+                        }
+                    });
+                }
+
+                if (matches.length > 0) {
+                    totalMatchCount += matches.length;
+                    groupedResults.push({
+                        lesson,
+                        matches,
+                        latestTime: new Date(lesson.updatedAt || lesson.createdAt || 0).getTime()
+                    });
+                }
+            }
+
+            // 更新日の新しい順にソート
+            groupedResults.sort((a, b) => b.latestTime - a.latestTime);
+
+            // カウント更新
+            el("omni-count-all").textContent = totalMatchCount;
+            el("omni-count-lecture").textContent = countLecture;
+            el("omni-count-memorize").textContent = countMemorize;
+            el("omni-count-timeline").textContent = countTimeline;
+            el("omni-count-title").textContent = countTitle;
+
+            const elapsed = Math.round(performance.now() - startTime);
+            el("omni-search-timing-info").textContent = `${lessons.length}件の授業を走査 (${elapsed}ms)`;
+
+            omniSearchResultsCache = groupedResults;
+            renderOmniSearchResults(keyword);
+        }
+
+        // 検索結果のHTMLレンダリング
+        function renderOmniSearchResults(keyword) {
+            const container = el("omni-search-results");
+            if (!container) return;
+
+            const filter = omniSearchCurrentFilter;
+            let totalFilteredMatches = 0;
+            omniSearchFlatItems = [];
+            omniSearchActiveItemIndex = -1;
+
+            const filteredGroups = omniSearchResultsCache.map(group => {
+                const filteredMatches = group.matches.filter(m => {
+                    if (filter === "all") return true;
+                    return m.type === filter;
+                });
+                if (filteredMatches.length > 0) {
+                    totalFilteredMatches += filteredMatches.length;
+                    return { ...group, matches: filteredMatches };
+                }
+                return null;
+            }).filter(Boolean);
+
+            if (filteredGroups.length === 0) {
+                container.innerHTML = `
+                    <div class="omni-empty-box">
+                        <div style="font-size: 2rem; margin-bottom: 0.6rem;">😢</div>
+                        <div style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.4rem;">
+                            「${escapeHtml(keyword)}」に一致する授業内容は見つかりませんでした
+                        </div>
+                        <div style="font-size: 0.78rem; color: var(--text-secondary);">
+                            別のキーワードや、漢字・ひらがな（例:「承和」や「良房」）で再検索してみてください。
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            let flatItemCounter = 0;
+
+            const groupsHtml = filteredGroups.map(group => {
+                const lesson = group.lesson;
+                const subj = lesson.subject || detectLessonSubject(lesson) || "その他";
+                const icon = LESSON_SUBJECT_ICONS[subj] || "📎";
+                const isCompleted = lesson.status === "completed";
+                const statusBadge = isCompleted
+                    ? `<span style="font-size:0.68rem; background:rgba(245,158,11,0.15); color:#d97706; border:1px solid rgba(245,158,11,0.3); padding:0.1rem 0.45rem; border-radius:999px; font-weight:700;">✓ 修了</span>`
+                    : `<span style="font-size:0.68rem; background:rgba(16,185,129,0.15); color:var(--brand-primary); border:1px solid var(--brand-border); padding:0.1rem 0.45rem; border-radius:999px; font-weight:700;">▶ 進行中</span>`;
+
+                const matchesHtml = group.matches.map(m => {
+                    const itemIndex = flatItemCounter++;
+                    omniSearchFlatItems.push({
+                        lessonId: lesson.id,
+                        actionOpt: m.actionOpt
+                    });
+
+                    let typeClass = "";
+                    if (m.type === "memorize") typeClass = "memorize";
+                    else if (m.type === "timeline") typeClass = "timeline";
+
+                    const escapedOptJson = JSON.stringify(m.actionOpt).replace(/"/g, '&quot;');
+
+                    return `
+                        <div class="omni-match-item" id="omni-item-${itemIndex}" data-omni-index="${itemIndex}" onclick="jumpToOmniTarget('${lesson.id}', ${escapedOptJson})">
+                            <div class="omni-match-meta">
+                                <span class="omni-match-type-badge ${typeClass}">${escapeHtml(m.label)}</span>
+                                <span style="font-size:0.72rem; color:var(--brand-primary); font-weight:700; display:flex; align-items:center; gap:0.2rem;">
+                                    ジャンプ ➔
+                                </span>
+                            </div>
+                            <div class="omni-match-snippet tex2jax_process">${m.snippet}</div>
+                        </div>
+                    `;
+                }).join("");
+
+                const escapedLessonKwOpt = JSON.stringify({ keyword }).replace(/"/g, '&quot;');
+
+                return `
+                    <div class="omni-lesson-group">
+                        <div class="omni-lesson-header">
+                            <div class="omni-lesson-title" onclick="jumpToOmniTarget('${lesson.id}', ${escapedLessonKwOpt})">
+                                <span style="font-size:0.75rem; background:rgba(16,185,129,0.1); color:var(--brand-primary); border:1px solid var(--brand-border); padding:0.1rem 0.45rem; border-radius:4px;">${icon} ${escapeHtml(subj)}</span>
+                                <span>${escapeHtml(lesson.title || '無題の授業')}</span>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:0.4rem;">
+                                ${statusBadge}
+                                <span style="font-size:0.72rem; color:var(--text-secondary);">${group.matches.length}箇所ヒット</span>
+                            </div>
+                        </div>
+                        <div class="omni-match-list">
+                            ${matchesHtml}
+                        </div>
+                    </div>
+                `;
+            }).join("");
+
+            container.innerHTML = `
+                <div class="omni-search-summary-bar">
+                    <span><b>${filteredGroups.length}件</b>の授業で <b>${totalFilteredMatches}箇所</b>がヒットしました</span>
+                    <span style="font-size:0.7rem; color:var(--text-muted);">クリックで該当パート・本文へダイレクト移動</span>
+                </div>
+                ${groupsHtml}
+            `;
+
+            // 最初の項目にフォーカス
+            if (omniSearchFlatItems.length > 0) {
+                setOmniActiveItem(0);
+            }
+        }
+
+        // スニペット抽出（前後35文字＋ハイライト）
+        function createSearchSnippet(fullText, query) {
+            if (!fullText) return "";
+            const clean = fullText
+                .replace(/#+/g, "")
+                .replace(/\*\*/g, "")
+                .replace(/\*/g, "")
+                .replace(/```[\s\S]*?```/g, " [コード] ")
+                .replace(/\$\$/g, "")
+                .replace(/\$/g, "")
+                .replace(/\s+/g, " ")
+                .trim();
+
+            const lower = clean.toLowerCase();
+            const q = query.toLowerCase();
+            const idx = lower.indexOf(q);
+
+            if (idx === -1) {
+                return escapeHtml(clean.slice(0, 80)) + (clean.length > 80 ? "..." : "");
+            }
+
+            const start = Math.max(0, idx - 35);
+            const end = Math.min(clean.length, idx + query.length + 35);
+
+            const prefix = start > 0 ? "..." : "";
+            const suffix = end < clean.length ? "..." : "";
+
+            const snippetRaw = clean.slice(start, end);
+            return prefix + highlightKeywordInSnippet(snippetRaw, query) + suffix;
+        }
+
+        // キーワードハイライト用HTML
+        function highlightKeywordInSnippet(text, query) {
+            if (!text || !query) return escapeHtml(text || "");
+            const escapedText = escapeHtml(text);
+            const escapedQuery = escapeHtml(query).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const regex = new RegExp(`(${escapedQuery})`, "gi");
+            return escapedText.replace(regex, `<mark class="search-target-highlight">$1</mark>`);
+        }
+
+        // 該当位置へのジャンプ＆ハイライト実行！
+        window.jumpToOmniTarget = function(lessonId, opt = {}) {
+            if (!lessonId) return;
+            closeLessonOmniSearch();
+
+            const isCurrentLesson = currentLessonId && currentLessonId === lessonId;
+
+            if (isCurrentLesson) {
+                // ⚡ 同一授業内の場合はリロードなしで高速ジャンプ！
+                applyJumpInCurrentLesson(opt);
+            } else {
+                // 🔗 別の授業の場合はURL遷移
+                const params = new URLSearchParams();
+                params.set("id", lessonId);
+                if (opt.partIndex !== undefined) params.set("part", opt.partIndex);
+                if (opt.msgIndex !== undefined) params.set("msgIdx", opt.msgIndex);
+                if (opt.tabName) params.set("tab", opt.tabName);
+                if (opt.keyword) params.set("q", opt.keyword);
+
+                window.location.href = `lesson.html?${params.toString()}`;
+            }
+        };
+
+        // 同一授業内での即時スクロール＆ハイライト
+        function applyJumpInCurrentLesson(opt = {}) {
+            // 1. タブ切り替えが必要な場合
+            if (opt.tabName) {
+                switchLessonSidebarTab(opt.tabName);
+                showToast(`📍 「${opt.tabName.replace('tab-', '')}」タブを開きました`, "info", 2500);
+                return;
+            }
+
+            // 2. パート位置へのスクロール
+            if (opt.partIndex !== undefined) {
+                scrollToPartDivider(opt.partIndex);
+            }
+
+            // 3. 該当のチャット吹き出し（講義本文）へのスクロール＆発光
+            if (opt.msgIndex !== undefined) {
+                setTimeout(() => {
+                    const bubble = document.querySelector(`.chat-bubble[data-bubble-idx="${opt.msgIndex}"]`);
+                    if (bubble) {
+                        bubble.scrollIntoView({ behavior: "smooth", block: "center" });
+                        bubble.classList.remove("omni-jump-target-flash");
+                        void bubble.offsetWidth; // リフロー強制
+                        bubble.classList.add("omni-jump-target-flash");
+
+                        // 該当単語が吹き出し内にあれば一時ハイライト
+                        if (opt.keyword) {
+                            highlightTextInsideElement(bubble, opt.keyword);
+                        }
+                    }
+                }, 200);
+            }
+
+            showToast(`📍 該当の箇所にジャンプしました`, "success", 2500);
+        }
+
+        // 要素内の該当テキストを <mark> で強調
+        function highlightTextInsideElement(container, keyword) {
+            if (!container || !keyword) return;
+            const textNodes = [];
+            const walk = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null, false);
+            let n;
+            while (n = walk.nextNode()) {
+                if (n.parentNode && n.parentNode.nodeName !== 'MARK' && n.nodeValue && n.nodeValue.toLowerCase().includes(keyword.toLowerCase())) {
+                    textNodes.push(n);
+                }
+            }
+
+            textNodes.forEach(node => {
+                const parent = node.parentNode;
+                const text = node.nodeValue;
+                const lower = text.toLowerCase();
+                const q = keyword.toLowerCase();
+                const idx = lower.indexOf(q);
+                if (idx !== -1) {
+                    const before = text.slice(0, idx);
+                    const match = text.slice(idx, idx + keyword.length);
+                    const after = text.slice(idx + keyword.length);
+
+                    const mark = document.createElement("mark");
+                    mark.className = "search-target-highlight";
+                    mark.textContent = match;
+
+                    const frag = document.createDocumentFragment();
+                    if (before) frag.appendChild(document.createTextNode(before));
+                    frag.appendChild(mark);
+                    if (after) frag.appendChild(document.createTextNode(after));
+
+                    parent.replaceChild(frag, node);
+                }
+            });
+        }
+
+        // 右サイドバーのタブ切り替え
+        function switchLessonSidebarTab(tabName) {
+            document.querySelectorAll(".sidebar-tab-btn").forEach(btn => {
+                const isActive = btn.getAttribute("data-tab") === tabName;
+                btn.classList.toggle("active", isActive);
+            });
+            document.querySelectorAll(".sidebar-panel").forEach(panel => {
+                const isActive = panel.id === tabName;
+                panel.classList.toggle("active", isActive);
+            });
+        }
+
+        // ページロード時のURLパラメータ自動ジャンプ処理
+        function checkUrlSearchHighlightParams() {
+            const params = new URLSearchParams(window.location.search);
+            const q = params.get("q");
+            const partStr = params.get("part");
+            const msgIdxStr = params.get("msgIdx");
+            const tabName = params.get("tab");
+
+            if (!q && !partStr && !msgIdxStr && !tabName) return;
+
+            const opt = {
+                keyword: q || "",
+                partIndex: partStr !== null ? parseInt(partStr, 10) : undefined,
+                msgIndex: msgIdxStr !== null ? parseInt(msgIdxStr, 10) : undefined,
+                tabName: tabName || undefined
+            };
+
+            applyJumpInCurrentLesson(opt);
+
+            // URLを綺麗に整理（ブラウザ履歴を汚さない）
+            const cleanUrl = new URL(window.location.href);
+            cleanUrl.searchParams.delete("q");
+            cleanUrl.searchParams.delete("part");
+            cleanUrl.searchParams.delete("msgIdx");
+            cleanUrl.searchParams.delete("tab");
+            window.history.replaceState({}, "", cleanUrl.toString());
+        }
+
+        // フィルターチップのUI更新
+        function updateOmniFilterChipsUI() {
+            document.querySelectorAll(".omni-filter-chip").forEach(chip => {
+                chip.classList.toggle("active", chip.getAttribute("data-omni-filter") === omniSearchCurrentFilter);
+            });
+        }
+
+        // キーボード操作のアクティブ項目設定
+        function setOmniActiveItem(index) {
+            if (omniSearchFlatItems.length === 0) return;
+            const prev = document.querySelector(".omni-match-item.focused");
+            if (prev) prev.classList.remove("focused");
+
+            omniSearchActiveItemIndex = Math.max(0, Math.min(index, omniSearchFlatItems.length - 1));
+            const targetEl = el(`omni-item-${omniSearchActiveItemIndex}`);
+            if (targetEl) {
+                targetEl.classList.add("focused");
+                targetEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            }
+        }
+
+        // イベントリスナーの登録
+        document.addEventListener("DOMContentLoaded", () => {
+            // フィルタチップクリックイベント
+            document.querySelectorAll(".omni-filter-chip").forEach(chip => {
+                chip.addEventListener("click", () => {
+                    omniSearchCurrentFilter = chip.getAttribute("data-omni-filter");
+                    updateOmniFilterChipsUI();
+                    const input = el("omni-search-input");
+                    if (input && input.value.trim()) {
+                        renderOmniSearchResults(input.value.trim());
+                    }
+                });
+            });
+
+            // 検索インプット入力イベント
+            el("omni-search-input")?.addEventListener("input", (e) => {
+                triggerOmniSearch(e.target.value);
+            });
+
+            // クリアボタン
+            el("btn-clear-omni-search")?.addEventListener("click", () => {
+                const input = el("omni-search-input");
+                if (input) {
+                    input.value = "";
+                    input.focus();
+                    triggerOmniSearch("");
+                }
+            });
+
+            // 閉じるボタン＆背景クリック
+            el("btn-close-omni-search")?.addEventListener("click", closeLessonOmniSearch);
+            el("lesson-omni-search-modal")?.addEventListener("click", (e) => {
+                if (e.target.id === "lesson-omni-search-modal") {
+                    closeLessonOmniSearch();
+                }
+            });
+
+            // ヘッダー検索ボタン＆一覧ツールバー検索ボタン
+            el("btn-open-omni-search")?.addEventListener("click", () => openLessonOmniSearch());
+            el("btn-quick-open-omni-search")?.addEventListener("click", () => {
+                const listInputVal = el("lesson-search-input")?.value || "";
+                openLessonOmniSearch(listInputVal);
+            });
+        });
+
+        // キーボードショートカット (Ctrl+K, Cmd+K, Esc, ArrowDown, ArrowUp, Enter)
+        window.addEventListener("keydown", (e) => {
+            const modal = el("lesson-omni-search-modal");
+            const isOpen = modal && modal.classList.contains("active");
+
+            // Ctrl+K / Cmd+K で検索を開く
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+                e.preventDefault();
+                if (isOpen) {
+                    closeLessonOmniSearch();
+                } else {
+                    const listInputVal = el("lesson-search-input")?.value || "";
+                    openLessonOmniSearch(listInputVal);
+                }
+                return;
+            }
+
+            if (!isOpen) return;
+
+            if (e.key === "Escape") {
+                e.preventDefault();
+                closeLessonOmniSearch();
+            } else if (e.key === "ArrowDown") {
+                e.preventDefault();
+                setOmniActiveItem(omniSearchActiveItemIndex + 1);
+            } else if (e.key === "ArrowUp") {
+                e.preventDefault();
+                setOmniActiveItem(omniSearchActiveItemIndex - 1);
+            } else if (e.key === "Enter") {
+                e.preventDefault();
+                if (omniSearchActiveItemIndex >= 0 && omniSearchFlatItems[omniSearchActiveItemIndex]) {
+                    const target = omniSearchFlatItems[omniSearchActiveItemIndex];
+                    jumpToOmniTarget(target.lessonId, target.actionOpt);
+                }
+            }
+        });
    </script>
 
     <!-- 🗑️ 授業一括削除フローティングバー -->
@@ -23286,6 +24242,43 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
                     🗑️ 選択した授業を一括削除
                 </button>
                 <button type="button" class="lesson-batch-btn btn-close" id="btn-close-batch-delete-bar">✕ 終了</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🔍 全授業キーワード横断検索モーダル (Spotlight / Omni Search) -->
+    <div id="lesson-omni-search-modal" class="omni-search-backdrop" role="dialog" aria-modal="true" aria-labelledby="omni-search-input">
+        <div class="omni-search-modal">
+            <!-- 検索ヘッダー -->
+            <div class="omni-search-header">
+                <span class="omni-search-icon">🔍</span>
+                <input type="text" id="omni-search-input" class="omni-search-input" placeholder="授業名・講義本文・暗記事項を横断検索... (例: 承和の変, 酸化還元)" autocomplete="off" spellcheck="false">
+                <button type="button" class="omni-search-clear-btn" id="btn-clear-omni-search" style="display:none;" title="クリア">✕</button>
+                <kbd class="omni-search-esc-badge" id="btn-close-omni-search" title="閉じる (Esc)">Esc</kbd>
+            </div>
+
+            <!-- フィルターチップ -->
+            <div class="omni-search-filters">
+                <button type="button" class="omni-filter-chip active" data-omni-filter="all">すべて (<span id="omni-count-all">0</span>)</button>
+                <button type="button" class="omni-filter-chip" data-omni-filter="lecture">💬 講義本文 (<span id="omni-count-lecture">0</span>)</button>
+                <button type="button" class="omni-filter-chip" data-omni-filter="memorize">🧠 暗記カード (<span id="omni-count-memorize">0</span>)</button>
+                <button type="button" class="omni-filter-chip" data-omni-filter="timeline">⏳ 年表 (<span id="omni-count-timeline">0</span>)</button>
+                <button type="button" class="omni-filter-chip" data-omni-filter="title">📚 授業タイトル (<span id="omni-count-title">0</span>)</button>
+            </div>
+
+            <!-- 結果リストエリア -->
+            <div class="omni-search-body" id="omni-search-results">
+                <!-- 初期案内または検索結果が描画される -->
+            </div>
+
+            <!-- フッターショートカット案内 -->
+            <div class="omni-search-footer">
+                <div style="display:flex; gap:0.8rem; align-items:center;">
+                    <span><kbd class="omni-search-esc-badge">↑</kbd> <kbd class="omni-search-esc-badge">↓</kbd> 移動</span>
+                    <span><kbd class="omni-search-esc-badge">Enter</kbd> ジャンプ</span>
+                    <span><kbd class="omni-search-esc-badge">Esc</kbd> 閉じる</span>
+                </div>
+                <div id="omni-search-timing-info" style="font-size:0.7rem; color:var(--text-muted);">IndexedDB 即時検索</div>
             </div>
         </div>
     </div>
