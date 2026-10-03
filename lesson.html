@@ -5193,6 +5193,7 @@
         .omni-search-body {
             flex: 1;
             overflow-y: auto;
+            overflow-x: hidden;
             padding: 1.25rem 1.5rem;
             display: flex;
             flex-direction: column;
@@ -5200,6 +5201,7 @@
             background: #090e17;
         }
         .omni-search-summary-bar {
+            flex-shrink: 0;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -5214,6 +5216,8 @@
             font-weight: 850;
         }
         .omni-lesson-group {
+            flex-shrink: 0;
+            min-height: fit-content;
             background: rgba(26, 36, 53, 0.85);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 14px;
@@ -5264,6 +5268,7 @@
             padding: 0.75rem 0.95rem;
         }
         .omni-match-item {
+            flex-shrink: 0;
             padding: 0.9rem 1.15rem;
             border: 1px solid rgba(255, 255, 255, 0.08);
             background: rgba(11, 17, 30, 0.78);
@@ -5275,6 +5280,30 @@
             gap: 0.5rem;
             text-decoration: none;
             position: relative;
+        }
+        .culture-period-select-wrap {
+            display: inline-flex;
+            align-items: center;
+        }
+        .culture-period-select {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            color: #34d399;
+            font-size: 0.74rem;
+            font-weight: 750;
+            padding: 0.2rem 0.55rem;
+            border-radius: 6px;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.15s ease;
+        }
+        .culture-period-select:hover {
+            background: rgba(16, 185, 129, 0.25);
+            border-color: #10b981;
+        }
+        .culture-period-select option {
+            background: #0f172a;
+            color: #f8fafc;
         }
         .omni-match-item:hover {
             background: rgba(16, 185, 129, 0.12);
@@ -24929,7 +24958,7 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
         // 🏛️ 日本史 文化史まとめ読みストリーム (Culture Stream System)
         // ==============================================================
         const JAPANESE_CULTURE_PERIODS = [
-            { id: "jomon-yayoi", name: "縄文・弥生文化", label: "縄文・弥生", order: 10, periodNames: ["縄文", "弥生"], keywords: ["土器", "金属器", "稲作", "青銅器", "鉄器"] },
+            { id: "jomon-yayoi", name: "旧石器・縄文・弥生文化", label: "旧石器・縄文・弥生", order: 10, periodNames: ["旧石器", "縄文", "弥生", "人類", "原始", "先史", "あけぼの"], keywords: ["あけぼの", "人類", "旧石器", "打製石器", "磨製石器", "岩宿", "野尻湖", "新人", "原人", "猿人", "土器", "金属器", "稲作", "青銅器", "鉄器", "縄文文化", "弥生文化"] },
             { id: "kofun", name: "古墳文化", label: "古墳時代", order: 20, periodNames: ["古墳"], keywords: ["古墳文化", "埴輪", "副葬品", "須恵器", "土師器"] },
             { id: "asuka", name: "飛鳥文化", label: "飛鳥時代", order: 30, periodNames: ["飛鳥"], keywords: ["飛鳥文化", "法隆寺", "推古", "聖徳太子", "鞍作止利", "玉虫厨子", "百済観音"] },
             { id: "hakuho", name: "白鳳文化", label: "白鳳期", order: 40, periodNames: ["白鳳"], keywords: ["白鳳文化", "薬師寺", "天武", "持統", "高松塚古墳", "興福寺仏頭"] },
@@ -24950,6 +24979,39 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
 
         let cultureStreamExtractedData = [];
         let cultureStreamShowAllMemorize = false;
+
+        // 手動所属変更（localStorage + メモリ保持）
+        function getCultureCustomPeriodsMap() {
+            try {
+                return JSON.parse(localStorage.getItem("flora_culture_custom_periods") || "{}");
+            } catch(e) {
+                return {};
+            }
+        }
+
+        window.changeCulturePartPeriod = function(lessonId, partIdx, newPeriodId) {
+            const map = getCultureCustomPeriodsMap();
+            const key = `${lessonId}_${partIdx}`;
+            if (newPeriodId === "auto") {
+                delete map[key];
+            } else {
+                map[key] = newPeriodId;
+            }
+            try {
+                localStorage.setItem("flora_culture_custom_periods", JSON.stringify(map));
+            } catch(e) {}
+
+            if (lastLessonsSnapshot && lastLessonsSnapshot[lessonId] && lastLessonsSnapshot[lessonId].parts && lastLessonsSnapshot[lessonId].parts[partIdx]) {
+                lastLessonsSnapshot[lessonId].parts[partIdx].customPeriodId = newPeriodId === "auto" ? null : newPeriodId;
+            }
+
+            const pObj = JAPANESE_CULTURE_PERIODS.find(p => p.id === newPeriodId) || { name: newPeriodId === "other" ? "その他・横断文化" : "自動判定" };
+            if (typeof showToast === "function") {
+                showToast(`🏛️ 時代区分を「${pObj.name}」に変更しました`, "success", 2500);
+            }
+
+            renderCultureStream();
+        };
 
         // 文化史を象徴する明確なキーワード
         const CULTURE_CORE_REGEX = /文化|文学|美術|建築|仏教|宗教|思想|絵画|彫刻|寺院建築|工芸|芸能|茶の湯|歌舞伎|浮世絵|絵巻|浄土教|密教|禅宗|新仏教|国学|蘭学|洋学|文明開化|歌集|連歌|かな文学|女流文学/;
@@ -24991,11 +25053,24 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
             return false;
         }
 
-        // 所属する文化時代を特定（確度順の5パス判定）
-        function detectCulturePeriod(part, lesson) {
+        // 所属する文化時代を特定（手動設定最優先 ＋ 確度順の判定）
+        function detectCulturePeriod(part, lesson, partIdx = 0, lectureContent = "") {
+            // 1. 手動設定（カスタム時代）の確認（最優先）
+            const customMap = getCultureCustomPeriodsMap();
+            const customKey = `${lesson?.id}_${partIdx}`;
+            const customId = (part && part.customPeriodId) || customMap[customKey];
+            if (customId) {
+                if (customId === "other") {
+                    return { id: "other", name: "その他・横断文化", label: "文化史", order: 999, periodNames: [], keywords: [] };
+                }
+                const manualPeriod = JAPANESE_CULTURE_PERIODS.find(p => p.id === customId);
+                if (manualPeriod) return manualPeriod;
+            }
+
             const pTitle = (part?.title || "").toLowerCase();
             const pSumm = (part?.summary || "").toLowerCase();
             const lTitle = ((lesson?.title || "") + " " + (lesson?.topicKey || "") + " " + (lesson?.topic || "")).toLowerCase();
+            const lecText = (lectureContent || "").slice(0, 1500).toLowerCase();
 
             // パス1: パートタイトルに含まれる「時代名」で直接判定（最高精度）
             for (const p of JAPANESE_CULTURE_PERIODS) {
@@ -25015,28 +25090,49 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
                 }
             }
 
-            // パス3: パート要約文の時代名で判定
+            // パス3: 授業タイトル全体の時代名で判定
+            for (const p of JAPANESE_CULTURE_PERIODS) {
+                for (const pn of p.periodNames) {
+                    if (lTitle.includes(pn.toLowerCase())) {
+                        return p;
+                    }
+                }
+            }
+
+            // パス4: 授業タイトル全体のキーワードで判定
+            for (const p of JAPANESE_CULTURE_PERIODS) {
+                for (const kw of p.keywords) {
+                    if (lTitle.includes(kw.toLowerCase())) {
+                        return p;
+                    }
+                }
+            }
+
+            // パス5: 講義本文冒頭に含まれるキーワードで判定
+            if (lecText) {
+                for (const p of JAPANESE_CULTURE_PERIODS) {
+                    for (const pn of p.periodNames) {
+                        if (lecText.includes(pn.toLowerCase())) {
+                            return p;
+                        }
+                    }
+                    for (const kw of p.keywords) {
+                        if (lecText.includes(kw.toLowerCase())) {
+                            return p;
+                        }
+                    }
+                }
+            }
+
+            // パス6: パート要約文の時代名・キーワードで判定
             for (const p of JAPANESE_CULTURE_PERIODS) {
                 for (const pn of p.periodNames) {
                     if (pSumm.includes(pn.toLowerCase())) {
                         return p;
                     }
                 }
-            }
-
-            // パス4: パート要約文のキーワードで判定
-            for (const p of JAPANESE_CULTURE_PERIODS) {
                 for (const kw of p.keywords) {
                     if (pSumm.includes(kw.toLowerCase())) {
-                        return p;
-                    }
-                }
-            }
-
-            // パス5: 授業タイトル全体の時代名で判定
-            for (const p of JAPANESE_CULTURE_PERIODS) {
-                for (const pn of p.periodNames) {
-                    if (lTitle.includes(pn.toLowerCase())) {
                         return p;
                     }
                 }
@@ -25088,7 +25184,7 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
             return false;
         }
 
-        // 全授業から文化パートを抽出して時代順にソート
+        // 全授業から文化パートを抽出して時代順にソート（未受講パートは完全除外）
         function extractAllCultureParts(lessonsObj) {
             const lessons = Object.values(lessonsObj || {});
             const results = [];
@@ -25101,8 +25197,6 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
 
                 lesson.parts.forEach((part, partIdx) => {
                     if (checkIsCulturePart(part, lesson)) {
-                        const period = detectCulturePeriod(part, lesson);
-
                         // 講義解説テキスト（chatHistoryのうち、該当パートのdivider〜次のdividerまで）
                         let lectureContent = "";
                         if (Array.isArray(lesson.chatHistory)) {
@@ -25117,8 +25211,14 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
                                     msgsInPart.push(msg.content);
                                 }
                             });
-                            lectureContent = msgsInPart.join("\n\n---\n\n");
+                            lectureContent = msgsInPart.join("\n\n---\n\n").trim();
                         }
+
+                        // ユーザーの要望: 「未受講のやつは表示しなくていい」
+                        // 講義チャット（lectureContent）がまだ受講・生成されていない未受講パートはスキップ
+                        if (!lectureContent) return;
+
+                        const period = detectCulturePeriod(part, lesson, partIdx, lectureContent);
 
                         // 暗記ポイント
                         const memorizeItems = (lesson.memorizationPoints || []).filter(pt => {
@@ -25135,7 +25235,7 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
                             partTitle: cleanPartTitle(part.title || "", partIdx),
                             partSummary: part.summary || "",
                             period: period,
-                            lectureContent: lectureContent || part.summary || "講義内容は授業画面でご確認ください。",
+                            lectureContent: lectureContent,
                             memorizeItems: memorizeItems,
                             updatedAt: lesson.updatedAt || lesson.createdAt || ""
                         });
@@ -25328,7 +25428,14 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
                     <div class="culture-section-card" id="culture-section-${idx}" ${periodAnchorId} data-period-id="${cp.period.id}">
                         <div class="culture-section-header">
                             <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
-                                <span class="culture-period-pill">🏛️ ${escapeHtml(cp.period.label)}</span>
+                                <div class="culture-period-select-wrap">
+                                    <select class="culture-period-select" onchange="changeCulturePartPeriod('${cp.lessonId}', ${cp.partIndex}, this.value)" title="このパートの時代区分を変更（クリックして変更）">
+                                        ${JAPANESE_CULTURE_PERIODS.map(p => `
+                                            <option value="${p.id}" ${p.id === cp.period.id ? 'selected' : ''}>🏛️ ${escapeHtml(p.name)}</option>
+                                        `).join("")}
+                                        <option value="other" ${cp.period.id === 'other' ? 'selected' : ''}>🏛️ その他・横断文化</option>
+                                    </select>
+                                </div>
                                 <span class="culture-part-name">${escapeHtml(cp.partTitle)}</span>
                             </div>
                             <div style="display:flex; align-items:center; gap:0.5rem;">
