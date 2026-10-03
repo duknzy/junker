@@ -684,6 +684,53 @@ export const ALL_AVAILABLE_MODELS = [
     ...DEEPSEEK_MODELS
 ];
 
+// --------------------------------------------------------------------------
+// 🚫 Proモデル（deepseek-v4-pro等）の利用制限設定
+// --------------------------------------------------------------------------
+const DISABLE_PRO_MODELS_STORAGE = "RE_MIND_DISABLE_PRO_MODELS";
+
+export function isProModel(modelName) {
+    if (!modelName || typeof modelName !== "string") return false;
+    const lower = modelName.toLowerCase();
+    return lower.includes("-pro") || lower.endsWith("pro");
+}
+
+export function isProModelsDisabled() {
+    try {
+        return localStorage.getItem(DISABLE_PRO_MODELS_STORAGE) === "true";
+    } catch (_) {
+        return false;
+    }
+}
+
+export function setProModelsDisabled(disabled) {
+    try {
+        if (disabled) {
+            localStorage.setItem(DISABLE_PRO_MODELS_STORAGE, "true");
+        } else {
+            localStorage.removeItem(DISABLE_PRO_MODELS_STORAGE);
+        }
+    } catch (e) {
+        console.error("[APIKeyManager] Failed to save pro models disabled setting:", e);
+    }
+}
+
+export function getAvailableDeepseekModels() {
+    if (isProModelsDisabled()) {
+        return DEEPSEEK_MODELS.filter(m => !isProModel(m));
+    }
+    return DEEPSEEK_MODELS;
+}
+
+export function getAvailableModels() {
+    let list = [...GEMINI_MODEL_FALLBACK_LIST, ...getAvailableDeepseekModels()];
+    if (isProModelsDisabled()) {
+        list = list.filter(m => !isProModel(m));
+    }
+    return list;
+}
+
+
 export const GEMINI_THINKING_LEVELS = [
     { id: 'default', label: 'default（自動思考・推奨）', description: 'モデル既定の自動思考' },
     { id: 'low',     label: 'low（低思考・高速応答）', description: '要約・抽出・定型処理向け・高速' },
@@ -884,12 +931,19 @@ export function isDeepseekModel(modelName) {
 }
 
 export function getEffectiveModelList(featureId) {
-    if (!featureId) return GEMINI_MODEL_FALLBACK_LIST;
-    const entry = getFeatureEntry(featureId);
-    if (!entry.models || entry.models.length === 0) return GEMINI_MODEL_FALLBACK_LIST;
-    // 💡 ユーザーが設定した配列の順序（優先順位）をそのまま採用する
-    const validModels = entry.models.filter(m => ALL_AVAILABLE_MODELS.includes(m));
-    return validModels.length > 0 ? validModels : GEMINI_MODEL_FALLBACK_LIST;
+    let list = GEMINI_MODEL_FALLBACK_LIST;
+    if (featureId) {
+        const entry = getFeatureEntry(featureId);
+        if (entry.models && entry.models.length > 0) {
+            const validModels = entry.models.filter(m => ALL_AVAILABLE_MODELS.includes(m));
+            if (validModels.length > 0) list = validModels;
+        }
+    }
+    // 💡 Proモデル除外設定が有効な場合は除外
+    if (isProModelsDisabled()) {
+        list = list.filter(m => !isProModel(m));
+    }
+    return list.length > 0 ? list : (isProModelsDisabled() ? GEMINI_MODEL_FALLBACK_LIST.filter(m => !isProModel(m)) : GEMINI_MODEL_FALLBACK_LIST);
 }
 
 export function getEffectiveGeminiKeys(featureId) {
@@ -1153,7 +1207,28 @@ async function runDeepseekFallbackLoop(contents, systemInstruction, options = {}
     }
     const baseMessages = convertGeminiContentsToOpenAIMessages(contents, systemWithSchema);
 
-    let modelList = [preferredModel, ...DEEPSEEK_MODELS.filter(m => m !== preferredModel)];
+    // 💡 ユーザーが設定したモデルリストを最優先し、未選択のProモデルを勝手に追加しない
+    let modelList = [];
+    if (Array.isArray(options.allowedModels) && options.allowedModels.length > 0) {
+        modelList = options.allowedModels.filter(m => isDeepseekModel(m));
+    } else if (featureId) {
+        const effective = getEffectiveModelList(featureId).filter(m => isDeepseekModel(m));
+        if (effective.length > 0) modelList = effective;
+    }
+    if (modelList.length === 0) {
+        const availableDs = getAvailableDeepseekModels();
+        const primary = (preferredModel && isDeepseekModel(preferredModel)) ? preferredModel : (availableDs[0] || "deepseek-v4-flash");
+        modelList = [primary, ...availableDs.filter(m => m !== primary)];
+    }
+    // Proモデル除外が有効なら念のためフィルタ
+    if (isProModelsDisabled()) {
+        modelList = modelList.filter(m => !isProModel(m));
+    }
+    if (modelList.length === 0) {
+        console.warn("⚠️ DeepSeekモデルが利用不可のためGeminiへフォールバックします");
+        return runGeminiFallbackLoop(contents, systemInstruction, { ...options, preferredModel: null });
+    }
+
     const strictJsonReminder = "\n\n❗最重要ルール: 出力は指定されたJSON形式のみとすること。挨拶・前置き・説明文・Markdownのコードブロック(```)など、JSON以外の文字列は一切含めないこと。";
     let lastError = null;
     const fallbackAttempts = [];
@@ -1165,10 +1240,19 @@ async function runDeepseekFallbackLoop(contents, systemInstruction, options = {}
         }
         const thinkingToUse = overrideThinking !== null ? overrideThinking : effectiveThinking;
         const deepseekThinkingPayload = buildDeepseekThinkingPayload(thinkingToUse);
+
+        // 💡 致命的バグ修正:
+        // DeepSeekの推論モデル（thinking enabled）で response_format: { type: "json_object" } を送ると、
+        // API内部の競合により reasoning_content のみが出力されて content が空（""）のまま stop で終了する現象が発生します。
+        // そのため、思考モード有効時は response_format を省いてプロンプト指示（【必須JSONスキーマ定義】）に任せ、
+        // 思考OFF（thinking: disabled / none）の時のみ response_format を付加します。
+        const isThinkingEnabled = deepseekThinkingPayload?.thinking?.type === "enabled";
+        const shouldSendJsonFormat = wantsJson && !isThinkingEnabled;
+
         const requestPayload = {
             model: modelName,
             messages: messages,
-            ...(wantsJson ? { response_format: { type: "json_object" } } : {}),
+            ...(shouldSendJsonFormat ? { response_format: { type: "json_object" } } : {}),
             ...deepseekThinkingPayload
         };
 
@@ -1196,14 +1280,14 @@ async function runDeepseekFallbackLoop(contents, systemInstruction, options = {}
                 }
             }
         } catch (err) {
-            return { ok: false, isFormatError: false, isTokenLimitError: false, reason: err?.message || "通信エラー", error: err };
+            return { ok: false, isFormatError: false, isTokenLimitError: false, isEmptyResponse: false, reason: err?.message || "通信エラー", error: err };
         }
 
         let resData;
         try {
             resData = await response.json();
         } catch (jsonErr) {
-            return { ok: false, isFormatError: false, isTokenLimitError: false, reason: "JSON応答パースエラー", error: jsonErr };
+            return { ok: false, isFormatError: false, isTokenLimitError: false, isEmptyResponse: false, reason: "JSON応答パースエラー", error: jsonErr };
         }
 
         const choice = resData?.choices?.[0] || {};
@@ -1227,14 +1311,29 @@ async function runDeepseekFallbackLoop(contents, systemInstruction, options = {}
                 ok: false,
                 isFormatError: false,
                 isTokenLimitError: true,
+                isEmptyResponse: false,
                 reason: "トークン上限到達（finish_reason: length / 回答出力前に中断）",
                 error: new Error(`DeepSeekの推論トークンが上限に達し、回答本文が出力される前に中断されました (finish_reason: length)。`)
             };
         }
 
-        // reasoning_content の救済
-        if (!candidateText) {
-            candidateText = (message.reasoning_content && message.reasoning_content.trim()) || "";
+        // 💡 reasoning_content からの救済:
+        // もし content が空でも reasoning_content 内に JSON が生成されていれば救出
+        if (!candidateText && message.reasoning_content) {
+            const rc = message.reasoning_content.trim();
+            if (!rawText) {
+                try {
+                    const extractor = arrayMode ? extractJsonArray : extractJsonObject;
+                    const extracted = extractor(stripCodeFence(rc));
+                    JSON.parse(extracted); // パース検証
+                    candidateText = extracted;
+                } catch (_) {
+                    // 思考テキストのみでJSONが含まれていない場合は candidateText に代入しない
+                    // （自然言語の思考文を JSON.parse して formatError ループに突入するのを防ぐ）
+                }
+            } else {
+                candidateText = rc;
+            }
         }
 
         if (!candidateText) {
@@ -1242,7 +1341,8 @@ async function runDeepseekFallbackLoop(contents, systemInstruction, options = {}
                 ok: false,
                 isFormatError: false,
                 isTokenLimitError: (finishReason === "length"),
-                reason: finishReason === "length" ? "トークン上限到達（空応答）" : "空応答",
+                isEmptyResponse: true,
+                reason: finishReason === "length" ? "トークン上限到達（空応答）" : "空応答（回答本文なし）",
                 error: new Error(`Empty response from ${modelName} (finish_reason: ${finishReason || "unknown"})`)
             };
         }
@@ -1263,20 +1363,27 @@ async function runDeepseekFallbackLoop(contents, systemInstruction, options = {}
             }
             return { ok: true, parsed };
         } catch (parseErr) {
-            return { ok: false, isFormatError: true, isTokenLimitError: (finishReason === "length"), reason: "JSON解析エラー", error: parseErr, rawText: candidateText };
+            return { ok: false, isFormatError: true, isTokenLimitError: (finishReason === "length"), isEmptyResponse: false, reason: "JSON解析エラー", error: parseErr, rawText: candidateText };
         }
     }
 
+    // 💡 トークン浪費防止ループ:
+    // 以前は何重にも再試行を繰り返して数万トークンを消費していたため、
+    // 失敗パターンに応じて「最大1回のみ」的を絞った再試行を実施して打ち切る
     for (const modelName of modelList) {
         let result = await attemptDeepseekOnce(modelName);
-        if (!result.ok && result.isTokenLimitError) {
-            console.warn(`⚠️ ${modelName} がトークン上限に達したため、推論深度をlowに引き下げて再試行します`);
-            result = await attemptDeepseekOnce(modelName, "", "low");
-            if (!result.ok && result.isTokenLimitError) {
+        if (!result.ok) {
+            if (result.isTokenLimitError) {
+                console.warn(`⚠️ ${modelName} がトークン上限に達したため、推論深度をlowに引き下げて1度だけ再試行します`);
+                result = await attemptDeepseekOnce(modelName, "", "low");
+            } else if (result.isEmptyResponse) {
+                // 💡 思考モードと衝突して空応答になった場合は、思考をOFF（none）にして1度だけ再試行
+                console.warn(`⚠️ ${modelName} の回答本文が空だったため、推論をOFF（thinking: disabled）にして1度だけ再試行します`);
                 result = await attemptDeepseekOnce(modelName, "", "none");
+            } else if (result.isFormatError) {
+                console.warn(`⚠️ ${modelName} のJSONフォーマット不正のため、リマインダーを付与して1度だけ再試行します`);
+                result = await attemptDeepseekOnce(modelName, strictJsonReminder);
             }
-        } else if (!result.ok && result.isFormatError) {
-            result = await attemptDeepseekOnce(modelName, strictJsonReminder);
         }
         if (result.ok) {
             if (!silentFallback) notifyModelFallback(fallbackAttempts, modelName);
@@ -1319,7 +1426,8 @@ async function runGeminiFallbackLoop(contents, systemInstruction, options = {}) 
     if (!hasImages && ((preferredModel && isDeepseekModel(preferredModel)) || (modelList.length > 0 && isDeepseekModel(modelList[0])))) {
         return runDeepseekFallbackLoop(contents, systemInstruction, {
             ...options,
-            preferredModel: preferredModel || modelList[0]
+            preferredModel: preferredModel || modelList[0],
+            allowedModels: modelList.filter(m => isDeepseekModel(m))
         });
     } else if (hasImages && ((preferredModel && isDeepseekModel(preferredModel)) || (modelList.length > 0 && isDeepseekModel(modelList[0])))) {
         console.warn("ℹ️ 入力データに画像が含まれているため、マルチモーダル非対応のDeepSeekをバイパスしてGeminiへ自動ルーティングします");

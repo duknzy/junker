@@ -394,6 +394,29 @@
             <!-- ============================== -->
             <!-- ⚙️ 機能ごとの割り当て：概要 -->
             <!-- ============================== -->
+                        <!-- ============================== -->
+            <!-- 🛡️ モデル全般ポリシー（トークン節約） -->
+            <!-- ============================== -->
+            <section class="settings-section">
+                <div class="settings-section-title">🛡️ モデル全般ポリシー（トークン節約）</div>
+                <div class="settings-section-sub">
+                    消費トークンが莫大になりやすい Pro モデルの利用を制限し、Flash系モデルのみで動作させます。
+                </div>
+                <div class="key-card" style="padding: 1rem 1.25rem;">
+                    <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; gap: 1rem; margin: 0;">
+                        <div>
+                            <div style="font-weight: 700; color: var(--text-primary); font-size: 0.95rem;">
+                                🚫 Proモデル（deepseek-v4-pro等）を一切使用しない
+                            </div>
+                            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem; line-height: 1.4;">
+                                有効にすると、自動フォールバック候補やモデル選択肢から Pro モデルが完全に除外され、Flash系モデル（deepseek-v4-flash / gemini-*-flash）のみで動作します。Proへの意図しない切り替わりによるトークン枯渇を防止できます。
+                            </div>
+                        </div>
+                        <input type="checkbox" id="toggle-disable-pro-models" style="transform: scale(1.3); cursor: pointer; accent-color: var(--brand-primary, #059669);">
+                    </label>
+                </div>
+            </section>
+
             <section class="settings-section">
                 <div class="settings-section-title">📋 割り当て状況の一覧</div>
                 <div class="settings-section-sub">行をクリックすると、下の編集カードにジャンプします。</div>
@@ -449,7 +472,8 @@ import {
     GEMINI_THINKING_LEVELS, DEEPSEEK_REASONING_EFFORTS, isDeepseekModel, isLiteModel,
     getFeatureAssignment, setFeatureAssignment, resetFeatureAssignment,
     showToast, exportAISettings, importAISettings,
-    getActiveThinkingIdForEngine, getThinkingDisplayLabel
+    getActiveThinkingIdForEngine, getThinkingDisplayLabel,
+    isProModel, isProModelsDisabled, setProModelsDisabled, getAvailableModels
 } from "./api-key-manager.js?v=4.0";
 
 const ENGINE_LABEL = { gemini: "✨ Gemini", deepseek: "🐋 DeepSeek" };
@@ -598,7 +622,7 @@ function renderFeatureCards() {
         const selectedKeys = new Set(entry.keys || []);
         const currentThinking = entry.thinkingLevel || "default";
 
-        const modelChips = ALL_AVAILABLE_MODELS.map(m => {
+        const modelChips = getAvailableModels().map(m => {
             const isDeepseek = isDeepseekModel(m);
             const isSelected = selectedModelsSet.has(m);
             const chipClass = `chip-toggle ${isDeepseek ? "deepseek-chip" : ""} ${isSelected ? "active" : ""}`;
@@ -974,6 +998,18 @@ function initGeneralSettingsControls() {
     window.addEventListener('flora-lang-changed', updateLangUI);
 }
 initGeneralSettingsControls();
+
+// 🚫 Proモデル利用制限トグルの初期化
+const disableProToggle = document.getElementById("toggle-disable-pro-models");
+if (disableProToggle) {
+    disableProToggle.checked = isProModelsDisabled();
+    disableProToggle.addEventListener("change", (e) => {
+        const checked = e.target.checked;
+        setProModelsDisabled(checked);
+        showToast(checked ? "🚫 Proモデルの利用を無効化しました（Flash系のみ使用）" : "✅ Proモデルの利用を許可しました", "info", 3500);
+        renderFeatureUI();
+    });
+}
 
 renderAllKeyLists();
 renderFeatureUI();
