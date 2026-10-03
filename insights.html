@@ -3138,11 +3138,14 @@
                 <!-- 🧠 忘却曲線・間隔反復 (SRS) デイリー復習ダッシュボードバー -->
                 <div id="srs-daily-banner" style="background:linear-gradient(135deg, rgba(16,185,129,0.08), rgba(5,150,105,0.03)); border:1px solid rgba(16,185,129,0.25); border-radius:var(--radius-lg); padding:0.8rem 1.1rem; margin-bottom:1rem; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.8rem;">
                     <div style="display:flex; align-items:center; gap:0.9rem; flex-wrap:wrap;">
-                        <div style="display:flex; align-items:center; gap:0.45rem;">
+                        <div style="display:flex; align-items:center; gap:0.5rem;">
                             <span style="font-size:1.35rem;">🧠</span>
                             <div>
-                                <div style="font-size:0.88rem; font-weight:800; color:var(--text-primary); line-height:1.2;">本日の暗記・復習タスク</div>
-                                <div style="font-size:0.7rem; color:var(--text-muted);">忘却曲線に基づく自動スケジュール</div>
+                                <div style="display:flex; align-items:center; gap:0.45rem;">
+                                    <div style="font-size:0.88rem; font-weight:800; color:var(--text-primary); line-height:1.2;">本日の暗記・復習タスク</div>
+                                    <span id="srs-banner-subject-badge" style="font-size:0.72rem; font-weight:800; background:rgba(16,185,129,0.15); color:#047857; padding:0.1rem 0.5rem; border-radius:var(--radius-sm); border:1px solid rgba(16,185,129,0.3);">全教科</span>
+                                </div>
+                                <div style="font-size:0.7rem; color:var(--text-muted);">忘却曲線に基づく自動スケジュール（選択中教科のみを出題）</div>
                             </div>
                         </div>
                         <div style="display:flex; align-items:center; gap:0.5rem; font-size:0.76rem; flex-wrap:wrap;">
@@ -3161,13 +3164,13 @@
                         </div>
                     </div>
                     <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
-                        <button type="button" id="btn-start-srs-due" style="background:linear-gradient(135deg, #10B981, #059669); color:#fff; border:none; font-size:0.8rem; font-weight:800; padding:0.45rem 1rem; border-radius:var(--radius-md); cursor:pointer; display:inline-flex; align-items:center; gap:0.4rem; box-shadow:0 2px 6px rgba(16,185,129,0.3); transition:all 0.15s ease;" title="期限が到来した復習カード、または未学習カードを最優先で出題します">
-                            🔥 今日の復習を開始
+                        <button type="button" id="btn-start-srs-due" style="background:linear-gradient(135deg, #10B981, #059669); color:#fff; border:none; font-size:0.8rem; font-weight:800; padding:0.45rem 1rem; border-radius:var(--radius-md); cursor:pointer; display:inline-flex; align-items:center; gap:0.4rem; box-shadow:0 2px 6px rgba(16,185,129,0.3); transition:all 0.15s ease;" title="選択中の教科でSRS復習期日が到来しているカードのみをテストします（他教科や期日未到来は混ざりません）">
+                            🔥 期日到来テスト (<span id="btn-srs-due-badge-count">0</span>)
                         </button>
-                        <button type="button" id="btn-start-weak-deck" style="background:var(--bg-surface); color:#dc2626; border:1px solid #fca5a5; font-size:0.78rem; font-weight:700; padding:0.42rem 0.8rem; border-radius:var(--radius-md); cursor:pointer; display:inline-flex; align-items:center; gap:0.35rem;" title="過去に間違えたことのあるカードを集中的に特訓します">
-                            ⚡ 苦手特訓
+                        <button type="button" id="btn-start-weak-deck" style="background:var(--bg-surface); color:#dc2626; border:1px solid #fca5a5; font-size:0.78rem; font-weight:700; padding:0.42rem 0.8rem; border-radius:var(--radius-md); cursor:pointer; display:inline-flex; align-items:center; gap:0.35rem;" title="選択中の教科で過去に間違えたことのあるカード（要復習Lv.1）のみを集中的に特訓します">
+                            ⚡ 苦手特訓 (<span id="btn-srs-weak-badge-count">0</span>)
                         </button>
-                        <button type="button" id="btn-start-quiz-deck" style="background:var(--bg-surface); color:var(--brand-primary); border:1px solid var(--brand-border); font-size:0.78rem; font-weight:700; padding:0.42rem 0.8rem; border-radius:var(--radius-md); cursor:pointer; display:inline-flex; align-items:center; gap:0.35rem;" title="4択スピードテストで瞬発力を鍛えます">
+                        <button type="button" id="btn-start-quiz-deck" style="background:var(--bg-surface); color:var(--brand-primary); border:1px solid var(--brand-border); font-size:0.78rem; font-weight:700; padding:0.42rem 0.8rem; border-radius:var(--radius-md); cursor:pointer; display:inline-flex; align-items:center; gap:0.35rem;" title="選択中教科の期日到来カードで4択スピードテストを実施します">
                             🎯 4択テスト
                         </button>
                         <button type="button" id="btn-open-lesson-filter-dashboard" style="background:var(--bg-surface); color:var(--text-primary); border:1.5px solid var(--border-color); font-size:0.78rem; font-weight:800; padding:0.42rem 0.85rem; border-radius:var(--radius-md); cursor:pointer; display:inline-flex; align-items:center; gap:0.35rem; transition:all 0.15s ease;" title="特定の授業内で作成されたカードを選択（複数可）して集中的に演習します">
@@ -3292,6 +3295,7 @@
                             <span class="filter-label">🎯 状態：</span>
                             <div style="display:inline-flex; gap:0.3rem; flex-wrap:wrap;" id="memorize-status-filters">
                                 <button type="button" class="status-chip-btn active" data-status="all">すべて</button>
+                                <button type="button" class="status-chip-btn" data-status="due" title="選択中教科で本日復習期日（SRS Due）の単語のみ表示" style="color:#b91c1c; border-color:rgba(239,68,68,0.35); font-weight:800;">🔥 期日到来のみ</button>
                                 <button type="button" class="status-chip-btn" data-status="unlearned" title="まだ覚えていない単語のみ表示">🌱 未習得のみ</button>
                                 <button type="button" class="status-chip-btn" data-status="mastered" title="習得済み（覚えた）単語のみ表示">✅ 覚えたのみ</button>
                                 <button type="button" class="status-chip-btn" data-status="weak" title="間違えた・苦手な単語のみ表示">🔄 苦手・要復習</button>
@@ -3493,8 +3497,9 @@
                 <div style="display:flex; align-items:center; gap:0.55rem; flex-wrap:wrap;">
                     <!-- デッキ・出題範囲セレクター -->
                     <select id="fc-scope-select" class="flora-select" style="padding:0.25rem 0.6rem; font-size:0.75rem; width:auto; font-weight:700;">
-                        <option value="due">🔥 今日の復習（期限到来・未学習）</option>
+                        <option value="due">🔥 期日到来カードのみ（本日要復習）</option>
                         <option value="weak">⚡ 苦手克服デッキ（要復習優先）</option>
+                        <option value="due_and_new">🌱 期日到来 ＋ 未学習</option>
                         <option value="current">現在の絞り込み表示</option>
                         <option value="lessons" id="fc-scope-lessons-opt" style="display:none;">📚 選択した授業（0単元）</option>
                         <option value="memorize">📌 暗記事項のみ</option>
@@ -3780,13 +3785,19 @@
 
             <!-- 【タブ1】条件指定パネル -->
             <div id="custom-test-pane-settings" style="display:flex; flex-direction:column; flex:1; min-height:0;">
-                <!-- 検索 & クイック選択バー -->
-                <div style="display:flex; align-items:center; justify-content:space-between; gap:0.8rem; flex-wrap:wrap;">
-                    <input type="text" id="lesson-picker-search" class="search-input" placeholder="単元名・教科・キーワードで絞り込み..." style="flex:1; min-width:200px; font-size:0.82rem; padding:0.42rem 0.8rem;">
-                    <div style="display:flex; align-items:center; gap:0.4rem;">
+                <!-- 検索 & 教科クイック選択バー -->
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:0.6rem; flex-wrap:wrap;">
+                    <div style="display:flex; align-items:center; gap:0.4rem; flex:1; min-width:240px;">
+                        <select id="lesson-picker-subject-filter" class="flora-select" style="padding:0.38rem 0.65rem; font-size:0.78rem; font-weight:800; min-width:110px;">
+                            <option value="ALL">📚 全教科</option>
+                        </select>
+                        <input type="text" id="lesson-picker-search" class="search-input" placeholder="単元名・キーワードで絞り込み..." style="flex:1; min-width:140px; font-size:0.82rem; padding:0.42rem 0.8rem;">
+                    </div>
+                    <div style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap;">
                         <button type="button" id="lesson-picker-select-all" class="flora-btn flora-btn-secondary" style="font-size:0.74rem; font-weight:700; padding:0.32rem 0.7rem;">すべて選択</button>
                         <button type="button" id="lesson-picker-clear-all" class="flora-btn flora-btn-secondary" style="font-size:0.74rem; font-weight:700; padding:0.32rem 0.7rem;">選択解除</button>
-                        <button type="button" id="lesson-picker-select-unlearned" class="flora-btn flora-btn-secondary" style="font-size:0.74rem; font-weight:700; padding:0.32rem 0.7rem; color:#059669; border-color:rgba(16,185,129,0.4);" title="未習得カードが残っている単元だけを一括選択">🌱 未習得ありのみ</button>
+                        <button type="button" id="lesson-picker-select-unlearned" class="flora-btn flora-btn-secondary" style="font-size:0.74rem; font-weight:700; padding:0.32rem 0.7rem; color:#059669; border-color:rgba(16,185,129,0.4);" title="未習得カードが残っている単元だけを一括選択">🌱 未習得あり</button>
+                        <button type="button" id="lesson-picker-select-due" class="flora-btn flora-btn-secondary" style="font-size:0.74rem; font-weight:700; padding:0.32rem 0.7rem; color:#b91c1c; border-color:rgba(239,68,68,0.4);" title="本日復習期日のカードがある単元だけを一括選択">🔥 期日到来あり</button>
                     </div>
                 </div>
 
@@ -3800,8 +3811,11 @@
                     <!-- ① 状態（ステータス）絞り込み -->
                     <div class="custom-test-option-group">
                         <span class="custom-test-option-label">① 出題条件（ステータス）</span>
+                        <label class="custom-test-radio-pill" style="color:#b91c1c; font-weight:800;">
+                            <input type="radio" name="custom-test-status" value="due" checked> 🔥 復習期日到来のみ（SRS期日）
+                        </label>
                         <label class="custom-test-radio-pill">
-                            <input type="radio" name="custom-test-status" value="unlearned" checked> 🌱 未習得のみ（集中暗記）
+                            <input type="radio" name="custom-test-status" value="unlearned"> 🌱 未習得のみ（集中暗記）
                         </label>
                         <label class="custom-test-radio-pill">
                             <input type="radio" name="custom-test-status" value="weak"> 🔄 苦手・要復習のみ
@@ -4425,7 +4439,7 @@
 
         // 🧠 暗記事項サブツールバーのトグル＆操作
         let memorizeViewMode = localStorage.getItem("fc_memorize_view_mode") || "grouped"; // "grouped" | "grid"
-        let memorizeStatusFilter = "all"; // "all" | "unlearned" | "mastered" | "weak"
+        let memorizeStatusFilter = "all"; // "all" | "due" | "unlearned" | "mastered" | "weak"
 
         const btnMemorizeViewGrouped = document.getElementById("btn-memorize-view-grouped");
         const btnMemorizeViewGrid = document.getElementById("btn-memorize-view-grid");
@@ -4830,6 +4844,7 @@
         subjectSelect.addEventListener("change", () => {
             resetDisplayLimits();
             populateLessonFilter();
+            updateSrsDashboardCounts();
             renderActiveView();
         });
         if (lessonFilterSelect) {
@@ -6334,7 +6349,10 @@
                     (p.answer || "").toLowerCase().includes(query)
                 );
             }
-            if (memorizeStatusFilter === "unlearned") {
+            if (memorizeStatusFilter === "due") {
+                const todayStr = getTodayStr();
+                items = items.filter(p => (p.nextReviewDate && p.nextReviewDate <= todayStr) || (p.boxLevel === 1));
+            } else if (memorizeStatusFilter === "unlearned") {
                 items = items.filter(p => p.status === "unlearned");
             } else if (memorizeStatusFilter === "mastered") {
                 items = items.filter(p => p.status === "mastered");
@@ -7543,7 +7561,10 @@
             }
 
             // 状態（ステータス）フィルター
-            if (memorizeStatusFilter === "unlearned") {
+            if (memorizeStatusFilter === "due") {
+                const todayStr = getTodayStr();
+                items = items.filter(p => (p.nextReviewDate && p.nextReviewDate <= todayStr) || (p.boxLevel === 1));
+            } else if (memorizeStatusFilter === "unlearned") {
                 items = items.filter(p => p.status === "unlearned");
             } else if (memorizeStatusFilter === "mastered") {
                 items = items.filter(p => p.status === "mastered");
@@ -10251,23 +10272,45 @@
             const currentQuery = searchInput ? searchInput.value.trim().toLowerCase() : "";
             const today = getTodayStr();
 
+            // ⚡ 重要：全カード取得時点で、もし教科フィルターが指定されていれば他教科を最初から完全除外
+            const filterByActiveSubject = (cards) => {
+                if (!cards || cards.length === 0) return [];
+                if (currentSubject === "ALL") return cards;
+                return cards.filter(c => c && c.subject === currentSubject);
+            };
+
+            const filterByActiveUnit = (cards) => {
+                if (!isUnitFilterActive()) return cards;
+                return cards.filter(item => item && isUnitSelected(item.lessonId, item.category, item.sourceTitle));
+            };
+
             if (scope === "due") {
-                // 本日の復習: 復習期限到来（または未学習Lv.0）のカードを優先
-                const all = getAllAvailableFlashcards();
-                const dueCards = all.filter(c => c.isDue);
-                // 期限到来が少なければ、全体から追加
-                list = dueCards.length > 0 ? dueCards : all;
-                if (currentSubject !== "ALL") list = list.filter(c => c.subject === currentSubject);
+                // 🔥 本日の期日到来カードのみ（SRS復習期日到達またはLv.1のカード。未着手Lv.0や他教科は絶対に混ざらない）
+                let all = filterByActiveSubject(getAllAvailableFlashcards());
+                all = filterByActiveUnit(all);
+                list = all.filter(c => (c.srsNextReviewDate && c.srsNextReviewDate <= today) || (c.srsBoxLevel === 1));
+            } else if (scope === "due_and_new") {
+                // 🌱 期日到来 ＋ 未学習カード
+                let all = filterByActiveSubject(getAllAvailableFlashcards());
+                all = filterByActiveUnit(all);
+                list = all.filter(c => (c.srsNextReviewDate && c.srsNextReviewDate <= today) || (c.srsBoxLevel === 1) || ((c.srsBoxLevel || 0) === 0));
             } else if (scope === "weak") {
-                // 苦手特訓: lapsesが多い順、またはLv.1以下のカード
-                const all = getAllAvailableFlashcards();
-                list = all.filter(c => (c.srsLapses && c.srsLapses > 0) || (c.srsBoxLevel && c.srsBoxLevel === 1))
+                // ⚡ 苦手特訓: 選択中教科の中で lapsesが多い、またはLv.1のカードのみ
+                let all = filterByActiveSubject(getAllAvailableFlashcards());
+                all = filterByActiveUnit(all);
+                list = all.filter(c => (c.srsLapses && c.srsLapses > 0) || (c.srsBoxLevel === 1))
                           .sort((a, b) => (b.srsLapses || 0) - (a.srsLapses || 0));
-                if (list.length === 0) list = all.slice(0, 20);
-                if (currentSubject !== "ALL") list = list.filter(c => c.subject === currentSubject);
+            } else if (scope === "unlearned") {
+                // 未学習のみ
+                let all = filterByActiveSubject(getAllAvailableFlashcards());
+                all = filterByActiveUnit(all);
+                list = all.filter(c => (c.srsBoxLevel || 0) === 0);
             } else if (scope === "lessons") {
                 // 📚 ユーザーが選択した特定の授業（複数可）から出題
-                const all = getAllAvailableFlashcards();
+                let all = getAllAvailableFlashcards();
+                if (currentSubject !== "ALL") {
+                    all = all.filter(c => c && c.subject === currentSubject);
+                }
                 if (selectedLessonFilterIds.size > 0) {
                     list = all.filter(c => c && c.lessonId && selectedLessonFilterIds.has(c.lessonId));
                     // もし授業IDで直接引けないカードでも、タイトルやsourceTitleが合致すれば含む
@@ -10290,9 +10333,9 @@
                     lessonsOpt.textContent = `📚 選択した授業 (${selectedLessonFilterIds.size}単元・${list.length}枚)`;
                 }
             } else if (scope === "starred") {
-                const all = getAllAvailableFlashcards();
+                let all = filterByActiveSubject(getAllAvailableFlashcards());
+                all = filterByActiveUnit(all);
                 list = all.filter(c => c.backNote && c.backNote.includes("⭐"));
-                if (currentSubject !== "ALL") list = list.filter(c => c.subject === currentSubject);
             } else if (scope === "current") {
                 if (activeTab === "memorize") {
                     list = buildMemorizationItems().map(p => convertToFlashcard(p, 'memorize'));
@@ -10305,12 +10348,8 @@
                 } else if (activeTab === "mnemonics") {
                     list = Object.values(rawProblems).filter(p => p && p.subject === "世界史" && p.mnemonic && p.mnemonic.trim() !== "").map(p => convertToFlashcard(p, 'mnemonic'));
                 }
-                if (currentSubject !== "ALL") {
-                    list = list.filter(item => item && item.subject === currentSubject);
-                }
-                if (typeof isUnitFilterActive === "function" && isUnitFilterActive()) {
-                    list = list.filter(item => item && isUnitSelected(item.lessonId, item.category, item.sourceTitle));
-                }
+                list = filterByActiveSubject(list);
+                list = filterByActiveUnit(list);
                 if (currentQuery) {
                     list = list.filter(item => item && (
                         (item.frontMain || "").toLowerCase().includes(currentQuery) ||
@@ -10321,17 +10360,21 @@
                 }
             } else if (scope === "memorize") {
                 list = buildMemorizationItems().map(p => convertToFlashcard(p, 'memorize'));
-                if (currentSubject !== "ALL") list = list.filter(item => item && item.subject === currentSubject);
+                list = filterByActiveSubject(list);
+                list = filterByActiveUnit(list);
             } else if (scope === "insights") {
                 const pList = Object.values(rawProblems).filter(p => p && p.insight && p.insight.trim() !== "").map(p => convertToFlashcard(p, 'problem'));
                 const lmList = buildLessonMemoItems().map(p => convertToFlashcard(p, 'lesson_memo'));
                 list = [...pList, ...lmList];
-                if (currentSubject !== "ALL") list = list.filter(item => item && item.subject === currentSubject);
+                list = filterByActiveSubject(list);
+                list = filterByActiveUnit(list);
             } else if (scope === "qna") {
                 list = Object.entries(rawQnaLogs).map(([id, l]) => convertToFlashcard({ id, ...l }, 'qna'));
-                if (currentSubject !== "ALL") list = list.filter(item => item && item.subject === currentSubject);
+                list = filterByActiveSubject(list);
+                list = filterByActiveUnit(list);
             } else if (scope === "all") {
-                list = getAllAvailableFlashcards();
+                list = filterByActiveSubject(getAllAvailableFlashcards());
+                list = filterByActiveUnit(list);
             }
 
             return list.filter(item => item && (item.frontMain || item.backAnswer));
@@ -10346,34 +10389,45 @@
             return copy;
         }
 
-        // 本日のダッシュボードバナー集計＆更新（超高速化版：全カードのオブジェクト変換を完全回避）
+        // 本日のダッシュボードバナー集計＆更新（教科フィルター完全連動版）
         function updateSrsDashboardCounts() {
             const dueCountEl = document.getElementById("srs-due-count");
             const newCountEl = document.getElementById("srs-new-count");
             const masteredCountEl = document.getElementById("srs-mastered-count");
             const retentionRateEl = document.getElementById("srs-retention-rate");
+            const badgeSubjEl = document.getElementById("srs-banner-subject-badge");
+            const btnDueCountEl = document.getElementById("btn-srs-due-badge-count");
+            const btnWeakCountEl = document.getElementById("btn-srs-weak-badge-count");
             if (!dueCountEl) return;
+
+            const currentSubject = (subjectSelect && subjectSelect.value) ? subjectSelect.value : "ALL";
+            if (badgeSubjEl) {
+                badgeSubjEl.textContent = currentSubject === "ALL" ? "全教科" : currentSubject;
+            }
 
             const today = getTodayStr();
             let dueCount = 0;
+            let weakCount = 0;
             let newCount = 0;
             let masteredCount = 0;
             let total = 0;
 
             // 1. 暗記事項（5000件近くあっても軽量配列走査で0.5msで集計完了）
             const memList = buildMemorizationItems();
-            total += memList.length;
             for (let i = 0; i < memList.length; i++) {
                 const c = memList[i];
+                if (currentSubject !== "ALL" && c.subject !== currentSubject) continue;
+                total++;
                 const level = c.boxLevel || 0;
+                const lapses = c.lapses || 0;
+                const isDueStrict = (c.nextReviewDate && c.nextReviewDate <= today) || (level === 1);
+                if (isDueStrict) dueCount++;
+                if (level === 1 || lapses > 0) weakCount++;
+
                 if (level === 0) {
                     newCount++;
-                    dueCount++;
                 } else if (level >= 4) {
                     masteredCount++;
-                    if (c.nextReviewDate && c.nextReviewDate <= today) dueCount++;
-                } else {
-                    if (!c.nextReviewDate || c.nextReviewDate <= today) dueCount++;
                 }
             }
 
@@ -10383,18 +10437,20 @@
                 for (let i = 0; i < probs.length; i++) {
                     const p = probs[i];
                     if (p && p.insight && p.insight.trim()) {
+                        if (currentSubject !== "ALL" && p.subject !== currentSubject) continue;
                         total++;
                         const pKey = sanitizeDbKey(`prob_${p.id}`);
                         const prog = (rawMemorizeProgress && rawMemorizeProgress[pKey]) || {};
                         const level = prog.boxLevel || 0;
+                        const lapses = prog.lapses || 0;
+                        const isDueStrict = (prog.nextReviewDate && prog.nextReviewDate <= today) || (level === 1);
+                        if (isDueStrict) dueCount++;
+                        if (level === 1 || lapses > 0) weakCount++;
+
                         if (level === 0) {
                             newCount++;
-                            dueCount++;
                         } else if (level >= 4) {
                             masteredCount++;
-                            if (prog.nextReviewDate && prog.nextReviewDate <= today) dueCount++;
-                        } else {
-                            if (!prog.nextReviewDate || prog.nextReviewDate <= today) dueCount++;
                         }
                     }
                 }
@@ -10402,25 +10458,29 @@
 
             // 3. 授業メモ
             const lmList = buildLessonMemoItems();
-            total += lmList.length;
             for (let i = 0; i < lmList.length; i++) {
                 const lm = lmList[i];
+                if (currentSubject !== "ALL" && lm.subject !== currentSubject) continue;
+                total++;
                 const lmKey = sanitizeDbKey(`lm_${lm.lessonId || 'l'}_${lm.memoId || 'm'}`);
                 const prog = (rawMemorizeProgress && rawMemorizeProgress[lmKey]) || {};
                 const level = prog.boxLevel || 0;
+                const lapses = prog.lapses || 0;
+                const isDueStrict = (prog.nextReviewDate && prog.nextReviewDate <= today) || (level === 1);
+                if (isDueStrict) dueCount++;
+                if (level === 1 || lapses > 0) weakCount++;
+
                 if (level === 0) {
                     newCount++;
-                    dueCount++;
                 } else if (level >= 4) {
                     masteredCount++;
-                    if (prog.nextReviewDate && prog.nextReviewDate <= today) dueCount++;
-                } else {
-                    if (!prog.nextReviewDate || prog.nextReviewDate <= today) dueCount++;
                 }
             }
 
             const retention = total > 0 ? Math.round((masteredCount / total) * 100) : 0;
             dueCountEl.textContent = dueCount;
+            if (btnDueCountEl) btnDueCountEl.textContent = dueCount;
+            if (btnWeakCountEl) btnWeakCountEl.textContent = weakCount;
             if (newCountEl) newCountEl.textContent = newCount;
             if (masteredCountEl) masteredCountEl.textContent = masteredCount;
             if (retentionRateEl) retentionRateEl.textContent = `${retention}%`;
@@ -10772,10 +10832,11 @@
             fcQuizBox.innerHTML = "";
             const cleanCorrect = (correctAnswer || "").trim();
 
-            // 他のカードから誤答ダミーを3つ選出
+            // ⚡ 重要：政経などを解いているときに他教科（日本史など）の用語が絶対に混ざらないよう同一教科を最優先
             const allCards = getAllAvailableFlashcards();
-            const sameSubject = allCards.filter(c => c && c.subject === fcCurrentCard.subject && (c.backAnswer || c.frontMain) !== cleanCorrect);
-            const pool = sameSubject.length >= 3 ? sameSubject : allCards.filter(c => (c.backAnswer || c.frontMain) !== cleanCorrect);
+            const targetSubj = fcCurrentCard ? fcCurrentCard.subject : null;
+            const sameSubject = allCards.filter(c => c && (!targetSubj || c.subject === targetSubj) && (c.backAnswer || c.frontMain) !== cleanCorrect);
+            const pool = sameSubject.length >= 3 ? sameSubject : (sameSubject.length > 0 ? sameSubject : allCards.filter(c => (c.backAnswer || c.frontMain) !== cleanCorrect));
 
             const shuffledPool = shuffleArray(pool);
             const dummyTexts = [];
@@ -11751,12 +11812,14 @@
         if (btnStartSrsDue) {
             btnStartSrsDue.onclick = () => {
                 if (fcScopeSelect) fcScopeSelect.value = "due";
+                const currentSubj = (subjectSelect && subjectSelect.value !== "ALL") ? subjectSelect.value : "";
                 const items = getFlashcardPool("due");
                 if (items.length === 0) {
-                    showToast("本日の要復習カードはすべて完了しています！全カード演習を起動します。", "success");
-                    openFlashcardModal(getFlashcardPool("all"), 0);
+                    showToast(currentSubj ? `🎉 【${currentSubj}】の本日復習期日（SRS Due）カードはすべて学習完了しています！` : "🎉 本日の要復習（期日到来）カードはすべて完了しています！", "success", 3000);
                     return;
                 }
+                const label = currentSubj ? `【${currentSubj}】期日到来テスト (${items.length}問)` : `🔥 本日の期日到来テスト (${items.length}問)`;
+                showToast(`${label} を開始します！`, "info", 1800);
                 openFlashcardModal(items, 0);
             };
         }
@@ -11764,23 +11827,34 @@
         if (btnStartWeakDeck) {
             btnStartWeakDeck.onclick = () => {
                 if (fcScopeSelect) fcScopeSelect.value = "weak";
+                const currentSubj = (subjectSelect && subjectSelect.value !== "ALL") ? subjectSelect.value : "";
                 const items = getFlashcardPool("weak");
                 if (items.length === 0) {
-                    showToast("苦手として記録されているカードはありません。", "info");
+                    showToast(currentSubj ? `✨ 【${currentSubj}】に苦手として記録されているカードはありません。` : "✨ 苦手として記録されているカードはありません。", "info", 3000);
                     return;
                 }
+                const label = currentSubj ? `【${currentSubj}】苦手特訓 (${items.length}問)` : `⚡ 苦手特訓 (${items.length}問)`;
+                showToast(`${label} を開始します！`, "info", 1800);
                 openFlashcardModal(items, 0);
             };
         }
 
         if (btnStartQuizDeck) {
             btnStartQuizDeck.onclick = () => {
-                const scope = fcScopeSelect ? fcScopeSelect.value : "due";
-                const items = getFlashcardPool(scope);
+                const currentSubj = (subjectSelect && subjectSelect.value !== "ALL") ? subjectSelect.value : "";
+                // 期日到来カード優先で、0件なら現在の絞り込みから
+                let items = getFlashcardPool("due");
+                let modeLabel = "期日到来";
                 if (items.length === 0) {
-                    showToast("出題対象のカードがありません。", "warning");
+                    items = getFlashcardPool("current");
+                    modeLabel = "カード一覧";
+                }
+                if (items.length === 0) {
+                    showToast(currentSubj ? `【${currentSubj}】の出題対象カードが0件です。` : "出題対象のカードが0件です。", "warning", 3000);
                     return;
                 }
+                const label = currentSubj ? `【${currentSubj}】4択スピードテスト (${modeLabel}・${items.length}問)` : `🎯 4択スピードテスト (${items.length}問)`;
+                showToast(`${label} を開始します！`, "info", 1800);
                 openFlashcardModal(items, 0, "quiz");
             };
         }
@@ -11820,6 +11894,8 @@
             let unlearnedCount = 0;
             let weakCount = 0;
             let masteredCount = 0;
+            let dueCount = 0;
+            const todayStr = getTodayStr();
 
             if (Array.isArray(lesson.memorizationPoints)) {
                 lesson.memorizationPoints.forEach((mp, idx) => {
@@ -11830,6 +11906,9 @@
                     const prog = (rawMemorizeProgress && rawMemorizeProgress[pKey]) || {};
                     const boxLevel = typeof prog.boxLevel === 'number' ? prog.boxLevel : 0;
                     const lapses = prog.lapses || 0;
+                    const isDueStrict = (prog.nextReviewDate && prog.nextReviewDate <= todayStr) || (boxLevel === 1);
+                    if (isDueStrict) dueCount++;
+
                     if (boxLevel >= 4) {
                         masteredCount++;
                     } else if (boxLevel === 1 || lapses > 0) {
@@ -11845,7 +11924,7 @@
                 : 0;
             const probCount = Object.values(rawProblems).filter(p => p && p.lessonId === lessonId && p.insight && p.insight.trim()).length;
             const total = memCount + memoCount + probCount;
-            return { memCount, memoCount, probCount, total, unlearnedCount, weakCount, masteredCount };
+            return { memCount, memoCount, probCount, total, unlearnedCount, weakCount, masteredCount, dueCount };
         }
 
         function updateLessonPickerSummary() {
@@ -11854,12 +11933,14 @@
             lessonPickerSelectedLessonsCount.textContent = count;
 
             const statusRadio = document.querySelector('input[name="custom-test-status"]:checked');
-            const statusVal = statusRadio ? statusRadio.value : 'unlearned';
+            const statusVal = statusRadio ? statusRadio.value : 'due';
 
             let totalCards = 0;
             selectedLessonFilterIds.forEach(id => {
                 const stats = getLessonCardStats(id);
-                if (statusVal === "unlearned") {
+                if (statusVal === "due") {
+                    totalCards += (stats.dueCount || 0);
+                } else if (statusVal === "unlearned") {
                     totalCards += stats.unlearnedCount;
                 } else if (statusVal === "weak") {
                     totalCards += stats.weakCount;
@@ -11886,6 +11967,8 @@
             lessonPickerList.innerHTML = "";
 
             const query = lessonPickerSearch ? lessonPickerSearch.value.trim().toLowerCase() : "";
+            const modalSubjFilterEl = document.getElementById("lesson-picker-subject-filter");
+            const selectedPickerSubject = modalSubjFilterEl ? modalSubjFilterEl.value : "ALL";
             const lessonEntries = Object.entries(rawLessons);
 
             if (lessonEntries.length === 0) {
@@ -11897,6 +11980,28 @@
                 return;
             }
 
+            // 全教科リストを収集してモーダル内教科フィルターの選択肢を生成（未初期化または選択肢不足時）
+            if (modalSubjFilterEl && modalSubjFilterEl.options.length <= 1) {
+                const allSubjs = new Set();
+                lessonEntries.forEach(([_, l]) => {
+                    let s = l.subject;
+                    if (!s || s === "未分類" || s === "その他") s = detectSubjectFromLesson(l) || "その他";
+                    if (s) allSubjs.add(s);
+                });
+                const sortedSubjs = [...allSubjs].sort();
+                sortedSubjs.forEach(s => {
+                    const opt = document.createElement("option");
+                    opt.value = s;
+                    opt.textContent = `📚 ${s}`;
+                    modalSubjFilterEl.appendChild(opt);
+                });
+                if (subjectSelect && subjectSelect.value && subjectSelect.value !== "ALL") {
+                    modalSubjFilterEl.value = subjectSelect.value;
+                }
+            }
+
+            const activePickerSubj = modalSubjFilterEl ? modalSubjFilterEl.value : "ALL";
+
             // 教科ごとにグループ化
             const grouped = {};
             lessonEntries.forEach(([lessonId, lesson]) => {
@@ -11904,6 +12009,11 @@
                 let subj = lesson.subject;
                 if (!subj || subj === "未分類" || subj === "その他") {
                     subj = detectSubjectFromLesson(lesson) || "その他";
+                }
+
+                // モーダル内教科フィルター
+                if (activePickerSubj !== "ALL" && subj !== activePickerSubj) {
+                    return;
                 }
 
                 // 検索フィルター
@@ -11922,7 +12032,7 @@
             if (subjects.length === 0) {
                 lessonPickerList.innerHTML = `
                     <div style="text-align:center; padding:2.5rem 1rem; color:var(--text-muted); font-size:0.9rem;">
-                        該当する授業が見つかりませんでした。別のキーワードでお試しください。
+                        該当する授業が見つかりませんでした。別のキーワードや教科でお試しください。
                     </div>`;
                 updateLessonPickerSummary();
                 return;
@@ -12027,6 +12137,17 @@
                     totalBadge.className = "lesson-badge-count";
                     totalBadge.innerHTML = `🎴 計 ${stats.total} 枚`;
 
+                    if (stats.dueCount > 0) {
+                        const dueBadge = document.createElement("span");
+                        dueBadge.style.fontSize = "0.72rem";
+                        dueBadge.style.color = "#dc2626";
+                        dueBadge.style.fontWeight = "800";
+                        dueBadge.style.background = "#fee2e2";
+                        dueBadge.style.padding = "0.1rem 0.4rem";
+                        dueBadge.style.borderRadius = "4px";
+                        dueBadge.textContent = `🔥 期日 ${stats.dueCount}`;
+                        badgesDiv.appendChild(dueBadge);
+                    }
                     if (stats.unlearnedCount > 0) {
                         const unlearnedBadge = document.createElement("span");
                         unlearnedBadge.style.fontSize = "0.72rem";
@@ -12109,9 +12230,12 @@
             let items = getFlashcardPool("lessons");
 
             const statusRadio = document.querySelector('input[name="custom-test-status"]:checked');
-            const statusVal = statusRadio ? statusRadio.value : 'unlearned';
+            const statusVal = statusRadio ? statusRadio.value : 'due';
+            const todayStr = getTodayStr();
 
-            if (statusVal === "unlearned") {
+            if (statusVal === "due") {
+                items = items.filter(c => (c.srsNextReviewDate && c.srsNextReviewDate <= todayStr) || (c.srsBoxLevel === 1));
+            } else if (statusVal === "unlearned") {
                 items = items.filter(c => (c.srsBoxLevel ?? 0) === 0);
             } else if (statusVal === "weak") {
                 items = items.filter(c => (c.srsBoxLevel === 1) || ((c.srsLapses || 0) > 0));
@@ -12143,8 +12267,11 @@
             }
 
             modalPreviewCardsList.innerHTML = items.map(c => {
+                const isCardDue = (c.srsNextReviewDate && c.srsNextReviewDate <= todayStr) || (c.srsBoxLevel === 1);
                 let stBadge = `<span class="preview-card-status status-unlearned">🌱 未習得</span>`;
-                if ((c.srsBoxLevel || 0) >= 4) {
+                if (isCardDue) {
+                    stBadge = `<span class="preview-card-status" style="background:#fee2e2; color:#b91c1c; border-color:#fecaca; font-weight:800;">🔥 期日到来</span>`;
+                } else if ((c.srsBoxLevel || 0) >= 4) {
                     stBadge = `<span class="preview-card-status status-mastered">✅ 習得済</span>`;
                 } else if ((c.srsBoxLevel === 1) || ((c.srsLapses || 0) > 0)) {
                     stBadge = `<span class="preview-card-status status-weak">🔄 苦手・復習</span>`;
@@ -12239,6 +12366,11 @@
             if (shuffleEl) {
                 shuffleEl.checked = localStorage.getItem("flora_fc_shuffle") !== "false";
             }
+            // メイン画面の教科セレクタの値をモーダル内の教科フィルターに初期反映
+            const modalSubjFilter = document.getElementById("lesson-picker-subject-filter");
+            if (modalSubjFilter && subjectSelect && subjectSelect.value) {
+                modalSubjFilter.value = subjectSelect.value;
+            }
             lessonPickerModal.style.display = "flex";
             if (lessonPickerSearch) lessonPickerSearch.value = "";
             if (modalPreviewCardSearch) modalPreviewCardSearch.value = "";
@@ -12265,6 +12397,27 @@
                 });
                 renderLessonPickerList();
             };
+        }
+
+        const lessonPickerSelectDue = document.getElementById("lesson-picker-select-due");
+        if (lessonPickerSelectDue) {
+            lessonPickerSelectDue.onclick = () => {
+                selectedLessonFilterIds.clear();
+                Object.keys(rawLessons).forEach(id => {
+                    const stats = getLessonCardStats(id);
+                    if (stats.dueCount > 0) {
+                        selectedLessonFilterIds.add(id);
+                    }
+                });
+                renderLessonPickerList();
+            };
+        }
+
+        const modalSubjFilterEl = document.getElementById("lesson-picker-subject-filter");
+        if (modalSubjFilterEl) {
+            modalSubjFilterEl.addEventListener("change", () => {
+                renderLessonPickerList();
+            });
         }
 
         if (lessonPickerSelectAll) {
@@ -12300,7 +12453,7 @@
                 saveSelectedLessons();
 
                 const statusRadio = document.querySelector('input[name="custom-test-status"]:checked');
-                const statusVal = statusRadio ? statusRadio.value : 'unlearned';
+                const statusVal = statusRadio ? statusRadio.value : 'due';
 
                 const modeRadio = document.querySelector('input[name="custom-test-mode"]:checked');
                 const modeVal = modeRadio ? modeRadio.value : '3d';
@@ -12316,7 +12469,10 @@
                 let items = getFlashcardPool("lessons");
 
                 // ステータス絞り込み
-                if (statusVal === "unlearned") {
+                if (statusVal === "due") {
+                    const todayStr = getTodayStr();
+                    items = items.filter(c => (c.srsNextReviewDate && c.srsNextReviewDate <= todayStr) || (c.srsBoxLevel === 1));
+                } else if (statusVal === "unlearned") {
                     items = items.filter(c => (c.srsBoxLevel ?? 0) === 0);
                 } else if (statusVal === "weak") {
                     items = items.filter(c => (c.srsBoxLevel === 1) || ((c.srsLapses || 0) > 0));

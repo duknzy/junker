@@ -2529,11 +2529,22 @@
             <div class="daily-hero-header">
                 <div>
                     <div class="daily-hero-sub">DAILY MEMORIZE DECK</div>
-                    <div class="daily-hero-title">本日の暗記特訓</div>
+                    <div style="display:flex; align-items:center; gap:0.45rem; flex-wrap:wrap;">
+                        <div class="daily-hero-title">本日の暗記特訓</div>
+                        <span id="daily-hero-subject-badge" style="font-size:0.75rem; font-weight:800; background:rgba(255,255,255,0.22); color:#fff; padding:0.15rem 0.55rem; border-radius:9999px; border:1px solid rgba(255,255,255,0.35);">全教科</span>
+                    </div>
                 </div>
                 <div class="daily-streak-badge" id="daily-streak-badge">
                     🔥 連続学習 <span id="daily-streak-days">1</span>日
                 </div>
+            </div>
+
+            <!-- 教科クイックセレクター -->
+            <div style="margin: 0.5rem 0 0.2rem 0; display:flex; align-items:center; gap:0.5rem;">
+                <span style="font-size:0.75rem; color:rgba(255,255,255,0.88); font-weight:700;">対象教科:</span>
+                <select id="daily-subject-select" style="background:rgba(255,255,255,0.18); color:#FFFFFF; border:1px solid rgba(255,255,255,0.35); border-radius:8px; padding:0.25rem 0.6rem; font-size:0.8rem; font-weight:700; outline:none; cursor:pointer;">
+                    <option value="ALL" style="color:#111;">✨ 全教科</option>
+                </select>
             </div>
 
             <!-- 3つの統計ブロック -->
@@ -2554,7 +2565,7 @@
 
             <!-- メインCTAボタン（1タップで今日の暗記が即座に始まる！） -->
             <button type="button" class="daily-cta-btn" id="btn-start-daily-session">
-                <span>⚡ 本日の暗記セッションを開始</span>
+                <span>🔥 期日到来テストを開始</span>
                 <span id="daily-session-count-badge" style="font-size:0.8rem; background:#ECFDF5; color:#065F46; padding:0.15rem 0.5rem; border-radius:9999px;">0問</span>
             </button>
 
@@ -2613,6 +2624,15 @@
             <div class="memo-selected-units-chips" id="memo-selected-units-chips" style="display:none;">
                 <!-- 選択中の単元チップを動的生成 -->
             </div>
+        </div>
+
+        <!-- ステータスフィルター（期日到来・未習得・苦手・習得済） -->
+        <div class="memo-status-filter-pills" id="memo-status-filter-pills" style="display:flex; gap:0.4rem; overflow-x:auto; padding:0.35rem 0 0.2rem 0; margin-bottom:0.25rem; -webkit-overflow-scrolling:touch;">
+            <button type="button" class="memo-status-pill active" data-status="all" style="font-size:0.75rem; font-weight:700; padding:0.28rem 0.65rem; border-radius:9999px; border:1px solid #CBD5E1; background:#FFFFFF; color:#334155; white-space:nowrap; cursor:pointer;">📚 すべて</button>
+            <button type="button" class="memo-status-pill" data-status="due" style="font-size:0.75rem; font-weight:700; padding:0.28rem 0.65rem; border-radius:9999px; border:1px solid #FCD34D; background:#FFFBEB; color:#B45309; white-space:nowrap; cursor:pointer;">🔥 期日到来のみ</button>
+            <button type="button" class="memo-status-pill" data-status="unlearned" style="font-size:0.75rem; font-weight:700; padding:0.28rem 0.65rem; border-radius:9999px; border:1px solid #A7F3D0; background:#ECFDF5; color:#047857; white-space:nowrap; cursor:pointer;">🌱 未習得</button>
+            <button type="button" class="memo-status-pill" data-status="weak" style="font-size:0.75rem; font-weight:700; padding:0.28rem 0.65rem; border-radius:9999px; border:1px solid #FECACA; background:#FEF2F2; color:#B91C1C; white-space:nowrap; cursor:pointer;">🔄 苦手</button>
+            <button type="button" class="memo-status-pill" data-status="mastered" style="font-size:0.75rem; font-weight:700; padding:0.28rem 0.65rem; border-radius:9999px; border:1px solid #C7D2FE; background:#EEF2FF; color:#4338CA; white-space:nowrap; cursor:pointer;">🏆 習得済</button>
         </div>
 
         <div class="memo-chips-row" id="memo-subject-chips">
@@ -2833,6 +2853,7 @@
                     <div class="custom-test-quick-btns">
                         <button type="button" class="ct-quick-btn" id="ct-btn-select-all">すべて選択</button>
                         <button type="button" class="ct-quick-btn" id="ct-btn-clear-all">選択解除</button>
+                        <button type="button" class="ct-quick-btn ct-quick-btn-due" id="ct-btn-select-due" style="background:#FFFBEB; border-color:#FCD34D; color:#B45309; font-weight:700;">🔥 期日到来あり</button>
                         <button type="button" class="ct-quick-btn ct-quick-btn-green" id="ct-btn-select-unlearned">🌱 未習得ありのみ</button>
                     </div>
                 </div>
@@ -2849,7 +2870,11 @@
                         <div class="ct-setting-label">① 出題条件（ステータス）</div>
                         <div class="ct-radio-group">
                             <label class="ct-radio-pill">
-                                <input type="radio" name="m-custom-status" value="unlearned" checked>
+                                <input type="radio" name="m-custom-status" value="due" checked>
+                                <span>🔥 復習期日到来のみ（SRS期日）</span>
+                            </label>
+                            <label class="ct-radio-pill">
+                                <input type="radio" name="m-custom-status" value="unlearned">
                                 <span>🌱 未習得のみ（集中暗記）</span>
                             </label>
                             <label class="ct-radio-pill">
@@ -3509,6 +3534,7 @@
                     
                     // PC版と同等の期日・習得判定
                     const isDue = (boxLevel === 0) || (!nextDate || nextDate <= today);
+                    const isDueStrict = (nextDate && nextDate <= today) || (boxLevel === 1);
                     const isMastered = boxLevel >= 4;
 
                     cards.push({
@@ -3529,6 +3555,7 @@
                         lapses: lapses,
                         nextReviewDate: nextDate,
                         isDue: isDue,
+                        isDueStrict: isDueStrict,
                         isMastered: isMastered,
                         retryCount: lapses || prog.retryCount || 0,
                         lastRating: prog.lastRating || null
@@ -3547,6 +3574,7 @@
                 const reps = prog.reps || 0;
                 const nextDate = prog.nextReviewDate || null;
                 const isDue = (boxLevel === 0) || (!nextDate || nextDate <= today);
+                const isDueStrict = (nextDate && nextDate <= today) || (boxLevel === 1);
                 const isMastered = boxLevel >= 4;
 
                 cards.push({
@@ -3567,6 +3595,7 @@
                     lapses: lapses,
                     nextReviewDate: nextDate,
                     isDue: isDue,
+                    isDueStrict: isDueStrict,
                     isMastered: isMastered,
                     retryCount: lapses || prog.retryCount || 0,
                     lastRating: prog.lastRating || null
@@ -3587,6 +3616,7 @@
                     const reps = prog.reps || 0;
                     const nextDate = prog.nextReviewDate || null;
                     const isDue = (boxLevel === 0) || (!nextDate || nextDate <= today);
+                    const isDueStrict = (nextDate && nextDate <= today) || (boxLevel === 1);
                     const isMastered = boxLevel >= 4;
 
                     const part = (l.parts && typeof m.partIndex === "number" && l.parts[m.partIndex]) ? `第${m.partIndex + 1}回: ${l.parts[m.partIndex].title}` : "";
@@ -3609,6 +3639,7 @@
                         lapses: lapses,
                         nextReviewDate: nextDate,
                         isDue: isDue,
+                        isDueStrict: isDueStrict,
                         isMastered: isMastered,
                         retryCount: lapses || 0,
                         lastRating: prog.lastRating || null
@@ -3626,6 +3657,7 @@
                 const reps = prog.reps || 0;
                 const nextDate = prog.nextReviewDate || null;
                 const isDue = (boxLevel === 0) || (!nextDate || nextDate <= today);
+                const isDueStrict = (nextDate && nextDate <= today) || (boxLevel === 1);
                 const isMastered = boxLevel >= 4;
 
                 cards.push({
@@ -3645,6 +3677,7 @@
                     lapses: lapses,
                     nextReviewDate: nextDate,
                     isDue: isDue,
+                    isDueStrict: isDueStrict,
                     isMastered: isMastered,
                     retryCount: lapses || 0,
                     lastRating: prog.lastRating || null
@@ -3661,6 +3694,7 @@
                 const reps = prog.reps || 0;
                 const nextDate = prog.nextReviewDate || null;
                 const isDue = (boxLevel === 0) || (!nextDate || nextDate <= today);
+                const isDueStrict = (nextDate && nextDate <= today) || (boxLevel === 1);
                 const isMastered = boxLevel >= 4;
 
                 const msgs = log.messages || [];
@@ -3686,6 +3720,7 @@
                     lapses: lapses,
                     nextReviewDate: nextDate,
                     isDue: isDue,
+                    isDueStrict: isDueStrict,
                     isMastered: isMastered,
                     retryCount: lapses || 0,
                     lastRating: prog.lastRating || null
@@ -3701,24 +3736,29 @@
             const allCards = getAllCards();
             const today = getTodayStr();
 
+            // 選択中教科のカードプール（ALLなら全件）
+            const activeCards = currentSubjectFilter === "ALL" 
+                ? allCards 
+                : allCards.filter(c => c.subject === currentSubjectFilter);
+
             let dueCount = 0;
             let newCount = 0;
             let masteredCount = 0;
             let weakCount = 0;
 
-            allCards.forEach(c => {
+            activeCards.forEach(c => {
                 const level = c.boxLevel || 0;
                 if (level === 0) {
                     newCount++;
-                    dueCount++; // 未学習も本日の復習タスクに含める（PC版準拠）
                 } else if (level >= 4) {
                     masteredCount++;
-                    if (c.nextReviewDate && c.nextReviewDate <= today) dueCount++;
-                } else {
-                    if (!c.nextReviewDate || c.nextReviewDate <= today) dueCount++;
+                }
+                // 厳密な期日到来判定（isDueStrict または boxLevel === 1 の当日再出題）
+                if (c.isDueStrict || level === 1) {
+                    dueCount++;
                 }
 
-                if (c.retryCount > 0 || c.lastRating === "again" || c.lapses > 0) {
+                if (c.retryCount > 0 || c.lastRating === "again" || c.lapses > 0 || level === 1) {
                     weakCount++;
                 }
             });
@@ -3727,14 +3767,70 @@
             const statNewEl = document.getElementById("stat-new-count");
             const statMasteredEl = document.getElementById("stat-mastered-count");
             const ctaBadge = document.getElementById("daily-session-count-badge");
+            const heroSubjectBadge = document.getElementById("daily-hero-subject-badge");
 
             if (statDueEl) statDueEl.textContent = dueCount;
             if (statNewEl) statNewEl.textContent = newCount;
             if (statMasteredEl) statMasteredEl.textContent = masteredCount;
 
-            // 今日の推奨セッション枚数（期日分 + 新規最大10問、最大25問）
-            const dailyPoolCount = Math.min(25, dueCount > 0 ? dueCount : allCards.length);
-            if (ctaBadge) ctaBadge.textContent = `${dailyPoolCount > 0 ? dailyPoolCount : allCards.length}問`;
+            // 対象教科バッジの更新
+            if (heroSubjectBadge) {
+                heroSubjectBadge.textContent = currentSubjectFilter === "ALL" ? "全教科" : currentSubjectFilter;
+            }
+
+            // 今日の推奨セッション枚数（期日到来したカード枚数）
+            if (ctaBadge) {
+                ctaBadge.textContent = `${dueCount}問`;
+                if (dueCount === 0) {
+                    ctaBadge.style.background = "#F3F4F6";
+                    ctaBadge.style.color = "#6B7280";
+                } else {
+                    ctaBadge.style.background = "#ECFDF5";
+                    ctaBadge.style.color = "#065F46";
+                }
+            }
+
+            // 教科クイックセレクターの同期
+            const dailySubjSelect = document.getElementById("daily-subject-select");
+            if (dailySubjSelect) {
+                const subjects = Array.from(new Set(allCards.map(c => c.subject || "その他"))).filter(Boolean);
+                const currentVal = currentSubjectFilter;
+                let optHtml = `<option value="ALL" style="color:#111;">✨ 全教科 (${allCards.length})</option>`;
+                subjects.forEach(s => {
+                    const cnt = allCards.filter(c => c.subject === s).length;
+                    const dueSubjCnt = allCards.filter(c => c.subject === s && (c.isDueStrict || (c.boxLevel || 0) === 1)).length;
+                    const dueLabel = dueSubjCnt > 0 ? ` [🔥${dueSubjCnt}]` : '';
+                    optHtml += `<option value="${escapeHtml(s)}" style="color:#111;">${escapeHtml(s)} (${cnt})${dueLabel}</option>`;
+                });
+                dailySubjSelect.innerHTML = optHtml;
+                dailySubjSelect.value = currentVal;
+                dailySubjSelect.onchange = () => {
+                    currentSubjectFilter = dailySubjSelect.value;
+                    cardListDisplayLimit = 25;
+                    renderDashboard();
+                };
+            }
+
+            // ステータスフィルターピルの状態同期 & イベントバインド
+            const statusPillsContainer = document.getElementById("memo-status-filter-pills");
+            if (statusPillsContainer) {
+                statusPillsContainer.querySelectorAll(".memo-status-pill").forEach(pill => {
+                    const st = pill.getAttribute("data-status");
+                    if (st === currentCardStatusFilter) {
+                        pill.style.outline = "2px solid #059669";
+                        pill.style.fontWeight = "800";
+                    } else {
+                        pill.style.outline = "none";
+                        pill.style.fontWeight = "700";
+                    }
+                    pill.onclick = () => {
+                        currentCardStatusFilter = st;
+                        cardListDisplayLimit = 25;
+                        renderCardsList(allCards);
+                        renderDashboard();
+                    };
+                });
+            }
 
             // 2. 教科別デッキ描画
             renderDecks(allCards);
@@ -3962,7 +4058,9 @@
                 filtered = filtered.filter(c => c.lessonId && selectedLessonFilterIds.has(c.lessonId));
             }
             // ステータス条件フィルター
-            if (currentCardStatusFilter === "unlearned") {
+            if (currentCardStatusFilter === "due") {
+                filtered = filtered.filter(c => c.isDueStrict || (c.boxLevel || 0) === 1);
+            } else if (currentCardStatusFilter === "unlearned") {
                 filtered = filtered.filter(c => (c.boxLevel || 0) === 0);
             } else if (currentCardStatusFilter === "weak") {
                 filtered = filtered.filter(c => (c.boxLevel || 0) === 1 || (c.lapses || 0) > 0);
@@ -4841,7 +4939,19 @@
 
             // 正解 1つ ＋ 一意なダミー 3つ の計4択を確実に生成
             const correctAnswer = card.answer;
-            const uniqueOthers = Array.from(new Set(quizPoolAllAnswers.filter(a => a && a !== correctAnswer)));
+            // 💡 教科の混入防止: 出題カードと同一教科の解答を最優先でダミーに採用する
+            const allCards = getAllCards();
+            const sameSubjAnswers = allCards
+                .filter(c => c.subject === card.subject && c.answer && c.answer !== correctAnswer)
+                .map(c => c.answer);
+            let uniqueOthers = Array.from(new Set(sameSubjAnswers));
+
+            // 同一教科の解答が足りない場合のみ、全体のプールから補完
+            if (uniqueOthers.length < 3) {
+                const globalOthers = Array.from(new Set(quizPoolAllAnswers.filter(a => a && a !== correctAnswer && !uniqueOthers.includes(a))));
+                uniqueOthers = uniqueOthers.concat(globalOthers);
+            }
+
             const dummyAnswers = uniqueOthers
                 .sort(() => Math.random() - 0.5)
                 .slice(0, 3);
@@ -4989,6 +5099,7 @@
                 // ステータス条件バッジ（もし設定されていれば先頭に表示）
                 if (hasStatusFilter) {
                     let label = "🌱 未習得のみ";
+                    if (currentCardStatusFilter === "due") label = "🔥 期日到来のみ";
                     if (currentCardStatusFilter === "weak") label = "🔄 苦手・要復習のみ";
                     if (currentCardStatusFilter === "mastered") label = "✅ 習得済のみ";
 
@@ -5083,16 +5194,17 @@
         function getLessonCardStats(lessonId, allCards) {
             const lCards = allCards.filter(c => c.lessonId === lessonId);
             const total = lCards.length;
+            const due = lCards.filter(c => c.isDueStrict || (c.boxLevel || 0) === 1).length;
             const unlearned = lCards.filter(c => (c.boxLevel || 0) === 0).length;
             const weak = lCards.filter(c => (c.boxLevel || 0) === 1 || (c.lapses || 0) > 0).length;
             const mastered = lCards.filter(c => c.isMastered).length;
-            return { total, unlearned, weak, mastered, cards: lCards };
+            return { total, due, unlearned, weak, mastered, cards: lCards };
         }
 
         // 現在選択されているステータス条件の値を取得
         function getSelectedCustomStatus() {
             const checked = document.querySelector('input[name="m-custom-status"]:checked');
-            return checked ? checked.value : "unlearned";
+            return checked ? checked.value : "due";
         }
 
         // 現在選択されている出題形式を取得
@@ -5122,7 +5234,9 @@
             // ステータス条件で絞り込み
             const status = getSelectedCustomStatus();
             let filtered = inLessons;
-            if (status === "unlearned") {
+            if (status === "due") {
+                filtered = inLessons.filter(c => c.isDueStrict || (c.boxLevel || 0) === 1);
+            } else if (status === "unlearned") {
                 filtered = inLessons.filter(c => (c.boxLevel || 0) === 0);
             } else if (status === "weak") {
                 filtered = inLessons.filter(c => (c.boxLevel || 0) === 1 || (c.lapses || 0) > 0);
@@ -5230,6 +5344,7 @@
                                 <div class="ct-lesson-name">${escapeHtml(item.title)}</div>
                                 <div class="ct-lesson-meta">
                                     <span class="ct-badge-stat ct-badge-total">🎴 ${st.total}問</span>
+                                    ${st.due > 0 ? `<span class="ct-badge-stat ct-badge-due" style="background:#FFFBEB; color:#B45309; border:1px solid #FDE68A;">🔥 期${st.due}</span>` : ''}
                                     ${st.unlearned > 0 ? `<span class="ct-badge-stat ct-badge-unlearned">🌱 未${st.unlearned}</span>` : ''}
                                     ${st.weak > 0 ? `<span class="ct-badge-stat ct-badge-weak">🔄 復${st.weak}</span>` : ''}
                                     ${st.mastered > 0 ? `<span class="ct-badge-stat ct-badge-mastered">✅ 習${st.mastered}</span>` : ''}
@@ -5599,6 +5714,26 @@
                 };
             }
 
+            // 期日到来ありのみ選択
+            const btnSelectDue = document.getElementById("ct-btn-select-due");
+            if (btnSelectDue) {
+                btnSelectDue.onclick = () => {
+                    selectedLessonFilterIds.clear();
+                    const allCards = getAllCards();
+                    let count = 0;
+                    Object.entries(allLessons).forEach(([lid, l]) => {
+                        const st = getLessonCardStats(lid, allCards);
+                        if (st.due > 0) {
+                            selectedLessonFilterIds.add(lid);
+                            count++;
+                        }
+                    });
+                    saveSelectedLessons();
+                    renderCustomTestLessonList();
+                    showToast(`🔥 復習期日がある ${count} 単元を選択しました`);
+                };
+            }
+
             // 未習得ありのみ選択
             const btnSelectUnlearned = document.getElementById("ct-btn-select-unlearned");
             if (btnSelectUnlearned) {
@@ -5698,9 +5833,19 @@
         if (btnDaily) {
             btnDaily.onclick = () => {
                 const all = getAllCards();
-                const dueCards = all.filter(c => c.isDue);
-                const targetCards = dueCards.length > 0 ? dueCards.slice(0, 25) : all.slice(0, 15);
-                startSession(targetCards, "🔥 本日の暗記特訓");
+                // 選択中教科に絞り込み
+                const activeCards = currentSubjectFilter === "ALL" ? all : all.filter(c => c.subject === currentSubjectFilter);
+                // 厳密な期日到来判定（isDueStrict または boxLevel === 1 の当日再出題）
+                const dueCards = activeCards.filter(c => c.isDueStrict || (c.boxLevel || 0) === 1);
+                
+                if (dueCards.length === 0) {
+                    const subjMsg = currentSubjectFilter === "ALL" ? "全教科" : currentSubjectFilter;
+                    showToast(`🎉 ${subjMsg} の復習期日カードはありません！すべて完了しています`);
+                    return;
+                }
+                const targetCards = dueCards.slice(0, 25);
+                const title = currentSubjectFilter === "ALL" ? "🔥 本日の期日到来暗記特訓" : `🔥 ${currentSubjectFilter} 期日到来特訓`;
+                startSession(targetCards, title);
             };
         }
 
@@ -5708,7 +5853,15 @@
         const btnQuiz = document.getElementById("btn-start-quiz-mode");
         if (btnQuiz) {
             btnQuiz.onclick = () => {
-                startQuizMode();
+                const all = getAllCards();
+                const activeCards = currentSubjectFilter === "ALL" ? all : all.filter(c => c.subject === currentSubjectFilter);
+                if (activeCards.length < 4) {
+                    const subjMsg = currentSubjectFilter === "ALL" ? "全教科" : currentSubjectFilter;
+                    showToast(`⚠️ ${subjMsg} のカードが4問未満のため4択テストを開始できません`);
+                    return;
+                }
+                const title = currentSubjectFilter === "ALL" ? "⚡ スピード4択テスト" : `⚡ ${currentSubjectFilter} 4択テスト`;
+                startQuizMode(activeCards, title);
             };
         }
 
@@ -5717,20 +5870,32 @@
         if (btnWeak) {
             btnWeak.onclick = () => {
                 const all = getAllCards();
-                const weakCards = all.filter(c => c.retryCount > 0 || c.lastRating === "again");
+                const activeCards = currentSubjectFilter === "ALL" ? all : all.filter(c => c.subject === currentSubjectFilter);
+                const weakCards = activeCards.filter(c => c.retryCount > 0 || c.lastRating === "again" || (c.lapses || 0) > 0 || (c.boxLevel || 0) === 1);
                 if (weakCards.length === 0) {
-                    showToast("苦手カードはありません！順調です 🎉");
+                    const subjMsg = currentSubjectFilter === "ALL" ? "" : `${currentSubjectFilter} に`;
+                    showToast(`${subjMsg}苦手カードはありません！順調です 🎉`);
                     return;
                 }
-                startSession(weakCards, "⚡ 苦手カード特訓");
+                const title = currentSubjectFilter === "ALL" ? "⚡ 苦手カード集中特訓" : `⚡ ${currentSubjectFilter} 苦手集中特訓`;
+                startSession(weakCards, title);
             };
         }
 
         // 4. 教科別デッキセッション開始
         function startDeckSession(subject) {
+            currentSubjectFilter = subject;
+            cardListDisplayLimit = 25;
+            renderDashboard();
+
             const all = getAllCards();
             const deckCards = all.filter(c => c.subject === subject);
-            startSession(deckCards, `📚 ${subject} 暗記特訓`);
+            const dueCards = deckCards.filter(c => c.isDueStrict || (c.boxLevel || 0) === 1);
+            if (dueCards.length > 0) {
+                startSession(dueCards, `🔥 ${subject} 期日到来特訓`);
+            } else {
+                startSession(deckCards, `📚 ${subject} 暗記特訓`);
+            }
         }
 
         // ==========================================
