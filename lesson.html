@@ -9946,12 +9946,13 @@
 
         // 🆕 新しい授業を始める：アコーディオン開閉
         function setNewLessonFormOpen(open) {
-            window.setNewLessonFormOpen = setNewLessonFormOpen;
-            window.toggleNewLessonPanel = setNewLessonFormOpen;
             el("new-lesson-body").classList.toggle("hidden", !open);
             el("new-lesson-toggle").classList.toggle("open", open);
             if (open) goToWizardStep(1);
         }
+        window.setNewLessonFormOpen = setNewLessonFormOpen;
+        window.toggleNewLessonPanel = setNewLessonFormOpen;
+
         el("new-lesson-toggle").addEventListener("click", () => {
             const isOpen = !el("new-lesson-body").classList.contains("hidden");
             setNewLessonFormOpen(!isOpen);
@@ -23719,39 +23720,43 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
             // 🕒 閲覧履歴クイックストリップの初期描画
             renderRecentLessonsQuickStrip();
 
-            if (REQUESTED_ID) {
-                await loadLessonView(loginUid, REQUESTED_ID);
-            } else {
-                // ⚡ SWR（Stale-While-Revalidate）：IndexedDBキャッシュから即時0秒描画 (localStorage容量を一切圧迫しない)
-                try {
-                    // 旧localStorageの残骸があれば即座に削除して容量解放
-                    localStorage.removeItem('flora_cached_lessons_' + loginUid);
-                } catch(e) {}
+            // ⚡ SWR（Stale-While-Revalidate）：IndexedDBキャッシュから即時0秒読み込み (個別受講中も検索・文化史用に常時保持)
+            try {
+                localStorage.removeItem('flora_cached_lessons_' + loginUid);
+            } catch(e) {}
 
-                if (window.floraCacheDB) {
-                    try {
-                        const cachedObj = await window.floraCacheDB.get('flora_cached_lessons_' + loginUid);
-                        if (cachedObj && !lastLessonsSnapshot) {
-                            lastLessonsSnapshot = cachedObj;
+            if (window.floraCacheDB) {
+                try {
+                    const cachedObj = await window.floraCacheDB.get('flora_cached_lessons_' + loginUid);
+                    if (cachedObj && (!lastLessonsSnapshot || Object.keys(lastLessonsSnapshot).length === 0)) {
+                        lastLessonsSnapshot = cachedObj;
+                        if (!REQUESTED_ID) {
                             renderContinueCard(cachedObj);
                             renderLessonList(cachedObj);
                             renderContinuationOptions(cachedObj);
                             renderTopicRoadmap(cachedObj);
                         }
-                    } catch(e) {}
-                }
-
-                // Firebase同期
-                onValue(ref(database, 'users/' + loginUid + '/lessons'), (snapshot) => {
-                    lastLessonsSnapshot = snapshot.val() || {};
-                    if (window.floraCacheDB) {
-                        window.floraCacheDB.set('flora_cached_lessons_' + loginUid, lastLessonsSnapshot).catch(() => {});
                     }
+                } catch(e) {}
+            }
+
+            // Firebase常時同期（授業受講中も全授業データを常に最新保持）
+            onValue(ref(database, 'users/' + loginUid + '/lessons'), (snapshot) => {
+                lastLessonsSnapshot = snapshot.val() || {};
+                if (window.floraCacheDB) {
+                    window.floraCacheDB.set('flora_cached_lessons_' + loginUid, lastLessonsSnapshot).catch(() => {});
+                }
+                if (!REQUESTED_ID) {
                     renderContinueCard(lastLessonsSnapshot);
                     renderLessonList(lastLessonsSnapshot);
                     renderContinuationOptions(lastLessonsSnapshot);
                     renderTopicRoadmap(lastLessonsSnapshot);
-                });
+                }
+            });
+
+            if (REQUESTED_ID) {
+                await loadLessonView(loginUid, REQUESTED_ID);
+            } else {
                 await handleLessonHandoff();
             }
         });
@@ -23906,6 +23911,9 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
             const input = el("omni-search-input");
             if (!modal || !input) return;
 
+            // バックグラウンドで全授業データを確実にウォームアップ
+            getOrFetchAllLessons().catch(() => {});
+
             modal.classList.add("active");
             omniSearchCurrentFilter = "all";
             updateOmniFilterChipsUI();
@@ -24014,6 +24022,61 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
             }, 100);
         }
 
+        // 全授業データを確実に取得する（メモリキャッシュ ➔ IndexedDB ➔ Firebaseフェッチの3重フォールバック）
+        async function getOrFetchAllLessons() {
+            // 1. メモリキャッシュにデータがあるか
+            if (lastLessonsSnapshot && typeof lastLessonsSnapshot === "object" && Object.keys(lastLessonsSnapshot).length > 0) {
+                if (currentLesson && currentLessonId && !lastLessonsSnapshot[currentLessonId]) {
+                    lastLessonsSnapshot[currentLessonId] = currentLesson;
+                }
+                return lastLessonsSnapshot;
+            }
+
+            // 2. IndexedDB (floraCacheDB) から取得
+            if (window.floraCacheDB && loginUid) {
+                try {
+                    const cached = await window.floraCacheDB.get("flora_cached_lessons_" + loginUid);
+                    if (cached && typeof cached === "object" && Object.keys(cached).length > 0) {
+                        lastLessonsSnapshot = cached;
+                        if (currentLesson && currentLessonId && !lastLessonsSnapshot[currentLessonId]) {
+                            lastLessonsSnapshot[currentLessonId] = currentLesson;
+                        }
+                        return lastLessonsSnapshot;
+                    }
+                } catch(e) {
+                    console.warn("floraCacheDB read error in getOrFetchAllLessons:", e);
+                }
+            }
+
+            // 3. Firebase Database から直接フェッチ
+            if (loginUid && database) {
+                try {
+                    const snap = await get(ref(database, 'users/' + loginUid + '/lessons'));
+                    const val = snap.val();
+                    if (val && typeof val === "object" && Object.keys(val).length > 0) {
+                        lastLessonsSnapshot = val;
+                        if (window.floraCacheDB) {
+                            window.floraCacheDB.set("flora_cached_lessons_" + loginUid, val).catch(() => {});
+                        }
+                        if (currentLesson && currentLessonId && !lastLessonsSnapshot[currentLessonId]) {
+                            lastLessonsSnapshot[currentLessonId] = currentLesson;
+                        }
+                        return lastLessonsSnapshot;
+                    }
+                } catch(e) {
+                    console.warn("Firebase fetch error in getOrFetchAllLessons:", e);
+                }
+            }
+
+            // 4. フォールバック：もし受講中の個別授業があれば登録
+            if (currentLesson && currentLessonId) {
+                lastLessonsSnapshot = { [currentLessonId]: currentLesson };
+                return lastLessonsSnapshot;
+            }
+
+            return lastLessonsSnapshot || {};
+        }
+
         // 全文検索の実行（IndexedDB / メモリキャッシュ走査）
         async function executeOmniSearch(keyword) {
             const container = el("omni-search-results");
@@ -24022,19 +24085,24 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
             const startTime = performance.now();
             const q = keyword.toLowerCase();
 
-            // データソース確保
-            let lessonsObj = lastLessonsSnapshot;
-            if (!lessonsObj && window.floraCacheDB && loginUid) {
-                try {
-                    lessonsObj = await window.floraCacheDB.get("flora_cached_lessons_" + loginUid);
-                } catch(e) {}
-            }
-            if (!lessonsObj) {
-                container.innerHTML = `<div class="omni-empty-box">⏳ 授業データを読み込み中です。しばらくお待ちください...</div>`;
+            // データソース確保（全授業データの確実な取得）
+            const lessonsObj = await getOrFetchAllLessons();
+            const lessons = Object.values(lessonsObj || {});
+
+            if (lessons.length === 0) {
+                container.innerHTML = `
+                    <div class="omni-empty-box">
+                        <div style="font-size: 2rem; margin-bottom: 0.6rem;">📚</div>
+                        <div style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.4rem;">
+                            検索対象の授業データが見つかりませんでした
+                        </div>
+                        <div style="font-size: 0.78rem; color: var(--text-secondary);">
+                            授業を作成・受講すると、ここから全授業の講義本文や暗記事項を横断検索できるようになります。
+                        </div>
+                    </div>
+                `;
                 return;
             }
-
-            const lessons = Object.values(lessonsObj);
             const groupedResults = [];
             let totalMatchCount = 0;
             let countLecture = 0;
@@ -24654,9 +24722,10 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
             lessons.forEach(lesson => {
                 if (!lesson || !Array.isArray(lesson.parts)) return;
 
-                // 対象教科（日本史・歴史系）
+                // 対象教科（日本史・歴史系、またはタイトルに歴史・文化を含むもの）
                 const subj = lesson.subject || detectLessonSubject(lesson) || "";
-                if (!/日本史|歴史|社会/.test(subj) && subj !== "その他") return;
+                const isHist = /日本史|歴史|社会/.test(subj) || subj === "その他" || /文化|歴史|縄文|弥生|古墳|飛鳥|白鳳|天平|国風|院政|鎌倉|室町|安土|桃山|江戸|明治|大正|昭和/.test((lesson.title || '') + ' ' + (lesson.topicKey || ''));
+                if (!isHist) return;
 
                 lesson.parts.forEach((part, partIdx) => {
                     if (checkIsCulturePart(part, lesson)) {
@@ -24769,14 +24838,8 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
 
             container.innerHTML = `<div style="text-align:center; padding:3rem; color:var(--text-secondary);">⏳ 全授業から文化史パートを抽出・統合中...</div>`;
 
-            // データソース確保
-            let lessonsObj = lastLessonsSnapshot;
-            if (!lessonsObj && window.floraCacheDB && loginUid) {
-                try {
-                    lessonsObj = await window.floraCacheDB.get("flora_cached_lessons_" + loginUid);
-                } catch(e) {}
-            }
-
+            // データソース確保（全授業データの確実な取得）
+            const lessonsObj = await getOrFetchAllLessons();
             const cultureParts = extractAllCultureParts(lessonsObj);
             cultureStreamExtractedData = cultureParts;
 
@@ -24820,7 +24883,19 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
                 });
             });
 
-            // 2. 左ペインの講義ストリームを描画
+        // 文化史ストリームから「授業作成」を開くハンドラー
+        window.handleCreateLessonFromCultureStream = function() {
+            closeCultureStreamView();
+            el("view-lesson")?.classList.add("hidden");
+            el("view-plan-preview")?.classList.add("hidden");
+            el("view-list")?.classList.remove("hidden");
+            if (typeof window.setNewLessonFormOpen === "function") {
+                window.setNewLessonFormOpen(true);
+            }
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        };
+
+        // 2. 左ペインの講義ストリームを描画
             if (cultureParts.length === 0) {
                 container.innerHTML = `
                     <div class="omni-empty-box" style="padding: 3rem 1.5rem; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg);">
@@ -24830,7 +24905,7 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
                             「国風文化」「天平文化」「鎌倉文化」などの単元で授業を作成すると、<br>
                             その中の文化パートが自動でここに集約され、時代順に一気通貫で読めるようになります。
                         </div>
-                        <button type="button" class="flora-btn flora-btn-primary btn-sm" onclick="closeCultureStreamView(); setNewLessonFormOpen(true);" style="margin-top: 1.25rem;">
+                        <button type="button" class="flora-btn flora-btn-primary btn-sm" onclick="handleCreateLessonFromCultureStream();" style="margin-top: 1.25rem;">
                             ＋ 文化史の授業を作成する
                         </button>
                     </div>
