@@ -5052,6 +5052,11 @@
             pointer-events: none;
             transition: opacity 0.18s ease;
         }
+        @media (max-width: 640px) {
+            .omni-search-backdrop {
+                padding: 1.5rem 0.5rem;
+            }
+        }
         .omni-search-backdrop.active {
             opacity: 1;
             pointer-events: auto;
@@ -5069,6 +5074,12 @@
             transform: translateY(-10px) scale(0.985);
             transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
             overflow: hidden;
+        }
+        @media (max-width: 640px) {
+            .omni-search-modal {
+                max-height: 90vh;
+                border-radius: 12px;
+            }
         }
         .omni-search-backdrop.active .omni-search-modal {
             transform: translateY(0) scale(1);
@@ -5304,6 +5315,266 @@
             animation: omniPulseHighlight 2.4s ease forwards !important;
             border-radius: 8px;
         }
+
+        /* 🏛️ 文化史まとめ読みストリーム (Culture Stream View) */
+        .culture-stream-wrap {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            animation: fadeIn 0.25s ease;
+        }
+        .culture-stream-header-card {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(16, 185, 129, 0.05) 100%);
+            border: 1px solid rgba(139, 92, 246, 0.25);
+            border-radius: var(--radius-lg);
+            padding: 1.25rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .culture-stream-title {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .culture-stream-subtitle {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+        .culture-stream-layout {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 1.5rem;
+            align-items: start;
+        }
+        @media (max-width: 1024px) {
+            .culture-stream-layout {
+                grid-template-columns: 1fr;
+            }
+            .culture-stream-timeline-nav {
+                position: static !important;
+                max-height: none !important;
+                order: -1;
+                padding: 0.75rem 1rem !important;
+            }
+            #culture-timeline-nav-list {
+                flex-direction: row !important;
+                overflow-x: auto;
+                padding-bottom: 0.4rem;
+                scrollbar-width: thin;
+                gap: 0.4rem !important;
+            }
+            .culture-timeline-item {
+                flex-shrink: 0;
+                white-space: nowrap;
+                border: 1px solid var(--border-color);
+                border-radius: var(--radius-full);
+                padding: 0.35rem 0.75rem;
+            }
+        }
+        .culture-stream-main {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        .culture-section-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            position: relative;
+            scroll-margin-top: 2rem;
+        }
+        .culture-section-card:hover {
+            border-color: rgba(139, 92, 246, 0.4);
+            box-shadow: var(--shadow-md);
+        }
+        .culture-section-header {
+            padding: 1rem 1.3rem;
+            background: var(--bg-subtle);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+        .culture-period-pill {
+            font-size: 0.72rem;
+            font-weight: 750;
+            padding: 0.18rem 0.6rem;
+            border-radius: var(--radius-full);
+            background: rgba(139, 92, 246, 0.12);
+            color: #8b5cf6;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        html.dark .culture-period-pill {
+            background: rgba(139, 92, 246, 0.2);
+            color: #c4b5fd;
+        }
+        .culture-part-name {
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+        .culture-source-link {
+            font-size: 0.74rem;
+            color: var(--brand-primary);
+            text-decoration: none;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid var(--brand-border);
+            padding: 0.2rem 0.55rem;
+            border-radius: var(--radius-sm);
+            transition: background 0.15s ease;
+        }
+        .culture-source-link:hover {
+            background: rgba(16, 185, 129, 0.16);
+        }
+        .culture-section-body {
+            padding: 1.4rem 1.6rem;
+            font-size: 0.95rem;
+            line-height: 1.85;
+            color: var(--text-primary);
+        }
+        .culture-memorize-drawer {
+            margin-top: 1.25rem;
+            padding: 1rem 1.25rem;
+            background: rgba(139, 92, 246, 0.04);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            border-radius: var(--radius-md);
+        }
+        .culture-memorize-drawer-title {
+            font-size: 0.82rem;
+            font-weight: 750;
+            color: #8b5cf6;
+            margin-bottom: 0.6rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .culture-memorize-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.45rem;
+        }
+        .culture-memorize-chip {
+            font-size: 0.76rem;
+            padding: 0.25rem 0.65rem;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            box-shadow: var(--shadow-xs);
+        }
+        .culture-stream-timeline-nav {
+            position: sticky;
+            top: 1.5rem;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 1.1rem 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+            box-shadow: var(--shadow-sm);
+            max-height: calc(100vh - 3rem);
+            overflow-y: auto;
+            scrollbar-width: thin;
+        }
+        .culture-timeline-nav-title {
+            font-size: 0.84rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .culture-timeline-item {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            padding: 0.45rem 0.6rem;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            text-decoration: none;
+            color: var(--text-secondary);
+            font-size: 0.78rem;
+            font-weight: 600;
+            position: relative;
+        }
+        .culture-timeline-item:hover {
+            background: var(--bg-subtle);
+            color: var(--text-primary);
+        }
+        .culture-timeline-item.active {
+            background: rgba(139, 92, 246, 0.1);
+            color: #8b5cf6;
+            font-weight: 800;
+        }
+        .culture-timeline-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--border-color);
+            flex-shrink: 0;
+            transition: background 0.15s ease;
+        }
+        .culture-timeline-item.has-lesson .culture-timeline-dot {
+            background: #8b5cf6;
+        }
+        .culture-timeline-item.active .culture-timeline-dot {
+            background: #8b5cf6;
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.25);
+        }
+        .culture-timeline-badge {
+            margin-left: auto;
+            font-size: 0.66rem;
+            padding: 0.1rem 0.4rem;
+            border-radius: 999px;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+        }
+        .culture-timeline-badge.taught {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--brand-primary);
+            border-color: var(--brand-border);
+        }
+        .culture-next-divider {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            margin: 0.5rem 0;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .culture-next-divider::before,
+        .culture-next-divider::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: dashed var(--border-color);
+            border-top: 1px dashed var(--border-color);
+        }
     </style>
 </head>
 
@@ -5328,6 +5599,9 @@
                         </div>
                     </div>
                     <div class="page-actions" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                        <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="btn-open-culture-stream" style="font-weight: 700; display: inline-flex; align-items: center; gap: 0.35rem; color: #8b5cf6; border-color: rgba(139, 92, 246, 0.4);" title="全授業から文化史パートを抽出して時代順にまとめ読み">
+                            <span>🏛️</span><span>文化史まとめ読み</span>
+                        </button>
                         <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="btn-open-omni-search" style="font-weight: 700; display: inline-flex; align-items: center; gap: 0.35rem; border-color: var(--brand-border);" title="全授業の本文・暗記事項を横断検索 (Ctrl+K)">
                             <span>🔍</span><span id="header-search-btn-label">授業内を検索</span>
                             <kbd style="font-size:0.65rem; background:var(--bg-subtle); padding:0.1rem 0.35rem; border-radius:4px; border:1px solid var(--border-color); color:var(--text-secondary); font-family:inherit;">Ctrl+K</kbd>
@@ -5988,6 +6262,9 @@
                                         <option value="title_asc">🔤 授業タイトル順</option>
                                     </select>
                                 </div>
+                                <button type="button" class="tactile-btn" id="btn-toolbar-culture-stream" style="font-size:0.75rem; font-weight:700; padding:0.4rem 0.85rem; height:36px; background:rgba(139, 92, 246, 0.1); color:#7c3aed; border:1px solid rgba(139, 92, 246, 0.35); border-radius:var(--radius-full); white-space:nowrap; display:inline-flex; align-items:center; gap:0.35rem; cursor:pointer;" title="全授業から文化史パートを抽出して時代順にまとめ読み">
+                                    🏛️ 文化史ストリーム
+                                </button>
                                 <button type="button" class="tactile-btn" id="btn-toggle-batch-lesson-delete" style="font-size:0.75rem; font-weight:700; padding:0.4rem 0.85rem; height:36px; background:rgba(239, 68, 68, 0.08); color:#dc2626; border:1px solid rgba(239, 68, 68, 0.35); border-radius:var(--radius-full); white-space:nowrap; display:inline-flex; align-items:center; gap:0.35rem; cursor:pointer;" title="授業を複数選択して一括削除（暗記事項・問題・年表等のデータも完全徹底パージ）します">
                                     🗑️ 授業を一括削除
                                 </button>
@@ -6732,6 +7009,49 @@
                                 <span class="vsc-status-item" id="vsc-status-lang-badge">LaTeX / TeX</span>
                                 <span class="vsc-status-item vsc-status-item-click" id="vsc-status-view-mode-badge" style="background:rgba(0,0,0,0.2); padding:1px 6px; border-radius:3px;">💻 VS Code Mode</span>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============ 🏛️ 文化史まとめ読みストリーム ビュー ============ -->
+                <div id="view-culture-stream" class="hidden">
+                    <div class="culture-stream-wrap">
+                        <!-- ヘッダーカード -->
+                        <div class="culture-stream-header-card">
+                            <div>
+                                <div class="culture-stream-title">
+                                    <span>🏛️ 日本史 文化史まとめ読みストリーム</span>
+                                </div>
+                                <div class="culture-stream-subtitle" id="culture-stream-subtitle">
+                                    全時代の文化パートを時系列順に串刺し通読・総復習
+                                </div>
+                            </div>
+                            <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+                                <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="btn-toggle-culture-memorize-all" style="font-weight:700; color:#8b5cf6; border:1px solid rgba(139,92,246,0.3);">
+                                    🧠 暗記ポイントを一括表示
+                                </button>
+                                <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="btn-back-from-culture-stream" style="font-weight:700;">
+                                    ← 授業一覧に戻る
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- メイン2ペインレイアウト -->
+                        <div class="culture-stream-layout">
+                            <!-- 左ペイン：講義本文ストリーム -->
+                            <div class="culture-stream-main" id="culture-stream-sections-container">
+                                <!-- JSで各時代の文化パートが順番にレンダリングされる -->
+                            </div>
+
+                            <!-- 右ペイン：時代順タイムライン目次ナビゲーター -->
+                            <aside class="culture-stream-timeline-nav" id="culture-stream-timeline-nav">
+                                <div class="culture-timeline-nav-title">
+                                    <span>⏳ 文化史タイムライン目次</span>
+                                </div>
+                                <div id="culture-timeline-nav-list" style="display:flex; flex-direction:column; gap:0.25rem;">
+                                    <!-- JSで時代リストがレンダリングされる -->
+                                </div>
+                            </aside>
                         </div>
                     </div>
                 </div>
@@ -18496,16 +18816,21 @@ ${subjectGuide}
                     ? `<button type="button" class="toc-regen-btn" data-regenerate-part="${i}" title="この回の説明を作り直す">🔄 作り直す</button>`
                     : "";
 
+                const isCulture = typeof checkIsCulturePart === "function" && checkIsCulturePart(p, currentLesson);
+                const cultureBadge = isCulture ? `<span style="font-size:0.68rem; background:rgba(139,92,246,0.12); color:#8b5cf6; border:1px solid rgba(139,92,246,0.3); padding:0.1rem 0.45rem; border-radius:4px; font-weight:750; margin-left:0.35rem;">🏛️ 文化史</span>` : "";
+                const cultureStreamBtn = isCulture ? `<button type="button" onclick="event.stopPropagation(); openCultureStreamView();" style="padding:0.18rem 0.5rem; font-size:0.72rem; color:#8b5cf6; background:rgba(139,92,246,0.08); border:1px solid rgba(139,92,246,0.25); border-radius:var(--radius-sm); cursor:pointer; font-weight:700;" title="全授業の文化史パートを時系列順に串刺し通読">🏛️ 文化史通読</button>` : "";
+
                 return `
                     <div class="toc-item ${isActive ? 'current-active' : ''}" data-toc-part="${i}" style="cursor:pointer;">
                         <div class="toc-item-header">
-                            <span class="toc-item-title tex2jax_process">第${i + 1}回: ${cleanTitle}</span>
+                            <span class="toc-item-title tex2jax_process">第${i + 1}回: ${cleanTitle} ${cultureBadge}</span>
                             <span class="toc-status-badge ${badgeClass}">${badgeText}</span>
                         </div>
                         <div class="toc-item-summary tex2jax_process">${p.summary || ''}</div>
-                        <div style="margin-top:0.6rem; display:flex; justify-content:space-between; align-items:center;">
+                        <div style="margin-top:0.6rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.35rem;">
                             <span style="font-size:0.75rem; color:var(--text-secondary);">クリックで該当位置へ移動</span>
                             <div style="display:flex; gap:0.35rem; align-items:center;">
+                                ${cultureStreamBtn}
                                 <button type="button" class="toc-edit-part-btn" data-edit-part="${i}" title="この回のタイトルを変更（短くスッキリ編集）" style="padding:0.18rem 0.5rem; font-size:0.72rem; color:var(--text-secondary); background:var(--bg-subtle); border:1px solid var(--border-color); border-radius:var(--radius-sm); cursor:pointer;">✏️ タイトル変更</button>
                                 ${regenBtn}
                             </div>
@@ -23842,6 +24167,7 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
         function renderOmniSearchResults(keyword) {
             const container = el("omni-search-results");
             if (!container) return;
+            container.scrollTop = 0;
 
             const filter = omniSearchCurrentFilter;
             let totalFilteredMatches = 0;
@@ -23951,10 +24277,15 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
         function createSearchSnippet(fullText, query) {
             if (!fullText) return "";
             const clean = fullText
+                .replace(/｜([^《\r\n]+)《[^》\r\n]+》/g, "$1") // ルビ記号除去 (｜漢字《かんじ》 ➔ 漢字)
+                .replace(/!\[.*?\]\(.*?\)/g, "") // 画像リンク除去
+                .replace(/\[(.*?)\]\(.*?\)/g, "$1") // マークダウンリンク除去
+                .replace(/<[^>]+>/g, "") // 生HTMLタグ除去
                 .replace(/#+/g, "")
                 .replace(/\*\*/g, "")
                 .replace(/\*/g, "")
                 .replace(/```[\s\S]*?```/g, " [コード] ")
+                .replace(/`([^`]+)`/g, "$1")
                 .replace(/\$\$/g, "")
                 .replace(/\$/g, "")
                 .replace(/\s+/g, " ")
@@ -23978,19 +24309,39 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
             return prefix + highlightKeywordInSnippet(snippetRaw, query) + suffix;
         }
 
-        // キーワードハイライト用HTML
+        // キーワードハイライト用HTML（正規表現クラッシュ回避 & HTMLエスケープ二重掛け完全防止）
         function highlightKeywordInSnippet(text, query) {
             if (!text || !query) return escapeHtml(text || "");
-            const escapedText = escapeHtml(text);
-            const escapedQuery = escapeHtml(query).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            const regex = new RegExp(`(${escapedQuery})`, "gi");
-            return escapedText.replace(regex, `<mark class="search-target-highlight">$1</mark>`);
+            const q = query.toLowerCase();
+            const lower = text.toLowerCase();
+            let lastIndex = 0;
+            let result = "";
+            let idx = lower.indexOf(q, lastIndex);
+
+            if (idx === -1) {
+                return escapeHtml(text);
+            }
+
+            while (idx !== -1) {
+                result += escapeHtml(text.slice(lastIndex, idx));
+                result += `<mark class="search-target-highlight">${escapeHtml(text.slice(idx, idx + query.length))}</mark>`;
+                lastIndex = idx + query.length;
+                idx = lower.indexOf(q, lastIndex);
+            }
+            result += escapeHtml(text.slice(lastIndex));
+            return result;
         }
 
         // 該当位置へのジャンプ＆ハイライト実行！
         window.jumpToOmniTarget = function(lessonId, opt = {}) {
             if (!lessonId) return;
             closeLessonOmniSearch();
+
+            // もし文化史ストリームが表示中なら閉じる
+            const streamEl = el("view-culture-stream");
+            if (streamEl && !streamEl.classList.contains("hidden")) {
+                closeCultureStreamView();
+            }
 
             const isCurrentLesson = currentLessonId && currentLessonId === lessonId;
 
@@ -24143,8 +24494,8 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
             }
         }
 
-        // イベントリスナーの登録
-        document.addEventListener("DOMContentLoaded", () => {
+        // イベントリスナーの登録（即時実行またはDOMContentLoaded対応）
+        function initOmniSearchEvents() {
             // フィルタチップクリックイベント
             document.querySelectorAll(".omni-filter-chip").forEach(chip => {
                 chip.addEventListener("click", () => {
@@ -24186,7 +24537,16 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
                 const listInputVal = el("lesson-search-input")?.value || "";
                 openLessonOmniSearch(listInputVal);
             });
-        });
+
+            // ページロード時のURLパラメータによる自動ジャンプ
+            setTimeout(checkUrlSearchHighlightParams, 300);
+        }
+
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", initOmniSearchEvents);
+        } else {
+            initOmniSearchEvents();
+        }
 
         // キーボードショートカット (Ctrl+K, Cmd+K, Esc, ArrowDown, ArrowUp, Enter)
         window.addEventListener("keydown", (e) => {
@@ -24224,6 +24584,382 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
                 }
             }
         });
+
+        // ==============================================================
+        // 🏛️ 日本史 文化史まとめ読みストリーム (Culture Stream System)
+        // ==============================================================
+        const JAPANESE_CULTURE_PERIODS = [
+            { id: "jomon-yayoi", name: "縄文・弥生文化", label: "縄文・弥生", order: 10, keywords: ["縄文", "弥生", "土器", "金属器", "稲作", "青銅器", "鉄器"] },
+            { id: "kofun", name: "古墳文化", label: "古墳時代", order: 20, keywords: ["古墳", "埴輪", "副葬品", "須恵器", "土師器", "大和政権"] },
+            { id: "asuka", name: "飛鳥文化", label: "飛鳥時代", order: 30, keywords: ["飛鳥文化", "飛鳥", "法隆寺", "推古", "聖徳太子", "鞍作止利", "玉虫厨子", "百済観音"] },
+            { id: "hakuho", name: "白鳳文化", label: "白鳳期", order: 40, keywords: ["白鳳文化", "白鳳", "薬師寺", "天武", "持統", "高松塚古墳", "興福寺仏頭"] },
+            { id: "tenpyo", name: "天平文化", label: "奈良時代", order: 50, keywords: ["天平文化", "天平", "東大寺", "正倉院", "聖武", "鑑真", "行基", "唐招提寺", "阿修羅", "乾漆像", "万葉集", "風土記", "古事記", "日本書紀"] },
+            { id: "konin-jogan", name: "弘仁・貞観文化", label: "平安初期", order: 60, keywords: ["弘仁・貞観", "弘仁", "貞観", "平安初期", "最澄", "空海", "天台宗", "真言宗", "密教", "曼荼羅", "延暦寺", "金剛峯寺", "室生寺", "一木造"] },
+            { id: "kokufu", name: "国風文化", label: "平安中期", order: 70, keywords: ["国風文化", "国風", "摂関", "かな文字", "源氏物語", "紫式部", "枕草子", "清少納言", "古今和歌集", "浄土教", "末法思想", "平等院鳳凰堂", "阿弥陀如来", "定朝", "寄木造", "寝殿造", "大和絵"] },
+            { id: "insei", name: "院政期文化", label: "平安末期", order: 80, keywords: ["院政期文化", "院政期", "院政", "平清盛", "厳島神社", "平家納経", "中尊寺金色堂", "今昔物語集", "絵巻物", "源氏物語絵巻", "鳥獣戯画", "伴大納言絵巻", "今鏡"] },
+            { id: "kamakura", name: "鎌倉文化", label: "鎌倉時代", order: 90, keywords: ["鎌倉文化", "鎌倉", "鎌倉新仏教", "法然", "親鸞", "一遍", "日蓮", "栄西", "道元", "浄土宗", "浄土真宗", "時宗", "日蓮宗", "臨済宗", "曹洞宗", "運慶", "快慶", "金剛力士", "東大寺南大門", "平家物語", "方丈記", "徒然草", "新古今和歌集"] },
+            { id: "kitayama", name: "北山文化", label: "室町前期", order: 100, keywords: ["北山文化", "北山", "足利義満", "鹿苑寺", "金閣", "能", "猿楽", "観阿弥", "世阿弥", "風姿花伝", "五山文学"] },
+            { id: "higashiyama", name: "東山文化", label: "室町中期", order: 110, keywords: ["東山文化", "東山", "足利義政", "慈照寺", "銀閣", "書院造", "枯山水", "侘び寂び", "茶の湯", "連歌", "雪舟", "水墨画", "狩野正信", "御伽草子"] },
+            { id: "momoyama", name: "桃山文化・南蛮文化", label: "安土桃山", order: 120, keywords: ["桃山文化", "桃山", "南蛮文化", "南蛮", "織田信長", "豊臣秀吉", "城郭建築", "安土城", "大坂城", "姫路城", "狩野永徳", "唐獅子図屏風", "長谷川等伯", "千利休", "出雲阿国", "歌舞伎踊り"] },
+            { id: "kanei", name: "寛永文化", label: "江戸前期", order: 130, keywords: ["寛永文化", "寛永", "日光東照宮", "俵屋宗達", "風神雷神図", "本阿弥光悦"] },
+            { id: "genroku", name: "元禄文化", label: "江戸中期", order: 140, keywords: ["元禄文化", "元禄", "上方", "徳川綱吉", "井原西鶴", "浮世草子", "近松門左衛門", "人形浄瑠璃", "松尾芭蕉", "奥の細道", "尾形光琳", "紅白梅図屏風", "菱川師宣", "見返り美人図", "野々村仁清"] },
+            { id: "kasei", name: "化政文化", label: "江戸後期", order: 150, keywords: ["化政文化", "化政", "江戸町人", "徳川家斉", "十返舎一九", "東海道中膝栗毛", "滝沢馬琴", "南総里見八犬伝", "小林一茶", "与謝蕪村", "葛飾北斎", "富嶽三十六景", "歌川広重", "東海道五十三次", "東洲斎写楽", "喜多川歌麿", "本居宣長", "古事記伝", "国学", "蘭学", "杉田玄白", "解体新書", "伊能忠敬"] },
+            { id: "meiji", name: "明治文化・文明開化", label: "明治時代", order: 160, keywords: ["文明開化", "明治文化", "近代文化", "福沢諭吉", "学問のすすめ", "中江兆民", "坪内逍遥", "二葉亭四迷", "森鴎外", "夏目漱石", "島崎藤村", "浪漫主義", "自然主義", "岡倉天心", "黒田清輝", "フェノロサ"] },
+            { id: "taisho-showa", name: "大正・昭和文化", label: "大正・昭和", order: 170, keywords: ["大正文化", "大正デモクラシー", "白樺派", "芥川龍之介", "モダニズム", "大衆文化", "ラジオ放送", "円本"] }
+        ];
+
+        let cultureStreamExtractedData = [];
+        let cultureStreamShowAllMemorize = false;
+
+        // 文化パート判定
+        function checkIsCulturePart(part, lesson) {
+            if (!part) return false;
+            const pTitle = (part.title || "").toLowerCase();
+            const pSummary = (part.summary || "").toLowerCase();
+            const lTitle = ((lesson.title || "") + " " + (lesson.topicKey || "") + " " + (lesson.topic || "")).toLowerCase();
+            const targetText = pTitle + " " + pSummary;
+
+            // 確実な文化キーワード
+            const cultureRegex = /文化|文学|美術|建築|仏教|宗教|思想|絵画|彫刻|寺院|国風|天平|飛鳥|白鳳|弘仁|貞観|北山|東山|桃山|南蛮|元禄|化政|近代文化|文明開化|歌集|絵巻|浄土教|禅宗|密教|新仏教/;
+            if (cultureRegex.test(targetText)) return true;
+
+            // 授業タイトルが文化系で、パートが政治系でない場合
+            if (cultureRegex.test(lTitle) && !/政治|戦争|合戦|幕府|外交|条約|政争|改革/.test(targetText)) {
+                return true;
+            }
+            return false;
+        }
+
+        // 所属する文化時代を特定
+        function detectCulturePeriod(part, lesson) {
+            const fullText = `${part.title || ''} ${part.summary || ''} ${lesson.title || ''} ${lesson.topicKey || ''} ${lesson.topic || ''}`.toLowerCase();
+            
+            for (let i = 0; i < JAPANESE_CULTURE_PERIODS.length; i++) {
+                const p = JAPANESE_CULTURE_PERIODS[i];
+                for (const kw of p.keywords) {
+                    if (fullText.includes(kw.toLowerCase())) {
+                        return p;
+                    }
+                }
+            }
+            // 不明な場合はその他（末尾）
+            return { id: "other", name: "その他・横断文化", label: "文化史", order: 999, keywords: [] };
+        }
+
+        // 全授業から文化パートを抽出して時代順にソート
+        function extractAllCultureParts(lessonsObj) {
+            const lessons = Object.values(lessonsObj || {});
+            const results = [];
+
+            lessons.forEach(lesson => {
+                if (!lesson || !Array.isArray(lesson.parts)) return;
+
+                // 対象教科（日本史・歴史系）
+                const subj = lesson.subject || detectLessonSubject(lesson) || "";
+                if (!/日本史|歴史|社会/.test(subj) && subj !== "その他") return;
+
+                lesson.parts.forEach((part, partIdx) => {
+                    if (checkIsCulturePart(part, lesson)) {
+                        const period = detectCulturePeriod(part, lesson);
+
+                        // 講義解説テキスト（chatHistoryのうち、該当パートのdivider〜次のdividerまで）
+                        let lectureContent = "";
+                        if (Array.isArray(lesson.chatHistory)) {
+                            let currentPIdx = 0;
+                            const msgsInPart = [];
+                            lesson.chatHistory.forEach((msg, mIdx) => {
+                                if (msg.role === "divider") {
+                                    currentPIdx = findPartIndexForMessage(lesson, mIdx);
+                                    return;
+                                }
+                                if (currentPIdx === partIdx && msg.content) {
+                                    msgsInPart.push(msg.content);
+                                }
+                            });
+                            lectureContent = msgsInPart.join("\n\n---\n\n");
+                        }
+
+                        // 暗記ポイント
+                        const memorizeItems = (lesson.memorizationPoints || []).filter(pt => {
+                            if (!pt) return false;
+                            const text = `${pt.term || ''} ${pt.explanation || ''}`.toLowerCase();
+                            return period.keywords.some(kw => text.includes(kw.toLowerCase())) || /文化|作|著|寺|像|画|院|宗/.test(text);
+                        });
+
+                        results.push({
+                            lessonId: lesson.id,
+                            lessonTitle: lesson.title || "無題の授業",
+                            partIndex: partIdx,
+                            partTitle: cleanPartTitle(part.title || "", partIdx),
+                            partSummary: part.summary || "",
+                            period: period,
+                            lectureContent: lectureContent || part.summary || "講義内容は授業画面でご確認ください。",
+                            memorizeItems: memorizeItems,
+                            updatedAt: lesson.updatedAt || lesson.createdAt || ""
+                        });
+                    }
+                });
+            });
+
+            // 時代順（order） ➔ 更新日順でソート
+            results.sort((a, b) => {
+                if (a.period.order !== b.period.order) {
+                    return a.period.order - b.period.order;
+                }
+                return new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime();
+            });
+
+            return results;
+        }
+
+        // 文化史ストリームビューを開く
+        window.openCultureStreamView = async function() {
+            const listEl = el("view-list");
+            const lessonEl = el("view-lesson");
+            const previewEl = el("view-plan-preview");
+            const streamEl = el("view-culture-stream");
+
+            if (listEl) listEl.classList.add("hidden");
+            if (lessonEl) lessonEl.classList.add("hidden");
+            if (previewEl) previewEl.classList.add("hidden");
+            if (streamEl) streamEl.classList.remove("hidden");
+
+            // 戻るボタンの文言を動的に切り替え
+            const backBtn = el("btn-back-from-culture-stream");
+            if (backBtn) {
+                backBtn.textContent = (currentLesson && currentLessonId) ? "← 授業画面に戻る" : "← 授業一覧に戻る";
+            }
+
+            window.scrollTo({ top: 0, behavior: "smooth" });
+
+            // URLにmode=culture-streamを反映
+            const cleanUrl = new URL(window.location.href);
+            cleanUrl.searchParams.set("mode", "culture-stream");
+            window.history.replaceState({}, "", cleanUrl.toString());
+
+            await renderCultureStream();
+        };
+
+        // 文化史ストリームビューを閉じる（戻る）
+        window.closeCultureStreamView = function() {
+            const streamEl = el("view-culture-stream");
+            if (streamEl) streamEl.classList.add("hidden");
+
+            // URLからmodeパラメータを削除
+            const cleanUrl = new URL(window.location.href);
+            cleanUrl.searchParams.delete("mode");
+            window.history.replaceState({}, "", cleanUrl.toString());
+
+            if (currentLesson && currentLessonId) {
+                el("view-lesson")?.classList.remove("hidden");
+            } else {
+                el("view-list")?.classList.remove("hidden");
+            }
+        };
+
+        // スクロール連動用オブザーバー
+        let cultureScrollObserver = null;
+
+        // 文化史ストリームの描画
+        async function renderCultureStream() {
+            const container = el("culture-stream-sections-container");
+            const navContainer = el("culture-timeline-nav-list");
+            const subtitleEl = el("culture-stream-subtitle");
+            if (!container || !navContainer) return;
+
+            container.innerHTML = `<div style="text-align:center; padding:3rem; color:var(--text-secondary);">⏳ 全授業から文化史パートを抽出・統合中...</div>`;
+
+            // データソース確保
+            let lessonsObj = lastLessonsSnapshot;
+            if (!lessonsObj && window.floraCacheDB && loginUid) {
+                try {
+                    lessonsObj = await window.floraCacheDB.get("flora_cached_lessons_" + loginUid);
+                } catch(e) {}
+            }
+
+            const cultureParts = extractAllCultureParts(lessonsObj);
+            cultureStreamExtractedData = cultureParts;
+
+            if (subtitleEl) {
+                subtitleEl.textContent = `全 ${cultureParts.length} 件の文化史パートを時系列順に串刺し通読・総復習`;
+            }
+
+            // 1. 右ペインのタイムライン目次ナビゲーターを描画
+            const periodCounts = {};
+            cultureParts.forEach(cp => {
+                periodCounts[cp.period.id] = (periodCounts[cp.period.id] || 0) + 1;
+            });
+
+            navContainer.innerHTML = JAPANESE_CULTURE_PERIODS.map(p => {
+                const count = periodCounts[p.id] || 0;
+                const hasLesson = count > 0;
+                const badgeClass = hasLesson ? "taught" : "";
+                const badgeText = hasLesson ? `${count}パート` : "未受講";
+
+                return `
+                    <a href="#culture-period-${p.id}" class="culture-timeline-item ${hasLesson ? 'has-lesson' : ''}" data-period-id="${p.id}">
+                        <div class="culture-timeline-dot"></div>
+                        <span>${escapeHtml(p.name)}</span>
+                        <span class="culture-timeline-badge ${badgeClass}">${badgeText}</span>
+                    </a>
+                `;
+            }).join("");
+
+            navContainer.querySelectorAll(".culture-timeline-item").forEach(item => {
+                item.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    const pid = item.getAttribute("data-period-id");
+                    const targetEl = document.querySelector(`.culture-section-card[data-period-id="${pid}"]`);
+                    if (targetEl) {
+                        targetEl.scrollIntoView({ behavior: "smooth", block: "start" });
+                        navContainer.querySelectorAll(".culture-timeline-item").forEach(i => i.classList.remove("active"));
+                        item.classList.add("active");
+                    } else {
+                        showToast(`💡 「${item.querySelector('span').textContent}」の文化パートはまだ登録されていません。`, "info", 3000);
+                    }
+                });
+            });
+
+            // 2. 左ペインの講義ストリームを描画
+            if (cultureParts.length === 0) {
+                container.innerHTML = `
+                    <div class="omni-empty-box" style="padding: 3rem 1.5rem; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg);">
+                        <div style="font-size: 2.5rem; margin-bottom: 0.8rem;">🏛️</div>
+                        <div style="font-size: 1.05rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.4rem;">文化史パートがまだ登録されていません</div>
+                        <div style="font-size: 0.82rem; color: var(--text-secondary); max-width: 480px; margin: 0 auto; line-height: 1.6;">
+                            「国風文化」「天平文化」「鎌倉文化」などの単元で授業を作成すると、<br>
+                            その中の文化パートが自動でここに集約され、時代順に一気通貫で読めるようになります。
+                        </div>
+                        <button type="button" class="flora-btn flora-btn-primary btn-sm" onclick="closeCultureStreamView(); setNewLessonFormOpen(true);" style="margin-top: 1.25rem;">
+                            ＋ 文化史の授業を作成する
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            const renderedPeriodSet = new Set();
+
+            container.innerHTML = cultureParts.map((cp, idx) => {
+                const nextPart = cultureParts[idx + 1];
+                let nextDividerHtml = "";
+                if (nextPart) {
+                    nextDividerHtml = `
+                        <div class="culture-next-divider">
+                            <span>▼ 次の時代へ（次は ${escapeHtml(nextPart.period.name)}）</span>
+                        </div>
+                    `;
+                }
+
+                // 暗記ポイントチップ
+                let memorizeHtml = "";
+                if (cp.memorizeItems && cp.memorizeItems.length > 0) {
+                    const chips = cp.memorizeItems.map(pt => `
+                        <div class="culture-memorize-chip" title="${escapeHtml(pt.explanation || '')}">
+                            <b>${escapeHtml(pt.term || '')}</b>
+                            <span style="font-size:0.7rem; color:var(--text-secondary); margin-left:0.3rem;">${escapeHtml((pt.explanation || '').slice(0, 30))}...</span>
+                        </div>
+                    `).join("");
+
+                    memorizeHtml = `
+                        <div class="culture-memorize-drawer" id="culture-drawer-${idx}" style="${cultureStreamShowAllMemorize ? '' : 'display:none;'}">
+                            <div class="culture-memorize-drawer-title">
+                                <span>🧠 この文化の重要作品・暗記ポイント (${cp.memorizeItems.length}件)</span>
+                            </div>
+                            <div class="culture-memorize-chips">${chips}</div>
+                        </div>
+                    `;
+                }
+
+                // 時代最初のカードにのみアンカーIDを付与（重複ID完全解消）
+                const isFirstOfPeriod = !renderedPeriodSet.has(cp.period.id);
+                if (isFirstOfPeriod) renderedPeriodSet.add(cp.period.id);
+                const periodAnchorId = isFirstOfPeriod ? `id="culture-period-${cp.period.id}"` : "";
+
+                return `
+                    <div class="culture-section-card" id="culture-section-${idx}" ${periodAnchorId} data-period-id="${cp.period.id}">
+                        <div class="culture-section-header">
+                            <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+                                <span class="culture-period-pill">🏛️ ${escapeHtml(cp.period.label)}</span>
+                                <span class="culture-part-name">${escapeHtml(cp.partTitle)}</span>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:0.5rem;">
+                                ${cp.memorizeItems && cp.memorizeItems.length > 0 ? `
+                                    <button type="button" class="flora-btn flora-btn-ghost btn-xs" onclick="toggleCultureDrawer(${idx})" style="font-size:0.72rem; color:#8b5cf6; border:1px solid rgba(139,92,246,0.3);">
+                                        🧠 暗記 (${cp.memorizeItems.length})
+                                    </button>
+                                ` : ''}
+                                <a href="lesson.html?id=${cp.lessonId}&part=${cp.partIndex}" class="culture-source-link" onclick="event.preventDefault(); jumpToOmniTarget('${cp.lessonId}', { partIndex: ${cp.partIndex} });" title="この授業全体を受講画面で開く">
+                                    <span>📖 ${escapeHtml(cp.lessonTitle)} 第${cp.partIndex + 1}回 ➔</span>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="culture-section-body tex2jax_process">
+                            ${renderFormattedMarkdown(cp.lectureContent)}
+                            ${memorizeHtml}
+                        </div>
+                    </div>
+                    ${nextDividerHtml}
+                `;
+            }).join("");
+
+            // スクロール追従（現在読んでいる時代をタイムラインナビで自動ハイライト）
+            if (cultureScrollObserver) cultureScrollObserver.disconnect();
+            if ("IntersectionObserver" in window) {
+                cultureScrollObserver = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const pid = entry.target.getAttribute("data-period-id");
+                            if (pid) {
+                                navContainer.querySelectorAll(".culture-timeline-item").forEach(item => {
+                                    item.classList.toggle("active", item.getAttribute("data-period-id") === pid);
+                                });
+                            }
+                        }
+                    });
+                }, { threshold: 0.25, rootMargin: "-80px 0px -40% 0px" });
+
+                container.querySelectorAll(".culture-section-card").forEach(card => {
+                    cultureScrollObserver.observe(card);
+                });
+            }
+
+            // MathJax を再描画
+            await forceTriggerMathJax(container);
+        }
+
+        window.toggleCultureDrawer = function(idx) {
+            const drawer = el(`culture-drawer-${idx}`);
+            if (drawer) {
+                drawer.style.display = drawer.style.display === "none" ? "block" : "none";
+            }
+        };
+
+        // 暗記ポイントの一括展開/折りたたみ
+        el("btn-toggle-culture-memorize-all")?.addEventListener("click", () => {
+            cultureStreamShowAllMemorize = !cultureStreamShowAllMemorize;
+            const btn = el("btn-toggle-culture-memorize-all");
+            if (btn) {
+                btn.textContent = cultureStreamShowAllMemorize ? "✕ 暗記ポイントを閉じる" : "🧠 暗記ポイントを一括表示";
+            }
+            document.querySelectorAll(".culture-memorize-drawer").forEach(drawer => {
+                drawer.style.display = cultureStreamShowAllMemorize ? "block" : "none";
+            });
+        });
+
+        // 戻るボタン
+        el("btn-back-from-culture-stream")?.addEventListener("click", closeCultureStreamView);
+
+        // 起動ボタン
+        el("btn-open-culture-stream")?.addEventListener("click", openCultureStreamView);
+        el("btn-toolbar-culture-stream")?.addEventListener("click", openCultureStreamView);
+
+        // URLパラメータによる初期起動チェック
+        if (new URLSearchParams(window.location.search).get("mode") === "culture-stream") {
+            setTimeout(() => {
+                openCultureStreamView();
+            }, 300);
+        }
    </script>
 
     <!-- 🗑️ 授業一括削除フローティングバー -->

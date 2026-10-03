@@ -263,6 +263,7 @@
             headerLessonsLink: '📚 授業一覧・新しい授業',
             headerBackDash: '← ダッシュボードに戻る',
             headerSearchBtn: '授業内を検索',
+            headerCultureStreamBtn: '文化史まとめ読み',
             headerHistoryBtn: '🕒 閲覧履歴 (10件)',
             headerAiBtn: '✨ AIモデル設定',
             headerPolicyBtn: '⚙️ 授業方針を編集',
@@ -338,6 +339,7 @@
             headerLessonsLink: '📚 Lessons & New',
             headerBackDash: '← Back to Dashboard',
             headerSearchBtn: 'Search Lessons',
+            headerCultureStreamBtn: 'Culture History Stream',
             headerHistoryBtn: '🕒 History (10)',
             headerAiBtn: '✨ AI Model Settings',
             headerPolicyBtn: '⚙️ Lesson Policy',
@@ -490,6 +492,12 @@
             const searchBtnLabel = document.getElementById('header-search-btn-label');
             if (searchBtnLabel) {
                 searchBtnLabel.textContent = t('headerSearchBtn');
+            }
+
+            const cultureBtn = document.getElementById('btn-open-culture-stream');
+            if (cultureBtn) {
+                const labelSpan = cultureBtn.querySelector('span:last-child');
+                if (labelSpan) labelSpan.textContent = t('headerCultureStreamBtn');
             }
 
             const histBtn = document.getElementById('btn-recent-lessons-history');
