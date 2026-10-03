@@ -4747,6 +4747,9 @@
             } else if (activeTab === "insights") {
                 renderInsights();
             }
+            if (typeof window.checkAndFlushPendingFirebaseSync === "function") {
+                window.checkAndFlushPendingFirebaseSync();
+            }
         };
 
         const btnOpenAddWordModal = document.getElementById("btn-open-add-word-modal");
@@ -11082,6 +11085,9 @@
             } else if (activeTab === "insights") {
                 renderInsights();
             }
+            if (typeof window.checkAndFlushPendingFirebaseSync === "function") {
+                window.checkAndFlushPendingFirebaseSync();
+            }
         }
 
         // ==========================================
@@ -12507,17 +12513,66 @@
             }
             currentUser = user;
 
+            // 🛡️ 他タブ（lesson.html等）でのAI返信や更新時に、演習中の画面が勝手に再描画・開き直しされるのを完全防止
+            function isUserEngagedInExerciseOrInput() {
+                // 1. 暗記カード1問1答モーダルが開いている
+                if (fcModal && fcModal.style.display !== "none") return true;
+
+                // 2. 他のモーダルが開いている
+                const activeModals = document.querySelectorAll(".modal-overlay");
+                for (const m of activeModals) {
+                    if (m && m.style.display && m.style.display !== "none") return true;
+                }
+
+                // 3. テキスト入力中（検索欄・メモ編集等）
+                if (document.activeElement && (
+                    document.activeElement.tagName === "INPUT" ||
+                    document.activeElement.tagName === "TEXTAREA" ||
+                    document.activeElement.isContentEditable
+                )) {
+                    return true;
+                }
+
+                // 4. 直近のローカル操作（カード操作など）から5秒以内
+                if ((Date.now() - (window._lastLocalSrsUpdateTimestamp || 0)) < 5000) {
+                    return true;
+                }
+
+                return false;
+            }
+
+            let hasPendingRemoteSync = false;
             let firebaseSyncDebounceTimer = null;
-            function handleFirebaseSync() {
+
+            function handleFirebaseSync(force = false) {
+                // 演習中や操作中は画面全体の再描画（renderActiveView）を保留し、ユーザーの操作を妨害しない
+                if (!force && isUserEngagedInExerciseOrInput()) {
+                    hasPendingRemoteSync = true;
+                    updateSrsDashboardCounts();
+                    return;
+                }
+
                 if (firebaseSyncDebounceTimer) clearTimeout(firebaseSyncDebounceTimer);
                 firebaseSyncDebounceTimer = setTimeout(() => {
+                    if (!force && isUserEngagedInExerciseOrInput()) {
+                        hasPendingRemoteSync = true;
+                        return;
+                    }
+                    hasPendingRemoteSync = false;
                     invalidateInsightsDataCache();
                     updateCounts();
                     populateSubjectFilter();
                     renderActiveView();
                     updateSrsDashboardCounts();
-                }, 60);
+                }, 120);
             }
+
+            window.checkAndFlushPendingFirebaseSync = function() {
+                if (hasPendingRemoteSync) {
+                    hasPendingRemoteSync = false;
+                    handleFirebaseSync(true);
+                }
+            };
 
             onValue(ref(database, 'users/' + user.uid + '/problems'), (snapshot) => {
                 rawProblems = snapshot.val() || {};
@@ -12529,6 +12584,7 @@
                 handleFirebaseSync();
             });
 
+            // 💡 別タブ（授業画面）でAI返信が完了してlessonsが更新されても、演習中は再描画しない
             onValue(ref(database, 'users/' + user.uid + '/lessons'), (snapshot) => {
                 rawLessons = snapshot.val() || {};
                 handleFirebaseSync();
@@ -12539,17 +12595,8 @@
                 const remoteData = snapshot.val() || {};
                 rawMemorizeProgress = mergeSrsProgressData(rawMemorizeProgress, remoteData);
                 saveMemorizeProgressLocally();
-                // キャッシュを破棄して他端末での進捗変更を即時反映
                 invalidateInsightsDataCache();
-
-                // 自端末での評価クリック直後（3.5秒以内）またはモーダル演習中は画面全体の再描画を抑制してスクロール飛びとチラつきを完全防止
-                const isFcModalOpen = fcModal && fcModal.style.display !== "none";
-                const isRecentLocalAction = (Date.now() - (window._lastLocalSrsUpdateTimestamp || 0)) < 3500;
-                if (!isFcModalOpen && !isRecentLocalAction) {
-                    handleFirebaseSync();
-                } else {
-                    updateSrsDashboardCounts();
-                }
+                handleFirebaseSync();
             });
 
             // 📝 単語・カードのユーザー追加メモをリアルタイム購読
