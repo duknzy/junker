@@ -709,8 +709,8 @@
         }, 350);
 
         document.documentElement.classList.toggle('dark');
-        const nowDark = isDark();
-        localStorage.setItem('flora-dark-mode', nowDark ? 'true' : 'false');
+        const nowDark = isDarkModeActive();
+        try { localStorage.setItem('flora-dark-mode', nowDark ? 'true' : 'false'); } catch (_) {}
         const meta = document.getElementById('meta-theme-color');
         if (meta) meta.setAttribute('content', nowDark ? '#131314' : '#059669');
         window.dispatchEvent(new CustomEvent('flora-theme-changed', { detail: { isDark: nowDark } }));
@@ -767,7 +767,9 @@
             };
         }
 
-        // OSテーマ変更検知
+        // OSテーマ変更検知（サイドバー再描画のたびに重複登録しないようガード）
+        if (window.__floraDarkMqBound) return;
+        window.__floraDarkMqBound = true;
         window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
             const stored = localStorage.getItem('flora-dark-mode');
             if (!stored) {
