@@ -4,6 +4,12 @@
  * 全モバイルページで <script src="bottom-nav.js"></script> として読み込む
  */
 (function () {
+    // 🌙 保存済みダークモード設定を全モバイルページで適用（ページ側の早期スクリプトが無い場合の保険）
+    try {
+        const storedTheme = localStorage.getItem('flora-dark-mode');
+        const prefersDarkTheme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.classList.toggle('dark', storedTheme === 'true' || (!storedTheme && prefersDarkTheme));
+    } catch (_) {}
     function getBasePath() {
         // 現在のURLが /m/ 配下であることを保証
         const pathname = window.location.pathname;
