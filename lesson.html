@@ -7173,6 +7173,9 @@
                                 </div>
                             </div>
                             <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+                                <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="btn-toggle-culture-excluded" style="font-weight:700; color:var(--text-secondary); border:1px solid var(--border-color); display:none;" title="一覧から削除したパートを確認・復元">
+                                    🗑️ 削除済み (<span id="culture-excluded-count">0</span>)
+                                </button>
                                 <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="btn-toggle-culture-memorize-all" style="font-weight:700; color:#8b5cf6; border:1px solid rgba(139,92,246,0.3);">
                                     🧠 暗記ポイントを一括表示
                                 </button>
@@ -7181,6 +7184,9 @@
                                 </button>
                             </div>
                         </div>
+
+                        <!-- 削除済み（除外）パート復元パネル -->
+                        <div id="culture-excluded-panel" style="display:none; margin-bottom:1rem; padding:1rem 1.15rem; background:var(--bg-surface); border:1px dashed var(--border-color); border-radius:var(--radius-lg);"></div>
 
                         <!-- メイン2ペインレイアウト -->
                         <div class="culture-stream-layout">
@@ -25019,6 +25025,161 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
             renderCultureStream();
         };
 
+        // 🗑️ 誤登録パートのユーザー側除外（Firebase RTDB: users/{uid}/cultureExcludedParts に保存・元の授業データは削除しない）
+        //    localStorage は初期描画用キャッシュとしてのみ使用
+        const CULTURE_EXCLUDED_STORAGE_KEY = "flora_culture_excluded_parts";
+        let cultureStreamExcludedData = [];
+        let cultureExcludedPanelOpen = false;
+        let cultureExcludedMapCache = null; // Firebase から同期された最新値
+
+        function readCultureExcludedLocal() {
+            try {
+                const raw = JSON.parse(localStorage.getItem(CULTURE_EXCLUDED_STORAGE_KEY) || "{}");
+                return (raw && typeof raw === "object" && !Array.isArray(raw)) ? raw : {};
+            } catch(e) {
+                return {};
+            }
+        }
+
+        function getCultureExcludedMap() {
+            return { ...(cultureExcludedMapCache || readCultureExcludedLocal()) };
+        }
+
+        function setCultureExcludedCache(map) {
+            cultureExcludedMapCache = map || {};
+            try {
+                localStorage.setItem(CULTURE_EXCLUDED_STORAGE_KEY, JSON.stringify(cultureExcludedMapCache));
+            } catch(e) {}
+        }
+
+        function cultureExcludedRef(key) {
+            const base = `users/${loginUid}/cultureExcludedParts`;
+            return ref(database, key ? `${base}/${key}` : base);
+        }
+
+        async function writeCultureExcluded(key, value) {
+            if (!loginUid) {
+                showToast?.("⚠️ ログインしていないためクラウドに保存できません", "error", 3000);
+                return false;
+            }
+            try {
+                await set(cultureExcludedRef(key), value);
+                return true;
+            } catch(e) {
+                console.error("cultureExcludedParts save error:", e);
+                showToast?.("⚠️ Firebaseへの保存に失敗しました: " + e.message, "error", 4000);
+                return false;
+            }
+        }
+
+        // Firebase リアルタイム同期（他端末での削除・復元も即反映）
+        let cultureExcludedSyncUid = null;
+        onAuthStateChanged(auth, (user) => {
+            if (!user || cultureExcludedSyncUid === user.uid) return;
+            cultureExcludedSyncUid = user.uid;
+            let migrated = false;
+            onValue(ref(database, `users/${user.uid}/cultureExcludedParts`), async (snap) => {
+                const remote = snap.val() || {};
+
+                // 旧仕様（localStorageのみ保存）のデータを初回のみクラウドへ移行
+                if (!migrated) {
+                    migrated = true;
+                    const local = readCultureExcludedLocal();
+                    const missing = {};
+                    Object.keys(local).forEach(k => { if (!(k in remote)) missing[k] = local[k]; });
+                    if (Object.keys(missing).length > 0) {
+                        try {
+                            await update(ref(database, `users/${user.uid}/cultureExcludedParts`), missing);
+                            return; // update により onValue が再発火する
+                        } catch(e) {
+                            console.warn("cultureExcludedParts migration failed:", e);
+                        }
+                    }
+                }
+
+                setCultureExcludedCache(remote);
+                if (!el("view-culture-stream")?.classList.contains("hidden")) {
+                    renderCultureStream();
+                }
+            });
+        });
+
+        window.excludeCulturePart = async function(lessonId, partIdx) {
+            const cp = cultureStreamExtractedData.find(c => String(c.lessonId) === String(lessonId) && c.partIndex === partIdx);
+            const label = cp ? `「${cp.partTitle}」` : "このパート";
+            if (!confirm(`${label}を文化史一覧から削除しますか？\n\n※元の授業データは削除されません。「🗑️ 削除済み」からいつでも元に戻せます。`)) return;
+
+            const key = `${lessonId}_${partIdx}`;
+            const map = getCultureExcludedMap();
+            map[key] = Date.now();
+            setCultureExcludedCache(map); // 楽観的更新
+            renderCultureStream();
+
+            if (await writeCultureExcluded(key, map[key])) {
+                showToast?.(`🗑️ ${label}を文化史一覧から削除しました`, "success", 2500);
+            }
+        };
+
+        window.restoreCulturePart = async function(lessonId, partIdx) {
+            const key = `${lessonId}_${partIdx}`;
+            const map = getCultureExcludedMap();
+            delete map[key];
+            setCultureExcludedCache(map);
+            renderCultureStream();
+
+            if (await writeCultureExcluded(key, null)) {
+                showToast?.("↩️ 文化史一覧に復元しました", "success", 2500);
+            }
+        };
+
+        window.restoreAllCultureParts = async function() {
+            if (!confirm("削除済みのパートをすべて文化史一覧に復元しますか？")) return;
+            setCultureExcludedCache({});
+            cultureExcludedPanelOpen = false;
+            renderCultureStream();
+
+            if (await writeCultureExcluded(null, null)) {
+                showToast?.("↩️ すべて復元しました", "success", 2500);
+            }
+        };
+
+        function renderCultureExcludedPanel() {
+            const btn = el("btn-toggle-culture-excluded");
+            const countEl = el("culture-excluded-count");
+            const panel = el("culture-excluded-panel");
+            const count = cultureStreamExcludedData.length;
+
+            if (countEl) countEl.textContent = count;
+            if (btn) btn.style.display = count > 0 ? "" : "none";
+            if (!panel) return;
+
+            if (count === 0) cultureExcludedPanelOpen = false;
+            if (!cultureExcludedPanelOpen) {
+                panel.style.display = "none";
+                panel.innerHTML = "";
+                return;
+            }
+
+            panel.style.display = "block";
+            panel.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.6rem;">
+                    <span style="font-weight:800; font-size:0.9rem; color:var(--text-primary);">🗑️ 文化史一覧から削除したパート (${count}件)</span>
+                    <button type="button" class="flora-btn flora-btn-ghost btn-xs" onclick="restoreAllCultureParts()" style="font-size:0.72rem; font-weight:700;">↩️ すべて復元</button>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:0.35rem;">
+                    ${cultureStreamExcludedData.map(cp => `
+                        <div style="display:flex; justify-content:space-between; align-items:center; gap:0.5rem; padding:0.45rem 0.65rem; background:var(--bg-main, rgba(0,0,0,0.02)); border:1px solid var(--border-color); border-radius:var(--radius-sm);">
+                            <div style="min-width:0; font-size:0.8rem;">
+                                <b style="color:var(--text-primary);">${escapeHtml(cp.partTitle)}</b>
+                                <span style="color:var(--text-secondary); margin-left:0.4rem;">📖 ${escapeHtml(cp.lessonTitle)} 第${cp.partIndex + 1}回</span>
+                            </div>
+                            <button type="button" class="flora-btn flora-btn-ghost btn-xs" onclick="restoreCulturePart('${cp.lessonId}', ${cp.partIndex})" style="font-size:0.72rem; font-weight:700; color:#8b5cf6; border:1px solid rgba(139,92,246,0.3); white-space:nowrap;">↩️ 復元</button>
+                        </div>
+                    `).join("")}
+                </div>
+            `;
+        }
+
         // 文化史を象徴する明確なキーワード
         const CULTURE_CORE_REGEX = /文化|文学|美術|建築|仏教|宗教|思想|絵画|彫刻|寺院建築|工芸|芸能|茶の湯|歌舞伎|浮世絵|絵巻|浄土教|密教|禅宗|新仏教|国学|蘭学|洋学|文明開化|歌集|連歌|かな文学|女流文学/;
 
@@ -25194,6 +25355,8 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
         function extractAllCultureParts(lessonsObj) {
             const lessons = Object.values(lessonsObj || {});
             const results = [];
+            const excludedMap = getCultureExcludedMap();
+            const excludedResults = [];
 
             lessons.forEach(lesson => {
                 if (!lesson || !Array.isArray(lesson.parts)) return;
@@ -25223,6 +25386,17 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
                         // ユーザーの要望: 「未受講のやつは表示しなくていい」
                         // 講義チャット（lectureContent）がまだ受講・生成されていない未受講パートはスキップ
                         if (!lectureContent) return;
+
+                        // ユーザーが「誤登録」として削除したパートは一覧から除外（復元用に別保持）
+                        if (excludedMap[`${lesson.id}_${partIdx}`]) {
+                            excludedResults.push({
+                                lessonId: lesson.id,
+                                lessonTitle: lesson.title || "無題の授業",
+                                partIndex: partIdx,
+                                partTitle: cleanPartTitle(part.title || "", partIdx)
+                            });
+                            return;
+                        }
 
                         const period = detectCulturePeriod(part, lesson, partIdx, lectureContent);
 
@@ -25257,6 +25431,7 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
                 return new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime();
             });
 
+            cultureStreamExcludedData = excludedResults;
             return results;
         }
 
@@ -25321,6 +25496,7 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
             const lessonsObj = await getOrFetchAllLessons();
             const cultureParts = extractAllCultureParts(lessonsObj);
             cultureStreamExtractedData = cultureParts;
+            renderCultureExcludedPanel();
 
             if (subtitleEl) {
                 subtitleEl.textContent = `全 ${cultureParts.length} 件の文化史パートを時系列順に串刺し通読・総復習`;
@@ -25453,6 +25629,9 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
                                 <a href="lesson.html?id=${cp.lessonId}&part=${cp.partIndex}" class="culture-source-link" onclick="event.preventDefault(); jumpToOmniTarget('${cp.lessonId}', { partIndex: ${cp.partIndex} });" title="この授業全体を受講画面で開く">
                                     <span>📖 ${escapeHtml(cp.lessonTitle)} 第${cp.partIndex + 1}回 ➔</span>
                                 </a>
+                                <button type="button" class="flora-btn flora-btn-ghost btn-xs" onclick="excludeCulturePart('${cp.lessonId}', ${cp.partIndex})" style="font-size:0.72rem; color:#ef4444; border:1px solid rgba(239,68,68,0.3);" title="文化史ではないパートを一覧から削除（元の授業は残ります）">
+                                    🗑️ 削除
+                                </button>
                             </div>
                         </div>
                         <div class="culture-section-body tex2jax_process">
@@ -25506,6 +25685,12 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
             document.querySelectorAll(".culture-memorize-drawer").forEach(drawer => {
                 drawer.style.display = cultureStreamShowAllMemorize ? "block" : "none";
             });
+        });
+
+        // 削除済みパネルの開閉
+        el("btn-toggle-culture-excluded")?.addEventListener("click", () => {
+            cultureExcludedPanelOpen = !cultureExcludedPanelOpen;
+            renderCultureExcludedPanel();
         });
 
         // 戻るボタン
