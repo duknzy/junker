@@ -1496,6 +1496,10 @@ async function runDeepseekFallbackLoop(contents, systemInstruction, options = {}
             }
         }
         if (result.ok) {
+            if (typeof window !== "undefined") window.__lastSuccessfulAIModel = modelName;
+            if (typeof options.onModelUsed === "function") {
+                try { options.onModelUsed(modelName); } catch (_) {}
+            }
             if (!silentFallback) notifyModelFallback(fallbackAttempts, modelName);
             return result.parsed;
         }
@@ -1724,6 +1728,10 @@ async function runGeminiFallbackLoop(contents, systemInstruction, options = {}) 
         }
 
         if (result.ok) {
+            if (typeof window !== "undefined") window.__lastSuccessfulAIModel = modelName;
+            if (typeof options.onModelUsed === "function") {
+                try { options.onModelUsed(modelName); } catch (_) {}
+            }
             if (!silentFallback) notifyModelFallback(fallbackAttempts, modelName);
             return result.parsed;
         }

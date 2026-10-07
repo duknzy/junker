@@ -6417,6 +6417,9 @@
                                 <button type="button" class="tactile-btn" id="btn-batch-generate-choice-drills" style="font-size:0.75rem; font-weight:700; padding:0.4rem 0.85rem; height:36px; background:#EEF2FF; color:#4F46E5; border:1px solid #C7D2FE; border-radius:var(--radius-full); white-space:nowrap; display:inline-flex; align-items:center; gap:0.35rem; cursor:pointer;" title="選択問題（共通テスト形式）が未作成の過去授業を検出し、API制限に配慮しながら段階的に一括作成します">
                                     🎯 選択問題を一括生成
                                 </button>
+                                <button type="button" class="tactile-btn" id="btn-batch-reextract-timeline" style="font-size:0.75rem; font-weight:700; padding:0.4rem 0.85rem; height:36px; background:rgba(245, 158, 11, 0.12); color:#d97706; border:1px solid rgba(245, 158, 11, 0.35); border-radius:var(--radius-full); white-space:nowrap; display:inline-flex; align-items:center; gap:0.35rem; cursor:pointer;" title="授業を選択（複数可）して、AIで年表・年代出来事を一括再抽出します">
+                                    ⏳ 年表を一括再抽出
+                                </button>
                                 <button type="button" class="tactile-btn" id="btn-autofix-lesson-subjects" style="font-size:0.75rem; font-weight:700; padding:0.4rem 0.85rem; height:36px; background:var(--brand-light); color:var(--brand-primary); border:1px solid var(--brand-border); border-radius:var(--radius-full); white-space:nowrap; display:inline-flex; align-items:center; gap:0.35rem; cursor:pointer;" title="「その他」や「未分類」の授業のタイトル・内容を自動判定し、政経・化学などの適切な教科へ一括で分類し直します（暗記カードも同期）">
                                     ⚡ 過去の授業の教科を一括自動判別
                                 </button>
@@ -6810,9 +6813,9 @@
                                         </div>
                                         <div style="display: flex; gap: 0.35rem; align-items: center; flex-wrap: wrap;">
                                             <button type="button" id="btn-toggle-batch-drills" class="flora-btn flora-btn-secondary btn-sm" onclick="toggleLessonDrillsBatchMode()" style="padding: 0.2rem 0.55rem; font-size: 0.72rem; color: #4338CA; border: 1px dashed rgba(99,102,241,0.5); background: rgba(99,102,241,0.06); font-weight: 750;" title="選択問題を選択して一括削除や解答リセットを行います">☑️ 一括管理</button>
-                                            <button type="button" id="btn-open-byot-drills-modal" class="flora-btn flora-btn-secondary btn-sm" style="padding: 0.2rem 0.55rem; font-size: 0.72rem; color: #4338CA; border: 1px dashed rgba(99,102,241,0.5); background: rgba(99,102,241,0.06); font-weight: 750;" title="Google AI Studio（構造化出力Structured outputs）で共通テスト形式問題を一括取り込み（API消費ゼロ＆パース崩れゼロ）">✨ AI Studioで作成</button>
-                                            <button type="button" id="btn-add-more-choice-drills" class="flora-btn flora-btn-secondary btn-sm" onclick="addMoreChoiceDrills()" style="padding: 0.2rem 0.55rem; font-size: 0.72rem; color: var(--brand-primary); font-weight: 700;" title="さらに新しい視点の選択問題を5問追加します">＋ 5問追加生成</button>
-                                            <button type="button" id="btn-regen-choice-drills" class="flora-btn flora-btn-secondary btn-sm" onclick="regenerateLessonChoiceDrills()" style="padding: 0.2rem 0.55rem; font-size: 0.72rem; color: var(--text-secondary);" title="全パートから選択問題を再生成します">🔄 再生成</button>
+                                            <button type="button" id="btn-open-api-drills-modal" class="flora-btn flora-btn-primary btn-sm" style="padding: 0.2rem 0.6rem; font-size: 0.72rem; background: linear-gradient(135deg, #4F46E5, #4338CA); color: #fff; font-weight: 800; border: none;" title="Gemini APIを活用して全パートから共通テスト形式選択問題をボタン1つで自動生成（コピペ不要）">🤖 AI自動生成</button>
+                                            <button type="button" id="btn-open-byot-drills-modal" class="flora-btn flora-btn-secondary btn-sm" style="padding: 0.2rem 0.55rem; font-size: 0.72rem; color: #059669; border: 1px dashed rgba(16,185,129,0.5); background: rgba(16,185,129,0.06); font-weight: 750;" title="Google AI Studio（構造化出力）で共通テスト形式問題を一括作成・取り込み（API消費ゼロ）">✨ AI Studio手動作成</button>
+                                            <button type="button" id="btn-add-more-choice-drills" class="flora-btn flora-btn-secondary btn-sm" onclick="addMoreChoiceDrills()" style="padding: 0.2rem 0.55rem; font-size: 0.72rem; color: var(--brand-primary); font-weight: 700;" title="さらに新しい視点の選択問題を5問追加します">＋ 5問追加</button>
                                             <button type="button" id="btn-reset-choice-drills-answers" class="flora-btn flora-btn-secondary btn-sm" onclick="resetAllChoiceDrillAnswers()" style="padding: 0.2rem 0.55rem; font-size: 0.72rem; color: var(--text-muted);" title="解答結果をリセットして最初から解き直します">🧹 解答リセット</button>
                                             <button type="button" id="btn-clear-all-drills" class="flora-btn flora-btn-secondary btn-sm" onclick="clearLessonChoiceDrills()" style="padding: 0.2rem 0.55rem; font-size: 0.72rem; color: var(--error);" title="この授業の選択問題をすべて削除します">🗑️ 全削除</button>
                                         </div>
@@ -6895,6 +6898,9 @@
                                             </a>
                                             <button type="button" class="flora-btn flora-btn-secondary btn-xs" id="btn-reextract-timeline-ai" onclick="ensureHistoricalEvents(true)" style="font-size:0.72rem; padding:0.25rem 0.55rem; color:var(--brand-primary); font-weight:700;" title="授業本文からAIで年号・出来事を自動再抽出します">
                                                 🤖 AI自動再抽出
+                                            </button>
+                                            <button type="button" class="flora-btn flora-btn-secondary btn-xs" id="btn-batch-reextract-timeline-tab" onclick="openBatchTimelineModal()" style="font-size:0.72rem; padding:0.25rem 0.55rem; color:#d97706; font-weight:700; background:rgba(245,158,11,0.08); border-color:rgba(245,158,11,0.3);" title="複数の授業を選択して年表・重要年代出来事をAIで一括再抽出します">
+                                                📚 複数授業を一括再抽出
                                             </button>
                                         </div>
                                     </div>
@@ -7589,6 +7595,174 @@
         </div>
     </div>
 
+    <!-- ⏳ 年表・年代出来事の一括再抽出モーダル -->
+    <div class="modal-overlay" id="batch-timeline-extract-modal" style="display: none;">
+        <div class="modal-content" style="max-width: 660px; width: 94%;">
+            <div class="modal-header" style="flex-wrap:wrap; gap:0.5rem; align-items:center;">
+                <div style="display:flex; align-items:center; gap:0.55rem;">
+                    <span style="font-size:1.3rem;">⏳</span>
+                    <div>
+                        <h3 class="modal-title" style="margin:0; font-size:1.05rem;">年表・年代出来事の一括再抽出</h3>
+                        <div style="font-size:0.72rem; color:var(--text-muted); font-weight:normal; margin-top:2px;">
+                            授業原本・講義ノートから重要年号・出来事・判例・法制をAIで網羅的に再抽出
+                        </div>
+                    </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:0.5rem; margin-left:auto;">
+                    <!-- タブ切り替えボタン -->
+                    <div style="display:inline-flex; background:var(--bg-subtle); padding:2px; border-radius:var(--radius-full); border:1px solid var(--border-color);">
+                        <button type="button" id="tab-btn-batch-timeline-run" style="font-size:0.72rem; padding:0.25rem 0.65rem; border-radius:var(--radius-full); font-weight:700; border:none; background:var(--brand-primary); color:#fff; cursor:pointer;">
+                            🚀 一括実行
+                        </button>
+                        <button type="button" id="tab-btn-batch-timeline-history" style="font-size:0.72rem; padding:0.25rem 0.65rem; border-radius:var(--radius-full); font-weight:700; border:none; background:transparent; color:var(--text-secondary); cursor:pointer;">
+                            📜 抽出履歴 <span id="batch-timeline-history-count-badge" style="font-size:0.65rem; background:rgba(0,0,0,0.08); padding:0.05rem 0.35rem; border-radius:10px; margin-left:2px;">0</span>
+                        </button>
+                    </div>
+                    <button type="button" class="modal-close-btn" id="close-batch-timeline-modal-btn">✕</button>
+                </div>
+            </div>
+
+            <!-- 初期設定ビュー -->
+            <div id="batch-timeline-setup-view">
+                <p style="font-size:0.82rem; color:var(--text-secondary); line-height:1.55; margin-bottom:0.7rem;">
+                    選択した授業の原本テキスト・講義ノートをAIが再解析し、統合年表および年代整序特訓に直結する【年号・出来事・重要判例】を一括抽出・更新します。<br>
+                    <span style="color:#d97706; font-weight:700;">※ APIレートリミットを避けるため、1件完了ごとにクールダウンを挟みながら段階的に生成・保存します。</span>
+                </p>
+
+                <!-- 🤖 抽出AIモデルの選択 -->
+                <div style="background:var(--bg-surface); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:0.55rem 0.75rem; margin-bottom:0.7rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.4rem;">
+                    <div>
+                        <div style="font-size:0.78rem; font-weight:750; color:var(--text-primary); display:flex; align-items:center; gap:0.35rem;">
+                            <span>🤖 抽出に使用するAIモデル</span>
+                        </div>
+                        <div style="font-size:0.68rem; color:var(--text-muted); margin-top:1px;">
+                            指定したモデルを最優先で呼び出し、失敗時は自動フォールバックします
+                        </div>
+                    </div>
+                    <select id="batch-timeline-model-select" class="flora-input" style="font-size:0.76rem; padding:0.3rem 0.6rem; border-radius:var(--radius-md); font-weight:700; background:var(--bg-subtle); color:var(--text-primary); border:1px solid var(--border-color); cursor:pointer;">
+                        <option value="gemini-3.8-flash" selected>✨ Gemini 3.8 Flash（推奨・最新最速）</option>
+                        <option value="gemini-3.7-flash">⚡ Gemini 3.7 Flash（安定）</option>
+                        <option value="gemini-3.6-flash">⚡ Gemini 3.6 Flash</option>
+                        <option value="gemini-3.5-flash">⚡ Gemini 3.5 Flash</option>
+                        <option value="gemini-3.5-flash-lite">🍃 Gemini 3.5 Flash-Lite（クォータ節約）</option>
+                        <option value="gemini-3.1-flash-lite">🍃 Gemini 3.1 Flash-Lite</option>
+                        <option value="deepseek-v4-flash">🐋 DeepSeek V4 Flash</option>
+                    </select>
+                </div>
+
+                <!-- 検索＆ステータス絞り込みバー -->
+                <div style="display:flex; gap:0.5rem; align-items:center; margin-bottom:0.55rem; flex-wrap:wrap;">
+                    <div style="flex:1; min-width:180px; position:relative;">
+                        <input type="text" id="batch-timeline-search-input" placeholder="🔍 授業タイトルで絞り込み..." class="flora-input" style="width:100%; font-size:0.78rem; padding:0.35rem 0.65rem 0.35rem 1.8rem; border-radius:var(--radius-full); box-sizing:border-box;">
+                        <span style="position:absolute; left:0.6rem; top:50%; transform:translateY(-50%); font-size:0.78rem; pointer-events:none; color:var(--text-muted);">🔍</span>
+                    </div>
+                    <select id="batch-timeline-status-filter" class="flora-input" style="font-size:0.75rem; padding:0.35rem 0.6rem; border-radius:var(--radius-full); cursor:pointer;">
+                        <option value="all">全ステータス</option>
+                        <option value="history_only">🏛️ 歴史・公共のみ</option>
+                        <option value="has_events">⏳ 年表ありのみ</option>
+                        <option value="empty_events">⚠️ 年表未抽出のみ</option>
+                    </select>
+                </div>
+
+                <!-- 教科フィルタータブ -->
+                <div style="display:flex; gap:0.35rem; flex-wrap:wrap; margin-bottom:0.65rem;" id="batch-timeline-subject-chips"></div>
+
+                <!-- 選択操作バー -->
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.45rem; font-size:0.75rem; color:var(--text-secondary); flex-wrap:wrap; gap:0.4rem;">
+                    <div>選択中: <b id="batch-timeline-target-count" style="color:var(--brand-primary); font-size:0.88rem;">0</b> / <span id="batch-timeline-total-count">0</span> 件</div>
+                    <div style="display:flex; gap:0.35rem;">
+                        <button type="button" class="tactile-btn" id="btn-batch-timeline-select-all" style="font-size:0.7rem; padding:0.2rem 0.55rem; background:var(--bg-subtle);">全選択</button>
+                        <button type="button" class="tactile-btn" id="btn-batch-timeline-deselect-all" style="font-size:0.7rem; padding:0.2rem 0.55rem; background:var(--bg-subtle);">全解除</button>
+                        <button type="button" class="tactile-btn" id="btn-batch-timeline-select-history" style="font-size:0.7rem; padding:0.2rem 0.55rem; background:rgba(245,158,11,0.1); color:#d97706; border-color:rgba(245,158,11,0.3);">🏛️ 歴史・公共を全選択</button>
+                    </div>
+                </div>
+
+                <!-- 候補リスト -->
+                <div id="batch-timeline-candidates-list" style="max-height: 230px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 0.75rem; border:1px solid var(--border-color); border-radius:var(--radius-md); padding:0.45rem; background:var(--bg-subtle);"></div>
+
+                <!-- 抽出モード選択 -->
+                <div style="background:var(--bg-surface); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:0.55rem 0.75rem; margin-bottom:0.85rem; display:flex; flex-direction:column; gap:0.35rem;">
+                    <div style="font-size:0.74rem; font-weight:700; color:var(--text-secondary); margin-bottom:0.1rem;">再抽出モード</div>
+                    <label style="display:flex; align-items:center; gap:0.45rem; font-size:0.78rem; cursor:pointer; color:var(--text-primary);">
+                        <input type="radio" name="batch-timeline-mode" value="replace" checked style="accent-color:var(--brand-primary); cursor:pointer;">
+                        <span><b>既存の年表を置き換えて最新抽出</b>（古い・不正な年代データを一掃して再生成）</span>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:0.45rem; font-size:0.78rem; cursor:pointer; color:var(--text-primary);">
+                        <input type="radio" name="batch-timeline-mode" value="merge" style="accent-color:var(--brand-primary); cursor:pointer;">
+                        <span><b>既存の年表にマージ・追加</b>（既存の出来事を残したまま重複排除して統合）</span>
+                    </label>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 0.6rem;">
+                    <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="cancel-batch-timeline-btn">キャンセル</button>
+                    <button type="button" class="flora-btn flora-btn-primary btn-sm" id="start-batch-timeline-btn" style="background:linear-gradient(135deg, #d97706, #b45309); border-color:#d97706; color:#fff; font-weight:700; box-shadow:0 2px 8px rgba(217,119,6,0.3);">
+                        🚀 選択した授業の年表を再抽出する
+                    </button>
+                </div>
+            </div>
+
+            <!-- 進行中・完了ビュー -->
+            <div id="batch-timeline-progress-view" style="display:none;">
+                <div style="margin-bottom:0.85rem;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.82rem; font-weight:700; margin-bottom:0.4rem;">
+                        <span id="batch-timeline-progress-label">処理準備中...</span>
+                        <span id="batch-timeline-progress-percent" style="color:#d97706;">0%</span>
+                    </div>
+                    <div style="height:8px; background:var(--bg-subtle); border-radius:var(--radius-full); overflow:hidden; border:1px solid var(--border-color);">
+                        <div id="batch-timeline-progress-bar" style="height:100%; width:0%; background:linear-gradient(90deg, #d97706, #059669); transition:width 0.3s ease;"></div>
+                    </div>
+                    <div id="batch-timeline-current-task" style="font-size:0.78rem; color:var(--text-secondary); margin-top:0.45rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                        待機中...
+                    </div>
+                </div>
+
+                <!-- 完了結果サマリーカード -->
+                <div id="batch-timeline-complete-summary-card" style="display:none; background:var(--bg-surface); border:1px solid rgba(5,150,105,0.3); border-radius:var(--radius-md); padding:0.75rem 0.9rem; margin-bottom:0.75rem;">
+                    <div style="font-size:0.84rem; font-weight:800; color:#059669; margin-bottom:0.45rem; display:flex; align-items:center; justify-content:space-between;">
+                        <span>🎉 一括再抽出が完了しました</span>
+                        <span id="batch-timeline-complete-duration" style="font-size:0.72rem; color:var(--text-muted); font-weight:normal;"></span>
+                    </div>
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:0.45rem; font-size:0.74rem;">
+                        <div><b>⏱️ 完了時刻:</b> <span id="batch-timeline-complete-time" style="color:var(--text-primary);">-</span></div>
+                        <div><b>🤖 応答AIモデル:</b> <span id="batch-timeline-complete-model" style="color:var(--brand-primary); font-weight:750;">-</span></div>
+                        <div><b>📊 処理結果:</b> <span id="batch-timeline-complete-stats" style="color:var(--text-primary);">-</span></div>
+                    </div>
+                </div>
+
+                <!-- リアルタイムログ -->
+                <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted); margin-bottom:0.35rem; display:flex; justify-content:space-between; align-items:center;">
+                    <span>処理履歴ログ</span>
+                </div>
+                <div id="batch-timeline-log-list" style="max-height: 180px; overflow-y: auto; background:var(--bg-subtle); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:0.6rem; display:flex; flex-direction:column; gap:0.35rem; font-size:0.76rem; font-family:monospace; margin-bottom:0.85rem;"></div>
+
+                <div style="display:flex; justify-content:flex-end; gap:0.6rem; align-items:center;">
+                    <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="btn-view-history-after-complete" style="display:none; font-size:0.74rem;">
+                        📜 履歴一覧で確認
+                    </button>
+                    <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="stop-batch-timeline-btn" style="color:var(--error); border-color:var(--error);">
+                        ⏸️ 一時停止 / 中断
+                    </button>
+                    <button type="button" class="flora-btn flora-btn-primary btn-sm" id="finish-batch-timeline-btn" style="display:none; background:#059669; border-color:#059669; color:#fff; font-weight:700;">
+                        ✅ 完了して閉じる
+                    </button>
+                </div>
+            </div>
+
+            <!-- 📜 実行履歴ビュー -->
+            <div id="batch-timeline-history-view" style="display:none;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.65rem; padding-bottom:0.4rem; border-bottom:1px solid var(--border-color);">
+                    <div style="font-size:0.78rem; color:var(--text-secondary); font-weight:700;">
+                        過去の年表一括再抽出の完了ログ（時間・応答AIモデル・件数）
+                    </div>
+                    <button type="button" class="tactile-btn" id="btn-clear-batch-timeline-history" style="font-size:0.7rem; padding:0.2rem 0.5rem; color:var(--error); border-color:rgba(239,68,68,0.3); background:transparent;">
+                        🗑️ 履歴を消去
+                    </button>
+                </div>
+                <div id="batch-timeline-history-list" style="max-height:360px; overflow-y:auto; display:flex; flex-direction:column; gap:0.65rem; padding-right:0.2rem;"></div>
+            </div>
+        </div>
+    </div>
+
     <!-- 🤖 Google AI Studio風 授業AIモデル・Thinking Level設定ドロワー -->
     <div class="ais-drawer-backdrop" id="lesson-ai-config-modal" style="display: none;">
         <div class="ais-drawer-panel" id="ais-drawer-panel">
@@ -8061,7 +8235,7 @@
         </div>
     </div>
 
-    <!-- 🎯 Google AI Studio連携：共通テスト形式問題一括インポートモーダル -->
+    <!-- 🎯 選択問題（共通テスト形式）作成・取り込みモーダル（API自動生成 ＆ AI Studio手動連携の二刀流） -->
     <div id="lesson-byot-drills-modal" class="modal-overlay" style="display:none; z-index:100065;">
         <div class="modal-content" style="max-width: 690px; width: 94vw; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; padding: 0; border-radius: var(--radius-xl);">
             <!-- ヘッダー -->
@@ -8070,126 +8244,212 @@
                     <span style="font-size: 1.3rem;">🎯</span>
                     <div>
                         <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-                            <h3 style="margin: 0; font-size: 1.05rem; font-weight: 800; color: var(--text-primary);">Google AI Studioで共通テスト形式問題を作成・登録</h3>
-                            <span style="font-size: 0.68rem; background: rgba(99, 102, 241, 0.15); color: #4338CA; padding: 0.15rem 0.5rem; border-radius: var(--radius-full); font-weight: 800;">API消費ゼロ</span>
-                            <span style="font-size: 0.68rem; background: rgba(16, 185, 129, 0.15); color: #059669; padding: 0.15rem 0.5rem; border-radius: var(--radius-full); font-weight: 800;">構造化出力で崩れゼロ</span>
+                            <h3 style="margin: 0; font-size: 1.05rem; font-weight: 800; color: var(--text-primary);">共通テスト形式 選択問題の作成・登録</h3>
+                            <span style="font-size: 0.68rem; background: rgba(99, 102, 241, 0.15); color: #4338CA; padding: 0.15rem 0.5rem; border-radius: var(--radius-full); font-weight: 800;">二刀流対応</span>
                         </div>
-                        <div style="font-size: 0.74rem; color: var(--text-secondary); margin-top: 0.15rem;">Google AI Studioの「Structured outputs」を活用して、引っかけ罠解説付きの良問（5問）を構文崩れゼロで作成・一括登録できます</div>
+                        <div style="font-size: 0.74rem; color: var(--text-secondary); margin-top: 0.15rem;">Gemini APIによるワンクリック自動生成、または Google AI Studio による手動取り込みを選択できます</div>
                     </div>
                 </div>
                 <button type="button" class="star-btn" id="byot-drills-modal-close" style="font-size: 1.5rem; line-height: 1; color: var(--text-muted); cursor: pointer; padding: 0 0.3rem;">×</button>
             </div>
 
+            <!-- 🎛️ モード切り替えタブバー -->
+            <div style="display: flex; border-bottom: 1px solid var(--border-color); background: var(--bg-subtle); padding: 0.35rem 1.4rem 0 1.4rem; gap: 0.5rem;">
+                <button type="button" id="byot-drills-tab-api" class="flora-tab-btn active" style="padding: 0.5rem 1rem; font-size: 0.8rem; font-weight: 800; border: none; background: none; color: #4F46E5; border-bottom: 2px solid #4F46E5; cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem;">
+                    <span>🤖</span><span>Gemini APIで自動生成（ワンクリック）</span>
+                </button>
+                <button type="button" id="byot-drills-tab-manual" class="flora-tab-btn" style="padding: 0.5rem 1rem; font-size: 0.8rem; font-weight: 700; border: none; background: none; color: var(--text-secondary); border-bottom: 2px solid transparent; cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem;">
+                    <span>✨</span><span>Google AI Studioで手動作成（コピペ）</span>
+                </button>
+            </div>
+
             <!-- ボディ -->
             <div style="padding: 1.2rem 1.4rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1.1rem;">
-                <!-- ⚡ AI Studio 推奨設定ガイド -->
-                <div style="background: linear-gradient(135deg, rgba(79, 70, 229, 0.08), rgba(99, 102, 241, 0.04)); border: 1.5px solid rgba(99, 102, 241, 0.3); border-radius: var(--radius-md); padding: 0.85rem 1rem;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.55rem;">
-                        <div style="font-size:0.83rem; font-weight:800; color:#3730A3; display:flex; align-items:center; gap:0.4rem;">
+                <!-- 🤖 モード1: Gemini API 自動生成パネル -->
+                <div id="byot-drills-panel-api" style="display: flex; flex-direction: column; gap: 1rem;">
+                    <div style="background: linear-gradient(135deg, rgba(79, 70, 229, 0.08), rgba(99, 102, 241, 0.04)); border: 1.5px solid rgba(99, 102, 241, 0.3); border-radius: var(--radius-md); padding: 0.85rem 1rem;">
+                        <div style="font-size: 0.83rem; font-weight: 800; color: #3730A3; display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.3rem;">
                             <span>⚡</span>
-                            <span>Google AI Studio 推奨設定（パースエラーゼロ化）</span>
+                            <span>コピペ作業ゼロ・全パート均等自動スキャン</span>
                         </div>
-                        <a href="https://aistudio.google.com/prompts/new_chat" target="_blank" rel="noopener noreferrer" style="font-size:0.74rem; background:linear-gradient(135deg, #4F46E5, #4338CA); color:#fff; font-weight:800; text-decoration:none; padding:0.3rem 0.7rem; border-radius:var(--radius-sm); display:inline-flex; align-items:center; gap:0.3rem; box-shadow:0 1px 3px rgba(79,70,229,0.3);">
-                            <span>🌐 Google AI Studioを開く</span>
-                            <span>↗</span>
-                        </a>
+                        <div style="font-size: 0.74rem; color: var(--text-secondary); line-height: 1.5;">
+                            登録済みのGemini APIを使って、全パートから共通テスト形式問題（2文正誤・整序・4択正誤・引っかけ罠解説）をボタン1つで自動生成＆即時保存します。
+                        </div>
                     </div>
-                    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:0.5rem; font-size:0.74rem; line-height:1.5;">
-                        <div style="background:#fff; border:1px solid rgba(99,102,241,0.25); border-radius:var(--radius-sm); padding:0.5rem 0.65rem;">
-                            <div style="font-weight:800; color:#4338CA; display:flex; align-items:center; gap:0.35rem; margin-bottom:0.2rem;">
-                                <span>✅</span> Structured outputs: <span style="background:#4338CA; color:#fff; font-size:0.67rem; padding:0.05rem 0.4rem; border-radius:4px; font-weight:800;">ON</span>
-                            </div>
-                            右側パネルで「Structured outputs」をONにし、下の「スキーマコピー」を貼り付けてください。選択肢や正解番号、罠解説が正しい構造で100%出力されます。
+
+                    <!-- パート選択 ＆ 出題ボリューム -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem;">
+                        <div>
+                            <label for="byot-drills-api-part-select" style="font-size: 0.74rem; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 0.2rem;">
+                                🎯 出題対象パート:
+                            </label>
+                            <select id="byot-drills-api-part-select" class="flora-select" style="font-size: 0.78rem; width: 100%; padding: 0.35rem 0.6rem;">
+                                <option value="all" selected>🌟 全パート一括（全パート均等出題）</option>
+                            </select>
                         </div>
-                        <div style="background:#fff; border:1px solid rgba(220,38,38,0.25); border-radius:var(--radius-sm); padding:0.5rem 0.65rem;">
-                            <div style="font-weight:800; color:#DC2626; display:flex; align-items:center; gap:0.35rem; margin-bottom:0.2rem;">
-                                <span>⛔</span> Code execution: <span style="background:#DC2626; color:#fff; font-size:0.67rem; padding:0.05rem 0.4rem; border-radius:4px; font-weight:800;">OFF</span>
-                            </div>
-                            ※AI Studioの仕様上、Code executionとStructured outputsは同時使用できないため、JSON構造固定のために必ずOFFにしてください。
+                        <div>
+                            <label for="byot-drills-api-count-select" style="font-size: 0.74rem; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 0.2rem;">
+                                📊 出題ボリューム（問題数）:
+                            </label>
+                            <select id="byot-drills-api-count-select" class="flora-select" style="font-size: 0.78rem; width: 100%; padding: 0.35rem 0.6rem;">
+                                <option value="rich" selected>🔥 パート網羅・たっぷり一括（各パート2〜3問 / 計10〜15問）</option>
+                                <option value="speed">⚡ スピード演習（各パート1問 / 計5問）</option>
+                                <option value="master">📚 超徹底演習（各パート4〜5問 / 計20問〜）</option>
+                            </select>
                         </div>
+                    </div>
+
+                    <!-- 登録オプション（追加 or 置き換え） -->
+                    <div style="background: var(--bg-subtle); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.7rem 0.9rem; display: flex; flex-direction: column; gap: 0.4rem;">
+                        <div style="font-size: 0.76rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.15rem;">取り込み方法:</div>
+                        <div style="display: flex; gap: 1.2rem; flex-wrap: wrap;">
+                            <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; cursor: pointer; color: var(--text-primary);">
+                                <input type="radio" name="byot-drills-api-mode" value="replace" checked style="accent-color: var(--brand-primary);">
+                                <span>🔄 既存の選択問題を新しく置き換える</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; cursor: pointer; color: var(--text-primary);">
+                                <input type="radio" name="byot-drills-api-mode" value="append" style="accent-color: var(--brand-primary);">
+                                <span>➕ 既存の選択問題に追加する</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- 実行中プログレス表示エリア -->
+                    <div id="byot-drills-api-progress-area" style="display:none; background:rgba(99,102,241,0.06); border:1px solid rgba(99,102,241,0.25); border-radius:var(--radius-md); padding:0.85rem 1rem;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem; font-size:0.75rem; font-weight:700;">
+                            <span id="byot-drills-api-status-text" style="color:#4F46E5;">⏳ Geminiが選択問題を分析・生成中...</span>
+                            <span id="byot-drills-api-progress-pct" style="color:var(--text-secondary);">0%</span>
+                        </div>
+                        <div style="width:100%; height:6px; background:rgba(99,102,241,0.15); border-radius:3px; overflow:hidden;">
+                            <div id="byot-drills-api-progress-bar" style="width:0%; height:100%; background:linear-gradient(90deg, #4F46E5, #059669); transition:width 0.3s ease;"></div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; justify-content: flex-end; gap: 0.6rem; align-items: center; margin-top: 0.4rem;">
+                        <button type="button" class="flora-btn flora-btn-secondary" id="byot-drills-api-cancel-btn">閉じる</button>
+                        <button type="button" class="flora-btn flora-btn-primary" id="byot-drills-api-submit-btn" style="background: linear-gradient(135deg, #4F46E5, #4338CA); color: #fff; border: none; font-weight: 800; padding: 0.55rem 1.4rem;">
+                            🚀 Geminiで選択問題を自動生成
+                        </button>
                     </div>
                 </div>
 
-                <!-- ステップ1: プロンプトとスキーマの取得 -->
-                <div style="background: rgba(99, 102, 241, 0.05); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: var(--radius-md); padding: 0.85rem 1rem;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.4rem;">
-                        <span style="font-size: 0.82rem; font-weight: 800; color: #4338CA;">Step 1: 出題対象パートを選択 ＆ プロンプト・スキーマを取得</span>
-                    </div>
-
-                    <!-- パート選択 ＆ 出題形式バージョン -->
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-bottom: 0.55rem;">
-                        <div>
-                            <label for="byot-drills-part-select" style="font-size: 0.74rem; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 0.2rem;">
-                                🎯 出題対象のパート範囲:
-                            </label>
-                            <select id="byot-drills-part-select" class="flora-select" style="font-size: 0.78rem; width: 100%; padding: 0.35rem 0.6rem;">
-                                <option value="all" selected>🌟 全パート一括（各パート均等配分）</option>
-                            </select>
-                            <div id="byot-drills-part-status-badge" style="margin-top: 0.35rem; font-size: 0.72rem; color: #4338CA; font-weight: 700; background: rgba(99, 102, 241, 0.1); padding: 0.25rem 0.55rem; border-radius: 4px; display: inline-flex; align-items: center; gap: 0.3rem;">
-                                <span>📊 対象文字数:</span> <span id="byot-drills-part-char-count">計算中...</span>
+                <!-- ✨ モード2: Google AI Studio 手動作成パネル -->
+                <div id="byot-drills-panel-manual" style="display: none; flex-direction: column; gap: 1.1rem;">
+                    <!-- ⚡ AI Studio 推奨設定ガイド -->
+                    <div style="background: linear-gradient(135deg, rgba(79, 70, 229, 0.08), rgba(99, 102, 241, 0.04)); border: 1.5px solid rgba(99, 102, 241, 0.3); border-radius: var(--radius-md); padding: 0.85rem 1rem;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.55rem;">
+                            <div style="font-size:0.83rem; font-weight:800; color:#3730A3; display:flex; align-items:center; gap:0.4rem;">
+                                <span>⚡</span>
+                                <span>Google AI Studio 推奨設定（パースエラーゼロ化・API消費ゼロ）</span>
                             </div>
+                            <a href="https://aistudio.google.com/prompts/new_chat" target="_blank" rel="noopener noreferrer" style="font-size:0.74rem; background:linear-gradient(135deg, #4F46E5, #4338CA); color:#fff; font-weight:800; text-decoration:none; padding:0.3rem 0.7rem; border-radius:var(--radius-sm); display:inline-flex; align-items:center; gap:0.3rem; box-shadow:0 1px 3px rgba(79,70,229,0.3);">
+                                <span>🌐 Google AI Studioを開く</span>
+                                <span>↗</span>
+                            </a>
                         </div>
-                        <div>
-                            <label for="byot-drills-version-select" style="font-size: 0.74rem; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 0.2rem;">
-                                📑 選択問題の形式・バージョン:
-                            </label>
-                            <select id="byot-drills-version-select" class="flora-select" style="font-size: 0.78rem; width: 100%; padding: 0.35rem 0.6rem;">
-                                <option value="mix" selected>🌟 全形式バランス（2文正誤・整序・4択正誤）</option>
-                                <option value="combination">⚔️ 2文正誤組み合わせ特化（文X・文Y判定）</option>
-                                <option value="true_false">🔍 4択正誤判定特化（正文・誤文選択）</option>
-                                <option value="chronological">⏳ 年代・因果整序特化（配列選択）</option>
-                                <option value="cloze">📝 空欄補充特化（空欄ア・イの語句組合せ）</option>
-                            </select>
-                            <div id="byot-drills-version-guide" style="margin-top: 0.35rem; font-size: 0.71rem; color: #059669; font-weight: 600; line-height: 1.35;">
-                                🌟 共通テスト本番に即した多彩な出題形式で満遍なく演習
+                        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:0.5rem; font-size:0.74rem; line-height:1.5;">
+                            <div style="background:#fff; border:1px solid rgba(99,102,241,0.25); border-radius:var(--radius-sm); padding:0.5rem 0.65rem;">
+                                <div style="font-weight:800; color:#4338CA; display:flex; align-items:center; gap:0.35rem; margin-bottom:0.2rem;">
+                                    <span>✅</span> Structured outputs: <span style="background:#4338CA; color:#fff; font-size:0.67rem; padding:0.05rem 0.4rem; border-radius:4px; font-weight:800;">ON</span>
+                                </div>
+                                右側パネルで「Structured outputs」をONにし、下の「スキーマコピー」を貼り付けてください。どの出題形式でも共通の1スキーマで100%出力されます。
+                            </div>
+                            <div style="background:#fff; border:1px solid rgba(220,38,38,0.25); border-radius:var(--radius-sm); padding:0.5rem 0.65rem;">
+                                <div style="font-weight:800; color:#DC2626; display:flex; align-items:center; gap:0.35rem; margin-bottom:0.2rem;">
+                                    <span>⛔</span> Code execution: <span style="background:#DC2626; color:#fff; font-size:0.67rem; padding:0.05rem 0.4rem; border-radius:4px; font-weight:800;">OFF</span>
+                                </div>
+                                ※AI Studioの仕様上、Code executionとStructured outputsは同時使用できないため、JSON構造固定のために必ずOFFにしてください。
                             </div>
                         </div>
                     </div>
 
-                    <div id="byot-drills-summary-lead" style="font-size: 0.74rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 0.6rem;">
-                        共通テスト形式の良問（2文正誤組み合わせ判定、年代整序、4択正誤判定、引っかけ罠解説付き）を5問作成させるプロンプトです。
+                    <!-- ステップ1: 出題設定 ＆ プロンプト取得 -->
+                    <div style="background: rgba(99, 102, 241, 0.05); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: var(--radius-md); padding: 0.85rem 1rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.4rem;">
+                            <span style="font-size: 0.82rem; font-weight: 800; color: #4338CA;">Step 1: 出題条件を設定 ＆ プロンプト・スキーマを取得</span>
+                        </div>
+
+                        <!-- パート選択 ＆ 出題ボリューム ＆ 形式 -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.55rem; margin-bottom: 0.55rem;">
+                            <div>
+                                <label for="byot-drills-part-select" style="font-size: 0.74rem; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 0.2rem;">
+                                    🎯 出題対象パート:
+                                </label>
+                                <select id="byot-drills-part-select" class="flora-select" style="font-size: 0.78rem; width: 100%; padding: 0.35rem 0.6rem;">
+                                    <option value="all" selected>🌟 全パート一括（全パート均等出題）</option>
+                                </select>
+                                <div id="byot-drills-part-status-badge" style="margin-top: 0.35rem; font-size: 0.72rem; color: #4338CA; font-weight: 700; background: rgba(99, 102, 241, 0.1); padding: 0.25rem 0.55rem; border-radius: 4px; display: inline-flex; align-items: center; gap: 0.3rem;">
+                                    <span>📊 対象文字数:</span> <span id="byot-drills-part-char-count">計算中...</span>
+                                </div>
+                            </div>
+                            <div>
+                                <label for="byot-drills-count-select" style="font-size: 0.74rem; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 0.2rem;">
+                                    📊 出題問数（ボリューム）:
+                                </label>
+                                <select id="byot-drills-count-select" class="flora-select" style="font-size: 0.78rem; width: 100%; padding: 0.35rem 0.6rem;">
+                                    <option value="rich" selected>🔥 パート網羅・たっぷり一括（計10〜15問）</option>
+                                    <option value="speed">⚡ スピード演習（計5問）</option>
+                                    <option value="master">📚 超徹底演習（計20問〜）</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="byot-drills-version-select" style="font-size: 0.74rem; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 0.2rem;">
+                                    📑 出題形式の配分:
+                                </label>
+                                <select id="byot-drills-version-select" class="flora-select" style="font-size: 0.78rem; width: 100%; padding: 0.35rem 0.6rem;">
+                                    <option value="mix" selected>🌟 全形式バランス（2文正誤・整序・4択）</option>
+                                    <option value="combination">⚔️ 2文正誤組み合わせ特化（文X・文Y判定）</option>
+                                    <option value="true_false">🔍 4択正誤判定特化（正文・誤文選択）</option>
+                                    <option value="chronological">⏳ 年代・因果整序特化（配列選択）</option>
+                                    <option value="cloze">📝 空欄補充特化（空欄ア・イの語句組合せ）</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div id="byot-drills-summary-lead" style="font-size: 0.74rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 0.6rem;">
+                            全パートから偏りなく各パート2〜3問ずつ（計10〜15問）を一括作成するプロンプトです。
+                        </div>
+
+                        <div style="display: flex; gap: 0.45rem; flex-wrap: wrap;">
+                            <button type="button" id="byot-drills-copy-with-text-btn" class="flora-btn flora-btn-primary btn-sm" style="font-size: 0.76rem; font-weight: 800; background: #4338CA; border-color: #4338CA;">
+                                📋 本文＋問題作成プロンプトを一括コピー（推奨）
+                            </button>
+                            <button type="button" id="byot-drills-copy-schema-btn" class="flora-btn btn-sm" style="font-size: 0.74rem; font-weight: 800; background: #059669; color: #fff; border-color: #059669;">
+                                ⚙️ 共通構造化スキーマ (JSON Schema) をコピー
+                            </button>
+                            <button type="button" id="byot-drills-copy-text-only-btn" class="flora-btn flora-btn-secondary btn-sm" style="font-size: 0.73rem;">
+                                📄 原本テキストのみコピー
+                            </button>
+                            <button type="button" id="byot-drills-copy-instruction-only-btn" class="flora-btn flora-btn-secondary btn-sm" style="font-size: 0.73rem;">
+                                📋 指示枠のみコピー
+                            </button>
+                        </div>
+
+                        <!-- プロンプトとスキーマのプレビュー -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.6rem;">
+                            <details style="font-size: 0.73rem; background: rgba(255,255,255,0.85); border: 1px dashed rgba(99, 102, 241, 0.4); border-radius: var(--radius-sm); padding: 0.4rem 0.65rem;">
+                                <summary style="cursor: pointer; font-weight: 700; color: #4338CA; user-select: none;">🔍 作成プロンプトのプレビュー</summary>
+                                <pre id="byot-drills-prompt-preview" style="margin: 0.4rem 0 0 0; font-size: 0.69rem; max-height: 140px; overflow-y: auto; background: var(--bg-card); padding: 0.5rem; border-radius: 4px; font-family: monospace; color: var(--text-secondary); line-height: 1.4; white-space: pre-wrap; word-break: break-all;"></pre>
+                            </details>
+                            <details style="font-size: 0.73rem; background: rgba(255,255,255,0.85); border: 1px dashed rgba(99, 102, 241, 0.4); border-radius: var(--radius-sm); padding: 0.4rem 0.65rem;">
+                                <summary style="cursor: pointer; font-weight: 700; color: #059669; user-select: none;">⚙️ 全形式共通スキーマ（JSON Schema）</summary>
+                                <pre id="byot-drills-schema-preview" style="margin: 0.4rem 0 0 0; font-size: 0.69rem; max-height: 140px; overflow-y: auto; background: var(--bg-card); padding: 0.5rem; border-radius: 4px; font-family: monospace; color: var(--text-secondary); line-height: 1.4;"></pre>
+                            </details>
+                        </div>
                     </div>
 
-                    <div style="display: flex; gap: 0.45rem; flex-wrap: wrap;">
-                        <button type="button" id="byot-drills-copy-with-text-btn" class="flora-btn flora-btn-primary btn-sm" style="font-size: 0.76rem; font-weight: 800; background: #4338CA; border-color: #4338CA;">
-                            📋 本文＋問題作成プロンプトを一括コピー（推奨）
-                        </button>
-                        <button type="button" id="byot-drills-copy-schema-btn" class="flora-btn btn-sm" style="font-size: 0.74rem; font-weight: 800; background: #059669; color: #fff; border-color: #059669;">
-                            ⚙️ 構造化スキーマ (JSON Schema) をコピー
-                        </button>
-                        <button type="button" id="byot-drills-copy-text-only-btn" class="flora-btn flora-btn-secondary btn-sm" style="font-size: 0.73rem;">
-                            📄 原本テキストのみコピー
-                        </button>
-                        <button type="button" id="byot-drills-copy-instruction-only-btn" class="flora-btn flora-btn-secondary btn-sm" style="font-size: 0.73rem;">
-                            📋 指示枠のみコピー
-                        </button>
-                    </div>
-
-                    <!-- プロンプトとスキーマのプレビュー -->
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.6rem;">
-                        <details style="font-size: 0.73rem; background: rgba(255,255,255,0.85); border: 1px dashed rgba(99, 102, 241, 0.4); border-radius: var(--radius-sm); padding: 0.4rem 0.65rem;">
-                            <summary style="cursor: pointer; font-weight: 700; color: #4338CA; user-select: none;">🔍 作成プロンプトのプレビュー</summary>
-                            <pre id="byot-drills-prompt-preview" style="margin: 0.4rem 0 0 0; font-size: 0.69rem; max-height: 140px; overflow-y: auto; background: var(--bg-card); padding: 0.5rem; border-radius: 4px; font-family: monospace; color: var(--text-secondary); line-height: 1.4; white-space: pre-wrap; word-break: break-all;"></pre>
-                        </details>
-                        <details style="font-size: 0.73rem; background: rgba(255,255,255,0.85); border: 1px dashed rgba(99, 102, 241, 0.4); border-radius: var(--radius-sm); padding: 0.4rem 0.65rem;">
-                            <summary style="cursor: pointer; font-weight: 700; color: #059669; user-select: none;">⚙️ 構造化出力スキーマ（JSON Schema）</summary>
-                            <pre id="byot-drills-schema-preview" style="margin: 0.4rem 0 0 0; font-size: 0.69rem; max-height: 140px; overflow-y: auto; background: var(--bg-card); padding: 0.5rem; border-radius: 4px; font-family: monospace; color: var(--text-secondary); line-height: 1.4;"></pre>
-                        </details>
-                    </div>
-                </div>
-
-                <!-- ステップ2: Google AI Studioの出力を貼り付け -->
-                <div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
-                        <label for="byot-drills-json-input" style="font-size: 0.82rem; font-weight: 800; color: var(--text-primary);">
-                            Step 2: Google AI Studioの出力結果を貼り付け
-                        </label>
-                        <span id="byot-drills-char-count" style="font-size: 0.72rem; color: var(--text-muted);">0文字</span>
-                    </div>
-                    <div style="font-size: 0.73rem; color: var(--text-secondary); margin-bottom: 0.45rem;">
-                        Google AI Studioが出力したJSONをそのまま貼り付けてください（Structured outputsにより前置き文なしで綺麗に出力されます）。
-                    </div>
-                    <textarea id="byot-drills-json-input" class="flora-input" rows="7" style="width: 100%; font-size: 0.8rem; font-family: monospace; line-height: 1.5; resize: vertical; padding: 0.6rem 0.8rem;" placeholder='{
+                    <!-- ステップ2: Google AI Studioの出力を貼り付け -->
+                    <div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                            <label for="byot-drills-json-input" style="font-size: 0.82rem; font-weight: 800; color: var(--text-primary);">
+                                Step 2: Google AI Studioの出力結果を貼り付け
+                            </label>
+                            <span id="byot-drills-char-count" style="font-size: 0.72rem; color: var(--text-muted);">0文字</span>
+                        </div>
+                        <div style="font-size: 0.73rem; color: var(--text-secondary); margin-bottom: 0.45rem;">
+                            Google AI Studioが出力したJSONをそのまま貼り付けてください（Structured outputsにより前置き文なしで綺麗に出力されます）。
+                        </div>
+                        <textarea id="byot-drills-json-input" class="flora-input" rows="7" style="width: 100%; font-size: 0.8rem; font-family: monospace; line-height: 1.5; resize: vertical; padding: 0.6rem 0.8rem;" placeholder='{
   "choice_drills": [
     {
       "part_number": 1,
@@ -8208,32 +8468,32 @@
     }
   ]
 }'></textarea>
-                </div>
+                    </div>
 
-                <!-- 登録オプション（追加 or 置き換え） -->
-                <div style="background: var(--bg-subtle); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.7rem 0.9rem; display: flex; flex-direction: column; gap: 0.4rem;">
-                    <div style="font-size: 0.76rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.15rem;">取り込み方法:</div>
-                    <div style="display: flex; gap: 1.2rem; flex-wrap: wrap;">
-                        <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; cursor: pointer; color: var(--text-primary);">
-                            <input type="radio" name="byot-drills-mode" value="append" checked style="accent-color: var(--brand-primary);">
-                            <span>➕ 既存の選択問題に追加する</span>
-                        </label>
-                        <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; cursor: pointer; color: var(--text-primary);">
-                            <input type="radio" name="byot-drills-mode" value="replace" style="accent-color: var(--brand-primary);">
-                            <span>🔄 既存の選択問題をすべて置き換える</span>
-                        </label>
+                    <!-- 登録オプション（追加 or 置き換え） -->
+                    <div style="background: var(--bg-subtle); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.7rem 0.9rem; display: flex; flex-direction: column; gap: 0.4rem;">
+                        <div style="font-size: 0.76rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.15rem;">取り込み方法:</div>
+                        <div style="display: flex; gap: 1.2rem; flex-wrap: wrap;">
+                            <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; cursor: pointer; color: var(--text-primary);">
+                                <input type="radio" name="byot-drills-mode" value="append" checked style="accent-color: var(--brand-primary);">
+                                <span>➕ 既存の選択問題に追加する</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; cursor: pointer; color: var(--text-primary);">
+                                <input type="radio" name="byot-drills-mode" value="replace" style="accent-color: var(--brand-primary);">
+                                <span>🔄 既存の選択問題をすべて置き換える</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; justify-content: flex-end; gap: 0.6rem; align-items: center; margin-top: 0.4rem;">
+                        <button type="button" class="flora-btn flora-btn-secondary" id="byot-drills-modal-cancel">
+                            キャンセル
+                        </button>
+                        <button type="button" class="flora-btn flora-btn-primary" id="byot-drills-modal-submit" style="background: linear-gradient(135deg, #4F46E5, #4338CA); color: #fff; border: none; font-weight: 800; padding: 0.55rem 1.3rem;">
+                            📥 選択問題を一括インポート
+                        </button>
                     </div>
                 </div>
-            </div>
-
-            <!-- フッター -->
-            <div style="padding: 0.9rem 1.4rem; background: var(--bg-subtle); border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 0.6rem; align-items: center;">
-                <button type="button" class="flora-btn flora-btn-secondary" id="byot-drills-modal-cancel">
-                    キャンセル
-                </button>
-                <button type="button" class="flora-btn flora-btn-primary" id="byot-drills-modal-submit" style="background: linear-gradient(135deg, #4F46E5, #4338CA); color: #fff; border: none; font-weight: 800; padding: 0.55rem 1.3rem;">
-                    📥 選択問題を一括インポート
-                </button>
             </div>
         </div>
     </div>
@@ -11543,8 +11803,13 @@
                 seenKeys.add(dedupeKey);
                 if (!cYear) seenKeys.add(`noyear___${cName}`);
 
-                // year_sort の補正（未設定または数値でない場合パース）
+                // year_sort の補正（未設定または数値でない場合パース、YYYYMMDD形式の補正）
                 let sortVal = typeof ev.year_sort === "number" && !isNaN(ev.year_sort) ? ev.year_sort : 0;
+                if (Math.abs(sortVal) >= 100000) {
+                    sortVal = sortVal < 0 ? -Math.floor(Math.abs(sortVal) / 10000) : Math.floor(sortVal / 10000);
+                } else if (Math.abs(sortVal) >= 10000 && Math.abs(sortVal) > 3000) {
+                    sortVal = sortVal < 0 ? -Math.floor(Math.abs(sortVal) / 100) : Math.floor(sortVal / 100);
+                }
                 if (!sortVal && ev.year) {
                     const parsed = parseInt(String(ev.year).replace(/[^\d-]/g, ""), 10);
                     if (!isNaN(parsed)) sortVal = parsed;
@@ -11554,6 +11819,7 @@
                     name: String(ev.name).trim(),
                     year: String(ev.year || "年代未詳").trim(),
                     year_sort: sortVal,
+                    era: ev.era || "",
                     region: ev.region || "日本"
                 });
             });
@@ -12770,7 +13036,7 @@ ${extractedText || "（本文なし）"}
                         properties: {
                             name: { type: "STRING", description: "出来事・事件・法制・戦乱・制度・条約・文化などの名称（例: 白村江の戦い, 大化の改新, 武家諸法度, 版籍奉還）" },
                             year: { type: "STRING", description: "年代表記（例: 663年, 1603年, 前4世紀頃, 1869年）" },
-                            year_sort: { type: "INTEGER", description: "並べ替え用の西暦整数値（紀元前はマイナス数値。例: 663, 1603, -400, 1869）" },
+                            year_sort: { type: "INTEGER", description: "並べ替え用の西暦整数値（例: 712, 1603, -400, 1869。※YYYYMMDD形式は不可。必ず西暦年そのものを整数で出力）" },
                             era: { type: "STRING", description: "日本史の時代区分（弥生・古墳, 飛鳥, 奈良, 平安, 鎌倉, 室町・戦国, 安土桃山, 江戸, 明治・大正, 昭和・現代）" },
                             region: { type: "STRING", description: "公共・政治経済の場合は分野カテゴリ（思想・哲学・人権宣言, 日本国憲法・法制度・判例, 政治・統治機構・国際情勢, 経済・金融・社会保障・環境）" },
                             description: { type: "STRING", description: "その出来事の背景、原因、重要点、影響・結果の簡潔な解説（1〜2文）" }
@@ -12791,7 +13057,7 @@ ${extractedText || "（本文なし）"}
             return /(時代|幕府|天皇|将軍|戦争|事件|条約|改革|年表|乱|の変|開国|遣隋使|遣唐使|縄文|弥生|古墳|飛鳥|奈良|平安|鎌倉|室町|戦国|安土桃山|江戸|明治|大正|昭和|憲法|判例|違憲|条約|法制|人権|内閣|国会|選挙|社会保障|冷戦|ブレトンウッズ|プラザ合意)/.test(text);
         }
 
-        async function generateHistoricalEvents(extractedText, lessonTitle, subjectName) {
+        async function generateHistoricalEvents(extractedText, lessonTitle, subjectName, preferredModel = null, onModelUsed = null) {
             if (!extractedText && !lessonTitle) return [];
             const isCivics = (subjectName === "公共" || subjectName === "政治・経済" || subjectName === "政経" || subjectName === "公民");
             const targetScope = isCivics ? "高校公共・政治経済・公民（憲法・判例・法制度・政治史・経済史・国際情勢）" : "高校日本史（古代〜現代の政治・外交・経済・文化）";
@@ -12804,7 +13070,7 @@ ${extractedText || "（本文なし）"}
 1. 年代（西暦・世紀・元号）が伴う歴史的・法的イベントを最優先で抽出すること。
 2. name: 正式な教科書用語（例: 日本史なら「白村江の戦い」「大化の改新」「武家諸法度」、公共なら「日本国憲法公布」「日米安保条約」「プラザ合意」「尊属殺重罰規定違憲判決」「男女雇用機会均等法」等）。ふりがな括弧や煽り文句は付けないこと。
 3. year: 覚えやすい標準年代表記（例: 「1946年」「1985年」「1600年」「645年」）。
-4. year_sort: 並び替え用の西暦整数値（紀元前はマイナス数値。例: 1946, 1985, 1600, 645）。
+4. year_sort: 並び替え用の西暦整数値（紀元前はマイナス数値。例: 1946, 1985, 1600, 645。※YYYYMMDD形式は厳禁、必ず西暦年そのものの整数）。
 5. era: 
    - 日本史の場合: 時代区分（「弥生・古墳」「飛鳥」「奈良」「平安」「鎌倉」「室町・戦国」「安土桃山」「江戸」「明治・大正」「昭和・現代」から選択）。
    - 公共・政治経済の場合: 分野区分（「思想・人権」「憲法・法制度」「政治・国際」「経済・金融」「社会・労働・環境」から選択）。
@@ -12815,10 +13081,14 @@ ${extractedText.slice(0, 15000)}`;
 
             const systemPrompt = `あなたは高校・大学受験の社会科（日本史および公共・政治経済）専門プロ講師です。提供された原本テキストから、年代整序ドリルおよび統合年表に必要な出来事リスト（historical_events）を網羅的に抽出し、指定のJSON形式で出力してください。`;
 
-            const res = await callGeminiJSON([{ text: promptText }], systemPrompt, {
+            const callOpts = {
                 responseSchema: HISTORICAL_EVENTS_SCHEMA,
                 featureId: "lesson_plan"
-            });
+            };
+            if (preferredModel) callOpts.preferredModel = preferredModel;
+            if (typeof onModelUsed === "function") callOpts.onModelUsed = onModelUsed;
+
+            const res = await callGeminiJSON([{ text: promptText }], systemPrompt, callOpts);
             return Array.isArray(res.historical_events) ? res.historical_events : [];
         }
 
@@ -12951,11 +13221,18 @@ ${extractedText.slice(0, 15000)}`;
                 return;
             }
 
-            // 年代順にソート
+            // 年代順にソート（YYYYMMDD形式にも対応した安全ソート）
             const sortedEvents = [...allEvents].sort((a, b) => {
-                const ya = (typeof a.year_sort === "number" && !isNaN(a.year_sort)) ? a.year_sort : 9999;
-                const yb = (typeof b.year_sort === "number" && !isNaN(b.year_sort)) ? b.year_sort : 9999;
-                return ya - yb;
+                const parseY = (ev) => {
+                    let y = (typeof ev.year_sort === "number" && !isNaN(ev.year_sort)) ? ev.year_sort : null;
+                    if (y !== null && Math.abs(y) >= 100000) y = Math.floor(Math.abs(y) / 10000);
+                    if (y === null && ev.year) {
+                        const m = String(ev.year).match(/\d+/);
+                        if (m) y = parseInt(m[0], 10);
+                    }
+                    return y !== null ? y : 9999;
+                };
+                return parseY(a) - parseY(b);
             });
 
             let html = '<div style="display:flex; flex-direction:column; gap:0.55rem;">';
@@ -14538,12 +14815,17 @@ ${existingLeads}
                         <div style="font-size:0.86rem; font-weight:700; color:var(--text-primary); margin-bottom:0.4rem;">
                             共通テスト形式 選択問題演習
                         </div>
-                        <div style="font-size:0.78rem; color:var(--text-secondary); line-height:1.6; margin-bottom:1rem; max-width:380px; margin-left:auto; margin-right:auto;">
-                            正誤組み合わせ、年代整序、出題者の罠（主語すり替え・時期ズレ・因果逆転）を突いた実戦問題を各パート4〜6問（計16〜24問）一括作成できます。
+                        <div style="font-size:0.78rem; color:var(--text-secondary); line-height:1.6; margin-bottom:1rem; max-width:420px; margin-left:auto; margin-right:auto;">
+                            正誤組み合わせ、年代整序、出題者の罠（主語すり替え・時期ズレ・因果逆転）を突いた実戦問題を各パート網羅で一括作成できます。お好みの作成方法を選択してください。
                         </div>
-                        <button type="button" class="flora-btn flora-btn-primary" style="font-size:0.8rem; padding:0.45rem 1.2rem; font-weight:700;" onclick="regenerateLessonChoiceDrills()">
-                            🎯 選択問題を一括生成する（16〜24問）
-                        </button>
+                        <div style="display:flex; justify-content:center; gap:0.6rem; flex-wrap:wrap;">
+                            <button type="button" class="flora-btn flora-btn-primary" style="font-size:0.8rem; padding:0.48rem 1.15rem; font-weight:800; background:linear-gradient(135deg, #4F46E5, #4338CA); border:none;" onclick="openByotDrillsModalWithTab('api')">
+                                🤖 Gemini APIで自動生成（ワンクリック）
+                            </button>
+                            <button type="button" class="flora-btn flora-btn-secondary" style="font-size:0.8rem; padding:0.48rem 1.1rem; font-weight:750; color:#059669; border:1px solid rgba(16,185,129,0.5); background:rgba(16,185,129,0.06);" onclick="openByotDrillsModalWithTab('manual')">
+                                ✨ Google AI Studioで手動作成（コピペ）
+                            </button>
+                        </div>
                     </div>
                 `;
                 return;
@@ -16680,6 +16962,609 @@ ${existingLeads}
             if (e.target.id === "batch-choice-drills-modal" && !isBatchGeneratingChoiceDrills) {
                 el("batch-choice-drills-modal").style.display = "none";
             }
+        });
+
+        // ==============================================================
+        // ⏳ 年表・年代出来事の一括段階的再抽出（AIモデル選択・実行履歴・APIレートリミット配慮）
+        // ==============================================================
+        const BATCH_TIMELINE_HISTORY_KEY = "flora_batch_timeline_history";
+        let batchTimelineCandidates = [];
+        let batchTimelineSelectedSubject = "all";
+        let batchTimelineSearchQuery = "";
+        let batchTimelineStatusFilter = "all";
+        let isBatchGeneratingTimeline = false;
+        let batchTimelineStopRequested = false;
+        let batchTimelineCurrentTab = "run"; // "run" | "history"
+
+        function getBatchTimelineHistory() {
+            try {
+                const raw = localStorage.getItem(BATCH_TIMELINE_HISTORY_KEY);
+                return raw ? JSON.parse(raw) : [];
+            } catch (e) {
+                console.warn("Error loading batch timeline history:", e);
+                return [];
+            }
+        }
+
+        async function saveBatchTimelineHistoryEntry(entry) {
+            try {
+                const history = getBatchTimelineHistory();
+                history.unshift(entry);
+                const trimmed = history.slice(0, 30); // 最新30件を保存
+                localStorage.setItem(BATCH_TIMELINE_HISTORY_KEY, JSON.stringify(trimmed));
+
+                // Firebase RTDBにも保存（ログイン中のみ）
+                if (loginUid && entry.id) {
+                    await set(ref(database, `users/${loginUid}/batch_timeline_history/${entry.id}`), entry).catch(err => {
+                        console.warn("Failed to sync history to Firebase:", err);
+                    });
+                }
+                updateBatchTimelineHistoryBadge();
+            } catch (e) {
+                console.warn("Error saving batch timeline history:", e);
+            }
+        }
+
+        function updateBatchTimelineHistoryBadge() {
+            const history = getBatchTimelineHistory();
+            const badge = el("batch-timeline-history-count-badge");
+            if (badge) badge.textContent = history.length;
+        }
+
+        function switchBatchTimelineTab(tab) {
+            batchTimelineCurrentTab = tab;
+            const btnRun = el("tab-btn-batch-timeline-run");
+            const btnHistory = el("tab-btn-batch-timeline-history");
+            const setupView = el("batch-timeline-setup-view");
+            const progressView = el("batch-timeline-progress-view");
+            const historyView = el("batch-timeline-history-view");
+
+            if (tab === "run") {
+                if (btnRun) {
+                    btnRun.style.background = "var(--brand-primary)";
+                    btnRun.style.color = "#fff";
+                }
+                if (btnHistory) {
+                    btnHistory.style.background = "transparent";
+                    btnHistory.style.color = "var(--text-secondary)";
+                }
+                if (historyView) historyView.style.display = "none";
+                if (isBatchGeneratingTimeline) {
+                    if (progressView) progressView.style.display = "block";
+                    if (setupView) setupView.style.display = "none";
+                } else {
+                    if (setupView) setupView.style.display = "block";
+                    if (progressView) progressView.style.display = "none";
+                }
+            } else {
+                if (btnHistory) {
+                    btnHistory.style.background = "var(--brand-primary)";
+                    btnHistory.style.color = "#fff";
+                }
+                if (btnRun) {
+                    btnRun.style.background = "transparent";
+                    btnRun.style.color = "var(--text-secondary)";
+                }
+                if (setupView) setupView.style.display = "none";
+                if (progressView) progressView.style.display = "none";
+                if (historyView) historyView.style.display = "block";
+                renderBatchTimelineHistoryView();
+            }
+        }
+
+        function renderBatchTimelineHistoryView() {
+            const listEl = el("batch-timeline-history-list");
+            if (!listEl) return;
+            const history = getBatchTimelineHistory();
+            updateBatchTimelineHistoryBadge();
+
+            if (history.length === 0) {
+                listEl.innerHTML = `
+                    <div style="text-align:center; padding:3rem 1rem; color:var(--text-muted); font-size:0.82rem;">
+                        <div style="font-size:2rem; margin-bottom:0.4rem;">📜</div>
+                        <div>実行履歴はまだありません。</div>
+                        <div style="font-size:0.72rem; margin-top:0.3rem;">年表の一括再抽出を実行すると、完了時間や応答AIモデル、抽出件数がここに記録されます。</div>
+                    </div>`;
+                return;
+            }
+
+            listEl.innerHTML = history.map((entry, idx) => {
+                const total = entry.totalLessons || (entry.items ? entry.items.length : 0);
+                const success = entry.successCount || 0;
+                const fail = entry.failCount || 0;
+                const events = entry.totalEvents || 0;
+                const model = entry.primaryRespondedModel || entry.requestedModel || "Gemini";
+                const modeLabel = entry.mode === "merge" ? "マージ追加" : "全置き換え";
+                const duration = entry.durationSec ? `（所要約${entry.durationSec}秒）` : "";
+
+                const itemsHtml = (Array.isArray(entry.items) && entry.items.length > 0) ? `
+                    <div style="margin-top:0.5rem; padding-top:0.5rem; border-top:1px dashed var(--border-color); display:flex; flex-direction:column; gap:0.35rem; font-size:0.72rem;">
+                        ${entry.items.map(it => `
+                            <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-subtle); padding:0.3rem 0.5rem; border-radius:var(--radius-sm); gap:0.4rem;">
+                                <div style="flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                                    <span style="font-weight:700; color:var(--text-primary);">${escapeHtml(it.lessonTitle || "無題")}</span>
+                                    <span style="color:var(--text-muted); font-size:0.68rem; margin-left:4px;">（${escapeHtml(it.subject || "")}）</span>
+                                </div>
+                                <div style="display:flex; align-items:center; gap:0.4rem; flex-shrink:0;">
+                                    <span style="font-family:monospace; background:rgba(0,0,0,0.06); padding:0.05rem 0.35rem; border-radius:4px; font-size:0.68rem;">🤖 ${escapeHtml(it.modelUsed || model)}</span>
+                                    ${it.status === "success" 
+                                        ? `<span style="color:#059669; font-weight:700;">✓ 出来事${it.eventsCount || 0}件</span>` 
+                                        : `<span style="color:#dc2626; font-weight:700;" title="${escapeHtml(it.error || '')}">✕ 失敗</span>`}
+                                </div>
+                            </div>
+                        `).join("")}
+                    </div>
+                ` : "";
+
+                return `
+                <div style="background:var(--bg-surface); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:0.65rem 0.8rem; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:0.5rem; flex-wrap:wrap;">
+                        <div>
+                            <div style="font-size:0.8rem; font-weight:800; color:var(--text-primary); display:flex; align-items:center; gap:0.4rem;">
+                                <span>⏱️ ${escapeHtml(entry.completedTimeStr || entry.completedAt || "")}</span>
+                                <span style="font-size:0.68rem; background:rgba(217,119,6,0.1); color:#d97706; padding:0.05rem 0.4rem; border-radius:10px; font-weight:700;">${modeLabel}</span>
+                            </div>
+                            <div style="font-size:0.72rem; color:var(--text-muted); margin-top:2px; display:flex; gap:0.4rem; align-items:center; flex-wrap:wrap;">
+                                <span>🤖 モデル: <b style="color:var(--brand-primary);">${escapeHtml(model)}</b></span>
+                                <span>•</span>
+                                <span>📊 成功 <b>${success}</b>件 / 失敗 <b>${fail}</b>件（計 <b>${events}</b>件の出来事）</span>
+                                <span>${duration}</span>
+                            </div>
+                        </div>
+                        <button type="button" class="tactile-btn btn-xs" onclick="toggleBatchHistoryAccordion('bth-accordion-${idx}')" style="font-size:0.68rem; padding:0.2rem 0.45rem;">
+                            詳細表示 ▼
+                        </button>
+                    </div>
+                    <div id="bth-accordion-${idx}" style="display:none;">
+                        ${itemsHtml}
+                    </div>
+                </div>`;
+            }).join("");
+        }
+
+        window.toggleBatchHistoryAccordion = function(id) {
+            const elAcc = document.getElementById(id);
+            if (!elAcc) return;
+            elAcc.style.display = (elAcc.style.display === "none") ? "block" : "none";
+        };
+
+        function openBatchTimelineModal() {
+            if (!loginUid) {
+                showToast("ログインが必要です。", "error", 2000);
+                return;
+            }
+            if (!lastLessonsSnapshot || typeof lastLessonsSnapshot !== "object") {
+                showToast("授業データを読み込み中です...", "info", 2000);
+                return;
+            }
+
+            const entries = Object.entries(lastLessonsSnapshot);
+            if (entries.length === 0) {
+                showToast("登録されている授業がありません。", "warning", 2000);
+                return;
+            }
+
+            const candidates = entries.map(([id, l]) => {
+                const subj = l.subject || (typeof detectLessonSubject === "function" ? detectLessonSubject(l) : "") || "その他";
+                const isHist = (typeof isHistoryLesson === "function") ? isHistoryLesson(l) : (subj === "日本史" || subj === "歴史" || subj === "公共" || subj === "政治・経済" || subj === "政経" || subj === "公民");
+                const eventsCount = Array.isArray(l.historicalEvents) ? l.historicalEvents.length : 0;
+                
+                const isCurrentlyActive = (currentLesson && currentLesson.id === id);
+                const shouldSelect = isCurrentlyActive || isHist;
+
+                return {
+                    id,
+                    title: l.title || "無題の授業",
+                    subject: subj,
+                    partsCount: Array.isArray(l.parts) ? l.parts.length : 1,
+                    eventsCount,
+                    isHist,
+                    lesson: l,
+                    selected: shouldSelect
+                };
+            });
+
+            candidates.sort((a, b) => {
+                if (a.isHist !== b.isHist) return a.isHist ? -1 : 1;
+                return (b.lesson.updatedAt || "").localeCompare(a.lesson.updatedAt || "");
+            });
+
+            batchTimelineCandidates = candidates;
+            batchTimelineSelectedSubject = "all";
+            batchTimelineSearchQuery = "";
+            batchTimelineStatusFilter = "all";
+
+            const searchInput = el("batch-timeline-search-input");
+            if (searchInput) searchInput.value = "";
+            const statusFilter = el("batch-timeline-status-filter");
+            if (statusFilter) statusFilter.value = "all";
+
+            updateBatchTimelineHistoryBadge();
+            switchBatchTimelineTab("run");
+
+            renderBatchTimelineSubjectChips();
+            renderBatchTimelineCandidatesList();
+
+            const modal = el("batch-timeline-extract-modal");
+            if (modal) modal.style.display = "flex";
+        }
+        window.openBatchTimelineModal = openBatchTimelineModal;
+
+        function renderBatchTimelineSubjectChips() {
+            const chipsContainer = el("batch-timeline-subject-chips");
+            if (!chipsContainer) return;
+
+            const subjectsCount = {};
+            batchTimelineCandidates.forEach(c => {
+                subjectsCount[c.subject] = (subjectsCount[c.subject] || 0) + 1;
+            });
+
+            let html = `<button type="button" class="lesson-subject-chip ${batchTimelineSelectedSubject === 'all' ? 'active' : ''}" onclick="filterBatchTimelineBySubject('all')">すべて (${batchTimelineCandidates.length})</button>`;
+            Object.entries(subjectsCount).forEach(([subj, count]) => {
+                const icon = (typeof LESSON_SUBJECT_ICONS !== "undefined" && LESSON_SUBJECT_ICONS[subj]) ? LESSON_SUBJECT_ICONS[subj] : "📎";
+                html += `<button type="button" class="lesson-subject-chip ${batchTimelineSelectedSubject === subj ? 'active' : ''}" onclick="filterBatchTimelineBySubject('${escapeHtml(subj)}')">${icon} ${escapeHtml(subj)} (${count})</button>`;
+            });
+            chipsContainer.innerHTML = html;
+        }
+
+        window.filterBatchTimelineBySubject = function(subj) {
+            batchTimelineSelectedSubject = subj;
+            renderBatchTimelineSubjectChips();
+            renderBatchTimelineCandidatesList();
+        };
+
+        function getFilteredBatchTimelineCandidates() {
+            return batchTimelineCandidates.filter(c => {
+                if (batchTimelineSelectedSubject !== "all" && c.subject !== batchTimelineSelectedSubject) {
+                    return false;
+                }
+                if (batchTimelineStatusFilter === "history_only" && !c.isHist) {
+                    return false;
+                }
+                if (batchTimelineStatusFilter === "has_events" && c.eventsCount === 0) {
+                    return false;
+                }
+                if (batchTimelineStatusFilter === "empty_events" && c.eventsCount > 0) {
+                    return false;
+                }
+                if (batchTimelineSearchQuery.trim()) {
+                    const q = batchTimelineSearchQuery.trim().toLowerCase();
+                    const matchTitle = (c.title || "").toLowerCase().includes(q);
+                    const matchSubject = (c.subject || "").toLowerCase().includes(q);
+                    if (!matchTitle && !matchSubject) return false;
+                }
+                return true;
+            });
+        }
+
+        function renderBatchTimelineCandidatesList() {
+            const listEl = el("batch-timeline-candidates-list");
+            const targetCountEl = el("batch-timeline-target-count");
+            const totalCountEl = el("batch-timeline-total-count");
+            if (!listEl) return;
+
+            const visibleItems = getFilteredBatchTimelineCandidates();
+            const totalSelected = batchTimelineCandidates.filter(c => c.selected).length;
+
+            if (targetCountEl) targetCountEl.textContent = totalSelected;
+            if (totalCountEl) totalCountEl.textContent = batchTimelineCandidates.length;
+
+            if (visibleItems.length === 0) {
+                listEl.innerHTML = `<div style="text-align:center; padding:1.5rem; color:var(--text-muted); font-size:0.8rem;">条件に一致する授業がありません。</div>`;
+                return;
+            }
+
+            listEl.innerHTML = visibleItems.map(c => {
+                const icon = (typeof LESSON_SUBJECT_ICONS !== "undefined" && LESSON_SUBJECT_ICONS[c.subject]) ? LESSON_SUBJECT_ICONS[c.subject] : "📎";
+                const badgeColor = c.eventsCount > 0 ? "rgba(16, 185, 129, 0.12)" : "rgba(245, 158, 11, 0.12)";
+                const badgeTextColor = c.eventsCount > 0 ? "#059669" : "#d97706";
+                const badgeLabel = c.eventsCount > 0 ? `⏳ 年表 ${c.eventsCount}件` : `⚠️ 年表未登録`;
+
+                return `
+                <label style="display:flex; align-items:center; gap:0.6rem; padding:0.5rem 0.75rem; background:var(--bg-surface); border:1px solid var(--border-color); border-radius:var(--radius-md); cursor:pointer; user-select:none; transition:all 0.15s ease;">
+                    <input type="checkbox" ${c.selected ? "checked" : ""} onchange="toggleBatchTimelineCandidateSelection('${c.id}', this.checked)" style="accent-color:var(--brand-primary); cursor:pointer; width:17px; height:17px; flex-shrink:0;">
+                    <div style="flex:1; min-width:0;">
+                        <div style="font-size:0.84rem; font-weight:700; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                            ${escapeHtml(c.title)}
+                        </div>
+                        <div style="font-size:0.72rem; color:var(--text-secondary); display:flex; gap:0.4rem; align-items:center; margin-top:3px; flex-wrap:wrap;">
+                            <span style="font-weight:600;">${icon} ${escapeHtml(c.subject)}</span>
+                            <span>•</span>
+                            <span>全${c.partsCount}パート</span>
+                            <span>•</span>
+                            <span style="background:${badgeColor}; color:${badgeTextColor}; padding:0.05rem 0.4rem; border-radius:10px; font-weight:700;">${badgeLabel}</span>
+                        </div>
+                    </div>
+                </label>`;
+            }).join("");
+        }
+
+        window.toggleBatchTimelineCandidateSelection = function(id, checked) {
+            const item = batchTimelineCandidates.find(c => c.id === id);
+            if (item) item.selected = checked;
+            const targetCountEl = el("batch-timeline-target-count");
+            const totalSelected = batchTimelineCandidates.filter(c => c.selected).length;
+            if (targetCountEl) targetCountEl.textContent = totalSelected;
+        };
+
+        async function startBatchTimelineGeneration() {
+            if (!loginUid) {
+                showToast("ログインが必要です。", "error", 2000);
+                return;
+            }
+
+            const targets = batchTimelineCandidates.filter(c => c.selected);
+
+            if (targets.length === 0) {
+                showToast("再抽出する授業を1件以上選択してください。", "warning", 2500);
+                return;
+            }
+
+            const modeRadios = document.getElementsByName("batch-timeline-mode");
+            let mode = "replace";
+            for (const r of modeRadios) {
+                if (r.checked) {
+                    mode = r.value;
+                    break;
+                }
+            }
+
+            // ユーザーが選択したAIモデル
+            const selectedModel = el("batch-timeline-model-select")?.value || "gemini-3.8-flash";
+
+            el("batch-timeline-setup-view").style.display = "none";
+            el("batch-timeline-progress-view").style.display = "block";
+            el("stop-batch-timeline-btn").style.display = "inline-flex";
+            el("finish-batch-timeline-btn").style.display = "none";
+            el("batch-timeline-complete-summary-card").style.display = "none";
+            el("btn-view-history-after-complete").style.display = "none";
+
+            const logList = el("batch-timeline-log-list");
+            if (logList) logList.innerHTML = "";
+
+            function addLog(msg, type = "info") {
+                if (!logList) return;
+                const color = type === "success" ? "#059669" : (type === "error" ? "#dc2626" : (type === "warn" ? "#d97706" : "var(--text-secondary)"));
+                const time = new Date().toLocaleTimeString();
+                const div = document.createElement("div");
+                div.style.color = color;
+                div.textContent = `[${time}] ${msg}`;
+                logList.appendChild(div);
+                logList.scrollTop = logList.scrollHeight;
+            }
+
+            isBatchGeneratingTimeline = true;
+            batchTimelineStopRequested = false;
+
+            const startTime = Date.now();
+            let successCount = 0;
+            let failCount = 0;
+            let totalEventsExtracted = 0;
+            const total = targets.length;
+            const historyItems = [];
+            const modelsUsedSet = new Set();
+
+            addLog(`🚀 年表・年代出来事の一括再抽出を開始（対象: 全${total}件, 指定モデル: ${selectedModel}, モード: ${mode === "replace" ? "全置き換え" : "マージ追加"}）`);
+            addLog(`ℹ️ APIクォータ保護のため、各授業完了ごとに約1.5秒のインターバルを設けます`);
+
+            for (let i = 0; i < total; i++) {
+                if (batchTimelineStopRequested) {
+                    addLog(`⏸️ 処理が中断されました。ここまでに再抽出された年表データは安全に保存されています。`, "warn");
+                    break;
+                }
+
+                const target = targets[i];
+                const progressPct = Math.round((i / total) * 100);
+
+                el("batch-timeline-progress-label").textContent = `処理中: ${i + 1} / ${total} 件目`;
+                el("batch-timeline-progress-percent").textContent = `${progressPct}%`;
+                el("batch-timeline-progress-bar").style.width = `${progressPct}%`;
+                el("batch-timeline-current-task").textContent = `⏳「${target.title}」（${target.subject}）をAI（${selectedModel}）で抽出中...`;
+
+                addLog(`[${i + 1}/${total}] ⏳「${target.title}」の年代・出来事を抽出中...`);
+
+                let actualModelForLesson = selectedModel;
+
+                try {
+                    const lesson = target.lesson;
+                    const subject = target.subject || (typeof detectLessonSubject === "function" ? detectLessonSubject(lesson) : "") || "日本史";
+
+                    const rawText = lesson.extractedText || 
+                                    (lesson.parts || []).map(p => `${p.title || ""}: ${p.summary || ""}\n${p.text || ""}`).join("\n") || 
+                                    lesson.lectureNotes || 
+                                    lesson.title || "";
+
+                    if (!rawText.trim()) {
+                        throw new Error("授業本文が空です");
+                    }
+
+                    const extractedEvents = await generateHistoricalEvents(
+                        rawText, 
+                        lesson.title, 
+                        subject, 
+                        selectedModel, 
+                        (usedModel) => {
+                            actualModelForLesson = usedModel;
+                            modelsUsedSet.add(usedModel);
+                        }
+                    );
+
+                    let finalEvents = [];
+                    if (mode === "replace") {
+                        finalEvents = extractedEvents;
+                    } else {
+                        const prevEvents = Array.isArray(lesson.historicalEvents) ? lesson.historicalEvents : [];
+                        finalEvents = mergeAndDeduplicateHistoricalEvents(prevEvents, extractedEvents);
+                    }
+
+                    const now = new Date().toISOString();
+                    await update(ref(database, `users/${loginUid}/lessons/${target.id}`), {
+                        historicalEvents: finalEvents,
+                        updatedAt: now
+                    });
+
+                    if (lastLessonsSnapshot && lastLessonsSnapshot[target.id]) {
+                        lastLessonsSnapshot[target.id].historicalEvents = finalEvents;
+                        lastLessonsSnapshot[target.id].updatedAt = now;
+                    }
+                    if (currentLesson && currentLesson.id === target.id) {
+                        currentLesson.historicalEvents = finalEvents;
+                        if (typeof renderHistoricalEvents === "function") renderHistoricalEvents();
+                    }
+
+                    target.eventsCount = finalEvents.length;
+                    successCount++;
+                    totalEventsExtracted += finalEvents.length;
+
+                    historyItems.push({
+                        lessonId: target.id,
+                        lessonTitle: target.title,
+                        subject,
+                        status: "success",
+                        modelUsed: actualModelForLesson,
+                        eventsCount: finalEvents.length,
+                        completedTime: new Date().toLocaleTimeString(),
+                        error: null
+                    });
+
+                    addLog(`✓「${target.title}」: ${finalEvents.length}件登録（応答モデル: ${actualModelForLesson}）`, "success");
+
+                } catch (err) {
+                    console.error(`Error re-extracting timeline for ${target.title}:`, err);
+                    failCount++;
+                    historyItems.push({
+                        lessonId: target.id,
+                        lessonTitle: target.title,
+                        subject: target.subject,
+                        status: "error",
+                        modelUsed: actualModelForLesson,
+                        eventsCount: 0,
+                        completedTime: new Date().toLocaleTimeString(),
+                        error: err.message
+                    });
+                    addLog(`✕「${target.title}」の年表抽出に失敗: ${err.message}`, "error");
+                }
+
+                if (i < total - 1 && !batchTimelineStopRequested) {
+                    el("batch-timeline-current-task").textContent = `⏱️ APIクォータ保護インターバル中（1.5秒待機）...`;
+                    await new Promise(r => setTimeout(r, 1500));
+                }
+            }
+
+            isBatchGeneratingTimeline = false;
+            const durationSec = Math.max(1, Math.round((Date.now() - startTime) / 1000));
+            const completedDate = new Date();
+            const completedTimeStr = completedDate.toLocaleString();
+            const primaryModel = Array.from(modelsUsedSet)[0] || selectedModel;
+
+            // 履歴エントリの作成と保存
+            const historyEntry = {
+                id: `bth_${Date.now()}`,
+                completedAt: completedDate.toISOString(),
+                completedTimeStr,
+                requestedModel: selectedModel,
+                primaryRespondedModel: primaryModel,
+                modelsUsed: Array.from(modelsUsedSet),
+                mode,
+                durationSec,
+                totalLessons: total,
+                successCount,
+                failCount,
+                totalEvents: totalEventsExtracted,
+                items: historyItems
+            };
+            saveBatchTimelineHistoryEntry(historyEntry);
+
+            el("batch-timeline-progress-bar").style.width = `100%`;
+            el("batch-timeline-progress-percent").textContent = `100%`;
+            el("batch-timeline-progress-label").textContent = batchTimelineStopRequested ? "⏸️ 処理を一時停止しました" : "🎉 年表の一括再抽出が完了しました！";
+            el("batch-timeline-current-task").textContent = `結果: 成功 ${successCount}件（計${totalEventsExtracted}件の出来事登録）/ 失敗 ${failCount}件`;
+
+            // サマリーカードの表示
+            const summaryCard = el("batch-timeline-complete-summary-card");
+            if (summaryCard) {
+                el("batch-timeline-complete-time").textContent = completedTimeStr;
+                el("batch-timeline-complete-model").textContent = primaryModel;
+                el("batch-timeline-complete-stats").textContent = `成功 ${successCount}件 / 失敗 ${failCount}件（計${totalEventsExtracted}件）`;
+                el("batch-timeline-complete-duration").textContent = `所要時間: 約${durationSec}秒`;
+                summaryCard.style.display = "block";
+            }
+            el("btn-view-history-after-complete").style.display = "inline-flex";
+
+            addLog(`🏁 処理完了: 成功 ${successCount}件（計${totalEventsExtracted}件の出来事）、失敗 ${failCount}件（完了時刻: ${completedTimeStr}, モデル: ${primaryModel}）`, "info");
+
+            el("stop-batch-timeline-btn").style.display = "none";
+            el("finish-batch-timeline-btn").style.display = "inline-flex";
+
+            if (typeof renderLessonList === "function") renderLessonList(lastLessonsSnapshot);
+            showToast(`🎉 年表の一括再抽出が完了しました！（${successCount}件 / 計${totalEventsExtracted}件）`, "success", 4000);
+        }
+
+        function stopBatchTimelineGeneration() {
+            if (!isBatchGeneratingTimeline) return;
+            batchTimelineStopRequested = true;
+            el("batch-timeline-current-task").textContent = "⏸️ 現在の処理が終了次第、安全に停止します...";
+        }
+
+        // タブ切り替え & イベントバインド
+        el("tab-btn-batch-timeline-run")?.addEventListener("click", () => switchBatchTimelineTab("run"));
+        el("tab-btn-batch-timeline-history")?.addEventListener("click", () => switchBatchTimelineTab("history"));
+        el("btn-view-history-after-complete")?.addEventListener("click", () => switchBatchTimelineTab("history"));
+
+        el("btn-clear-batch-timeline-history")?.addEventListener("click", () => {
+            if (!confirm("年表の一括再抽出履歴をすべて消去しますか？")) return;
+            localStorage.removeItem(BATCH_TIMELINE_HISTORY_KEY);
+            if (loginUid) {
+                set(ref(database, `users/${loginUid}/batch_timeline_history`), null).catch(console.warn);
+            }
+            renderBatchTimelineHistoryView();
+            showToast("実行履歴を消去しました。", "info", 2000);
+        });
+
+        // 年表一括再抽出 イベントバインド
+        el("btn-batch-reextract-timeline")?.addEventListener("click", openBatchTimelineModal);
+        el("btn-batch-reextract-timeline-tab")?.addEventListener("click", openBatchTimelineModal);
+        el("close-batch-timeline-modal-btn")?.addEventListener("click", () => {
+            if (isBatchGeneratingTimeline) {
+                if (!confirm("現在年表の一括再抽出の処理中です。中断しますか？")) return;
+                stopBatchTimelineGeneration();
+            }
+            el("batch-timeline-extract-modal").style.display = "none";
+        });
+        el("cancel-batch-timeline-btn")?.addEventListener("click", () => el("batch-timeline-extract-modal").style.display = "none");
+        el("start-batch-timeline-btn")?.addEventListener("click", startBatchTimelineGeneration);
+        el("stop-batch-timeline-btn")?.addEventListener("click", stopBatchTimelineGeneration);
+        el("finish-batch-timeline-btn")?.addEventListener("click", () => el("batch-timeline-extract-modal").style.display = "none");
+        el("batch-timeline-extract-modal")?.addEventListener("click", (e) => {
+            if (e.target.id === "batch-timeline-extract-modal" && !isBatchGeneratingTimeline) {
+                el("batch-timeline-extract-modal").style.display = "none";
+            }
+        });
+
+        // 絞り込み・選択ボタンイベント
+        el("btn-batch-timeline-select-all")?.addEventListener("click", () => {
+            const visible = getFilteredBatchTimelineCandidates();
+            visible.forEach(c => c.selected = true);
+            renderBatchTimelineCandidatesList();
+        });
+        el("btn-batch-timeline-deselect-all")?.addEventListener("click", () => {
+            const visible = getFilteredBatchTimelineCandidates();
+            visible.forEach(c => c.selected = false);
+            renderBatchTimelineCandidatesList();
+        });
+        el("btn-batch-timeline-select-history")?.addEventListener("click", () => {
+            batchTimelineCandidates.forEach(c => {
+                c.selected = c.isHist;
+            });
+            renderBatchTimelineCandidatesList();
+        });
+        el("batch-timeline-search-input")?.addEventListener("input", (e) => {
+            batchTimelineSearchQuery = e.target.value;
+            renderBatchTimelineCandidatesList();
+        });
+        el("batch-timeline-status-filter")?.addEventListener("change", (e) => {
+            batchTimelineStatusFilter = e.target.value;
+            renderBatchTimelineCandidatesList();
         });
 
         
@@ -21673,7 +22558,10 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
         // ==========================================================
         // 🎯 Google AI Studio連携（共通テスト形式問題一括インポート）ロジック
         // ==========================================================
-        function getDrillsSchemaByVersion(version) {
+        // ==========================================================
+        // 🎯 選択問題（共通テスト形式）二刀流生成エンジン（API自動生成 ＆ AI Studio手動連携）
+        // ==========================================================
+        function getDrillsSchemaByVersion(version = "mix") {
             const baseProperties = {
                 part_number: {
                     type: "integer",
@@ -21681,171 +22569,53 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
                 },
                 type: {
                     type: "string",
-                    description: "問題の形式種別"
+                    enum: ["combination", "chronological", "single_choice", "true_false"],
+                    description: "問題の形式種別 (combination: 2文正誤判定, chronological: 年代整序, single_choice: 4択問題, true_false: 正誤判定)"
                 },
                 lead_text: {
                     type: "string",
                     description: "問題文のリード文"
                 },
+                statements: {
+                    type: "array",
+                    items: { type: "string" },
+                    description: "文X・文Yや出来事Ⅰ〜Ⅲなど（形式に応じて使用）"
+                },
+                options: {
+                    type: "array",
+                    items: {
+                        type: "object",
+                        properties: {
+                            number: { type: "integer" },
+                            text: { type: "string" }
+                        },
+                        required: ["number", "text"]
+                    },
+                    description: "選択肢リスト（1〜4または1〜6）"
+                },
+                correct_number: {
+                    type: "integer",
+                    description: "正解の選択肢番号（1, 2, 3, 4など）"
+                },
                 explanation: {
                     type: "string",
-                    description: "正解の根拠と不正解の解説"
+                    description: "正解の論理的根拠と各選択肢の学術的解説"
                 },
                 trap_reason: {
                     type: "string",
-                    description: "受験生が最も引っかかりやすい落とし穴・罠解説"
+                    description: "受験生が最も引っかかりやすい落とし穴・誤答原因の心理/知識的分析"
                 }
             };
 
-            if (version === "combination") {
-                return {
-                    type: "object",
-                    properties: {
-                        choice_drills: {
-                            type: "array",
-                            description: "2文正誤組み合わせ判定問題リスト（5問）",
-                            items: {
-                                type: "object",
-                                properties: {
-                                    ...baseProperties,
-                                    type: { type: "string", enum: ["combination"] },
-                                    statements: {
-                                        type: "array",
-                                        items: { type: "string" },
-                                        description: "文Xと文Yの2文リスト（必ず2要素）"
-                                    },
-                                    options: {
-                                        type: "array",
-                                        items: {
-                                            type: "object",
-                                            properties: {
-                                                number: { type: "integer" },
-                                                text: { type: "string" }
-                                            },
-                                            required: ["number", "text"]
-                                        },
-                                        description: "①X-正/Y-正, ②X-正/Y-誤, ③X-誤/Y-正, ④X-誤/Y-誤の4択"
-                                    },
-                                    correct_number: { type: "integer", enum: [1, 2, 3, 4] }
-                                },
-                                required: ["type", "lead_text", "statements", "options", "correct_number", "explanation", "trap_reason"]
-                            }
-                        }
-                    },
-                    required: ["choice_drills"]
-                };
-            }
-
-            if (version === "chronological") {
-                return {
-                    type: "object",
-                    properties: {
-                        choice_drills: {
-                            type: "array",
-                            description: "年代・因果関係整序問題リスト（5問）",
-                            items: {
-                                type: "object",
-                                properties: {
-                                    ...baseProperties,
-                                    type: { type: "string", enum: ["chronological"] },
-                                    statements: {
-                                        type: "array",
-                                        items: { type: "string" },
-                                        description: "出来事Ⅰ〜Ⅲのリスト（必ず3要素）"
-                                    },
-                                    options: {
-                                        type: "array",
-                                        items: {
-                                            type: "object",
-                                            properties: {
-                                                number: { type: "integer" },
-                                                text: { type: "string" }
-                                            },
-                                            required: ["number", "text"]
-                                        },
-                                        description: "①Ⅰ-Ⅱ-Ⅲ などの配列組み合わせ（4〜6択）"
-                                    },
-                                    correct_number: { type: "integer" }
-                                },
-                                required: ["type", "lead_text", "statements", "options", "correct_number", "explanation", "trap_reason"]
-                            }
-                        }
-                    },
-                    required: ["choice_drills"]
-                };
-            }
-
-            if (version === "true_false") {
-                return {
-                    type: "object",
-                    properties: {
-                        choice_drills: {
-                            type: "array",
-                            description: "4択正誤判定問題リスト（5問）",
-                            items: {
-                                type: "object",
-                                properties: {
-                                    ...baseProperties,
-                                    type: { type: "string", enum: ["single_choice", "true_false"] },
-                                    options: {
-                                        type: "array",
-                                        items: {
-                                            type: "object",
-                                            properties: {
-                                                number: { type: "integer" },
-                                                text: { type: "string" }
-                                            },
-                                            required: ["number", "text"]
-                                        },
-                                        description: "4つの選択肢（①〜④）"
-                                    },
-                                    correct_number: { type: "integer", enum: [1, 2, 3, 4] }
-                                },
-                                required: ["type", "lead_text", "options", "correct_number", "explanation", "trap_reason"]
-                            }
-                        }
-                    },
-                    required: ["choice_drills"]
-                };
-            }
-
-            // cloze or mix
             return {
                 type: "object",
                 properties: {
                     choice_drills: {
                         type: "array",
-                        description: "共通テスト形式の実戦選択問題リスト（5問）",
+                        description: "大学入学共通テスト形式の実戦多肢選択問題リスト",
                         items: {
                             type: "object",
-                            properties: {
-                                ...baseProperties,
-                                type: {
-                                    type: "string",
-                                    enum: ["combination", "chronological", "single_choice", "true_false"]
-                                },
-                                statements: {
-                                    type: "array",
-                                    items: { type: "string" },
-                                    description: "文X・Yや出来事Ⅰ〜Ⅲなど（任意）"
-                                },
-                                options: {
-                                    type: "array",
-                                    items: {
-                                        type: "object",
-                                        properties: {
-                                            number: { type: "integer" },
-                                            text: { type: "string" }
-                                        },
-                                        required: ["number", "text"]
-                                    },
-                                    description: "選択肢リスト（1〜4または1〜6）"
-                                },
-                                correct_number: {
-                                    type: "integer",
-                                    description: "正解の選択肢番号"
-                                }
-                            },
+                            properties: baseProperties,
                             required: ["type", "lead_text", "options", "correct_number", "explanation", "trap_reason"]
                         }
                     }
@@ -21856,6 +22626,7 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
 
         const modalByotDrills = el("lesson-byot-drills-modal");
         const btnOpenByotDrills = el("btn-open-byot-drills-modal");
+        const btnOpenApiDrills = el("btn-open-api-drills-modal");
         const btnCloseByotDrills = el("byot-drills-modal-close");
         const btnCancelByotDrills = el("byot-drills-modal-cancel");
         const btnSubmitByotDrills = el("byot-drills-modal-submit");
@@ -21867,25 +22638,89 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
         const btnCopyByotDrillsOnly = el("byot-drills-copy-instruction-only-btn");
         const selectByotDrillsPart = el("byot-drills-part-select");
         const selectByotDrillsVersion = el("byot-drills-version-select");
+        const selectByotDrillsCount = el("byot-drills-count-select");
         const previewByotDrillsSchema = el("byot-drills-schema-preview");
         const previewByotDrillsPrompt = el("byot-drills-prompt-preview");
         const badgeByotDrillsCharCount = el("byot-drills-part-char-count");
-        const guideByotDrillsVersion = el("byot-drills-version-guide");
         const leadByotDrillsSummary = el("byot-drills-summary-lead");
+
+        // API自動生成用UI要素
+        const tabByotDrillsApi = el("byot-drills-tab-api");
+        const tabByotDrillsManual = el("byot-drills-tab-manual");
+        const panelByotDrillsApi = el("byot-drills-panel-api");
+        const panelByotDrillsManual = el("byot-drills-panel-manual");
+        const selectByotDrillsApiPart = el("byot-drills-api-part-select");
+        const selectByotDrillsApiCount = el("byot-drills-api-count-select");
+        const btnByotDrillsApiSubmit = el("byot-drills-api-submit-btn");
+        const btnByotDrillsApiCancel = el("byot-drills-api-cancel-btn");
+        const progressAreaByotDrillsApi = el("byot-drills-api-progress-area");
+        const progressBarByotDrillsApi = el("byot-drills-api-progress-bar");
+        const progressPctByotDrillsApi = el("byot-drills-api-progress-pct");
+        const statusTextByotDrillsApi = el("byot-drills-api-status-text");
+
+        let activeByotDrillsTab = "api";
+
+        function switchByotDrillsMode(mode = "api") {
+            activeByotDrillsTab = mode;
+            if (tabByotDrillsApi) {
+                tabByotDrillsApi.classList.toggle("active", mode === "api");
+                tabByotDrillsApi.style.color = mode === "api" ? "#4F46E5" : "var(--text-secondary)";
+                tabByotDrillsApi.style.borderBottom = mode === "api" ? "2px solid #4F46E5" : "2px solid transparent";
+                tabByotDrillsApi.style.fontWeight = mode === "api" ? "800" : "700";
+            }
+            if (tabByotDrillsManual) {
+                tabByotDrillsManual.classList.toggle("active", mode === "manual");
+                tabByotDrillsManual.style.color = mode === "manual" ? "#059669" : "var(--text-secondary)";
+                tabByotDrillsManual.style.borderBottom = mode === "manual" ? "2px solid #059669" : "2px solid transparent";
+                tabByotDrillsManual.style.fontWeight = mode === "manual" ? "800" : "700";
+            }
+            if (panelByotDrillsApi) panelByotDrillsApi.style.display = mode === "api" ? "flex" : "none";
+            if (panelByotDrillsManual) panelByotDrillsManual.style.display = mode === "manual" ? "flex" : "none";
+        }
+
+        if (tabByotDrillsApi) tabByotDrillsApi.addEventListener("click", () => switchByotDrillsMode("api"));
+        if (tabByotDrillsManual) tabByotDrillsManual.addEventListener("click", () => switchByotDrillsMode("manual"));
 
         function buildByotDrillsPrompt(includeText = false) {
             const subject = (currentLesson && (currentLesson.subject || detectLessonSubject(currentLesson))) || "指定なし";
             const title = cleanLessonTitle((currentLesson && currentLesson.title) || "無題の授業");
             const selectedPartVal = selectByotDrillsPart ? selectByotDrillsPart.value : "all";
             const selectedVersion = selectByotDrillsVersion ? selectByotDrillsVersion.value : "mix";
+            const selectedCountMode = selectByotDrillsCount ? selectByotDrillsCount.value : "rich";
             const ctx = extractLessonPartContext(currentLesson, selectedPartVal);
+
+            const partsCount = (ctx.parts && ctx.parts.length > 0) ? ctx.parts.length : 1;
+            let targetQuestionCount = 10;
+            if (ctx.isAll) {
+                if (selectedCountMode === "speed") {
+                    targetQuestionCount = Math.max(5, partsCount);
+                } else if (selectedCountMode === "master") {
+                    targetQuestionCount = Math.max(16, partsCount * 4);
+                } else {
+                    // rich (default)
+                    targetQuestionCount = Math.max(10, partsCount * 3);
+                }
+            } else {
+                if (selectedCountMode === "speed") {
+                    targetQuestionCount = 5;
+                } else if (selectedCountMode === "master") {
+                    targetQuestionCount = 12;
+                } else {
+                    // rich
+                    targetQuestionCount = 8;
+                }
+            }
 
             let partContextSection = "";
             if (ctx.isAll) {
                 if (ctx.parts && ctx.parts.length > 0) {
+                    const minPerPart = Math.max(1, Math.floor(targetQuestionCount / ctx.parts.length));
                     partContextSection = `【授業全体のカリキュラム構成（全${ctx.parts.length}回）】\n` +
                         ctx.parts.map((p, i) => `・第${i + 1}回：${cleanPartTitle(p.title, i)}（学習要約・範囲: ${p.summary || "なし"}）`).join("\n") +
-                        `\n\n【全パート均等出題指示】\n全パートから偏りなく満遍なく良問を作成し、各問題がどのパートに属するかを示す "part_number"（1以上の整数。第1回なら 1、第2回なら 2）を正確に割り振ってください。`;
+                        `\n\n【🚨 最重要指示：全パート必須出題・手加減禁止】\n` +
+                        `本文全体を精読し、全${ctx.parts.length}回の各パートから【必ず最低${minPerPart}問ずつ】偏りなく作問し、合計【${targetQuestionCount}問】を作成してください。\n` +
+                        `各問題には必ずそれがどの回に属するかを示す "part_number"（1以上の整数。第1回なら 1、第2回なら 2）を正確に割り振ってください。\n` +
+                        `特定の回だけに偏ったり、出題されない回が生じることは【固く禁止】します。全カリキュラムを満遍なく網羅してください。`;
                 }
             } else {
                 const cPartTitle = cleanPartTitle(ctx.partTitle, ctx.partIndex);
@@ -21893,48 +22728,32 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
                     `出題パート見出し: 第${ctx.partNumber}回 ${cPartTitle}\n` +
                     `学習要約・範囲: ${ctx.partSummary || "該当範囲"}\n\n` +
                     `【⚠️ パート集中出題の厳格指示】\n` +
-                    `今回は【第${ctx.partNumber}回：「${cPartTitle}」】の講義内容に【完全に集中】して5問を作問してください。\n` +
+                    `今回は【第${ctx.partNumber}回：「${cPartTitle}」】の講義内容に【完全に集中】して【${targetQuestionCount}問】を作問してください。\n` +
                     `他パートの内容は混ぜず、全問題の "part_number" は必ず「${ctx.partNumber}」としてください。`;
             }
 
             let formatInstruction = "";
             if (selectedVersion === "combination") {
-                formatInstruction = `【出題形式：⚔️ 2文正誤組み合わせ判定（共通テスト最頻出・文X・文Y判定）に特化】
-全5問すべてを「type: combination」として作成してください。
-・lead_text: 「次の文 X・Y について、その正誤の組み合わせとして最も適当なものを、下の①〜④のうちから一つ選べ。」
-・statements: ["X: ○○に関する記述...", "Y: △△に関する記述..."] の2文を提示。
-・options:
-  ① X-正 / Y-正
-  ② X-正 / Y-誤
-  ③ X-誤 / Y-正
-  ④ X-誤 / Y-誤
-・XとYのそれぞれに明確な根拠を持たせ、一見正しそうに見える巧妙な引っかけ（時期・主体・因果のすり替え）を盛り込んでください。`;
+                formatInstruction = `【出題形式：⚔️ 2文正誤組み合わせ判定（共通テスト最頻出・文X・文Y判定）に特化】\n全問を「type: combination」として作成してください。\n・lead_text: 「次の文 X・Y について、その正誤の組み合わせとして最も適当なものを、下の①〜④のうちから一つ選べ。」\n・statements: ["X: ○○に関する記述...", "Y: △△に関する記述..."] の2文を提示。\n・options: ① X-正 / Y-正, ② X-正 / Y-誤, ③ X-誤 / Y-正, ④ X-誤 / Y-誤\n・XとYそれぞれに明確な根拠を持たせ、一見正しそうに見える巧妙な引っかけを盛り込んでください。`;
             } else if (selectedVersion === "true_false") {
-                formatInstruction = `【出題形式：🔍 4択正誤判定（共通テスト王道形式：正文・誤文選択）に特化】
-全5問すべてを「type: single_choice」または「type: true_false」として作成してください。
-・問題文（lead_text）で「正しいものを一つ選べ」または「誤っているものを一つ選べ」と明確に指示。
-・options: 4つの選択肢（①〜④）を提示。
-・誤文の選択肢には、「主語と述語の入れ替え」「似た法令・用語・概念の混同」「原因と結果の逆転」「年代の前後すり替え」などの典型的トラップを必ず仕込んでください。`;
+                formatInstruction = `【出題形式：🔍 4択正誤判定（共通テスト王道形式：正文・誤文選択）に特化】\n全問を「type: single_choice」または「type: true_false」として作成してください。\n・lead_text: 「正しいものを一つ選べ」または「誤っているものを一つ選べ」と指示。\n・options: 4つの選択肢（①〜④）を提示。\n・誤文には「主語と述語の入れ替え」「似た法令・用語の混同」「原因と結果の逆転」「年代の前後すり替え」などの典型的トラップを仕込んでください。`;
             } else if (selectedVersion === "chronological") {
-                formatInstruction = `【出題形式：⏳ 年代・因果関係整序（配列問題：Ⅰ〜Ⅲの順序）に特化】
-全5問すべてを「type: chronological」として作成してください。
-・lead_text: 「次のⅠ〜Ⅲの出来事について、古いものから順に正しく配列したものを、下の①〜⑥のうちから一つ選べ。」
-・statements: ["Ⅰ: ...", "Ⅱ: ...", "Ⅲ: ..."] の3つの出来事やプロセスを提示。
-・options: ① Ⅰ-Ⅱ-Ⅲ, ② Ⅰ-Ⅲ-Ⅱ, ③ Ⅱ-Ⅰ-Ⅲ, ④ Ⅱ-Ⅲ-Ⅰ, ⑤ Ⅲ-Ⅰ-Ⅱ, ⑥ Ⅲ-Ⅱ-Ⅰ （4択にする場合は4つの組み合わせ）
-・時代が離れすぎた問題ではなく、同時代または因果関係で直結する微妙な前後関係を問う良問にしてください。`;
+                formatInstruction = `【出題形式：⏳ 年代・因果関係整序（配列問題：Ⅰ〜Ⅲの順序）に特化】\n全問を「type: chronological」として作成してください。\n・lead_text: 「次のⅠ〜Ⅲの出来事について、古いものから順に正しく配列したものを、下の①〜⑥のうちから一つ選べ。」\n・statements: ["Ⅰ: ...", "Ⅱ: ...", "Ⅲ: ..."] の3つの出来事やプロセスを提示。\n・options: ① Ⅰ-Ⅱ-Ⅲ, ② Ⅰ-Ⅲ-Ⅱ, ③ Ⅱ-Ⅰ-Ⅲ, ④ Ⅱ-Ⅲ-Ⅰ, ⑤ Ⅲ-Ⅰ-Ⅱ, ⑥ Ⅲ-Ⅱ-Ⅰ\n・同時代や因果関係で直結する微妙な前後関係を問う良問にしてください。`;
             } else if (selectedVersion === "cloze") {
-                formatInstruction = `【出題形式：📝 空欄補充・対立概念特化（二連空欄の語句組み合わせ）に特化】
-全5問すべてを「type: combination」として作成してください。
-・lead_text: リード文の中に［ ア ］［ イ ］の空欄を設け、「文章中の空欄［ ア ］・［ イ ］に入る語句の組み合わせとして最も適当なものを、下の①〜④のうちから一つ選べ。」とする。
-・options: ① ア: ○○ / イ: △△, ② ア: ○○ / イ: ××, ③ ア: □□ / イ: △△, ④ ア: □□ / イ: ××
-・混同しやすい対立概念や関連語句を配置してください。`;
+                formatInstruction = `【出題形式：📝 空欄補充・対立概念特化（二連空欄の語句組み合わせ）に特化】\n全問を「type: combination」として作成してください。\n・lead_text: リード文中に［ ア ］［ イ ］の空欄を設け、「空欄［ ア ］・［ イ ］に入る語句の組み合わせとして最も適当なものを一つ選べ。」とする。\n・options: ① ア: ○○ / イ: △△ などの4択\n・混同しやすい対立概念や関連語句を配置してください。`;
             } else {
-                formatInstruction = `【出題形式：🌟 共通テスト本番バランス（全種混合）】
-以下の形式をバランス良く織り交ぜて全5問を作成してください：
-1. 2文正誤の組み合わせ判定（combination）：文Xと文Yの正誤判定（①正-正、②正-誤、③誤-正、④誤-誤）
-2. 年代整序・因果関係順序（chronological）：Ⅰ〜Ⅲの出来事の正しい前後関係
-3. 4択正誤判定（single_choice / true_false）：正しい文・誤っている文を1つ選ばせる良問
-4. 空欄補充型：リード文の［ ア ］［ イ ］に入る語句の組み合わせ`;
+                formatInstruction = `【出題形式：🌟 共通テスト本番バランス（全種混合）】\n以下の形式をバランス良く織り交ぜて全問を作成してください：\n1. 2文正誤の組み合わせ判定（combination）：文Xと文Yの正誤判定（①正-正、②正-誤、③誤-正、④誤-誤）\n2. 年代整序・因果関係順序（chronological）：Ⅰ〜Ⅲの出来事の正しい前後関係\n3. 4択正誤判定（single_choice / true_false）：正しい文・誤っている文を1つ選ばせる良問\n4. 空欄補充型：リード文の［ ア ］［ イ ］に入る語句の組み合わせ`;
+            }
+
+            let subjectSpecificRule = "";
+            if (subject.includes("歴史") || subject.includes("日本史") || subject.includes("世界史")) {
+                subjectSpecificRule = `【⛩️ 歴史科の共テ頻出トラップ重点】\n・年代整序（出来事の前後関係）や因果関係（原因と結果のすり替え）を問う良問を必ず含めてください。\n・誤文選択肢には「主語と述語の入れ替え」「同時代の別人物・別政策のすり替え」「世紀・時期のすり替え」「似た条約・法令の混同」を巧妙に仕込んでください。`;
+            } else if (subject.includes("公民") || subject.includes("政治") || subject.includes("経済") || subject.includes("公共") || subject.includes("倫理")) {
+                subjectSpecificRule = `【🏛️ 公民科の共テ頻出トラップ重点】\n・制度・統治機構の仕組み、対立概念（直接税/間接税、物価上昇/下落、公的年金/社会保険など）のすり替えを盛り込んでください。\n・憲法条文の文言すり替え、重要判例の合憲/違憲の根拠の違いを問う問題を含めてください。`;
+            } else if (subject.includes("物理") || subject.includes("化学") || subject.includes("生物") || subject.includes("地学") || subject.includes("理科")) {
+                subjectSpecificRule = `【⚡ 理科の共テ頻出トラップ重点】\n・実験条件や操作手順の変更による結果の変化、現象発生のメカニズム・因果関係の逆転を問う問題を含めてください。\n・数式や化学反応式は必ず完全なLaTeX記法で記述してください。`;
+            } else if (subject.includes("数学")) {
+                subjectSpecificRule = `【📐 数学科の共テ頻出トラップ重点】\n・必要十分条件、反例の存在、定義域・値域の境界値、公式・定理の前提条件が満たされているかどうかの落とし穴を含めてください。\n・数式は必ず完全なLaTeX記法（$ $）で記述してください。`;
             }
 
             const isScience = isMathOrScienceSubject(subject);
@@ -21943,13 +22762,14 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
                 : `3. 【最重要：LaTeX記法の完全禁止】\n   - 社会・文系科目のため、$ や $$ や \\fbox などの LaTeX 記法は【一切使用禁止】です。\n   - 空欄や選択肢は通常の日本語記号【 】や［ ］を使い、すべてプレーンテキストで記述すること。`;
 
             let prompt = `あなたは大学入学共通テストの作問委員・予備校の特任講師AIです。
-以下の【対象テキスト本文】を深く読み解き、大学入学共通テスト形式の極めて実戦的で質の高い多肢選択問題を【5問】作成してください。
+以下の【対象テキスト本文】を深く読み解き、大学入学共通テスト形式の極めて実戦的で質の高い多肢選択問題を【${targetQuestionCount}問】作成してください。
 
 【教科】${subject}
 【授業タイトル】${title}
 ${partContextSection}
 
 ${formatInstruction}
+${subjectSpecificRule ? "\n" + subjectSpecificRule : ""}
 
 【🚨 最重要作問ルール】
 1. 引っかけ罠（trap_reason）の徹底：
@@ -21960,6 +22780,8 @@ ${formatInstruction}
 ${mathRuleText}
 4. 正解番号：
    - "correct_number" は必ず 1, 2, 3, 4 などの半角整数（options 配列の number と一致）にすること。
+5. 出題数の手加減禁止：
+   - 指示された【${targetQuestionCount}問】を省略せず、すべて完全なJSONとして出力すること。
 
 【🚨 出力形式】
 Google AI Studioの Structured outputs（構造化出力）で設定したスキーマに従って出力してください。前置きや挨拶文、余計な説明文は一切含めず、純粋なJSONのみを出力してください。
@@ -21996,6 +22818,7 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
         function updateByotDrillsUI() {
             const selectedPartVal = selectByotDrillsPart ? selectByotDrillsPart.value : "all";
             const selectedVersion = selectByotDrillsVersion ? selectByotDrillsVersion.value : "mix";
+            const selectedCountMode = selectByotDrillsCount ? selectByotDrillsCount.value : "rich";
             const ctx = extractLessonPartContext(currentLesson, selectedPartVal);
             const schema = getDrillsSchemaByVersion(selectedVersion);
 
@@ -22008,26 +22831,18 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
                     : `📄 第${ctx.partNumber}回の本文（${ctx.charCount.toLocaleString()}文字）をコピー`;
             }
 
-            if (guideByotDrillsVersion) {
-                const guides = {
-                    mix: "🌟 共通テスト本番に即した多彩な出題形式（正誤・整序・空欄）で総合演習",
-                    combination: "⚔️ 文X・文Yの2文について①正-正 ②正-誤 ③誤-正 ④誤-誤を判定（共テ最頻出）",
-                    true_false: "🔍 4択の中から「正しい文」または「誤っている文」を1つ選ばせる王道正誤問題",
-                    chronological: "⏳ 出来事Ⅰ〜Ⅲの正しい順序（①〜⑥）を年代・因果関係から判定する整序問題",
-                    cloze: "📝 リード文の空欄［ア］［イ］に入る語句の正しい組み合わせを選ばせる問題"
-                };
-                guideByotDrillsVersion.textContent = guides[selectedVersion] || guides.mix;
+            const partsCount = (ctx.parts && ctx.parts.length > 0) ? ctx.parts.length : 1;
+            let countLabel = "10〜15問";
+            if (ctx.isAll) {
+                countLabel = selectedCountMode === "speed" ? "5問" : (selectedCountMode === "master" ? `各パート4〜5問（計${Math.max(16, partsCount * 4)}問）` : `各パート2〜3問（計${Math.max(10, partsCount * 3)}問）`);
+            } else {
+                countLabel = selectedCountMode === "speed" ? "5問" : (selectedCountMode === "master" ? "12問" : "8問");
             }
 
             if (leadByotDrillsSummary) {
-                const leads = {
-                    mix: "共通テスト形式の良問（2文正誤判定、年代整序、4択正誤、引っかけ罠解説付き）を5問作成させるプロンプトです。",
-                    combination: "共通テスト最頻出の「2文正誤組み合わせ判定（文X・文Y）」に特化した5問を作成させるプロンプトです。",
-                    true_false: "共通テスト王道の「4択正誤判定（正文・誤文選択・トラップ解説付き）」に特化した5問を作成させるプロンプトです。",
-                    chronological: "共通テスト頻出の「年代・因果整序（出来事Ⅰ〜Ⅲの配列選択）」に特化した5問を作成させるプロンプトです。",
-                    cloze: "共通テストの「二連空欄補充（語句組み合わせ判定）」に特化した5問を作成させるプロンプトです。"
-                };
-                leadByotDrillsSummary.textContent = leads[selectedVersion] || leads.mix;
+                leadByotDrillsSummary.textContent = ctx.isAll
+                    ? `全${partsCount}パートから偏りなく均等に【${countLabel}】を一括作成するプロンプトです。`
+                    : `第${ctx.partNumber}回の学習範囲に特化して【${countLabel}】を作成するプロンプトです。`;
             }
 
             if (previewByotDrillsSchema) {
@@ -22038,29 +22853,116 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
             }
         }
 
-        function openByotDrillsModal() {
+        function openByotDrillsModalWithTab(tab = "api") {
             if (!currentLesson) {
                 showToast("授業データが見つかりません。", "error");
                 return;
             }
             if (!modalByotDrills) return;
             populateByotPartSelect(selectByotDrillsPart, "all");
+            populateByotPartSelect(selectByotDrillsApiPart, "all");
             if (inputByotDrillsJson) inputByotDrillsJson.value = "";
             if (countByotDrillsChar) countByotDrillsChar.textContent = "0文字";
+            if (progressAreaByotDrillsApi) progressAreaByotDrillsApi.style.display = "none";
             updateByotDrillsUI();
+            switchByotDrillsMode(tab);
             modalByotDrills.style.display = "flex";
         }
+        window.openByotDrillsModalWithTab = openByotDrillsModalWithTab;
 
-        if (selectByotDrillsPart) {
-            selectByotDrillsPart.addEventListener("change", updateByotDrillsUI);
-        }
-        if (selectByotDrillsVersion) {
-            selectByotDrillsVersion.addEventListener("change", updateByotDrillsUI);
+        function openByotDrillsModal() {
+            openByotDrillsModalWithTab("manual");
         }
 
-        if (btnOpenByotDrills) btnOpenByotDrills.addEventListener("click", openByotDrillsModal);
+        if (selectByotDrillsPart) selectByotDrillsPart.addEventListener("change", updateByotDrillsUI);
+        if (selectByotDrillsVersion) selectByotDrillsVersion.addEventListener("change", updateByotDrillsUI);
+        if (selectByotDrillsCount) selectByotDrillsCount.addEventListener("change", updateByotDrillsUI);
+
+        if (btnOpenByotDrills) btnOpenByotDrills.addEventListener("click", () => openByotDrillsModalWithTab("manual"));
+        if (btnOpenApiDrills) btnOpenApiDrills.addEventListener("click", () => openByotDrillsModalWithTab("api"));
         if (btnCloseByotDrills) btnCloseByotDrills.addEventListener("click", () => { modalByotDrills.style.display = "none"; });
         if (btnCancelByotDrills) btnCancelByotDrills.addEventListener("click", () => { modalByotDrills.style.display = "none"; });
+        if (btnByotDrillsApiCancel) btnByotDrillsApiCancel.addEventListener("click", () => { modalByotDrills.style.display = "none"; });
+
+        // 🤖 Gemini API 自動生成ハンドラ
+        if (btnByotDrillsApiSubmit) {
+            btnByotDrillsApiSubmit.addEventListener("click", async () => {
+                if (!currentLesson || !currentLessonId) return;
+
+                const selectedPartVal = selectByotDrillsApiPart ? selectByotDrillsApiPart.value : "all";
+                const selectedCountMode = selectByotDrillsApiCount ? selectByotDrillsApiCount.value : "rich";
+                const modeEl = document.querySelector('input[name="byot-drills-api-mode"]:checked');
+                const isReplace = modeEl && modeEl.value === "replace";
+
+                let countPerPart = 3;
+                if (selectedCountMode === "speed") countPerPart = 1;
+                else if (selectedCountMode === "master") countPerPart = 5;
+
+                btnByotDrillsApiSubmit.disabled = true;
+                if (btnByotDrillsApiCancel) btnByotDrillsApiCancel.disabled = true;
+                if (progressAreaByotDrillsApi) progressAreaByotDrillsApi.style.display = "block";
+                if (progressBarByotDrillsApi) progressBarByotDrillsApi.style.width = "20%";
+                if (progressPctByotDrillsApi) progressPctByotDrillsApi.textContent = "20%";
+                if (statusTextByotDrillsApi) statusTextByotDrillsApi.textContent = "⏳ 全パートをスキャン中...";
+
+                try {
+                    const subject = currentLesson.subject || detectLessonSubject(currentLesson) || "その他";
+                    let targetParts = currentLesson.parts;
+                    if (selectedPartVal !== "all") {
+                        const pIdx = parseInt(selectedPartVal, 10);
+                        if (!isNaN(pIdx) && currentLesson.parts && currentLesson.parts[pIdx]) {
+                            targetParts = [currentLesson.parts[pIdx]];
+                        }
+                    }
+
+                    if (progressBarByotDrillsApi) progressBarByotDrillsApi.style.width = "50%";
+                    if (progressPctByotDrillsApi) progressPctByotDrillsApi.textContent = "50%";
+                    if (statusTextByotDrillsApi) statusTextByotDrillsApi.textContent = `🎯 共通テスト形式問題を並列生成中（各パート${countPerPart}問）...`;
+
+                    const drills = await generateChoiceDrills(
+                        currentLesson.extractedText || "",
+                        currentLesson.title || "",
+                        subject,
+                        targetParts,
+                        countPerPart
+                    );
+
+                    if (!Array.isArray(drills) || drills.length === 0) {
+                        throw new Error("問題の生成結果が空でした。APIキーの設定や講義ノートをご確認ください。");
+                    }
+
+                    if (progressBarByotDrillsApi) progressBarByotDrillsApi.style.width = "90%";
+                    if (progressPctByotDrillsApi) progressPctByotDrillsApi.textContent = "90%";
+                    if (statusTextByotDrillsApi) statusTextByotDrillsApi.textContent = "💾 データベースへ保存中...";
+
+                    if (isReplace) {
+                        currentLesson.choiceDrills = drills;
+                    } else {
+                        const existing = Array.isArray(currentLesson.choiceDrills) ? currentLesson.choiceDrills : [];
+                        currentLesson.choiceDrills = [...existing, ...drills];
+                    }
+
+                    currentLesson.updatedAt = new Date().toISOString();
+                    await saveLesson();
+                    renderChoiceDrills();
+                    await forceTriggerMathJax();
+
+                    if (progressBarByotDrillsApi) progressBarByotDrillsApi.style.width = "100%";
+                    if (progressPctByotDrillsApi) progressPctByotDrillsApi.textContent = "100%";
+
+                    modalByotDrills.style.display = "none";
+                    showToast(`🎉 Geminiが共通テスト形式問題 ${drills.length}問 を自動生成して保存しました！`, "success", 4500);
+
+                } catch (err) {
+                    console.error("API自動生成エラー:", err);
+                    showToast("⚠️ 自動生成に失敗しました: " + err.message, "error", 6000);
+                    if (statusTextByotDrillsApi) statusTextByotDrillsApi.textContent = "❌ エラー: " + err.message;
+                } finally {
+                    btnByotDrillsApiSubmit.disabled = false;
+                    if (btnByotDrillsApiCancel) btnByotDrillsApiCancel.disabled = false;
+                }
+            });
+        }
 
         if (inputByotDrillsJson && countByotDrillsChar) {
             inputByotDrillsJson.addEventListener("input", (e) => {
@@ -22086,7 +22988,7 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
                 const schema = getDrillsSchemaByVersion(version);
                 try {
                     await navigator.clipboard.writeText(JSON.stringify(schema, null, 2));
-                    showToast("⚙️ 選択問題の構造化スキーマ（JSON Schema）をコピーしました！AI StudioのStructured outputs設定に貼り付けてください", "success", 4500);
+                    showToast("⚙️ 選択問題の共通スキーマ（JSON Schema）をコピーしました！AI StudioのStructured outputs設定に貼り付けてください", "success", 4500);
                 } catch(e) {
                     showToast("コピーに失敗しました。", "error");
                 }

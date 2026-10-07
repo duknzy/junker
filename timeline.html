@@ -975,8 +975,8 @@
             { name: "種子島への鉄砲伝来", year: "1543年", year_sort: 1543, category: "安土桃山", mnemonics: ["1543年: 以後(15)よ(4)み(3)がえる戦術の変革"], note: "ポルトガル人より伝来" },
             { name: "関ヶ原の戦い（天下分け目の合戦）", year: "1600年", year_sort: 1600, category: "安土桃山", mnemonics: ["1600年: ヒーロー(16)おお(00)いに関ヶ原"], note: "徳川家康が石田三成を破り覇権掌握" },
             { name: "島原・天草一揆と鎖国の完成", year: "1637年", year_sort: 1637, category: "江戸", mnemonics: ["1637年: ヒーロー(16)み(3)な(7)決起す島原一揆"], note: "ポルトガル船来航禁止、出島オランダ商館へ" },
-            { name: "ペリー来航（浦賀沖に黒船出現）", year: "1853年", year_sort: 1853, category: "明治・大正", mnemonics: ["1853年: いや(18)ご(5)み(3)だらけ黒船来航"], note: "日米和親条約の締結へ" },
-            { name: "大政奉還（徳川慶喜が政権返上）", year: "1867年", year_sort: 1867, category: "明治・大正", mnemonics: ["1867年: 人は(18)む(6)な(7)しく幕府返上"], note: "明治維新の始まり" },
+            { name: "ペリー来航（浦賀沖に黒船出現）", year: "1853年", year_sort: 1853, category: "江戸", mnemonics: ["1853年: いや(18)ご(5)み(3)だらけ黒船来航"], note: "日米和親条約の締結へ" },
+            { name: "大政奉還（徳川慶喜が政権返上）", year: "1867年", year_sort: 1867, category: "江戸", mnemonics: ["1867年: 人は(18)む(6)な(7)しく幕府返上"], note: "明治維新の始まり" },
             { name: "大日本帝国憲法発布", year: "1889年", year_sort: 1889, category: "明治・大正", mnemonics: ["1889年: いちは(18)やく(89)発布帝国憲法"], note: "伊藤博文が起草、欽定憲法" },
             { name: "日露戦争勃発", year: "1904年", year_sort: 1904, category: "明治・大正", mnemonics: ["1904年: 行く(19)わ(04)よ日露戦争"], note: "ポーツマス条約で講和" }
         ];
@@ -1424,21 +1424,54 @@
             };
         }
 
-        // 年号パースヘルパー（紀元前・BC・負の年代を精密ソート・9999フォールバック）
+        // 年号パースヘルパー（紀元前・BC・世紀表記・YYYYMMDD形式を精密ソート・9999フォールバック）
         function parseYearSort(yearStr, fallbackSort) {
-            if (typeof fallbackSort === "number" && !isNaN(fallbackSort)) return fallbackSort;
-            if (yearStr == null) return 9999;
-            const s = String(yearStr).trim();
-            if (!s) return 9999;
-            const isBc = /^(前|紀元前|bc|b\.c\.)/i.test(s) || /前\s*\d+/.test(s) || /-\d+/.test(s);
-            const m = s.match(/\d+/);
-            if (!m) return 9999;
-            const num = parseInt(m[0], 10);
-            return isBc ? -num : num;
+            // 1. fallbackSort の正規化（AIがYYYYMMDD形式 [例: 7120000, 15820600] で出力した場合の補正）
+            let num = (typeof fallbackSort === "number" && !isNaN(fallbackSort)) ? fallbackSort : null;
+            if (num !== null) {
+                if (Math.abs(num) >= 100000) {
+                    num = num < 0 ? -Math.floor(Math.abs(num) / 10000) : Math.floor(num / 10000);
+                } else if (Math.abs(num) >= 10000 && Math.abs(num) > 3000) {
+                    num = num < 0 ? -Math.floor(Math.abs(num) / 100) : Math.floor(num / 100);
+                }
+            }
+
+            // 2. yearStr の解析（世紀表記、紀元前、年号テキスト）
+            if (yearStr != null) {
+                const s = String(yearStr).trim();
+                if (s) {
+                    const isBc = /^(前|紀元前|bc|b\.c\.)/i.test(s) || /前\s*\d+/.test(s) || /-\d+/.test(s);
+                    // 世紀表記（例: "19世紀前半", "前4世紀頃"）
+                    const centMatch = s.match(/(\d+)\s*世紀\s*(前半|初頭|中頃|後半|末)?/);
+                    if (centMatch) {
+                        const cent = parseInt(centMatch[1], 10);
+                        const part = centMatch[2] || '';
+                        let y = (cent - 1) * 100 + 50;
+                        if (part === '初頭') y = (cent - 1) * 100 + 10;
+                        else if (part === '前半') y = (cent - 1) * 100 + 25;
+                        else if (part === '中頃') y = (cent - 1) * 100 + 50;
+                        else if (part === '後半') y = (cent - 1) * 100 + 75;
+                        else if (part === '末') y = (cent - 1) * 100 + 90;
+                        return isBc ? -y : y;
+                    }
+                    const m = s.match(/\d+/);
+                    if (m) {
+                        const parsedNum = parseInt(m[0], 10);
+                        // fallbackSortが未設定、または3000超の異常値の場合はyearStrの数値を最優先
+                        if (num === null || num > 3000 || num < -100000) {
+                            return isBc ? -parsedNum : parsedNum;
+                        }
+                    }
+                }
+            }
+
+            if (num !== null) return num;
+            return 9999;
         }
 
         // 日本史の時代判定ヘルパー（高校日本史・共通テスト準拠）
         function getJapanEraCategory(yearSort) {
+            if (yearSort === 9999 || typeof yearSort !== "number" || isNaN(yearSort)) return "その他";
             if (yearSort <= 592) return "弥生・古墳";
             if (yearSort <= 710) return "飛鳥";
             if (yearSort <= 794) return "奈良";
@@ -1448,12 +1481,13 @@
             if (yearSort <= 1603) return "安土桃山";
             if (yearSort <= 1867) return "江戸";
             if (yearSort <= 1926) return "明治・大正";
-            return "昭和・現代";
+            if (yearSort <= 2100) return "昭和・現代";
+            return "その他";
         }
 
         // 世紀・時代のラベル生成ヘルパー（出来事ごとの年号重複を廃止し、時代区分として整理）
         function formatCentury(yearSort) {
-            if (yearSort === 9999) return "年代未詳・その他";
+            if (yearSort === 9999 || typeof yearSort !== "number" || isNaN(yearSort)) return "年代未詳・その他";
             if (activeHistoryType === "japan") {
                 const era = getJapanEraCategory(yearSort);
                 const eraLabelMap = {
@@ -1466,7 +1500,8 @@
                     "安土桃山": "安土桃山時代（1573年〜1603年）",
                     "江戸": "江戸時代（1603年〜1867年）",
                     "明治・大正": "明治・大正時代（1868年〜1926年）",
-                    "昭和・現代": "昭和・現代（1926年〜現在）"
+                    "昭和・現代": "昭和・現代（1926年〜現在）",
+                    "その他": "年代未詳・その他"
                 };
                 return eraLabelMap[era] || `${era}時代`;
             }
@@ -1563,9 +1598,10 @@
                 problemEvents.forEach(ev => {
                     if (!ev || !ev.name) return;
                     const yearSort = parseYearSort(ev.year, ev.year_sort);
+                    const computedEra = getJapanEraCategory(yearSort);
                     const category = isCivics 
                         ? (ev.category || ev.field || "日本国憲法・法制度・判例")
-                        : (ev.era || getJapanEraCategory(yearSort));
+                        : (computedEra !== "その他" ? computedEra : (ev.era || "その他"));
 
                     const key = `${ev.name}_${ev.year || ""}`;
                     if (!eventsMap.has(key)) {
@@ -1616,9 +1652,10 @@
                 l.historicalEvents.forEach(ev => {
                     if (!ev || !ev.name) return;
                     const yearSort = parseYearSort(ev.year, ev.year_sort);
+                    const computedEra = getJapanEraCategory(yearSort);
                     const category = isCivics 
                         ? (ev.category || ev.field || "日本国憲法・法制度・判例")
-                        : (ev.era || getJapanEraCategory(yearSort));
+                        : (computedEra !== "その他" ? computedEra : (ev.era || "その他"));
 
                     const key = `${ev.name}_${ev.year || ""}`;
                     if (!eventsMap.has(key)) {
