@@ -2762,17 +2762,31 @@
                     選択した授業の講義ノートから、共通テスト・入試で問われる重要年代・出来事をAIが一括再抽出して統合年表に同期します。
                 </p>
 
-                <!-- 🤖 AIモデル選択 -->
-                <div style="background:var(--bg-surface); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:0.45rem 0.6rem; margin-bottom:0.55rem; display:flex; justify-content:space-between; align-items:center;">
-                    <span style="font-size:0.74rem; font-weight:750; color:var(--text-primary);">🤖 抽出AIモデル</span>
-                    <select id="m-batch-timeline-model-select" class="m-input" style="width:auto; font-size:0.73rem; padding:0.25rem 0.5rem; font-weight:700; background:var(--bg-subtle);">
-                        <option value="gemini-3.8-flash" selected>✨ Gemini 3.8 Flash（推奨）</option>
-                        <option value="gemini-3.7-flash">⚡ Gemini 3.7 Flash</option>
-                        <option value="gemini-3.6-flash">⚡ Gemini 3.6 Flash</option>
-                        <option value="gemini-3.5-flash">⚡ Gemini 3.5 Flash</option>
-                        <option value="gemini-3.5-flash-lite">🍃 Gemini 3.5 Lite</option>
-                        <option value="deepseek-v4-flash">🐋 DeepSeek V4 Flash</option>
-                    </select>
+                <!-- 🤖 AIモデル & 🧠 思考レベル選択 -->
+                <div style="background:var(--bg-surface); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:0.5rem 0.6rem; margin-bottom:0.55rem; display:flex; flex-direction:column; gap:0.4rem;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:0.4rem;">
+                        <span style="font-size:0.74rem; font-weight:750; color:var(--text-primary); flex-shrink:0;">🤖 抽出モデル:</span>
+                        <select id="m-batch-timeline-model-select" class="m-input" style="flex:1; font-size:0.73rem; padding:0.25rem 0.4rem; font-weight:700; background:var(--bg-subtle);">
+                            <option value="gemini-3.8-flash" selected>✨ Gemini 3.8 Flash</option>
+                            <option value="gemini-3.7-flash">⚡ Gemini 3.7 Flash</option>
+                            <option value="gemini-3.6-flash">⚡ Gemini 3.6 Flash</option>
+                            <option value="gemini-3.5-flash">⚡ Gemini 3.5 Flash</option>
+                            <option value="gemini-3.5-flash-lite">🍃 Gemini 3.5 Lite</option>
+                            <option value="deepseek-v4-flash">🐋 DeepSeek V4 Flash</option>
+                        </select>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:0.4rem;">
+                        <span style="font-size:0.74rem; font-weight:750; color:var(--text-primary); flex-shrink:0;">🧠 思考レベル:</span>
+                        <select id="m-batch-timeline-thinking-select" class="m-input" style="flex:1; font-size:0.73rem; padding:0.25rem 0.4rem; font-weight:700; background:var(--bg-subtle);">
+                            <option value="default" selected>自動 (モデル既定)</option>
+                            <option value="low">低 (高速・簡潔)</option>
+                            <option value="medium">中 (バランス・推奨)</option>
+                            <option value="high">高 (高思考・詳細推論)</option>
+                        </select>
+                    </div>
+                    <div id="m-batch-timeline-thinking-hint" style="font-size:0.65rem; color:var(--text-muted);">
+                        ※ 思考レベルを指定して深層推論・網羅性を調整できます（Lite系はhigh固定）
+                    </div>
                 </div>
 
                 <!-- 検索 & フィルター -->
@@ -6465,7 +6479,7 @@ ${textToUse ? textToUse.slice(0, 8000) : "講義ノートなし"}
             return merged;
         }
 
-        async function mGenerateHistoricalEvents(extractedText, lessonTitle, subjectName, preferredModel = null, onModelUsed = null) {
+        async function mGenerateHistoricalEvents(extractedText, lessonTitle, subjectName, preferredModel = null, onModelUsed = null, thinkingLevel = null) {
             if (!extractedText && !lessonTitle) return [];
             const isCivics = (subjectName === "公共" || subjectName === "政治・経済" || subjectName === "政経" || subjectName === "公民");
             const targetScope = isCivics ? "高校公共・政治経済・公民（憲法・判例・法制度・政治史・経済史・国際情勢）" : "高校日本史（古代〜現代の政治・外交・経済・文化）";
@@ -6486,6 +6500,7 @@ ${extractedText.slice(0, 15000)}`;
             };
             if (preferredModel) callOpts.preferredModel = preferredModel;
             if (typeof onModelUsed === "function") callOpts.onModelUsed = onModelUsed;
+            if (thinkingLevel) callOpts.thinkingLevel = thinkingLevel;
 
             const res = await callGeminiJSON([{ text: promptText }], systemPrompt, callOpts);
             return Array.isArray(res?.historical_events) ? res.historical_events : [];
@@ -6581,6 +6596,7 @@ ${extractedText.slice(0, 15000)}`;
                 const success = entry.successCount || 0;
                 const events = entry.totalEvents || 0;
                 const duration = entry.durationSec ? `（約${entry.durationSec}秒）` : "";
+                const thinkingStr = entry.requestedThinking ? ` (思考: ${escapeHtml(entry.requestedThinking)})` : "";
 
                 const items = Array.isArray(entry.items) ? entry.items : [];
                 return `
@@ -6590,7 +6606,7 @@ ${extractedText.slice(0, 15000)}`;
                         <span style="background:rgba(217,119,6,0.1); color:#d97706; font-size:0.65rem; padding:0.05rem 0.35rem; border-radius:10px; font-weight:700;">${modeLabel}</span>
                     </div>
                     <div style="font-size:0.68rem; color:var(--text-muted); margin-top:2px;">
-                        🤖 <b>${escapeHtml(model)}</b> • 成功 <b>${success}</b>件（出来事 <b>${events}</b>件）${duration}
+                        🤖 <b>${escapeHtml(model)}</b>${thinkingStr} • 成功 <b>${success}</b>件（出来事 <b>${events}</b>件）${duration}
                     </div>
                     ${items.length > 0 ? `
                         <div style="margin-top:0.4rem; padding-top:0.35rem; border-top:1px dashed var(--border-color); display:flex; flex-direction:column; gap:0.25rem;">
@@ -6732,6 +6748,7 @@ ${extractedText.slice(0, 15000)}`;
             }
 
             const selectedModel = document.getElementById("m-batch-timeline-model-select")?.value || "gemini-3.8-flash";
+            const selectedThinking = document.getElementById("m-batch-timeline-thinking-select")?.value || "default";
 
             document.getElementById("m-batch-timeline-setup-view").style.display = "none";
             document.getElementById("m-batch-timeline-progress-view").style.display = "block";
@@ -6764,7 +6781,7 @@ ${extractedText.slice(0, 15000)}`;
             const historyItems = [];
             const modelsUsedSet = new Set();
 
-            addLog(`🚀 年表一括再抽出を開始（対象: ${total}件, モデル: ${selectedModel}）`);
+            addLog(`🚀 年表一括再抽出を開始（対象: ${total}件, モデル: ${selectedModel}, 思考: ${selectedThinking}）`);
 
             for (let i = 0; i < total; i++) {
                 if (mBatchTimelineStopRequested) {
@@ -6797,7 +6814,8 @@ ${extractedText.slice(0, 15000)}`;
                         (usedModel) => {
                             actualModelForLesson = usedModel;
                             modelsUsedSet.add(usedModel);
-                        }
+                        },
+                        selectedThinking
                     );
                     let finalEvents = (mode === "replace") ? newEvents : mMergeHistoricalEvents(lesson.historicalEvents, newEvents);
 
@@ -6822,6 +6840,7 @@ ${extractedText.slice(0, 15000)}`;
                         subject,
                         status: "success",
                         modelUsed: actualModelForLesson,
+                        thinkingLevel: selectedThinking,
                         eventsCount: finalEvents.length,
                         completedTime: new Date().toLocaleTimeString(),
                         error: null
@@ -6838,6 +6857,7 @@ ${extractedText.slice(0, 15000)}`;
                         subject: target.subject,
                         status: "error",
                         modelUsed: actualModelForLesson,
+                        thinkingLevel: selectedThinking,
                         eventsCount: 0,
                         completedTime: new Date().toLocaleTimeString(),
                         error: e.message
@@ -6861,6 +6881,7 @@ ${extractedText.slice(0, 15000)}`;
                 completedAt: completedDate.toISOString(),
                 completedTimeStr,
                 requestedModel: selectedModel,
+                requestedThinking: selectedThinking,
                 primaryRespondedModel: primaryModel,
                 modelsUsed: Array.from(modelsUsedSet),
                 mode,
@@ -6881,7 +6902,7 @@ ${extractedText.slice(0, 15000)}`;
             const summaryEl = document.getElementById("m-batch-timeline-complete-summary");
             if (summaryEl) {
                 document.getElementById("m-batch-timeline-complete-time").textContent = completedTimeStr;
-                document.getElementById("m-batch-timeline-complete-model").textContent = primaryModel;
+                document.getElementById("m-batch-timeline-complete-model").textContent = `${primaryModel}${selectedThinking !== "default" ? ` (思考: ${selectedThinking})` : ""}`;
                 document.getElementById("m-batch-timeline-complete-stats").textContent = `成功 ${successCount}件 / 失敗 ${failCount}件（計${totalEvents}件）`;
                 summaryEl.style.display = "block";
             }
@@ -6917,6 +6938,25 @@ ${extractedText.slice(0, 15000)}`;
         document.getElementById("m-tab-btn-batch-timeline-run")?.addEventListener("click", () => switchMBatchTimelineTab("run"));
         document.getElementById("m-tab-btn-batch-timeline-history")?.addEventListener("click", () => switchMBatchTimelineTab("history"));
         document.getElementById("m-btn-view-history-after-complete")?.addEventListener("click", () => switchMBatchTimelineTab("history"));
+
+        // AIモデル選択変更時に思考レベル制御（Lite系はhigh固定）
+        document.getElementById("m-batch-timeline-model-select")?.addEventListener("change", (e) => {
+            const val = e.target.value;
+            const thinkingSelect = document.getElementById("m-batch-timeline-thinking-select");
+            const hintEl = document.getElementById("m-batch-timeline-thinking-hint");
+            if (val.includes("lite")) {
+                if (thinkingSelect) {
+                    thinkingSelect.value = "high";
+                    thinkingSelect.disabled = true;
+                }
+                if (hintEl) hintEl.textContent = "⚡ Flash-Liteモデルは仕様上、思考レベルが【high】に自動固定されます。";
+            } else {
+                if (thinkingSelect) {
+                    thinkingSelect.disabled = false;
+                }
+                if (hintEl) hintEl.textContent = "※ 思考レベルを指定して深層推論・網羅性を調整できます。";
+            }
+        });
 
         document.getElementById("m-btn-clear-batch-timeline-history")?.addEventListener("click", () => {
             if (!confirm("履歴をすべて消去しますか？")) return;

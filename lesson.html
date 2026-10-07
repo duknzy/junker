@@ -7629,25 +7629,38 @@
                     <span style="color:#d97706; font-weight:700;">※ APIレートリミットを避けるため、1件完了ごとにクールダウンを挟みながら段階的に生成・保存します。</span>
                 </p>
 
-                <!-- 🤖 抽出AIモデルの選択 -->
-                <div style="background:var(--bg-surface); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:0.55rem 0.75rem; margin-bottom:0.7rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.4rem;">
-                    <div>
-                        <div style="font-size:0.78rem; font-weight:750; color:var(--text-primary); display:flex; align-items:center; gap:0.35rem;">
-                            <span>🤖 抽出に使用するAIモデル</span>
+                <!-- 🤖 抽出AIモデル & 🧠 思考レベルの選択 -->
+                <div style="background:var(--bg-surface); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:0.6rem 0.75rem; margin-bottom:0.7rem; display:flex; flex-direction:column; gap:0.45rem;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
+                        <div style="flex:1; min-width:180px;">
+                            <label for="batch-timeline-model-select" style="font-size:0.76rem; font-weight:750; color:var(--text-primary); display:block; margin-bottom:2px;">
+                                🤖 抽出AIモデル
+                            </label>
+                            <select id="batch-timeline-model-select" class="flora-input" style="width:100%; font-size:0.75rem; padding:0.3rem 0.6rem; border-radius:var(--radius-md); font-weight:700; background:var(--bg-subtle); color:var(--text-primary); border:1px solid var(--border-color); cursor:pointer;">
+                                <option value="gemini-3.8-flash" selected>✨ Gemini 3.8 Flash（推奨・最新最速）</option>
+                                <option value="gemini-3.7-flash">⚡ Gemini 3.7 Flash（安定）</option>
+                                <option value="gemini-3.6-flash">⚡ Gemini 3.6 Flash</option>
+                                <option value="gemini-3.5-flash">⚡ Gemini 3.5 Flash</option>
+                                <option value="gemini-3.5-flash-lite">🍃 Gemini 3.5 Flash-Lite（クォータ節約）</option>
+                                <option value="gemini-3.1-flash-lite">🍃 Gemini 3.1 Flash-Lite</option>
+                                <option value="deepseek-v4-flash">🐋 DeepSeek V4 Flash</option>
+                            </select>
                         </div>
-                        <div style="font-size:0.68rem; color:var(--text-muted); margin-top:1px;">
-                            指定したモデルを最優先で呼び出し、失敗時は自動フォールバックします
+                        <div style="width:170px;">
+                            <label for="batch-timeline-thinking-select" style="font-size:0.76rem; font-weight:750; color:var(--text-primary); display:block; margin-bottom:2px;">
+                                🧠 思考レベル (Thinking)
+                            </label>
+                            <select id="batch-timeline-thinking-select" class="flora-input" style="width:100%; font-size:0.75rem; padding:0.3rem 0.5rem; border-radius:var(--radius-md); font-weight:700; background:var(--bg-subtle); color:var(--text-primary); border:1px solid var(--border-color); cursor:pointer;">
+                                <option value="default" selected>自動 (モデル既定)</option>
+                                <option value="low">低 (高速・簡潔)</option>
+                                <option value="medium">中 (バランス・推奨)</option>
+                                <option value="high">高 (高思考・詳細推論)</option>
+                            </select>
                         </div>
                     </div>
-                    <select id="batch-timeline-model-select" class="flora-input" style="font-size:0.76rem; padding:0.3rem 0.6rem; border-radius:var(--radius-md); font-weight:700; background:var(--bg-subtle); color:var(--text-primary); border:1px solid var(--border-color); cursor:pointer;">
-                        <option value="gemini-3.8-flash" selected>✨ Gemini 3.8 Flash（推奨・最新最速）</option>
-                        <option value="gemini-3.7-flash">⚡ Gemini 3.7 Flash（安定）</option>
-                        <option value="gemini-3.6-flash">⚡ Gemini 3.6 Flash</option>
-                        <option value="gemini-3.5-flash">⚡ Gemini 3.5 Flash</option>
-                        <option value="gemini-3.5-flash-lite">🍃 Gemini 3.5 Flash-Lite（クォータ節約）</option>
-                        <option value="gemini-3.1-flash-lite">🍃 Gemini 3.1 Flash-Lite</option>
-                        <option value="deepseek-v4-flash">🐋 DeepSeek V4 Flash</option>
-                    </select>
+                    <div id="batch-timeline-thinking-hint" style="font-size:0.68rem; color:var(--text-muted); line-height:1.4;">
+                        ※ 思考レベルを指定して深層推論・網羅性を調整できます（Flash-Lite系は仕様上高思考「high」に自動固定されます）。
+                    </div>
                 </div>
 
                 <!-- 検索＆ステータス絞り込みバー -->
@@ -13057,7 +13070,7 @@ ${extractedText || "（本文なし）"}
             return /(時代|幕府|天皇|将軍|戦争|事件|条約|改革|年表|乱|の変|開国|遣隋使|遣唐使|縄文|弥生|古墳|飛鳥|奈良|平安|鎌倉|室町|戦国|安土桃山|江戸|明治|大正|昭和|憲法|判例|違憲|条約|法制|人権|内閣|国会|選挙|社会保障|冷戦|ブレトンウッズ|プラザ合意)/.test(text);
         }
 
-        async function generateHistoricalEvents(extractedText, lessonTitle, subjectName, preferredModel = null, onModelUsed = null) {
+        async function generateHistoricalEvents(extractedText, lessonTitle, subjectName, preferredModel = null, onModelUsed = null, thinkingLevel = null) {
             if (!extractedText && !lessonTitle) return [];
             const isCivics = (subjectName === "公共" || subjectName === "政治・経済" || subjectName === "政経" || subjectName === "公民");
             const targetScope = isCivics ? "高校公共・政治経済・公民（憲法・判例・法制度・政治史・経済史・国際情勢）" : "高校日本史（古代〜現代の政治・外交・経済・文化）";
@@ -13087,6 +13100,7 @@ ${extractedText.slice(0, 15000)}`;
             };
             if (preferredModel) callOpts.preferredModel = preferredModel;
             if (typeof onModelUsed === "function") callOpts.onModelUsed = onModelUsed;
+            if (thinkingLevel) callOpts.thinkingLevel = thinkingLevel;
 
             const res = await callGeminiJSON([{ text: promptText }], systemPrompt, callOpts);
             return Array.isArray(res.historical_events) ? res.historical_events : [];
@@ -17074,6 +17088,7 @@ ${existingLeads}
                 const fail = entry.failCount || 0;
                 const events = entry.totalEvents || 0;
                 const model = entry.primaryRespondedModel || entry.requestedModel || "Gemini";
+                const thinkingBadge = entry.requestedThinking ? `<span style="font-size:0.68rem; background:rgba(99,102,241,0.1); color:#6366f1; padding:0.05rem 0.35rem; border-radius:6px; font-weight:700;">思考: ${escapeHtml(entry.requestedThinking)}</span>` : "";
                 const modeLabel = entry.mode === "merge" ? "マージ追加" : "全置き換え";
                 const duration = entry.durationSec ? `（所要約${entry.durationSec}秒）` : "";
 
@@ -17086,7 +17101,7 @@ ${existingLeads}
                                     <span style="color:var(--text-muted); font-size:0.68rem; margin-left:4px;">（${escapeHtml(it.subject || "")}）</span>
                                 </div>
                                 <div style="display:flex; align-items:center; gap:0.4rem; flex-shrink:0;">
-                                    <span style="font-family:monospace; background:rgba(0,0,0,0.06); padding:0.05rem 0.35rem; border-radius:4px; font-size:0.68rem;">🤖 ${escapeHtml(it.modelUsed || model)}</span>
+                                    <span style="font-family:monospace; background:rgba(0,0,0,0.06); padding:0.05rem 0.35rem; border-radius:4px; font-size:0.68rem;">🤖 ${escapeHtml(it.modelUsed || model)}${it.thinkingLevel && it.thinkingLevel !== 'default' ? ` [${it.thinkingLevel}]` : ''}</span>
                                     ${it.status === "success" 
                                         ? `<span style="color:#059669; font-weight:700;">✓ 出来事${it.eventsCount || 0}件</span>` 
                                         : `<span style="color:#dc2626; font-weight:700;" title="${escapeHtml(it.error || '')}">✕ 失敗</span>`}
@@ -17103,6 +17118,7 @@ ${existingLeads}
                             <div style="font-size:0.8rem; font-weight:800; color:var(--text-primary); display:flex; align-items:center; gap:0.4rem;">
                                 <span>⏱️ ${escapeHtml(entry.completedTimeStr || entry.completedAt || "")}</span>
                                 <span style="font-size:0.68rem; background:rgba(217,119,6,0.1); color:#d97706; padding:0.05rem 0.4rem; border-radius:10px; font-weight:700;">${modeLabel}</span>
+                                ${thinkingBadge}
                             </div>
                             <div style="font-size:0.72rem; color:var(--text-muted); margin-top:2px; display:flex; gap:0.4rem; align-items:center; flex-wrap:wrap;">
                                 <span>🤖 モデル: <b style="color:var(--brand-primary);">${escapeHtml(model)}</b></span>
@@ -17309,8 +17325,9 @@ ${existingLeads}
                 }
             }
 
-            // ユーザーが選択したAIモデル
+            // ユーザーが選択したAIモデル & 思考レベル
             const selectedModel = el("batch-timeline-model-select")?.value || "gemini-3.8-flash";
+            const selectedThinking = el("batch-timeline-thinking-select")?.value || "default";
 
             el("batch-timeline-setup-view").style.display = "none";
             el("batch-timeline-progress-view").style.display = "block";
@@ -17344,7 +17361,7 @@ ${existingLeads}
             const historyItems = [];
             const modelsUsedSet = new Set();
 
-            addLog(`🚀 年表・年代出来事の一括再抽出を開始（対象: 全${total}件, 指定モデル: ${selectedModel}, モード: ${mode === "replace" ? "全置き換え" : "マージ追加"}）`);
+            addLog(`🚀 年表・年代出来事の一括再抽出を開始（対象: 全${total}件, モデル: ${selectedModel}, 思考レベル: ${selectedThinking}, モード: ${mode === "replace" ? "全置き換え" : "マージ追加"}）`);
             addLog(`ℹ️ APIクォータ保護のため、各授業完了ごとに約1.5秒のインターバルを設けます`);
 
             for (let i = 0; i < total; i++) {
@@ -17386,7 +17403,8 @@ ${existingLeads}
                         (usedModel) => {
                             actualModelForLesson = usedModel;
                             modelsUsedSet.add(usedModel);
-                        }
+                        },
+                        selectedThinking
                     );
 
                     let finalEvents = [];
@@ -17422,6 +17440,7 @@ ${existingLeads}
                         subject,
                         status: "success",
                         modelUsed: actualModelForLesson,
+                        thinkingLevel: selectedThinking,
                         eventsCount: finalEvents.length,
                         completedTime: new Date().toLocaleTimeString(),
                         error: null
@@ -17438,6 +17457,7 @@ ${existingLeads}
                         subject: target.subject,
                         status: "error",
                         modelUsed: actualModelForLesson,
+                        thinkingLevel: selectedThinking,
                         eventsCount: 0,
                         completedTime: new Date().toLocaleTimeString(),
                         error: err.message
@@ -17463,6 +17483,7 @@ ${existingLeads}
                 completedAt: completedDate.toISOString(),
                 completedTimeStr,
                 requestedModel: selectedModel,
+                requestedThinking: selectedThinking,
                 primaryRespondedModel: primaryModel,
                 modelsUsed: Array.from(modelsUsedSet),
                 mode,
@@ -17484,7 +17505,7 @@ ${existingLeads}
             const summaryCard = el("batch-timeline-complete-summary-card");
             if (summaryCard) {
                 el("batch-timeline-complete-time").textContent = completedTimeStr;
-                el("batch-timeline-complete-model").textContent = primaryModel;
+                el("batch-timeline-complete-model").textContent = `${primaryModel}${selectedThinking !== "default" ? ` (思考: ${selectedThinking})` : ""}`;
                 el("batch-timeline-complete-stats").textContent = `成功 ${successCount}件 / 失敗 ${failCount}件（計${totalEventsExtracted}件）`;
                 el("batch-timeline-complete-duration").textContent = `所要時間: 約${durationSec}秒`;
                 summaryCard.style.display = "block";
@@ -17505,6 +17526,25 @@ ${existingLeads}
             batchTimelineStopRequested = true;
             el("batch-timeline-current-task").textContent = "⏸️ 現在の処理が終了次第、安全に停止します...";
         }
+
+        // AIモデル選択変更時に思考レベル制御（Lite系はhigh固定）
+        el("batch-timeline-model-select")?.addEventListener("change", (e) => {
+            const val = e.target.value;
+            const thinkingSelect = el("batch-timeline-thinking-select");
+            const hintEl = el("batch-timeline-thinking-hint");
+            if (val.includes("lite")) {
+                if (thinkingSelect) {
+                    thinkingSelect.value = "high";
+                    thinkingSelect.disabled = true;
+                }
+                if (hintEl) hintEl.textContent = "⚡ Flash-Liteモデルは仕様上、思考レベルが【high（高思考）】に自動固定されます。";
+            } else {
+                if (thinkingSelect) {
+                    thinkingSelect.disabled = false;
+                }
+                if (hintEl) hintEl.textContent = "※ 思考レベルを指定して深層推論・網羅性を調整できます。";
+            }
+        });
 
         // タブ切り替え & イベントバインド
         el("tab-btn-batch-timeline-run")?.addEventListener("click", () => switchBatchTimelineTab("run"));
