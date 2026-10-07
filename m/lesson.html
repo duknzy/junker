@@ -3636,7 +3636,7 @@ ${subjectGuide}
 論理と公式・解法の厳密性を最優先に教えてください。
 ${subjectGuide}
 【🚨 読み仮名（ふりがな）の徹底（最重要ルール）】：
-社会科（日本史・世界史・地理・公民・公共・政治経済等）や国語をはじめ、高校生がつまずきやすい「難しい漢字」「難解な歴史用語」「人名」「地名」「制度名・役職名」「寺社・条約・法律名」「専門用語」には、必ず「漢字（よみがな）」または「<ruby>漢字<rt>よみがな</rt></ruby>」で読み仮名を徹底してください。
+社会科（日本史・世界史・地理・公民・公共・政治経済等）や国語をはじめ、高校生がつまずきやすい「難しい漢字」「難解な歴史用語」「人名」「地名」「制度名・役職名」「寺社・条約・法律名」「専門用語」には、必ず「漢字（よみがな）」で読み仮名を徹底してください。
 数式は必ず $ $ または $$ $$ で囲んでください。
 前置きや挨拶は省き、本題から直接わかりやすく解説してください。`;
 
@@ -3658,7 +3658,7 @@ ${subjectGuide}
                     }];
                 }
 
-                const reply = await callGeminiChat(contextHistory, systemInstruction, { featureId: "lesson_teach" });
+                const reply = await callGeminiChat(contextHistory, withFormatRule(systemInstruction), { featureId: "lesson_teach" });
                 const replyText = typeof reply === "string" ? reply : (reply?.message || reply?.reply || JSON.stringify(reply));
 
                 lesson.chatHistory[msgIndex].content = replyText;
@@ -3727,7 +3727,7 @@ ${subjectGuide}
 【指示】
 この単元についての超詳細な講義ノート全文を最初からわかりやすく執筆してください。
 前回の説明とは別の例えや直感的なアプローチを取り入れ、論理と公式の導出を厳密に行ってください。
-【🚨 難しい漢字の読み仮名徹底】社会系科目（日本史・世界史・地理・公民・公共・政治経済等）の歴史用語、人名、地名、制度名、重要概念や、初見で読みにくい漢字には、必ず「漢字（よみがな）」または「<ruby>漢字<rt>よみがな</rt></ruby>」で読み仮名を徹底して付記してください。
+【🚨 難しい漢字の読み仮名徹底】社会系科目（日本史・世界史・地理・公民・公共・政治経済等）の歴史用語、人名、地名、制度名、重要概念や、初見で読みにくい漢字には、必ず「漢字（よみがな）」で読み仮名を徹底して付記してください。
 数式は必ず $ $ または $$ $$ で囲んでください。`;
 
                 const systemInstruction = isNihonshi
@@ -3740,7 +3740,7 @@ ${subjectGuide}
 
                 const reply = await callGeminiChat(
                     [{ role: "user", parts: [{ text: prompt }] }],
-                    systemInstruction,
+                    withFormatRule(systemInstruction),
                     { featureId: "lesson_plan" }
                 );
                 const replyText = typeof reply === "string" ? reply : (reply?.message || reply?.reply || JSON.stringify(reply));
@@ -3817,7 +3817,7 @@ ${subjectGuide}
 
 【指示】
 第${partIndex + 1}回「${part.title}」の講義を、初回1通目として最初からわかりやすく、論理的かつ厳密に解説してください。
-【🚨 読み仮名（ふりがな）徹底】社会系科目（日本史・世界史・地理・公民・公共・政治経済等）や国語をはじめ、高校生がつまずきやすい難しい漢字や歴史用語、人名、地名、制度名、専門用語には、必ず「漢字（よみがな）」または「<ruby>漢字<rt>よみがな</rt></ruby>」を添えて読み仮名を徹底してください。
+【🚨 読み仮名（ふりがな）徹底】社会系科目（日本史・世界史・地理・公民・公共・政治経済等）や国語をはじめ、高校生がつまずきやすい難しい漢字や歴史用語、人名、地名、制度名、専門用語には、必ず「漢字（よみがな）」を添えて読み仮名を徹底してください。
 前回の説明とは別の例えや直感的なアプローチを交え、初学者がつまずきやすい急所を明確に示してください。
 数式は必ず $ $ または $$ $$ で囲むこと。前置きやお礼は省き、第${partIndex + 1}回の本題から始めてください。`;
 
@@ -3827,11 +3827,11 @@ ${subjectGuide}
 難しい漢字や歴史用語には必ず「漢字（よみがな）」を付記してください。`
                     : `あなたは高校・難関大受験指導のプロ講師AIです。わかりやすく明快、論理的で厳密な講義を行ってください。
 ${subjectGuide}
-【最重要ルール】難しい漢字、歴史用語、人名、地名、制度名、法令名などには必ず「漢字（よみがな）」または「<ruby>漢字<rt>よみがな</rt></ruby>」を付記して読み仮名を徹底してください。`;
+【最重要ルール】難しい漢字、歴史用語、人名、地名、制度名、法令名などには必ず「漢字（よみがな）」を付記して読み仮名を徹底してください。`;
 
                 const reply = await callGeminiChat(
                     [{ role: "user", parts: [{ text: prompt }] }],
-                    systemInstruction,
+                    withFormatRule(systemInstruction),
                     { featureId: "lesson_teach" }
                 );
                 const replyText = typeof reply === "string" ? reply : (reply?.message || reply?.reply || JSON.stringify(reply));
@@ -4112,13 +4112,13 @@ ${subjectGuide}
                     const isNihonshi = /日本史/.test(lesson.subject || "");
                     const nextPrompt = isNihonshi
                         ? `【授業テーマ】${lesson.title}\n【教科】日本史（共通テスト特化）\n【第${nextPartIdx + 1}回】${nextPart.title}（${nextPart.summary || ''}）\n\n【指示】第${nextPartIdx + 1}回の講義を始めてください。教科書を平坦になぞるだけの退屈な解説は絶対厳禁！歴史を生身の人間たちの切実な生存戦略・権力闘争のドラマとしてスリリングかつ面白く語ってください。共通テストで狙われる罠（正誤判定・時代の前後関係）を先回り指導し、難しい漢字には必ず「漢字（よみがな）」を添えてください。`
-                        : `【授業テーマ】${lesson.title}\n【教科】${lesson.subject || ''}\n【第${nextPartIdx + 1}回】${nextPart.title}（${nextPart.summary || ''}）\n\n【指示】第${nextPartIdx + 1}回の講義を始めてください。論理と公式の厳密性を最優先に、初学者にもわかりやすく解説してください。難しい漢字や歴史・社会用語、専門用語（人名・地名・制度名など）には必ず「漢字（よみがな）」または「<ruby>漢字<rt>よみがな</rt></ruby>」を添えて読み仮名を徹底してください。`;
+                        : `【授業テーマ】${lesson.title}\n【教科】${lesson.subject || ''}\n【第${nextPartIdx + 1}回】${nextPart.title}（${nextPart.summary || ''}）\n\n【指示】第${nextPartIdx + 1}回の講義を始めてください。論理と公式の厳密性を最優先に、初学者にもわかりやすく解説してください。難しい漢字や歴史・社会用語、専門用語（人名・地名・制度名など）には必ず「漢字（よみがな）」を添えて読み仮名を徹底してください。`;
                     const nextSystemInstruction = isNihonshi
                         ? `あなたは予備校の伝説的人気日本史カリスマプロ講師AIです。教科書の文章を平坦になぞるだけの無味乾燥な説明は【絶対厳禁】です！歴史を極上の人間ドラマ・危機の生存戦略として知的興奮たっぷりに熱く解き明かしてください。\n${subjectGuide}\n難しい漢字や歴史用語には必ず「漢字（よみがな）」を付記してください。`
-                        : `あなたは予備校の専任プロ講師AIです。論理的で厳密、かつ明快な講義を行ってください。\n${subjectGuide}\n【最重要ルール】難しい漢字、歴史用語、人名、地名、制度名、法令名などには必ず「漢字（よみがな）」または「<ruby>漢字<rt>よみがな</rt></ruby>」を付記して読み仮名を徹底してください。数式は$ $で囲んでください。`;
+                        : `あなたは予備校の専任プロ講師AIです。論理的で厳密、かつ明快な講義を行ってください。\n${subjectGuide}\n【最重要ルール】難しい漢字、歴史用語、人名、地名、制度名、法令名などには必ず「漢字（よみがな）」を付記して読み仮名を徹底してください。数式は$ $で囲んでください。`;
                     const reply = await callGeminiChat(
                         [{ role: "user", parts: [{ text: nextPrompt }] }],
-                        nextSystemInstruction,
+                        withFormatRule(nextSystemInstruction),
                         { featureId: "lesson_teach" }
                     );
                     const replyText = typeof reply === "string" ? reply : (reply?.message || reply?.reply || JSON.stringify(reply));
@@ -4145,7 +4145,7 @@ ${subjectGuide}
 生徒の疑問・要望に応えるため、直感的で視覚的な【SVG図解コード（diagram_svg）】と【わかりやすい解説文（ai_response）】をJSONで生成してください。
 ${subjectGuide}
 【🚨 読み仮名徹底ルール】
-社会科や国語の歴史用語・人名・制度名・専門用語には、必ず「漢字（よみがな）」または「<ruby>漢字<rt>よみがな</rt></ruby>」を添えて読み仮名を徹底してください。数式は$ $で囲んでください。
+社会科や国語の歴史用語・人名・制度名・専門用語には、必ず「漢字（よみがな）」を添えて読み仮名を徹底してください。数式は$ $で囲んでください。
 
 【🎨 SVG図解デザイン厳格ルール（最重要）】
 1. 必ず <svg viewBox="0 0 500 350" xmlns="http://www.w3.org/2000/svg">〜</svg> の形式で出力してください（Markdownの記法等は含めず生コード）。
@@ -4233,14 +4233,14 @@ ${subjectGuide}
                     ? `あなたは予備校の伝説的人気日本史カリスマプロ講師AIです。生徒の質問に対して教科書的な丸暗記を排し、人間ドラマや危機の生存戦略、構造的必然性から最高に面白くスリリングに解説してください。
 ${subjectGuide}
 【🚨 読み仮名徹底ルール】
-社会系科目（日本史・世界史・地理・公民・公共・政治経済等）の歴史用語、人名、地名、制度名、法令名などには、必ず「漢字（よみがな）」または「<ruby>漢字<rt>よみがな</rt></ruby>」を添えて読み仮名を徹底してください。`
+社会系科目（日本史・世界史・地理・公民・公共・政治経済等）の歴史用語、人名、地名、制度名、法令名などには、必ず「漢字（よみがな）」を添えて読み仮名を徹底してください。`
                     : `あなたは高校・大学受験指導のエキスパート専任プロ講師AIです。授業内容や生徒から送られた写真・質問について分かりやすく丁寧に答えてください。
 ${subjectGuide}
 【🚨 読み仮名（ふりがな）徹底ルール】
-社会科（日本史・世界史・地理・公民・公共・政治経済等）や国語をはじめ、高校生がつまずきやすい「難しい漢字」「難解な歴史用語」「人名」「地名」「制度名・役職名」「寺社・条約・法律名」「専門用語」には、必ず「漢字（よみがな）」または「<ruby>漢字<rt>よみがな</rt></ruby>」を添えて読み仮名を徹底してください。
+社会科（日本史・世界史・地理・公民・公共・政治経済等）や国語をはじめ、高校生がつまずきやすい「難しい漢字」「難解な歴史用語」「人名」「地名」「制度名・役職名」「寺社・条約・法律名」「専門用語」には、必ず「漢字（よみがな）」を添えて読み仮名を徹底してください。
 数式は必ず$ $で囲んでください。`;
 
-                const reply = await callGeminiChat(history, qaSystemInstruction, { featureId: "lesson_teach" });
+                const reply = await callGeminiChat(history, withFormatRule(qaSystemInstruction), { featureId: "lesson_teach" });
                 const replyText = typeof reply === "string" ? reply : (reply?.message || reply?.reply || JSON.stringify(reply));
 
                 // チャット履歴に保存
@@ -6217,7 +6217,7 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
 
                 const planInstruction = `あなたは難関大受験指導のプロ講師AIです。
 提供された原本テキスト（文字起こし）から、2〜4パートの論理的な講義カリキュラムと重要用語リストを再構成してください。
-【最重要】社会系科目等の難読漢字、歴史用語、人名、地名、制度名、専門用語には必ず「漢字（よみがな）」または「<ruby>漢字<rt>よみがな</rt></ruby>」で読み仮名を徹底してください。
+【最重要】社会系科目等の難読漢字、歴史用語、人名、地名、制度名、専門用語には必ず「漢字（よみがな）」で読み仮名を徹底してください。
 【🚨 最重要：タイトル命名の短縮・簡潔化ルール】
 ・lesson_title: 簡潔・明快に【12〜22文字以内】。サブタイトル・煽り文・『〜まで』・『――』・読み仮名括弧は一切禁止。
 ・parts[].title: 各回のテーマを【8〜16文字程度】で短くスッキリ命名。『Part 1』『第1回』等の回数番号、サブタイトル（「――」）、煽り文句、読み仮名括弧は完全禁止（要約 summary に記載すること）。${socraticAddon}`;
@@ -6311,7 +6311,7 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
 
                     const reply = await callGeminiChat(
                         [{ role: "user", parts: [{ text: firstPrompt }] }],
-                        firstSystemInstruction,
+                        withFormatRule(firstSystemInstruction),
                         { featureId: "lesson_teach" }
                     );
                     const replyText = typeof reply === "string" ? reply : (reply?.message || reply?.reply || JSON.stringify(reply));
@@ -6386,7 +6386,7 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
 5. 難しい漢字・専門用語には必ず読み仮名（ふりがな）を添えること。`;
 
             try {
-                const result = await callGeminiJSON([{ text: "このパートの類題を1問作成してください。" }], DRILL_PROMPT, {
+                const result = await callGeminiJSON([{ text: "このパートの類題を1問作成してください。" }], withFormatRule(DRILL_PROMPT), {
                     responseSchema: DRILL_SCHEMA,
                     featureId: "lesson_drill"
                 });
@@ -6829,7 +6829,7 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
 ・大学入学共通テスト「情報I」の出題傾向に直結する擬似言語の読み解き方や論理的思考力を養成すること。`,
 
             "地理": `【地理専門の授業構築ガイドライン】
-・【🚨 読み仮名徹底】難読地名、地形用語、土壌名、民族名、農法名等には必ず「漢字（よみがな）」または「<ruby>漢字<rt>よみがな</rt></ruby>」を添えること（例: レス（黄土）、氾濫原（はんらんげん）、カルスト（石灰岩）、ステップ、焼畑農業（やきはたのうぎょう）等）。
+・【🚨 読み仮名徹底】難読地名、地形用語、土壌名、民族名、農法名等には必ず「漢字（よみがな）」を添えること（例: レス（黄土）、氾濫原（はんらんげん）、カルスト（石灰岩）、ステップ、焼畑農業（やきはたのうぎょう）等）。
 ・地名の単なる羅列を廃し、「自然環境（気候・地形・プレートテクトニクス）」が「人間活動（農業・工業・集落・宗教・貿易）」にどう影響を与えているかという「地理的因果関係」を徹底的に解説すること。
 ・ケッペンの気候区分は、気温・降水量のグラフ（雨温図）の読解基準と植生・土壌の関係性を明快に体系化すること。
 ・現代の地球規模課題（食料、エネルギー、環境、人口問題、サプライチェーン）と地域統合・紛争の背景を多面的に考察させること。`,
@@ -6868,13 +6868,13 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
         文化史で最も失点が多い「時代の混同（天平と弘仁貞観、元禄と化政の作家シャッフル）」「仏教宗派と開祖・寺院の組み合わせミス」を先回り警告。
 
 4. 【🚨 読み仮名（ふりがな）の徹底】：
-   ・歴史用語、人名、地名、制度名、役職名、寺社名、法令・条約名、重要概念には、必ず初出時および解説内で「漢字（よみがな）」または「<ruby>漢字<rt>よみがな</rt></ruby>」を添えること。漢字の読み方で生徒の思考や没入感を絶対に止めないこと。
+   ・歴史用語、人名、地名、制度名、役職名、寺社名、法令・条約名、重要概念には、必ず初出時および解説内で「漢字（よみがな）」を添えること。漢字の読み方で生徒の思考や没入感を絶対に止めないこと。
 
 5. 【暗記ポイント（一問一答）の共通テスト最適化】：
    ・単なる用語当てではなく、「なぜその政策が行われたのかという因果関係」「共通テストの正誤判定で狙われる誤文パターン」を問いと答えに落とし込むこと。`,
 
             "世界史": `【世界史専門の授業構築ガイドライン】
-・【🚨 読み仮名徹底】難解な漢字表記の王朝名、人名、官制名、条約名、都市名には必ず「漢字（よみがな）」または「<ruby>漢字<rt>よみがな</rt></ruby>」を添えること（例: 科挙（かきょ）、節度使（せつどし）、均田制（きんでんせい）、均輸法（きんゆほう）、契丹（きったん）、西夏（せいか）、アケメネス朝、ユスティニアヌス帝等）。
+・【🚨 読み仮名徹底】難解な漢字表記の王朝名、人名、官制名、条約名、都市名には必ず「漢字（よみがな）」を添えること（例: 科挙（かきょ）、節度使（せつどし）、均田制（きんでんせい）、均輸法（きんゆほう）、契丹（きったん）、西夏（せいか）、アケメネス朝、ユスティニアヌス帝等）。
 ・地域史（西欧、東アジア、イスラーム、内陸ユーラシア、南北アメリカ）の縦の時間の流れと、貿易・戦争・宗教・人の移動による横の空間の連動性をダイナミックに結びつけること。
 ・各帝国・王朝の統治システム、財政基盤、法制度、宗教政策を論理的に比較・対比すること。
 ・近現代史では、産業革命、帝国主義、世界大戦、冷戦体制、多極化への構造変化をグローバルな因果の連鎖として鮮明に浮き彫りにすること。`,
@@ -6891,7 +6891,7 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
 ・漢文：返り点・送りがな・基本句法（反語・使役・受身・否定・比較）の構造的理解と、訓読・書き下し文・解釈のプロセスを論理的に解説すること。`,
 
             "公共": `【公共・公民専門の授業構築ガイドライン】
-・【🚨 読み仮名徹底】法制度、統治機構、経済用語、倫理思想の難読漢字・専門用語には必ず「漢字（よみがな）」または「<ruby>漢字<rt>よみがな</rt></ruby>」を添えること（例: 違憲審査権（いけんしんさけん）、冤罪（えんざい）、弾劾裁判所（だんがいさいばんしょ）、信託（しんたく）、累進課税（るいしんかぜい）、功利主義（こうりしゅぎ）等）。
+・【🚨 読み仮名徹底】法制度、統治機構、経済用語、倫理思想の難読漢字・専門用語には必ず「漢字（よみがな）」を添えること（例: 違憲審査権（いけんしんさけん）、冤罪（えんざい）、弾劾裁判所（だんがいさいばんしょ）、信託（しんたく）、累進課税（るいしんかぜい）、功利主義（こうりしゅぎ）等）。
 ・現代社会の諸課題（少子高齢化、グローバル化、情報化、環境問題）について、倫理的・政治的・経済的な観点から多角的に考察させること。
 ・日本国憲法の基本原理（基本的人権、国民主権、平和主義）と統治機構（三権分立、違憲審査権）、市場経済のメカニズム（価格決定、市場の失敗、財政・金融政策）を具体例を交えて明快に解説すること。`,
 
@@ -7643,7 +7643,7 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
                     // 🚀 3並列同時ディスパッチ
                     const [resStructure, resLecture, resMemorize] = await Promise.all([
                         callGeminiJSON([{ text: basePrompt + "\n\nカリキュラム構成をJSONで出力してください。" }], curriculumInstruction, { responseSchema: STRUCTURE_SCHEMA, featureId: "lesson_plan", keyOffset: 0 }),
-                        callGeminiJSON([{ text: basePrompt + "\n\n超詳細な講義ノート全文をJSONで出力してください。数式は必ず$ $で囲むこと。\n【最重要】社会系科目等の難しい漢字や専門用語（人名・地名・制度名・重要概念等）には必ず「漢字（よみがな）」または「<ruby>漢字<rt>よみがな</rt></ruby>」を併記して読み仮名を徹底してください。" }], lectureGenSystemInstruction, { responseSchema: LECTURE_SCHEMA, featureId: "lesson_plan", keyOffset: 1 }),
+                        callGeminiJSON([{ text: basePrompt + "\n\n超詳細な講義ノート全文をJSONで出力してください。数式は必ず$ $で囲むこと。\n【最重要】社会系科目等の難しい漢字や専門用語（人名・地名・制度名・重要概念等）には必ず「漢字（よみがな）」を併記して読み仮名を徹底してください。" }], withFormatRule(lectureGenSystemInstruction), { responseSchema: LECTURE_SCHEMA, featureId: "lesson_plan", keyOffset: 1 }),
                         callGeminiJSON([{ text: basePrompt + "\n\n重要公式・用語リストをJSONで出力してください。※漢字の後ろに括弧でふりがな（ひらがな）を付けることは禁止します。正式な漢字表記のみでスッキリ出力してください。" }], "暗記すべき重要公式・用語を漏れなく抽出してください。ふりがな・ひらがなの括弧表記は一切不要です。", { responseSchema: MEMORIZE_SCHEMA, featureId: "lesson_plan", keyOffset: 2 })
                     ]);
 
@@ -7661,7 +7661,7 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
 ・【教科書の記述順・時系列を100%厳守（AIによる勝手な並び替え禁止）】：1ページ目の冒頭から最後のページまで、教科書に書かれている通りの順番・時系列で素直に進めてください。AIが勝手にテーマ別や特定の型に再構成して教科書の順番を前後させることは【絶対禁止】です。
 ・【パート構成と内容の端折り防止ルール】：教科書内の記述順・時系列に忠実に従い、中見出しや時代の節目単位で自然にパートを区切ってください。※重要：添付された写真の分量や情報量が多い場合、内容や歴史的事実・重要人物・事件の因果関係・文化史を端折る（要約・省略する）ことは【絶対禁止】です。内容を漏れなく網羅するためであれば、パート数を柔軟に増やして構成してください（情報量に応じて4〜8パート以上になっても構いません）。内容の網羅性と正確性を最優先してください。
 ・【政治・文化・社会が混在する場合の自然な構成】：写真の中に政治史の後に文化史や経済が連続して登場する場合、無理に1つのテーマにまとめようとせず、教科書の順番通りに「前半パート：〇〇の政治動向」「後半パート：同時代の〇〇文化の特色」のように自然な流れのままパートを分けること。
-【🚨 読み仮名徹底】社会系科目等の難読漢字や歴史用語、人名、地名、制度名、専門用語には必ず「漢字（よみがな）」または「<ruby>漢字<rt>よみがな</rt></ruby>」で読み仮名を徹底して付記してください。
+【🚨 読み仮名徹底】社会系科目等の難読漢字や歴史用語、人名、地名、制度名、専門用語には必ず「漢字（よみがな）」で読み仮名を徹底して付記してください。
 【🚨 最重要：タイトル命名の短縮・簡潔化ルール】
 ・lesson_title: 簡潔・明快に【12〜22文字以内】。サブタイトル・煽り文・『〜まで』・『――』・読み仮名括弧は一切禁止。
 ・parts[].title: 各回のテーマを【8〜16文字程度】で短くスッキリ命名。『Part 1』『第1回』等の回数番号、サブタイトル（「――」）、煽り文句、読み仮名括弧は完全禁止（要約 summary に記載すること）。`;
@@ -7787,51 +7787,87 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
             }
         });
 
+        // 🧹 AIの本文出力をHTMLタグなし（Markdownのみ）に固定するための共通ルール
+        const AI_TEXT_FORMAT_RULE = `
+
+【出力フォーマット厳守】
+- 本文はプレーンテキスト＋Markdown（### 見出し、**太字**、- 箇条書き、1. 番号付きリスト、--- 区切り線）のみで書くこと。
+- HTMLタグ（<div>、<span>、<p>、<br>、<b>、<ruby>、style属性など）やコードブロック（\`\`\`）は絶対に使わないこと。
+- 読み仮名は必ず「漢字（よみがな）」の形式で書くこと。
+- 数式は $ $ または $$ $$ で囲むこと。`;
+        function withFormatRule(systemInstruction) {
+            return `${systemInstruction || ""}${AI_TEXT_FORMAT_RULE}`;
+        }
+
         function formatText(s) {
             if (!s) return "";
             let text = String(s);
 
+            // 0. コードフェンス（```html 等）の記号行を除去（中身は残す）
+            text = text.replace(/^[ \t]*```[\w-]*[ \t]*$/gm, "");
+
             // 1. 青空文庫ルビ記法: ｜漢字《よみ》 または 漢字《よみ》 を <ruby>漢字<rt>よみ</rt></ruby> に変換
             text = text.replace(/[｜|]?([一-龠々〆ヵヶA-Za-z0-9]+)《([^》]+)》/g, '<ruby>$1<rt>$2</rt></ruby>');
 
-            // 2. 数式ブロックの退避 ($$...$$ または $...$)
+            // 2. 数式ブロックの退避 ($$...$$ / \[...\] / \(...\) / $...$)
+            //    数式内の < > & は KaTeX が textContent から読むため、エスケープして安全に保持する
             const mathBlocks = [];
-            text = text.replace(/(\$\$[\s\S]*?\$\$|\$[^\$\n]+?\$)/g, (match) => {
-                mathBlocks.push(match);
+            text = text.replace(/(\$\$[\s\S]*?\$\$|\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\)|\$[^\$\n]+?\$)/g, (match) => {
+                mathBlocks.push(escapeHtml(match));
                 return `%%%M_MATH_${mathBlocks.length - 1}%%%`;
             });
 
-            // 3. <ruby>...</ruby> タグを一時プレースホルダーに退避（XSS防止しつつrubyタグのみ保持）
+            // 3. <ruby>...</ruby> タグを一時プレースホルダーに退避（XSS防止しつつ属性なしのruby/rt/rpのみ保持）
             const rubyBlocks = [];
-            let placeholderText = text.replace(/<ruby\b[^>]*>[\s\S]*?<\/ruby>/gi, (match) => {
-                const safeRuby = match.replace(/<(?!\/?(ruby|rt|rp)\b)[^>]+>/gi, '');
+            text = text.replace(/<ruby\b[^>]*>[\s\S]*?<\/ruby>/gi, (match) => {
+                const stripped = match.replace(/<(?!\/?(ruby|rt|rp)\b)[^>]*>/gi, '');
+                const safeRuby = escapeHtml(stripped).replace(/&lt;(\/?)(ruby|rt|rp)\b[^&]*?&gt;/gi, '<$1$2>');
                 rubyBlocks.push(safeRuby);
                 return `%%%M_RUBY_${rubyBlocks.length - 1}%%%`;
             });
 
-            // 4. 基本のHTMLエスケープ
-            let formatted = placeholderText
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;");
+            // 4. AIが混入させたHTMLタグをMarkdown/プレーンテキストへ正規化（コードとして表示されるのを防ぐ）
+            text = text
+                .replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi, "")
+                .replace(/<br\s*\/?>/gi, "\n")
+                .replace(/<hr\b[^>]*>/gi, "\n---\n")
+                .replace(/<h[1-6]\b[^>]*>([\s\S]*?)<\/h[1-6]>/gi, "\n### $1\n")
+                .replace(/<(b|strong)\b[^>]*>([\s\S]*?)<\/\1>/gi, "**$2**")
+                .replace(/<li\b[^>]*>/gi, "\n- ")
+                .replace(/<\/(p|div|li|tr|ul|ol|table|section|article|blockquote|pre|h[1-6])>/gi, "\n")
+                .replace(/<\/t[dh]>/gi, " ｜ ")
+                .replace(/<\/?(div|span|p|b|strong|i|em|u|s|font|section|article|header|footer|main|ul|ol|li|h[1-6]|table|thead|tbody|tfoot|tr|td|th|code|pre|small|big|mark|sup|sub|blockquote|a|img|center|label|figure|figcaption|html|body)\b[^>]*>/gi, "")
+                .replace(/&nbsp;/g, " ");
 
-            // 5. マークダウンの見出し・装飾・リスト
-            formatted = formatted.replace(/^#{3,4}\s*(.+)$/gm, '<h3 style="font-size:1.05rem; font-weight:800; color:var(--text-primary); margin:1.2rem 0 0.5rem 0; border-left:3.5px solid var(--brand-primary); padding-left:0.5rem;">$1</h3>');
-            formatted = formatted.replace(/^---\s*$/gm, '<hr style="border:none; border-top:1px dashed var(--border-color); margin:1rem 0;">');
+            // 4.5 文字列としての「\n」（二重エスケープされた改行）を本物の改行へ（数式は退避済みなので \neq 等は壊れない）
+            text = text.replace(/\\n/g, "\n");
+
+            // 5. 基本のHTMLエスケープ
+            let formatted = escapeHtml(text);
+
+            // 6. マークダウンの見出し・装飾・リスト・表
+            const H3_STYLE = 'font-size:1.05rem; font-weight:800; color:var(--text-primary); margin:1.2rem 0 0.5rem 0; border-left:3.5px solid var(--brand-primary); padding-left:0.5rem;';
+            formatted = formatted.replace(/^[ \t]*#{1,6}[ \t]+(.+?)[ \t#]*$/gm, `<h3 style="${H3_STYLE}">$1</h3>`);
+            formatted = formatted.replace(/^#{3,4}(\S.*)$/gm, `<h3 style="${H3_STYLE}">$1</h3>`);
+            formatted = formatted.replace(/^[ \t]*\|?(?:[ \t]*:?-{3,}:?[ \t]*\|)+[ \t]*(?::?-{3,}:?)?[ \t]*(?:\n|$)/gm, ""); // Markdown表の区切り行
+            formatted = formatted.replace(/^[ \t]*(?:---+|\*\*\*+|___+)[ \t]*$/gm, '<hr style="border:none; border-top:1px dashed var(--border-color); margin:1rem 0;">');
             formatted = formatted.replace(/【(.*?)】/g, '<strong style="color:var(--brand-primary, #059669); font-weight:800;">【$1】</strong>');
-            formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong style="font-weight:750; color:var(--text-primary);">$1</strong>');
-            formatted = formatted.replace(/^-\s+(.+)$/gm, '<div style="margin-left:0.8rem; text-indent:-0.8rem; margin-top:0.25rem;">• $1</div>');
-            formatted = formatted.replace(/^(\d+\.)\s*/gm, '<span style="color:var(--brand-primary); font-weight:800; margin-right:0.3rem;">$1</span>');
-
-            // 6. ルビと数式の復元
-            formatted = formatted.replace(/%%%M_RUBY_(\d+)%%%/g, (_, idx) => rubyBlocks[idx]);
-            formatted = formatted.replace(/%%%M_MATH_(\d+)%%%/g, (_, idx) => mathBlocks[idx]);
+            formatted = formatted.replace(/\*\*(.+?)\*\*/g, '<strong style="font-weight:750; color:var(--text-primary);">$1</strong>');
+            formatted = formatted.replace(/^[ \t]*[-*・][ \t]+(.+)$/gm, '<div style="margin-left:0.8rem; text-indent:-0.8rem; margin-top:0.25rem;">• $1</div>');
+            formatted = formatted.replace(/(^|[^*\w])\*([^*\n]+?)\*(?![*\w])/g, '$1<em>$2</em>');
+            formatted = formatted.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+            formatted = formatted.replace(/^[ \t]*(\d+\.)[ \t]*/gm, '<span style="color:var(--brand-primary); font-weight:800; margin-right:0.3rem;">$1</span>');
 
             // 7. 改行コードの変換（ブロックタグ前後の重複改行を除去）
-            formatted = formatted.replace(/\\n/g, "\n");
             formatted = formatted.replace(/\n{3,}/g, '\n\n');
+            formatted = formatted.replace(/^\s+|\s+$/g, '');
             formatted = formatted.replace(/\n/g, '<br>');
             formatted = formatted.replace(/(<\/h3>|<\/div>|<hr[^>]*>)\s*<br>/gi, '$1');
+            formatted = formatted.replace(/<br>\s*(<h3|<hr)/gi, '$1');
+
+            // 8. ルビと数式の復元（数式は改行変換後に戻すので $$ ブロック内に <br> が混入しない）
+            formatted = formatted.replace(/%%%M_RUBY_(\d+)%%%/g, (_, idx) => rubyBlocks[idx]);
+            formatted = formatted.replace(/%%%M_MATH_(\d+)%%%/g, (_, idx) => mathBlocks[idx]);
 
             return formatted;
         }

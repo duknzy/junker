@@ -1019,6 +1019,116 @@ export function extractJsonArray(text) {
     return text.substring(start);
 }
 
+/**
+ * 💡 Gemini形式の responseSchema を DeepSeek が直感的に従える具象JSON例に自動変換する
+ */
+export function schemaToExampleJson(schema) {
+    if (!schema || typeof schema !== "object") return null;
+    function walk(node) {
+        if (!node) return "";
+        const type = String(node.type || "").toUpperCase();
+        if (type === "OBJECT") {
+            const res = {};
+            const props = node.properties || {};
+            for (const key of Object.keys(props)) {
+                res[key] = walk(props[key]);
+            }
+            return res;
+        } else if (type === "ARRAY") {
+            const item = node.items ? walk(node.items) : "string";
+            return [item];
+        } else if (type === "STRING") {
+            return node.description ? `<${node.description}>` : "string";
+        } else if (type === "INTEGER" || type === "NUMBER") {
+            return 0;
+        } else if (type === "BOOLEAN") {
+            return false;
+        }
+        return "string";
+    }
+    try {
+        return walk(schema);
+    } catch (_) {
+        return null;
+    }
+}
+
+/**
+ * 🛠️ 壊れかけ・切断・エスケープ異常のあるJSON文字列を最大限修復してパースする強力な復旧エンジン
+ */
+export function tryParseJsonWithRecovery(rawText, arrayMode = false) {
+    if (!rawText || typeof rawText !== "string") return { ok: false, error: new Error("Empty JSON string") };
+    const cleaned = stripCodeFence(rawText.trim());
+
+    // 1. 素直にパース
+    try {
+        return { ok: true, data: JSON.parse(cleaned) };
+    } catch (_) {}
+
+    // 2. ブラケット対応（extractJsonObject / extractJsonArray）でパース
+    const extractor = arrayMode ? extractJsonArray : extractJsonObject;
+    const extracted = extractor(cleaned);
+    try {
+        return { ok: true, data: JSON.parse(extracted) };
+    } catch (_) {}
+
+    // 3. エスケープ漏れの自動修復（fixJsonEscapes）
+    try {
+        return { ok: true, data: JSON.parse(fixJsonEscapes(extracted)) };
+    } catch (_) {}
+
+    // 4. 最初と最後のブラケット範囲を単純切り出し
+    const startChar = arrayMode ? '[' : '{';
+    const endChar = arrayMode ? ']' : '}';
+    const s = cleaned.indexOf(startChar);
+    const e = cleaned.lastIndexOf(endChar);
+    if (s !== -1 && e > s) {
+        const slice = cleaned.substring(s, e + 1);
+        try {
+            return { ok: true, data: JSON.parse(slice) };
+        } catch (_) {
+            try {
+                return { ok: true, data: JSON.parse(fixJsonEscapes(slice)) };
+            } catch (_) {}
+        }
+    }
+
+    // 5. 途中で切断された（max_tokens等で末尾が欠けた）JSONの自動クローズ修復
+    if (s !== -1) {
+        let partial = cleaned.substring(s);
+        // 末尾の不完全な文字列リテラルを閉じる
+        const quoteCount = (partial.match(/(?<!\\)"/g) || []).length;
+        if (quoteCount % 2 !== 0) partial += '"';
+
+        // 開いているブラケット（{ や [）をカウントして末尾に補完
+        const stack = [];
+        let inStr = false;
+        for (let i = 0; i < partial.length; i++) {
+            const ch = partial[i];
+            if (ch === '"' && (i === 0 || partial[i - 1] !== '\\')) inStr = !inStr;
+            if (!inStr) {
+                if (ch === '{' || ch === '[') stack.push(ch === '{' ? '}' : ']');
+                else if (ch === '}' || ch === ']') {
+                    if (stack.length > 0 && stack[stack.length - 1] === ch) stack.pop();
+                }
+            }
+        }
+        if (stack.length > 0) {
+            const repaired = partial + stack.reverse().join('');
+            try {
+                return { ok: true, data: JSON.parse(repaired) };
+            } catch (_) {
+                try {
+                    return { ok: true, data: JSON.parse(fixJsonEscapes(repaired)) };
+                } catch (_) {}
+            }
+        }
+    }
+
+    return { ok: false, error: new Error("Failed to parse JSON even after multi-tier recovery") };
+}
+
+
 // --------------------------------------------------------------------------
 // 🐋 DeepSeek フォールバック実行ループ
 // --------------------------------------------------------------------------
@@ -1197,13 +1307,17 @@ async function runDeepseekFallbackLoop(contents, systemInstruction, options = {}
     const deepseekKeys = getDeepseekKeys();
     const effectiveThinking = options.thinkingLevel || getEffectiveThinkingLevel(featureId, "default");
     
-    // 💡 DeepSeek向けにresponseSchemaをプロンプト内へスキーマ定義として補完注入
+    // 💡 DeepSeek向けにresponseSchemaを具象JSON例＋公式推奨指示として注入
     let systemWithSchema = systemInstruction || "";
     if (options.responseSchema) {
         try {
             const schemaStr = JSON.stringify(options.responseSchema, null, 2);
-            systemWithSchema += `\n\n【必須JSONスキーマ定義】\n回答は以下のJSONスキーマ構造に厳密に従って出力してください:\n\`\`\`json\n${schemaStr}\n\`\`\``;
+            const exampleObj = schemaToExampleJson(options.responseSchema);
+            const exampleStr = exampleObj ? JSON.stringify(exampleObj, null, 2) : schemaStr;
+            systemWithSchema += `\n\n【必須出力フォーマット (JSON Mode)】\n回答は解説文や挨拶、前置き、Markdown記号を含めず、以下のJSONスキーマ構造に厳密に従った1つの有効な json オブジェクトのみを出力してください:\n\`\`\`json\n${exampleStr}\n\`\`\`\n※JSONスキーマ定義:\n${schemaStr}`;
         } catch (_) {}
+    } else if (wantsJson) {
+        systemWithSchema += "\n\n【必須出力フォーマット】\n回答は必ず有効な json オブジェクトのみを出力してください。前置きやMarkdownコードブロックは不要です。";
     }
     const baseMessages = convertGeminiContentsToOpenAIMessages(contents, systemWithSchema);
 
@@ -1322,14 +1436,9 @@ async function runDeepseekFallbackLoop(contents, systemInstruction, options = {}
         if (!candidateText && message.reasoning_content) {
             const rc = message.reasoning_content.trim();
             if (!rawText) {
-                try {
-                    const extractor = arrayMode ? extractJsonArray : extractJsonObject;
-                    const extracted = extractor(stripCodeFence(rc));
-                    JSON.parse(extracted); // パース検証
-                    candidateText = extracted;
-                } catch (_) {
-                    // 思考テキストのみでJSONが含まれていない場合は candidateText に代入しない
-                    // （自然言語の思考文を JSON.parse して formatError ループに突入するのを防ぐ）
+                const recoveredRc = tryParseJsonWithRecovery(rc, arrayMode);
+                if (recoveredRc.ok) {
+                    return { ok: true, parsed: recoveredRc.data };
                 }
             } else {
                 candidateText = rc;
@@ -1351,20 +1460,21 @@ async function runDeepseekFallbackLoop(contents, systemInstruction, options = {}
             return { ok: true, parsed: candidateText };
         }
 
-        try {
-            const cleaned = stripCodeFence(candidateText.trim());
-            let parsed;
-            try {
-                parsed = JSON.parse(cleaned);
-            } catch (e1) {
-                const extractor = arrayMode ? extractJsonArray : extractJsonObject;
-                const extracted = extractor(cleaned);
-                parsed = JSON.parse(extracted);
-            }
-            return { ok: true, parsed };
-        } catch (parseErr) {
-            return { ok: false, isFormatError: true, isTokenLimitError: (finishReason === "length"), isEmptyResponse: false, reason: "JSON解析エラー", error: parseErr, rawText: candidateText };
+        // 💡 多層リカバリーエンジンで救出（末尾欠損補完・エスケープ修復・外側テキスト剥離）
+        const recoveryResult = tryParseJsonWithRecovery(candidateText, arrayMode);
+        if (recoveryResult.ok) {
+            return { ok: true, parsed: recoveryResult.data };
         }
+
+        return {
+            ok: false,
+            isFormatError: true,
+            isTokenLimitError: (finishReason === "length"),
+            isEmptyResponse: false,
+            reason: "JSON解析エラー",
+            error: recoveryResult.error,
+            rawText: candidateText
+        };
     }
 
     // 💡 トークン浪費防止ループ:
@@ -1597,36 +1707,12 @@ async function runGeminiFallbackLoop(contents, systemInstruction, options = {}) 
             return { ok: true, parsed: candidateText };
         }
 
-        try {
-            const cleaned = stripCodeFence(candidateText.trim());
-            let parsed;
-            try {
-                parsed = JSON.parse(cleaned);
-            } catch (e1) {
-                const extractor = arrayMode ? extractJsonArray : extractJsonObject;
-                const extracted = extractor(cleaned);
-                try {
-                    parsed = JSON.parse(extracted);
-                } catch (e2) {
-                    try {
-                        parsed = JSON.parse(fixJsonEscapes(extracted));
-                    } catch (e3) {
-                        const startChar = arrayMode ? '[' : '{';
-                        const endChar = arrayMode ? ']' : '}';
-                        const s = cleaned.indexOf(startChar);
-                        const e = cleaned.lastIndexOf(endChar);
-                        if (s !== -1 && e > s) {
-                            parsed = JSON.parse(cleaned.substring(s, e + 1));
-                        } else {
-                            throw e3;
-                        }
-                    }
-                }
-            }
-            return { ok: true, parsed };
-        } catch (parseErr) {
-            return { ok: false, isFormatError: true, reason: "JSON解析エラー（応答の形式が崩れていた）", error: parseErr, rawText: candidateText };
+        // 💡 多層リカバリーエンジンで救出（末尾欠損補完・エスケープ修復・外側テキスト剥離）
+        const recoveryResult = tryParseJsonWithRecovery(candidateText, arrayMode);
+        if (recoveryResult.ok) {
+            return { ok: true, parsed: recoveryResult.data };
         }
+        return { ok: false, isFormatError: true, reason: "JSON解析エラー（応答の形式が崩れていた）", error: recoveryResult.error, rawText: candidateText };
     }
 
     for (const modelName of effectiveGeminiModels) {
