@@ -6329,7 +6329,7 @@
                                             <span style="font-size:0.7rem; color:var(--text-muted);">※パート分けと講義はAIが自動で論理的に行います</span>
                                         </div>
                                         <div style="display:flex; flex-direction:column; gap:0.65rem; font-size:0.78rem;">
-                                            <label style="display:flex; align-items:flex-start; gap:0.55rem; cursor:pointer; color:var(--text-primary); user-select:none;">
+                                            <label id="opt-autogen-memorize-wrap" style="display:flex; align-items:flex-start; gap:0.55rem; cursor:pointer; color:var(--text-primary); user-select:none;">
                                                 <input type="checkbox" id="opt-autogen-memorize" checked style="margin-top:0.18rem; transform:scale(1.2); accent-color:var(--brand-primary);">
                                                 <div>
                                                     <span style="font-weight:750;">🧠 暗記事項（暗記カード）を自動抽出・作成する</span>
@@ -6338,7 +6338,7 @@
                                                     </div>
                                                 </div>
                                             </label>
-                                            <label style="display:flex; align-items:flex-start; gap:0.55rem; cursor:pointer; color:var(--text-primary); user-select:none;">
+                                            <label id="opt-autogen-drills-wrap" style="display:flex; align-items:flex-start; gap:0.55rem; cursor:pointer; color:var(--text-primary); user-select:none;">
                                                 <input type="checkbox" id="opt-autogen-drills" checked style="margin-top:0.18rem; transform:scale(1.2); accent-color:var(--brand-primary);">
                                                 <div>
                                                     <span style="font-weight:750;">🎯 共通テスト形式選択問題を自動生成する</span>
@@ -6347,7 +6347,7 @@
                                                     </div>
                                                 </div>
                                             </label>
-                                            <label style="display:flex; align-items:flex-start; gap:0.55rem; cursor:pointer; color:var(--text-primary); user-select:none;">
+                                            <label id="opt-autogen-timeline-wrap" style="display:flex; align-items:flex-start; gap:0.55rem; cursor:pointer; color:var(--text-primary); user-select:none;">
                                                 <input type="checkbox" id="opt-autogen-timeline" checked style="margin-top:0.18rem; transform:scale(1.2); accent-color:var(--brand-primary);">
                                                 <div>
                                                     <span style="font-weight:750;">⏳ 年表・年代（出来事・年号）を自動作成する（日本史・公共等）</span>
@@ -6356,7 +6356,7 @@
                                                     </div>
                                                 </div>
                                             </label>
-                                            <label style="display:flex; align-items:flex-start; gap:0.55rem; cursor:pointer; color:var(--text-primary); user-select:none;">
+                                            <label id="opt-autogen-lecture-wrap" style="display:flex; align-items:flex-start; gap:0.55rem; cursor:pointer; color:var(--text-primary); user-select:none;">
                                                 <input type="checkbox" id="opt-autogen-lecture" checked style="margin-top:0.18rem; transform:scale(1.2); accent-color:var(--brand-primary);">
                                                 <div>
                                                     <span style="font-weight:750;">📖 第1回講義の自動解説から開始する</span>
@@ -6450,7 +6450,7 @@
                                 <input type="checkbox" id="preview-opt-autogen-lecture" checked>
                                 <span>📖 第1回講義の自動解説</span>
                             </label>
-                            <label style="display:flex; align-items:center; gap:0.35rem; cursor:pointer; color:var(--text-primary); user-select:none;">
+                            <label id="preview-opt-autogen-memorize-wrap" style="display:flex; align-items:center; gap:0.35rem; cursor:pointer; color:var(--text-primary); user-select:none;">
                                 <input type="checkbox" id="preview-opt-autogen-memorize" checked>
                                 <span>🧠 暗記事項の自動抽出</span>
                             </label>
@@ -6722,7 +6722,7 @@
                                 <!-- パネル3: 暗記事項リスト -->
                                 <div class="sidebar-panel" id="tab-memorize">
                                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem; gap: 0.4rem; flex-wrap: wrap;">
-                                        <div style="font-size: 0.78rem; color: var(--text-secondary); font-weight: 600;">
+                                        <div id="memorize-tab-header-title" style="font-size: 0.78rem; color: var(--text-secondary); font-weight: 600;">
                                             🧠 暗記すべき公式・用語一覧
                                         </div>
                                         <div style="display: flex; gap: 0.35rem; align-items: center; flex-wrap: wrap;">
@@ -6759,7 +6759,7 @@
                                             <button type="button" class="lesson-batch-btn lesson-batch-btn-danger" onclick="batchDeleteLessonMemorize()" title="選択した暗記事項を一括削除します">🗑️ 一括削除</button>
                                             <button type="button" class="lesson-batch-btn lesson-batch-btn-success" onclick="batchMarkLessonMemorizeMastered()" title="選択した項目をLv.5（習得済み）にします">⭐ 習得済みにする</button>
                                             <button type="button" class="lesson-batch-btn" onclick="batchMarkLessonMemorizeUnlearned()" title="選択した項目をLv.0（未習得）に戻します">🔄 未習得に戻す</button>
-                                            <button type="button" class="lesson-batch-btn" onclick="batchCleanLessonMemorizeFurigana()" title="選択した項目のふりがな表記を一括消去します">🧹 ふりがな消去</button>
+                                            <button type="button" class="lesson-batch-btn" id="btn-batch-clean-furigana" onclick="batchCleanLessonMemorizeFurigana()" title="選択した項目のふりがな表記を一括消去します">🧹 ふりがな消去</button>
                                         </div>
                                     </div>
 
@@ -9987,20 +9987,66 @@
 
             // 🧠 数学・現代文のときは暗記事項自動生成オプションをスマートに調整
             const cbMemo = el("opt-autogen-memorize");
-            const labelMemo = cbMemo ? cbMemo.closest("label") : null;
+            const labelMemo = el("opt-autogen-memorize-wrap") || (cbMemo ? cbMemo.closest("label") : null);
             if (cbMemo && labelMemo) {
                 const isNoMemo = (selectedSubject === "数学" || selectedSubject === "現代文");
                 if (isNoMemo) {
                     cbMemo.checked = false;
                     cbMemo.disabled = true;
-                    labelMemo.style.opacity = "0.6";
-                    const titleSpan = labelMemo.querySelector("span[style*='font-weight:750']");
-                    if (titleSpan) titleSpan.textContent = `🧠 暗記事項（暗記カード）作成：${selectedSubject}は思考・演習重視のため自動スキップ`;
+                    labelMemo.style.display = "none"; // 数学では暗記カード自動生成オプション自体を非表示にしてスッキリ整理
                 } else {
                     cbMemo.disabled = false;
+                    labelMemo.style.display = "flex";
                     labelMemo.style.opacity = "1";
                     const titleSpan = labelMemo.querySelector("span[style*='font-weight:750']");
                     if (titleSpan) titleSpan.textContent = "🧠 暗記事項（暗記カード）を自動抽出・作成する";
+                }
+            }
+
+            // ⏳ 歴史年表自動作成オプション（日本史・世界史・公共・政経・公民・地理等の社会科のみ表示。数学・理科等は完全非表示）
+            const wrapTimeline = el("opt-autogen-timeline-wrap");
+            const cbTimeline = el("opt-autogen-timeline");
+            const isHistoryOrSocial = (selectedSubject === "日本史" || selectedSubject === "世界史" || selectedSubject === "地理" || selectedSubject === "公共" || selectedSubject === "政治・経済" || selectedSubject === "政経" || selectedSubject === "公民");
+            if (wrapTimeline) {
+                wrapTimeline.style.display = isHistoryOrSocial ? "flex" : "none";
+            }
+            if (cbTimeline) {
+                cbTimeline.checked = isHistoryOrSocial;
+            }
+
+            // 📋 Web版Geminiおすすめ文字起こしプロンプトの教科別最適化（数学なら数式・LaTeX指定）
+            const byotPromptEl = el("byot-prompt-text");
+            if (byotPromptEl) {
+                if (selectedSubject === "数学") {
+                    byotPromptEl.textContent = `【数学参考書・文字起こし厳格ルール】
+
+本文、定義、定理、公式、例題、解答、解説、注釈テキストのみを正確に抽出すること。
+
+数式や変数は必ずLaTeX記法（インラインは $ ... $、独立行は $$ ... $$）で出力すること。
+
+途中式、式変形の理由説明、補足図の解説文は省略せずすべて維持すること。
+
+ページ番号、ヘッダー/フッター等のメタデータは除外すること。`;
+                } else if (selectedSubject.includes("物理") || selectedSubject.includes("化学") || selectedSubject.includes("生物") || selectedSubject.includes("地学")) {
+                    byotPromptEl.textContent = `【理科参考書・文字起こし厳格ルール】
+
+本文、実験手順、観察結果、法則・公式、反応式、注釈テキストのみを抽出すること。
+
+物理・化学の数式や単位は正確に抽出し、必要に応じて $ ... $ で出力すること。
+
+ページ番号、ヘッダー/フッター等のメタデータは除外すること。`;
+                } else {
+                    byotPromptEl.textContent = `【改良版・厳格な遵守ルール】
+
+本文・注釈・史料テキストのみを抽出すること。
+
+ページ番号、ヘッダー/フッター、画像の寸法・所蔵地などのメタデータは除外すること。
+
+地図や図中のテキストで、単語の羅列にしかならないものは除外すること。
+
+文頭や文末で途切れている不完全な文章は除外し、意味が通る完全な節・段落のみを出力すること。
+
+階層構造（見出し・注釈番号）と改行は維持すること。`;
                 }
             }
         }
@@ -13099,11 +13145,17 @@ ${extractedText || "（本文なし）"}
 
         function isHistoryLesson(lesson) {
             if (!lesson) return false;
-            const s = lesson.subject || (typeof detectLessonSubject === "function" ? detectLessonSubject(lesson) : "");
-            if (s === "日本史" || s === "歴史" || s === "公共" || s === "政治・経済" || s === "政経" || s === "公民") return true;
-            if (Array.isArray(lesson.historicalEvents) && lesson.historicalEvents.length > 0) return true;
-            const text = `${lesson.title || ""} ${lesson.topic || ""} ${lesson.topicKey || ""} ${(lesson.extractedText || "").slice(0, 1500)}`;
-            return /(時代|幕府|天皇|将軍|戦争|事件|条約|改革|年表|乱|の変|開国|遣隋使|遣唐使|縄文|弥生|古墳|飛鳥|奈良|平安|鎌倉|室町|戦国|安土桃山|江戸|明治|大正|昭和|憲法|判例|違憲|条約|法制|人権|内閣|国会|選挙|社会保障|冷戦|ブレトンウッズ|プラザ合意)/.test(text);
+            const s = String(lesson.subject || (typeof detectLessonSubject === "function" ? detectLessonSubject(lesson) : "")).trim();
+            // 🚨 数学・理科（物理・化学・生物・地学）・情報・英語・国語等の非歴史科目は絶対に年表対象外！
+            if (s.includes("数") || s.includes("物理") || s.includes("化学") || s.includes("生物") || s.includes("地学") || s.includes("情報") || s.includes("英語") || s.includes("現代文") || s.includes("古文") || s.includes("漢文") || s.includes("国語")) {
+                return false;
+            }
+            // 🏛️ 日本史・世界史・歴史・公共・政経・公民・地理などの社会科のみを対象とする
+            const isSocial = (s === "日本史" || s === "世界史" || s === "歴史" || s === "公共" || s === "政治・経済" || s === "政経" || s === "公民" || s === "地理");
+            if (isSocial) return true;
+            // 教科未分類("その他"等)の場合、明示的な歴史重要キーワードのみ判定（数学の「式の変形」等で誤判定しないよう厳格化）
+            const text = `${lesson.title || ""} ${lesson.topic || ""} ${lesson.topicKey || ""}`;
+            return /(日本史|世界史|幕府|江戸時代|明治維新|戦国時代|古代史|憲法・判例)/.test(text);
         }
 
         async function generateHistoricalEvents(extractedText, lessonTitle, subjectName, preferredModel = null, onModelUsed = null, thinkingLevel = null) {
@@ -13197,13 +13249,18 @@ ${extractedText.slice(0, 15000)}`;
             const tabBtn = el("tab-btn-timeline");
             const allEvents = Array.isArray(currentLesson?.historicalEvents) ? currentLesson.historicalEvents : [];
 
-            // 日本史・公共等の科目または出来事が存在する場合はタブボタンをアクティブ表示
+            // 🏛️ 歴史・社会系科目のみタブボタンを表示（数学・理科等は絶対に非表示）
             if (tabBtn && currentLesson) {
                 const isHist = isHistoryLesson(currentLesson);
-                if (isHist || allEvents.length > 0) {
+                if (isHist) {
                     tabBtn.style.display = "inline-flex";
                 } else {
                     tabBtn.style.display = "none";
+                    // もし非歴史科目で年表タブがアクティブになっていたら、ノートまたは目次タブに切り替え
+                    if (tabBtn.classList.contains("active")) {
+                        const notesBtn = document.querySelector('.sidebar-tab-btn[data-tab="tab-notes"]');
+                        if (notesBtn) notesBtn.click();
+                    }
                 }
             }
 
@@ -15130,6 +15187,18 @@ ${existingLeads}
                     <p>${renderFormattedMarkdown(p.summary)}</p>
                 </div>
             `).join("");
+
+            // 🧠 数学・現代文のときは暗記事項自動抽出オプションを非表示＆OFF化
+            const planSubj = String(draftPlan.subject || selectedSubject || "").trim();
+            const isNoMemo = (planSubj.includes("数") || planSubj === "現代文");
+            const prevMemoWrap = el("preview-opt-autogen-memorize-wrap");
+            const prevMemoCb = el("preview-opt-autogen-memorize");
+            if (prevMemoWrap) {
+                prevMemoWrap.style.display = isNoMemo ? "none" : "flex";
+            }
+            if (prevMemoCb && isNoMemo) {
+                prevMemoCb.checked = false;
+            }
         }
 
         // --------------------------------------------------------------
@@ -15161,6 +15230,13 @@ ${existingLeads}
                 memorize = localStorage.getItem("flora_autogen_memorize") !== "false";
                 drills = localStorage.getItem("flora_autogen_drills") !== "false";
             }
+
+            // 数学・現代文のときは暗記事項自動抽出はスキップ（思考・解法・演習に集中）
+            const curSubj = String((isPreviewOpen && draftPlan?.subject) || selectedSubject || "").trim();
+            if (curSubj.includes("数") || curSubj === "現代文") {
+                memorize = false;
+            }
+
             return { lecture, memorize, drills };
         }
 
@@ -16307,6 +16383,18 @@ ${existingLeads}
             const listEl = el("lesson-list");
 
             renderLessonSubjectChips(sortedAll);
+
+            // 🏛️ 文化史ストリーム・年表一括再抽出ボタンの教科連動
+            // 数学・理科など非歴史科目に絞り込まれているときは非表示にしてUIをスマートに整頓
+            const isNonHistoryFilter = (lessonListSubjectFilter !== "すべて" && ["数学", "物理", "化学", "生物", "地学", "情報", "英語", "現代文"].some(k => lessonListSubjectFilter.includes(k)));
+            const cultureStreamBtn = el("btn-toolbar-culture-stream");
+            if (cultureStreamBtn) {
+                cultureStreamBtn.style.display = isNonHistoryFilter ? "none" : "inline-flex";
+            }
+            const batchTimelineBtn = el("btn-batch-reextract-timeline");
+            if (batchTimelineBtn) {
+                batchTimelineBtn.style.display = isNonHistoryFilter ? "none" : "inline-flex";
+            }
 
             // ソートセレクターの状態同期
             const sortSelect = el("lesson-sort-select");
@@ -21805,10 +21893,26 @@ ${curriculumRulePrompt}
             if (badgeEventsCount) badgeEventsCount.textContent = `${events.length}件`;
 
             // デフォルトは「暗記物を大切にキープ」
-            if (chkKeepMemo) chkKeepMemo.checked = memoPoints.length > 0;
+            const isHist = isHistoryLesson(currentLesson);
+            if (chkKeepMemo) {
+                chkKeepMemo.checked = memoPoints.length > 0;
+                // 数学で暗記事項が0件なら非表示にしてスッキリ
+                const memoWrap = chkKeepMemo.closest("label");
+                if (memoWrap) memoWrap.style.display = (currentLesson.subject === "数学" && memoPoints.length === 0) ? "none" : "flex";
+            }
             if (chkKeepDrills) chkKeepDrills.checked = drills.length > 0;
-            if (chkKeepTerms) chkKeepTerms.checked = terms.length > 0;
-            if (chkKeepEvents) chkKeepEvents.checked = events.length > 0;
+            if (chkKeepTerms) {
+                chkKeepTerms.checked = terms.length > 0;
+                const termsWrap = chkKeepTerms.closest("label");
+                if (termsWrap) termsWrap.style.display = (currentLesson.subject === "数学" && terms.length === 0) ? "none" : "flex";
+            }
+            if (chkKeepEvents) {
+                const eventsWrap = chkKeepEvents.closest("label");
+                if (eventsWrap) {
+                    eventsWrap.style.display = isHist ? "flex" : "none";
+                }
+                chkKeepEvents.checked = isHist && events.length > 0;
+            }
 
             if (selectRecreateStyle) {
                 selectRecreateStyle.value = currentLesson.teachingStyle === "socratic" ? "socratic" : "standard";
@@ -23430,10 +23534,10 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
             if (contWrap && contBtn) {
                 if (isCompleted && !currentLesson.continuationToLessonId) {
                     contWrap.style.display = "block";
-                    const isHistoryOrSingle = (detectLessonSubject(currentLesson) === "日本史" || getSubjectLearningTrack(detectLessonSubject(currentLesson)) === "single");
-                    contBtn.textContent = isHistoryOrSingle
+                    const isHistSubj = isHistoryLesson(currentLesson);
+                    contBtn.textContent = isHistSubj
                         ? `🔗 この授業の続き（次の時代・単元）を作成する`
-                        : `🔗 この授業の続きを作成する`;
+                        : `🔗 この授業の続き（次の単元）を作成する`;
                     contBtn.onclick = () => startContinuationLesson(currentLesson);
                 } else if (isCompleted && currentLesson.continuationToLessonId) {
                     contWrap.style.display = "block";
@@ -24776,15 +24880,60 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
 
             // 🔬 共テ理科基礎トラップ特訓ボタンの表示連動
             const scienceTrapBtn = el("lesson-science-trap-btn");
+            const subjName = String(currentLesson.subject || (typeof detectLessonSubject === "function" ? detectLessonSubject(currentLesson) : "")).trim();
             if (scienceTrapBtn) {
-                const s = String(currentLesson.subject || "");
-                const isScience = ["物理", "化学", "生物", "地学"].some(k => s.includes(k));
+                const isScience = ["物理", "化学", "生物", "地学"].some(k => subjName.includes(k));
                 if (isScience) {
                     scienceTrapBtn.style.display = "inline-flex";
                     const topicParam = String(currentLesson.topic || currentLesson.title || "");
-                    scienceTrapBtn.href = `custom-sprint.html?mode=science-trap&subject=${encodeURIComponent(s)}&field=${encodeURIComponent(topicParam)}`;
+                    scienceTrapBtn.href = `custom-sprint.html?mode=science-trap&subject=${encodeURIComponent(subjName)}&field=${encodeURIComponent(topicParam)}`;
                 } else {
                     scienceTrapBtn.style.display = "none";
+                }
+            }
+
+            // ⏳ 歴史年表タブの教科連動（数学・理科等は完全に非表示化＆アクティブ解除）
+            const isHist = isHistoryLesson(currentLesson);
+            const timelineTabBtn = el("tab-btn-timeline");
+            if (timelineTabBtn) {
+                timelineTabBtn.style.display = isHist ? "inline-flex" : "none";
+                if (!isHist && timelineTabBtn.classList.contains("active")) {
+                    const defaultTab = document.querySelector('.sidebar-tab-btn[data-tab="tab-parts"]') || document.querySelector('.sidebar-tab-btn[data-tab="tab-notes"]');
+                    if (defaultTab) defaultTab.click();
+                }
+            }
+
+            // 🧹 暗記事項の「ふりがな消去」ボタン連動（数学・理科・英語等では不要なため非表示）
+            const needsFurigana = (subjName === "日本史" || subjName === "世界史" || subjName === "歴史" || subjName === "地理" || subjName.includes("国語") || subjName.includes("現代文") || subjName.includes("古文") || subjName.includes("漢文") || subjName === "公共" || subjName === "倫理" || subjName === "政治・経済");
+            const btnCleanFurigana = el("btn-clean-furigana-points");
+            if (btnCleanFurigana) btnCleanFurigana.style.display = needsFurigana ? "inline-flex" : "none";
+            const btnBatchCleanFurigana = el("btn-batch-clean-furigana");
+            if (btnBatchCleanFurigana) btnBatchCleanFurigana.style.display = needsFurigana ? "inline-flex" : "none";
+
+            // 🧠 暗記事項ヘッダータイトルの教科別最適化（数学は公式・解法定石）
+            const memoTitleEl = el("memorize-tab-header-title");
+            if (memoTitleEl) {
+                if (subjName.includes("数")) {
+                    memoTitleEl.textContent = "🧠 重要公式・解法定石一覧";
+                } else if (subjName.includes("物理") || subjName.includes("化学") || subjName.includes("生物") || subjName.includes("地学")) {
+                    memoTitleEl.textContent = "🧠 重要公式・法則・用語一覧";
+                } else {
+                    memoTitleEl.textContent = "🧠 暗記すべき公式・用語一覧";
+                }
+            }
+
+            // 📝 講義下部のメモ追記ボタン文言切り替え
+            const addEventBtn = el("add-custom-event-btn");
+            if (addEventBtn) {
+                if (subjName.includes("数")) {
+                    addEventBtn.textContent = "📝 解法メモ・ポイント追記";
+                    addEventBtn.title = "授業に解法のポイントや自分用のメモを追記";
+                } else if (isHist) {
+                    addEventBtn.textContent = "📝 出来事・メモを追記";
+                    addEventBtn.title = "授業に補足出来事や自分用のメモを追記";
+                } else {
+                    addEventBtn.textContent = "📝 補足・メモを追記";
+                    addEventBtn.title = "授業に補足事項や自分用のメモを追記";
                 }
             }
 
@@ -24804,7 +24953,7 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
                 renderChoiceDrills();
             }
 
-            if (autogen.timeline !== false) {
+            if (autogen.timeline !== false && isHist) {
                 ensureHistoricalEvents(); // ⏳ 日本史・公共等の年表・重要年代もバックグラウンドで自動生成（ブロックしない）
             } else {
                 currentLesson.historicalEvents = currentLesson.historicalEvents || [];
