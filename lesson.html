@@ -205,6 +205,11 @@
             transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
             box-shadow: var(--shadow-xs);
             user-select: none;
+            position: relative;
+            z-index: 5;
+        }
+        .lesson-toolbar-toggle-btn * {
+            pointer-events: none;
         }
         .lesson-toolbar-toggle-btn:hover {
             background: var(--bg-subtle);
@@ -235,18 +240,21 @@
             display: grid;
             grid-template-rows: 0fr;
             opacity: 0;
-            transition: grid-template-rows 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, margin-bottom 0.25s ease;
+            transition: grid-template-rows 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, margin-bottom 0.25s ease;
             margin-bottom: 0;
             overflow: hidden;
-            visibility: hidden;
-            pointer-events: none;
         }
         .lesson-list-toolbar-container.is-open {
             grid-template-rows: 1fr;
             opacity: 1;
             margin-bottom: 1.25rem;
-            visibility: visible;
-            pointer-events: auto;
+        }
+        .lesson-list-toolbar-container > .lesson-list-toolbar {
+            min-height: 0;
+            overflow: hidden;
+        }
+        .lesson-list-toolbar-container.is-open > .lesson-list-toolbar {
+            overflow: visible;
         }
         .lesson-list-toolbar {
             overflow: hidden;
@@ -6298,23 +6306,6 @@
                                     <textarea class="note-textarea" id="direct-text-note-input" placeholder="（任意）特にここが分からない、この小見出しを重点的に、などのメモがあれば入力してください"></textarea>
                                 </div>
 
-                                    <label for="direct-text-input" style="font-size:0.82rem; font-weight:700; color:var(--text-primary); display:block; margin-bottom:0.35rem;">
-                                        📝 参考書・教科書の本文テキスト（ここに貼り付け） <span style="color:var(--danger); font-size:0.75rem;">*必須</span>
-                                    </label>
-                                    <textarea class="note-textarea" id="direct-text-input" rows="8" placeholder="ここにWeb版Geminiからコピーした文字起こしテキスト（または教科書・参考書の本文）を貼り付けてください...&#10;&#10;例：&#10;第2章 二次関数の最大・最小&#10;定義域に制限がある場合の最大値・最小値について考察する...&#10;1. 軸が定義域の内側にある場合&#10;頂点の y 座標が最小値（または最大値）となる..." style="min-height:160px; font-family:inherit; line-height:1.6;"></textarea>
-                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:0.3rem; margin-bottom:0.75rem; font-size:0.73rem; color:var(--text-secondary);">
-                                        <span id="direct-text-count">0 文字入力中</span>
-                                        <button type="button" id="paste-from-clipboard-btn" class="tactile-btn" style="font-size:0.72rem; padding:0.25rem 0.6rem; border-radius:var(--radius-sm); background:var(--bg-surface); border:1px solid var(--border-color); color:var(--text-primary); cursor:pointer;">
-                                            📋 クリップボードから貼り付け
-                                        </button>
-                                    </div>
-
-                                    <label for="direct-text-note-input" style="font-size:0.8rem; color:var(--text-secondary); display:block; margin-bottom:0.3rem; font-weight:600;">
-                                        💭 （任意）先生へのメモ・重点リクエスト
-                                    </label>
-                                    <textarea class="note-textarea" id="direct-text-note-input" placeholder="（任意）特にここが分からない、この小見出しを重点的に、などのメモがあれば入力してください"></textarea>
-                                </div>
-
                                 <div id="mode-group-topic" style="display:none;">
                                     <label style="font-size:0.8rem; color:var(--text-secondary); display:block; margin-bottom:0.3rem; font-weight:600;">
                                         📝 学びたい単元名（例：<span id="topic-placeholder-example">二次関数の最大最小</span>）
@@ -6618,7 +6609,7 @@
                                 </span>
                             </div>
                             <div class="lesson-list-title-right">
-                                <button type="button" class="lesson-toolbar-toggle-btn" id="btn-toggle-lesson-toolbar" aria-expanded="false" title="検索窓や設定・一括操作ツールの表示/非表示を切り替えます">
+                                <button type="button" class="lesson-toolbar-toggle-btn" id="btn-toggle-lesson-toolbar" aria-expanded="false" onclick="window.toggleLessonToolbar(event)" title="検索窓や設定・一括操作ツールの表示/非表示を切り替えます">
                                     <span class="toolbar-toggle-icon">🔍</span>
                                     <span id="lesson-toolbar-toggle-label">検索・設定ツール</span>
                                     <span class="toolbar-toggle-arrow">▾</span>
@@ -6670,42 +6661,63 @@
                     </div>
                     <script>
                         (function() {
-                            function initToolbarCollapse() {
+                            let isToggling = false;
+
+                            window.toggleLessonToolbar = function(e) {
+                                if (e) {
+                                    if (typeof e.preventDefault === "function") e.preventDefault();
+                                    if (typeof e.stopPropagation === "function") e.stopPropagation();
+                                }
+                                if (isToggling) return;
+                                isToggling = true;
+                                setTimeout(() => { isToggling = false; }, 180);
+
+                                const container = document.getElementById("lesson-list-toolbar-container");
+                                const isOpen = container ? container.classList.contains("is-open") : false;
+                                window.setLessonToolbarOpen(!isOpen, true);
+                            };
+
+                            window.setLessonToolbarOpen = function(open, animate) {
                                 const container = document.getElementById("lesson-list-toolbar-container");
                                 const btn = document.getElementById("btn-toggle-lesson-toolbar");
                                 const label = document.getElementById("lesson-toolbar-toggle-label");
-                                if (!container || !btn) return;
+                                if (!container) return;
 
-                                function setOpen(open, animate) {
-                                    if (!animate) {
-                                        container.style.transition = "none";
-                                        requestAnimationFrame(() => {
-                                            setTimeout(() => { if (container) container.style.transition = ""; }, 60);
-                                        });
-                                    }
-                                    container.classList.toggle("is-open", open);
-                                    btn.classList.toggle("is-open", open);
-                                    btn.setAttribute("aria-expanded", open ? "true" : "false");
-                                    const isJa = typeof floraLang !== "undefined" && floraLang.get ? floraLang.get() === "ja" : true;
-                                    if (label) {
-                                        label.textContent = open ? (isJa ? "閉じる" : "Close") : (isJa ? "検索・設定ツール" : "Search & Tools");
-                                    }
-                                    try { localStorage.setItem("flora_lesson_toolbar_open", open ? "true" : "false"); } catch(e) {}
+                                if (!animate) {
+                                    container.style.transition = "none";
+                                    requestAnimationFrame(() => {
+                                        setTimeout(() => { if (container) container.style.transition = ""; }, 50);
+                                    });
                                 }
 
-                                window.setLessonToolbarOpen = setOpen;
-                                window.toggleLessonToolbar = function() {
-                                    setOpen(!container.classList.contains("is-open"), true);
-                                };
+                                container.classList.toggle("is-open", open);
+                                if (btn) {
+                                    btn.classList.toggle("is-open", open);
+                                    btn.setAttribute("aria-expanded", open ? "true" : "false");
+                                }
 
-                                btn.onclick = function() {
-                                    window.toggleLessonToolbar();
-                                };
+                                const currentLang = (typeof floraLang !== "undefined" && floraLang.get) 
+                                    ? floraLang.get() 
+                                    : (localStorage.getItem("flora_lang") || "ja");
+                                const isJa = currentLang === "ja";
 
+                                if (label) {
+                                    label.textContent = open 
+                                        ? (isJa ? "閉じる" : "Close") 
+                                        : (isJa ? "検索・設定ツール" : "Search & Tools");
+                                }
+
+                                try {
+                                    localStorage.setItem("flora_lesson_toolbar_open", open ? "true" : "false");
+                                } catch(err) {}
+                            };
+
+                            function initToolbarCollapse() {
                                 let saved = "false";
                                 try { saved = localStorage.getItem("flora_lesson_toolbar_open"); } catch(e) {}
-                                setOpen(saved === "true", false);
+                                window.setLessonToolbarOpen(saved === "true", false);
                             }
+
                             if (document.readyState === "loading") {
                                 document.addEventListener("DOMContentLoaded", initToolbarCollapse);
                             } else {
@@ -18286,48 +18298,17 @@ ${existingLeads}
         }
 
         // ==============================================================
-        // 🛠️ 過去の授業一覧：ツールバー可変式開閉制御
+        // 🛠️ 過去の授業一覧：ツールバー可変式開閉制御（グローバル関数参照）
         // ==============================================================
-        function setLessonToolbarOpen(open, animate = true) {
-            const container = el("lesson-list-toolbar-container");
-            const btn = el("btn-toggle-lesson-toolbar");
-            const label = el("lesson-toolbar-toggle-label");
-            if (!container || !btn) return;
-
-            if (!animate) {
-                container.style.transition = "none";
-                requestAnimationFrame(() => {
-                    setTimeout(() => {
-                        if (container) container.style.transition = "";
-                    }, 60);
-                });
-            }
-
-            container.classList.toggle("is-open", open);
-            btn.classList.toggle("is-open", open);
-            btn.setAttribute("aria-expanded", open ? "true" : "false");
-
-            const isJa = typeof floraLang !== "undefined" && floraLang.get ? floraLang.get() === "ja" : true;
-            if (label) {
-                label.textContent = open 
-                    ? (isJa ? "閉じる" : "Close") 
-                    : (isJa ? "検索・設定ツール" : "Search & Tools");
-            }
-
-            localStorage.setItem("flora_lesson_toolbar_open", open ? "true" : "false");
-        }
-        window.setLessonToolbarOpen = setLessonToolbarOpen;
-
-        function toggleLessonToolbar() {
-            const container = el("lesson-list-toolbar-container");
-            const isOpen = container?.classList.contains("is-open");
+        const setLessonToolbarOpen = window.setLessonToolbarOpen || function(open, animate) {
+            const container = document.getElementById("lesson-list-toolbar-container");
+            if (container) container.classList.toggle("is-open", open);
+        };
+        const toggleLessonToolbar = window.toggleLessonToolbar || function(e) {
+            const container = document.getElementById("lesson-list-toolbar-container");
+            const isOpen = container ? container.classList.contains("is-open") : false;
             setLessonToolbarOpen(!isOpen, true);
-        }
-        window.toggleLessonToolbar = toggleLessonToolbar;
-
-        el("btn-toggle-lesson-toolbar")?.addEventListener("click", () => {
-            toggleLessonToolbar();
-        });
+        };
 
         // 絞り込み中バッジの更新
         function updateLessonFilterBadge(totalCount, filteredCount) {
