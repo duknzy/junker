@@ -4115,22 +4115,42 @@
             const isCompleted = lesson.status === "completed" || (currentPartIdx >= parts.length - 1 && history.length > 0);
             const nxt = lesson.level ? nextLevelOf(lesson) : null;
             if (isCompleted) {
+                // 🧪 公式参考書の次講判定
+                const tbItem = getMobileTextbookChapterInfo(lesson);
+                const nextTb = tbItem ? getMobileNextTextbookChapterInfo(tbItem) : null;
+
                 let ctaHtml = `
                     <div style="background:var(--bg-surface); border:1.5px solid var(--primary); border-radius:var(--radius-lg); padding:1.2rem; margin-top:1.5rem; text-align:center; box-shadow:var(--shadow-sm);">
                         <div style="font-size:1.1rem; font-weight:800; color:var(--text-primary); margin-bottom:0.4rem;">🎉 全パートの講義を修了しました！</div>
                         <div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:1rem; line-height:1.6;">本単元の基本事項と解法ステップをマスターしました。次のレベルや続きの単元に挑戦して定着させましょう！</div>
                         <div style="display:flex; flex-direction:column; gap:0.55rem;">
                 `;
-                if (nxt && !lesson.levelUpToLessonId) {
+
+                if (nextTb) {
+                    ctaHtml += `
+                        <button type="button" class="m-btn m-btn-primary" id="m-btn-next-textbook-cta" style="font-size:0.88rem; min-height:46px; justify-content:center; background:linear-gradient(135deg, #0891b2, #0284c7); border:none; color:#fff; font-weight:800; box-shadow:0 3px 12px rgba(8,145,178,0.35);">
+                            ▶ 次の授業（第${nextTb.chapter}講：${nextTb.lesson_title}）へ進む ➔
+                        </button>
+                    `;
+                }
+
+                if (nxt && !lesson.levelUpToLessonId && !nextTb) {
                     ctaHtml += `<button type="button" class="m-btn m-btn-primary" id="m-btn-levelup-cta" style="font-size:0.85rem; min-height:44px; justify-content:center;">🎓 次のレベル「${nxt}」に進む</button>`;
                 }
+
+                if (!nextTb) {
+                    ctaHtml += `
+                        <button type="button" class="m-btn" id="m-btn-continuation-cta" style="font-size:0.85rem; min-height:44px; justify-content:center; background:var(--bg-subtle); border:1px solid var(--border-subtle); color:var(--text-primary);">🔗 続きの単元を作成して進める</button>
+                    `;
+                }
+
                 ctaHtml += `
-                            <button type="button" class="m-btn" id="m-btn-continuation-cta" style="font-size:0.85rem; min-height:44px; justify-content:center; background:var(--bg-subtle); border:1px solid var(--border-subtle); color:var(--text-primary);">🔗 続きの単元を作成して進める</button>
                         </div>
                     </div>
                 `;
                 stage.innerHTML += ctaHtml;
                 setTimeout(() => {
+                    document.getElementById("m-btn-next-textbook-cta")?.addEventListener("click", () => goToNextTextbookLessonM(nextTb, lesson));
                     document.getElementById("m-btn-levelup-cta")?.addEventListener("click", () => startLevelUp(lesson));
                     document.getElementById("m-btn-continuation-cta")?.addEventListener("click", () => startContinuationLesson(lesson));
                 }, 0);
@@ -8815,6 +8835,87 @@ ${levels.map((l, i) => `${i + 1}. 「${l.value}」(${l.label})`).join("\n")}
                 }
                 createModal.style.display = "flex";
                 if (window.mToast) mToast(`🔍 つまずき単元「${handoff.topic}」の授業プランをセットしました`);
+            }
+        }
+
+        // 🧪 公式参考書（全10講）判定ヘルパー (Mobile)
+        function getMobileTextbookChapterInfo(lesson) {
+            if (!lesson) return null;
+            if (typeof CHEM_BASE_TEXTBOOK === "undefined" || !Array.isArray(CHEM_BASE_TEXTBOOK)) return null;
+            if (typeof lesson.chapter === "number") {
+                const item = CHEM_BASE_TEXTBOOK.find(t => t.chapter === lesson.chapter);
+                if (item) return item;
+            }
+            return CHEM_BASE_TEXTBOOK.find(t => 
+                (lesson.topicKey && t.topicKey === lesson.topicKey) ||
+                (lesson.title && (lesson.title.includes(t.lesson_title) || t.lesson_title.includes(lesson.title) || (t.topicKey && lesson.title.includes(t.topicKey))))
+            ) || null;
+        }
+
+        function getMobileNextTextbookChapterInfo(currentTbItem) {
+            if (!currentTbItem || typeof currentTbItem.chapter !== "number") return null;
+            const nextCh = currentTbItem.chapter + 1;
+            return CHEM_BASE_TEXTBOOK.find(t => t.chapter === nextCh) || null;
+        }
+
+        async function goToNextTextbookLessonM(nextTbItem, currentLesson) {
+            if (!nextTbItem) return;
+            if (!loginUid) {
+                if (window.mToast) mToast("次の授業へ進むにはログインしてください");
+                return;
+            }
+            if (window.mToast) mToast(`⏳ 第${nextTbItem.chapter}講「${nextTbItem.lesson_title}」を開いています...`);
+
+            try {
+                const snap = await get(ref(database, 'users/' + loginUid + '/lessons'));
+                const allLessons = snap.val() || {};
+                const existing = Object.values(allLessons).find(l => 
+                    l && (
+                        l.chapter === nextTbItem.chapter ||
+                        (l.topicKey === nextTbItem.topicKey && l.isOfficialTextbook) ||
+                        (l.title && l.title === nextTbItem.lesson_title)
+                    )
+                );
+                if (existing) {
+                    window.location.href = `lesson.html?id=${existing.id}`;
+                    return;
+                }
+
+                const newId = "LESSON_" + Date.now();
+                const now = new Date().toISOString();
+                const lessonObj = {
+                    id: newId,
+                    title: nextTbItem.lesson_title,
+                    topic: nextTbItem.topicKey,
+                    topicKey: nextTbItem.topicKey,
+                    subject: "化学基礎",
+                    level: "完全網羅マスター",
+                    levelIndex: 0,
+                    learningTrack: "single",
+                    extractedText: nextTbItem.extracted_text,
+                    parts: nextTbItem.parts,
+                    currentPartIndex: 0,
+                    status: "teaching",
+                    chatHistory: [],
+                    createdAt: now,
+                    updatedAt: now,
+                    keyTerms: nextTbItem.key_terms || [],
+                    inheritedKeyTerms: (currentLesson?.accumulatedKeyTerms || currentLesson?.keyTerms || []),
+                    accumulatedKeyTerms: [...(currentLesson?.accumulatedKeyTerms || currentLesson?.keyTerms || []), ...(nextTbItem.key_terms || [])],
+                    historicalEvents: [],
+                    sourceMode: "textbook",
+                    isOfficialTextbook: true,
+                    chapter: nextTbItem.chapter,
+                    autogenSettings: { memorize: true, drills: true, timeline: false },
+                    memorizationPoints: [],
+                    choiceDrills: []
+                };
+
+                await set(ref(database, 'users/' + loginUid + '/lessons/' + newId), removeUndefinedFields(lessonObj));
+                window.location.href = `lesson.html?id=${newId}`;
+            } catch (e) {
+                console.error("次の講義への遷移失敗:", e);
+                if (window.mToast) mToast("次の授業の開始に失敗しました: " + e.message);
             }
         }
 

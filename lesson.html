@@ -6824,7 +6824,14 @@
                                 <div id="drill-container-area"></div>
 
                                 <div id="completed-banner" class="completed-banner hidden" style="text-align: center; padding: 1.2rem; background: var(--brand-light); border-radius: var(--radius-md); border: 1px solid var(--brand-border); margin: 0.6rem 0;">
-                                    <div style="font-size: 1rem; font-weight: 700; color: var(--brand-primary);">🎉 この授業の全パートが修了しました！お疲れさまでした。</div>
+                                    <div style="font-size: 1rem; font-weight: 700; color: var(--brand-primary);" id="completed-banner-heading">🎉 この授業の全パートが修了しました！お疲れさまでした。</div>
+                                    <!-- 🧪 公式参考書（全10講）・ロードマップ直通ナビゲーションCTA -->
+                                    <div id="next-textbook-cta-wrap" style="margin-top:0.85rem; display:none;">
+                                        <button type="button" class="flora-btn flora-btn-primary btn-lg" id="next-textbook-cta-btn" style="background:linear-gradient(135deg, #0891b2, #0284c7); border:none; color:#fff; font-weight:800; font-size:0.95rem; padding:0.65rem 1.4rem; box-shadow:0 4px 16px rgba(8,145,178,0.35); gap:0.45rem; display:inline-flex; align-items:center; border-radius:var(--radius-md); cursor:pointer;">
+                                            <span id="next-textbook-cta-label">▶ 次の授業へ進む ➔</span>
+                                        </button>
+                                        <div id="next-textbook-cta-desc" style="font-size:0.75rem; color:var(--text-secondary); margin-top:0.35rem; font-weight:500;"></div>
+                                    </div>
                                     <div id="level-up-cta-wrap" style="margin-top:0.6rem; display:none;">
                                         <button type="button" class="flora-btn flora-btn-primary btn-sm" id="level-up-cta-btn"></button>
                                     </div>
@@ -21531,27 +21538,122 @@ ${curriculumRulePrompt}
             handleLessonNoteInput();
         };
 
+        // 🧠 講義DOMからTeX数式・ルビ・構造を正確に復元するテキスト抽出ヘルパー
+        function extractCleanLectureTextFromRange(range) {
+            if (!range) return "";
+            try {
+                const fragment = range.cloneContents();
+
+                // 1. KaTeX要素の復元: <span class="katex"> -> $tex$
+                fragment.querySelectorAll(".katex").forEach(kEl => {
+                    const annotation = kEl.querySelector('annotation[encoding="application/x-tex"]');
+                    const tex = annotation ? annotation.textContent.trim() : "";
+                    if (tex) {
+                        const isDisplay = kEl.classList.contains("katex-display") || !!kEl.closest(".katex-display");
+                        const mathStr = isDisplay ? `\n$$${tex}$$\n` : `$${tex}$`;
+                        kEl.parentNode.replaceChild(document.createTextNode(mathStr), kEl);
+                    } else {
+                        const plain = (kEl.textContent || "").replace(/\s+/g, "");
+                        kEl.parentNode.replaceChild(document.createTextNode(plain ? `$${plain}$` : ""), kEl);
+                    }
+                });
+
+                // 2. MathJax要素の復元: mjx-container, .MathJax -> $tex$
+                fragment.querySelectorAll("mjx-container, .MathJax").forEach(mjxEl => {
+                    const tex = mjxEl.getAttribute("data-tex") || (mjxEl.querySelector('annotation[encoding="application/x-tex"]') || {}).textContent || "";
+                    if (tex) {
+                        const isDisplay = mjxEl.getAttribute("display") === "true";
+                        const mathStr = isDisplay ? `\n$$${tex.trim()}$$\n` : `$${tex.trim()}$`;
+                        mjxEl.parentNode.replaceChild(document.createTextNode(mathStr), mjxEl);
+                    }
+                });
+
+                // 3. ルビタグの正規化: <ruby>漢字<rt>よみ</rt></ruby> -> 漢字（よみ）
+                fragment.querySelectorAll("ruby").forEach(rb => {
+                    const rt = rb.querySelector("rt");
+                    const rtText = rt ? rt.textContent.trim() : "";
+                    if (rt) rt.remove();
+                    const baseText = rb.textContent.trim();
+                    const rubyStr = rtText ? `${baseText}（${rtText}）` : baseText;
+                    rb.parentNode.replaceChild(document.createTextNode(rubyStr), rb);
+                });
+
+                // 4. 不要なボタン・SVG・ツールチップ等のUI要素を排除
+                fragment.querySelectorAll("button, svg, .bubble-actions, .lesson-selection-quote-tooltip, .diagram-tool-btn, .bubble-regenerating-overlay, .flora-blank").forEach(el => el.remove());
+
+                // 5. 改行要素・ブロック要素の前後に適切な改行を挿入
+                fragment.querySelectorAll("br").forEach(br => {
+                    br.parentNode.replaceChild(document.createTextNode("\n"), br);
+                });
+                fragment.querySelectorAll("h1, h2, h3, h4, p, div, li, tr, hr").forEach(block => {
+                    block.insertAdjacentText("beforebegin", "\n");
+                    block.insertAdjacentText("afterend", "\n");
+                });
+
+                const temp = document.createElement("div");
+                temp.appendChild(fragment);
+                const raw = temp.innerText || temp.textContent || "";
+                return cleanLectureQuotedText(raw);
+            } catch (err) {
+                console.warn("レンジテキスト抽出フォールバック:", err);
+                return cleanLectureQuotedText(range.toString());
+            }
+        }
+
+        // 引用用テキストの改行・記号クリーニング
+        function cleanLectureQuotedText(text) {
+            if (!text) return "";
+            return String(text)
+                .replace(/\r\n/g, "\n")
+                .replace(/\r/g, "\n")
+                // リスト記号（• または ・）をMarkdownの標準ハイフンに正規化
+                .replace(/^[ \t]*[•・][ \t]*/gm, "- ")
+                .split("\n")
+                .map(line => line.trim())
+                // 連続する空行を1行に圧縮し、無駄な空行やゴミ記号のみの行を除去
+                .filter((line, idx, arr) => {
+                    if (!line && idx > 0 && !arr[idx - 1]) return false;
+                    return true;
+                })
+                .join("\n")
+                .trim();
+        }
+
+        // Markdown引用ブロック（> ...）の整形組み立て
+        function buildFormattedQuoteMarkdown(cleanText, headerLabel) {
+            if (!cleanText) return "";
+            const lines = cleanText.split("\n");
+            const quotedLines = lines.map(line => line ? `> ${line}` : `>`);
+            return `\n> 📖 **${headerLabel}:**\n${quotedLines.join("\n")}\n\n`;
+        }
+
         // 講義吹き出しのワンクリック引用
         window.quoteLessonMsgToNote = function(msgIdx) {
             if (!currentLesson || !Array.isArray(currentLesson.chatHistory) || !currentLesson.chatHistory[msgIdx]) return;
             const msg = currentLesson.chatHistory[msgIdx];
 
-            // 選択テキストがあればそれを優先、なければ吹き出し全文（SVG等除去）
             let quoteText = "";
-            const sel = window.getSelection ? window.getSelection().toString().trim() : "";
-            if (sel) {
-                quoteText = sel;
-            } else {
-                quoteText = (msg.content || "")
-                    .replace(/<svg[\s\S]*?<\/svg>/gi, "")
-                    .replace(/<[^>]+>/g, "")
-                    .trim();
+            const sel = window.getSelection ? window.getSelection() : null;
+            const selString = sel ? sel.toString().trim() : "";
+
+            // 選択範囲が存在すればDOMレンジから正確に抽出
+            if (selString && sel && sel.rangeCount > 0) {
+                quoteText = extractCleanLectureTextFromRange(sel.getRangeAt(0));
+            }
+
+            // 選択がない、または抽出結果が空なら、元の完全な講義Markdown（数式・記法完全保持）を使用
+            if (!quoteText) {
+                quoteText = cleanLectureQuotedText(
+                    (msg.content || "")
+                        .replace(/<svg[\s\S]*?<\/svg>/gi, "")
+                        .replace(/<[^>]+>/g, "")
+                );
             }
 
             if (!quoteText) return;
 
             const partNum = (typeof currentLesson.currentPartIndex === "number") ? currentLesson.currentPartIndex + 1 : 1;
-            const quoteMd = `\n> 📖 **第${partNum}回 講義より引用:**\n> ${quoteText.split("\n").join("\n> ")}\n\n`;
+            const quoteMd = buildFormattedQuoteMarkdown(quoteText, `第${partNum}回 講義より${selString ? "抜粋" : "引用"}`);
 
             appendContentToNote(quoteMd, "📝 講義の解説を授業ノートに引用しました！");
         };
@@ -21580,7 +21682,7 @@ ${curriculumRulePrompt}
                 if (e.target.closest(".lesson-selection-quote-tooltip") || e.target.closest("button, input, textarea")) return;
 
                 const sel = window.getSelection();
-                if (!sel || sel.isCollapsed) {
+                if (!sel || sel.isCollapsed || sel.rangeCount === 0) {
                     removeTooltip();
                     return;
                 }
@@ -21613,9 +21715,14 @@ ${curriculumRulePrompt}
                 tooltip.onmousedown = (te) => {
                     te.preventDefault();
                     te.stopPropagation();
-                    const partNum = (typeof currentLesson?.currentPartIndex === "number") ? currentLesson.currentPartIndex + 1 : 1;
-                    const quoteMd = `\n> 📖 **第${partNum}回 講義より抜粋:**\n> ${selText.split("\n").join("\n> ")}\n\n`;
-                    appendContentToNote(quoteMd, "📝 選択した解説をノートに引用しました！");
+
+                    // DOMレンジから数式・記法・テキストを美しく抽出
+                    const cleanText = extractCleanLectureTextFromRange(range);
+                    if (cleanText) {
+                        const partNum = (typeof currentLesson?.currentPartIndex === "number") ? currentLesson.currentPartIndex + 1 : 1;
+                        const quoteMd = buildFormattedQuoteMarkdown(cleanText, `第${partNum}回 講義より抜粋`);
+                        appendContentToNote(quoteMd, "📝 選択した解説をノートに引用しました！");
+                    }
                     removeTooltip();
                     if (window.getSelection) window.getSelection().removeAllRanges();
                 };
@@ -24161,6 +24268,111 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
             });
         }
 
+        // 🧪 公式参考書（全10講）・ロードマップ判定ヘルパー
+        function getLessonTextbookChapterInfo(lesson) {
+            if (!lesson) return null;
+            if (typeof CHEM_BASE_TEXTBOOK === "undefined" || !Array.isArray(CHEM_BASE_TEXTBOOK)) return null;
+
+            // 1. lesson.chapter が明示されているか
+            if (typeof lesson.chapter === "number") {
+                const item = CHEM_BASE_TEXTBOOK.find(t => t.chapter === lesson.chapter);
+                if (item) return item;
+            }
+
+            // 2. topicKey または title でマッチング
+            const itemByTopic = CHEM_BASE_TEXTBOOK.find(t => 
+                (lesson.topicKey && t.topicKey === lesson.topicKey) ||
+                (lesson.title && (lesson.title.includes(t.lesson_title) || t.lesson_title.includes(lesson.title) || (t.topicKey && lesson.title.includes(t.topicKey))))
+            );
+            return itemByTopic || null;
+        }
+
+        function getNextTextbookChapterInfo(currentTbItem) {
+            if (!currentTbItem || typeof currentTbItem.chapter !== "number") return null;
+            const nextCh = currentTbItem.chapter + 1;
+            return CHEM_BASE_TEXTBOOK.find(t => t.chapter === nextCh) || null;
+        }
+
+        // 🚀 公式参考書（全10講）の次の授業へワンタップで直通遷移（新規作成の手間ゼロ）
+        async function goToNextTextbookLesson(nextTbItem) {
+            if (!nextTbItem) return;
+            if (!loginUid) {
+                showToast("次の授業へ進むにはログインしてください", "warning");
+                return;
+            }
+
+            const btn = el("next-textbook-cta-btn");
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = `<span>⏳ 第${nextTbItem.chapter}講の受講枠を準備中...</span>`;
+            }
+
+            try {
+                // 1. 既存の授業に第N講が存在するか確認
+                let existingLessonId = null;
+                const snap = await get(ref(database, 'users/' + loginUid + '/lessons'));
+                const allLessons = snap.val() || {};
+                const existing = Object.values(allLessons).find(l => 
+                    l && (
+                        l.chapter === nextTbItem.chapter ||
+                        (l.topicKey === nextTbItem.topicKey && l.isOfficialTextbook) ||
+                        (l.title && l.title === nextTbItem.lesson_title)
+                    )
+                );
+                if (existing) {
+                    existingLessonId = existing.id;
+                }
+
+                if (existingLessonId) {
+                    showToast(`🚀 作成済みの第${nextTbItem.chapter}講「${nextTbItem.lesson_title}」を開きます！`, "success", 2500);
+                    window.location.href = `lesson.html?id=${existingLessonId}`;
+                    return;
+                }
+
+                // 2. まだ存在しない場合は公式テキストから即座に生成・保存して遷移
+                const newId = "LESSON_" + Date.now();
+                const now = new Date().toISOString();
+                const lessonObj = {
+                    id: newId,
+                    title: nextTbItem.lesson_title,
+                    topic: nextTbItem.topicKey,
+                    topicKey: nextTbItem.topicKey,
+                    subject: "化学基礎",
+                    level: "完全網羅マスター",
+                    levelIndex: 0,
+                    learningTrack: "single",
+                    extractedText: nextTbItem.extracted_text,
+                    parts: nextTbItem.parts,
+                    currentPartIndex: 0,
+                    status: "teaching",
+                    chatHistory: [],
+                    createdAt: now,
+                    updatedAt: now,
+                    keyTerms: nextTbItem.key_terms || [],
+                    inheritedKeyTerms: (currentLesson.accumulatedKeyTerms || currentLesson.keyTerms || []),
+                    accumulatedKeyTerms: [...(currentLesson.accumulatedKeyTerms || currentLesson.keyTerms || []), ...(nextTbItem.key_terms || [])],
+                    historicalEvents: [],
+                    sourceMode: "textbook",
+                    isOfficialTextbook: true,
+                    chapter: nextTbItem.chapter,
+                    autogenSettings: { memorize: true, drills: true, timeline: false },
+                    memorizationPoints: [],
+                    choiceDrills: []
+                };
+
+                await set(ref(database, 'users/' + loginUid + '/lessons/' + newId), removeUndefinedFields(lessonObj));
+                showToast(`🎉 第${nextTbItem.chapter}講「${nextTbItem.lesson_title}」を開きました！受講を開始します`, "success", 3000);
+                window.location.href = `lesson.html?id=${newId}`;
+            } catch (e) {
+                console.error("次の講義への遷移失敗:", e);
+                showToast("次の授業の開始に失敗しました: " + e.message, "error", 6000);
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = `<span>▶ 次の授業（第${nextTbItem.chapter}講：${nextTbItem.lesson_title}）へ進む ➔</span>`;
+                }
+            }
+        }
+
         function updateCompletionUI() {
             const isCompleted = currentLesson.status === "completed";
             el("completed-banner").classList.toggle("hidden", !isCompleted);
@@ -24169,10 +24381,40 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
             const isLastPart = currentLesson.currentPartIndex >= currentLesson.parts.length - 1;
             el("next-part-btn").textContent = isLastPart ? "🏁 この授業を完了する" : "▶ 次のパートへ進む";
 
+            // 🧪 公式参考書（全10講）の直通判定
+            const tbItem = getLessonTextbookChapterInfo(currentLesson);
+            const nextTbItem = tbItem ? getNextTextbookChapterInfo(tbItem) : null;
+            const nextTbWrap = el("next-textbook-cta-wrap");
+            const nextTbBtn = el("next-textbook-cta-btn");
+            const nextTbLabel = el("next-textbook-cta-label");
+            const nextTbDesc = el("next-textbook-cta-desc");
+
+            if (isCompleted && nextTbItem) {
+                if (nextTbWrap) nextTbWrap.style.display = "block";
+                if (nextTbLabel) nextTbLabel.textContent = `▶ 次の授業（第${nextTbItem.chapter}講：${nextTbItem.lesson_title}）へ進む ➔`;
+                if (nextTbDesc) nextTbDesc.textContent = `✨ 面倒な授業作成・入力は一切不要！ワンタップで次の講義が始まります`;
+                if (nextTbBtn) {
+                    nextTbBtn.disabled = false;
+                    nextTbBtn.onclick = () => goToNextTextbookLesson(nextTbItem);
+                }
+            } else if (isCompleted && tbItem && tbItem.chapter === 10) {
+                if (nextTbWrap) {
+                    nextTbWrap.style.display = "block";
+                    nextTbWrap.innerHTML = `
+                        <div style="background:rgba(5, 150, 105, 0.12); border:1.5px solid #059669; border-radius:var(--radius-md); padding:0.8rem 1.2rem; color:#065f46; font-weight:700;">
+                            🏆 祝・化学基礎公式参考書（全10講）完全修了！<br>
+                            <span style="font-size:0.82rem; font-weight:normal;">共通テスト化学基礎の全範囲を制覇しました。演習ドリルやスプリントで定着させましょう！</span>
+                        </div>
+                    `;
+                }
+            } else {
+                if (nextTbWrap) nextTbWrap.style.display = "none";
+            }
+
             const ctaWrap = el("level-up-cta-wrap");
             const ctaBtn = el("level-up-cta-btn");
             const nxt = isCompleted && currentLesson.level ? nextLevelOf(currentLesson) : null;
-            if (isCompleted && nxt && !currentLesson.levelUpToLessonId) {
+            if (isCompleted && nxt && !currentLesson.levelUpToLessonId && !nextTbItem) {
                 ctaWrap.style.display = "block";
                 ctaBtn.textContent = `🎓 次は「${nxt}」に進む`;
                 ctaBtn.onclick = () => startLevelUp(currentLesson);
@@ -24180,18 +24422,18 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
                 ctaWrap.style.display = "none";
             }
 
-            // 🔗 続きの授業（次の単元/時代）を作成するCTA
+            // 🔗 続きの授業（次の単元/時代）を作成するCTA（公式参考書で次講がある場合は重複回避）
             const contWrap = el("continuation-cta-wrap");
             const contBtn = el("continuation-cta-btn");
             if (contWrap && contBtn) {
-                if (isCompleted && !currentLesson.continuationToLessonId) {
+                if (isCompleted && !currentLesson.continuationToLessonId && !nextTbItem) {
                     contWrap.style.display = "block";
                     const isHistSubj = isHistoryLesson(currentLesson);
                     contBtn.textContent = isHistSubj
                         ? `🔗 この授業の続き（次の時代・単元）を作成する`
                         : `🔗 この授業の続き（次の単元）を作成する`;
                     contBtn.onclick = () => startContinuationLesson(currentLesson);
-                } else if (isCompleted && currentLesson.continuationToLessonId) {
+                } else if (isCompleted && currentLesson.continuationToLessonId && !nextTbItem) {
                     contWrap.style.display = "block";
                     contBtn.textContent = `▶ 次の続きの授業へ進む ➔`;
                     contBtn.onclick = () => {
@@ -24338,6 +24580,15 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
 
                 updateCompletionUI();
                 btn.disabled = false;
+
+                // 🧪 公式参考書の次講がある場合、ワンタップ遷移をスムーズに案内
+                const tbItem = getLessonTextbookChapterInfo(currentLesson);
+                const nextTb = tbItem ? getNextTextbookChapterInfo(tbItem) : null;
+                if (nextTb) {
+                    showToast(`🎉 第${tbItem.chapter}講修了！画面下のボタンから第${nextTb.chapter}講「${nextTb.lesson_title}」へワンタップで進めます`, "success", 6000);
+                    const wrap = el("completed-banner");
+                    if (wrap) wrap.scrollIntoView({ behavior: "smooth", block: "center" });
+                }
                 return;
             }
 
