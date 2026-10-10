@@ -3076,6 +3076,235 @@
             font-size: 0.76rem;
             border: 1px solid var(--border-color);
         }
+
+        /* 📝 授業ノート専用スタイル */
+        .notes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(460px, 1fr));
+            gap: 1.25rem;
+            align-items: start;
+        }
+        @media (max-width: 640px) {
+            .notes-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+        }
+        .note-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-xs);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+        }
+        .note-card:hover {
+            border-color: #94A3B8;
+            box-shadow: var(--shadow-sm);
+        }
+        .note-card-header {
+            padding: 0.85rem 1.1rem;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--bg-subtle);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+        .note-card-title-group {
+            flex: 1;
+            min-width: 220px;
+        }
+        .note-card-title-link {
+            font-size: 0.98rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            text-decoration: none;
+            line-height: 1.35;
+            display: inline-block;
+            transition: color 0.12s ease;
+        }
+        .note-card-title-link:hover {
+            color: var(--brand-primary);
+            text-decoration: underline;
+        }
+        .note-card-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            font-size: 0.73rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+            flex-wrap: wrap;
+        }
+        .note-card-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+        }
+        .note-card-body-wrap {
+            padding: 1.1rem;
+            position: relative;
+        }
+        .note-card-content {
+            font-size: 0.88rem;
+            line-height: 1.7;
+            color: var(--text-primary);
+            word-break: break-word;
+            max-height: 250px;
+            overflow: hidden;
+            position: relative;
+            transition: max-height 0.25s ease;
+        }
+        .note-card-content:not(.is-expanded)::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            background: linear-gradient(to bottom, transparent, var(--bg-surface));
+            pointer-events: none;
+        }
+        .note-card-content.is-expanded {
+            max-height: none;
+        }
+        .note-expand-bar {
+            margin-top: 0.65rem;
+            text-align: center;
+        }
+        .note-expand-btn, .note-collapse-btn {
+            background: var(--bg-subtle);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 0.45rem 1rem;
+            font-size: 0.78rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.35rem;
+        }
+        .note-expand-btn:hover, .note-collapse-btn:hover {
+            background: var(--bg-surface);
+            color: var(--brand-primary);
+            border-color: var(--brand-primary);
+        }
+
+        /* 引用・見出し・テーブル・マーカー */
+        .note-card-content blockquote {
+            margin: 0.6rem 0;
+            padding: 0.5rem 0.8rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+        .note-card-content blockquote.note-lecture-quote {
+            border-left: 3.5px solid #6366f1;
+            background: rgba(99, 102, 241, 0.08);
+            color: var(--text-primary);
+        }
+        .note-card-content blockquote.note-trap-quote {
+            border-left: 3.5px solid #f59e0b;
+            background: rgba(245, 158, 11, 0.08);
+            color: var(--text-primary);
+        }
+        .note-card-content blockquote.note-point-quote {
+            border-left: 3.5px solid #059669;
+            background: rgba(5, 150, 105, 0.08);
+            color: var(--text-primary);
+        }
+        .note-card-content blockquote.note-quote {
+            border-left: 3.5px solid var(--border-color);
+            background: var(--bg-subtle);
+            color: var(--text-primary);
+        }
+        .note-card-content .note-h2 {
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin: 0.8rem 0 0.4rem 0;
+            padding-bottom: 0.25rem;
+            border-bottom: 1.5px solid var(--border-color);
+        }
+        .note-card-content .note-task-item {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            margin: 0.3rem 0;
+            font-size: 0.85rem;
+        }
+        .note-card-content .note-task-item.is-checked {
+            text-decoration: line-through;
+            opacity: 0.65;
+        }
+        .note-card-content .flora-marker {
+            background: linear-gradient(transparent 55%, rgba(253, 224, 71, 0.65) 55%);
+            font-weight: 700;
+            padding: 0 0.15rem;
+            border-radius: 2px;
+        }
+        .note-card-content .note-table-wrap {
+            overflow-x: auto;
+            margin: 0.6rem 0;
+        }
+        .note-card-content .note-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+        }
+        .note-card-content .note-table th, .note-card-content .note-table td {
+            border: 1px solid var(--border-color);
+            padding: 0.4rem 0.6rem;
+            text-align: left;
+        }
+        .note-card-content .note-table th {
+            background: var(--bg-subtle);
+            font-weight: 700;
+        }
+
+        /* 📋 授業ノート コンパクトリストテーブル */
+        .notes-compact-table-wrap {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            overflow-x: auto;
+            box-shadow: var(--shadow-xs);
+        }
+        .notes-compact-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.84rem;
+        }
+        .notes-compact-table th {
+            background: var(--bg-subtle);
+            padding: 0.7rem 0.9rem;
+            text-align: left;
+            font-weight: 700;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border-color);
+            white-space: nowrap;
+        }
+        .notes-compact-table td {
+            padding: 0.75rem 0.9rem;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-primary);
+            vertical-align: middle;
+        }
+        .notes-compact-table tr:last-child td {
+            border-bottom: none;
+        }
+        .notes-compact-table tr:hover td {
+            background: rgba(16, 185, 129, 0.03);
+        }
     </style>
 </head>
 <body>
@@ -3107,6 +3336,9 @@
                 <div class="main-tab-bar">
                     <button type="button" class="main-tab-btn active" id="tab-btn-insights">
                         🧠 気づき・極意メモ (<span id="count-insights">0</span>)
+                    </button>
+                    <button type="button" class="main-tab-btn" id="tab-btn-notes">
+                        📝 授業ノート (<span id="count-notes">0</span>)
                     </button>
                     <button type="button" class="main-tab-btn" id="tab-btn-memorize">
                         📌 暗記事項 (<span id="count-memorize">0</span>)
@@ -3267,6 +3499,28 @@
                         <button type="button" class="toggle-btn" id="btn-toggle-red-sheet-insights" title="赤シートのように気づき・極意を隠し、タップした項目だけめくって確認できます">
                             📕 赤シート（隠す）
                         </button>
+                    </div>
+
+                    <!-- 📝 授業ノートタブ専用のサブツールバー -->
+                    <div class="filter-row" id="notes-subtoolbar" style="border-top: 1px dashed var(--border-color); padding-top:0.6rem; display:none; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.6rem;">
+                        <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+                            <span class="filter-label">🎛 表示：</span>
+                            <button type="button" class="toggle-btn active" id="btn-notes-view-cards" title="カード形式でノート本文をプレビュー表示します">
+                                📖 ノートカード
+                            </button>
+                            <button type="button" class="toggle-btn" id="btn-notes-view-compact" title="1行ずつコンパクトにノート一覧を表示します">
+                                📋 爆速リスト
+                            </button>
+                            <span style="color: var(--border-color); margin: 0 0.15rem;">|</span>
+                            <button type="button" class="toggle-btn" id="btn-notes-toggle-all-expand" title="すべてのノートカードの本文を全文展開または折りたたみます">
+                                🔽 全文一括展開
+                            </button>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+                            <button type="button" class="flora-btn flora-btn-secondary" id="btn-copy-filtered-notes" style="font-size:0.74rem; font-weight:700; padding:0.32rem 0.75rem;" onclick="copyAllFilteredNotesMarkdown()" title="現在表示されている授業ノートの全Markdownをクリップボードに一括コピーします">
+                                📋 表示中ノートを一括コピー
+                            </button>
+                        </div>
                     </div>
 
                     <!-- 暗記事項タブ専用のサブツールバー -->
@@ -3432,6 +3686,9 @@
                 <div>
                     <!-- 1. 気づきメモビュー -->
                     <div id="view-insights"></div>
+
+                    <!-- 1.2. 授業ノートビュー -->
+                    <div id="view-notes" style="display: none;"></div>
 
                     <!-- 1.5. 暗記事項ビュー -->
                     <div id="view-memorize" style="display: none;"></div>
@@ -4230,7 +4487,9 @@
         initApiKeyManager({ needGemini: true, needDeepseek: false, autoOpen: false });
 
         let currentUser = null;
-        let activeTab = "insights"; // "insights" | "qna" | "mnemonics"
+        const initialUrlParams = new URLSearchParams(window.location.search);
+        const initialTabParam = initialUrlParams.get("tab") || (window.location.hash ? window.location.hash.replace("#", "") : null);
+        let activeTab = (initialTabParam && ["insights", "notes", "memorize", "drills", "qna", "mnemonics"].includes(initialTabParam)) ? initialTabParam : "insights";
         let insightViewMode = "card"; // "card" | "compact"
         let isGrouped = true; // 単元グループ化 ON/OFF
         let filterPinnedOnly = false; // スター付きのみ ON/OFF
@@ -4356,29 +4615,35 @@
 
         // 🎛 タブ切り替え
         const tabBtnInsights = document.getElementById("tab-btn-insights");
+        const tabBtnNotes = document.getElementById("tab-btn-notes");
         const tabBtnMemorize = document.getElementById("tab-btn-memorize");
         const tabBtnDrills = document.getElementById("tab-btn-drills");
         const tabBtnQna = document.getElementById("tab-btn-qna");
         const tabBtnMnemonics = document.getElementById("tab-btn-mnemonics");
         const insightSubToolbar = document.getElementById("insight-subtoolbar");
+        const notesSubToolbar = document.getElementById("notes-subtoolbar");
         const memorizeSubToolbar = document.getElementById("memorize-subtoolbar");
         const drillsSubToolbar = document.getElementById("drills-subtoolbar");
 
         function switchTab(tab) {
             activeTab = tab;
             tabBtnInsights.classList.toggle("active", tab === "insights");
+            if (tabBtnNotes) tabBtnNotes.classList.toggle("active", tab === "notes");
             tabBtnMemorize.classList.toggle("active", tab === "memorize");
             if (tabBtnDrills) tabBtnDrills.classList.toggle("active", tab === "drills");
             tabBtnQna.classList.toggle("active", tab === "qna");
             tabBtnMnemonics.classList.toggle("active", tab === "mnemonics");
 
             document.getElementById("view-insights").style.display = tab === "insights" ? "block" : "none";
+            const viewNotes = document.getElementById("view-notes");
+            if (viewNotes) viewNotes.style.display = tab === "notes" ? "block" : "none";
             document.getElementById("view-memorize").style.display = tab === "memorize" ? "block" : "none";
             const viewDrills = document.getElementById("view-drills");
             if (viewDrills) viewDrills.style.display = tab === "drills" ? "block" : "none";
             document.getElementById("view-qna").style.display = tab === "qna" ? "grid" : "none";
             document.getElementById("view-mnemonics").style.display = tab === "mnemonics" ? "grid" : "none";
             insightSubToolbar.style.display = tab === "insights" ? "flex" : "none";
+            if (notesSubToolbar) notesSubToolbar.style.display = tab === "notes" ? "flex" : "none";
             if (memorizeSubToolbar) memorizeSubToolbar.style.display = tab === "memorize" ? "flex" : "none";
             if (drillsSubToolbar) drillsSubToolbar.style.display = tab === "drills" ? "block" : "none";
             const batchBar = document.getElementById("memorize-batch-bar");
@@ -4399,10 +4664,55 @@
         }
 
         tabBtnInsights.addEventListener("click", () => switchTab("insights"));
+        if (tabBtnNotes) tabBtnNotes.addEventListener("click", () => switchTab("notes"));
         tabBtnMemorize.addEventListener("click", () => switchTab("memorize"));
         if (tabBtnDrills) tabBtnDrills.addEventListener("click", () => switchTab("drills"));
         tabBtnQna.addEventListener("click", () => switchTab("qna"));
         tabBtnMnemonics.addEventListener("click", () => switchTab("mnemonics"));
+
+        if (activeTab !== "insights") {
+            switchTab(activeTab);
+        }
+
+        // 📝 授業ノートサブツールバーのトグル＆操作
+        let notesViewMode = localStorage.getItem("fc_notes_view_mode") || "cards"; // "cards" | "compact"
+        let isAllNotesExpanded = false;
+        const expandedNoteLessonIds = new Set();
+
+        const btnNotesViewCards = document.getElementById("btn-notes-view-cards");
+        const btnNotesViewCompact = document.getElementById("btn-notes-view-compact");
+        const btnNotesToggleAllExpand = document.getElementById("btn-notes-toggle-all-expand");
+
+        function updateNotesViewModeButtons() {
+            if (btnNotesViewCards) btnNotesViewCards.classList.toggle("active", notesViewMode === "cards");
+            if (btnNotesViewCompact) btnNotesViewCompact.classList.toggle("active", notesViewMode === "compact");
+        }
+
+        if (btnNotesViewCards && btnNotesViewCompact) {
+            updateNotesViewModeButtons();
+            btnNotesViewCards.addEventListener("click", () => {
+                notesViewMode = "cards";
+                localStorage.setItem("fc_notes_view_mode", "cards");
+                updateNotesViewModeButtons();
+                resetDisplayLimits();
+                renderLessonNotes();
+            });
+            btnNotesViewCompact.addEventListener("click", () => {
+                notesViewMode = "compact";
+                localStorage.setItem("fc_notes_view_mode", "compact");
+                updateNotesViewModeButtons();
+                resetDisplayLimits();
+                renderLessonNotes();
+            });
+        }
+
+        if (btnNotesToggleAllExpand) {
+            btnNotesToggleAllExpand.addEventListener("click", () => {
+                isAllNotesExpanded = !isAllNotesExpanded;
+                btnNotesToggleAllExpand.textContent = isAllNotesExpanded ? "▲ 全文一括折りたたみ" : "🔽 全文一括展開";
+                renderLessonNotes();
+            });
+        }
 
         // 気づきサブツールバーのトグル
         const btnViewCard = document.getElementById("btn-view-card");
@@ -5013,6 +5323,20 @@
                         entry.totalCount++;
                         if (!item.isAnswered) entry.unlearnedCount++;
                         if (item.isAnswered && !item.isCorrect) entry.weakCount++;
+                    }
+                });
+            } else if (activeTab === "notes") {
+                const noteItems = buildLessonNoteItems();
+                noteItems.forEach(n => {
+                    const itemSubj = n.subject || "未分類";
+                    if (selectedSubject === "ALL" || itemSubj === selectedSubject) {
+                        const lid = n.lessonId;
+                        const title = n.title || "授業";
+                        if (!lessonsMap.has(lid)) {
+                            lessonsMap.set(lid, { id: lid, title: `📝 ${title}`, subject: itemSubj, totalCount: 0, unlearnedCount: 0, weakCount: 0 });
+                        }
+                        const entry = lessonsMap.get(lid);
+                        entry.totalCount++;
                     }
                 });
             } else if (activeTab === "insights") {
@@ -9744,8 +10068,400 @@
             }
         };
 
+        // ==========================================
+        // 📝 授業ノート（Lesson Notebooks）機能
+        // ==========================================
+        function buildLessonNoteItems() {
+            if (!rawLessons || typeof rawLessons !== "object") return [];
+            const items = [];
+            Object.keys(rawLessons).forEach(lid => {
+                const lesson = rawLessons[lid];
+                if (!lesson) return;
+                let nb = typeof lesson.lessonNotebook === "string" ? lesson.lessonNotebook.trim() : "";
+                if (!nb && Array.isArray(lesson.lessonMemos) && lesson.lessonMemos.length > 0) {
+                    const title = lesson.title || "授業";
+                    nb = `## 📝 【${title}】学習ノート\n\n`;
+                    lesson.lessonMemos.forEach(m => {
+                        const partStr = (typeof m.partIndex === "number") ? `*(第${m.partIndex + 1}回)* ` : "";
+                        nb += `- ${partStr}${m.text.trim()}\n`;
+                    });
+                    nb = nb.trim();
+                }
+
+                if (nb.length > 0) {
+                    items.push({
+                        lessonId: lid,
+                        title: lesson.title || "無題の授業",
+                        subject: lesson.subject || "その他",
+                        field: lesson.field || "",
+                        notebook: nb,
+                        charCount: nb.length,
+                        lineCount: nb.split('\n').length,
+                        updatedAt: lesson.updatedAt || lesson.createdAt || "",
+                        createdAt: lesson.createdAt || "",
+                        orderIndex: typeof lesson.orderIndex === "number" ? lesson.orderIndex : 999999
+                    });
+                }
+            });
+            return items;
+        }
+
+        function renderEnhancedNoteMarkdown(text, subject = "") {
+            if (!text) return '<span style="color:var(--text-muted); font-size:0.85rem;">（ノートの内容がまだありません）</span>';
+
+            const blocks = [];
+            let src = text.replace(/\r\n/g, '\n');
+
+            // 1. Markdown テーブル解析
+            const tableRegex = /(?:^|\n)((?:\|[^\n]+\|\n?)+)/g;
+            src = src.replace(tableRegex, (match, block) => {
+                const lines = block.trim().split('\n').map(l => l.trim()).filter(Boolean);
+                if (lines.length < 2) return match;
+                let html = '<div class="note-table-wrap"><table class="note-table">';
+                let isHeader = true;
+                for (const line of lines) {
+                    const cells = line.split('|').slice(1, -1).map(c => c.trim());
+                    const isSeparator = cells.length > 0 && cells.every(c => /^[\s\-:]+$/.test(c));
+                    if (isSeparator) {
+                        isHeader = false;
+                        continue;
+                    }
+                    html += '<tr>';
+                    for (const c of cells) {
+                        const cellFormatted = renderFormattedMarkdown(c, subject);
+                        html += isHeader ? `<th>${cellFormatted}</th>` : `<td>${cellFormatted}</td>`;
+                    }
+                    html += '</tr>';
+                }
+                html += '</table></div>';
+                const idx = blocks.length;
+                blocks.push(html);
+                return `\n%%%NOTE_BLOCK_${idx}%%%\n`;
+            });
+
+            // 2. チェックリスト - [ ] / - [x]
+            src = src.replace(/^-\s*\[\s*\]\s*(.+)$/gm, (_, item) => {
+                const itemFormatted = renderFormattedMarkdown(item, subject);
+                const idx = blocks.length;
+                blocks.push(`<div class="note-task-item"><input type="checkbox" disabled> <span>${itemFormatted}</span></div>`);
+                return `%%%NOTE_BLOCK_${idx}%%%`;
+            });
+            src = src.replace(/^-\s*\[[xX]\]\s*(.+)$/gm, (_, item) => {
+                const itemFormatted = renderFormattedMarkdown(item, subject);
+                const idx = blocks.length;
+                blocks.push(`<div class="note-task-item is-checked"><input type="checkbox" checked disabled> <span>${itemFormatted}</span></div>`);
+                return `%%%NOTE_BLOCK_${idx}%%%`;
+            });
+
+            // 3. H2 大見出し
+            src = src.replace(/^##\s+(.+)$/gm, (_, h) => {
+                const hFormatted = renderFormattedMarkdown(h, subject);
+                const idx = blocks.length;
+                blocks.push(`<h2 class="note-h2">${hFormatted}</h2>`);
+                return `%%%NOTE_BLOCK_${idx}%%%`;
+            });
+
+            // 4. 急所・要点・講義引用・標準引用ブロック
+            src = src.replace(/^>\s*⚠️\s*(.+)$/gm, (_, q) => {
+                const qFormatted = renderFormattedMarkdown(q, subject);
+                const idx = blocks.length;
+                blocks.push(`<blockquote class="note-trap-quote">⚠️ <b>【試験の急所】</b> ${qFormatted}</blockquote>`);
+                return `%%%NOTE_BLOCK_${idx}%%%`;
+            });
+            src = src.replace(/^>\s*💡\s*(.+)$/gm, (_, q) => {
+                const qFormatted = renderFormattedMarkdown(q, subject);
+                const idx = blocks.length;
+                blocks.push(`<blockquote class="note-point-quote">💡 <b>【重要要点】</b> ${qFormatted}</blockquote>`);
+                return `%%%NOTE_BLOCK_${idx}%%%`;
+            });
+            src = src.replace(/^>\s*📖\s*(.+)$/gm, (_, q) => {
+                const qFormatted = renderFormattedMarkdown(q, subject);
+                const idx = blocks.length;
+                blocks.push(`<blockquote class="note-lecture-quote">📖 <b>【講義引用】</b> ${qFormatted}</blockquote>`);
+                return `%%%NOTE_BLOCK_${idx}%%%`;
+            });
+            src = src.replace(/^>\s*(.+)$/gm, (_, q) => {
+                const qFormatted = renderFormattedMarkdown(q, subject);
+                const idx = blocks.length;
+                blocks.push(`<blockquote class="note-quote">${qFormatted}</blockquote>`);
+                return `%%%NOTE_BLOCK_${idx}%%%`;
+            });
+
+            // 5. 基本整形（ルビ・LaTeX数式・太字・H3見出し等）
+            let html = renderFormattedMarkdown(src, subject);
+
+            // 6. 蛍光マーカー ==強調==
+            html = html.replace(/==([^=\n<]+)==/g, '<mark class="flora-marker">$1</mark>');
+
+            // 7. 特殊ブロックの復元
+            html = html.replace(/%%%NOTE_BLOCK_(\d+)%%%/g, (_, i) => blocks[parseInt(i, 10)] || '');
+
+            // 8. 余計なブロック後<br>のクリーンアップ
+            html = html.replace(/(<\/h2>|<\/blockquote>|<\/div>|<\/table>)\s*<br\s*\/?>/gi, '$1');
+
+            return html;
+        }
+
+        function getFilteredLessonNotes() {
+            let items = buildLessonNoteItems();
+            const selSubj = subjectSelect ? subjectSelect.value : "ALL";
+            if (selSubj && selSubj !== "ALL") {
+                items = items.filter(n => n.subject === selSubj);
+            }
+            if (isUnitFilterActive()) {
+                items = items.filter(n => isUnitSelected(n.lessonId, n.field, n.title));
+            }
+            const query = searchInput ? searchInput.value.trim().toLowerCase() : "";
+            if (query) {
+                items = items.filter(n =>
+                    (n.title && n.title.toLowerCase().includes(query)) ||
+                    (n.subject && n.subject.toLowerCase().includes(query)) ||
+                    (n.field && n.field.toLowerCase().includes(query)) ||
+                    (n.notebook && n.notebook.toLowerCase().includes(query))
+                );
+            }
+
+            // ソート
+            const mode = (sortSelect ? sortSelect.value : "custom") || "updated";
+            items.sort((a, b) => {
+                if (mode === "custom") {
+                    return a.orderIndex - b.orderIndex;
+                } else if (mode === "created_asc" || mode === "date_asc") {
+                    return new Date(a.createdAt || 0) - new Date(b.createdAt || 0);
+                } else if (mode === "created_desc" || mode === "date_desc") {
+                    return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+                } else if (mode === "title") {
+                    return (a.title || "").localeCompare(b.title || "", "ja");
+                } else {
+                    // updated
+                    return new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0);
+                }
+            });
+
+            return items;
+        }
+
+        window.copySingleNoteMarkdown = function(lessonId, e) {
+            if (e) e.stopPropagation();
+            const lesson = rawLessons[lessonId];
+            if (!lesson) return;
+            let md = (lesson.lessonNotebook || "").trim();
+            if (!md && Array.isArray(lesson.lessonMemos)) {
+                md = lesson.lessonMemos.map(m => m.text).join('\n');
+            }
+            if (!md) {
+                showToast("ノートの内容がありません", "info");
+                return;
+            }
+            navigator.clipboard.writeText(md).then(() => {
+                showToast("📋 ノートをクリップボードにコピーしました！", "success", 2000);
+            }).catch(() => {
+                showToast("コピーに失敗しました", "error");
+            });
+        };
+
+        window.copyAllFilteredNotesMarkdown = function() {
+            const items = getFilteredLessonNotes();
+            if (items.length === 0) {
+                showToast("コピー対象のノートがありません", "info");
+                return;
+            }
+            const combined = items.map(n => {
+                return `# 📝 【${n.subject}】${n.title}\n最終更新: ${formatDateDisplay(n.updatedAt)}\n\n${n.notebook}\n\n---\n`;
+            }).join('\n');
+
+            navigator.clipboard.writeText(combined).then(() => {
+                showToast(`📋 表示中 ${items.length} 件のノートを一括コピーしました！`, "success", 2500);
+            }).catch(() => {
+                showToast("コピーに失敗しました", "error");
+            });
+        };
+
+        window.toggleNoteExpand = function(lessonId, e) {
+            if (e) e.stopPropagation();
+            if (expandedNoteLessonIds.has(lessonId)) {
+                expandedNoteLessonIds.delete(lessonId);
+            } else {
+                expandedNoteLessonIds.add(lessonId);
+            }
+            renderLessonNotes();
+        };
+
+        function getSubjectBadgeClass(subj) {
+            if (!subj) return "badge-physics";
+            if (subj.includes("化学")) return "badge-chemistry";
+            if (subj.includes("物理")) return "badge-physics";
+            if (subj.includes("数")) return "badge-math";
+            if (subj.includes("生物") || subj.includes("地学")) return "badge-biology";
+            if (subj.includes("日本史") || subj.includes("世界史") || subj.includes("歴史") || subj.includes("地理")) return "badge-history";
+            if (subj.includes("政経") || subj.includes("公共") || subj.includes("公民")) return "badge-civics";
+            if (subj.includes("英")) return "badge-english";
+            if (subj.includes("国語")) return "badge-japanese";
+            return "badge-physics";
+        }
+
+        function formatDateDisplay(d) {
+            if (!d) return "--";
+            try {
+                const date = new Date(d);
+                if (isNaN(date.getTime())) return String(d);
+                const now = new Date();
+                const diffMin = Math.floor((now - date) / (60 * 1000));
+                if (diffMin < 1) return "たった今";
+                if (diffMin < 60) return `${diffMin}分前`;
+                const diffHours = Math.floor(diffMin / 60);
+                if (diffHours < 24) return `${diffHours}時間前`;
+                const diffDays = Math.floor(diffHours / 24);
+                if (diffDays < 7) return `${diffDays}日前`;
+                return `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`;
+            } catch (_) {
+                return String(d);
+            }
+        }
+
+        function renderLessonNotes() {
+            const viewEl = document.getElementById("view-notes");
+            if (!viewEl) return;
+
+            const items = getFilteredLessonNotes();
+
+            if (items.length === 0) {
+                viewEl.innerHTML = `
+                    <div style="text-align:center; padding:4rem 1.5rem; background:var(--bg-surface); border:1px dashed var(--border-color); border-radius:var(--radius-lg); margin:1rem 0;">
+                        <div style="font-size:2.8rem; margin-bottom:0.75rem;">📝</div>
+                        <h3 style="font-size:1.05rem; font-weight:800; color:var(--text-primary); margin-bottom:0.4rem;">
+                            該当する授業ノートが見つかりません
+                        </h3>
+                        <p style="font-size:0.84rem; color:var(--text-secondary); max-width:440px; margin:0 auto 1.2rem auto; line-height:1.6;">
+                            授業ページ（lesson.html）で講義を受けながら右側のノート欄にメモや引用を書き留めると、ここに自動的に集約されます。
+                        </p>
+                        <a href="lesson.html" class="flora-btn flora-btn-primary" style="text-decoration:none; display:inline-flex; align-items:center; gap:0.4rem; padding:0.55rem 1.3rem; font-weight:700; border-radius:var(--radius-md);">
+                            📖 授業を開く
+                        </a>
+                    </div>
+                `;
+                hideEmptyNotice();
+                return;
+            }
+
+            hideEmptyNotice();
+
+            // 表示モード別レンダリング
+            if (notesViewMode === "compact") {
+                // コンパクトテーブルビュー
+                viewEl.innerHTML = `
+                    <div class="notes-compact-table-wrap">
+                        <table class="notes-compact-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 110px;">教科</th>
+                                    <th>授業タイトル</th>
+                                    <th style="width: 90px; text-align:right;">文字数</th>
+                                    <th style="width: 140px;">最終更新</th>
+                                    <th style="width: 180px; text-align:right;">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${items.map(n => {
+                                    const badgeClass = getSubjectBadgeClass(n.subject);
+                                    const timeStr = formatDateDisplay(n.updatedAt);
+                                    return `
+                                        <tr>
+                                            <td><span class="flora-badge ${badgeClass}" style="font-size:0.74rem;">${escapeHtml(n.subject)}</span></td>
+                                            <td>
+                                                <a href="lesson.html?id=${encodeURIComponent(n.lessonId)}" class="note-card-title-link">
+                                                    ${escapeHtml(n.title)}
+                                                </a>
+                                            </td>
+                                            <td style="text-align:right; font-weight:700; color:var(--text-secondary);">${n.charCount.toLocaleString()}字</td>
+                                            <td style="color:var(--text-muted); font-size:0.75rem;">${timeStr}</td>
+                                            <td style="text-align:right;">
+                                                <div style="display:inline-flex; align-items:center; gap:0.4rem;">
+                                                    <button type="button" class="flora-btn flora-btn-secondary btn-xs" onclick="copySingleNoteMarkdown('${escapeHtml(n.lessonId)}', event)" title="Markdownをコピー" style="font-size:0.72rem; padding:0.2rem 0.5rem;">
+                                                        📋 コピー
+                                                    </button>
+                                                    <a href="lesson.html?id=${encodeURIComponent(n.lessonId)}" class="flora-btn flora-btn-primary btn-xs" style="text-decoration:none; font-size:0.72rem; padding:0.2rem 0.55rem;">
+                                                        📖 開く ➔
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    `;
+                                }).join("")}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            } else {
+                // カードビュー（リッチプレビュー）
+                viewEl.innerHTML = `
+                    <div class="notes-grid">
+                        ${items.map(n => {
+                            const badgeClass = getSubjectBadgeClass(n.subject);
+                            const timeStr = formatDateDisplay(n.updatedAt);
+                            const isExpanded = isAllNotesExpanded || expandedNoteLessonIds.has(n.lessonId);
+                            const bodyHtml = renderEnhancedNoteMarkdown(n.notebook, n.subject);
+                            const showExpandBtn = n.lineCount > 7 || n.charCount > 240;
+
+                            return `
+                                <div class="note-card">
+                                    <div class="note-card-header">
+                                        <div class="note-card-title-group">
+                                            <div style="display:flex; align-items:center; gap:0.45rem; margin-bottom:0.25rem;">
+                                                <span class="flora-badge ${badgeClass}" style="font-size:0.72rem;">${escapeHtml(n.subject)}</span>
+                                                ${n.field ? `<span style="font-size:0.72rem; color:var(--text-muted);">· ${escapeHtml(n.field)}</span>` : ''}
+                                            </div>
+                                            <a href="lesson.html?id=${encodeURIComponent(n.lessonId)}" class="note-card-title-link">
+                                                ${escapeHtml(n.title)}
+                                            </a>
+                                            <div class="note-card-meta">
+                                                <span>🕒 ${timeStr}</span>
+                                                <span>📝 ${n.charCount.toLocaleString()}文字</span>
+                                                <span>📄 ${n.lineCount}行</span>
+                                            </div>
+                                        </div>
+                                        <div class="note-card-actions">
+                                            <button type="button" class="flora-btn flora-btn-secondary btn-sm" onclick="copySingleNoteMarkdown('${escapeHtml(n.lessonId)}', event)" title="Markdown本文をクリップボードにコピー" style="font-size:0.74rem; padding:0.25rem 0.6rem;">
+                                                📋 コピー
+                                            </button>
+                                            <a href="lesson.html?id=${encodeURIComponent(n.lessonId)}" class="flora-btn flora-btn-primary btn-sm" style="text-decoration:none; font-size:0.74rem; padding:0.25rem 0.65rem;">
+                                                📖 授業を開く ➔
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div class="note-card-body-wrap">
+                                        <div class="note-card-content tex2jax_process ${isExpanded ? 'is-expanded' : ''}" id="note-content-${escapeHtml(n.lessonId)}">
+                                            ${bodyHtml}
+                                        </div>
+                                        ${showExpandBtn ? `
+                                            <div class="note-expand-bar">
+                                                <button type="button" class="${isExpanded ? 'note-collapse-btn' : 'note-expand-btn'}" onclick="toggleNoteExpand('${escapeHtml(n.lessonId)}', event)">
+                                                    ${isExpanded ? '▲ 折りたたむ' : `▼ 全文を展開する（残り約 ${Math.max(0, n.lineCount - 6)} 行）`}
+                                                </button>
+                                            </div>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                            `;
+                        }).join("")}
+                    </div>
+                `;
+
+                // 数式レンダリングキューへ追加
+                viewEl.querySelectorAll(".tex2jax_process").forEach(el => {
+                    if (typeof containsMathSyntax === "function" && containsMathSyntax(el.textContent || "")) {
+                        pendingMathElements.add(el);
+                    }
+                });
+                if (typeof processMathQueue === "function") {
+                    processMathQueue();
+                }
+            }
+        }
+
         function renderActiveView() {
             if (activeTab === "insights") renderInsights();
+            else if (activeTab === "notes") renderLessonNotes();
             else if (activeTab === "memorize") renderMemorize();
             else if (activeTab === "drills") renderDrills();
             else if (activeTab === "qna") renderQna();
@@ -9764,18 +10480,21 @@
         function updateCounts() {
             const insightCount = Object.values(rawProblems).filter(p => p && p.insight && p.insight.trim() !== "").length
                 + buildLessonMemoItems().length;
+            const notesCount = buildLessonNoteItems().length;
             const memorizeCount = buildMemorizationItems().length;
             const drillsCount = buildChoiceDrillItems().length;
             const qnaCount = Object.keys(rawQnaLogs).length;
             const mnemonicCount = Object.values(rawProblems).filter(p => p && p.subject === "世界史" && p.mnemonic && p.mnemonic.trim() !== "").length;
 
             document.getElementById("count-insights").textContent = insightCount;
+            const countNotesEl = document.getElementById("count-notes");
+            if (countNotesEl) countNotesEl.textContent = notesCount;
             document.getElementById("count-memorize").textContent = memorizeCount;
             const countDrillsEl = document.getElementById("count-drills");
             if (countDrillsEl) countDrillsEl.textContent = drillsCount;
             document.getElementById("count-qna").textContent = qnaCount;
             document.getElementById("count-mnemonics").textContent = mnemonicCount;
-            document.getElementById("stat-summary-text").textContent = `総蓄積ナレッジ: ${insightCount + memorizeCount + drillsCount + qnaCount + mnemonicCount} 件`;
+            document.getElementById("stat-summary-text").textContent = `総蓄積ナレッジ: ${insightCount + notesCount + memorizeCount + drillsCount + qnaCount + mnemonicCount} 件`;
         }
 
         /* ==========================================================

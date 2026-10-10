@@ -293,6 +293,7 @@
             headerInsightsSubtitle: 'これまでの演習で記録した「気づき・極意」「AI質問ログ」「暗記事項」の統合ナレッジベース',
             btnAiTermAsk: '💬 教科書・単語 AI質問',
             tabInsights: '🧠 気づき・極意メモ',
+            tabNotes: '📝 授業ノート',
             tabMemorize: '📌 暗記事項',
             tabDrills: '🎯 授業 選択問題',
             tabQna: '💬 AI質問ログ',
@@ -371,6 +372,7 @@
             headerInsightsSubtitle: 'Integrated knowledge base for insights, AI Q&A logs, and memorization cards recorded during practice.',
             btnAiTermAsk: '💬 Textbook & Term AI Q&A',
             tabInsights: '🧠 Insights & Takeaways',
+            tabNotes: '📝 Lesson Notes',
             tabMemorize: '📌 Memorization Cards',
             tabDrills: '🎯 Choice Drills',
             tabQna: '💬 AI Q&A Logs',
@@ -447,6 +449,11 @@
             if (tabInsights) {
                 const count = document.getElementById('count-insights')?.textContent || '0';
                 tabInsights.innerHTML = `${t('tabInsights')} (<span id="count-insights">${count}</span>)`;
+            }
+            const tabNotes = document.getElementById('tab-btn-notes');
+            if (tabNotes) {
+                const count = document.getElementById('count-notes')?.textContent || '0';
+                tabNotes.innerHTML = `${t('tabNotes')} (<span id="count-notes">${count}</span>)`;
             }
             const tabMemorize = document.getElementById('tab-btn-memorize');
             if (tabMemorize) {
