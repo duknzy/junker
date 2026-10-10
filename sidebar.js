@@ -274,6 +274,8 @@
             btnClear: 'クリア',
             searchLessonPlaceholder: '教科や単元名で絞り込み...',
             pastLessonsTitle: '📚 過去の授業一覧',
+            btnLessonToolbarOpen: '検索・設定ツール',
+            btnLessonToolbarClose: '閉じる',
             btnBatchGenerateDrills: '🎯 選択問題を一括生成',
             btnAutofixSubjects: '⚡ 過去の授業の教科を一括自動判別',
             sortLabel: '並び順:',
@@ -350,6 +352,8 @@
             btnClear: 'Clear',
             searchLessonPlaceholder: 'Filter by subject or unit...',
             pastLessonsTitle: '📚 Past Lessons Archive',
+            btnLessonToolbarOpen: 'Search & Tools',
+            btnLessonToolbarClose: 'Close',
             btnBatchGenerateDrills: '🎯 Batch Generate Drills',
             btnAutofixSubjects: '⚡ Auto-classify Subjects',
             sortLabel: 'Sort:',
@@ -560,6 +564,12 @@
             const autofixBtn = document.getElementById('btn-autofix-lesson-subjects');
             if (autofixBtn) {
                 autofixBtn.textContent = t('btnAutofixSubjects');
+            }
+
+            const toolbarToggleLabel = document.getElementById('lesson-toolbar-toggle-label');
+            if (toolbarToggleLabel) {
+                const isOpen = document.getElementById('lesson-list-toolbar-container')?.classList.contains('is-open');
+                toolbarToggleLabel.textContent = isOpen ? t('btnLessonToolbarClose') : t('btnLessonToolbarOpen');
             }
 
             const sortSelect = document.getElementById('lesson-sort-select');

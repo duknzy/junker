@@ -118,12 +118,142 @@
         .roadmap-step.rm-locked { opacity: 0.45; }
         .roadmap-arrow { color: var(--text-muted); font-size: 0.65rem; flex-shrink: 0; }
 
-        /* 📚 授業一覧ツールバー */
+        /* 📚 過去の授業一覧ヘッダー & 可変式ツールバー */
+        .lesson-list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            margin-bottom: 0.75rem;
+        }
+        .lesson-list-title-left {
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+            flex-wrap: wrap;
+        }
+        .lesson-list-title-text {
+            font-family: var(--font-heading);
+            font-weight: 700;
+            font-size: 1.05rem;
+            color: var(--text-primary);
+            letter-spacing: -0.01em;
+        }
+        .lesson-total-badge {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            padding: 0.15rem 0.55rem;
+            border-radius: var(--radius-full);
+            letter-spacing: 0.02em;
+        }
+        .lesson-filter-status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--brand-primary);
+            background: var(--brand-light);
+            border: 1px solid var(--brand-border);
+            padding: 0.18rem 0.6rem;
+            border-radius: var(--radius-full);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .lesson-filter-status-badge:hover {
+            background: var(--brand-primary);
+            color: #ffffff;
+        }
+        .lesson-filter-status-badge.hidden {
+            display: none !important;
+        }
+        .lesson-filter-clear-btn {
+            background: none;
+            border: none;
+            color: inherit;
+            cursor: pointer;
+            font-size: 0.85rem;
+            line-height: 1;
+            padding: 0;
+            margin-left: 0.15rem;
+            display: inline-flex;
+            align-items: center;
+            opacity: 0.8;
+        }
+        .lesson-filter-clear-btn:hover {
+            opacity: 1;
+        }
+        
+        /* 🛠️ ツールバー開閉トグルボタン */
+        .lesson-toolbar-toggle-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            font-size: 0.78rem;
+            font-weight: 700;
+            padding: 0.38rem 0.85rem;
+            height: 34px;
+            border-radius: var(--radius-full);
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: var(--shadow-xs);
+            user-select: none;
+        }
+        .lesson-toolbar-toggle-btn:hover {
+            background: var(--bg-subtle);
+            border-color: var(--brand-primary);
+            color: var(--brand-primary);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-sm);
+        }
+        .lesson-toolbar-toggle-btn:active {
+            transform: translateY(0);
+        }
+        .lesson-toolbar-toggle-btn.is-open {
+            background: var(--brand-light);
+            border-color: var(--brand-border);
+            color: var(--brand-primary);
+        }
+        .lesson-toolbar-toggle-btn .toolbar-toggle-arrow {
+            font-size: 0.72rem;
+            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            display: inline-block;
+        }
+        .lesson-toolbar-toggle-btn.is-open .toolbar-toggle-arrow {
+            transform: rotate(180deg);
+        }
+
+        /* 📚 授業一覧ツールバー（可変式・グリッド高さアニメーション） */
+        .lesson-list-toolbar-container {
+            display: grid;
+            grid-template-rows: 0fr;
+            opacity: 0;
+            transition: grid-template-rows 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, margin-bottom 0.25s ease;
+            margin-bottom: 0;
+            overflow: hidden;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        .lesson-list-toolbar-container.is-open {
+            grid-template-rows: 1fr;
+            opacity: 1;
+            margin-bottom: 1.25rem;
+            visibility: visible;
+            pointer-events: auto;
+        }
         .lesson-list-toolbar {
+            overflow: hidden;
+            min-height: 0;
             display: flex;
             flex-direction: column;
             gap: 0.75rem;
-            margin-bottom: 1.25rem;
             background: var(--bg-surface);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-lg);
@@ -5002,6 +5132,31 @@
             color: var(--text-primary) !important;
             border-color: rgba(255, 255, 255, 0.08) !important;
         }
+        html.dark .lesson-toolbar-toggle-btn {
+            background: var(--bg-surface);
+            border-color: rgba(255, 255, 255, 0.12);
+            color: var(--text-primary);
+        }
+        html.dark .lesson-toolbar-toggle-btn:hover {
+            background: var(--bg-surface-raised);
+            border-color: var(--brand-primary);
+            color: var(--brand-primary);
+        }
+        html.dark .lesson-toolbar-toggle-btn.is-open {
+            background: rgba(99, 102, 241, 0.18);
+            border-color: rgba(99, 102, 241, 0.45);
+            color: #818cf8;
+        }
+        html.dark .lesson-total-badge {
+            background: var(--bg-surface-raised);
+            border-color: rgba(255, 255, 255, 0.08);
+            color: var(--text-secondary);
+        }
+        html.dark .lesson-filter-status-badge {
+            background: rgba(99, 102, 241, 0.2);
+            border-color: rgba(99, 102, 241, 0.4);
+            color: #a5b4fc;
+        }
         html.dark .recent-lesson-item:hover {
             background: var(--bg-surface-raised);
             border-color: var(--brand-primary);
@@ -6453,46 +6608,111 @@
                     </div>
 
                     <div id="lesson-list-wrap" style="margin-top: 1.5rem;">
-                        <div style="font-family: var(--font-heading); font-weight:700; font-size:1.05rem; margin-bottom: 0.8rem;">📚 過去の授業一覧</div>
-                        <div class="lesson-list-toolbar">
-                            <div class="lesson-toolbar-top-row">
-                                <div style="display:flex; gap:0.4rem; align-items:center; flex:1; min-width:280px;">
-                                    <input type="text" class="lesson-search-input" id="lesson-search-input" placeholder="🔍 授業タイトルで絞り込み..." style="flex:1;">
-                                    <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="btn-quick-open-omni-search" style="font-size:0.75rem; white-space:nowrap; font-weight:700; color:var(--brand-primary); border:1px dashed var(--brand-border); padding:0.4rem 0.65rem; height:36px; display:inline-flex; align-items:center; gap:0.3rem;" title="授業の講義本文や暗記カードも丸ごと全文検索 (Ctrl+K)">
-                                        <span>🔍</span><span>本文も横断検索</span>
-                                    </button>
-                                </div>
-                                <div class="lesson-sort-control">
-                                    <label for="lesson-sort-select" style="font-size:0.75rem; color:var(--text-secondary); white-space:nowrap; font-weight:600;">並び順:</label>
-                                    <select id="lesson-sort-select" class="flora-select" style="font-size:0.75rem; padding:0.4rem 0.65rem; height:36px; width:auto; border-radius:var(--radius-md); background:var(--bg-surface); border:1px solid var(--border-color); color:var(--text-primary); cursor:pointer;">
-                                        <option value="custom">📌 自由並べ替え（ドラッグ＆ボタン）</option>
-                                        <option value="created_asc">📅 受講日（古い順・カリキュラム順）</option>
-                                        <option value="created_desc">📅 受講日（新しい順）</option>
-                                        <option value="updated_desc">⚡ 最終更新日順</option>
-                                        <option value="title_asc">🔤 授業タイトル順</option>
-                                    </select>
-                                </div>
-                                <button type="button" class="tactile-btn" id="btn-toolbar-culture-stream" style="font-size:0.75rem; font-weight:700; padding:0.4rem 0.85rem; height:36px; background:rgba(139, 92, 246, 0.1); color:#7c3aed; border:1px solid rgba(139, 92, 246, 0.35); border-radius:var(--radius-full); white-space:nowrap; display:inline-flex; align-items:center; gap:0.35rem; cursor:pointer;" title="全授業から文化史パートを抽出して時代順にまとめ読み">
-                                    🏛️ 文化史ストリーム
-                                </button>
-                                <button type="button" class="tactile-btn" id="btn-toggle-batch-lesson-delete" style="font-size:0.75rem; font-weight:700; padding:0.4rem 0.85rem; height:36px; background:rgba(239, 68, 68, 0.08); color:#dc2626; border:1px solid rgba(239, 68, 68, 0.35); border-radius:var(--radius-full); white-space:nowrap; display:inline-flex; align-items:center; gap:0.35rem; cursor:pointer;" title="授業を複数選択して一括削除（暗記事項・問題・年表等のデータも完全徹底パージ）します">
-                                    🗑️ 授業を一括削除
-                                </button>
-                                <button type="button" class="tactile-btn" id="btn-batch-generate-choice-drills" style="font-size:0.75rem; font-weight:700; padding:0.4rem 0.85rem; height:36px; background:#EEF2FF; color:#4F46E5; border:1px solid #C7D2FE; border-radius:var(--radius-full); white-space:nowrap; display:inline-flex; align-items:center; gap:0.35rem; cursor:pointer;" title="選択問題（共通テスト形式）が未作成の過去授業を検出し、API制限に配慮しながら段階的に一括作成します">
-                                    🎯 選択問題を一括生成
-                                </button>
-                                <button type="button" class="tactile-btn" id="btn-batch-reextract-timeline" style="font-size:0.75rem; font-weight:700; padding:0.4rem 0.85rem; height:36px; background:rgba(245, 158, 11, 0.12); color:#d97706; border:1px solid rgba(245, 158, 11, 0.35); border-radius:var(--radius-full); white-space:nowrap; display:inline-flex; align-items:center; gap:0.35rem; cursor:pointer;" title="授業を選択（複数可）して、AIで年表・年代出来事を一括再抽出します">
-                                    ⏳ 年表を一括再抽出
-                                </button>
-                                <button type="button" class="tactile-btn" id="btn-autofix-lesson-subjects" style="font-size:0.75rem; font-weight:700; padding:0.4rem 0.85rem; height:36px; background:var(--brand-light); color:var(--brand-primary); border:1px solid var(--brand-border); border-radius:var(--radius-full); white-space:nowrap; display:inline-flex; align-items:center; gap:0.35rem; cursor:pointer;" title="「その他」や「未分類」の授業のタイトル・内容を自動判定し、政経・化学などの適切な教科へ一括で分類し直します（暗記カードも同期）">
-                                    ⚡ 過去の授業の教科を一括自動判別
+                        <div class="lesson-list-header">
+                            <div class="lesson-list-title-left">
+                                <span id="lesson-list-title-label" class="lesson-list-title-text">📚 過去の授業一覧</span>
+                                <span id="lesson-list-total-count" class="lesson-total-badge"></span>
+                                <span id="lesson-filter-status-badge" class="lesson-filter-status-badge hidden" title="クリックでツールバーを開いて検索条件を確認">
+                                    <span id="lesson-filter-status-text">🔍 絞り込み中</span>
+                                    <button type="button" class="lesson-filter-clear-btn" id="btn-clear-lesson-filters-inline" title="絞り込みをクリア">×</button>
+                                </span>
+                            </div>
+                            <div class="lesson-list-title-right">
+                                <button type="button" class="lesson-toolbar-toggle-btn" id="btn-toggle-lesson-toolbar" aria-expanded="false" title="検索窓や設定・一括操作ツールの表示/非表示を切り替えます">
+                                    <span class="toolbar-toggle-icon">🔍</span>
+                                    <span id="lesson-toolbar-toggle-label">検索・設定ツール</span>
+                                    <span class="toolbar-toggle-arrow">▾</span>
                                 </button>
                             </div>
-                            <div class="lesson-subject-chips" id="lesson-subject-chips"></div>
+                        </div>
+
+                        <!-- 🛠️ 可変式ツールバーコンテナ（スムーズ開閉アニメーション） -->
+                        <div class="lesson-list-toolbar-container" id="lesson-list-toolbar-container">
+                            <div class="lesson-list-toolbar" id="lesson-list-toolbar">
+                                <div class="lesson-toolbar-top-row">
+                                    <div style="display:flex; gap:0.4rem; align-items:center; flex:1; min-width:280px;">
+                                        <input type="text" class="lesson-search-input" id="lesson-search-input" placeholder="🔍 授業タイトルで絞り込み..." style="flex:1;">
+                                        <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="btn-quick-open-omni-search" style="font-size:0.75rem; white-space:nowrap; font-weight:700; color:var(--brand-primary); border:1px dashed var(--brand-border); padding:0.4rem 0.65rem; height:36px; display:inline-flex; align-items:center; gap:0.3rem;" title="授業の講義本文や暗記カードも丸ごと全文検索 (Ctrl+K)">
+                                            <span>🔍</span><span>本文も横断検索</span>
+                                        </button>
+                                    </div>
+                                    <div class="lesson-sort-control">
+                                        <label for="lesson-sort-select" style="font-size:0.75rem; color:var(--text-secondary); white-space:nowrap; font-weight:600;">並び順:</label>
+                                        <select id="lesson-sort-select" class="flora-select" style="font-size:0.75rem; padding:0.4rem 0.65rem; height:36px; width:auto; border-radius:var(--radius-md); background:var(--bg-surface); border:1px solid var(--border-color); color:var(--text-primary); cursor:pointer;">
+                                            <option value="custom">📌 自由並べ替え（ドラッグ＆ボタン）</option>
+                                            <option value="created_asc">📅 受講日（古い順・カリキュラム順）</option>
+                                            <option value="created_desc">📅 受講日（新しい順）</option>
+                                            <option value="updated_desc">⚡ 最終更新日順</option>
+                                            <option value="title_asc">🔤 授業タイトル順</option>
+                                        </select>
+                                    </div>
+                                    <button type="button" class="tactile-btn" id="btn-toolbar-culture-stream" style="font-size:0.75rem; font-weight:700; padding:0.4rem 0.85rem; height:36px; background:rgba(139, 92, 246, 0.1); color:#7c3aed; border:1px solid rgba(139, 92, 246, 0.35); border-radius:var(--radius-full); white-space:nowrap; display:inline-flex; align-items:center; gap:0.35rem; cursor:pointer;" title="全授業から文化史パートを抽出して時代順にまとめ読み">
+                                        🏛️ 文化史ストリーム
+                                    </button>
+                                    <button type="button" class="tactile-btn" id="btn-toggle-batch-lesson-delete" style="font-size:0.75rem; font-weight:700; padding:0.4rem 0.85rem; height:36px; background:rgba(239, 68, 68, 0.08); color:#dc2626; border:1px solid rgba(239, 68, 68, 0.35); border-radius:var(--radius-full); white-space:nowrap; display:inline-flex; align-items:center; gap:0.35rem; cursor:pointer;" title="授業を複数選択して一括削除（暗記事項・問題・年表等のデータも完全徹底パージ）します">
+                                        🗑️ 授業を一括削除
+                                    </button>
+                                    <button type="button" class="tactile-btn" id="btn-batch-generate-choice-drills" style="font-size:0.75rem; font-weight:700; padding:0.4rem 0.85rem; height:36px; background:#EEF2FF; color:#4F46E5; border:1px solid #C7D2FE; border-radius:var(--radius-full); white-space:nowrap; display:inline-flex; align-items:center; gap:0.35rem; cursor:pointer;" title="選択問題（共通テスト形式）が未作成の過去授業を検出し、API制限に配慮しながら段階的に一括作成します">
+                                        🎯 選択問題を一括生成
+                                    </button>
+                                    <button type="button" class="tactile-btn" id="btn-batch-reextract-timeline" style="font-size:0.75rem; font-weight:700; padding:0.4rem 0.85rem; height:36px; background:rgba(245, 158, 11, 0.12); color:#d97706; border:1px solid rgba(245, 158, 11, 0.35); border-radius:var(--radius-full); white-space:nowrap; display:inline-flex; align-items:center; gap:0.35rem; cursor:pointer;" title="授業を選択（複数可）して、AIで年表・年代出来事を一括再抽出します">
+                                        ⏳ 年表を一括再抽出
+                                    </button>
+                                    <button type="button" class="tactile-btn" id="btn-autofix-lesson-subjects" style="font-size:0.75rem; font-weight:700; padding:0.4rem 0.85rem; height:36px; background:var(--brand-light); color:var(--brand-primary); border:1px solid var(--brand-border); border-radius:var(--radius-full); white-space:nowrap; display:inline-flex; align-items:center; gap:0.35rem; cursor:pointer;" title="「その他」や「未分類」の授業のタイトル・内容を自動判定し、政経・化学などの適切な教科へ一括で分類し直します（暗記カードも同期）">
+                                        ⚡ 過去の授業の教科を一括自動判別
+                                    </button>
+                                </div>
+                                <div class="lesson-subject-chips" id="lesson-subject-chips"></div>
+                            </div>
                         </div>
                         <div id="lesson-list"></div>
                         <div id="lesson-list-empty" style="color: var(--text-muted); font-size:0.85rem; display:none; text-align:center; padding: 2rem 0;">まだ授業履歴はありません。</div>
                     </div>
+                    <script>
+                        (function() {
+                            function initToolbarCollapse() {
+                                const container = document.getElementById("lesson-list-toolbar-container");
+                                const btn = document.getElementById("btn-toggle-lesson-toolbar");
+                                const label = document.getElementById("lesson-toolbar-toggle-label");
+                                if (!container || !btn) return;
+
+                                function setOpen(open, animate) {
+                                    if (!animate) {
+                                        container.style.transition = "none";
+                                        requestAnimationFrame(() => {
+                                            setTimeout(() => { if (container) container.style.transition = ""; }, 60);
+                                        });
+                                    }
+                                    container.classList.toggle("is-open", open);
+                                    btn.classList.toggle("is-open", open);
+                                    btn.setAttribute("aria-expanded", open ? "true" : "false");
+                                    const isJa = typeof floraLang !== "undefined" && floraLang.get ? floraLang.get() === "ja" : true;
+                                    if (label) {
+                                        label.textContent = open ? (isJa ? "閉じる" : "Close") : (isJa ? "検索・設定ツール" : "Search & Tools");
+                                    }
+                                    try { localStorage.setItem("flora_lesson_toolbar_open", open ? "true" : "false"); } catch(e) {}
+                                }
+
+                                window.setLessonToolbarOpen = setOpen;
+                                window.toggleLessonToolbar = function() {
+                                    setOpen(!container.classList.contains("is-open"), true);
+                                };
+
+                                btn.onclick = function() {
+                                    window.toggleLessonToolbar();
+                                };
+
+                                let saved = "false";
+                                try { saved = localStorage.getItem("flora_lesson_toolbar_open"); } catch(e) {}
+                                setOpen(saved === "true", false);
+                            }
+                            if (document.readyState === "loading") {
+                                document.addEventListener("DOMContentLoaded", initToolbarCollapse);
+                            } else {
+                                initToolbarCollapse();
+                            }
+                        })();
+                    </script>
                 </div>
 
                 <!-- ============ プランプレビュー（未保存） ============ -->
@@ -16722,6 +16942,10 @@ ${existingLeads}
                 return true;
             });
 
+            if (typeof updateLessonFilterBadge === "function") {
+                updateLessonFilterBadge(sortedAll.length, filtered.length);
+            }
+
             if (allLessons.length === 0) {
                 const hasAnyLesson = Object.keys(lessonsObj || {}).length > 0;
                 el("lesson-list-empty").style.display = "block";
@@ -18060,6 +18284,126 @@ ${existingLeads}
                 searchDebounce = setTimeout(() => renderLessonList(lastLessonsSnapshot), 200);
             });
         }
+
+        // ==============================================================
+        // 🛠️ 過去の授業一覧：ツールバー可変式開閉制御
+        // ==============================================================
+        function setLessonToolbarOpen(open, animate = true) {
+            const container = el("lesson-list-toolbar-container");
+            const btn = el("btn-toggle-lesson-toolbar");
+            const label = el("lesson-toolbar-toggle-label");
+            if (!container || !btn) return;
+
+            if (!animate) {
+                container.style.transition = "none";
+                requestAnimationFrame(() => {
+                    setTimeout(() => {
+                        if (container) container.style.transition = "";
+                    }, 60);
+                });
+            }
+
+            container.classList.toggle("is-open", open);
+            btn.classList.toggle("is-open", open);
+            btn.setAttribute("aria-expanded", open ? "true" : "false");
+
+            const isJa = typeof floraLang !== "undefined" && floraLang.get ? floraLang.get() === "ja" : true;
+            if (label) {
+                label.textContent = open 
+                    ? (isJa ? "閉じる" : "Close") 
+                    : (isJa ? "検索・設定ツール" : "Search & Tools");
+            }
+
+            localStorage.setItem("flora_lesson_toolbar_open", open ? "true" : "false");
+        }
+        window.setLessonToolbarOpen = setLessonToolbarOpen;
+
+        function toggleLessonToolbar() {
+            const container = el("lesson-list-toolbar-container");
+            const isOpen = container?.classList.contains("is-open");
+            setLessonToolbarOpen(!isOpen, true);
+        }
+        window.toggleLessonToolbar = toggleLessonToolbar;
+
+        el("btn-toggle-lesson-toolbar")?.addEventListener("click", () => {
+            toggleLessonToolbar();
+        });
+
+        // 絞り込み中バッジの更新
+        function updateLessonFilterBadge(totalCount, filteredCount) {
+            const badge = el("lesson-filter-status-badge");
+            const badgeText = el("lesson-filter-status-text");
+            const totalBadge = el("lesson-list-total-count");
+
+            if (totalBadge && typeof totalCount === "number") {
+                totalBadge.textContent = `${totalCount}件`;
+            }
+
+            if (!badge || !badgeText) return;
+
+            const hasSearch = !!(lessonListSearchQuery && lessonListSearchQuery.trim());
+            const hasSubject = lessonListSubjectFilter && lessonListSubjectFilter !== "すべて";
+            const hasTab = activeLessonTab && activeLessonTab !== "all";
+
+            if (hasSearch || hasSubject || hasTab) {
+                badge.classList.remove("hidden");
+                const parts = [];
+                if (hasSearch) parts.push(`"${lessonListSearchQuery.trim()}"`);
+                if (hasSubject) parts.push(lessonListSubjectFilter);
+                if (hasTab) {
+                    const tabObj = (typeof getLessonTabs === "function" ? getLessonTabs() : []).find(t => t.id === activeLessonTab);
+                    if (tabObj) parts.push(tabObj.name);
+                }
+                const isJa = typeof floraLang !== "undefined" && floraLang.get ? floraLang.get() === "ja" : true;
+                badgeText.textContent = isJa 
+                    ? `🔍 絞り込み中: ${parts.join("・")} (${filteredCount}件)`
+                    : `🔍 Filtered: ${parts.join(" · ")} (${filteredCount})`;
+            } else {
+                badge.classList.add("hidden");
+            }
+        }
+        window.updateLessonFilterBadge = updateLessonFilterBadge;
+
+        // 絞り込みバッジクリックでツールバーを開いて検索窓にフォーカス
+        el("lesson-filter-status-badge")?.addEventListener("click", () => {
+            setLessonToolbarOpen(true);
+            el("lesson-search-input")?.focus();
+        });
+
+        // インラインクリアボタン（×）で即時クリア
+        el("btn-clear-lesson-filters-inline")?.addEventListener("click", (e) => {
+            e.stopPropagation();
+            lessonListSearchQuery = "";
+            const searchInput = el("lesson-search-input");
+            if (searchInput) searchInput.value = "";
+            lessonListSubjectFilter = "すべて";
+            activeLessonTab = "all";
+            renderLessonList(lastLessonsSnapshot);
+        });
+
+        // キーボードショートカット（Ctrl+F または / でツールバーを開いて検索窓にフォーカス）
+        document.addEventListener("keydown", (e) => {
+            const activeTag = document.activeElement?.tagName;
+            if (activeTag === "INPUT" || activeTag === "TEXTAREA" || activeTag === "SELECT") return;
+
+            if ((e.ctrlKey && e.key.toLowerCase() === "f") || e.key === "/") {
+                const wrap = el("lesson-list-wrap");
+                if (wrap && wrap.offsetParent !== null) {
+                    e.preventDefault();
+                    setLessonToolbarOpen(true);
+                    const searchInput = el("lesson-search-input");
+                    if (searchInput) {
+                        searchInput.focus();
+                        searchInput.select();
+                    }
+                }
+            }
+        });
+
+        // 初期状態の復元（デフォルトは閉じる = 授業本体が最上部にすぐ見える）
+        const savedToolbarState = localStorage.getItem("flora_lesson_toolbar_open");
+        const initialToolbarOpen = savedToolbarState === "true";
+        setLessonToolbarOpen(initialToolbarOpen, false);
 
                 // ==============================================================
         // 🗑️ 授業一括削除モード＆UI管理
