@@ -617,11 +617,35 @@ if (typeof window !== "undefined") {
 }
 
 // --------------------------------------------------------------------------
-// 🔁 キー・ローテーション付きfetch
+// --------------------------------------------------------------------------
+// ⏳ キャンセル対応スリープ（バックオフ待機用）
+// --------------------------------------------------------------------------
+function sleepWithSignal(ms, signal) {
+    return new Promise((resolve, reject) => {
+        if (signal?.aborted) {
+            return reject(new Error("ユーザーによりAIリクエストが中断されました。"));
+        }
+        const timer = setTimeout(() => {
+            if (signal) signal.removeEventListener("abort", onAbort);
+            resolve();
+        }, ms);
+        const onAbort = () => {
+            clearTimeout(timer);
+            reject(new Error("ユーザーによりAIリクエストが中断されました。"));
+        };
+        if (signal) {
+            signal.addEventListener("abort", onAbort, { once: true });
+        }
+    });
+}
+
+// --------------------------------------------------------------------------
+// 🔁 キー・ローテーション付きfetch（503過負荷時は待機リトライ付き）
 // - 自動タイムアウト（60秒など）はデフォルトで無効化
 // - ユーザーがタイムアウトボタンを押すか、APIから返信があるまで待機
 // - ユーザーがタイムアウトを押した場合は次のキーへ切り替え
 // - ユーザーが中止を押した場合は即座に例外を送出して終了
+// - 503過負荷時は即脱落せず、指数バックオフで一時待機後に同一キーで最大2回再試行
 // --------------------------------------------------------------------------
 export async function fetchWithKeyRotation(keys, buildRequest, { requestTimeoutMs = null, startIndex = 0, modelName = "", featureId = null, signal = null } = {}) {
     if (!keys || keys.length === 0) {
@@ -644,96 +668,131 @@ export async function fetchWithKeyRotation(keys, buildRequest, { requestTimeoutM
     const order = Array.from({ length: activeCount }, (_, step) => availableIndices[(offset + step) % activeCount]);
 
     let lastError = null;
+    const max503RetriesPerKey = 2; // 過負荷(503)時の最大リトライ回数
+
     for (const item of order) {
         const key = item.key;
         const i = item.originalIndex; // 元のキー番号（ログ用）
+        let retry503Count = 0;
+        let shouldTryNextKey = false;
 
-        const controller = new AbortController();
-        const reqId = ++activeRequestCounter;
-        const reqEntry = {
-            id: reqId,
-            controller,
-            modelName,
-            featureId,
-            startTime: Date.now(),
-            abortReason: null
-        };
-        activeRequestRegistry.set(reqId, reqEntry);
-        updateActiveRequestUI();
-
-        // 外部シグナル（ユーザーによる生成キャンセル等）との同期
-        if (signal) {
-            if (signal.aborted) {
-                reqEntry.abortReason = "user_cancel";
-                try { controller.abort("user_cancel"); } catch (e) {}
-            } else {
-                signal.addEventListener("abort", () => {
-                    reqEntry.abortReason = "user_cancel";
-                    try { controller.abort("user_cancel"); } catch (e) {}
-                }, { once: true });
-            }
-        }
-
-        let timeoutId = null;
-        if (typeof requestTimeoutMs === "number" && requestTimeoutMs > 0 && Number.isFinite(requestTimeoutMs)) {
-            timeoutId = setTimeout(() => {
-                reqEntry.abortReason = "auto_timeout";
-                controller.abort("auto_timeout");
-            }, requestTimeoutMs);
-        }
-
-        try {
-            const { url, options } = buildRequest(key);
-            const response = await fetch(url, { ...options, signal: controller.signal });
-            if (timeoutId) clearTimeout(timeoutId);
-            activeRequestRegistry.delete(reqId);
-            updateActiveRequestUI();
-
-            if (response.status === 429) {
-                const cooldownMs = Math.max(0, nextGeminiQuotaResetAt() - Date.now());
-                setKeyCooldown(key, modelName, cooldownMs);
-                const hoursLeft = Math.max(1, Math.round(cooldownMs / 3600000));
-                const tag = modelName ? `[${modelName}] ` : "";
-                console.warn(`⚠️ ${tag}キー#${i + 1} が上限（429）に達しました → 日次リセット（あと約${hoursLeft}時間）までお休みに設定し、次のキーへ`);
-                lastError = new Error(`レート制限(429): ${tag}キー#${i + 1}`);
-                continue;
-            }
-            if (response.status === 503) {
-                console.warn(`⚠️ モデルが過負荷（503） → 残りのキーは試さず次のモデルへフォールバック`);
-                lastError = new Error(`モデル過負荷(503)`);
-                break;
-            }
-            if (!response.ok) {
-                const errBody = await response.json().catch(() => ({}));
-                console.warn(`⚠️ キー#${i + 1} でエラー(${response.status}) → 次のキーへフォールバック`, errBody);
-                lastError = new Error(errBody.error?.message || `HTTPエラー: ${response.status}（キー#${i + 1}）`);
-                continue;
-            }
-            return response;
-        } catch (networkErr) {
-            if (timeoutId) clearTimeout(timeoutId);
-            activeRequestRegistry.delete(reqId);
-            updateActiveRequestUI();
-
-            const reason = reqEntry.abortReason;
-            if (reason === "user_cancel") {
+        while (true) {
+            if (signal?.aborted) {
                 console.warn(`⏹️ ユーザーによりAIリクエストが完全に中断されました`);
                 throw new Error("ユーザーによりAIリクエストが中断されました。");
             }
 
-            if (reason === "user_timeout") {
-                console.warn(`⏱️ ユーザーの指示によりキー#${i + 1}をタイムアウト → 次のキー/モデルへフォールバック`);
-                lastError = new Error(`手動タイムアウト: キー#${i + 1}`);
-                continue;
+            const controller = new AbortController();
+            const reqId = ++activeRequestCounter;
+            const reqEntry = {
+                id: reqId,
+                controller,
+                modelName,
+                featureId,
+                startTime: Date.now(),
+                abortReason: null
+            };
+            activeRequestRegistry.set(reqId, reqEntry);
+            updateActiveRequestUI();
+
+            // 外部シグナル（ユーザーによる生成キャンセル等）との同期
+            const syncAbort = () => {
+                reqEntry.abortReason = "user_cancel";
+                try { controller.abort("user_cancel"); } catch (e) {}
+            };
+            if (signal) {
+                if (signal.aborted) syncAbort();
+                else signal.addEventListener("abort", syncAbort, { once: true });
             }
 
-            if (networkErr?.name === "AbortError" || reason === "auto_timeout") {
-                console.warn(`⚠️ キー#${i + 1} がタイムアウトしました → 次のキーへフォールバック`);
-                lastError = new Error(`タイムアウト: キー#${i + 1}`);
-                continue;
+            let timeoutId = null;
+            if (typeof requestTimeoutMs === "number" && requestTimeoutMs > 0 && Number.isFinite(requestTimeoutMs)) {
+                timeoutId = setTimeout(() => {
+                    reqEntry.abortReason = "auto_timeout";
+                    controller.abort("auto_timeout");
+                }, requestTimeoutMs);
             }
-            console.warn(`⚠️ キー#${i + 1} で通信エラー → 次のキーへフォールバック`, networkErr);
-            lastError = networkErr;
+
+            try {
+                const { url, options } = buildRequest(key);
+                const response = await fetch(url, { ...options, signal: controller.signal });
+                if (timeoutId) clearTimeout(timeoutId);
+                activeRequestRegistry.delete(reqId);
+                updateActiveRequestUI();
+
+                if (response.status === 429) {
+                    const cooldownMs = Math.max(0, nextGeminiQuotaResetAt() - Date.now());
+                    setKeyCooldown(key, modelName, cooldownMs);
+                    const hoursLeft = Math.max(1, Math.round(cooldownMs / 3600000));
+                    const tag = modelName ? `[${modelName}] ` : "";
+                    console.warn(`⚠️ ${tag}キー#${i + 1} が上限（429）に達しました → 日次リセット（あと約${hoursLeft}時間）までお休みに設定し、次のキーへ`);
+                    lastError = new Error(`レート制限(429): ${tag}キー#${i + 1}`);
+                    shouldTryNextKey = true;
+                    break;
+                }
+
+                if (response.status === 503) {
+                    const tag = modelName ? `[${modelName}] ` : "";
+                    if (retry503Count < max503RetriesPerKey) {
+                        retry503Count++;
+                        // 1回目: ~1.2s-1.7s, 2回目: ~2.2s-2.8s
+                        const backoffMs = Math.round(1200 * Math.pow(1.8, retry503Count - 1) + Math.random() * 500);
+                        console.warn(`⚠️ ${tag}キー#${i + 1} で一時的な過負荷（503）を検知 → ${backoffMs}ms待機後に再試行します (${retry503Count}/${max503RetriesPerKey})...`);
+                        await sleepWithSignal(backoffMs, signal);
+                        continue; // 同一キーで再試行
+                    }
+                    console.warn(`⚠️ ${tag}過負荷（503）が継続（リトライ${max503RetriesPerKey}回上限） → 次のモデルへフォールバック`);
+                    lastError = new Error(`モデル過負荷(503)`);
+                    // 503はクラスタ全体の過負荷のため、同モデルの他キーは叩かず次のモデルへ脱出
+                    throw lastError;
+                }
+
+                if (!response.ok) {
+                    const errBody = await response.json().catch(() => ({}));
+                    console.warn(`⚠️ キー#${i + 1} でエラー(${response.status}) → 次のキーへフォールバック`, errBody);
+                    lastError = new Error(errBody.error?.message || `HTTPエラー: ${response.status}（キー#${i + 1}）`);
+                    shouldTryNextKey = true;
+                    break;
+                }
+
+                return response;
+            } catch (networkErr) {
+                if (timeoutId) clearTimeout(timeoutId);
+                activeRequestRegistry.delete(reqId);
+                updateActiveRequestUI();
+
+                if (networkErr?.message === "モデル過負荷(503)") {
+                    throw networkErr; // 次のモデルへフォールバックさせるため再送出
+                }
+
+                const reason = reqEntry.abortReason;
+                if (reason === "user_cancel" || networkErr?.message === "ユーザーによりAIリクエストが中断されました。") {
+                    console.warn(`⏹️ ユーザーによりAIリクエストが完全に中断されました`);
+                    throw new Error("ユーザーによりAIリクエストが中断されました。");
+                }
+
+                if (reason === "user_timeout") {
+                    console.warn(`⏱️ ユーザーの指示によりキー#${i + 1}をタイムアウト → 次のキー/モデルへフォールバック`);
+                    lastError = new Error(`手動タイムアウト: キー#${i + 1}`);
+                    shouldTryNextKey = true;
+                    break;
+                }
+
+                if (networkErr?.name === "AbortError" || reason === "auto_timeout") {
+                    console.warn(`⚠️ キー#${i + 1} がタイムアウトしました → 次のキーへフォールバック`);
+                    lastError = new Error(`タイムアウト: キー#${i + 1}`);
+                    shouldTryNextKey = true;
+                    break;
+                }
+
+                console.warn(`⚠️ キー#${i + 1} で通信エラー → 次のキーへフォールバック`, networkErr);
+                lastError = networkErr;
+                shouldTryNextKey = true;
+                break;
+            }
+        }
+
+        if (shouldTryNextKey) {
             continue;
         }
     }
@@ -742,19 +801,15 @@ export async function fetchWithKeyRotation(keys, buildRequest, { requestTimeoutM
 
 // --------------------------------------------------------------------------
 // 🧠 Geminiモデル一覧・機能割り当て
+// 💡 Google公式推奨の 3.8 / 3.7 系統に厳選・集約
 // --------------------------------------------------------------------------
 export const GEMINI_MODEL_FALLBACK_LIST = [
     'gemini-3.8-flash',
-    'gemini-3.7-flash',
-    'gemini-3.6-flash',
-    'gemini-3.5-flash',
-    'gemini-3.5-flash-lite',
-    'gemini-3.1-flash-lite',
-    'gemini-3-flash-preview'
+    'gemini-3.7-flash'
 ];
 
 export const DEEPSEEK_MODELS = [
-    'deepseek-v4-flash',
+    'deepseek-v4.1-flash',
     'deepseek-v4-pro'
 ];
 
@@ -1382,7 +1437,7 @@ async function runDeepseekFallbackLoop(contents, systemInstruction, options = {}
         silentFallback = false,
         featureId = null,
         requestTimeoutMs = null,
-        preferredModel = "deepseek-v4-flash",
+        preferredModel = "deepseek-v4.1-flash",
         rawText = !wantsJson
     } = options;
 
@@ -1413,7 +1468,7 @@ async function runDeepseekFallbackLoop(contents, systemInstruction, options = {}
     }
     if (modelList.length === 0) {
         const availableDs = getAvailableDeepseekModels();
-        const primary = (preferredModel && isDeepseekModel(preferredModel)) ? preferredModel : (availableDs[0] || "deepseek-v4-flash");
+        const primary = (preferredModel && isDeepseekModel(preferredModel)) ? preferredModel : (availableDs[0] || "deepseek-v4.1-flash");
         modelList = [primary, ...availableDs.filter(m => m !== primary)];
     }
     // Proモデル除外が有効なら念のためフィルタ
@@ -1725,12 +1780,27 @@ async function runGeminiFallbackLoop(contents, systemInstruction, options = {}) 
                     }
                 }), { requestTimeoutMs, startIndex: keyOffset, modelName, featureId, signal });
             } else {
-                response = await fetch("/api/gemini/generate", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ model: modelName, ...requestBodyObj }),
-                    signal: signal || undefined
-                });
+                let proxyResp = null;
+                const maxProxyRetries = 2;
+                for (let pAttempt = 0; pAttempt <= maxProxyRetries; pAttempt++) {
+                    if (signal?.aborted) {
+                        throw new Error("ユーザーによりAIリクエストが中断されました。");
+                    }
+                    proxyResp = await fetch("/api/gemini/generate", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ model: modelName, ...requestBodyObj }),
+                        signal: signal || undefined
+                    });
+                    if (proxyResp.status === 503 && pAttempt < maxProxyRetries) {
+                        const backoffMs = Math.round(1200 * Math.pow(1.8, pAttempt) + Math.random() * 500);
+                        console.warn(`⚠️ [${modelName}] サーバープロキシ経由で一時的過負荷（503） → ${backoffMs}ms待機後に再試行 (${pAttempt + 1}/${maxProxyRetries})...`);
+                        await sleepWithSignal(backoffMs, signal);
+                        continue;
+                    }
+                    break;
+                }
+                response = proxyResp;
                 if (!response.ok) {
                     if (response.status === 404) {
                         setTimeout(() => { if (window.__apikmOpen) window.__apikmOpen(); }, 150);
@@ -1821,6 +1891,33 @@ async function runGeminiFallbackLoop(contents, systemInstruction, options = {}) 
         console.warn(`⚠️ ${modelName} が失敗しました（${result.reason}） → 次のモデルへフォールバック`, result.error);
         lastError = result.error;
         fallbackAttempts.push({ model: modelName, reason: result.isFormatError ? "JSON解析エラー（再指示後も形式が崩れていた）" : result.reason });
+    }
+
+    // 🛡️ 最終防衛ライン: Gemini全モデル（3.8 / 3.7）が失敗した場合、画像入力がなければDeepSeek (deepseek-v4.1-flash) に自動フォールバック
+    if (!hasImages) {
+        const dsKeys = getDeepseekKeys();
+        const hasDsProxy = !isStaticHostingEnvironment() && (typeof window === "undefined" || window.__serverHasDeepseekKey !== false);
+        if ((dsKeys && dsKeys.length > 0) || hasDsProxy) {
+            console.warn("🛡️ Gemini全モデルが利用不可のため、最終防衛ラインとしてDeepSeek (deepseek-v4.1-flash) へ自動フォールバックします");
+            fallbackAttempts.push({ model: "gemini-all", reason: "Gemini全モデル過負荷・失敗 → 最終防衛ライン(DeepSeek)発動" });
+            try {
+                const dsResult = await runDeepseekFallbackLoop(contents, systemInstruction, {
+                    ...options,
+                    preferredModel: "deepseek-v4.1-flash",
+                    allowedModels: ["deepseek-v4.1-flash"],
+                    silentFallback: false
+                });
+                if (typeof window !== "undefined") window.__lastSuccessfulAIModel = "deepseek-v4.1-flash";
+                if (typeof options.onModelUsed === "function") {
+                    try { options.onModelUsed("deepseek-v4.1-flash"); } catch (_) {}
+                }
+                if (!silentFallback) notifyModelFallback(fallbackAttempts, "deepseek-v4.1-flash");
+                return dsResult;
+            } catch (dsErr) {
+                console.error("❌ 最終防衛ラインのDeepSeekでもリクエストが失敗しました:", dsErr);
+                lastError = dsErr;
+            }
+        }
     }
 
     if (!silentFallback) notifyModelFallback(fallbackAttempts, null);
