@@ -5765,14 +5765,23 @@
                 }
             });
 
-            structuredAnswer += `\n【小問ごとのステップ別解説】\n`;
-            (kyotsuProblemData.sections || []).forEach(sec => {
+            structuredAnswer += `\n【一連の流れで読み解く完全模範解答・詳細思考プロセス】\n`;
+            (kyotsuProblemData.sections || []).forEach((sec, idx) => {
+                if (idx > 0) {
+                    const prevSec = kyotsuProblemData.sections[idx - 1];
+                    const prevNum = prevSec?.section_id || `(${idx})`;
+                    const curNum = sec.section_id || `(${idx + 1})`;
+                    structuredAnswer += `\n----------------------------------------\n`;
+                    structuredAnswer += `🔗 思考のバトン：${prevNum}の結論を活用して${curNum}へ\n`;
+                    structuredAnswer += `前問で得られた結果や規則性を土台として、次の設問へと論理を展開します。\n`;
+                    structuredAnswer += `----------------------------------------\n`;
+                }
                 structuredAnswer += `\n▼ ${sec.section_id} ${sec.section_title || ""}\n`;
                 structuredAnswer += `${sec.explanation || "解説なし"}\n`;
             });
 
             if (kyotsuProblemData.overall_review) {
-                structuredAnswer += `\n【大問の総括・思考ポイント】\n${kyotsuProblemData.overall_review}\n`;
+                structuredAnswer += `\n【大問の総括・共通テストの急所と思考ポイント】\n${kyotsuProblemData.overall_review}\n`;
             }
 
             // 3. ミスしたマークの着眼点・罠 / 全問正解サマリー
