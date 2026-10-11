@@ -1083,56 +1083,120 @@
             display: flex;
             align-items: center;
             gap: 0.45rem;
+        }
+
         /* ==========================================================================
-           💡 AI質問（AIチューター）強化スタイル（スタイル切り替え・引用・ピンポイント質問）
+           💡 AI質問（AIチューター）強化スタイル（指導スタイル・引用・チップ）
            ========================================================================== */
-        /* 指導スタイル切り替えバー */
+        /* 指導スタイル セクション */
+        .chat-teaching-styles-section {
+            margin-bottom: 0.75rem;
+            padding: 0.1rem 0;
+        }
+        .chat-styles-header {
+            display: flex;
+            align-items: center;
+            border-radius: var(--radius-md);
+            justify-content: space-between;
+            margin-bottom: 0.35rem;
+            padding: 0 0.2rem;
+        }
+        .chat-styles-micro-label {
+            font-size: 0.66rem;
+            font-weight: 800;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+        .chat-styles-active-badge {
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: var(--brand-primary);
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.25);
+            padding: 0.1rem 0.45rem;
+            border-radius: var(--radius-full);
+            transition: all 150ms ease;
+        }
+
+        /* セグメンテッドコントロール（カプセル状タブバー） */
         .chat-teaching-styles-bar {
             display: flex;
             align-items: center;
-            gap: 0.35rem;
-            padding: 0.35rem 0.5rem;
-            background: var(--bg-subtle);
+            background: rgba(0, 0, 0, 0.32);
             border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
-            margin-bottom: 0.6rem;
-            overflow-x: auto;
-            scrollbar-width: none;
-        }
-        .chat-teaching-styles-bar::-webkit-scrollbar {
-            display: none;
-        }
-        .teaching-style-label {
-            font-size: 0.7rem;
-            font-weight: 800;
-            color: var(--text-muted);
-            white-space: nowrap;
-            margin-right: 0.2rem;
+            border-radius: var(--radius-full);
+            padding: 2.5px;
+            gap: 2px;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.25);
+            width: 100%;
         }
         .teaching-style-btn {
-            font-size: 0.72rem;
-            font-weight: 700;
-            padding: 0.25rem 0.55rem;
-            border-radius: var(--radius-sm);
-            border: 1px solid transparent;
-            background: transparent;
-            color: var(--text-secondary);
-            cursor: pointer;
-            white-space: nowrap;
-            transition: all 120ms ease;
+            flex: 1;
+            min-width: 0;
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 0.25rem;
+            padding: 0.32rem 0.2rem;
+            border-radius: var(--radius-full);
+            border: 1px solid transparent;
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 0.7rem;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 160ms cubic-bezier(0.16, 1, 0.3, 1);
+            user-select: none;
+        }
+        .teaching-style-btn .style-icon {
+            font-size: 0.75rem;
+            line-height: 1;
+            opacity: 0.85;
+            transition: transform 140ms ease;
+        }
+        .teaching-style-btn .style-text {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            line-height: 1.1;
         }
         .teaching-style-btn:hover {
             color: var(--text-primary);
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.04);
         }
+        .teaching-style-btn:hover .style-icon {
+            transform: scale(1.1);
+        }
+
+        /* アクティブスタイルごとのカラーバリエーション */
         .teaching-style-btn.active {
-            background: var(--bg-surface);
-            color: var(--brand-primary);
-            border-color: var(--brand-primary);
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+            font-weight: 800;
+        }
+        .teaching-style-btn[data-style="standard"].active {
+            background: rgba(16, 185, 129, 0.16);
+            border-color: rgba(16, 185, 129, 0.38);
+            color: #34D399;
+            box-shadow: 0 1px 6px rgba(16, 185, 129, 0.15), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+        }
+        .teaching-style-btn[data-style="easy"].active {
+            background: rgba(6, 182, 212, 0.16);
+            border-color: rgba(6, 182, 212, 0.38);
+            color: #38BDF8;
+            box-shadow: 0 1px 6px rgba(6, 182, 212, 0.15), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+        }
+        .teaching-style-btn[data-style="speed"].active {
+            background: rgba(245, 158, 11, 0.16);
+            border-color: rgba(245, 158, 11, 0.38);
+            color: #FBBF24;
+            box-shadow: 0 1px 6px rgba(245, 158, 11, 0.15), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+        }
+        .teaching-style-btn[data-style="strict"].active {
+            background: rgba(168, 85, 247, 0.16);
+            border-color: rgba(168, 85, 247, 0.38);
+            color: #C084FC;
+            box-shadow: 0 1px 6px rgba(168, 85, 247, 0.15), inset 0 1px 1px rgba(255, 255, 255, 0.1);
         }
 
         /* ⚡ クイック質問チップ列 */
@@ -1140,8 +1204,8 @@
             display: flex;
             gap: 0.35rem;
             overflow-x: auto;
-            padding: 0.3rem 0.1rem;
-            margin-bottom: 0.45rem;
+            padding: 0.35rem 0.1rem;
+            margin-bottom: 0.5rem;
             scrollbar-width: none;
         }
         .chat-quick-chips-wrap::-webkit-scrollbar {
@@ -1150,44 +1214,82 @@
         .chat-quick-chip-btn {
             font-size: 0.72rem;
             font-weight: 700;
-            padding: 0.25rem 0.6rem;
+            padding: 0.28rem 0.65rem;
             border-radius: var(--radius-full);
-            border: 1px solid var(--border-color);
-            background: var(--bg-surface);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.03);
             color: var(--text-secondary);
             cursor: pointer;
             white-space: nowrap;
-            transition: all 120ms ease;
+            transition: all 140ms cubic-bezier(0.16, 1, 0.3, 1);
             flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            backdrop-filter: blur(4px);
         }
         .chat-quick-chip-btn:hover {
-            color: #818CF8;
-            border-color: #818CF8;
-            background: rgba(99, 102, 241, 0.08);
+            color: var(--brand-primary);
+            border-color: rgba(16, 185, 129, 0.35);
+            background: rgba(16, 185, 129, 0.08);
             transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+        .chat-quick-chip-btn#chip-kyotsu-trap {
+            border-color: rgba(239, 68, 68, 0.3);
+            background: rgba(239, 68, 68, 0.08);
+            color: #F87171;
+        }
+        .chat-quick-chip-btn#chip-kyotsu-trap:hover {
+            border-color: #EF4444;
+            background: rgba(239, 68, 68, 0.15);
+            color: #FCA5A5;
         }
 
         /* ❝ 引用プレビューボックス */
         .chat-quote-preview-box {
             display: none;
             align-items: flex-start;
-            justify-content: space-between;
-            gap: 0.5rem;
+            gap: 0.55rem;
             background: rgba(99, 102, 241, 0.08);
-            border: 1px solid rgba(99, 102, 241, 0.28);
+            border: 1px solid rgba(99, 102, 241, 0.25);
             border-left: 3.5px solid #818CF8;
-            border-radius: var(--radius-sm);
-            padding: 0.45rem 0.65rem;
-            margin-bottom: 0.45rem;
-            font-size: 0.78rem;
+            border-radius: var(--radius-md);
+            padding: 0.5rem 0.7rem;
+            margin-bottom: 0.55rem;
+            font-size: 0.75rem;
             color: var(--text-primary);
-            animation: fadeIn 0.15s ease-out;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            animation: quoteSlideIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes quoteSlideIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         .chat-quote-preview-box.visible {
             display: flex;
         }
-        .chat-quote-preview-box .quote-content {
+        .chat-quote-preview-box .quote-badge-icon {
+            font-size: 0.95rem;
+            color: #818CF8;
+            font-weight: 900;
+            line-height: 1;
+            margin-top: 0.1rem;
+            flex-shrink: 0;
+        }
+        .chat-quote-preview-box .quote-body {
             flex: 1;
+            min-width: 0;
+        }
+        .chat-quote-preview-box .quote-header-title {
+            font-size: 0.65rem;
+            font-weight: 800;
+            color: #A5B4FC;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            margin-bottom: 0.15rem;
+        }
+        .chat-quote-preview-box .quote-content {
             overflow: hidden;
             text-overflow: ellipsis;
             display: -webkit-box;
@@ -1195,18 +1297,30 @@
             -webkit-box-orient: vertical;
             line-height: 1.45;
             font-style: italic;
+            color: var(--text-secondary);
         }
         .chat-quote-preview-box .quote-clear-btn {
-            background: none;
-            border: none;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             color: var(--text-muted);
             cursor: pointer;
-            font-size: 0.9rem;
-            padding: 0 0.2rem;
+            font-size: 0.75rem;
+            width: 1.4rem;
+            height: 1.4rem;
+            border-radius: var(--radius-full);
+            display: flex;
+            align-items: center;
+            justify-content: center;
             line-height: 1;
+            flex-shrink: 0;
+            transition: all 120ms ease;
+            margin-top: -0.1rem;
         }
         .chat-quote-preview-box .quote-clear-btn:hover {
-            color: #EF4444;
+            color: #FFFFFF;
+            background: #EF4444;
+            border-color: #EF4444;
+            transform: scale(1.08);
         }
 
         /* 🎯 フローティング引用質問ボタン（テキスト選択時に出現） */
@@ -1517,13 +1631,30 @@
                             </div>
                         </div>
 
-                        <!-- 🎛️ ④ 指導スタイル切り替えバー -->
-                        <div class="chat-teaching-styles-bar" id="chat-teaching-styles-bar" title="AIの解説スタイルを選択できます">
-                            <span class="teaching-style-label">指導方針:</span>
-                            <button type="button" class="teaching-style-btn active" data-style="standard" title="標準的で丁寧なステップ解説">⚪ 標準丁寧</button>
-                            <button type="button" class="teaching-style-btn" data-style="easy" title="専門用語を控え、直感的なイメージや日常の例えで解説">🟢 噛み砕き</button>
-                            <button type="button" class="teaching-style-btn" data-style="speed" title="試験本番で使える秒殺テクニック・裏技・グラフでの判断">🔵 最速・裏技</button>
-                            <button type="button" class="teaching-style-btn" data-style="strict" title="定理の背景や前提条件を漏らさない厳密な数学的論理展開">🟣 厳密・論理</button>
+                        <!-- 🎛️ ④ 指導方針セグメンテッドコントロール -->
+                        <div class="chat-teaching-styles-section">
+                            <div class="chat-styles-header">
+                                <span class="chat-styles-micro-label">指導方針</span>
+                                <span class="chat-styles-active-badge" id="chat-styles-active-badge">標準丁寧</span>
+                            </div>
+                            <div class="chat-teaching-styles-bar" id="chat-teaching-styles-bar" role="tablist">
+                                <button type="button" class="teaching-style-btn active" data-style="standard" title="標準的で丁寧なステップ解説">
+                                    <span class="style-icon">🎯</span>
+                                    <span class="style-text">標準丁寧</span>
+                                </button>
+                                <button type="button" class="teaching-style-btn" data-style="easy" title="専門用語を控え、直感的なイメージや日常の例えで解説">
+                                    <span class="style-icon">💡</span>
+                                    <span class="style-text">噛み砕き</span>
+                                </button>
+                                <button type="button" class="teaching-style-btn" data-style="speed" title="試験本番で使える秒殺テクニック・裏技・グラフでの判断">
+                                    <span class="style-icon">⚡</span>
+                                    <span class="style-text">最速裏技</span>
+                                </button>
+                                <button type="button" class="teaching-style-btn" data-style="strict" title="定理の背景や前提条件を漏らさない厳密な数学的論理展開">
+                                    <span class="style-icon">📐</span>
+                                    <span class="style-text">厳密論理</span>
+                                </button>
+                            </div>
                         </div>
 
                         <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="qna-past-logs-btn" style="display:none; width:100%; margin-bottom:0.5rem; justify-content:flex-start;">
@@ -1537,9 +1668,12 @@
                         </div>
 
                         <!-- ❝ 引用プレビューボックス（テキスト選択や設問指定時に自動出現） -->
-                        <div class="chat-quote-preview-box" id="chat-quote-preview-box">
-                            <span style="font-size: 1rem; color: #818CF8; font-weight: 900; line-height: 1;">❝</span>
-                            <div class="quote-content" id="chat-quote-content">引用した解説部分...</div>
+                        <div class="chat-quote-preview-box" id="chat-quote-preview-box" style="display: none;">
+                            <span class="quote-badge-icon">❝</span>
+                            <div class="quote-body">
+                                <div class="quote-header-title">引用中の解説</div>
+                                <div class="quote-content" id="chat-quote-content"></div>
+                            </div>
                             <button type="button" class="quote-clear-btn" id="chat-quote-clear-btn" title="引用を解除">✕</button>
                         </div>
 
@@ -4557,8 +4691,30 @@ ${EXPERT_TEACHER_PROMPT}
                 document.querySelectorAll(".teaching-style-btn").forEach(b => b.classList.remove("active"));
                 btn.classList.add("active");
                 activeTeachingStyle = btn.getAttribute("data-style") || "standard";
-                const styleName = TEACHING_STYLES[activeTeachingStyle]?.label || "標準";
-                showToast(`指導方針を「${styleName}」に切り替えました。以降の回答に反映されます。`, "info", 2000);
+                const styleName = TEACHING_STYLES[activeTeachingStyle]?.label || "標準丁寧";
+                
+                const badgeEl = document.getElementById("chat-styles-active-badge");
+                if (badgeEl) {
+                    badgeEl.textContent = styleName;
+                    if (activeTeachingStyle === "standard") {
+                        badgeEl.style.color = "#10B981";
+                        badgeEl.style.borderColor = "rgba(16, 185, 129, 0.3)";
+                        badgeEl.style.background = "rgba(16, 185, 129, 0.1)";
+                    } else if (activeTeachingStyle === "easy") {
+                        badgeEl.style.color = "#06B6D4";
+                        badgeEl.style.borderColor = "rgba(6, 182, 212, 0.3)";
+                        badgeEl.style.background = "rgba(6, 182, 212, 0.1)";
+                    } else if (activeTeachingStyle === "speed") {
+                        badgeEl.style.color = "#F59E0B";
+                        badgeEl.style.borderColor = "rgba(245, 158, 11, 0.3)";
+                        badgeEl.style.background = "rgba(245, 158, 11, 0.1)";
+                    } else if (activeTeachingStyle === "strict") {
+                        badgeEl.style.color = "#A855F7";
+                        badgeEl.style.borderColor = "rgba(168, 85, 247, 0.3)";
+                        badgeEl.style.background = "rgba(168, 85, 247, 0.1)";
+                    }
+                }
+                showToast(`指導方針を「${styleName}」に切り替えました。以降の回答に反映されます。`, "info", 1800);
             });
         });
 
