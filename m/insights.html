@@ -2511,9 +2511,129 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
             animation: fadeInToast 0.2s ease;
         }
-        @keyframes fadeInToast {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        /* 💬 モバイル版 教科書・単語 AI質問メンター専用スタイル */
+        .m-ai-ask-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(6px);
+            z-index: 100050;
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+        }
+        .m-ai-ask-overlay.active { display: flex; }
+        .m-ai-ask-dialog {
+            width: 100%;
+            max-width: 580px;
+            height: 92vh;
+            background: #FFFFFF;
+            border-radius: 20px 20px 0 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.3);
+            animation: slideUpAiModal 0.22s ease-out;
+        }
+        @keyframes slideUpAiModal {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+        .m-ai-ask-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.85rem 1.1rem;
+            border-bottom: 1px solid #E2E8F0;
+            background: #FFFFFF;
+            flex-shrink: 0;
+        }
+        .m-ai-ask-toolbar {
+            display: flex;
+            gap: 0.4rem;
+            padding: 0.5rem 1rem;
+            background: #F8FAFC;
+            border-bottom: 1px solid #E2E8F0;
+            align-items: center;
+            flex-wrap: wrap;
+            flex-shrink: 0;
+        }
+        .m-ai-ask-chips {
+            display: flex;
+            gap: 0.35rem;
+            overflow-x: auto;
+            padding: 0.35rem 1rem;
+            background: rgba(0, 243, 255, 0.04);
+            border-bottom: 1px dashed #E2E8F0;
+            white-space: nowrap;
+            flex-shrink: 0;
+            -webkit-overflow-scrolling: touch;
+        }
+        .m-ai-ask-chip {
+            background: #FFFFFF;
+            border: 1px solid #CBD5E1;
+            border-radius: 9999px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: #475569;
+            padding: 0.2rem 0.6rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.2rem;
+            flex-shrink: 0;
+        }
+        .m-ai-ask-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.9rem 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+            background: #F1F5F9;
+        }
+        .m-ai-ask-bubble-user {
+            align-self: flex-end;
+            max-width: 86%;
+            background: linear-gradient(135deg, #10B981, #059669);
+            color: #FFFFFF;
+            padding: 0.65rem 0.95rem;
+            border-radius: 14px 14px 2px 14px;
+            font-size: 0.86rem;
+            font-weight: 600;
+            line-height: 1.5;
+            word-break: break-word;
+        }
+        .m-ai-ask-bubble-ai {
+            align-self: flex-start;
+            max-width: 98%;
+            width: 100%;
+            background: #FFFFFF;
+            border: 1px solid #E2E8F0;
+            border-radius: 14px 14px 14px 2px;
+            padding: 0.95rem 1rem;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .m-ai-ask-card-box {
+            background: #F0FDF4;
+            border: 1.5px solid #86EFAC;
+            border-radius: 12px;
+            padding: 0.85rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+        .m-ai-ask-footer {
+            padding: 0.65rem 1rem;
+            background: #FFFFFF;
+            border-top: 1px solid #E2E8F0;
+            display: flex;
+            gap: 0.4rem;
+            align-items: flex-end;
+            flex-shrink: 0;
         }
     </style>
 </head>
@@ -2529,6 +2649,7 @@
             </div>
         </div>
         <div class="memo-header-actions">
+            <button type="button" class="memo-icon-btn" id="m-btn-header-ai-ask" style="color:#0284c7; background:rgba(0,243,255,0.12); border:1px solid rgba(0,243,255,0.35);" title="💬 単語AI質問＆即カード化">💬</button>
             <button type="button" class="memo-icon-btn" onclick="location.href='../insights.html?tab=notes'" title="📝 授業ノート一覧を開く">📝</button>
             <button type="button" class="memo-icon-btn" id="btn-open-add-card" title="暗記カード追加">➕</button>
             <button type="button" class="memo-icon-btn" onclick="location.href='lesson.html'" title="授業へ戻る">📖</button>
@@ -2585,6 +2706,9 @@
             <div class="daily-sub-actions">
                 <button type="button" class="daily-sub-btn" id="btn-open-custom-test" style="background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.4); color: #047857; font-weight: 800;">
                     <span>🎯 範囲指定カスタムテスト</span>
+                </button>
+                <button type="button" class="daily-sub-btn" id="m-btn-open-ai-ask" style="background: rgba(0, 243, 255, 0.12); border-color: rgba(0, 243, 255, 0.4); color: #0284c7; font-weight: 800;">
+                    <span>💬 単語AI質問＆即カード化</span>
                 </button>
                 <button type="button" class="daily-sub-btn" id="btn-start-quiz-mode">
                     <span>⚡ スピード4択テスト</span>
@@ -3084,6 +3208,67 @@
             <button type="button" class="ai-sheet-close-btn" id="ai-sheet-btn-ack">
                 学習を続ける
             </button>
+        </div>
+    </div>
+
+    <!-- 💬 モバイル版 教科書・単語 AI質問メンターモーダル -->
+    <div id="m-ai-ask-modal" class="m-ai-ask-overlay">
+        <div class="m-ai-ask-dialog">
+            <div class="m-ai-ask-header">
+                <div style="display: flex; align-items: center; gap: 0.45rem;">
+                    <span style="font-size: 1.25rem;">💬</span>
+                    <div>
+                        <div style="font-weight: 800; font-size: 0.95rem; color: #0F172A;">教科書・単語 AIメンター</div>
+                        <div style="font-size: 0.68rem; color: #64748B;">質問 ➔ 暗記カードに即座に登録</div>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.4rem;">
+                    <button type="button" class="rate-btn-sub" id="m-ai-ask-btn-reset" style="padding: 0.25rem 0.55rem; font-size: 0.72rem;">🔄 新規</button>
+                    <button type="button" style="background: none; border: none; font-size: 1.4rem; color: #94A3B8; cursor: pointer; padding: 0.2rem 0.4rem;" id="m-ai-ask-close-btn">✕</button>
+                </div>
+            </div>
+
+            <div class="m-ai-ask-toolbar">
+                <select id="m-ai-ask-subj-select" style="background: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 8px; padding: 0.3rem 0.5rem; font-size: 0.75rem; font-weight: 700;">
+                    <option value="英語">🔤 英語</option>
+                    <option value="数学">📐 数学</option>
+                    <option value="物理">⚡ 物理</option>
+                    <option value="化学">🧪 化学</option>
+                    <option value="生物">🧬 生物</option>
+                    <option value="世界史" selected>🏛️ 世界史</option>
+                    <option value="日本史">🏯 日本史</option>
+                    <option value="地理">🌍 地理</option>
+                    <option value="公共">⚖️ 公共</option>
+                    <option value="国語">📖 国語</option>
+                    <option value="情報">💻 情報</option>
+                </select>
+                <select id="m-ai-ask-style-select" style="background: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 8px; padding: 0.3rem 0.5rem; font-size: 0.75rem;">
+                    <option value="explain">💡 本質から直感解説</option>
+                    <option value="analogy">🍎 身近なたとえ話で</option>
+                    <option value="mnemonic">🎴 語呂合わせ・暗記術</option>
+                    <option value="exam">🎯 入試・テストでの急所</option>
+                </select>
+            </div>
+
+            <div class="m-ai-ask-chips" id="m-ai-ask-chips-container">
+                <!-- 教科別チップ動的生成 -->
+            </div>
+
+            <div class="m-ai-ask-body" id="m-ai-ask-body">
+                <div id="m-ai-ask-transcript" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    <div id="m-ai-ask-welcome" style="text-align: center; padding: 2rem 1rem; color: #64748B; font-size: 0.82rem; line-height: 1.6; background: #FFFFFF; border-radius: 12px; border: 1px dashed #CBD5E1;">
+                        💡 <strong>教科書で疑問に思った単語や公式を質問！</strong><br>
+                        AIが解説し、フラッシュカードの表・裏・覚え方を自動作成します。
+                    </div>
+                </div>
+            </div>
+
+            <div class="m-ai-ask-footer">
+                <textarea id="m-ai-ask-input" class="memo-textarea" rows="2" style="flex: 1; padding: 0.5rem 0.7rem; font-size: 0.84rem; border-radius: 10px; resize: none;" placeholder="分からない単語や文を入力..."></textarea>
+                <button type="button" class="daily-cta-btn" id="m-ai-ask-send-btn" style="width: auto; padding: 0.55rem 0.95rem; font-size: 0.82rem; white-space: nowrap; border-radius: 10px; margin: 0;">
+                    送信 ➔
+                </button>
+            </div>
         </div>
     </div>
 
@@ -6806,8 +6991,356 @@
             }, 500);
         }
 
+        // ==========================================
+        // 💬 モバイル版 教科書・単語 AI質問メンター ロジック
+        // ==========================================
+        let mAiAskHistory = [];
+        const mAiPresets = {
+            "英語": [
+                { label: "accommodate の意味と急所", q: "accommodate の意味、コロケーション、使い方の急所を教えて" },
+                { label: "仮定法過去と過去完了の違い", q: "仮定法過去と過去完了の直感イメージと見分け方は？" },
+                { label: "前置詞 at / on / in のイメージ", q: "前置詞 at, on, in の本質的イメージの差は？" },
+                { label: "reluctant と hesitant の差", q: "reluctant と hesitant の使い分けとニュアンス差は？" }
+            ],
+            "数学": [
+                { label: "相加相乗平均の使い所と等号成立", q: "相加相乗平均の大小関係を問題で使うサインと等号成立条件は？" },
+                { label: "分散と標準偏差の直感理解", q: "なぜ分散は2乗するのか？日常のたとえ話で教えて" },
+                { label: "余事象を使う問題のサイン", q: "確率で「余事象」を使うべきキーワードやサインは？" }
+            ],
+            "物理": [
+                { label: "仕事と運動エネルギーの原理", q: "仕事と運動エネルギーの原理（W=ΔK）の本質と力学的エネルギー保存則との差は？" },
+                { label: "電位と電場の違い", q: "電位と電場の直感的なイメージの違いは？" }
+            ],
+            "化学": [
+                { label: "酸化数を見抜く鉄則ルール", q: "酸化数を求める基本ルールと例外で迷わない判定法は？" },
+                { label: "ルシャトリエの原理の直感理解", q: "ルシャトリエの原理を直感的にスッと理解する方法は？" }
+            ],
+            "生物": [
+                { label: "転写と翻訳の違い", q: "転写と翻訳の場所・仕組み・関わるRNAの違いは？" },
+                { label: "受動輸送と能動輸送の違い", q: "受動輸送（拡散）と能動輸送（ATP消費）の違いは？" }
+            ],
+            "世界史": [
+                { label: "アダム・スミス『見えざる手』", q: "アダム・スミス『諸国民の富』の「見えざる手」の意味と背景は？" },
+                { label: "ウェストファリア条約の意義", q: "ウェストファリア条約が「主権国家体制の確立」と言われる理由は？" }
+            ],
+            "日本史": [
+                { label: "惣村と座の違い", q: "農民の「惣村」と商工業者の「座」のそれぞれの特徴は？" },
+                { label: "寛政の改革と享保の改革の比較", q: "享保の改革と寛政の改革の政策の違いと共通点は？" }
+            ],
+            "公共": [
+                { label: "ロールズの正義論と格差原理", q: "ロールズの「無知のヴェール」と「格差原理」の意味を教えて" },
+                { label: "夜警国家と福祉国家の違い", q: "安上がりな政府から福祉国家への変遷理由は？" }
+            ],
+            "地理": [
+                { label: "偏西風と西岸海洋性気候", q: "なぜヨーロッパは高緯度でも温暖なのか？偏西風と暖流の関係は？" }
+            ],
+            "国語": [
+                { label: "「いとおかし」と「あはれ」の差", q: "古文の「をかし」と「あはれ」の美意識の違いは？" }
+            ],
+            "情報": [
+                { label: "公開鍵と共通鍵の暗号方式の違い", q: "公開鍵暗号と共通鍵暗号の使い分けとメリット・デメリットは？" }
+            ]
+        };
+
+        function renderMobileAiAskChips() {
+            const container = document.getElementById("m-ai-ask-chips-container");
+            const subjSel = document.getElementById("m-ai-ask-subj-select");
+            if (!container) return;
+            const curSubj = (subjSel && subjSel.value) ? subjSel.value : "世界史";
+            const list = mAiPresets[curSubj] || mAiPresets["世界史"] || [];
+            container.innerHTML = "";
+            list.forEach(item => {
+                const btn = document.createElement("button");
+                btn.type = "button";
+                btn.className = "m-ai-ask-chip";
+                btn.innerHTML = `<span>💡</span><span>${escapeHtml(item.label)}</span>`;
+                btn.onclick = () => {
+                    const input = document.getElementById("m-ai-ask-input");
+                    if (input) {
+                        input.value = item.q;
+                        submitMobileAiAskQuestion();
+                    }
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        function openMobileAiAskModal(initialTerm = "", initialSubj = "") {
+            const modal = document.getElementById("m-ai-ask-modal");
+            if (!modal) return;
+            modal.classList.add("active");
+            const subjSel = document.getElementById("m-ai-ask-subj-select");
+            const input = document.getElementById("m-ai-ask-input");
+            if (initialSubj && subjSel) subjSel.value = initialSubj;
+            if (initialTerm && input) input.value = initialTerm;
+            renderMobileAiAskChips();
+            if (input) {
+                input.focus();
+                if (initialTerm) setTimeout(() => submitMobileAiAskQuestion(), 100);
+            }
+        }
+
+        window.openMobileAiAskModal = openMobileAiAskModal;
+        window.closeMobileAiAskModal = closeMobileAiAskModal;
+        window.submitMobileAiAskQuestion = submitMobileAiAskQuestion;
+
+        function closeMobileAiAskModal() {
+            const modal = document.getElementById("m-ai-ask-modal");
+            if (modal) modal.classList.remove("active");
+        }
+
+        async function submitMobileAiAskQuestion() {
+            const input = document.getElementById("m-ai-ask-input");
+            const subjSel = document.getElementById("m-ai-ask-subj-select");
+            const styleSel = document.getElementById("m-ai-ask-style-select");
+            const sendBtn = document.getElementById("m-ai-ask-send-btn");
+            const transcript = document.getElementById("m-ai-ask-transcript");
+            const welcome = document.getElementById("m-ai-ask-welcome");
+
+            if (!input) return;
+            const query = input.value.trim();
+            if (!query) {
+                showToast("質問内容や単語を入力してください");
+                return;
+            }
+
+            const subject = subjSel ? subjSel.value : "世界史";
+            const style = styleSel ? styleSel.value : "explain";
+
+            if (welcome) welcome.style.display = "none";
+
+            const userBubble = document.createElement("div");
+            userBubble.className = "m-ai-ask-bubble-user";
+            userBubble.textContent = query;
+            transcript.appendChild(userBubble);
+            transcript.scrollTop = transcript.scrollHeight;
+
+            const aiBubble = document.createElement("div");
+            aiBubble.className = "m-ai-ask-bubble-ai";
+            aiBubble.innerHTML = `
+                <div style="font-size:0.8rem; color:#64748B; display:flex; align-items:center; gap:0.4rem;">
+                    <span>🤖 AIメンターが要点を解説中...</span>
+                </div>
+            `;
+            transcript.appendChild(aiBubble);
+            transcript.scrollTop = transcript.scrollHeight;
+
+            input.value = "";
+            input.disabled = true;
+            if (sendBtn) sendBtn.disabled = true;
+
+            try {
+                let styleInstruction = "用語や概念の本質を、中高生でも直感的にわかるように解説してください。重要キーワードを太字にしてください。";
+                if (style === "analogy") styleInstruction = "身近な日常の例え話を交えて解説してください。";
+                if (style === "mnemonic") styleInstruction = "覚えるための語呂合わせや暗記テクニックを伝授してください。";
+                if (style === "exam") styleInstruction = "大学入試や共通テストでの出題ポイントと急所を教えてください。";
+
+                const systemInstruction = `あなたは親切で超優秀な教科書特化型AIメンターです。
+科目: 【${subject}】
+方針: ${styleInstruction}
+【厳守：出力形式】
+回答先頭に必ず暗記カード用JSONをこの形式で出力してください：
+:::card
+{
+  "term": "単語・用語の正式名称",
+  "definition": "暗記カード裏面用の短くコアな定義・意味（1〜2文）",
+  "hint": "語呂合わせ・覚え方のコツ"
+}
+:::
+その後に見出し付きマークダウンで本文を解説してください。数式は $x$ を使用してください。`;
+
+                mAiAskHistory.push({ role: "user", parts: [{ text: query }] });
+
+                const aiText = await callGeminiChat(
+                    mAiAskHistory,
+                    systemInstruction,
+                    { featureId: "chat", preferredModel: "gemini-3.6-flash" }
+                );
+
+                mAiAskHistory.push({ role: "model", parts: [{ text: aiText }] });
+
+                let cardData = { term: query.slice(0, 30), definition: "", hint: "", subject: subject };
+                let cleanAiText = aiText;
+                const cardMatch = aiText.match(/:::card\s*([\s\S]*?)\s*:::/);
+                if (cardMatch) {
+                    try {
+                        const parsed = JSON.parse(cardMatch[1].trim());
+                        cardData.term = parsed.term || cardData.term;
+                        cardData.definition = parsed.definition || "";
+                        cardData.hint = parsed.hint || "";
+                        cleanAiText = aiText.replace(cardMatch[0], "").trim();
+                    } catch(e) {}
+                }
+                if (!cardData.definition) {
+                    cardData.definition = cleanAiText.split(/\n+/)[0].slice(0, 150);
+                }
+
+                aiBubble.innerHTML = "";
+
+                // 本文
+                const bodyDiv = document.createElement("div");
+                bodyDiv.style.cssText = "font-size:0.86rem; line-height:1.65; color:#1E293B; word-break:break-word;";
+                bodyDiv.innerHTML = renderFormattedMarkdown(cleanAiText);
+                aiBubble.appendChild(bodyDiv);
+
+                // カードプレビュー＆保存ボックス
+                const cardBox = document.createElement("div");
+                cardBox.className = "m-ai-ask-card-box";
+                const boxId = "m_card_" + Date.now();
+
+                // レッスン選択option
+                let lessonOptions = "";
+                Object.entries(allLessons || {}).forEach(([lid, lesson]) => {
+                    const sel = (lesson.subject === subject) ? "selected" : "";
+                    lessonOptions += `<option value="${escapeHtml(lid)}" ${sel}>[${escapeHtml(lesson.subject || "全般")}] ${escapeHtml(lesson.title || "単元")}</option>`;
+                });
+
+                cardBox.innerHTML = `
+                    <div style="font-size:0.75rem; font-weight:800; color:#047857; display:flex; justify-content:space-between; align-items:center;">
+                        <span>🎴 暗記カード自動抽出（編集可）</span>
+                        <span style="font-size:0.68rem; color:#059669;">SRS即時反映</span>
+                    </div>
+                    <div>
+                        <div style="font-size:0.68rem; font-weight:700; color:#64748B; margin-bottom:2px;">表面（単語・問い）</div>
+                        <input type="text" id="${boxId}_q" class="memo-input" style="padding:0.4rem 0.6rem; font-size:0.85rem; font-weight:800;" value="${escapeHtml(cardData.term)}">
+                    </div>
+                    <div>
+                        <div style="font-size:0.68rem; font-weight:700; color:#64748B; margin-bottom:2px;">裏面（コア意味）</div>
+                        <textarea id="${boxId}_a" class="memo-textarea" rows="2" style="padding:0.4rem 0.6rem; font-size:0.82rem;">${escapeHtml(cardData.definition)}</textarea>
+                    </div>
+                    <div>
+                        <div style="font-size:0.68rem; font-weight:700; color:#64748B; margin-bottom:2px;">✨ 補足・語呂</div>
+                        <input type="text" id="${boxId}_note" class="memo-input" style="padding:0.35rem 0.6rem; font-size:0.78rem;" value="${escapeHtml(cardData.hint)}">
+                    </div>
+                    <div>
+                        <div style="font-size:0.68rem; font-weight:700; color:#64748B; margin-bottom:2px;">追加先単元</div>
+                        <select id="${boxId}_lesson" class="memo-select" style="padding:0.35rem 0.5rem; font-size:0.78rem;">
+                            ${lessonOptions || `<option value="">(新規作成されます)</option>`}
+                        </select>
+                    </div>
+                    <div style="display:flex; gap:0.4rem; margin-top:0.2rem;">
+                        <button type="button" class="daily-cta-btn" id="${boxId}_btn_card" style="flex:1; padding:0.45rem; font-size:0.78rem; border-radius:8px; margin:0; background:linear-gradient(135deg, #10B981, #059669);">
+                            💾 暗記カードに登録
+                        </button>
+                    </div>
+                `;
+
+                aiBubble.appendChild(cardBox);
+
+                // 保存イベント
+                setTimeout(() => {
+                    const saveBtn = document.getElementById(`${boxId}_btn_card`);
+                    if (saveBtn) {
+                        saveBtn.onclick = async () => {
+                            if (!currentUser) {
+                                showToast("保存にはログインが必要です");
+                                return;
+                            }
+                            const q = document.getElementById(`${boxId}_q`)?.value.trim() || cardData.term;
+                            const a = document.getElementById(`${boxId}_a`)?.value.trim() || cardData.definition;
+                            const note = document.getElementById(`${boxId}_note`)?.value.trim() || "";
+                            const selLesson = document.getElementById(`${boxId}_lesson`);
+                            let lessonId = selLesson ? selLesson.value : null;
+
+                            if (!q || !a) {
+                                showToast("表面と裏面を入力してください");
+                                return;
+                            }
+
+                            const nowIso = new Date().toISOString();
+                            if (!lessonId || !allLessons[lessonId]) {
+                                lessonId = `lesson_${Date.now()}`;
+                                allLessons[lessonId] = {
+                                    title: `${subject} AI質問単語帳`,
+                                    subject: subject,
+                                    createdAt: nowIso,
+                                    updatedAt: nowIso,
+                                    memorizationPoints: []
+                                };
+                            }
+
+                            const lesson = allLessons[lessonId];
+                            if (!Array.isArray(lesson.memorizationPoints)) lesson.memorizationPoints = [];
+
+                            lesson.memorizationPoints.push({
+                                id: `mp_${Date.now()}`,
+                                category: "重要用語",
+                                question: q,
+                                answer: a,
+                                content: `${q}：${a}`,
+                                note: note,
+                                subject: subject,
+                                createdAt: nowIso,
+                                updatedAt: nowIso
+                            });
+                            lesson.updatedAt = nowIso;
+
+                            try {
+                                await update(ref(database, `users/${currentUser.uid}/lessons/${lessonId}`), lesson);
+                                showToast("🎉 暗記カードに追加しました！");
+                                saveBtn.textContent = "✅ カード追加済み";
+                                saveBtn.disabled = true;
+                                invalidateCardCache();
+                                renderDashboard();
+                            } catch(e) {
+                                showToast("保存に失敗しました");
+                            }
+                        };
+                    }
+                }, 50);
+
+                transcript.scrollTop = transcript.scrollHeight;
+                if (typeof triggerMathTypeset === "function") triggerMathTypeset(aiBubble);
+
+            } catch(e) {
+                aiBubble.innerHTML = `<div style="color:#EF4444; font-size:0.85rem;">⚠️ 回答取得エラー: ${escapeHtml(e.message)}</div>`;
+            } finally {
+                input.disabled = false;
+                if (sendBtn) sendBtn.disabled = false;
+                input.focus();
+            }
+        }
+
+        // モバイル版ボタンのイベントバインド
+        const mBtnHeaderAiAsk = document.getElementById("m-btn-header-ai-ask");
+        const mBtnOpenAiAsk = document.getElementById("m-btn-open-ai-ask");
+        const mAiAskCloseBtn = document.getElementById("m-ai-ask-close-btn");
+        const mAiAskBtnReset = document.getElementById("m-ai-ask-btn-reset");
+        const mAiAskSendBtn = document.getElementById("m-ai-ask-send-btn");
+        const mAiAskSubjSelect = document.getElementById("m-ai-ask-subj-select");
+        const mAiAskInput = document.getElementById("m-ai-ask-input");
+
+        if (mBtnHeaderAiAsk) mBtnHeaderAiAsk.onclick = () => openMobileAiAskModal();
+        if (mBtnOpenAiAsk) mBtnOpenAiAsk.onclick = () => openMobileAiAskModal();
+        if (mAiAskCloseBtn) mAiAskCloseBtn.onclick = closeMobileAiAskModal;
+        if (mAiAskBtnReset) mAiAskBtnReset.onclick = () => {
+            mAiAskHistory = [];
+            const transcript = document.getElementById("m-ai-ask-transcript");
+            if (transcript) {
+                transcript.innerHTML = `
+                    <div id="m-ai-ask-welcome" style="text-align: center; padding: 2rem 1rem; color: #64748B; font-size: 0.82rem; line-height: 1.6; background: #FFFFFF; border-radius: 12px; border: 1px dashed #CBD5E1;">
+                        💡 <strong>教科書で疑問に思った単語や公式を質問！</strong><br>
+                        AIが解説し、フラッシュカードの表・裏・覚え方を自動作成します。
+                    </div>
+                `;
+            }
+            if (mAiAskInput) { mAiAskInput.value = ""; mAiAskInput.focus(); }
+            showToast("新しい質問を開始できます");
+        };
+        if (mAiAskSubjSelect) mAiAskSubjSelect.onchange = renderMobileAiAskChips;
+        if (mAiAskSendBtn) mAiAskSendBtn.onclick = submitMobileAiAskQuestion;
+        if (mAiAskInput) {
+            mAiAskInput.addEventListener("keydown", (e) => {
+                if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    submitMobileAiAskQuestion();
+                }
+            });
+        }
+
         // 初回ロード
         renderDashboard();
+
     </script>
 
 </body>
