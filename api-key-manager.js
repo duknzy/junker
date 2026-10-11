@@ -218,6 +218,85 @@ export function getKeyCooldownRemainingMs(key, modelName = "") {
     return remaining > 0 ? remaining : null;
 }
 
+// 🩺 全キー・全モデルの429（お休み）上限記録を完全クリア
+export function clearAllKeyCooldowns() {
+    let count = 0;
+    try {
+        const raw = localStorage.getItem(KEY_COOLDOWN_STORAGE);
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed === "object") {
+                count = Object.keys(parsed).length;
+            }
+        }
+        localStorage.removeItem(KEY_COOLDOWN_STORAGE);
+    } catch (e) {
+        /* noop */
+    }
+    return count;
+}
+
+// 🩺 特定のキー（または特定モデル×キー）のお休み記録を解除
+export function clearKeyCooldown(key, modelName = null) {
+    let map = {};
+    try {
+        const raw = localStorage.getItem(KEY_COOLDOWN_STORAGE);
+        const parsed = raw ? JSON.parse(raw) : {};
+        if (parsed && typeof parsed === "object") map = parsed;
+    } catch (e) {
+        map = {};
+    }
+    let removed = 0;
+    if (modelName) {
+        const cKey = getCooldownStorageKey(modelName, key);
+        if (cKey in map) {
+            delete map[cKey];
+            removed++;
+        }
+    } else {
+        // キーに紐づく全モデルのクールダウンを解除
+        for (const k of Object.keys(map)) {
+            if (k === key || k.endsWith(`:${key}`)) {
+                delete map[k];
+                removed++;
+            }
+        }
+    }
+    try {
+        localStorage.setItem(KEY_COOLDOWN_STORAGE, JSON.stringify(map));
+    } catch (e) { /* noop */ }
+    return removed;
+}
+
+// 🩺 キーのお休み状態詳細を取得
+export function getKeyCooldownDetails(key) {
+    const map = loadCooldowns();
+    const now = Date.now();
+    const matches = [];
+    for (const [k, until] of Object.entries(map)) {
+        if (typeof until === "number" && until > now) {
+            if (k === key || k.endsWith(`:${key}`)) {
+                const modelName = k.includes(":") ? k.split(":")[0] : "(全般)";
+                const remainingMin = Math.ceil((until - now) / 60000);
+                matches.push({ keyStr: k, modelName, remainingMin, until });
+            }
+        }
+    }
+    return matches;
+}
+
+// 🩺 現在アクティブな全クールダウン情報を取得
+export function getAllKeyCooldowns() {
+    return loadCooldowns();
+}
+
+if (typeof window !== "undefined") {
+    window.clearAllKeyCooldowns = clearAllKeyCooldowns;
+    window.clearKeyCooldown = clearKeyCooldown;
+    window.getKeyCooldownDetails = getKeyCooldownDetails;
+    window.getAllKeyCooldowns = getAllKeyCooldowns;
+}
+
 // Gemini(Google AI Studio)無料枠の日次クォータがリセットされる「次のタイミング」を返す。
 // 太平洋時間(America/Los_Angeles)の深夜0時にリセット（日本時間の16:00または17:00）。
 function nextGeminiQuotaResetAt() {
@@ -764,6 +843,7 @@ export const GEMINI_FEATURES = [
     { id: "lesson_teach",     label: "授業内AIチャット",             page: "lesson.html" },
     { id: "memorization_points", label: "単元の暗記事項リスト生成（授業プランとは別リクエスト）", page: "lesson.html" },
     { id: "choice_quiz",      label: "授業の選択問題（4択・正誤判定）生成", page: "lesson.html / insights.html" },
+    { id: "ai_ask",           label: "教科書・単語 AI質問（メンター＆暗記カード化）", page: "insights.html / m/insights.html" },
     { id: "refbook_extract",  label: "参考書の写真からの問題読み取り",  page: "refbook.html" },
     { id: "refbook_answer_generate", label: "参考書問題のAIによる解答・解説生成", page: "refbook.html" },
 ];
@@ -778,7 +858,9 @@ const FEATURE_ALIASES = {
     "lesson_plan_photo": "lesson_plan",
     "answer_check": "quick_answer",
     "problem_chat": "chat",
-    "lesson_chat": "lesson_teach"
+    "lesson_chat": "lesson_teach",
+    "insights_ask": "ai_ask",
+    "ai_mentor": "ai_ask"
 };
 
 function resolveFeatureId(featureId) {
@@ -1935,6 +2017,23 @@ function injectStylesAndModal() {
                     <button type="button" class="apikm-add-btn" data-add="deepseek">＋ 追加</button>
                 </form>
             </div>
+            <!-- 🩺 APIキー上限記録（クールダウン）解除セクション -->
+            <div class="apikm-cooldown-section" style="margin: 0.6rem 0 1.2rem; padding: 0.85rem 1rem; background: rgba(239, 68, 68, 0.08); border: 1px dashed rgba(239, 68, 68, 0.35); border-radius: 12px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:0.5rem; margin-bottom:0.35rem;">
+                    <div style="font-weight:800; font-size:0.83rem; color:#ff8080; display:flex; align-items:center; gap:0.35rem;">
+                        <span>🩺 APIキー上限記録（クールダウン）</span>
+                    </div>
+                    <span id="apikm-cooldown-count-badge" style="font-size:0.7rem; font-weight:700; padding:0.15rem 0.55rem; border-radius:999px; background:rgba(255,255,255,0.06); color:var(--text-bright-muted,#a0b5c0);">
+                        記録なし
+                    </span>
+                </div>
+                <div style="font-size:0.72rem; color:var(--text-muted,#708590); line-height:1.5; margin-bottom:0.6rem;">
+                    429エラー（利用制限）時にlocalStorageへ自動記録されたお休み状態を削除します。誤って記録されたキーを即座に再有効化できます。
+                </div>
+                <button type="button" class="apikm-reset-cooldown-btn" id="apikm-reset-cooldown-btn" style="width:100%; background:rgba(239,68,68,0.18); border:1px solid #ef4444; color:#fff; border-radius:10px; padding:0.55rem 0.8rem; font-weight:800; font-size:0.78rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:0.4rem; transition:all 0.15s ease;">
+                    🔄 ローカルストレージの上限記録をすべて削除
+                </button>
+            </div>
             <div class="apikm-settings-link-row">
                 <a class="apikm-settings-link-btn" href="ai-settings.html">⚙️ 機能ごとのモデル／キー割り当てを管理画面で設定 →</a>
             </div>
@@ -1963,22 +2062,63 @@ function injectStylesAndModal() {
             listEl.innerHTML = `<div class="apikm-empty">まだ${LABEL[engine]}のキーが登録されていません。</div>`;
             return;
         }
-        listEl.innerHTML = keys.map((k, i) => `
+        listEl.innerHTML = keys.map((k, i) => {
+            const cdDetails = getKeyCooldownDetails(k);
+            const isCooling = cdDetails.length > 0;
+            const cdBadge = isCooling ? `
+                <button type="button" class="apikm-cooldown-tag" data-clear-cooldown="${k}" style="background:rgba(239,68,68,0.22); border:1px solid #ef4444; color:#ff8080; font-size:0.65rem; font-weight:800; border-radius:6px; padding:0.15rem 0.45rem; cursor:pointer;" title="クリックでこのキーの上限記録（${cdDetails.map(d=>d.modelName).join(', ')}）を解除">
+                    ⚠️ 上限記録中（解除）
+                </button>
+            ` : "";
+            return `
             <div class="apikm-key-row">
                 <span class="apikm-key-badge">${i === 0 ? "優先" : `#${i + 1}`}</span>
                 <span class="apikm-key-text">${maskKey(k)}</span>
+                ${cdBadge}
                 <button type="button" class="apikm-remove-btn" data-remove="${engine}:${i}" title="削除">×</button>
             </div>
-        `).join("");
+            `;
+        }).join("");
     }
 
     function renderAll() {
         renderList("gemini");
         renderList("deepseek");
+
+        const cdBadge = overlay.querySelector("#apikm-cooldown-count-badge");
+        if (cdBadge) {
+            const allCds = getAllKeyCooldowns();
+            const count = Object.keys(allCds).length;
+            if (count > 0) {
+                cdBadge.textContent = `${count}件 制限中`;
+                cdBadge.style.color = "#ff8080";
+                cdBadge.style.background = "rgba(239,68,68,0.2)";
+            } else {
+                cdBadge.textContent = "制限なし (クリア)";
+                cdBadge.style.color = "var(--text-bright-muted,#a0b5c0)";
+                cdBadge.style.background = "rgba(255,255,255,0.06)";
+            }
+        }
     }
 
     overlay.addEventListener("click", (e) => {
         if (e.target === overlay) closeModal();
+
+        if (e.target.id === "apikm-reset-cooldown-btn" || e.target.closest("#apikm-reset-cooldown-btn")) {
+            const count = clearAllKeyCooldowns();
+            renderAll();
+            showToast(`🔄 APIキーの上限記録（クールダウン）をすべてリセットしました（${count}件削除）`, "success");
+            return;
+        }
+
+        const cdTarget = e.target.closest("[data-clear-cooldown]");
+        if (cdTarget) {
+            const keyToClear = cdTarget.getAttribute("data-clear-cooldown");
+            const removed = clearKeyCooldown(keyToClear);
+            renderAll();
+            showToast(`🔄 このキーの上限記録を解除しました（${removed}件解除）`, "success");
+            return;
+        }
 
         const removeTarget = e.target.closest("[data-remove]");
         if (removeTarget) {

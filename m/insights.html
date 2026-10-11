@@ -3228,7 +3228,7 @@
                 </div>
             </div>
 
-            <div class="m-ai-ask-toolbar">
+            <div class="m-ai-ask-toolbar" style="display: flex; gap: 0.4rem; overflow-x: auto; padding-bottom: 0.2rem;">
                 <select id="m-ai-ask-subj-select" style="background: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 8px; padding: 0.3rem 0.5rem; font-size: 0.75rem; font-weight: 700;">
                     <option value="英語">🔤 英語</option>
                     <option value="数学">📐 数学</option>
@@ -3243,11 +3243,20 @@
                     <option value="情報">💻 情報</option>
                 </select>
                 <select id="m-ai-ask-style-select" style="background: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 8px; padding: 0.3rem 0.5rem; font-size: 0.75rem;">
-                    <option value="explain">💡 本質から直感解説</option>
-                    <option value="analogy">🍎 身近なたとえ話で</option>
-                    <option value="mnemonic">🎴 語呂合わせ・暗記術</option>
-                    <option value="exam">🎯 入試・テストでの急所</option>
+                    <option value="explain">💡 本質から解説</option>
+                    <option value="analogy">🍎 たとえ話で</option>
+                    <option value="mnemonic">🎴 語呂合わせ</option>
+                    <option value="exam">🎯 入試の急所</option>
                 </select>
+                <select id="m-ai-ask-model-select" style="background: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 8px; padding: 0.3rem 0.5rem; font-size: 0.75rem; font-weight: 700; color: #047857;">
+                    <option value="gemini-3.6-flash">✨ 3.6 Flash (推奨)</option>
+                    <option value="gemini-2.5-flash">⚡ 2.5 Flash</option>
+                    <option value="gemini-2.5-pro">🧠 2.5 Pro</option>
+                    <option value="deepseek-chat">🐋 DeepSeek</option>
+                </select>
+                <button type="button" id="m-ai-ask-btn-reset-cooldown" style="background: rgba(239, 68, 68, 0.08); border: 1px dashed #f87171; color: #dc2626; border-radius: 8px; padding: 0.25rem 0.5rem; font-size: 0.7rem; font-weight: 700; white-space: nowrap; cursor: pointer;" title="429等のエラーでローカルストレージに記録されたAPI key上限を削除">
+                    🔄 上限解除
+                </button>
             </div>
 
             <div class="m-ai-ask-chips" id="m-ai-ask-chips-container">
@@ -7073,6 +7082,39 @@
             const input = document.getElementById("m-ai-ask-input");
             if (initialSubj && subjSel) subjSel.value = initialSubj;
             if (initialTerm && input) input.value = initialTerm;
+            // AIモデルの復元
+            const modelSel = document.getElementById("m-ai-ask-model-select");
+            if (modelSel) {
+                const savedModel = localStorage.getItem("flora_ai_ask_model") || "gemini-3.6-flash";
+                modelSel.value = savedModel;
+                if (!modelSel.__listenerAttached) {
+                    modelSel.__listenerAttached = true;
+                    modelSel.addEventListener("change", (e) => {
+                        localStorage.setItem("flora_ai_ask_model", e.target.value);
+                        showToast(`🤖 使用モデルを ${e.target.value} に設定しました`);
+                    });
+                }
+            }
+
+            // 上限リセットボタン初期化
+            const resetCdBtn = document.getElementById("m-ai-ask-btn-reset-cooldown");
+            if (resetCdBtn && !resetCdBtn.__listenerAttached) {
+                resetCdBtn.__listenerAttached = true;
+                resetCdBtn.addEventListener("click", () => {
+                    let count = 0;
+                    if (typeof window.clearAllKeyCooldowns === "function") {
+                        count = window.clearAllKeyCooldowns();
+                    } else {
+                        try {
+                            const raw = localStorage.getItem("RE_MIND_KEY_COOLDOWN");
+                            if (raw) count = Object.keys(JSON.parse(raw) || {}).length;
+                            localStorage.removeItem("RE_MIND_KEY_COOLDOWN");
+                        } catch(e) {}
+                    }
+                    showToast(`🔄 APIキーの上限記録を削除しました（${count}件解除）`);
+                });
+            }
+
             renderMobileAiAskChips();
             if (input) {
                 input.focus();
@@ -7151,10 +7193,13 @@
 
                 mAiAskHistory.push({ role: "user", parts: [{ text: query }] });
 
+                const modelSel = document.getElementById("m-ai-ask-model-select");
+                const chosenModel = (modelSel && modelSel.value) ? modelSel.value : (localStorage.getItem("flora_ai_ask_model") || "gemini-3.6-flash");
+
                 const aiText = await callGeminiChat(
                     mAiAskHistory,
                     systemInstruction,
-                    { featureId: "chat", preferredModel: "gemini-3.6-flash" }
+                    { featureId: "ai_ask", preferredModel: chosenModel }
                 );
 
                 mAiAskHistory.push({ role: "model", parts: [{ text: aiText }] });

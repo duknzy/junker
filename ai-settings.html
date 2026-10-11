@@ -371,6 +371,57 @@
                 <div class="settings-section-sub">
                     ニックネームを付けておくと、下の「機能ごとの割り当て」でどのキーか一目でわかります（未入力でも動作に問題ありません）。
                 </div>
+                <!-- 🩺 APIキー上限記録（クールダウン）リセット -->
+                <div class="key-card" style="margin-bottom: 1.25rem; background: rgba(239, 68, 68, 0.04); border: 1px dashed rgba(239, 68, 68, 0.35); padding: 1.1rem 1.4rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.8rem; flex-wrap: wrap; margin-bottom: 0.4rem;">
+                        <div style="font-weight: 700; font-size: 0.95rem; color: #dc2626; display: flex; align-items: center; gap: 0.4rem;">
+                            <span>🩺 APIキーの上限記録（クールダウン）管理</span>
+                        </div>
+                        <span id="page-cooldown-count-badge" style="font-size: 0.72rem; font-weight: 700; padding: 0.2rem 0.65rem; border-radius: 9999px; background: rgba(16, 185, 129, 0.12); color: #059669;">
+                            ✅ 制限なし (正常稼働)
+                        </span>
+                    </div>
+                    <div style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 0.75rem;">
+                        429エラー（利用制限・クォータ上限）時にローカルストレージ（localStorage）へ自動記録された「お休み中」データを削除します。誤って上限記録されて使えなくなったキーを即座に再稼働できます。
+                    </div>
+                    <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+                        <button type="button" id="btn-page-clear-cooldowns" class="flora-btn flora-btn-secondary btn-sm" style="border-color: #f87171; color: #dc2626; font-weight: 700; cursor: pointer;">
+                            🔄 ローカルストレージの上限記録をすべて削除
+                        </button>
+                    </div>
+                </div>
+                <script>
+                (function() {
+                    window.refreshCooldownUi = function() {
+                        var badge = document.getElementById("page-cooldown-count-badge");
+                        if (!badge) return;
+                        try {
+                            var raw = localStorage.getItem("RE_MIND_KEY_COOLDOWN");
+                            var map = raw ? JSON.parse(raw) : {};
+                            var now = Date.now();
+                            var activeCount = 0;
+                            if (map && typeof map === "object") {
+                                for (var k in map) {
+                                    if (typeof map[k] === "number" && map[k] > now) activeCount++;
+                                }
+                            }
+                            if (activeCount > 0) {
+                                badge.textContent = "⚠️ " + activeCount + "件 制限中";
+                                badge.style.background = "rgba(239, 68, 68, 0.15)";
+                                badge.style.color = "#dc2626";
+                            } else {
+                                badge.textContent = "✅ 制限なし (正常稼働)";
+                                badge.style.background = "rgba(16, 185, 129, 0.12)";
+                                badge.style.color = "#059669";
+                            }
+                        } catch(e) {
+                            badge.textContent = "✅ 制限なし (正常稼働)";
+                        }
+                    };
+                    window.refreshCooldownUi();
+                })();
+                </script>
+
                 <div class="key-engine-grid">
                     <div class="key-card" data-engine-card="gemini">
                         <div style="font-weight:700; font-size: 1rem; margin-bottom:0.8rem; color: var(--text-primary);">✨ Gemini キー</div>
@@ -473,7 +524,8 @@ import {
     getFeatureAssignment, setFeatureAssignment, resetFeatureAssignment,
     showToast, exportAISettings, importAISettings,
     getActiveThinkingIdForEngine, getThinkingDisplayLabel,
-    isProModel, isProModelsDisabled, setProModelsDisabled, getAvailableModels
+    isProModel, isProModelsDisabled, setProModelsDisabled, getAvailableModels,
+    clearAllKeyCooldowns, clearKeyCooldown, getKeyCooldownDetails, getAllKeyCooldowns
 } from "./api-key-manager.js?v=4.0";
 
 const ENGINE_LABEL = { gemini: "✨ Gemini", deepseek: "🐋 DeepSeek" };
@@ -490,6 +542,22 @@ function keysFor(engine) {
 // --------------------------------------------------------------------------
 // 🔑 キー一覧の描画
 // --------------------------------------------------------------------------
+function updateCooldownBadge() {
+    const badge = document.getElementById("page-cooldown-count-badge");
+    if (!badge) return;
+    const allCds = getAllKeyCooldowns();
+    const count = Object.keys(allCds).length;
+    if (count > 0) {
+        badge.textContent = `⚠️ ${count}件 制限中`;
+        badge.style.background = "rgba(239, 68, 68, 0.15)";
+        badge.style.color = "#dc2626";
+    } else {
+        badge.textContent = "✅ 制限なし (正常稼働)";
+        badge.style.background = "rgba(16, 185, 129, 0.12)";
+        badge.style.color = "#059669";
+    }
+}
+
 function renderKeyList(engine) {
     const listEl = document.querySelector(`[data-key-list="${engine}"]`);
     const keys = keysFor(engine);
@@ -497,22 +565,49 @@ function renderKeyList(engine) {
         listEl.innerHTML = `<div class="key-empty">まだ${ENGINE_LABEL[engine]}のキーが登録されていません。</div>`;
         return;
     }
-    listEl.innerHTML = keys.map((k, i) => `
+    listEl.innerHTML = keys.map((k, i) => {
+        const cdDetails = getKeyCooldownDetails(k);
+        const isCooling = cdDetails.length > 0;
+        const cdBadge = isCooling ? `
+            <button type="button" class="flora-btn flora-btn-ghost btn-sm" data-key-clear-cooldown="${k}" style="padding: 0.15rem 0.45rem; font-size: 0.68rem; color: #dc2626; border: 1px solid #f87171; border-radius: 6px; background: rgba(239,68,68,0.08); cursor: pointer;" title="クリックでこのキーの上限記録（${cdDetails.map(d=>d.modelName).join(', ')}）を解除">
+                ⚠️ 上限中 (解除)
+            </button>
+        ` : "";
+        return `
         <div class="key-row">
             <span class="key-order-badge">${i === 0 ? "優先" : `#${i + 1}`}</span>
             <input type="text" class="key-label-input" data-key-label="${engine}:${i}" placeholder="ニックネーム未設定" value="${(getKeyLabel(engine, k) || "").replace(/"/g, "&quot;")}">
             <span class="key-text-masked">${maskKey(k)}</span>
+            ${cdBadge}
             <button type="button" class="key-remove-btn" data-key-remove="${engine}:${i}" title="削除">×</button>
         </div>
-    `).join("");
+        `;
+    }).join("");
 }
 
 function renderAllKeyLists() {
     renderKeyList("gemini");
     renderKeyList("deepseek");
+    updateCooldownBadge();
 }
 
 document.addEventListener("click", (e) => {
+    if (e.target.id === "btn-page-clear-cooldowns" || e.target.closest("#btn-page-clear-cooldowns")) {
+        const count = clearAllKeyCooldowns();
+        renderAllKeyLists();
+        showToast(`🔄 ローカルストレージのAPIキー上限記録をすべて削除しました（${count}件解除）`, "success");
+        return;
+    }
+
+    const cdTarget = e.target.closest("[data-key-clear-cooldown]");
+    if (cdTarget) {
+        const keyStr = cdTarget.getAttribute("data-key-clear-cooldown");
+        const count = clearKeyCooldown(keyStr);
+        renderAllKeyLists();
+        showToast(`🔄 このキーの上限記録を解除しました（${count}件解除）`, "success");
+        return;
+    }
+
     const removeBtn = e.target.closest("[data-key-remove]");
     if (removeBtn) {
         const [engine, idxStr] = removeBtn.getAttribute("data-key-remove").split(":");
