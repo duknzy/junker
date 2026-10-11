@@ -6646,8 +6646,12 @@
                     handleMobileSync();
                 });
                 onValue(ref(database, `users/${user.uid}/memorizeProgress`), snap => {
-                    const remoteData = snap.val() || {};
-                    allMemorizeProgress = mergeSrsProgressData(allMemorizeProgress, remoteData);
+                    const remoteData = snap.val();
+                    if (!snap.exists() || !remoteData || Object.keys(remoteData).length === 0) {
+                        allMemorizeProgress = {};
+                    } else {
+                        allMemorizeProgress = mergeSrsProgressData(allMemorizeProgress, remoteData);
+                    }
                     debouncedSaveOffline("flora_srs_memorize_progress", allMemorizeProgress, 600);
                     handleMobileSync();
                 });
@@ -6792,7 +6796,7 @@
             let doneCount = 0;
             quotaCards.forEach(c => {
                 const k = c.progressKey || c.id;
-                if (completedSet.has(k) || (c.srsBoxLevel && c.srsBoxLevel >= 1)) doneCount++;
+                if (completedSet.has(k)) doneCount++;
             });
 
             const isFin = quotaCount > 0 && doneCount >= quotaCount;
@@ -6989,6 +6993,71 @@
             }
             renderMobilePlannerUI();
         }
+
+        // 🔄 モバイル版 全暗記カードSRS進捗 ＆ 学習計画完全リセット
+        window.resetAllSrsProgress = async function() {
+            if (!auth.currentUser) {
+                showToast("ログインが必要です。", "error");
+                return;
+            }
+
+            const confirm1 = confirm(
+                "【⚠️ 暗記・SRS学習データの完全リセット】\n\n" +
+                "これまでに記録されたすべての暗記カードの習得状況（覚えた/未習得、Lv.0〜Lv.5、復習スケジュール、演習履歴）および、暗記ペースメーカーの進捗ログを完全に消去して初期状態（1からスタート）に戻します。\n\n" +
+                "※登録済みの暗記事項カードや授業テキストの内容自体は一切削除されません。学習進捗のみがリセットされます。\n\n" +
+                "本当にリセットしてよろしいですか？"
+            );
+            if (!confirm1) return;
+
+            const confirm2 = confirm(
+                "【最終確認】\n\nこの操作は取り消せません。\n本当にすべてのSRS進捗データを消去して1からやり直しますか？"
+            );
+            if (!confirm2) return;
+
+            try {
+                showToast("⏳ 暗記・SRS学習データを完全リセット中...", "info", 2000);
+                const uid = auth.currentUser.uid;
+                const nowIso = new Date().toISOString();
+                const updates = {};
+
+                // 1. users/${uid}/memorizeProgress を全削除
+                updates[`users/${uid}/memorizeProgress`] = null;
+
+                // 2. users/${uid}/memorizePlanLogs (計画の消化履歴) を全削除
+                updates[`users/${uid}/memorizePlanLogs`] = null;
+
+                // 3. 各学習計画の currentIndex を 0 にリセット
+                if (rawMobileMemorizePlans && typeof rawMobileMemorizePlans === "object") {
+                    Object.keys(rawMobileMemorizePlans).forEach(pid => {
+                        updates[`users/${uid}/memorizePlans/${pid}/currentIndex`] = 0;
+                        updates[`users/${uid}/memorizePlans/${pid}/updatedAt`] = nowIso;
+                        if (rawMobileMemorizePlans[pid]) rawMobileMemorizePlans[pid].currentIndex = 0;
+                    });
+                }
+
+                // 4. リセット日時マーク
+                updates[`users/${uid}/srsResetAt`] = Date.now();
+
+                await update(ref(database), updates);
+
+                // 5. ローカルキャッシュ＆変数の完全初期化
+                allMemorizeProgress = {};
+                rawMobileMemorizePlanLogs = {};
+                debouncedSaveOffline("flora_srs_memorize_progress", {}, 10);
+                localStorage.setItem("flora_srs_reset_at", String(Date.now()));
+
+                // 6. UI＆集計の即時再構築
+                invalidateMobileCache();
+                renderMobilePlannerUI();
+                renderMobileActiveView();
+
+                playSound("fanfare");
+                showToast("✨ すべての暗記・SRSデータと学習計画の進捗をリセットしました！1から学習を開始できます。", "success", 4000);
+            } catch (err) {
+                console.error("SRSリセット失敗:", err);
+                showToast("リセットに失敗しました: " + (err.message || err), "error");
+            }
+        };
 
         // テスト用自動ログイン対応
         if (new URLSearchParams(location.search).has("autologin")) {

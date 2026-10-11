@@ -2987,25 +2987,45 @@ ${glossaryBlock}`;
             }
         };
 
-        // 🎯 ② 誤答状況・問題前提のコンテキスト構築
+        // 🎯 ② 誤答状況・問題前提のコンテキスト構築（AIチャットに現在解いている問題の全データを確実に渡す）
         function buildProblemContextForChat() {
-            let ctx = "";
-            
-            // 共通テストスプリントの誤答・マーク分析コンテキスト
+            let ctx = "\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n【生徒が現在解いている問題のデータ】\n";
+            ctx += `・教科: ${currentProblemData.subject || "数学"}\n`;
+            if (currentProblemData.field) ctx += `・単元・分野: ${currentProblemData.field}\n`;
+            if (currentProblemData.short_title) ctx += `・問題タイトル: ${currentProblemData.short_title}\n`;
+
+            // 問題本文
+            const problemBody = (currentProblemData.title || currentProblemData.questionText || "").trim();
+            if (problemBody) {
+                ctx += `\n【問題文】\n${problemBody}\n`;
+            }
+
+            // 共通テストスプリントの場合の追加データ
             if (currentProblemData.isKyotsuMistake || (currentProblemData.kyotsuData && currentProblemData.kyotsuData.sections)) {
-                const kd = currentProblemData.kyotsuData;
+                const kd = currentProblemData.kyotsuData || {};
                 const wrongSet = new Set(currentProblemData.wrongMarkIds || []);
                 const userAnswers = currentProblemData.kyotsuUserAnswers || {};
-                
+
+                if (kd.passage) {
+                    ctx += `\n【共通テスト大問本文・前提資料】\n${kd.passage}\n`;
+                }
+                if (kd.overall_review) {
+                    ctx += `\n【大問全体の思考誘導ストーリー】\n${kd.overall_review}\n`;
+                }
+
                 const allMarks = [];
                 (kd.sections || []).forEach(sec => {
-                    (sec.marks || []).forEach(m => allMarks.push({ ...m, sectionTitle: sec.section_title || sec.section_id }));
+                    const secTitle = sec.section_title || sec.section_id || "";
+                    if (sec.explanation) {
+                        ctx += `\n[ステップ解説 (${secTitle})]\n${sec.explanation}\n`;
+                    }
+                    (sec.marks || []).forEach(m => allMarks.push({ ...m, sectionTitle: secTitle }));
                 });
                 const totalCount = allMarks.length;
                 const correctCount = allMarks.filter(m => !wrongSet.has(m.id)).length;
                 const pct = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0;
 
-                ctx += `\n\n【共通テスト演習の誤答データ（生徒の解答状況）】\n`;
+                ctx += `\n【共通テスト演習の誤答データ（生徒の解答状況）】\n`;
                 ctx += `・演習大問: ${kd.title || currentProblemData.short_title || "共通テスト"} (${kd.year || "最新形式"})\n`;
                 ctx += `・正答率: ${pct}% (${correctCount}/${totalCount} マーク正解)\n`;
 
@@ -3021,9 +3041,13 @@ ${glossaryBlock}`;
                     ctx += `・全問正解パーフェクトです！より発展的な着眼点や別解、スピード短縮テクニックについて指導してください。\n`;
                 }
             } else {
-                // 通常問題の誤答・定石コンテキスト
+                // 通常問題の模範解答・解説
+                const modelAnswer = (currentProblemData.answerFormula || currentProblemData.solution || "").trim();
+                if (modelAnswer && modelAnswer !== "解答データなし" && modelAnswer !== "解説データなし") {
+                    ctx += `\n【模範解答と解説】\n${modelAnswer}\n`;
+                }
                 if (currentProblemData.strategyPattern) {
-                    ctx += `\n\n【解法の定石】\n${currentProblemData.strategyPattern}\n`;
+                    ctx += `\n【解法の定石】\n${currentProblemData.strategyPattern}\n`;
                 }
                 if (currentProblemData.trapDescription) {
                     ctx += `\n【典型的な罠・注意点】\n${currentProblemData.trapDescription}\n`;
@@ -3033,11 +3057,26 @@ ${glossaryBlock}`;
                 }
             }
 
+            ctx += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+            ctx += `★最重要ルール: 生徒からの質問には、必ず「上記の問題データ（問題文・模範解答・解説・設定された数値）」に具体的に即して回答してください。一般的な一般論だけで流さず、本問の具体的な数式や条件を引用・参照して解説してください。\n\n`;
+
             return ctx;
         }
 
         // 初期バブルとクイックチップの更新
         function initChatContextAndBubble() {
+            chatHistory = [];
+            qnaTurns = [];
+            const saveRowEl = document.getElementById("qna-save-row");
+            if (saveRowEl) saveRowEl.style.display = "none";
+
+            // 過去の動的チャットバブルがあれば除去し初期バブルだけに戻す
+            const chatHistoryArea = document.querySelector(".chat-history");
+            if (chatHistoryArea) {
+                const dynamicBubbles = chatHistoryArea.querySelectorAll(".chat-bubble:not(#initial-ai-bubble)");
+                dynamicBubbles.forEach(b => b.remove());
+            }
+
             const initialBubble = document.getElementById("initial-ai-bubble");
             const kyotsuChip = document.getElementById("chip-kyotsu-trap");
             const stepLabel = document.getElementById("current-step");
@@ -4301,8 +4340,8 @@ ${EXPERT_TEACHER_PROMPT}
             
             chatHistory.push({ "role": "user", "content": studentMessage });
 
-            const recentHistory = chatHistory.slice(1).slice(-4);
-            const conversationMessages = [chatHistory[0], ...recentHistory];
+            // 直近の会話ターン（最大8ターン＝4往復分）を取得
+            const conversationMessages = chatHistory.slice(-8);
 
             try {
                 let aiJson;
@@ -4967,14 +5006,9 @@ ${EXPERT_TEACHER_PROMPT}
                 // 3. ボタン自体は役割を終えたので非表示にする
                 activateAiBtn.style.display = "none"; 
                 
-                // 4. AIへ渡す前提文脈（コンテキスト）に問題と模範解答をセット
-                const strategyContext = currentProblemData.strategyPattern
-                    ? "\n\n【考え方の定石】\n" + currentProblemData.strategyPattern
-                    : "";
-                chatHistory = [
-                    { "role": "user", "content": "【問題文】\n" + currentProblemData.title + strategyContext + "\n\n【模範解答と解説】\n" + currentProblemData.answerFormula },
-                    { "role": "assistant", "content": `{"ai_response": "解説のどの部分が納得いかなかったですか？何でも質問してください！", "current_step_label": "質問受付中"}` }
-                ];
+                // 4. チャット入力欄へフォーカス
+                const chatInput = document.getElementById("ai-chat-question-field");
+                if (chatInput) chatInput.focus();
 
                 // 💬【新設】保存対象の会話（実際のQ&Aのみ）をリセット。まだ何も無いので保存ボタンは隠す
                 qnaTurns = [];

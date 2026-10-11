@@ -4514,6 +4514,9 @@
                 <button type="button" class="batch-action-btn batch-btn-delete" onclick="batchDeleteSelectedMemorize()" title="選択した暗記事項を完全に削除">
                     🗑️ 一括削除 (<span id="batch-delete-count">0</span>)
                 </button>
+                <button type="button" class="batch-action-btn" onclick="window.resetAllSrsProgress()" style="color:#ef4444; border-color:rgba(239,68,68,0.35); font-weight:700;" title="全暗記カードのSRS学習データ・ペースメーカー履歴をすべて初期化">
+                    🔄 全SRSリセット
+                </button>
                 <button type="button" class="batch-close-btn" onclick="toggleBatchManageMode(false)" title="一括管理モードを終了">
                     ✕ 閉じる
                 </button>
@@ -7531,6 +7534,76 @@
                 showToast("暗記事項を削除しました。", "success", 2000);
             } catch (err) {
                 showToast("削除に失敗しました。", "error");
+            }
+        };
+
+        // 🔄 全暗記カードSRS進捗 ＆ 学習計画完全リセット
+        window.resetAllSrsProgress = async function() {
+            if (!currentUser || !currentUser.uid) {
+                showToast("ログインが必要です。", "error");
+                return;
+            }
+
+            const confirm1 = confirm(
+                "【⚠️ 暗記・SRS学習データの完全リセット】\n\n" +
+                "これまでに記録されたすべての暗記カードの習得状況（覚えた/未習得、Lv.0〜Lv.5、復習スケジュール、演習履歴）および、暗記ペースメーカーの進捗ログを完全に消去して初期状態（1からスタート）に戻します。\n\n" +
+                "※登録済みの暗記事項カードや授業テキストの内容自体は一切削除されません。学習進捗のみがリセットされます。\n\n" +
+                "本当にリセットしてよろしいですか？"
+            );
+            if (!confirm1) return;
+
+            const confirm2 = confirm(
+                "【最終確認】\n\nこの操作は取り消せません。\n本当にすべてのSRS進捗データを消去して1からやり直しますか？"
+            );
+            if (!confirm2) return;
+
+            try {
+                showToast("⏳ 暗記・SRS学習データを完全リセット中...", "info", 2000);
+                const uid = currentUser.uid;
+                const nowIso = new Date().toISOString();
+                const updates = {};
+
+                // 1. users/${uid}/memorizeProgress を全削除
+                updates[`users/${uid}/memorizeProgress`] = null;
+
+                // 2. users/${uid}/memorizePlanLogs (計画の消化履歴) を全削除
+                updates[`users/${uid}/memorizePlanLogs`] = null;
+
+                // 3. 各学習計画の currentIndex を 0 にリセット（第1授業からやり直し）
+                if (rawMemorizePlans && typeof rawMemorizePlans === "object") {
+                    Object.keys(rawMemorizePlans).forEach(pid => {
+                        updates[`users/${uid}/memorizePlans/${pid}/currentIndex`] = 0;
+                        updates[`users/${uid}/memorizePlans/${pid}/updatedAt`] = nowIso;
+                        if (rawMemorizePlans[pid]) rawMemorizePlans[pid].currentIndex = 0;
+                    });
+                }
+
+                // 4. リセット実行日時をマーク（別端末での古い進捗復活を防止）
+                updates[`users/${uid}/srsResetAt`] = Date.now();
+
+                await update(ref(database), updates);
+
+                // 5. ローカルキャッシュ＆変数の完全初期化
+                rawMemorizeProgress = {};
+                rawMemorizePlanLogs = {};
+                window.plannerFilterQuotaKeys = null;
+                window._activePlannerSession = null;
+                if (window.floraCacheDB) {
+                    await window.floraCacheDB.set("flora_srs_memorize_progress", {}).catch(() => {});
+                }
+                localStorage.setItem("flora_srs_reset_at", String(Date.now()));
+
+                // 6. UI＆集計の即時再構築
+                invalidateInsightsDataCache();
+                updateSrsDashboardCounts();
+                renderPlannerUI();
+                renderActiveView();
+
+                if (typeof playSound === "function") playSound("fanfare");
+                showToast("✨ すべての暗記・SRSデータと学習計画の進捗をリセットしました！1から学習を開始できます。", "success", 4000);
+            } catch (err) {
+                console.error("SRSリセット失敗:", err);
+                showToast("リセットに失敗しました: " + (err.message || err), "error");
             }
         };
 
@@ -14493,10 +14566,15 @@
 
             // 🧠 間隔反復(SRS)の進捗データをリアルタイム購読（スマホ・PC相互同期・若返り完全防止）
             onValue(ref(database, 'users/' + user.uid + '/memorizeProgress'), (snapshot) => {
-                const remoteData = snapshot.val() || {};
-                rawMemorizeProgress = mergeSrsProgressData(rawMemorizeProgress, remoteData);
+                const remoteData = snapshot.val();
+                if (!snapshot.exists() || !remoteData || Object.keys(remoteData).length === 0) {
+                    rawMemorizeProgress = {};
+                } else {
+                    rawMemorizeProgress = mergeSrsProgressData(rawMemorizeProgress, remoteData);
+                }
                 saveMemorizeProgressLocally();
                 invalidateInsightsDataCache();
+                updateSrsDashboardCounts();
                 handleFirebaseSync();
             });
 
@@ -14662,7 +14740,7 @@
             quotaCards.forEach(c => {
                 const key1 = c.progressKey || c.id;
                 const key2 = c.memoId;
-                if (completedSet.has(key1) || (key2 && completedSet.has(key2)) || (c.boxLevel && c.boxLevel >= 1)) {
+                if (completedSet.has(key1) || (key2 && completedSet.has(key2))) {
                     completedCount++;
                 }
             });
@@ -14820,6 +14898,9 @@
                             <button type="button" class="planner-secondary-btn" id="btn-planner-edit-plan" title="現在の計画設定を変更">
                                 ⚙️ 計画を編集
                             </button>
+                            <button type="button" class="planner-secondary-btn" id="btn-planner-reset-srs" style="color:var(--danger, #ef4444); border-color:rgba(239,68,68,0.3);" title="すべての暗記カードのSRS学習データ・ペースメーカー履歴をリセット">
+                                🔄 SRS完全リセット
+                            </button>
                             <button type="button" class="planner-secondary-btn" id="btn-planner-new-plan" style="color:var(--brand-primary); font-weight:800;" title="別の教科や授業で新しい計画を作成">
                                 ＋ 新規計画
                             </button>
@@ -14925,6 +15006,9 @@
 
             const btnEditPlan = document.getElementById("btn-planner-edit-plan");
             if (btnEditPlan) btnEditPlan.onclick = () => openPlannerModal(activePlanId);
+
+            const btnResetSrs = document.getElementById("btn-planner-reset-srs");
+            if (btnResetSrs) btnResetSrs.onclick = () => window.resetAllSrsProgress();
 
             const btnStartQuota = document.getElementById("btn-planner-start-quota");
             if (btnStartQuota) btnStartQuota.onclick = () => startPlannerQuotaDrill();
