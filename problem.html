@@ -1083,12 +1083,252 @@
             display: flex;
             align-items: center;
             gap: 0.45rem;
-            letter-spacing: 0.02em;
+        /* ==========================================================================
+           💡 AI質問（AIチューター）強化スタイル（スタイル切り替え・引用・ピンポイント質問）
+           ========================================================================== */
+        /* 指導スタイル切り替えバー */
+        .chat-teaching-styles-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.35rem 0.5rem;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            margin-bottom: 0.6rem;
+            overflow-x: auto;
+            scrollbar-width: none;
         }
-        .kyotsu-overall-review-card .review-body {
-            font-size: 0.94rem;
-            line-height: 1.85;
+        .chat-teaching-styles-bar::-webkit-scrollbar {
+            display: none;
+        }
+        .teaching-style-label {
+            font-size: 0.7rem;
+            font-weight: 800;
+            color: var(--text-muted);
+            white-space: nowrap;
+            margin-right: 0.2rem;
+        }
+        .teaching-style-btn {
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 0.25rem 0.55rem;
+            border-radius: var(--radius-sm);
+            border: 1px solid transparent;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 120ms ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        .teaching-style-btn:hover {
             color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .teaching-style-btn.active {
+            background: var(--bg-surface);
+            color: var(--brand-primary);
+            border-color: var(--brand-primary);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+        }
+
+        /* ⚡ クイック質問チップ列 */
+        .chat-quick-chips-wrap {
+            display: flex;
+            gap: 0.35rem;
+            overflow-x: auto;
+            padding: 0.3rem 0.1rem;
+            margin-bottom: 0.45rem;
+            scrollbar-width: none;
+        }
+        .chat-quick-chips-wrap::-webkit-scrollbar {
+            display: none;
+        }
+        .chat-quick-chip-btn {
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 0.25rem 0.6rem;
+            border-radius: var(--radius-full);
+            border: 1px solid var(--border-color);
+            background: var(--bg-surface);
+            color: var(--text-secondary);
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 120ms ease;
+            flex-shrink: 0;
+        }
+        .chat-quick-chip-btn:hover {
+            color: #818CF8;
+            border-color: #818CF8;
+            background: rgba(99, 102, 241, 0.08);
+            transform: translateY(-1px);
+        }
+
+        /* ❝ 引用プレビューボックス */
+        .chat-quote-preview-box {
+            display: none;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 0.5rem;
+            background: rgba(99, 102, 241, 0.08);
+            border: 1px solid rgba(99, 102, 241, 0.28);
+            border-left: 3.5px solid #818CF8;
+            border-radius: var(--radius-sm);
+            padding: 0.45rem 0.65rem;
+            margin-bottom: 0.45rem;
+            font-size: 0.78rem;
+            color: var(--text-primary);
+            animation: fadeIn 0.15s ease-out;
+        }
+        .chat-quote-preview-box.visible {
+            display: flex;
+        }
+        .chat-quote-preview-box .quote-content {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            line-height: 1.45;
+            font-style: italic;
+        }
+        .chat-quote-preview-box .quote-clear-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.9rem;
+            padding: 0 0.2rem;
+            line-height: 1;
+        }
+        .chat-quote-preview-box .quote-clear-btn:hover {
+            color: #EF4444;
+        }
+
+        /* 🎯 フローティング引用質問ボタン（テキスト選択時に出現） */
+        .selection-quote-tooltip {
+            position: fixed;
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            gap: 0.35rem;
+            background: #1E1F20;
+            border: 1.5px solid #818CF8;
+            color: #FFFFFF;
+            padding: 0.4rem 0.8rem;
+            border-radius: var(--radius-full);
+            font-size: 0.78rem;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45), 0 0 12px rgba(129, 140, 248, 0.35);
+            transition: transform 120ms ease, opacity 120ms ease;
+            user-select: none;
+        }
+        .selection-quote-tooltip:hover {
+            background: #2D2E30;
+            border-color: #A5B4FC;
+            transform: translateY(-2px) scale(1.03);
+        }
+        .selection-quote-tooltip .tooltip-icon {
+            color: #818CF8;
+            font-size: 0.85rem;
+        }
+
+        /* 各小問の「💬 この設問をAIに質問」ボタン */
+        .kyotsu-ask-step-btn {
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 0.2rem 0.55rem;
+            border-radius: var(--radius-sm);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            background: rgba(99, 102, 241, 0.08);
+            color: #818CF8;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            transition: all 120ms ease;
+        }
+        .kyotsu-ask-step-btn:hover {
+            background: rgba(99, 102, 241, 0.16);
+            border-color: #818CF8;
+            color: #A5B4FC;
+            transform: translateY(-1px);
+        }
+
+        /* 💬 AIバブル内アクションバー（気づきメモ転記・コピー） */
+        .ai-bubble-action-bar {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 0.4rem;
+            margin-top: 0.65rem;
+            padding-top: 0.45rem;
+            border-top: 1px dashed rgba(255, 255, 255, 0.1);
+            flex-wrap: wrap;
+        }
+        .ai-bubble-action-btn {
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 0.2rem 0.5rem;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-color);
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            transition: all 120ms ease;
+        }
+        .ai-bubble-action-btn:hover {
+            color: var(--text-primary);
+            border-color: var(--brand-primary);
+            background: rgba(5, 150, 105, 0.1);
+        }
+        .ai-bubble-action-btn.save-insight-btn-highlight {
+            border-color: rgba(99, 102, 241, 0.4);
+            color: #818CF8;
+            background: rgba(99, 102, 241, 0.08);
+        }
+        .ai-bubble-action-btn.save-insight-btn-highlight:hover {
+            border-color: #818CF8;
+            background: rgba(99, 102, 241, 0.16);
+        }
+
+        /* ❝ ユーザーバブル内の引用カード表示 */
+        .user-bubble-quote {
+            background: rgba(0, 0, 0, 0.28);
+            border-left: 3px solid #818CF8;
+            border-radius: 4px;
+            padding: 0.35rem 0.55rem;
+            margin-bottom: 0.45rem;
+            font-size: 0.72rem;
+            text-align: left;
+        }
+        .user-bubble-quote .quote-tag {
+            color: #A5B4FC;
+            font-weight: 700;
+            display: block;
+            margin-bottom: 0.15rem;
+            font-size: 0.68rem;
+        }
+        .user-bubble-quote .quote-snippet {
+            max-height: 4.8em;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: pre-wrap;
+            font-style: italic;
+            opacity: 0.92;
+            line-height: 1.4;
+        }
+        .user-bubble-text {
+            word-break: break-word;
+            line-height: 1.5;
         }
     </style>
 </head>
@@ -1261,7 +1501,7 @@
                             <div class="chat-resize-grip"></div>
                         </div>
 
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.6rem; gap: 0.4rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; gap: 0.4rem;">
                             <div>
                                 <div style="display: flex; align-items: center; gap: 0.4rem;">
                                     <span class="flora-badge badge-safe" id="ai-status">AI TUTOR</span>
@@ -1277,6 +1517,15 @@
                             </div>
                         </div>
 
+                        <!-- 🎛️ ④ 指導スタイル切り替えバー -->
+                        <div class="chat-teaching-styles-bar" id="chat-teaching-styles-bar" title="AIの解説スタイルを選択できます">
+                            <span class="teaching-style-label">指導方針:</span>
+                            <button type="button" class="teaching-style-btn active" data-style="standard" title="標準的で丁寧なステップ解説">⚪ 標準丁寧</button>
+                            <button type="button" class="teaching-style-btn" data-style="easy" title="専門用語を控え、直感的なイメージや日常の例えで解説">🟢 噛み砕き</button>
+                            <button type="button" class="teaching-style-btn" data-style="speed" title="試験本番で使える秒殺テクニック・裏技・グラフでの判断">🔵 最速・裏技</button>
+                            <button type="button" class="teaching-style-btn" data-style="strict" title="定理の背景や前提条件を漏らさない厳密な数学的論理展開">🟣 厳密・論理</button>
+                        </div>
+
                         <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="qna-past-logs-btn" style="display:none; width:100%; margin-bottom:0.5rem; justify-content:flex-start;">
                             📜 過去の質問ログ（<span id="qna-past-logs-count">0</span>件）
                         </button>
@@ -1287,9 +1536,26 @@
                             </div>
                         </div>
 
-                        <div class="chat-input-wrapper" id="ai-chat-input-wrap" style="display: none;">
+                        <!-- ❝ 引用プレビューボックス（テキスト選択や設問指定時に自動出現） -->
+                        <div class="chat-quote-preview-box" id="chat-quote-preview-box">
+                            <span style="font-size: 1rem; color: #818CF8; font-weight: 900; line-height: 1;">❝</span>
+                            <div class="quote-content" id="chat-quote-content">引用した解説部分...</div>
+                            <button type="button" class="quote-clear-btn" id="chat-quote-clear-btn" title="引用を解除">✕</button>
+                        </div>
+
+                        <!-- ⚡ ① クイック質問チップ列（ワンタップで疑問を即送信） -->
+                        <div class="chat-quick-chips-wrap" id="chat-quick-chips-wrap">
+                            <button type="button" class="chat-quick-chip-btn" data-quick="途中式の計算を一歩ずつもっと細かく展開して教えて">⚡ 途中式を詳しく</button>
+                            <button type="button" class="chat-quick-chip-btn" data-quick="なぜこの方針・着眼点を使うのか、発想のきっかけを直感的に教えて">💡 なぜこの解法？</button>
+                            <button type="button" class="chat-quick-chip-btn" data-quick="他の解き方（別解や試験での時短テクニック）はありますか？">🔍 別解はある？</button>
+                            <button type="button" class="chat-quick-chip-btn" data-quick="この問題で受験生がハマりやすい典型的なミスや落とし穴を教えて">⚠️ よくあるミス</button>
+                            <button type="button" class="chat-quick-chip-btn" id="chip-kyotsu-trap" style="display:none;" data-quick="間違えたマークについて、なぜ自分の答えが誤りで正解が導かれるのか詳しく教えて">🏛️ 誤答マークを分析</button>
+                        </div>
+
+                        <!-- チャット入力欄（常時アクセス可能） -->
+                        <div class="chat-input-wrapper" id="ai-chat-input-wrap">
                             <textarea class="chat-input" id="ai-chat-question-field" rows="1" placeholder="解説の疑問点や解き方を質問...（Shift+Enterで改行）" name="ai-chat-question-field" autocomplete="off"></textarea>
-                            <button type="button" class="flora-btn flora-btn-primary btn-sm" style="align-self: flex-end;">送信</button>
+                            <button type="button" class="flora-btn flora-btn-primary btn-sm" id="ai-chat-send-btn" style="align-self: flex-end;">送信</button>
                         </div>
 
                         <div class="diagram-controls-wrap" id="diagram-controls-wrap" style="margin-top: 0.5rem;">
@@ -1504,6 +1770,10 @@
                 <div style="text-align: center; color: var(--text-muted); padding: 2rem;">問題を読み込み中...</div>
             </div>
         </div>
+    <!-- 🎯 テキスト選択時に出現する「💬 引用してAIに質問」フローティングボタン -->
+    <div class="selection-quote-tooltip" id="selection-quote-tooltip" title="選択したテキストを引用してAIチューターに質問する">
+        <span class="tooltip-icon">❝</span>
+        <span>この部分をAIに質問</span>
     </div>
 
     <script src="sidebar.js"></script>
@@ -2412,8 +2682,288 @@ ${glossaryBlock}`;
   "diagram_svg": "図解が必要な場合のみSVGコード全体。不要なら空文字列"
 }`;
 
+        // 🎛️ ④ 指導スタイル定義
+        const TEACHING_STYLES = {
+            standard: {
+                label: "標準丁寧",
+                instruction: "\n\n【現在の指導方針: ⚪ 標準丁寧】\n生徒がつまずきやすいポイントを丁寧にフォローし、初学者にも分かりやすい標準的で親切・丁寧なステップ解説を行ってください。論理の飛躍を避け、途中式の変形理由や根拠を省かずに説明してください。"
+            },
+            easy: {
+                label: "噛み砕き",
+                instruction: "\n\n【現在の指導方針: 🟢 噛み砕き（直感・イメージ重視）】\n小難しい専門用語や抽象的な数式をできるだけ日常の言葉や直感的なイメージ・具体例に言い換えて、「なぜそうなるのか」「直感的にどう捉えればよいか」を感覚的にスッと腑に落ちるように噛み砕いて解説してください。"
+            },
+            speed: {
+                label: "最速・裏技",
+                instruction: "\n\n【現在の指導方針: 🔵 最速・裏技（時短・試験テクニック）】\n共通テストや本番入試で1秒でも速く解くための着眼点、選択肢の消去法、特殊値代入、対称性の利用、グラフの概形や極限から直感で判断する裏技・時短テクニックを中心に実践的に解説してください。"
+            },
+            strict: {
+                label: "厳密・論理",
+                instruction: "\n\n【現在の指導方針: 🟣 厳密・論理（定義・定理重視）】\n高校数学・理科の厳密な定義や定理の成立条件（定義域・値域・分母≠0・真数条件など）、論理的な同値変形、必要十分条件、場合分けの網羅性を徹底的に重視し、数学的な穴やごまかしのない厳密な論理展開で解説してください。"
+            }
+        };
+        let activeTeachingStyle = "standard";
+
+        // ❝ 引用管理
+        let currentChatQuote = null;
+
+        function setChatQuote(text, label = "") {
+            if (!text || typeof text !== "string") return;
+            const trimmed = text.trim();
+            if (!trimmed) return;
+            currentChatQuote = trimmed;
+
+            const quoteBox = document.getElementById("chat-quote-preview-box");
+            const quoteContent = document.getElementById("chat-quote-content");
+            const chatInput = document.getElementById("ai-chat-question-field");
+            const activateBtn = document.getElementById("activate-ai-question-btn");
+            const chatInputWrap = document.getElementById("ai-chat-input-wrap");
+
+            // チャット入力欄が隠れている場合は解放
+            if (activateBtn && chatInputWrap && chatInputWrap.style.display === "none") {
+                activateBtn.click();
+            }
+
+            if (quoteContent) {
+                quoteContent.textContent = label ? `【${label}】${trimmed}` : trimmed;
+            }
+            if (quoteBox) {
+                quoteBox.style.display = "flex";
+                quoteBox.classList.add("visible");
+            }
+
+            if (chatInput) {
+                chatInput.focus();
+                quoteBox?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            }
+        }
+
+        function clearChatQuote() {
+            currentChatQuote = null;
+            const quoteBox = document.getElementById("chat-quote-preview-box");
+            const quoteContent = document.getElementById("chat-quote-content");
+            if (quoteBox) {
+                quoteBox.style.display = "none";
+                quoteBox.classList.remove("visible");
+            }
+            if (quoteContent) quoteContent.textContent = "";
+        }
+
+        // 💬 ③ 小問ピンポイント質問
+        window.askAboutSection = function(secNum, secTitle) {
+            const num = secNum || "";
+            const title = secTitle || "";
+            const label = `設問 ${num} ${title}`.trim();
+
+            let quoteSnippet = `設問 ${num}: ${title}`;
+            if (currentProblemData.kyotsuData && currentProblemData.kyotsuData.sections) {
+                const sec = currentProblemData.kyotsuData.sections.find(s =>
+                    (s.section_id && String(s.section_id) === String(num)) ||
+                    (s.section_title && String(s.section_title) === String(title))
+                );
+                if (sec) {
+                    const marksSummary = (sec.marks || []).map(m => {
+                        const userVal = (currentProblemData.kyotsuUserAnswers || {})[m.id];
+                        return `[${m.id}]=${m.answer}` + (userVal ? ` (あなたの回答:${userVal})` : "");
+                    }).join(", ");
+                    const cleanExp = (sec.explanation || "").replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+                    quoteSnippet = `設問 ${sec.section_id || num} ${sec.section_title || title}\nマーク: ${marksSummary}\n解説概要: ${cleanExp.slice(0, 140)}...`;
+                }
+            }
+
+            setChatQuote(quoteSnippet, label);
+
+            const inputField = document.getElementById("ai-chat-question-field");
+            if (inputField) {
+                if (!inputField.value.trim()) {
+                    inputField.value = `この設問${num ? `（${num}）` : ""}の解き方と考え方について詳しく教えて`;
+                }
+                inputField.focus();
+                inputField.setSelectionRange(inputField.value.length, inputField.value.length);
+            }
+            showToast(`設問${num}を引用してチャット入力欄にセットしました`, "info", 2000);
+        };
+
+        // 🧠 ⑤ AI回答から気づきメモへの保存
+        window.saveAiResponseToInsight = function(buttonEl) {
+            const bubbleEl = buttonEl.closest(".bubble-ai");
+            if (!bubbleEl) return;
+
+            const clone = bubbleEl.cloneNode(true);
+            const actionBar = clone.querySelector(".ai-bubble-action-bar");
+            if (actionBar) actionBar.remove();
+            const diagramBox = clone.querySelector(".ai-diagram-box");
+            if (diagramBox) diagramBox.remove();
+
+            let text = (clone.innerText || clone.textContent || "").trim();
+            if (!text) {
+                showToast("保存するテキストがありません。", "error");
+                return;
+            }
+
+            const header = `【💡 AI対話からの気づき】\n問題: ${currentProblemData.short_title || currentProblemData.title || "演習問題"}`;
+            const insightContent = `${header}\n${text}`;
+
+            const insightTextarea = document.getElementById("insight-text");
+            const insightModal = document.getElementById("insight-modal");
+
+            if (insightTextarea) {
+                if (insightTextarea.value.trim()) {
+                    insightTextarea.value += "\n\n---\n\n" + insightContent;
+                } else {
+                    insightTextarea.value = insightContent;
+                }
+            }
+
+            if (insightModal) {
+                insightModal.style.display = "flex";
+                insightModal.classList.add("active");
+                if (insightTextarea) insightTextarea.focus();
+                showToast("🧠 AIの解説を気づきメモに読み込みました！確認して保存してください。", "success", 4000);
+            }
+        };
+
+        // 📋 AIバブルのテキストコピー
+        window.copyAiBubbleText = async function(buttonEl) {
+            const bubbleEl = buttonEl.closest(".bubble-ai");
+            if (!bubbleEl) return;
+
+            const clone = bubbleEl.cloneNode(true);
+            const actionBar = clone.querySelector(".ai-bubble-action-bar");
+            if (actionBar) actionBar.remove();
+            const diagramBox = clone.querySelector(".ai-diagram-box");
+            if (diagramBox) diagramBox.remove();
+
+            let text = (clone.innerText || clone.textContent || "").trim();
+            if (!text) return;
+
+            try {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(text);
+                } else {
+                    throw new Error("Clipboard API unavailable");
+                }
+                showToast("📋 AI解説をコピーしました", "success", 2000);
+            } catch (err) {
+                const tempTextArea = document.createElement("textarea");
+                tempTextArea.value = text;
+                document.body.appendChild(tempTextArea);
+                tempTextArea.select();
+                document.execCommand("copy");
+                document.body.removeChild(tempTextArea);
+                showToast("📋 コピーしました", "success", 2000);
+            }
+        };
+
+        // 🎯 ② 誤答状況・問題前提のコンテキスト構築
+        function buildProblemContextForChat() {
+            let ctx = "";
+            
+            // 共通テストスプリントの誤答・マーク分析コンテキスト
+            if (currentProblemData.isKyotsuMistake || (currentProblemData.kyotsuData && currentProblemData.kyotsuData.sections)) {
+                const kd = currentProblemData.kyotsuData;
+                const wrongSet = new Set(currentProblemData.wrongMarkIds || []);
+                const userAnswers = currentProblemData.kyotsuUserAnswers || {};
+                
+                const allMarks = [];
+                (kd.sections || []).forEach(sec => {
+                    (sec.marks || []).forEach(m => allMarks.push({ ...m, sectionTitle: sec.section_title || sec.section_id }));
+                });
+                const totalCount = allMarks.length;
+                const correctCount = allMarks.filter(m => !wrongSet.has(m.id)).length;
+                const pct = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0;
+
+                ctx += `\n\n【共通テスト演習の誤答データ（生徒の解答状況）】\n`;
+                ctx += `・演習大問: ${kd.title || currentProblemData.short_title || "共通テスト"} (${kd.year || "最新形式"})\n`;
+                ctx += `・正答率: ${pct}% (${correctCount}/${totalCount} マーク正解)\n`;
+
+                const wrongMarks = allMarks.filter(m => wrongSet.has(m.id));
+                if (wrongMarks.length > 0) {
+                    ctx += `・生徒が間違えたマーク一覧:\n`;
+                    wrongMarks.forEach(wm => {
+                        const userVal = userAnswers[wm.id] ?? "未入力";
+                        ctx += `  - マーク [${wm.id}] (${wm.sectionTitle}): 生徒の誤答="${userVal}", 正解="${wm.answer}" (配点: ${wm.points || 2}点)\n`;
+                    });
+                    ctx += `★指導指示: 生徒が間違えた上記マークについて、なぜその誤答を選んでしまいがちか（典型的な思考の罠）、どう考えれば正解に至るかを優しく的確に指摘できるように準備してください。\n`;
+                } else {
+                    ctx += `・全問正解パーフェクトです！より発展的な着眼点や別解、スピード短縮テクニックについて指導してください。\n`;
+                }
+            } else {
+                // 通常問題の誤答・定石コンテキスト
+                if (currentProblemData.strategyPattern) {
+                    ctx += `\n\n【解法の定石】\n${currentProblemData.strategyPattern}\n`;
+                }
+                if (currentProblemData.trapDescription) {
+                    ctx += `\n【典型的な罠・注意点】\n${currentProblemData.trapDescription}\n`;
+                }
+                if (currentProblemData.errorCount && currentProblemData.errorCount > 0) {
+                    ctx += `\n【生徒の学習履歴】この問題を過去に ${currentProblemData.errorCount} 回間違えています。生徒が苦手としている前提で親身に解説してください。\n`;
+                }
+            }
+
+            return ctx;
+        }
+
+        // 初期バブルとクイックチップの更新
+        function initChatContextAndBubble() {
+            const initialBubble = document.getElementById("initial-ai-bubble");
+            const kyotsuChip = document.getElementById("chip-kyotsu-trap");
+            const stepLabel = document.getElementById("current-step");
+
+            if (currentProblemData.subject === "未分類") {
+                if (initialBubble) initialBubble.textContent = "この問題は未解析ストックです。右上の『⚡ この問題をAI解析する』を押すと、選択中のAI（Gemini / DeepSeek）が起動して完全に対話可能になります！";
+                if (stepLabel) stepLabel.textContent = "ステップ0: 未解析";
+                if (kyotsuChip) kyotsuChip.style.display = "none";
+                return;
+            }
+
+            // 共通テスト演習の場合
+            if (currentProblemData.isKyotsuMistake || (currentProblemData.kyotsuData && currentProblemData.kyotsuData.sections)) {
+                const kd = currentProblemData.kyotsuData;
+                const wrongSet = new Set(currentProblemData.wrongMarkIds || []);
+                const userAnswers = currentProblemData.kyotsuUserAnswers || {};
+                const allMarks = [];
+                (kd.sections || []).forEach(sec => (sec.marks || []).forEach(m => allMarks.push(m)));
+                const wrongMarks = allMarks.filter(m => wrongSet.has(m.id));
+
+                if (wrongMarks.length > 0) {
+                    const sampleWrong = wrongMarks.slice(0, 3).map(m => `【${m.id}】(あなたの答: ${userAnswers[m.id] ?? "未"} ➔ 正解: ${m.answer})`).join("、");
+                    if (initialBubble) {
+                        initialBubble.innerHTML = `共通テスト演習お疲れ様でした！ マーク ${escapeHtml(sampleWrong)} などで失点しているようです。なぜその選択肢に引っかかったのか、どのステップで迷ったのか、何でも気軽に質問してください！（上のタブで解説スタイルも選べます）`;
+                    }
+                    if (stepLabel) stepLabel.textContent = "共通テスト誤答分析";
+                    if (kyotsuChip) kyotsuChip.style.display = "inline-flex";
+                } else {
+                    if (initialBubble) {
+                        initialBubble.textContent = "共通テスト演習全問正解パーフェクトです！より速く解く裏技や別解、解法の背景など何でも質問してください。";
+                    }
+                    if (stepLabel) stepLabel.textContent = "共通テスト完全攻略";
+                    if (kyotsuChip) kyotsuChip.style.display = "none";
+                }
+            } else {
+                // 通常問題
+                if (currentProblemData.errorCount && currentProblemData.errorCount > 0) {
+                    if (initialBubble) {
+                        initialBubble.textContent = `復習お疲れ様です！この問題は過去に ${currentProblemData.errorCount} 回間違えています。解法の定石や典型的な罠、途中式の変形など、納得いくまで何でも質問してください！`;
+                    }
+                    if (stepLabel) stepLabel.textContent = "弱点克服フェーズ";
+                } else {
+                    if (initialBubble) {
+                        initialBubble.textContent = "問題の疑問点や別解、途中式の詳しい計算など、納得いくまで何でも質問してください！（上の指導方針タブで解説スタイルも選べます）";
+                    }
+                    if (stepLabel) stepLabel.textContent = "解説・対話フェーズ";
+                }
+                if (kyotsuChip) kyotsuChip.style.display = "none";
+            }
+        }
+
         function getChatPrompt(subject) {
-            return EXPERT_TEACHER_PROMPT + "\n\n" + (SUBJECT_CHAT_PROMPTS[subject] || SUBJECT_CHAT_PROMPTS["数学"]) + CHAT_DIAGRAM_RULE_BLOCK + buildLessonContextBlock();
+            const styleObj = TEACHING_STYLES[activeTeachingStyle] || TEACHING_STYLES.standard;
+            return EXPERT_TEACHER_PROMPT + "\n\n" +
+                (SUBJECT_CHAT_PROMPTS[subject] || SUBJECT_CHAT_PROMPTS["数学"]) +
+                CHAT_DIAGRAM_RULE_BLOCK +
+                buildLessonContextBlock() +
+                buildProblemContextForChat() +
+                styleObj.instruction;
         }
 
         let chatHistory = []; 
@@ -3037,7 +3587,8 @@ ${glossaryBlock}`;
                                 <span class="kyotsu-step-badge">${escapeHtml(secStepNum)}</span>
                                 <span class="kyotsu-step-title">${escapeHtml(secTitle)}</span>
                             </div>
-                            <div class="kyotsu-step-marks-resolved">
+                            <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                                <div class="kyotsu-step-marks-resolved">
                 `;
                 sectionMarks.forEach(m => {
                     const userVal = (userAnswers || {})[m.id];
@@ -3049,6 +3600,8 @@ ${glossaryBlock}`;
                     }
                 });
                 html += `
+                                </div>
+                                <button type="button" class="kyotsu-ask-step-btn" onclick="window.askAboutSection('${escapeHtml(secStepNum)}', '${escapeHtml(secTitle)}')">💬 この設問を質問</button>
                             </div>
                         </div>
                         <div class="kyotsu-stream-step-body">
@@ -3248,13 +3801,7 @@ ${glossaryBlock}`;
 
                 renderQuestionContent();
                 
-                if (currentProblemData.subject === "未分類") {
-                    document.getElementById("initial-ai-bubble").textContent = "この問題は未解析ストックです。右上の『⚡ この問題をAI解析する』を押すと、選択中のAI（Gemini / DeepSeek）が起動して完全に対話可能になります！";
-                    document.getElementById("current-step").textContent = "ステップ0: 未解析";
-                } else {
-                    document.getElementById("initial-ai-bubble").textContent = "クラウド連携完了。まずは左下の『模範解答』を確認してください。もし納得いかない部分があれば、質問ボタンから何でも聞いてください！";
-                    document.getElementById("current-step").textContent = "解説確認フェーズ";
-                }
+                initChatContextAndBubble();
 
                 const showAnsBtn = document.getElementById("show-answer-btn");
                 if (showAnsBtn) {
@@ -3794,7 +4341,24 @@ ${EXPERT_TEACHER_PROMPT}
 
             const uBubble = document.createElement("div"); 
             uBubble.className = "chat-bubble bubble-user"; 
-            uBubble.textContent = userText; 
+            if (userText.includes("【引用箇所】")) {
+                const quoteMatch = userText.match(/【引用箇所】\s*\n?>?\s*([\s\S]*?)\n\n【(?:質問|生徒からの質問)】\s*([\s\S]*)/);
+                if (quoteMatch) {
+                    const qSnippet = quoteMatch[1].trim();
+                    const qBody = quoteMatch[2].trim();
+                    uBubble.innerHTML = `
+                        <div class="user-bubble-quote">
+                            <span class="quote-tag">❝ 引用箇所</span>
+                            <div class="quote-snippet">${escapeHtml(qSnippet)}</div>
+                        </div>
+                        <div class="user-bubble-text">${escapeHtml(qBody)}</div>
+                    `;
+                } else {
+                    uBubble.textContent = userText;
+                }
+            } else {
+                uBubble.textContent = userText;
+            }
             chatHistoryArea.appendChild(uBubble);
 
             const aBubble = document.createElement("div"); 
@@ -3821,7 +4385,19 @@ ${EXPERT_TEACHER_PROMPT}
                     </div>
                   `
                 : "";
-            aBubble.innerHTML = renderFormattedMarkdown(aiJson.ai_response) + diagramHtml;
+            
+            // 🧠 ⑤ AIバブル下部のアクションバー（気づきメモ保存・コピー）
+            const actionBarHtml = `
+                <div class="ai-bubble-action-bar">
+                    <button type="button" class="ai-bubble-action-btn save-insight-btn-highlight" onclick="window.saveAiResponseToInsight(this)" title="このAIの解説を気づき・極意メモに保存">
+                        🧠 気づきメモに保存
+                    </button>
+                    <button type="button" class="ai-bubble-action-btn" onclick="window.copyAiBubbleText(this)" title="解説テキストをコピー">
+                        📋 コピー
+                    </button>
+                </div>
+            `;
+            aBubble.innerHTML = renderFormattedMarkdown(aiJson.ai_response) + diagramHtml + actionBarHtml;
 
             chatHistoryArea.appendChild(aBubble);
 
@@ -3942,17 +4518,27 @@ ${EXPERT_TEACHER_PROMPT}
         if (sendBtn && inputField) {
             const autoGrowChatInput = () => {
                 inputField.style.height = "auto";
-                inputField.style.height = inputField.scrollHeight + "px";
+                inputField.style.height = Math.min(inputField.scrollHeight, 180) + "px";
             };
             const sendChatInput = () => {
-                const t = inputField.value.trim();
-                if (t) {
-                    inputField.value = "";
-                    autoGrowChatInput();
-                    setTimeout(() => {
-                        sendMessageToTutor(t);
-                    }, 0);
+                let userText = inputField.value.trim();
+                if (!userText && !currentChatQuote) return;
+
+                if (!userText && currentChatQuote) {
+                    userText = "この引用部分の考え方や計算の導出について詳しく教えてください。";
                 }
+
+                let fullPayload = userText;
+                if (currentChatQuote) {
+                    fullPayload = `【引用箇所】\n> ${currentChatQuote}\n\n【質問】\n${userText}`;
+                    clearChatQuote();
+                }
+
+                inputField.value = "";
+                autoGrowChatInput();
+                setTimeout(() => {
+                    sendMessageToTutor(fullPayload);
+                }, 0);
             };
             sendBtn.addEventListener("click", sendChatInput);
             inputField.addEventListener("input", autoGrowChatInput);
@@ -3961,6 +4547,131 @@ ${EXPERT_TEACHER_PROMPT}
                 if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
                     e.preventDefault();
                     sendChatInput();
+                }
+            });
+        }
+
+        // 🎛️ ④ 指導スタイル切り替えボタンのイベントリスナー
+        document.querySelectorAll(".teaching-style-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                document.querySelectorAll(".teaching-style-btn").forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+                activeTeachingStyle = btn.getAttribute("data-style") || "standard";
+                const styleName = TEACHING_STYLES[activeTeachingStyle]?.label || "標準";
+                showToast(`指導方針を「${styleName}」に切り替えました。以降の回答に反映されます。`, "info", 2000);
+            });
+        });
+
+        // ⚡ クイック質問チップ列のイベントリスナー
+        document.querySelectorAll(".chat-quick-chip-btn").forEach(chip => {
+            chip.addEventListener("click", () => {
+                const quickText = chip.getAttribute("data-quick");
+                if (!quickText) return;
+
+                const activateBtn = document.getElementById("activate-ai-question-btn");
+                const chatInputWrap = document.getElementById("ai-chat-input-wrap");
+                if (activateBtn && chatInputWrap && chatInputWrap.style.display === "none") {
+                    activateBtn.click();
+                }
+
+                // 🏛️ 誤答マーク分析チップの特別処理
+                let finalQuestion = quickText;
+                if (chip.id === "chip-kyotsu-trap" && currentProblemData.wrongMarkIds && currentProblemData.wrongMarkIds.length > 0) {
+                    const wrongMarks = (currentProblemData.wrongMarkIds || []).map(id => {
+                        const userVal = (currentProblemData.kyotsuUserAnswers || {})[id] ?? "未入力";
+                        return `マーク[${id}]（自分の回答:${userVal}）`;
+                    }).join("、");
+                    finalQuestion = `間違えた${wrongMarks}について、なぜ自分の選択が間違いで正解に至る思考ルートはどうなっているのか、罠とポイントを詳しく教えてください。`;
+                }
+
+                if (inputField) {
+                    inputField.value = finalQuestion;
+                    if (sendBtn) sendBtn.click();
+                } else {
+                    sendMessageToTutor(finalQuestion);
+                }
+            });
+        });
+
+        // ✕ 引用解除ボタン
+        const quoteClearBtn = document.getElementById("chat-quote-clear-btn");
+        if (quoteClearBtn) {
+            quoteClearBtn.addEventListener("click", () => {
+                clearChatQuote();
+                showToast("引用を解除しました", "info", 1500);
+            });
+        }
+
+        // 🎯 テキスト選択によるフローティング「❝ この部分をAIに質問」ツールチップ
+        const selectionTooltip = document.getElementById("selection-quote-tooltip");
+        let activeSelectedText = "";
+
+        document.addEventListener("mouseup", (e) => {
+            // チャット入力欄、ツールチップ自体、またはモーダル内のテキスト選択は無視
+            if (e.target.closest("#ai-chat-input-wrap") || e.target.closest("#selection-quote-tooltip") || e.target.closest("#insight-modal") || e.target.closest("button") || e.target.closest("input") || e.target.closest("textarea")) {
+                return;
+            }
+
+            const selection = window.getSelection();
+            const text = selection ? selection.toString().trim() : "";
+
+            if (text && text.length >= 4 && !text.includes("\n\n\n")) {
+                activeSelectedText = text;
+                try {
+                    const range = selection.getRangeAt(0);
+                    const rect = range.getBoundingClientRect();
+                    
+                    if (rect && rect.width > 0 && rect.height > 0 && selectionTooltip) {
+                        const tooltipWidth = 190;
+                        const tooltipHeight = 36;
+                        let left = rect.left + (rect.width / 2) - (tooltipWidth / 2);
+                        let top = rect.top - tooltipHeight - 8;
+
+                        // 画面外はみ出し防止
+                        if (left < 10) left = 10;
+                        if (left + tooltipWidth > window.innerWidth - 10) {
+                            left = window.innerWidth - tooltipWidth - 10;
+                        }
+                        if (top < 10) {
+                            top = rect.bottom + 8;
+                        }
+
+                        selectionTooltip.style.left = `${left}px`;
+                        selectionTooltip.style.top = `${top}px`;
+                        selectionTooltip.style.display = "flex";
+                        selectionTooltip.classList.add("visible");
+                        return;
+                    }
+                } catch (err) {
+                    console.warn("Selection tooltip rect error:", err);
+                }
+            }
+
+            // 選択解除または短すぎる場合は隠す
+            if (selectionTooltip && selectionTooltip.style.display !== "none") {
+                setTimeout(() => {
+                    const currentSel = window.getSelection()?.toString().trim();
+                    if (!currentSel || currentSel.length < 4) {
+                        selectionTooltip.style.display = "none";
+                        selectionTooltip.classList.remove("visible");
+                    }
+                }, 150);
+            }
+        });
+
+        if (selectionTooltip) {
+            selectionTooltip.addEventListener("mousedown", (e) => {
+                e.preventDefault(); // 選択解除を防ぐ
+            });
+            selectionTooltip.addEventListener("click", (e) => {
+                e.stopPropagation();
+                if (activeSelectedText) {
+                    setChatQuote(activeSelectedText, "選択箇所の引用");
+                    selectionTooltip.style.display = "none";
+                    selectionTooltip.classList.remove("visible");
+                    const sel = window.getSelection();
+                    if (sel) sel.removeAllRanges();
+                    showToast("❝ 選択テキストを引用枠にセットしました！", "info", 2000);
                 }
             });
         }
