@@ -809,7 +809,7 @@ export const GEMINI_MODEL_FALLBACK_LIST = [
 ];
 
 export const DEEPSEEK_MODELS = [
-    'deepseek-v4.1-flash',
+    'deepseek-flash',
     'deepseek-v4-pro'
 ];
 
@@ -1437,7 +1437,7 @@ async function runDeepseekFallbackLoop(contents, systemInstruction, options = {}
         silentFallback = false,
         featureId = null,
         requestTimeoutMs = null,
-        preferredModel = "deepseek-v4.1-flash",
+        preferredModel = "deepseek-flash",
         rawText = !wantsJson
     } = options;
 
@@ -1468,7 +1468,7 @@ async function runDeepseekFallbackLoop(contents, systemInstruction, options = {}
     }
     if (modelList.length === 0) {
         const availableDs = getAvailableDeepseekModels();
-        const primary = (preferredModel && isDeepseekModel(preferredModel)) ? preferredModel : (availableDs[0] || "deepseek-v4.1-flash");
+        const primary = (preferredModel && isDeepseekModel(preferredModel)) ? preferredModel : (availableDs[0] || "deepseek-flash");
         modelList = [primary, ...availableDs.filter(m => m !== primary)];
     }
     // Proモデル除外が有効なら念のためフィルタ
@@ -1500,8 +1500,19 @@ async function runDeepseekFallbackLoop(contents, systemInstruction, options = {}
         const isThinkingEnabled = deepseekThinkingPayload?.thinking?.type === "enabled";
         const shouldSendJsonFormat = wantsJson && !isThinkingEnabled;
 
+        // 💡 公式推奨呼び出し名への自動正規化（旧名やエイリアスを最新の deepseek-flash / deepseek-v4-pro へ補正）
+        function normalizeDeepseekApiName(name) {
+            if (!name || typeof name !== "string") return "deepseek-flash";
+            const lower = name.trim().toLowerCase();
+            if (lower === "deepseek-v4-pro" || lower === "deepseek-v4-pro-0813") return "deepseek-v4-pro";
+            if (lower === "deepseek-v4.1-flash" || lower === "deepseek-v4-flash" || lower === "deepseek-v4-flash-vision-exp" || lower === "deepseek-reasoner" || lower === "deepseek-chat") {
+                return "deepseek-flash";
+            }
+            return name;
+        }
+
         const requestPayload = {
-            model: modelName,
+            model: normalizeDeepseekApiName(modelName),
             messages: messages,
             ...(shouldSendJsonFormat ? { response_format: { type: "json_object" } } : {}),
             ...deepseekThinkingPayload
@@ -1893,25 +1904,25 @@ async function runGeminiFallbackLoop(contents, systemInstruction, options = {}) 
         fallbackAttempts.push({ model: modelName, reason: result.isFormatError ? "JSON解析エラー（再指示後も形式が崩れていた）" : result.reason });
     }
 
-    // 🛡️ 最終防衛ライン: Gemini全モデル（3.8 / 3.7）が失敗した場合、画像入力がなければDeepSeek (deepseek-v4.1-flash) に自動フォールバック
+    // 🛡️ 最終防衛ライン: Gemini全モデル（3.8 / 3.7）が失敗した場合、画像入力がなければDeepSeek (deepseek-flash) に自動フォールバック
     if (!hasImages) {
         const dsKeys = getDeepseekKeys();
         const hasDsProxy = !isStaticHostingEnvironment() && (typeof window === "undefined" || window.__serverHasDeepseekKey !== false);
         if ((dsKeys && dsKeys.length > 0) || hasDsProxy) {
-            console.warn("🛡️ Gemini全モデルが利用不可のため、最終防衛ラインとしてDeepSeek (deepseek-v4.1-flash) へ自動フォールバックします");
+            console.warn("🛡️ Gemini全モデルが利用不可のため、最終防衛ラインとしてDeepSeek (deepseek-flash) へ自動フォールバックします");
             fallbackAttempts.push({ model: "gemini-all", reason: "Gemini全モデル過負荷・失敗 → 最終防衛ライン(DeepSeek)発動" });
             try {
                 const dsResult = await runDeepseekFallbackLoop(contents, systemInstruction, {
                     ...options,
-                    preferredModel: "deepseek-v4.1-flash",
-                    allowedModels: ["deepseek-v4.1-flash"],
+                    preferredModel: "deepseek-flash",
+                    allowedModels: ["deepseek-flash"],
                     silentFallback: false
                 });
-                if (typeof window !== "undefined") window.__lastSuccessfulAIModel = "deepseek-v4.1-flash";
+                if (typeof window !== "undefined") window.__lastSuccessfulAIModel = "deepseek-flash";
                 if (typeof options.onModelUsed === "function") {
-                    try { options.onModelUsed("deepseek-v4.1-flash"); } catch (_) {}
+                    try { options.onModelUsed("deepseek-flash"); } catch (_) {}
                 }
-                if (!silentFallback) notifyModelFallback(fallbackAttempts, "deepseek-v4.1-flash");
+                if (!silentFallback) notifyModelFallback(fallbackAttempts, "deepseek-flash");
                 return dsResult;
             } catch (dsErr) {
                 console.error("❌ 最終防衛ラインのDeepSeekでもリクエストが失敗しました:", dsErr);

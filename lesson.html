@@ -6643,6 +6643,9 @@
                                     <button type="button" class="tactile-btn" id="btn-toggle-batch-lesson-delete" style="font-size:0.75rem; font-weight:700; padding:0.4rem 0.85rem; height:36px; background:rgba(239, 68, 68, 0.08); color:#dc2626; border:1px solid rgba(239, 68, 68, 0.35); border-radius:var(--radius-full); white-space:nowrap; display:inline-flex; align-items:center; gap:0.35rem; cursor:pointer;" title="授業を複数選択して一括削除（暗記事項・問題・年表等のデータも完全徹底パージ）します">
                                         🗑️ 授業を一括削除
                                     </button>
+                                    <button type="button" class="tactile-btn" id="btn-batch-regenerate-memorize" style="font-size:0.75rem; font-weight:700; padding:0.4rem 0.85rem; height:36px; background:rgba(16, 185, 129, 0.1); color:#059669; border:1px solid rgba(16, 185, 129, 0.35); border-radius:var(--radius-full); white-space:nowrap; display:inline-flex; align-items:center; gap:0.35rem; cursor:pointer;" title="授業を選択して、全パートから暗記事項を漏れなく網羅再抽出します（4択ダミーも同時作成）">
+                                        🧠 暗記事項を一括再生成
+                                    </button>
                                     <button type="button" class="tactile-btn" id="btn-batch-generate-choice-drills" style="font-size:0.75rem; font-weight:700; padding:0.4rem 0.85rem; height:36px; background:#EEF2FF; color:#4F46E5; border:1px solid #C7D2FE; border-radius:var(--radius-full); white-space:nowrap; display:inline-flex; align-items:center; gap:0.35rem; cursor:pointer;" title="選択問題（共通テスト形式）が未作成の過去授業を検出し、API制限に配慮しながら段階的に一括作成します">
                                         🎯 選択問題を一括生成
                                     </button>
@@ -7826,6 +7829,81 @@
         </div>
     </div>
 
+    <!-- 🧠 暗記事項（暗記カード）の一括再生成モーダル -->
+    <div class="modal-overlay" id="batch-memorize-extract-modal" style="display: none;">
+        <div class="modal-content" style="max-width: 640px; width: 92%;">
+            <div class="modal-header">
+                <div style="display:flex; align-items:center; gap:0.5rem;">
+                    <span style="font-size:1.25rem;">🧠</span>
+                    <div>
+                        <h3 class="modal-title" style="margin:0;">暗記事項の一括網羅再生成</h3>
+                        <div style="font-size:0.72rem; color:var(--text-muted); font-weight:normal; margin-top:2px;">全パートから重要語句・人名・制度を網羅抽出（4択ダミーも同時作成）</div>
+                    </div>
+                </div>
+                <button type="button" class="modal-close-btn" id="close-batch-memorize-modal-btn">✕</button>
+            </div>
+
+            <!-- 初期設定ビュー -->
+            <div id="batch-memorize-setup-view">
+                <p style="font-size:0.82rem; color:var(--text-secondary); line-height:1.55; margin-bottom:0.75rem;">
+                    選択した授業の原本ノートから、最新のAIプロンプト（パート別網羅抽出）で暗記事項を再生成します。<br>
+                    <span style="color:#059669; font-weight:700;">※ 4択テスト用のダミー選択肢（紛らわしい類似用語・誤答）も同時に自動作成されます。</span>
+                </p>
+
+                <!-- 教科フィルタータブ -->
+                <div style="display:flex; gap:0.4rem; flex-wrap:wrap; margin-bottom:0.75rem;" id="batch-memorize-subject-chips"></div>
+
+                <!-- 選択操作バー -->
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem; font-size:0.75rem; color:var(--text-secondary);">
+                    <div>対象授業: <b id="batch-memorize-target-count" style="color:var(--text-primary);">0</b> 件</div>
+                    <div style="display:flex; gap:0.5rem;">
+                        <button type="button" class="tactile-btn" id="btn-batch-memorize-select-all" style="font-size:0.7rem; padding:0.2rem 0.5rem; background:var(--bg-subtle);">全選択</button>
+                        <button type="button" class="tactile-btn" id="btn-batch-memorize-deselect-all" style="font-size:0.7rem; padding:0.2rem 0.5rem; background:var(--bg-subtle);">全解除</button>
+                    </div>
+                </div>
+
+                <!-- 候補リスト -->
+                <div id="batch-memorize-candidates-list" style="max-height: 260px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.45rem; margin-bottom: 1rem; border:1px solid var(--border-color); border-radius:var(--radius-md); padding:0.4rem; background:var(--bg-subtle);"></div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 0.6rem;">
+                    <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="cancel-batch-memorize-btn">キャンセル</button>
+                    <button type="button" class="flora-btn flora-btn-primary btn-sm" id="start-batch-memorize-btn" style="background:#059669; border-color:#059669; color:#fff; font-weight:700;">
+                        🧠 一括再生成を開始する
+                    </button>
+                </div>
+            </div>
+
+            <!-- 進行中・完了ビュー -->
+            <div id="batch-memorize-progress-view" style="display:none;">
+                <div style="margin-bottom:1rem;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.82rem; font-weight:700; margin-bottom:0.4rem;">
+                        <span id="batch-memorize-progress-label">処理準備中...</span>
+                        <span id="batch-memorize-progress-percent" style="color:#059669;">0%</span>
+                    </div>
+                    <div style="height:8px; background:var(--bg-subtle); border-radius:var(--radius-full); overflow:hidden; border:1px solid var(--border-color);">
+                        <div id="batch-memorize-progress-bar" style="height:100%; width:0%; background:linear-gradient(90deg, #059669, #10b981); transition:width 0.3s ease;"></div>
+                    </div>
+                    <div id="batch-memorize-current-task" style="font-size:0.78rem; color:var(--text-secondary); margin-top:0.45rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                        待機中...
+                    </div>
+                </div>
+
+                <!-- リアルタイムログ -->
+                <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted); margin-bottom:0.35rem;">処理履歴ログ</div>
+                <div id="batch-memorize-log-list" style="max-height: 180px; overflow-y: auto; background:var(--bg-subtle); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:0.6rem; display:flex; flex-direction:column; gap:0.35rem; font-size:0.76rem; font-family:monospace; margin-bottom:1rem;"></div>
+
+                <div style="display:flex; justify-content:flex-end; gap:0.6rem;">
+                    <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="stop-batch-memorize-btn" style="color:var(--error); border-color:var(--error);">
+                        ⏸️ 一時停止 / 中断
+                    </button>
+                    <button type="button" class="flora-btn flora-btn-primary btn-sm" id="finish-batch-memorize-btn" style="display:none;">
+                        ✅ 完了して閉じる
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- 🎴 暗記カード4択ダミー（distractors）の一括生成モーダル -->
     <div class="modal-overlay" id="batch-card-distractors-modal" style="display: none;">
         <div class="modal-content" style="max-width: 620px; width: 92%;">
@@ -8020,7 +8098,7 @@
                             <select id="batch-timeline-model-select" class="flora-input" style="width:100%; font-size:0.75rem; padding:0.3rem 0.6rem; border-radius:var(--radius-md); font-weight:700; background:var(--bg-subtle); color:var(--text-primary); border:1px solid var(--border-color); cursor:pointer;">
                                 <option value="gemini-3.8-flash" selected>✨ Gemini 3.8 Flash（推奨・最新最速）</option>
                                 <option value="gemini-3.7-flash">⚡ Gemini 3.7 Flash（安定）</option>
-                                <option value="deepseek-v4.1-flash">🐋 DeepSeek V4.1 Flash</option>
+                                <option value="deepseek-flash">🐋 DeepSeek Flash (V4.1)</option>
                             </select>
                         </div>
                         <div style="width:170px;">
@@ -9126,7 +9204,7 @@
         const MODEL_LABELS = {
             "gemini-3.8-flash": "Gemini 3.8 Flash (最新・高速)",
             "gemini-3.7-flash": "Gemini 3.7 Flash",
-            "deepseek-v4.1-flash": "DeepSeek V4.1 Flash (超高速)",
+            "deepseek-flash": "DeepSeek Flash (超高速)",
             "deepseek-v4-pro": "DeepSeek V4 Pro (深層推論)"
         };
 
@@ -9361,17 +9439,17 @@
                 release: "2025年リビジョン"
             },
             {
-                id: "deepseek-v4.1-flash",
-                name: "DeepSeek V4.1 Flash",
+                id: "deepseek-flash",
+                name: "DeepSeek Flash",
                 badge: "DeepSeek",
                 badgeClass: "ais-badge-rec",
                 category: "DeepSeek",
                 provider: "DeepSeek",
                 icon: "🐋",
-                desc: "DeepSeekの次世代高速アーキテクチャ。高速な思考プロセスと数学・理科の計算ステップに強みを発揮し、Gemini過負荷時の最終防衛ラインとしても機能します。",
-                specs: "Context: 128k tokens • 推論制御対応",
+                desc: "DeepSeekの最新アーキテクチャ（V4.1-Flash）。高速な思考プロセスと数学・理科の計算ステップに強みを発揮し、Gemini過負荷時の最終防衛ラインとしても機能します。",
+                specs: "Context: 1M tokens • 最大出力384K • マルチモーダル対応",
                 speed: "Fast",
-                release: "2025年リビジョン"
+                release: "2026年最新モデル"
             },
             {
                 id: "deepseek-v4-pro",
@@ -17693,6 +17771,310 @@ ${existingLeads}
         });
 
         // ==============================================================
+        // 🧠 暗記事項（暗記カード）の一括網羅再生成エンジン
+        // ==============================================================
+        let batchMemorizeCandidates = [];
+        let batchMemorizeSelectedSubject = "all";
+        let isBatchGeneratingMemorize = false;
+        let batchMemorizeStopRequested = false;
+
+        function openBatchMemorizeModal() {
+            if (!lastLessonsSnapshot) {
+                showToast("授業データを読み込み中です...", "info", 2000);
+                return;
+            }
+
+            // 本文(extractedText)が存在する授業を抽出
+            const candidates = [];
+            Object.entries(lastLessonsSnapshot).forEach(([id, l]) => {
+                if (!l) return;
+                const text = (l.extractedText || "").trim();
+                if (!text && (!Array.isArray(l.parts) || l.parts.length === 0)) return;
+
+                const points = Array.isArray(l.memorizationPoints) ? l.memorizationPoints : [];
+                candidates.push({
+                    id,
+                    title: l.title || "無題の授業",
+                    subject: l.subject || detectLessonSubject(l) || "その他",
+                    partsCount: Array.isArray(l.parts) ? l.parts.length : 1,
+                    currentPointsCount: points.length,
+                    lesson: l,
+                    selected: true
+                });
+            });
+
+            if (candidates.length === 0) {
+                showToast("再生成の対象となる授業が見つかりませんでした。", "info", 3000);
+                return;
+            }
+
+            batchMemorizeCandidates = candidates;
+            batchMemorizeSelectedSubject = "all";
+
+            const setupView = el("batch-memorize-setup-view");
+            const progressView = el("batch-memorize-progress-view");
+            if (setupView) setupView.style.display = "block";
+            if (progressView) progressView.style.display = "none";
+
+            renderBatchMemorizeSubjectChips();
+            renderBatchMemorizeCandidates();
+
+            const modal = el("batch-memorize-extract-modal");
+            if (modal) modal.style.display = "flex";
+        }
+
+        function renderBatchMemorizeSubjectChips() {
+            const container = el("batch-memorize-subject-chips");
+            if (!container) return;
+            container.innerHTML = "";
+
+            const subjects = ["all"];
+            batchMemorizeCandidates.forEach(c => {
+                if (c.subject && !subjects.includes(c.subject)) subjects.push(c.subject);
+            });
+
+            subjects.forEach(subj => {
+                const btn = document.createElement("button");
+                btn.type = "button";
+                btn.className = "tactile-btn";
+                btn.style.cssText = `font-size:0.72rem; padding:0.25rem 0.6rem; border-radius:var(--radius-full); cursor:pointer; font-weight:700; ${
+                    batchMemorizeSelectedSubject === subj
+                        ? "background:#059669; color:#fff; border:1px solid #059669;"
+                        : "background:var(--bg-subtle); color:var(--text-secondary); border:1px solid var(--border-color);"
+                }`;
+                const count = subj === "all"
+                    ? batchMemorizeCandidates.length
+                    : batchMemorizeCandidates.filter(c => c.subject === subj).length;
+                btn.textContent = `${subj === "all" ? "すべて" : subj} (${count})`;
+                btn.addEventListener("click", () => {
+                    batchMemorizeSelectedSubject = subj;
+                    renderBatchMemorizeSubjectChips();
+                    renderBatchMemorizeCandidates();
+                });
+                container.appendChild(btn);
+            });
+        }
+
+        function renderBatchMemorizeCandidates() {
+            const listEl = el("batch-memorize-candidates-list");
+            const targetCountEl = el("batch-memorize-target-count");
+            if (!listEl) return;
+            listEl.innerHTML = "";
+
+            const filtered = batchMemorizeCandidates.filter(c => {
+                return batchMemorizeSelectedSubject === "all" || c.subject === batchMemorizeSelectedSubject;
+            });
+
+            const selectedFiltered = filtered.filter(c => c.selected);
+            if (targetCountEl) targetCountEl.textContent = selectedFiltered.length;
+
+            if (filtered.length === 0) {
+                listEl.innerHTML = `<div style="text-align:center; padding:1.5rem; color:var(--text-muted); font-size:0.8rem;">該当する授業はありません</div>`;
+                return;
+            }
+
+            filtered.forEach(c => {
+                const item = document.createElement("label");
+                item.style.cssText = `display:flex; align-items:center; gap:0.55rem; padding:0.45rem 0.6rem; background:var(--bg-surface); border:1px solid var(--border-color); border-radius:var(--radius-sm); cursor:pointer; user-select:none; transition:background 0.15s;`;
+                item.innerHTML = `
+                    <input type="checkbox" ${c.selected ? "checked" : ""} style="cursor:pointer; accent-color:#059669;">
+                    <div style="flex:1; min-width:0;">
+                        <div style="font-size:0.8rem; font-weight:700; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(c.title)}</div>
+                        <div style="font-size:0.7rem; color:var(--text-muted); display:flex; gap:0.5rem; align-items:center; margin-top:2px;">
+                            <span style="display:inline-block; padding:1px 5px; border-radius:3px; background:rgba(16,185,129,0.1); color:#059669; font-weight:700;">${escapeHtml(c.subject)}</span>
+                            <span>全${c.partsCount}パート</span>
+                            <span>現在: <b>${c.currentPointsCount}</b> 問</span>
+                        </div>
+                    </div>
+                `;
+                const chk = item.querySelector("input");
+                chk.addEventListener("change", (e) => {
+                    c.selected = e.target.checked;
+                    const curSelected = filtered.filter(x => x.selected);
+                    if (targetCountEl) targetCountEl.textContent = curSelected.length;
+                });
+                listEl.appendChild(item);
+            });
+        }
+
+        async function startBatchMemorizeGeneration() {
+            if (!loginUid) {
+                showToast("ログインが必要です。", "error", 2000);
+                return;
+            }
+
+            const targets = batchMemorizeCandidates.filter(c => {
+                const matchesSubj = (batchMemorizeSelectedSubject === "all" || c.subject === batchMemorizeSelectedSubject);
+                return matchesSubj && c.selected;
+            });
+
+            if (targets.length === 0) {
+                showToast("選択された授業がありません。", "warning", 2500);
+                return;
+            }
+
+            el("batch-memorize-setup-view").style.display = "none";
+            el("batch-memorize-progress-view").style.display = "block";
+            el("stop-batch-memorize-btn").style.display = "inline-flex";
+            el("finish-batch-memorize-btn").style.display = "none";
+
+            const logList = el("batch-memorize-log-list");
+            if (logList) logList.innerHTML = "";
+
+            function addLog(msg, type = "info") {
+                if (!logList) return;
+                const color = type === "success" ? "#059669" : (type === "error" ? "#dc2626" : (type === "warn" ? "#d97706" : "var(--text-secondary)"));
+                const time = new Date().toLocaleTimeString();
+                const div = document.createElement("div");
+                div.style.color = color;
+                div.textContent = `[${time}] ${msg}`;
+                logList.appendChild(div);
+                logList.scrollTop = logList.scrollHeight;
+            }
+
+            isBatchGeneratingMemorize = true;
+            batchMemorizeStopRequested = false;
+
+            let successCount = 0;
+            let failCount = 0;
+            let totalCardsGenerated = 0;
+            const total = targets.length;
+
+            addLog(`🚀 暗記事項の一括再生成を開始します（対象: 全${total}授業）`);
+            addLog(`ℹ️ 各パートから重要用語を漏れなく抽出し、4択ダミーも同時に作成します`);
+
+            for (let i = 0; i < total; i++) {
+                if (batchMemorizeStopRequested) {
+                    addLog(`⏸️ 処理が中断されました。これまでに更新された暗記事項は安全に保存されています。`, "warn");
+                    break;
+                }
+
+                const target = targets[i];
+                const progressPct = Math.round((i / total) * 100);
+
+                el("batch-memorize-progress-label").textContent = `処理中: ${i + 1} / ${total} 授業目`;
+                el("batch-memorize-progress-percent").textContent = `${progressPct}%`;
+                el("batch-memorize-progress-bar").style.width = `${progressPct}%`;
+                el("batch-memorize-current-task").textContent = `⏳「${target.title}」（${target.partsCount}パート）の暗記事項を抽出中...`;
+
+                addLog(`[${i + 1}/${total}] ⏳「${target.title}」を分析中...`);
+
+                try {
+                    const lesson = target.lesson;
+                    const subject = target.subject || detectLessonSubject(lesson) || "その他";
+
+                    // 数学・現代文は暗記カードを自動抽出しない（スキップ）
+                    if (subject === "数学" || subject === "現代文") {
+                        addLog(`⏩「${target.title}」は${subject}科目のためスキップしました`, "info");
+                        continue;
+                    }
+
+                    const points = await generateMemorizationPoints(lesson.extractedText, lesson.title, subject, lesson.parts);
+
+                    if (!Array.isArray(points) || points.length === 0) {
+                        addLog(`⚠️「${target.title}」から抽出された重要語句がありませんでした`, "warn");
+                        continue;
+                    }
+
+                    const newCards = points.map((p, idx) => ({
+                        id: "mp_" + Date.now() + "_" + idx,
+                        category: p.category || "重要事項",
+                        question: p.question || "",
+                        answer: p.answer || "",
+                        content: p.content || (p.question && p.answer ? `${p.question}：${p.answer}` : (p.answer || p.question || "")),
+                        note: p.note || "",
+                        distractors: Array.isArray(p.distractors) ? p.distractors : [],
+                        partIndex: p.partIndex !== undefined ? p.partIndex : null,
+                        partTitle: p.partTitle || "",
+                        subject: subject,
+                        createdAt: new Date().toISOString()
+                    }));
+
+                    lesson.memorizationPoints = newCards;
+                    lesson.updatedAt = new Date().toISOString();
+
+                    await update(ref(database, 'users/' + loginUid + '/lessons/' + target.id), {
+                        memorizationPoints: newCards,
+                        updatedAt: lesson.updatedAt
+                    });
+
+                    // 現在開いている授業ならcurrentLessonにも反映
+                    if (typeof currentLesson !== "undefined" && currentLesson && currentLesson.id === target.id) {
+                        currentLesson.memorizationPoints = newCards;
+                        if (typeof renderMemorizationPoints === "function") renderMemorizationPoints();
+                    }
+
+                    successCount++;
+                    totalCardsGenerated += newCards.length;
+                    addLog(`✅「${target.title}」の暗記事項を保存しました（${newCards.length}問 抽出完了）`, "success");
+
+                } catch (err) {
+                    console.error("Batch memorize error for", target.title, err);
+                    failCount++;
+                    addLog(`❌「${target.title}」の生成に失敗しました: ${err.message}`, "error");
+                }
+
+                // クールダウン（API制限配慮: 約1.5秒）
+                if (i < total - 1 && !batchMemorizeStopRequested) {
+                    await new Promise(r => setTimeout(r, 1500));
+                }
+            }
+
+            isBatchGeneratingMemorize = false;
+            el("batch-memorize-progress-bar").style.width = "100%";
+            el("batch-memorize-progress-percent").textContent = "100%";
+            el("batch-memorize-progress-label").textContent = batchMemorizeStopRequested ? "⏸️ 処理を一時停止しました" : "🎉 一括再生成が完了しました！";
+            el("batch-memorize-current-task").textContent = `完了: 成功 ${successCount}授業 / 失敗 ${failCount}授業（計 ${totalCardsGenerated}問の暗記カードを作成）`;
+
+            el("stop-batch-memorize-btn").style.display = "none";
+            el("finish-batch-memorize-btn").style.display = "inline-flex";
+
+            addLog(`🏁 処理終了: 成功 ${successCount}授業 / 失敗 ${failCount}授業（計 ${totalCardsGenerated}問を更新）`, successCount > 0 ? "success" : "warn");
+            showToast(`🎉 暗記事項の一括再生成が完了しました！（${successCount}授業 / ${totalCardsGenerated}問）`, "success", 4000);
+        }
+
+        function stopBatchMemorizeGeneration() {
+            if (!isBatchGeneratingMemorize) return;
+            batchMemorizeStopRequested = true;
+            el("batch-memorize-current-task").textContent = "⏸️ 現在の処理が終了次第、安全に停止します...";
+        }
+
+        // イベントバインド
+        el("btn-batch-regenerate-memorize")?.addEventListener("click", openBatchMemorizeModal);
+        el("close-batch-memorize-modal-btn")?.addEventListener("click", () => {
+            if (isBatchGeneratingMemorize) {
+                if (!confirm("現在一括再生成の処理中です。中断しますか？")) return;
+                stopBatchMemorizeGeneration();
+            }
+            el("batch-memorize-extract-modal").style.display = "none";
+        });
+        el("cancel-batch-memorize-btn")?.addEventListener("click", () => el("batch-memorize-extract-modal").style.display = "none");
+        el("start-batch-memorize-btn")?.addEventListener("click", startBatchMemorizeGeneration);
+        el("stop-batch-memorize-btn")?.addEventListener("click", stopBatchMemorizeGeneration);
+        el("finish-batch-memorize-btn")?.addEventListener("click", () => el("batch-memorize-extract-modal").style.display = "none");
+        el("btn-batch-memorize-select-all")?.addEventListener("click", () => {
+            batchMemorizeCandidates.forEach(c => {
+                if (batchMemorizeSelectedSubject === "all" || c.subject === batchMemorizeSelectedSubject) {
+                    c.selected = true;
+                }
+            });
+            renderBatchMemorizeCandidates();
+        });
+        el("btn-batch-memorize-deselect-all")?.addEventListener("click", () => {
+            batchMemorizeCandidates.forEach(c => {
+                if (batchMemorizeSelectedSubject === "all" || c.subject === batchMemorizeSelectedSubject) {
+                    c.selected = false;
+                }
+            });
+            renderBatchMemorizeCandidates();
+        });
+        el("batch-memorize-extract-modal")?.addEventListener("click", (e) => {
+            if (e.target.id === "batch-memorize-extract-modal" && !isBatchGeneratingMemorize) {
+                el("batch-memorize-extract-modal").style.display = "none";
+            }
+        });
+
+        // ==============================================================
         // 🎴 暗記カード4択ダミー（distractors）の一括段階的生成エンジン
         // ==============================================================
         let batchDistractorsCandidates = [];
@@ -22890,6 +23272,7 @@ ${curriculumRulePrompt}
                     answer: p.answer || "",
                     content: p.content || (p.question && p.answer ? `${p.question}：${p.answer}` : (p.answer || p.question || "")),
                     note: p.note || "",
+                    distractors: Array.isArray(p.distractors) ? p.distractors : [],
                     partIndex: p.partIndex !== undefined ? p.partIndex : null,
                     partTitle: p.partTitle || "",
                     subject: subject,
