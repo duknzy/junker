@@ -3754,6 +3754,7 @@
                         question: q,
                         answer: a,
                         note: note,
+                        distractors: Array.isArray(mp.distractors) ? mp.distractors : [],
                         box: boxLevel,
                         boxLevel: boxLevel,
                         reps: reps,
@@ -5143,23 +5144,50 @@
             if (progressBar) progressBar.style.width = `${Math.round(((quizCurrentIndex) / quizQueue.length) * 100)}%`;
 
             // 正解 1つ ＋ 一意なダミー 3つ の計4択を確実に生成
-            const correctAnswer = card.answer;
-            // 💡 教科の混入防止: 出題カードと同一教科の解答を最優先でダミーに採用する
-            const allCards = getAllCards();
-            const sameSubjAnswers = allCards
-                .filter(c => c.subject === card.subject && c.answer && c.answer !== correctAnswer)
-                .map(c => c.answer);
-            let uniqueOthers = Array.from(new Set(sameSubjAnswers));
+            const correctAnswer = (card.answer || "").trim();
+            const dummyAnswers = [];
 
-            // 同一教科の解答が足りない場合のみ、全体のプールから補完
-            if (uniqueOthers.length < 3) {
-                const globalOthers = Array.from(new Set(quizPoolAllAnswers.filter(a => a && a !== correctAnswer && !uniqueOthers.includes(a))));
-                uniqueOthers = uniqueOthers.concat(globalOthers);
+            // 🌟 1. AI生成された紛らわしいダミー（distractors）を最優先で採用
+            if (Array.isArray(card.distractors) && card.distractors.length > 0) {
+                card.distractors.forEach(d => {
+                    const cleanD = (d || "").trim();
+                    if (cleanD && cleanD !== correctAnswer && !dummyAnswers.includes(cleanD)) {
+                        dummyAnswers.push(cleanD);
+                    }
+                });
             }
 
-            const dummyAnswers = uniqueOthers
-                .sort(() => Math.random() - 0.5)
-                .slice(0, 3);
+            // 🌟 2. 3つに満たない場合、スマートフォールバック（同一単元・文字数近似・語尾一致）
+            if (dummyAnswers.length < 3) {
+                const allCards = getAllCards();
+                const targetSubj = card.subject;
+                const targetLessonId = card.lessonId;
+                const correctLen = correctAnswer.length;
+
+                const pool = allCards.filter(c => c && c.answer && c.answer.trim() !== correctAnswer);
+                const scored = pool.map(c => {
+                    const ans = (c.answer || "").trim();
+                    if (!ans || ans === correctAnswer || dummyAnswers.includes(ans)) return null;
+
+                    let score = 0;
+                    if (c.subject === targetSubj) score += 20;
+                    if (targetLessonId && c.lessonId === targetLessonId) score += 10;
+                    const lenDiff = Math.abs(ans.length - correctLen);
+                    if (lenDiff <= Math.max(3, Math.round(correctLen * 0.4))) score += 5;
+                    if (ans.length > 1 && correctAnswer.length > 1 && ans.slice(-1) === correctAnswer.slice(-1)) score += 3;
+
+                    return { ans, score: score + Math.random() * 2 };
+                }).filter(Boolean);
+
+                scored.sort((a, b) => b.score - a.score);
+
+                for (const item of scored) {
+                    if (!dummyAnswers.includes(item.ans)) {
+                        dummyAnswers.push(item.ans);
+                        if (dummyAnswers.length === 3) break;
+                    }
+                }
+            }
             
             // もしダミーが足りない場合のフェイルセーフ選択肢
             const fallbackOptions = ["該当事項なし", "条件不十分", "未定義", "常に0"];

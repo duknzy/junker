@@ -6124,7 +6124,8 @@
                         insightUpdatedAt: mp.updatedAt || lesson.updatedAt || lesson.createdAt,
                         createdAt: lesson.createdAt,
                         isPinned: false,
-                        sourceType: "memorize"
+                        sourceType: "memorize",
+                        distractors: Array.isArray(mp.distractors) ? mp.distractors : []
                     });
                 });
             });
@@ -11262,6 +11263,7 @@
                     backTermTitle: backTermTitle,
                     backAnswer: definition,
                     backNote: backNote,
+                    distractors: Array.isArray(raw.distractors) ? raw.distractors : [],
                     lessonId: raw.lessonId,
                     memoId: raw.memoId,
                     progressKey: sanitizeDbKey(`mem_${raw.lessonId || 'l'}_${raw.memoId || 'm'}`)
@@ -11955,19 +11957,48 @@
             fcQuizBox.innerHTML = "";
             const cleanCorrect = (correctAnswer || "").trim();
 
-            // ⚡ 重要：政経などを解いているときに他教科（日本史など）の用語が絶対に混ざらないよう同一教科を最優先
-            const allCards = getAllAvailableFlashcards();
-            const targetSubj = fcCurrentCard ? fcCurrentCard.subject : null;
-            const sameSubject = allCards.filter(c => c && (!targetSubj || c.subject === targetSubj) && (c.backAnswer || c.frontMain) !== cleanCorrect);
-            const pool = sameSubject.length >= 3 ? sameSubject : (sameSubject.length > 0 ? sameSubject : allCards.filter(c => (c.backAnswer || c.frontMain) !== cleanCorrect));
-
-            const shuffledPool = shuffleArray(pool);
             const dummyTexts = [];
-            for (const item of shuffledPool) {
-                const text = (item.backAnswer || item.frontMain || "").trim();
-                if (text && text !== cleanCorrect && !dummyTexts.includes(text)) {
-                    dummyTexts.push(text);
-                    if (dummyTexts.length === 3) break;
+
+            // 🌟 1. AI生成された紛らわしいダミー（distractors）が存在すれば最優先で採用
+            if (fcCurrentCard && Array.isArray(fcCurrentCard.distractors) && fcCurrentCard.distractors.length > 0) {
+                fcCurrentCard.distractors.forEach(d => {
+                    const cleanD = (d || "").trim();
+                    if (cleanD && cleanD !== cleanCorrect && !dummyTexts.includes(cleanD)) {
+                        dummyTexts.push(cleanD);
+                    }
+                });
+            }
+
+            // 🌟 2. 3つに満たない場合、スマートフォールバック（同一単元・同一教科・文字数近似で抽出）
+            if (dummyTexts.length < 3) {
+                const allCards = getAllAvailableFlashcards();
+                const targetSubj = fcCurrentCard ? fcCurrentCard.subject : null;
+                const targetLessonId = fcCurrentCard ? fcCurrentCard.lessonId : null;
+                const correctLen = cleanCorrect.length;
+
+                const sameSubjectCards = allCards.filter(c => c && (!targetSubj || c.subject === targetSubj) && (c.backAnswer || c.frontMain) !== cleanCorrect);
+                const pool = sameSubjectCards.length >= 3 ? sameSubjectCards : (allCards.filter(c => (c.backAnswer || c.frontMain) !== cleanCorrect));
+
+                const scored = pool.map(item => {
+                    const text = (item.backAnswer || item.frontMain || "").trim();
+                    if (!text || text === cleanCorrect || dummyTexts.includes(text)) return null;
+
+                    let score = 0;
+                    if (targetLessonId && item.lessonId === targetLessonId) score += 10;
+                    const lenDiff = Math.abs(text.length - correctLen);
+                    if (lenDiff <= Math.max(3, Math.round(correctLen * 0.4))) score += 5;
+                    if (text.length > 1 && cleanCorrect.length > 1 && text.slice(-1) === cleanCorrect.slice(-1)) score += 3;
+
+                    return { text, score: score + Math.random() * 2 };
+                }).filter(Boolean);
+
+                scored.sort((a, b) => b.score - a.score);
+
+                for (const item of scored) {
+                    if (!dummyTexts.includes(item.text)) {
+                        dummyTexts.push(item.text);
+                        if (dummyTexts.length === 3) break;
+                    }
                 }
             }
 
