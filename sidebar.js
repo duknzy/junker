@@ -243,6 +243,7 @@
             navCustomSprint: 'カスタムスプリント',
             navAnswerCheck: 'クイック答え合わせ',
             navInsights: '質問・学びアーカイブ',
+            navPastExam: '共テ過去問演習',
             navTimelineQuiz: '共テ年代整序特訓',
             navTimeline: '歴史 統合年表',
             navAiSettings: 'AI設定',
@@ -322,6 +323,7 @@
             navCustomSprint: 'Custom Sprint',
             navAnswerCheck: 'Quick Answer Check',
             navInsights: 'Questions & Insights',
+            navPastExam: 'Past Exam Drill',
             navTimelineQuiz: 'Chronology Drill',
             navTimeline: 'History Timeline',
             navAiSettings: 'AI Settings',
@@ -634,6 +636,7 @@
                     { href: 'custom-sprint.html', icon: '⚡', label: t('navCustomSprint'), match: ['custom-sprint.html'] },
                     { href: 'answer-check.html', icon: '✅', label: t('navAnswerCheck'), match: ['answer-check.html'] },
                     { href: 'insights.html', icon: '💡', label: t('navInsights'), match: ['insights.html'] },
+                    { href: 'past-exam.html', icon: '🏛️', label: t('navPastExam'), match: ['past-exam.html'] },
                     { href: 'timeline.html?quiz=true', icon: '🎯', label: t('navTimelineQuiz'), badge: t('badgeImportant'), match: ['timeline.html?quiz=true'] },
                     { href: 'timeline.html', icon: '🏛️', label: t('navTimeline'), match: ['timeline.html'] },
                 ]

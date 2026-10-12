@@ -1,0 +1,1767 @@
+<!DOCTYPE html>
+<html lang="ja" class="notranslate" translate="no">
+<head>
+    <meta name="google" content="notranslate">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#059669" id="meta-theme-color">
+    <script>
+        (function() {
+            const stored = localStorage.getItem('flora-dark-mode');
+            const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (stored === 'true' || (!stored && prefersDark)) {
+                document.documentElement.classList.add('dark');
+            }
+        })();
+    </script>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="icons/icon.png">
+    <link rel="apple-touch-icon" href="icons/icon.png">
+    <title>Flora | 共通テスト過去問演習</title>
+    <link rel="stylesheet" href="style.css?v=3.5">
+
+    <style>
+        /* ==========================================================================
+           🏛️ 共通テスト過去問演習 専用スタイル
+           ========================================================================== */
+        .exam-page-container {
+            width: 100%;
+            max-width: 1480px;
+            margin: 0 auto;
+            padding: 1.25rem 1.5rem 4rem;
+        }
+
+        /* 頂部ヘッダー & コントロールバー */
+        .exam-header-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-xl);
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 1.25rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .exam-title-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .exam-badge-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            background: rgba(13, 148, 136, 0.1);
+            color: #0D9488;
+            border: 1px solid rgba(13, 148, 136, 0.25);
+            font-size: 0.75rem;
+            font-weight: 800;
+            padding: 0.25rem 0.65rem;
+            border-radius: var(--radius-full);
+            letter-spacing: 0.02em;
+        }
+
+        .exam-main-title {
+            font-size: 1.45rem;
+            font-weight: 850;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            margin-top: 0.35rem;
+        }
+
+        .exam-subtitle {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        /* モード切替タブ */
+        .exam-mode-tabs {
+            display: flex;
+            gap: 0.5rem;
+            background: var(--bg-subtle);
+            padding: 0.3rem;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            width: fit-content;
+        }
+
+        .exam-mode-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 0.82rem;
+            font-weight: 700;
+            padding: 0.45rem 0.95rem;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .exam-mode-btn.active {
+            background: var(--bg-surface);
+            color: var(--brand-primary);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--brand-border);
+        }
+
+        /* タイマー ＆ 進捗ステータス */
+        .exam-status-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+            padding-top: 0.85rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .exam-timer-box {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .exam-timer-display {
+            font-family: 'Plus Jakarta Sans', monospace;
+            font-size: 1.5rem;
+            font-weight: 850;
+            color: var(--brand-primary);
+            background: var(--bg-subtle);
+            padding: 0.25rem 0.85rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            letter-spacing: 0.05em;
+        }
+
+        .exam-timer-display.warning {
+            color: #EF4444;
+            border-color: rgba(239, 68, 68, 0.4);
+            animation: pulseWarning 1s infinite alternate;
+        }
+
+        @keyframes pulseWarning {
+            from { background-color: var(--bg-subtle); }
+            to { background-color: rgba(239, 68, 68, 0.1); }
+        }
+
+        .exam-progress-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+        }
+
+        .exam-progress-bar-wrap {
+            width: 180px;
+            height: 8px;
+            background: var(--bg-subtle);
+            border-radius: 4px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .exam-progress-bar-fill {
+            height: 100%;
+            background: var(--brand-primary);
+            width: 0%;
+            transition: width 0.2s ease;
+        }
+
+        /* 2カラムレイアウト（問題一覧 & 追従マークシート） */
+        .exam-layout-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 340px;
+            gap: 1.5rem;
+            align-items: start;
+            width: 100%;
+        }
+
+        @media (max-width: 1080px) {
+            .exam-layout-grid {
+                grid-template-columns: 1fr;
+            }
+            .exam-marksheet-panel {
+                position: static !important;
+                max-height: none !important;
+            }
+        }
+
+        /* 大問セクションカード */
+        .exam-section-block {
+            margin-bottom: 2rem;
+        }
+
+        .exam-section-header {
+            background: linear-gradient(135deg, rgba(13, 148, 136, 0.08) 0%, rgba(5, 150, 105, 0.05) 100%);
+            border: 1.5px solid rgba(13, 148, 136, 0.3);
+            border-left: 5px solid #0D9488;
+            border-radius: var(--radius-xl);
+            padding: 1.1rem 1.4rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .exam-section-title {
+            font-size: 1.18rem;
+            font-weight: 850;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.8rem;
+        }
+
+        .exam-section-points {
+            font-size: 0.82rem;
+            background: rgba(13, 148, 136, 0.15);
+            color: #0D9488;
+            font-weight: 800;
+            padding: 0.2rem 0.65rem;
+            border-radius: var(--radius-full);
+            white-space: nowrap;
+        }
+
+        .exam-section-lead {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+            line-height: 1.6;
+        }
+
+        /* 個別問題カード */
+        .exam-question-card {
+            background: var(--bg-surface);
+            border: 1.5px solid var(--border-color);
+            border-radius: var(--radius-xl);
+            padding: 1.4rem 1.6rem;
+            margin-bottom: 1.25rem;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.02);
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .exam-question-card:focus-within,
+        .exam-question-card.highlighted {
+            border-color: var(--brand-primary);
+            box-shadow: 0 4px 18px rgba(5, 150, 105, 0.12);
+        }
+
+        .exam-question-card.status-correct {
+            border-color: #10B981;
+            background: linear-gradient(180deg, rgba(16, 185, 129, 0.02) 0%, var(--bg-surface) 100%);
+        }
+
+        .exam-question-card.status-wrong {
+            border-color: #EF4444;
+            background: linear-gradient(180deg, rgba(239, 68, 68, 0.02) 0%, var(--bg-surface) 100%);
+        }
+
+        .exam-q-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.85rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .exam-q-number-pill {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .exam-q-label {
+            font-size: 1.05rem;
+            font-weight: 850;
+            color: var(--text-primary);
+        }
+
+        .exam-q-mark-badge {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-size: 0.78rem;
+            font-weight: 750;
+            padding: 0.18rem 0.55rem;
+            border-radius: var(--radius-sm);
+        }
+
+        .exam-q-mark-badge.answered {
+            background: var(--brand-light);
+            border-color: var(--brand-border);
+            color: var(--brand-primary);
+        }
+
+        .exam-q-points-badge {
+            font-size: 0.78rem;
+            font-weight: 750;
+            color: var(--text-muted);
+        }
+
+        .exam-q-content {
+            font-size: 0.96rem;
+            line-height: 1.75;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+        }
+
+        /* 資料カード（会話文・ノート・表・図説明） */
+        .exam-material-card {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 1rem 1.25rem;
+            margin: 0.85rem 0 1.15rem;
+            font-size: 0.9rem;
+            line-height: 1.7;
+        }
+
+        .exam-material-title {
+            font-weight: 800;
+            font-size: 0.84rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .exam-dialogue-row {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 0.55rem;
+        }
+
+        .exam-dialogue-speaker {
+            font-weight: 850;
+            color: var(--brand-primary);
+            min-width: 28px;
+            flex-shrink: 0;
+        }
+
+        .exam-dialogue-text {
+            flex: 1;
+            color: var(--text-primary);
+        }
+
+        /* 表スタイル */
+        .exam-table-container {
+            width: 100%;
+            overflow-x: auto;
+            margin: 0.5rem 0;
+        }
+
+        .exam-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.86rem;
+            text-align: right;
+        }
+
+        .exam-table th, .exam-table td {
+            padding: 0.55rem 0.85rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .exam-table th {
+            background: var(--bg-surface);
+            font-weight: 800;
+            color: var(--text-primary);
+            text-align: center;
+        }
+
+        .exam-table td:first-child {
+            text-align: left;
+            font-weight: 700;
+        }
+
+        .exam-table-notes {
+            font-size: 0.74rem;
+            color: var(--text-muted);
+            margin-top: 0.4rem;
+            line-height: 1.5;
+        }
+
+        /* 選択肢リスト */
+        .exam-choices-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 0.55rem;
+            margin-top: 0.85rem;
+        }
+
+        .exam-choice-item {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            padding: 0.75rem 1rem;
+            background: var(--bg-surface);
+            border: 1.5px solid var(--border-color);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            user-select: none;
+        }
+
+        .exam-choice-item:hover {
+            border-color: var(--brand-primary);
+            background: var(--brand-light);
+            transform: translateX(2px);
+        }
+
+        .exam-choice-item.selected {
+            background: var(--brand-light);
+            border-color: var(--brand-primary);
+            box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.2);
+        }
+
+        .exam-choice-num-bubble {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--bg-subtle);
+            border: 1.5px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 850;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            flex-shrink: 0;
+            transition: all 0.15s ease;
+        }
+
+        .exam-choice-item:hover .exam-choice-num-bubble {
+            border-color: var(--brand-primary);
+            color: var(--brand-primary);
+        }
+
+        .exam-choice-item.selected .exam-choice-num-bubble {
+            background: var(--brand-primary);
+            border-color: var(--brand-primary);
+            color: #ffffff;
+        }
+
+        .exam-choice-text {
+            font-size: 0.92rem;
+            color: var(--text-primary);
+            line-height: 1.5;
+            flex: 1;
+        }
+
+        /* 採点後の正誤表示 */
+        .exam-choice-item.is-correct-answer {
+            border-color: #10B981 !important;
+            background: rgba(16, 185, 129, 0.1) !important;
+        }
+
+        .exam-choice-item.is-wrong-selected {
+            border-color: #EF4444 !important;
+            background: rgba(239, 68, 68, 0.08) !important;
+            text-decoration: line-through;
+        }
+
+        /* 問題下部のアクションツールバー */
+        .exam-q-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 1rem;
+            padding-top: 0.75rem;
+            border-top: 1px dashed var(--border-color);
+            flex-wrap: wrap;
+            gap: 0.6rem;
+        }
+
+        .exam-q-btn-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .exam-mini-btn {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-size: 0.76rem;
+            font-weight: 750;
+            padding: 0.35rem 0.7rem;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .exam-mini-btn:hover {
+            border-color: var(--brand-primary);
+            color: var(--brand-primary);
+            background: var(--brand-light);
+        }
+
+        .exam-mini-btn.ai-btn {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(139, 92, 246, 0.05) 100%);
+            border-color: rgba(99, 102, 241, 0.3);
+            color: #6366F1;
+        }
+
+        .exam-mini-btn.ai-btn:hover {
+            background: #6366F1;
+            color: #ffffff;
+            border-color: #6366F1;
+        }
+
+        /* 解説カード */
+        .exam-explanation-box {
+            background: var(--bg-subtle);
+            border: 1.5px solid var(--brand-border);
+            border-left: 4px solid var(--brand-primary);
+            border-radius: var(--radius-md);
+            padding: 1rem 1.25rem;
+            margin-top: 1rem;
+            font-size: 0.88rem;
+            line-height: 1.7;
+            color: var(--text-primary);
+            display: none;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .exam-explanation-box.open {
+            display: block;
+        }
+
+        .exam-explanation-title {
+            font-weight: 850;
+            color: var(--brand-primary);
+            margin-bottom: 0.45rem;
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-size: 0.92rem;
+        }
+
+        /* ==========================================================================
+           📑 追従マークシートパネル
+           ========================================================================== */
+        .exam-marksheet-panel {
+            background: var(--bg-surface);
+            border: 1.5px solid var(--border-color);
+            border-radius: var(--radius-xl);
+            padding: 1.25rem 1.25rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+            position: sticky;
+            top: 1.5rem;
+            max-height: calc(100vh - 3rem);
+            display: flex;
+            flex-direction: column;
+            gap: 0.9rem;
+        }
+
+        .exam-ms-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 0.65rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .exam-ms-title {
+            font-size: 1.05rem;
+            font-weight: 850;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .exam-ms-count {
+            font-size: 0.8rem;
+            font-weight: 800;
+            color: var(--brand-primary);
+            background: var(--brand-light);
+            padding: 0.2rem 0.55rem;
+            border-radius: var(--radius-full);
+        }
+
+        .exam-ms-list-wrap {
+            overflow-y: auto;
+            flex: 1;
+            padding-right: 0.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .exam-ms-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.45rem 0.65rem;
+            border-radius: var(--radius-md);
+            background: var(--bg-subtle);
+            border: 1px solid transparent;
+            transition: all 0.12s ease;
+            cursor: pointer;
+        }
+
+        .exam-ms-row:hover {
+            border-color: var(--border-color);
+            background: var(--bg-surface);
+        }
+
+        .exam-ms-row.active {
+            border-color: var(--brand-primary);
+            background: var(--brand-light);
+        }
+
+        .exam-ms-num {
+            font-size: 0.8rem;
+            font-weight: 800;
+            color: var(--text-secondary);
+            min-width: 32px;
+        }
+
+        .exam-ms-bubbles {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .exam-ms-bubble {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--bg-surface);
+            border: 1.2px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.74rem;
+            font-weight: 800;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.12s ease;
+        }
+
+        .exam-ms-bubble:hover {
+            border-color: var(--brand-primary);
+            color: var(--brand-primary);
+        }
+
+        .exam-ms-bubble.selected {
+            background: var(--text-primary);
+            border-color: var(--text-primary);
+            color: #ffffff;
+        }
+
+        .exam-ms-bubble.correct {
+            background: #10B981 !important;
+            border-color: #10B981 !important;
+            color: #ffffff !important;
+        }
+
+        .exam-ms-bubble.wrong {
+            background: #EF4444 !important;
+            border-color: #EF4444 !important;
+            color: #ffffff !important;
+        }
+
+        .exam-ms-footer {
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        /* 採点結果モーダル */
+        .exam-result-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(5px);
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+        }
+
+        .exam-result-modal-overlay.open {
+            display: flex;
+        }
+
+        .exam-result-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-2xl);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 680px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 2rem 2.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            animation: zoomIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .exam-score-header {
+            text-align: center;
+        }
+
+        .exam-score-badge {
+            display: inline-block;
+            font-size: 0.8rem;
+            font-weight: 850;
+            color: var(--brand-primary);
+            background: var(--brand-light);
+            padding: 0.25rem 0.85rem;
+            border-radius: var(--radius-full);
+            margin-bottom: 0.5rem;
+        }
+
+        .exam-score-number {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 3.5rem;
+            font-weight: 900;
+            color: var(--text-primary);
+            line-height: 1;
+        }
+
+        .exam-score-denom {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+
+        .exam-section-scores-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 0.75rem;
+            margin-top: 0.5rem;
+        }
+
+        .exam-sec-score-item {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 0.75rem 0.95rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .exam-sec-score-title {
+            font-size: 0.78rem;
+            font-weight: 750;
+            color: var(--text-secondary);
+        }
+
+        .exam-sec-score-val {
+            font-size: 1.15rem;
+            font-weight: 850;
+            color: var(--brand-primary);
+        }
+
+        /* AI相談モーダル */
+        .exam-ai-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+        }
+
+        .exam-ai-modal-overlay.open {
+            display: flex;
+        }
+
+        .exam-ai-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-2xl);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 620px;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .exam-ai-header {
+            padding: 1.1rem 1.4rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .exam-ai-body {
+            padding: 1.25rem 1.4rem;
+            overflow-y: auto;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .exam-ai-chat-bubble {
+            padding: 0.9rem 1.1rem;
+            border-radius: var(--radius-lg);
+            font-size: 0.88rem;
+            line-height: 1.7;
+        }
+
+        .exam-ai-chat-bubble.assistant {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .exam-ai-chat-bubble.user {
+            background: var(--brand-primary);
+            color: #ffffff;
+            align-self: flex-end;
+            max-width: 80%;
+        }
+
+        .exam-ai-footer {
+            padding: 1rem 1.4rem;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes zoomIn {
+            from { opacity: 0; transform: scale(0.96); }
+            to { opacity: 1; transform: scale(1); }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-layout">
+        <!-- 🌿 左側共通サイドバー -->
+        <div id="flora-sidebar"></div>
+
+        <!-- 💻 右側メインコンテンツ -->
+        <main class="app-main">
+            <div class="exam-page-container">
+
+                <!-- 頂部ヘッダーカード -->
+                <div class="exam-header-card">
+                    <div class="exam-title-row">
+                        <div>
+                            <span class="exam-badge-tag">🏛️ 大学入学共通テスト 過去問演習</span>
+                            <h1 class="exam-main-title" id="exam-display-title">
+                                2025年度 本試験【公共、政治・経済】
+                            </h1>
+                            <p class="exam-subtitle" id="exam-display-subtitle">
+                                全34問 / 100点満点（第1問〜第6問）完全収録・自動採点・AI解説対応
+                            </p>
+                        </div>
+
+                        <!-- 演習モード切替 -->
+                        <div class="exam-mode-tabs" id="exam-mode-tabs">
+                            <button type="button" class="exam-mode-btn active" data-mode="mock" id="btn-mode-mock">
+                                ⏱️ 本番模試 (60分)
+                            </button>
+                            <button type="button" class="exam-mode-btn" data-mode="section" id="btn-mode-section">
+                                🎯 大問集中演習
+                            </button>
+                            <button type="button" class="exam-mode-btn" data-mode="instant" id="btn-mode-instant">
+                                ⚡ 1問1答即時判定
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 大問セレクター（大問集中モード時のみ表示） -->
+                    <div id="section-selector-row" style="display: none; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                        <span style="font-size: 0.82rem; font-weight: 750; color: var(--text-secondary);">演習する大問：</span>
+                        <div class="subject-tab-group" id="section-filter-btns">
+                            <button type="button" class="reg-subject-btn active" data-sec="all">全大問</button>
+                            <button type="button" class="reg-subject-btn" data-sec="1">第1問 (社会保障)</button>
+                            <button type="button" class="reg-subject-btn" data-sec="2">第2問 (文化・宗教)</button>
+                            <button type="button" class="reg-subject-btn" data-sec="3">第3問 (国際協調)</button>
+                            <button type="button" class="reg-subject-btn" data-sec="4">第4問 (日本経済)</button>
+                            <button type="button" class="reg-subject-btn" data-sec="5">第5問 (地方自治)</button>
+                            <button type="button" class="reg-subject-btn" data-sec="6">第6問 (SDGs)</button>
+                        </div>
+                    </div>
+
+                    <!-- タイマー & ステータスバー -->
+                    <div class="exam-status-bar">
+                        <div class="exam-timer-box">
+                            <div class="exam-timer-display" id="exam-timer">60:00</div>
+                            <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="btn-timer-toggle">
+                                ⏸️ 一時停止
+                            </button>
+                            <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="btn-timer-reset">
+                                🔄 リセット
+                            </button>
+                        </div>
+
+                        <div class="exam-progress-info">
+                            <span id="answered-count-text">解答状況: 0 / 34 問</span>
+                            <div class="exam-progress-bar-wrap">
+                                <div class="exam-progress-bar-fill" id="exam-progress-fill"></div>
+                            </div>
+                            <button type="button" class="flora-btn flora-btn-primary btn-sm" id="btn-submit-exam" style="font-weight: 800; padding: 0.45rem 1.2rem;">
+                                🎯 採点する
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2カラムコンテンツグリッド -->
+                <div class="exam-layout-grid">
+                    <!-- 左カラム：問題一覧 -->
+                    <div id="exam-questions-container">
+                        <!-- JSでセクションと問題を動的に展開 -->
+                    </div>
+
+                    <!-- 右カラム：マークシートパネル -->
+                    <aside class="exam-marksheet-panel" id="exam-marksheet-panel">
+                        <div class="exam-ms-header">
+                            <div class="exam-ms-title">
+                                <span>📝 マークシート</span>
+                            </div>
+                            <span class="exam-ms-count" id="ms-answered-badge">0 / 34</span>
+                        </div>
+
+                        <div class="exam-ms-list-wrap" id="exam-ms-list">
+                            <!-- JSで1〜34問のマーク行を生成 -->
+                        </div>
+
+                        <div class="exam-ms-footer">
+                            <button type="button" class="flora-btn flora-btn-primary btn-md" id="btn-ms-submit" style="width: 100%; font-weight: 800; justify-content: center;">
+                                🎯 答案を提出して採点
+                            </button>
+                            <div style="display: flex; gap: 0.4rem;">
+                                <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="btn-clear-answers" style="flex: 1; font-size: 0.74rem;">
+                                    🗑️ マーク消去
+                                </button>
+                                <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="btn-toggle-wrong-only" style="flex: 1; font-size: 0.74rem; display: none;">
+                                    ❌ 誤答のみ表示
+                                </button>
+                            </div>
+                        </div>
+                    </aside>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- 採点結果モーダル -->
+    <div class="exam-result-modal-overlay" id="exam-result-modal">
+        <div class="exam-result-card">
+            <div class="exam-score-header">
+                <span class="exam-score-badge">🎉 演習完了・採点結果</span>
+                <div class="exam-score-number">
+                    <span id="result-total-score">0</span>
+                    <span class="exam-score-denom"> / 100 点</span>
+                </div>
+                <p style="font-size: 0.9rem; color: var(--text-secondary); margin-top: 0.4rem;" id="result-time-taken">
+                    所要時間: 42分15秒 | 正答率: 82%
+                </p>
+            </div>
+
+            <div style="font-weight: 800; font-size: 0.92rem; color: var(--text-primary); margin-top: 0.5rem;">
+                📊 大問別 得点内訳
+            </div>
+            <div class="exam-section-scores-grid" id="result-section-scores-grid">
+                <!-- 大問別得点 -->
+            </div>
+
+            <div style="display: flex; gap: 0.8rem; margin-top: 1rem;">
+                <button type="button" class="flora-btn flora-btn-primary btn-lg" id="btn-close-result-modal" style="flex: 1; font-weight: 800; justify-content: center;">
+                    📖 各問の解説を確認する
+                </button>
+                <button type="button" class="flora-btn flora-btn-secondary btn-lg" id="btn-retry-wrong-exam" style="flex: 1; font-weight: 800; justify-content: center;">
+                    ❌ 間違えた問題だけ再挑戦
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI質問モーダル -->
+    <div class="exam-ai-modal-overlay" id="exam-ai-modal">
+        <div class="exam-ai-card">
+            <div class="exam-ai-header">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span style="font-size: 1.25rem;">🤖</span>
+                    <div>
+                        <div style="font-weight: 800; font-size: 0.92rem; color: var(--text-primary);" id="ai-modal-title">
+                            AI解説アシスタント
+                        </div>
+                        <div style="font-size: 0.74rem; color: var(--text-muted);">
+                            共通テスト「公共、政治・経済」特化解説
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="btn-close-ai-modal">✕</button>
+            </div>
+
+            <div class="exam-ai-body" id="exam-ai-chat-body">
+                <div class="exam-ai-chat-bubble assistant" id="ai-initial-context">
+                    この問題についてわからない選択肢や、なぜ正解・不正解になるのか気になるポイントを何でも聞いてください！
+                </div>
+            </div>
+
+            <div class="exam-ai-footer">
+                <input type="text" id="ai-user-prompt-input" class="flora-input" placeholder="例: なぜ選択肢3は誤りなのですか？" style="flex: 1;">
+                <button type="button" class="flora-btn flora-btn-primary btn-md" id="btn-send-ai-prompt" style="font-weight: 750;">
+                    送信
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- スクリプト群 -->
+    <script src="sidebar.js?v=3.5"></script>
+    <script src="data/past-exams-data.js?v=1.0"></script>
+    <script type="module">
+        import { requestUniversalAICompletion, getActiveProvider } from "./api-key-manager.js?v=3.6";
+
+        // ==========================================================================
+        // 状態管理
+        // ==========================================================================
+        const exam = window.PAST_EXAMS_DATABASE[0];
+        let currentMode = "mock"; // 'mock' | 'section' | 'instant'
+        let currentSectionFilter = "all";
+        let userAnswers = {}; // { [markNumber]: choiceNum }
+        let timerSeconds = 60 * 60;
+        let timerInterval = null;
+        let timerRunning = true;
+        let isGraded = false;
+        let filterWrongOnly = false;
+        let activeAiQuestion = null;
+
+        // 全設問のフラットリスト
+        const flatQuestions = [];
+        exam.sections.forEach(sec => {
+            sec.questions.forEach(q => {
+                flatQuestions.push({ ...q, sectionNumber: sec.sectionNumber, sectionTitle: sec.title });
+            });
+        });
+
+        // ==========================================================================
+        // 初期化 & レンダリング
+        // ==========================================================================
+        function initApp() {
+            renderExamSections();
+            renderMarksheet();
+            initTimer();
+            setupEventListeners();
+            updateProgress();
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener("DOMContentLoaded", initApp);
+        } else {
+            initApp();
+        }
+
+        // タイマー処理
+        function initTimer() {
+            updateTimerDisplay();
+            timerInterval = setInterval(() => {
+                if (timerRunning && timerSeconds > 0) {
+                    timerSeconds--;
+                    updateTimerDisplay();
+                    if (timerSeconds === 0) {
+                        clearInterval(timerInterval);
+                        alert("⏱️ 制限時間の60分が経過しました！採点を開始します。");
+                        submitExam();
+                    }
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const el = document.getElementById("exam-timer");
+            if (!el) return;
+            const min = Math.floor(timerSeconds / 60);
+            const sec = timerSeconds % 60;
+            el.textContent = `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+            if (timerSeconds <= 300) {
+                el.classList.add("warning");
+            } else {
+                el.classList.remove("warning");
+            }
+        }
+
+        // 大問・問題一覧のレンダリング
+        function renderExamSections() {
+            const container = document.getElementById("exam-questions-container");
+            if (!container) return;
+            container.innerHTML = "";
+
+            exam.sections.forEach(sec => {
+                if (currentSectionFilter !== "all" && currentSectionFilter !== String(sec.sectionNumber)) {
+                    return;
+                }
+
+                const secBlock = document.createElement("div");
+                secBlock.className = "exam-section-block";
+                secBlock.id = `section-${sec.sectionNumber}`;
+
+                secBlock.innerHTML = `
+                    <div class="exam-section-header">
+                        <div class="exam-section-title">
+                            <span>${sec.title}</span>
+                            <span class="exam-section-points">配点 ${sec.points}点</span>
+                        </div>
+                        <div class="exam-section-lead">${sec.lead}</div>
+                    </div>
+                    <div class="exam-section-questions-list"></div>
+                `;
+
+                const qListEl = secBlock.querySelector(".exam-section-questions-list");
+
+                sec.questions.forEach(q => {
+                    const qCard = renderQuestionCard(q, sec);
+                    qListEl.appendChild(qCard);
+                });
+
+                container.appendChild(secBlock);
+            });
+        }
+
+        // 個別問題カード生成
+        function renderQuestionCard(q, sec) {
+            const card = document.createElement("div");
+            card.className = "exam-question-card";
+            card.id = `question-card-${q.markNumber}`;
+            card.dataset.markNumber = q.markNumber;
+
+            // 資料レンダリング
+            let materialsHtml = "";
+            if (q.materials && q.materials.length > 0) {
+                q.materials.forEach(mat => {
+                    materialsHtml += `<div class="exam-material-card">`;
+                    if (mat.title) {
+                        materialsHtml += `<div class="exam-material-title">📄 ${mat.title}</div>`;
+                    }
+                    if (mat.type === "dialogue") {
+                        materialsHtml += `<div class="exam-dialogues-wrap">`;
+                        mat.dialogues.forEach(d => {
+                            materialsHtml += `
+                                <div class="exam-dialogue-row">
+                                    <div class="exam-dialogue-speaker">${d.speaker}：</div>
+                                    <div class="exam-dialogue-text">${d.text}</div>
+                                </div>
+                            `;
+                        });
+                        materialsHtml += `</div>`;
+                    } else if (mat.type === "table") {
+                        materialsHtml += `<div class="exam-table-container"><table class="exam-table"><thead><tr>`;
+                        mat.tableData.headers.forEach(h => { materialsHtml += `<th>${h}</th>`; });
+                        materialsHtml += `</tr></thead><tbody>`;
+                        mat.tableData.rows.forEach(r => {
+                            materialsHtml += `<tr>`;
+                            r.forEach(cell => { materialsHtml += `<td>${cell}</td>`; });
+                            materialsHtml += `</tr>`;
+                        });
+                        materialsHtml += `</tbody></table></div>`;
+                        if (mat.notes) materialsHtml += `<div class="exam-table-notes">${mat.notes}</div>`;
+                    } else {
+                        materialsHtml += `<div>${mat.text || ""}</div>`;
+                    }
+                    materialsHtml += `</div>`;
+                });
+            }
+
+            // 選択肢レンダリング
+            let choicesHtml = `<div class="exam-choices-grid">`;
+            q.choices.forEach(ch => {
+                const isSelected = userAnswers[q.markNumber] === ch.num;
+                choicesHtml += `
+                    <div class="exam-choice-item ${isSelected ? 'selected' : ''}" data-mark="${q.markNumber}" data-choice="${ch.num}">
+                        <div class="exam-choice-num-bubble">${ch.num}</div>
+                        <div class="exam-choice-text">${ch.text}</div>
+                    </div>
+                `;
+            });
+            choicesHtml += `</div>`;
+
+            card.innerHTML = `
+                <div class="exam-q-header">
+                    <div class="exam-q-number-pill">
+                        <span class="exam-q-label">${q.qNumber}</span>
+                        <span class="exam-q-mark-badge ${userAnswers[q.markNumber] ? 'answered' : ''}" id="badge-mark-${q.markNumber}">
+                            解答番号 ［ ${q.markNumber} ］
+                        </span>
+                    </div>
+                    <span class="exam-q-points-badge">${q.points}点</span>
+                </div>
+                <div class="exam-q-content">${q.content}</div>
+                ${materialsHtml}
+                ${choicesHtml}
+                <div class="exam-q-actions">
+                    <div class="exam-q-btn-group">
+                        <button type="button" class="exam-mini-btn btn-toggle-exp" data-mark="${q.markNumber}">
+                            💡 解説を見る
+                        </button>
+                    </div>
+                    <button type="button" class="exam-mini-btn ai-btn btn-ask-ai" data-mark="${q.markNumber}">
+                        🤖 AIにこの問題を質問する
+                    </button>
+                </div>
+                <div class="exam-explanation-box" id="exp-box-${q.markNumber}">
+                    <div class="exam-explanation-title">💡 正答と詳しい解説</div>
+                    <div>${q.explanation}</div>
+                </div>
+            `;
+
+            return card;
+        }
+
+        // マークシートのレンダリング
+        function renderMarksheet() {
+            const listEl = document.getElementById("exam-ms-list");
+            if (!listEl) return;
+            listEl.innerHTML = "";
+
+            flatQuestions.forEach(q => {
+                if (currentSectionFilter !== "all" && currentSectionFilter !== String(q.sectionNumber)) {
+                    return;
+                }
+
+                const row = document.createElement("div");
+                row.className = "exam-ms-row";
+                row.id = `ms-row-${q.markNumber}`;
+                row.dataset.markNumber = q.markNumber;
+
+                let bubblesHtml = "";
+                const totalChoices = q.choices.length;
+                for (let i = 1; i <= totalChoices; i++) {
+                    const isSelected = userAnswers[q.markNumber] === i;
+                    bubblesHtml += `
+                        <div class="exam-ms-bubble ${isSelected ? 'selected' : ''}" data-mark="${q.markNumber}" data-choice="${i}">
+                            ${i}
+                        </div>
+                    `;
+                }
+
+                row.innerHTML = `
+                    <div class="exam-ms-num">${q.markNumber}</div>
+                    <div class="exam-ms-bubbles">${bubblesHtml}</div>
+                `;
+
+                listEl.appendChild(row);
+            });
+        }
+
+        // 解答選択時の処理
+        function selectChoice(markNumber, choiceNum) {
+            userAnswers[markNumber] = choiceNum;
+
+            // 1. 問題カード上の選択肢ハイライト更新
+            const card = document.getElementById(`question-card-${markNumber}`);
+            if (card) {
+                card.querySelectorAll(".exam-choice-item").forEach(item => {
+                    const cNum = parseInt(item.dataset.choice, 10);
+                    if (cNum === choiceNum) {
+                        item.classList.add("selected");
+                    } else {
+                        item.classList.remove("selected");
+                    }
+                });
+                const badge = card.querySelector(`#badge-mark-${markNumber}`);
+                if (badge) badge.classList.add("answered");
+            }
+
+            // 2. マークシート上のバブル更新
+            const msRow = document.getElementById(`ms-row-${markNumber}`);
+            if (msRow) {
+                msRow.querySelectorAll(".exam-ms-bubble").forEach(b => {
+                    const cNum = parseInt(b.dataset.choice, 10);
+                    if (cNum === choiceNum) {
+                        b.classList.add("selected");
+                    } else {
+                        b.classList.remove("selected");
+                    }
+                });
+            }
+
+            // 3. 即時モードなら正誤判定と解説を自動表示
+            if (currentMode === "instant") {
+                checkSingleQuestion(markNumber);
+            }
+
+            updateProgress();
+        }
+
+        // 進捗バー更新
+        function updateProgress() {
+            const answeredCount = Object.keys(userAnswers).length;
+            const total = flatQuestions.length;
+            const percent = Math.round((answeredCount / total) * 100);
+
+            const countText = document.getElementById("answered-count-text");
+            if (countText) countText.textContent = `解答状況: ${answeredCount} / ${total} 問`;
+
+            const fillBar = document.getElementById("exam-progress-fill");
+            if (fillBar) fillBar.style.width = `${percent}%`;
+
+            const badge = document.getElementById("ms-answered-badge");
+            if (badge) badge.textContent = `${answeredCount} / ${total}`;
+        }
+
+        // 1問ごとの正誤チェック（即時判定モード用）
+        function checkSingleQuestion(markNumber) {
+            const q = flatQuestions.find(item => item.markNumber === markNumber);
+            if (!q) return;
+
+            const selected = userAnswers[markNumber];
+            let isCorrect = false;
+
+            if (q.dependsOn && q.correctMap) {
+                const parentChoice = userAnswers[q.dependsOn];
+                const expected = q.correctMap[parentChoice] || q.correct;
+                isCorrect = selected === expected;
+            } else if (q.isBranchChoice) {
+                isCorrect = selected != null;
+            } else {
+                isCorrect = selected === q.correct;
+            }
+
+            const card = document.getElementById(`question-card-${markNumber}`);
+            if (card) {
+                card.classList.remove("status-correct", "status-wrong");
+                card.classList.add(isCorrect ? "status-correct" : "status-wrong");
+
+                // 正解と不正解の選択肢に色をつける
+                card.querySelectorAll(".exam-choice-item").forEach(item => {
+                    const cNum = parseInt(item.dataset.choice, 10);
+                    item.classList.remove("is-correct-answer", "is-wrong-selected");
+                    if (cNum === q.correct) item.classList.add("is-correct-answer");
+                    if (cNum === selected && !isCorrect) item.classList.add("is-wrong-selected");
+                });
+
+                // 解説を自動オープン
+                const expBox = document.getElementById(`exp-box-${markNumber}`);
+                if (expBox) expBox.classList.add("open");
+            }
+
+            const msRow = document.getElementById(`ms-row-${markNumber}`);
+            if (msRow) {
+                msRow.querySelectorAll(".exam-ms-bubble").forEach(b => {
+                    const cNum = parseInt(b.dataset.choice, 10);
+                    b.classList.remove("correct", "wrong");
+                    if (cNum === selected) {
+                        b.classList.add(isCorrect ? "correct" : "wrong");
+                    }
+                });
+            }
+        }
+
+        // 一括採点
+        function submitExam() {
+            isGraded = true;
+            timerRunning = false;
+
+            let totalScore = 0;
+            const sectionScores = {};
+
+            exam.sections.forEach(sec => {
+                sectionScores[sec.sectionNumber] = {
+                    title: sec.title.split(" ")[0],
+                    points: sec.points,
+                    earned: 0
+                };
+            });
+
+            flatQuestions.forEach(q => {
+                const selected = userAnswers[q.markNumber];
+                let isCorrect = false;
+
+                if (q.dependsOn && q.correctMap) {
+                    const parentChoice = userAnswers[q.dependsOn];
+                    const expected = q.correctMap[parentChoice] || q.correct;
+                    isCorrect = selected === expected;
+                } else if (q.isBranchChoice) {
+                    isCorrect = selected != null;
+                } else {
+                    isCorrect = selected === q.correct;
+                }
+
+                if (isCorrect) {
+                    totalScore += q.points;
+                    sectionScores[q.sectionNumber].earned += q.points;
+                }
+
+                // 問題カードの見た目更新
+                const card = document.getElementById(`question-card-${q.markNumber}`);
+                if (card) {
+                    card.classList.remove("status-correct", "status-wrong");
+                    card.classList.add(isCorrect ? "status-correct" : "status-wrong");
+
+                    card.querySelectorAll(".exam-choice-item").forEach(item => {
+                        const cNum = parseInt(item.dataset.choice, 10);
+                        item.classList.remove("is-correct-answer", "is-wrong-selected");
+                        if (cNum === q.correct) item.classList.add("is-correct-answer");
+                        if (cNum === selected && !isCorrect) item.classList.add("is-wrong-selected");
+                    });
+
+                    // 解説を自動展開
+                    const expBox = document.getElementById(`exp-box-${q.markNumber}`);
+                    if (expBox) expBox.classList.add("open");
+                }
+
+                // マークシートの見た目更新
+                const msRow = document.getElementById(`ms-row-${q.markNumber}`);
+                if (msRow) {
+                    msRow.querySelectorAll(".exam-ms-bubble").forEach(b => {
+                        const cNum = parseInt(b.dataset.choice, 10);
+                        b.classList.remove("correct", "wrong");
+                        if (cNum === selected) {
+                            b.classList.add(isCorrect ? "correct" : "wrong");
+                        }
+                    });
+                }
+            });
+
+            // 誤答のみ絞り込みボタンを表示
+            const wrongToggleBtn = document.getElementById("btn-toggle-wrong-only");
+            if (wrongToggleBtn) wrongToggleBtn.style.display = "inline-flex";
+
+            // 結果モーダルの表示
+            showResultModal(totalScore, sectionScores);
+        }
+
+        // 採点結果モーダル表示
+        function showResultModal(totalScore, sectionScores) {
+            const modal = document.getElementById("exam-result-modal");
+            const scoreEl = document.getElementById("result-total-score");
+            const timeTakenEl = document.getElementById("result-time-taken");
+            const secGrid = document.getElementById("result-section-scores-grid");
+
+            if (scoreEl) scoreEl.textContent = totalScore;
+
+            const timeSpentSec = (60 * 60) - timerSeconds;
+            const min = Math.floor(timeSpentSec / 60);
+            const sec = timeSpentSec % 60;
+            const accuracy = Math.round((totalScore / exam.totalPoints) * 100);
+
+            if (timeTakenEl) {
+                timeTakenEl.textContent = `所要時間: ${min}分${sec}秒 | 得点率: ${accuracy}%`;
+            }
+
+            if (secGrid) {
+                secGrid.innerHTML = "";
+                Object.values(sectionScores).forEach(s => {
+                    const item = document.createElement("div");
+                    item.className = "exam-sec-score-item";
+                    item.innerHTML = `
+                        <div class="exam-sec-score-title">${s.title}</div>
+                        <div class="exam-sec-score-val">${s.earned} / ${s.points} 点</div>
+                    `;
+                    secGrid.appendChild(item);
+                });
+            }
+
+            if (modal) modal.classList.add("open");
+        }
+
+        // イベントリスナーの登録
+        function setupEventListeners() {
+            // モード切替
+            const modeTabs = document.getElementById("exam-mode-tabs");
+            if (modeTabs) {
+                modeTabs.addEventListener("click", e => {
+                    const btn = e.target.closest(".exam-mode-btn");
+                    if (!btn) return;
+                    modeTabs.querySelectorAll(".exam-mode-btn").forEach(b => b.classList.remove("active"));
+                    btn.classList.add("active");
+                    currentMode = btn.dataset.mode;
+
+                    const secRow = document.getElementById("section-selector-row");
+                    if (secRow) {
+                        secRow.style.display = currentMode === "section" ? "flex" : "none";
+                    }
+
+                    // タイマー切り替え
+                    if (currentMode === "mock") {
+                        timerRunning = true;
+                    }
+                });
+            }
+
+            // 大問フィルター切替
+            const secBtns = document.getElementById("section-filter-btns");
+            if (secBtns) {
+                secBtns.addEventListener("click", e => {
+                    const btn = e.target.closest(".reg-subject-btn");
+                    if (!btn) return;
+                    secBtns.querySelectorAll(".reg-subject-btn").forEach(b => b.classList.remove("active"));
+                    btn.classList.add("active");
+                    currentSectionFilter = btn.dataset.sec;
+                    renderExamSections();
+                    renderMarksheet();
+                });
+            }
+
+            // 問題クリック（選択肢選択）
+            document.addEventListener("click", e => {
+                const choiceItem = e.target.closest(".exam-choice-item");
+                if (choiceItem) {
+                    const markNumber = parseInt(choiceItem.dataset.mark, 10);
+                    const choiceNum = parseInt(choiceItem.dataset.choice, 10);
+                    selectChoice(markNumber, choiceNum);
+                    return;
+                }
+
+                // マークシートバブルクリック
+                const bubble = e.target.closest(".exam-ms-bubble");
+                if (bubble) {
+                    const markNumber = parseInt(bubble.dataset.mark, 10);
+                    const choiceNum = parseInt(bubble.dataset.choice, 10);
+                    selectChoice(markNumber, choiceNum);
+
+                    // 該当問題へスムーズスクロール
+                    const targetCard = document.getElementById(`question-card-${markNumber}`);
+                    if (targetCard) {
+                        targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        targetCard.classList.add("highlighted");
+                        setTimeout(() => targetCard.classList.remove("highlighted"), 1200);
+                    }
+                    return;
+                }
+
+                // 解説開閉ボタン
+                const expBtn = e.target.closest(".btn-toggle-exp");
+                if (expBtn) {
+                    const markNumber = parseInt(expBtn.dataset.mark, 10);
+                    const box = document.getElementById(`exp-box-${markNumber}`);
+                    if (box) {
+                        box.classList.toggle("open");
+                        expBtn.textContent = box.classList.contains("open") ? "✕ 解説を閉じる" : "💡 解説を見る";
+                    }
+                    return;
+                }
+
+                // AI質問ボタン
+                const aiBtn = e.target.closest(".btn-ask-ai");
+                if (aiBtn) {
+                    const markNumber = parseInt(aiBtn.dataset.mark, 10);
+                    openAiModalForQuestion(markNumber);
+                    return;
+                }
+            });
+
+            // 提出・採点ボタン
+            const submitBtn = document.getElementById("btn-submit-exam");
+            if (submitBtn) submitBtn.addEventListener("click", submitExam);
+
+            const msSubmitBtn = document.getElementById("btn-ms-submit");
+            if (msSubmitBtn) msSubmitBtn.addEventListener("click", submitExam);
+
+            // タイマーコントロール
+            const timerToggleBtn = document.getElementById("btn-timer-toggle");
+            if (timerToggleBtn) {
+                timerToggleBtn.addEventListener("click", () => {
+                    timerRunning = !timerRunning;
+                    timerToggleBtn.textContent = timerRunning ? "⏸️ 一時停止" : "▶️ 再開";
+                });
+            }
+
+            const timerResetBtn = document.getElementById("btn-timer-reset");
+            if (timerResetBtn) {
+                timerResetBtn.addEventListener("click", () => {
+                    if (confirm("タイマーを60分にリセットしますか？")) {
+                        timerSeconds = 60 * 60;
+                        updateTimerDisplay();
+                    }
+                });
+            }
+
+            // マーク消去
+            const clearBtn = document.getElementById("btn-clear-answers");
+            if (clearBtn) {
+                clearBtn.addEventListener("click", () => {
+                    if (confirm("すべてのマーク解答をクリアしますか？")) {
+                        userAnswers = {};
+                        isGraded = false;
+                        renderExamSections();
+                        renderMarksheet();
+                        updateProgress();
+                    }
+                });
+            }
+
+            // 誤答のみ表示トグル
+            const wrongToggleBtn = document.getElementById("btn-toggle-wrong-only");
+            if (wrongToggleBtn) {
+                wrongToggleBtn.addEventListener("click", () => {
+                    filterWrongOnly = !filterWrongOnly;
+                    wrongToggleBtn.textContent = filterWrongOnly ? "👀 全問表示に戻す" : "❌ 誤答のみ表示";
+                    flatQuestions.forEach(q => {
+                        const card = document.getElementById(`question-card-${q.markNumber}`);
+                        if (!card) return;
+                        if (filterWrongOnly) {
+                            card.style.display = card.classList.contains("status-wrong") ? "block" : "none";
+                        } else {
+                            card.style.display = "block";
+                        }
+                    });
+                });
+            }
+
+            // モーダル閉じる
+            const closeResultBtn = document.getElementById("btn-close-result-modal");
+            if (closeResultBtn) {
+                closeResultBtn.addEventListener("click", () => {
+                    document.getElementById("exam-result-modal").classList.remove("open");
+                });
+            }
+
+            // 誤答再挑戦
+            const retryWrongBtn = document.getElementById("btn-retry-wrong-exam");
+            if (retryWrongBtn) {
+                retryWrongBtn.addEventListener("click", () => {
+                    document.getElementById("exam-result-modal").classList.remove("open");
+                    // 間違えた問題のみ解答をリセット
+                    flatQuestions.forEach(q => {
+                        const card = document.getElementById(`question-card-${q.markNumber}`);
+                        if (card && card.classList.contains("status-wrong")) {
+                            delete userAnswers[q.markNumber];
+                            card.classList.remove("status-wrong");
+                            card.querySelectorAll(".exam-choice-item").forEach(it => {
+                                it.classList.remove("selected", "is-correct-answer", "is-wrong-selected");
+                            });
+                        }
+                    });
+                    renderMarksheet();
+                    updateProgress();
+                });
+            }
+
+            // AIモーダル閉じる
+            const closeAiBtn = document.getElementById("btn-close-ai-modal");
+            if (closeAiBtn) {
+                closeAiBtn.addEventListener("click", () => {
+                    document.getElementById("exam-ai-modal").classList.remove("open");
+                });
+            }
+
+            // AIプロンプト送信
+            const sendAiBtn = document.getElementById("btn-send-ai-prompt");
+            const aiInput = document.getElementById("ai-user-prompt-input");
+            if (sendAiBtn && aiInput) {
+                const handleSend = () => {
+                    const text = aiInput.value.trim();
+                    if (!text) return;
+                    sendAiQuestion(text);
+                    aiInput.value = "";
+                };
+                sendAiBtn.addEventListener("click", handleSend);
+                aiInput.addEventListener("keydown", e => {
+                    if (e.key === "Enter") handleSend();
+                });
+            }
+        }
+
+        // AI相談モーダル展開
+        function openAiModalForQuestion(markNumber) {
+            const q = flatQuestions.find(it => it.markNumber === markNumber);
+            if (!q) return;
+            activeAiQuestion = q;
+
+            const modal = document.getElementById("exam-ai-modal");
+            const titleEl = document.getElementById("ai-modal-title");
+            const chatBody = document.getElementById("exam-ai-chat-body");
+
+            if (titleEl) titleEl.textContent = `🤖 AI解説：${q.qNumber}［解答番号 ${q.markNumber}］`;
+
+            if (chatBody) {
+                chatBody.innerHTML = `
+                    <div class="exam-ai-chat-bubble assistant">
+                        <b>【${q.qNumber}の要点】</b><br>
+                        ${q.content}<br><br>
+                        💡 <b>公式解説：</b><br>
+                        ${q.explanation}<br><br>
+                        この問題に関する疑問や、「なぜこの選択肢は違うのか？」「関連する用語を整理してほしい」など、何でも質問してください！
+                    </div>
+                `;
+            }
+
+            if (modal) modal.classList.add("open");
+        }
+
+        // AIへの質問送信実行
+        async function sendAiQuestion(promptText) {
+            const chatBody = document.getElementById("exam-ai-chat-body");
+            if (!chatBody || !activeAiQuestion) return;
+
+            // ユーザーメッセージ追加
+            const userBubble = document.createElement("div");
+            userBubble.className = "exam-ai-chat-bubble user";
+            userBubble.textContent = promptText;
+            chatBody.appendChild(userBubble);
+
+            // ローディングメッセージ
+            const aiBubble = document.createElement("div");
+            aiBubble.className = "exam-ai-chat-bubble assistant";
+            aiBubble.innerHTML = "Thinking... 思考中...";
+            chatBody.appendChild(aiBubble);
+            chatBody.scrollTop = chatBody.scrollHeight;
+
+            const systemPrompt = `あなたは共通テスト「公共、政治・経済」のプロフェッショナル指導者です。
+高校生・受験生に向けて、問題の背景知識、選択肢の正誤の根拠、解法の急所をわかりやすく論理的に解説してください。
+
+【現在の対象問題】
+問題: ${activeAiQuestion.qNumber} (解答番号: ${activeAiQuestion.markNumber})
+配点: ${activeAiQuestion.points}点
+問題文: ${activeAiQuestion.content}
+公式解説: ${activeAiQuestion.explanation}`;
+
+            try {
+                const response = await requestUniversalAICompletion({
+                    messages: [
+                        { role: "system", content: systemPrompt },
+                        { role: "user", content: promptText }
+                    ],
+                    temperature: 0.5
+                });
+                aiBubble.innerHTML = response.replace(/\n/g, "<br>");
+            } catch (err) {
+                console.warn("AI response error:", err);
+                aiBubble.innerHTML = `⚠️ AIからの回答取得中にエラーが発生しました。<br><small>${err.message}</small><br>「AI設定」画面でAPIキー（GeminiまたはDeepSeek）が登録されているかご確認ください。`;
+            }
+            chatBody.scrollTop = chatBody.scrollHeight;
+        }
+
+    </script>
+</body>
+</html>
