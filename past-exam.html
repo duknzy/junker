@@ -634,7 +634,8 @@
             font-size: 0.8rem;
             font-weight: 800;
             color: var(--text-secondary);
-            min-width: 32px;
+            min-width: 44px;
+            white-space: nowrap;
         }
 
         .exam-ms-bubbles {
@@ -1194,6 +1195,196 @@
             background: var(--bg-subtle);
         }
 
+
+
+        /* 上付き・下付き文字（化学式・イオン式の行間・改行乱れ防止） */
+        sub, sup {
+            font-size: 75%;
+            line-height: 0;
+            position: relative;
+            vertical-align: baseline;
+            white-space: nowrap;
+        }
+        sup { top: -0.45em; }
+        sub { bottom: -0.2em; }
+
+        .exam-ms-num {
+            font-size: 0.78rem;
+            font-weight: 800;
+            color: var(--text-secondary);
+            min-width: 44px;
+            white-space: nowrap;
+            letter-spacing: -0.02em;
+        }
+
+        /* 🤖 AIによる正解・配点自動作成パネル */
+        .ai-keygen-panel {
+            background: linear-gradient(135deg, rgba(13, 148, 136, 0.08) 0%, rgba(59, 130, 246, 0.05) 100%);
+            border: 1.5px solid rgba(13, 148, 136, 0.35);
+            border-radius: var(--radius-xl);
+            padding: 1rem 1.25rem;
+            margin-bottom: 0.9rem;
+            box-shadow: 0 4px 18px rgba(13, 148, 136, 0.06);
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .ai-keygen-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .ai-keygen-title {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            font-size: 0.92rem;
+            font-weight: 850;
+            color: var(--text-primary);
+        }
+
+        .ai-keygen-sparkle {
+            font-size: 1.15rem;
+            animation: pulse-glow 2s infinite ease-in-out;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 2px rgba(13,148,136,0.4)); }
+            50% { transform: scale(1.15); filter: drop-shadow(0 0 8px rgba(13,148,136,0.8)); }
+        }
+
+        .ai-keygen-badge {
+            background: rgba(13, 148, 136, 0.15);
+            color: #0D9488;
+            font-size: 0.7rem;
+            font-weight: 800;
+            padding: 0.2rem 0.55rem;
+            border-radius: var(--radius-full);
+            letter-spacing: 0.03em;
+        }
+
+        .ai-keygen-desc {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            margin: 0;
+            line-height: 1.45;
+        }
+
+        .ai-keygen-buttons-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 0.65rem;
+        }
+
+        .ai-gen-btn {
+            background: var(--bg-surface);
+            border: 1.5px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 0.75rem 0.85rem;
+            cursor: pointer;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.65rem;
+            text-align: left;
+            transition: all 0.18s ease;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+            color: inherit;
+        }
+
+        .ai-gen-btn:hover:not(:disabled) {
+            border-color: #0D9488;
+            background: rgba(13, 148, 136, 0.06);
+            transform: translateY(-1.5px);
+            box-shadow: 0 4px 12px rgba(13, 148, 136, 0.12);
+        }
+
+        .ai-gen-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .ai-gen-btn.primary {
+            border-color: rgba(13, 148, 136, 0.5);
+            background: rgba(13, 148, 136, 0.05);
+        }
+
+        .ai-gen-btn .btn-icon {
+            font-size: 1.35rem;
+            line-height: 1;
+            flex-shrink: 0;
+            margin-top: 0.1rem;
+        }
+
+        .ai-gen-btn .btn-content {
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+            overflow: hidden;
+            flex: 1;
+        }
+
+        .ai-gen-btn .btn-title {
+            font-size: 0.81rem;
+            font-weight: 850;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.3;
+        }
+
+        .ai-gen-btn .btn-sub {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            line-height: 1.35;
+        }
+
+        .ai-keygen-status {
+            background: rgba(15, 23, 42, 0.8);
+            color: #ffffff;
+            border-radius: var(--radius-md);
+            padding: 0.6rem 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            font-size: 0.82rem;
+            font-weight: 750;
+            animation: fadeIn 0.2s ease;
+        }
+
+        html.dark .ai-keygen-status {
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .ai-keygen-spinner {
+            width: 16px;
+            height: 16px;
+            border: 2.5px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #10B981;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            flex-shrink: 0;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .highlight-generated {
+            animation: highlight-pulse 1.4s ease-out;
+        }
+
+        @keyframes highlight-pulse {
+            0% { background-color: rgba(16, 185, 129, 0.25); }
+            100% { background-color: transparent; }
+        }
+
         /* トースト通知 */
         .flora-toast-container {
             position: fixed;
@@ -1369,7 +1560,7 @@
                 <span class="exam-score-badge">🎉 演習完了・採点結果</span>
                 <div class="exam-score-number">
                     <span id="result-total-score">0</span>
-                    <span class="exam-score-denom"> / 100 点</span>
+                    <span class="exam-score-denom" id="result-total-denom"> / 100 点</span>
                 </div>
                 <p style="font-size: 0.9rem; color: var(--text-secondary); margin-top: 0.4rem;" id="result-time-taken">
                     所要時間: 42分15秒 | 正答率: 82%
@@ -1494,6 +1685,10 @@
                             <label>問題数（マーク数）</label>
                             <input type="number" id="new-exam-total-q" class="flora-input" value="30" min="1" max="100">
                         </div>
+                        <div class="form-group-item">
+                            <label>開始マーク番号（理科基礎等は101等）</label>
+                            <input type="number" id="new-exam-start-q" class="flora-input" value="1" min="1" max="999" placeholder="通常は1">
+                        </div>
                     </div>
                 </div>
 
@@ -1535,10 +1730,62 @@
                         </span>
                     </div>
 
-                    <!-- テキスト一括入力補助 -->
+                    <!-- 🤖 AIによる正解・配点の自動作成パネル -->
+                    <div class="ai-keygen-panel">
+                        <div class="ai-keygen-header">
+                            <div class="ai-keygen-title">
+                                <span class="ai-keygen-sparkle">✨</span>
+                                <span>AIに正解と配点を自動作成してもらう</span>
+                            </div>
+                            <span class="ai-keygen-badge">Gemini AI 解析</span>
+                        </div>
+                        <p class="ai-keygen-desc">
+                            正解や配点を自分で1つずつ入力する必要はありません。下のいずれかの方法を選ぶと、AIが全問分の正解番号と配点を自動算出・入力します。
+                        </p>
+
+                        <div class="ai-keygen-buttons-grid">
+                            <!-- ① 試験名から公式解答を取得 -->
+                            <button type="button" class="ai-gen-btn primary" id="btn-ai-gen-by-title" title="ステップ1の試験名と科目から、AIが共通テスト公式の正解と配点を即時特定して自動セットします">
+                                <span class="btn-icon">🧠</span>
+                                <div class="btn-content">
+                                    <span class="btn-title">試験名から公式解答を取得</span>
+                                    <span class="btn-sub">試験名から公式正解・配点を一発入力</span>
+                                </div>
+                            </button>
+
+                            <!-- ② 解答表画像からOCR読み取り -->
+                            <button type="button" class="ai-gen-btn" id="btn-ai-gen-by-image" title="赤本や予備校の解答一覧・配点表の画像をアップロードしてAIが読み取ります">
+                                <span class="btn-icon">📸</span>
+                                <div class="btn-content">
+                                    <span class="btn-title">解答表画像から読み取り</span>
+                                    <span class="btn-sub">正答表の写メやスクショから自動入力</span>
+                                </div>
+                            </button>
+
+                            <!-- ③ 問題冊子ファイルからAIが問題を解く -->
+                            <button type="button" class="ai-gen-btn" id="btn-ai-gen-by-booklet" title="ステップ2でアップロードした問題冊子の画像から、AIが実際に問題を解いて解答と配点を推測します">
+                                <span class="btn-icon">📖</span>
+                                <div class="btn-content">
+                                    <span class="btn-title">問題冊子から解いて作成</span>
+                                    <span class="btn-sub">問題画像からAIが正解と適正配点を算出</span>
+                                </div>
+                            </button>
+                        </div>
+
+                        <!-- 隠しファイル入力: 解答表画像用 -->
+                        <input type="file" id="ai-answer-image-input" accept="image/*" style="display: none;">
+
+                        <!-- AI処理中の進捗スピナー -->
+                        <div id="ai-keygen-status-box" style="display: none;" class="ai-keygen-status">
+                            <div class="ai-keygen-spinner"></div>
+                            <span id="ai-keygen-status-text">AIが正解と配点を解析・生成中...</span>
+                        </div>
+                    </div>
+
+                    <!-- テキスト一括入力補助（手動用） -->
                     <div style="background: var(--bg-subtle); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.75rem; margin-bottom: 0.75rem;">
                         <div style="font-size: 0.78rem; font-weight: 750; color: var(--text-secondary); margin-bottom: 0.35rem;">
-                            ⚡ 正解の一括貼り付け（オプション）：
+                            ⚡ 手動での一括貼り付け（オプション）：
                         </div>
                         <div style="display: flex; gap: 0.5rem;">
                             <input type="text" id="new-exam-quick-keys-input" class="flora-input" placeholder="例: 1:3 2:1 3:4 4:2 5:1... または 3 1 4 2 1..." style="flex: 1; font-size: 0.82rem;">
@@ -1583,7 +1830,7 @@
     <script src="sidebar.js?v=3.5"></script>
     <script src="data/past-exams-data.js?v=1.0"></script>
     <script type="module">
-        import { callGeminiChat } from "./api-key-manager.js?v=3.6";
+        import { callGeminiChat, callGeminiJSON, normalizeImageFile } from "./api-key-manager.js?v=3.6";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
         import { getDatabase, ref, get, set, remove, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
@@ -1739,12 +1986,18 @@
             const currentSelectedVal = selectEl.value;
             selectEl.innerHTML = "";
 
-            // プリセット
-            if (presetExam) {
-                const optPreset = document.createElement("option");
-                optPreset.value = "preset-2025-kokyo-seikei";
-                optPreset.textContent = `🏛️ ${presetExam.title}【${presetExam.subject}】（公式プリセット）`;
-                selectEl.appendChild(optPreset);
+            // 公式プリセット過去問一覧
+            const presetList = window.PAST_EXAMS_DATABASE || (presetExam ? [presetExam] : []);
+            if (presetList.length > 0) {
+                const group = document.createElement("optgroup");
+                group.label = "🏛️ 公式プリセット過去問";
+                presetList.forEach(pe => {
+                    const optPreset = document.createElement("option");
+                    optPreset.value = pe.id;
+                    optPreset.textContent = `🏛️ ${pe.title}【${pe.subject}】(${pe.totalQuestions}問・${pe.totalPoints}点)`;
+                    group.appendChild(optPreset);
+                });
+                selectEl.appendChild(group);
             }
 
             // ユーザー登録過去問
@@ -1761,7 +2014,7 @@
             }
 
             if (currentExam) {
-                selectEl.value = currentExam.isCustom ? currentExam.id : "preset-2025-kokyo-seikei";
+                selectEl.value = currentExam.id;
             }
         }
 
@@ -1828,8 +2081,8 @@
                     });
                 });
             } else {
-                // プリセット（公共・政経）
-                presetExam.sections.forEach(sec => {
+                // プリセット（大問構成のある試験）
+                (currentExam.sections || []).forEach(sec => {
                     sec.questions.forEach(q => {
                         flatQuestions.push({
                             ...q,
@@ -1848,6 +2101,24 @@
             await renderLeftContent();
             renderMarksheet();
             updateProgress();
+            // 大問セレクターボタンの動的生成
+            const secBtnsContainer = document.getElementById("section-filter-btns");
+            if (secBtnsContainer) {
+                secBtnsContainer.innerHTML = `<button type="button" class="reg-subject-btn active" data-sec="all">全大問</button>`;
+                if (!currentExam.isCustom && currentExam.sections) {
+                    currentExam.sections.forEach(sec => {
+                        const sBtn = document.createElement("button");
+                        sBtn.type = "button";
+                        sBtn.className = "reg-subject-btn";
+                        sBtn.dataset.sec = String(sec.sectionNumber);
+                        const shortName = sec.title.split(" ")[0] || `第${sec.sectionNumber}問`;
+                        sBtn.textContent = shortName;
+                        secBtnsContainer.appendChild(sBtn);
+                    });
+                }
+            }
+            currentSectionFilter = "all";
+
             updateExamSelectDropdown();
         }
 
@@ -1998,7 +2269,7 @@
 
         // プリセット問題のセクション描画
         function renderPresetSections(container) {
-            presetExam.sections.forEach(sec => {
+            (currentExam.sections || []).forEach(sec => {
                 if (currentSectionFilter !== "all" && currentSectionFilter !== String(sec.sectionNumber)) {
                     return;
                 }
@@ -2329,6 +2600,9 @@
             const totalPoints = currentExam.totalPoints || 100;
             const accuracy = Math.round((totalScore / totalPoints) * 100);
 
+            const denomEl = document.getElementById("result-total-denom");
+            if (denomEl) denomEl.textContent = ` / ${totalPoints} 点`;
+
             if (timeTakenEl) {
                 timeTakenEl.textContent = `所要時間: ${min}分${sec}秒 | 得点率: ${accuracy}% (${totalScore} / ${totalPoints} 点)`;
             }
@@ -2336,8 +2610,8 @@
             // 大問別得点（自作試験時は簡易表示）
             if (secGrid) {
                 secGrid.innerHTML = "";
-                if (!currentExam.isCustom && presetExam) {
-                    presetExam.sections.forEach(sec => {
+                if (!currentExam.isCustom && currentExam.sections) {
+                    currentExam.sections.forEach(sec => {
                         let earned = 0;
                         sec.questions.forEach(q => {
                             if (userAnswers[q.markNumber] === q.correct) earned += q.points;
@@ -2487,18 +2761,22 @@ ${q.explanation ? `正解・公式解説: ${q.explanation}` : ''}`;
         // ==========================================================================
         // 🏛️ 過去問新規登録モーダルの操作ロジック
         // ==========================================================================
-        function initModalAnswersGrid(totalQ) {
+        function initModalAnswersGrid(totalQ, startNum = 1) {
             const tbody = document.getElementById("new-exam-answers-tbody");
             if (!tbody) return;
             tbody.innerHTML = "";
 
-            for (let i = 1; i <= totalQ; i++) {
+            const sNum = parseInt(startNum, 10) || 1;
+            const tQ = parseInt(totalQ, 10) || 30;
+
+            for (let idx = 0; idx < tQ; idx++) {
+                const markNum = sNum + idx;
                 const tr = document.createElement("tr");
                 tr.innerHTML = `
-                    <td style="font-weight: 800; color: var(--text-primary);">問 ${i}</td>
+                    <td style="font-weight: 800; color: var(--text-primary);">問 ${markNum}</td>
                     <td>
-                        <select class="flora-select modal-ans-select" data-q="${i}" style="font-weight: 800; padding: 0.35rem 0.6rem; width: 90px; text-align: center;">
-                            <option value="1" ${i === 1 ? 'selected' : ''}>① (1)</option>
+                        <select class="flora-select modal-ans-select" data-q="${markNum}" style="font-weight: 800; padding: 0.35rem 0.6rem; width: 90px; text-align: center;">
+                            <option value="1">① (1)</option>
                             <option value="2">② (2)</option>
                             <option value="3">③ (3)</option>
                             <option value="4">④ (4)</option>
@@ -2510,7 +2788,7 @@ ${q.explanation ? `正解・公式解説: ${q.explanation}` : ''}`;
                         </select>
                     </td>
                     <td>
-                        <input type="number" class="flora-input modal-points-input" data-q="${i}" value="3" min="1" max="20" style="width: 75px; text-align: center; padding: 0.35rem;">
+                        <input type="number" class="flora-input modal-points-input" data-q="${markNum}" value="3" min="1" max="20" style="width: 75px; text-align: center; padding: 0.35rem;">
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -2561,6 +2839,251 @@ ${q.explanation ? `正解・公式解説: ${q.explanation}` : ''}`;
             }
         }
 
+        // ==========================================================================
+        // 🤖 AIによる正解・配点の自動作成ロジック
+        // ==========================================================================
+
+        function setAiKeygenLoading(isLoading, message = "") {
+            const statusBox = document.getElementById("ai-keygen-status-box");
+            const statusText = document.getElementById("ai-keygen-status-text");
+            const btns = document.querySelectorAll(".ai-gen-btn");
+            if (statusBox) statusBox.style.display = isLoading ? "flex" : "none";
+            if (statusText && message) statusText.textContent = message;
+            btns.forEach(b => b.disabled = isLoading);
+        }
+
+        // AIから生成された正解・配点データをテーブルに反映
+        function applyGeneratedAnswers(data) {
+            if (!data || !Array.isArray(data.answers) || data.answers.length === 0) {
+                throw new Error("AIから有効な解答データを受信できませんでした。もう一度お試しください。");
+            }
+
+            const answers = data.answers;
+            const totalQ = answers.length;
+
+            // 1. 開始マーク番号と問題数の判定
+            const firstMarkNum = answers[0]?.markNumber || answers[0]?.questionNumber || answers[0]?.q;
+            const startQ = (firstMarkNum && parseInt(firstMarkNum, 10) > 0) ? parseInt(firstMarkNum, 10) : 1;
+
+            const startQInput = document.getElementById("new-exam-start-q");
+            if (startQInput) {
+                startQInput.value = startQ;
+            }
+
+            // 2. 問題数入力欄を更新
+            const totalQInput = document.getElementById("new-exam-total-q");
+            if (totalQInput) {
+                totalQInput.value = totalQ;
+            }
+
+            // 3. テーブル行を再構築
+            initModalAnswersGrid(totalQ, startQ);
+
+            // 3. 各問の正解番号・配点をセット
+            answers.forEach(item => {
+                const qNum = item.markNumber || item.questionNumber || item.q;
+                if (!qNum) return;
+                const sel = document.querySelector(`.modal-ans-select[data-q="${qNum}"]`);
+                const inp = document.querySelector(`.modal-points-input[data-q="${qNum}"]`);
+                if (sel && item.correct !== undefined) {
+                    const cVal = parseInt(item.correct, 10);
+                    if (cVal >= 1 && cVal <= 9) sel.value = String(cVal);
+                }
+                if (inp && item.points !== undefined) {
+                    const pVal = parseInt(item.points, 10);
+                    if (pVal > 0) inp.value = String(pVal);
+                }
+            });
+
+            // 4. 合計配点を再計算
+            updateModalTotalPoints();
+
+            // 5. テーブル全体を視覚的にハイライト
+            const gridEl = document.querySelector(".exam-answers-edit-grid");
+            if (gridEl) {
+                gridEl.classList.remove("highlight-generated");
+                void gridEl.offsetWidth; // 強制再描画
+                gridEl.classList.add("highlight-generated");
+            }
+
+            const sumDisplay = document.getElementById("new-exam-total-points-display")?.textContent || "";
+            showToast(`🎉 AIが問1〜問${totalQ}の正解・配点（合計${sumDisplay}点）を自動作成しました！`, "success", 4500);
+        }
+
+        // 【方法1】試験タイトル・科目からAI自動生成
+        async function generateAnswersByTitle() {
+            const title = document.getElementById("new-exam-title")?.value.trim();
+            const subject = document.getElementById("new-exam-subject")?.value.trim();
+            const currentQCount = parseInt(document.getElementById("new-exam-total-q")?.value, 10) || 30;
+
+            if (!title) {
+                showToast("ステップ1の「試験タイトル」（例: 2024年度 共通テスト 本試験）を入力してください。", "error");
+                document.getElementById("new-exam-title")?.focus();
+                return;
+            }
+
+            setAiKeygenLoading(true, `「${title}」の公式正解・配点をAI照合中...`);
+
+            const promptText = `あなたは大学入学共通テスト・センター試験の公式過去問データベースに精通した指導専門家です。
+以下の試験について、全問の【解答番号（問1〜問N）】【公式正解番号（選択肢 1〜9の半角数字）】【公式配点（整数）】を漏れなく正確に出力してください。
+
+【試験情報】
+試験タイトル: ${title}
+科目: ${subject || '指定なし'}
+${currentQCount ? `目安の問題数: 約${currentQCount}問` : ''}
+
+【必須要件】
+1. マーク解答番号はすべて 1〜9 の半角数字とすること（①②などの丸数字や記号は半角数字に変換）。
+2. 配点合計は通常科目の場合は100点（基礎科目等の場合は50点など科目の規定配点）になるよう割り振ること。
+3. 出力は以下のJSON形式のみとすること（挨拶やMarkdownコードブロック以外の文字列は一切含めない）：
+
+{
+  "totalQuestions": 34,
+  "totalPoints": 100,
+  "answers": [
+    { "markNumber": 1, "correct": 2, "points": 3 },
+    { "markNumber": 2, "correct": 4, "points": 3 }
+  ]
+}`;
+
+            try {
+                const response = await callGeminiChat(
+                    [{ role: "user", parts: [{ text: promptText }] }],
+                    "大学入学共通テストの公式正解キー・配点を完全なJSON形式のみで出力する専門システムです。",
+                    { responseMimeType: "application/json" }
+                );
+
+                let parsed;
+                if (typeof response === "string") {
+                    const clean = response.replace(/^```json\s*/i, "").replace(/```\s*$/i, "").trim();
+                    parsed = JSON.parse(clean);
+                } else {
+                    parsed = response;
+                }
+
+                applyGeneratedAnswers(parsed);
+            } catch (err) {
+                console.error("AI Gen by title error:", err);
+                showToast("AI生成中にエラーが発生しました: " + (err.message || err), "error", 6000);
+            } finally {
+                setAiKeygenLoading(false);
+            }
+        }
+
+        // 【方法2】解答表・配点画像からAI読み取り（OCR）
+        async function generateAnswersByImageFile(file) {
+            if (!file) return;
+
+            setAiKeygenLoading(true, `解答表画像「${file.name}」をAI解析中...`);
+
+            try {
+                const norm = await normalizeImageFile(file);
+                const promptText = `画像に写っている大学入学共通テスト等の「正解一覧」「配点一覧」「解答・配点表」をすべて読み取り、構造化してください。
+・各問の解答番号（問1〜問N）、正解選択肢番号（1〜9の半角数字）、配点（点）を抽出してください。
+・正解が1〜9以外のアルファベットや記号の場合も対応する1〜9の数字に変換してください。
+・出力は以下のJSON形式のみ：
+{
+  "totalQuestions": 34,
+  "totalPoints": 100,
+  "answers": [
+    { "markNumber": 1, "correct": 2, "points": 3 }
+  ]
+}`;
+
+                const parts = [
+                    { inline_data: { mime_type: norm.mimeType, data: norm.data } },
+                    { text: promptText }
+                ];
+
+                const response = await callGeminiChat(
+                    [{ role: "user", parts: parts }],
+                    "画像から共通テスト解答・配点表を読み取りJSONのみで出力するOCRシステムです。",
+                    { responseMimeType: "application/json" }
+                );
+
+                let parsed;
+                if (typeof response === "string") {
+                    const clean = response.replace(/^```json\s*/i, "").replace(/```\s*$/i, "").trim();
+                    parsed = JSON.parse(clean);
+                } else {
+                    parsed = response;
+                }
+
+                applyGeneratedAnswers(parsed);
+            } catch (err) {
+                console.error("AI Gen by image error:", err);
+                showToast("画像からのAI読み取りに失敗しました: " + (err.message || err), "error", 6000);
+            } finally {
+                setAiKeygenLoading(false);
+            }
+        }
+
+        // 【方法3】問題冊子ファイルからAIが問題を解く
+        async function generateAnswersByBooklet() {
+            if (!uploadedFiles || uploadedFiles.length === 0) {
+                showToast("ステップ2で問題冊子ファイル（写真画像）を先に選択してください。", "error");
+                return;
+            }
+
+            const filesArr = Array.from(uploadedFiles).filter(f => f.type && f.type.startsWith("image/"));
+            if (filesArr.length === 0) {
+                showToast("問題冊子からのAI解答は「写真・画像」形式でアップロードされている場合に利用可能です。PDFの場合は「試験名からAI自動取得」または「解答表画像」をご利用ください。", "info", 6000);
+                return;
+            }
+
+            // 先頭から最大4枚までを対象にする
+            const targetFiles = filesArr.slice(0, 4);
+            setAiKeygenLoading(true, `問題画像（${targetFiles.length}枚）からAIが問題を解いて正解・配点を算出中...`);
+
+            try {
+                const parts = [];
+                for (let i = 0; i < targetFiles.length; i++) {
+                    const norm = await normalizeImageFile(targetFiles[i]);
+                    parts.push({ inline_data: { mime_type: norm.mimeType, data: norm.data } });
+                }
+
+                const title = document.getElementById("new-exam-title")?.value.trim() || "共通テスト";
+                const subject = document.getElementById("new-exam-subject")?.value.trim() || "";
+
+                parts.push({
+                    text: `あなたは大学入学共通テスト指導の最高峰エキスパートです。
+添付された問題冊子画像に写っている各設問（マーク解答番号 問1〜）を解き、
+それぞれの【正解番号（選択肢 1〜9の半角数字）】と【標準配点（配点合計100点になるよう按分）】を決定してください。
+試験: ${title} (${subject})
+
+出力は以下のJSON形式のみ：
+{
+  "totalQuestions": 30,
+  "totalPoints": 100,
+  "answers": [
+    { "markNumber": 1, "correct": 2, "points": 3 }
+  ]
+}`
+                });
+
+                const response = await callGeminiChat(
+                    [{ role: "user", parts: parts }],
+                    "問題冊子を解いて正解と配点をJSONのみで出力するシステムです。",
+                    { responseMimeType: "application/json" }
+                );
+
+                let parsed;
+                if (typeof response === "string") {
+                    const clean = response.replace(/^```json\s*/i, "").replace(/```\s*$/i, "").trim();
+                    parsed = JSON.parse(clean);
+                } else {
+                    parsed = response;
+                }
+
+                applyGeneratedAnswers(parsed);
+            } catch (err) {
+                console.error("AI Gen by booklet error:", err);
+                showToast("問題冊子からのAI解答生成に失敗しました: " + (err.message || err), "error", 6000);
+            } finally {
+                setAiKeygenLoading(false);
+            }
+        }
+
         // 新規過去問の保存実行
         async function submitCreateExam() {
             if (!loginUid) {
@@ -2572,6 +3095,7 @@ ${q.explanation ? `正解・公式解説: ${q.explanation}` : ''}`;
             const subject = document.getElementById("new-exam-subject")?.value.trim();
             const timeLimit = parseInt(document.getElementById("new-exam-time")?.value, 10) || 60;
             const totalQ = parseInt(document.getElementById("new-exam-total-q")?.value, 10) || 30;
+            const startQ = parseInt(document.getElementById("new-exam-start-q")?.value, 10) || 1;
 
             if (!title) { showToast("試験タイトルを入力してください。", "error"); return; }
             if (!subject) { showToast("科目名を入力してください。", "error"); return; }
@@ -2637,13 +3161,14 @@ ${q.explanation ? `正解・公式解説: ${q.explanation}` : ''}`;
                 // 正解キー＆配点の収集
                 const questions = [];
                 let totalPointsSum = 0;
-                for (let i = 1; i <= totalQ; i++) {
-                    const sel = document.querySelector(`.modal-ans-select[data-q="${i}"]`);
-                    const inp = document.querySelector(`.modal-points-input[data-q="${i}"]`);
+                for (let idx = 0; idx < totalQ; idx++) {
+                    const markNum = startQ + idx;
+                    const sel = document.querySelector(`.modal-ans-select[data-q="${markNum}"]`);
+                    const inp = document.querySelector(`.modal-points-input[data-q="${markNum}"]`);
                     const correctVal = sel ? parseInt(sel.value, 10) : 1;
                     const ptsVal = inp ? parseInt(inp.value, 10) : 3;
                     questions.push({
-                        markNumber: i,
+                        markNumber: markNum,
                         correct: correctVal,
                         points: ptsVal
                     });
@@ -2711,7 +3236,11 @@ ${q.explanation ? `正解・公式解説: ${q.explanation}` : ''}`;
             if (examSelectEl) {
                 examSelectEl.addEventListener("change", (e) => {
                     const val = e.target.value;
-                    if (val === "preset-2025-kokyo-seikei") {
+                    const presetList = window.PAST_EXAMS_DATABASE || (presetExam ? [presetExam] : []);
+                    const foundPreset = presetList.find(it => it.id === val || (val === "preset-2025-kokyo-seikei" && it.id === "kyotsu-2025-kokyo-seikei"));
+                    if (foundPreset) {
+                        loadExam(foundPreset);
+                    } else if (val === "preset-2025-kokyo-seikei" && presetExam) {
                         loadExam(presetExam);
                     } else {
                         const found = userExams.find(it => it.id === val);
@@ -2907,8 +3436,21 @@ ${q.explanation ? `正解・公式解説: ${q.explanation}` : ''}`;
             const closeCreateModalBtn = document.getElementById("btn-close-create-modal");
             const cancelCreateModalBtn = document.getElementById("btn-cancel-create-modal");
 
+            // 問題数・開始番号変更で正解テーブルを再描画
+            const totalQInput = document.getElementById("new-exam-total-q");
+            const startQInput = document.getElementById("new-exam-start-q");
+            const refreshModalGrid = () => {
+                const count = Math.min(100, Math.max(1, parseInt(totalQInput?.value, 10) || 30));
+                const start = Math.min(999, Math.max(1, parseInt(startQInput?.value, 10) || 1));
+                initModalAnswersGrid(count, start);
+            };
+
+            if (totalQInput) totalQInput.addEventListener("input", refreshModalGrid);
+            if (startQInput) startQInput.addEventListener("input", refreshModalGrid);
+
             if (openCreateModalBtn && createModal) {
                 openCreateModalBtn.addEventListener("click", () => {
+                    refreshModalGrid();
                     createModal.classList.add("open");
                 });
             }
@@ -2919,15 +3461,6 @@ ${q.explanation ? `正解・公式解説: ${q.explanation}` : ''}`;
             if (closeCreateModalBtn) closeCreateModalBtn.addEventListener("click", closeModalFunc);
             if (cancelCreateModalBtn) cancelCreateModalBtn.addEventListener("click", closeModalFunc);
 
-            // 問題数変更で正解テーブルを再描画
-            const totalQInput = document.getElementById("new-exam-total-q");
-            if (totalQInput) {
-                totalQInput.addEventListener("input", (e) => {
-                    const count = Math.min(100, Math.max(1, parseInt(e.target.value, 10) || 1));
-                    initModalAnswersGrid(count);
-                });
-            }
-
             // 配点変更時の合計再計算
             const answersTbody = document.getElementById("new-exam-answers-tbody");
             if (answersTbody) {
@@ -2936,6 +3469,28 @@ ${q.explanation ? `正解・公式解説: ${q.explanation}` : ''}`;
                         updateModalTotalPoints();
                     }
                 });
+            }
+
+            // 🤖 AIによる正解・配点の自動作成ボタン
+            const aiGenTitleBtn = document.getElementById("btn-ai-gen-by-title");
+            if (aiGenTitleBtn) {
+                aiGenTitleBtn.addEventListener("click", generateAnswersByTitle);
+            }
+
+            const aiGenImgBtn = document.getElementById("btn-ai-gen-by-image");
+            const aiAnswerImgInput = document.getElementById("ai-answer-image-input");
+            if (aiGenImgBtn && aiAnswerImgInput) {
+                aiGenImgBtn.addEventListener("click", () => aiAnswerImgInput.click());
+                aiAnswerImgInput.addEventListener("change", (e) => {
+                    if (e.target.files && e.target.files[0]) {
+                        generateAnswersByImageFile(e.target.files[0]);
+                    }
+                });
+            }
+
+            const aiGenBookletBtn = document.getElementById("btn-ai-gen-by-booklet");
+            if (aiGenBookletBtn) {
+                aiGenBookletBtn.addEventListener("click", generateAnswersByBooklet);
             }
 
             // 正解一括貼り付けボタン
