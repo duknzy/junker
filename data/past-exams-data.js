@@ -3,7 +3,7 @@
  * 2025年共通テスト「公共、政治・経済」本試験
  * 全6大問・34解答番号・100点満点
  */
-const PAST_EXAMS_DATABASE = [
+window.PAST_EXAMS_DATABASE = [
   {
     id: "kyotsu-2025-kokyo-seikei",
     title: "2025年度 共通テスト 本試験",

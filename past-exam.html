@@ -183,7 +183,7 @@
         /* 2カラムレイアウト（問題一覧 & 追従マークシート） */
         .exam-layout-grid {
             display: grid;
-            grid-template-columns: minmax(0, 1fr) 340px;
+            grid-template-columns: minmax(0, 1fr) 380px;
             gap: 1.5rem;
             align-items: start;
             width: 100%;
@@ -860,10 +860,371 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        @keyframes zoomIn {
-            from { opacity: 0; transform: scale(0.96); }
-            to { opacity: 1; transform: scale(1); }
+        /* ==========================================================================
+           📚 過去問セレクター＆切り替えバー
+           ========================================================================== */
+        .exam-selector-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+            padding-bottom: 0.9rem;
+            margin-bottom: 0.4rem;
+            border-bottom: 1px solid var(--border-color);
         }
+
+        .exam-select-control {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex: 1;
+            min-width: 280px;
+        }
+
+        .exam-custom-select {
+            background: var(--bg-surface);
+            border: 1.5px solid var(--brand-border);
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            font-weight: 800;
+            padding: 0.55rem 1rem;
+            border-radius: var(--radius-lg);
+            outline: none;
+            cursor: pointer;
+            flex: 1;
+            max-width: 540px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+            transition: all 0.15s ease;
+        }
+
+        .exam-custom-select:focus {
+            border-color: var(--brand-primary);
+            box-shadow: 0 0 0 3px var(--brand-light);
+        }
+
+        /* ==========================================================================
+           📄 PDF / 写真 問題冊子ビューア（左カラム）
+           ========================================================================== */
+        .exam-doc-viewer-card {
+            background: var(--bg-surface);
+            border: 1.5px solid var(--border-color);
+            border-radius: var(--radius-xl);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+            height: calc(100vh - 10.5rem);
+            min-height: 680px;
+            position: sticky;
+            top: 1rem;
+        }
+
+        .exam-doc-toolbar {
+            background: var(--bg-subtle);
+            border-bottom: 1.5px solid var(--border-color);
+            padding: 0.65rem 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            flex-shrink: 0;
+            z-index: 10;
+        }
+
+        .exam-doc-title-badge {
+            font-size: 0.88rem;
+            font-weight: 850;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+        }
+
+        .exam-pdf-container {
+            flex: 1;
+            width: 100%;
+            height: 100%;
+            background: #525659;
+            position: relative;
+        }
+
+        .exam-pdf-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: block;
+        }
+
+        .exam-img-container {
+            flex: 1;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background: #1e293b;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 1.5rem;
+            position: relative;
+            user-select: none;
+        }
+
+        .exam-doc-img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+            transition: transform 0.15s ease-out;
+            transform-origin: center top;
+        }
+
+        /* マークシート内の誤答保存ボタン＆レイアウト拡張 */
+        .exam-ms-row.status-wrong {
+            border-color: rgba(239, 68, 68, 0.4) !important;
+            background: rgba(239, 68, 68, 0.05) !important;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 0.45rem;
+            padding: 0.55rem 0.75rem;
+        }
+
+        .exam-ms-row-main {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+        }
+
+        .exam-ms-row-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            padding-top: 0.4rem;
+            border-top: 1px dashed rgba(239, 68, 68, 0.25);
+        }
+
+        .exam-correct-ans-pill {
+            font-size: 0.75rem;
+            font-weight: 850;
+            color: #10B981;
+            background: rgba(16, 185, 129, 0.12);
+            padding: 0.15rem 0.5rem;
+            border-radius: var(--radius-full);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .btn-save-to-wrong-book {
+            background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+            color: #ffffff;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 0.74rem;
+            font-weight: 800;
+            padding: 0.3rem 0.65rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            box-shadow: 0 2px 6px rgba(239, 68, 68, 0.25);
+        }
+
+        .btn-save-to-wrong-book:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(239, 68, 68, 0.35);
+        }
+
+        .btn-save-to-wrong-book:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+            background: #64748B;
+        }
+
+        .btn-save-to-wrong-book.saved {
+            background: #10B981;
+            box-shadow: none;
+        }
+
+        /* ==========================================================================
+           🏛️ 過去問新規登録モーダル
+           ========================================================================== */
+        .create-exam-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(6px);
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+        }
+
+        .create-exam-modal-overlay.open {
+            display: flex;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .create-exam-modal-card {
+            background: var(--bg-surface);
+            border: 1.5px solid var(--border-color);
+            border-radius: var(--radius-2xl);
+            width: 100%;
+            max-width: 820px;
+            max-height: 92vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+            animation: zoomIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            overflow: hidden;
+        }
+
+        .create-exam-modal-header {
+            padding: 1.25rem 1.6rem;
+            border-bottom: 1.5px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--bg-subtle);
+        }
+
+        .create-exam-modal-title {
+            font-size: 1.2rem;
+            font-weight: 850;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .create-exam-modal-body {
+            padding: 1.6rem;
+            overflow-y: auto;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1.4rem;
+        }
+
+        .form-section-label {
+            font-size: 0.92rem;
+            font-weight: 850;
+            color: var(--brand-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-grid-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+        }
+
+        .form-group-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .form-group-item label {
+            font-size: 0.82rem;
+            font-weight: 750;
+            color: var(--text-secondary);
+        }
+
+        .flora-file-dropzone {
+            border: 2px dashed var(--brand-border);
+            border-radius: var(--radius-xl);
+            padding: 1.5rem;
+            text-align: center;
+            background: var(--bg-subtle);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .flora-file-dropzone:hover {
+            border-color: var(--brand-primary);
+            background: var(--brand-light);
+        }
+
+        .exam-answers-edit-grid {
+            max-height: 260px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            background: var(--bg-subtle);
+            padding: 0.75rem;
+        }
+
+        .exam-answers-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        .exam-answers-table th, .exam-answers-table td {
+            padding: 0.45rem 0.65rem;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .exam-answers-table th {
+            font-weight: 800;
+            color: var(--text-secondary);
+            background: var(--bg-surface);
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        .create-exam-modal-footer {
+            padding: 1.1rem 1.6rem;
+            border-top: 1.5px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            background: var(--bg-subtle);
+        }
+
+        /* トースト通知 */
+        .flora-toast-container {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+            pointer-events: none;
+        }
+
+        .flora-toast {
+            background: #1E293B;
+            color: #ffffff;
+            font-size: 0.88rem;
+            font-weight: 750;
+            padding: 0.75rem 1.25rem;
+            border-radius: var(--radius-lg);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            pointer-events: auto;
+            animation: fadeIn 0.2s ease-out;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .flora-toast.success { border-left: 4px solid #10B981; }
+        .flora-toast.error { border-left: 4px solid #EF4444; }
+        .flora-toast.info { border-left: 4px solid #3B82F6; }
     </style>
 </head>
 
@@ -878,6 +1239,26 @@
 
                 <!-- 頂部ヘッダーカード -->
                 <div class="exam-header-card">
+                    <!-- 📚 過去問セレクター＆新規追加 -->
+                    <div class="exam-selector-bar">
+                        <div class="exam-select-control">
+                            <label for="exam-select-dropdown" style="font-weight: 850; font-size: 0.9rem; color: var(--text-primary); white-space: nowrap;">
+                                📚 過去問を選択：
+                            </label>
+                            <select id="exam-select-dropdown" class="exam-custom-select">
+                                <option value="preset-2025-kokyo-seikei">2025年度 本試験【公共、政治・経済】（公式プリセット）</option>
+                            </select>
+                        </div>
+                        <div style="display: flex; gap: 0.6rem; align-items: center;">
+                            <button type="button" class="flora-btn flora-btn-primary btn-sm" id="btn-open-create-exam-modal" style="font-weight: 850; padding: 0.5rem 1rem;">
+                                ＋ 過去問を新規追加
+                            </button>
+                            <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="btn-delete-current-exam" style="display: none; color: #ef4444; font-size: 0.78rem;" title="現在選択中の自作過去問を削除">
+                                🗑️ この過去問を削除
+                            </button>
+                        </div>
+                    </div>
+
                     <div class="exam-title-row">
                         <div>
                             <span class="exam-badge-tag">🏛️ 大学入学共通テスト 過去問演習</span>
@@ -1002,6 +1383,23 @@
                 <!-- 大問別得点 -->
             </div>
 
+            <!-- 誤答ダッシュボード連携バナー -->
+            <div id="result-wrong-summary-box" style="margin-top: 1rem; padding: 1rem; background: rgba(239, 68, 68, 0.06); border: 1.5px solid rgba(239, 68, 68, 0.25); border-radius: var(--radius-lg); display: none;">
+                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+                    <div>
+                        <div style="font-weight: 850; font-size: 0.92rem; color: #DC2626;">
+                            ❌ 間違えた問題: <span id="result-wrong-count-text">0問</span>
+                        </div>
+                        <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 0.15rem;">
+                            AIが解法の定石・思考プロセスを生成し、誤答克服ダッシュボードにストックできます
+                        </div>
+                    </div>
+                    <button type="button" class="btn-save-to-wrong-book" id="btn-batch-save-wrong" style="padding: 0.45rem 1rem; font-size: 0.82rem;">
+                        📥 誤答ダッシュボードに一括保存
+                    </button>
+                </div>
+            </div>
+
             <div style="display: flex; gap: 0.8rem; margin-top: 1rem;">
                 <button type="button" class="flora-btn flora-btn-primary btn-lg" id="btn-close-result-modal" style="flex: 1; font-weight: 800; justify-content: center;">
                     📖 各問の解説を確認する
@@ -1046,43 +1444,269 @@
         </div>
     </div>
 
+    <!-- 🏛️ 過去問新規登録モーダル -->
+    <div class="create-exam-modal-overlay" id="create-exam-modal">
+        <div class="create-exam-modal-card">
+            <div class="create-exam-modal-header">
+                <div class="create-exam-modal-title">
+                    <span>🏛️ 過去問の新規登録</span>
+                </div>
+                <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="btn-close-create-modal">✕</button>
+            </div>
+
+            <div class="create-exam-modal-body">
+                <!-- 基本情報 -->
+                <div>
+                    <div class="form-section-label">
+                        <span>📝 ステップ1：基本情報</span>
+                    </div>
+                    <div class="form-grid-row">
+                        <div class="form-group-item">
+                            <label>試験タイトル <span style="color:#ef4444;">*</span></label>
+                            <input type="text" id="new-exam-title" class="flora-input" placeholder="例: 2024年度 共通テスト 本試験" required>
+                        </div>
+                        <div class="form-group-item">
+                            <label>科目 <span style="color:#ef4444;">*</span></label>
+                            <input type="text" id="new-exam-subject" class="flora-input" list="subject-presets" placeholder="例: 化学基礎 / 公共、政治・経済" required>
+                            <datalist id="subject-presets">
+                                <option value="公共、政治・経済">
+                                <option value="政治・経済">
+                                <option value="倫理、政治・経済">
+                                <option value="化学基礎">
+                                <option value="化学">
+                                <option value="生物基礎">
+                                <option value="物理基礎">
+                                <option value="地学基礎">
+                                <option value="日本史探究">
+                                <option value="世界史探究">
+                                <option value="地理探究">
+                                <option value="英語リーディング">
+                                <option value="数学Ⅰ・A">
+                                <option value="数学Ⅱ・B・C">
+                                <option value="情報Ⅰ">
+                            </datalist>
+                        </div>
+                        <div class="form-group-item">
+                            <label>制限時間（分）</label>
+                            <input type="number" id="new-exam-time" class="flora-input" value="60" min="5" max="120">
+                        </div>
+                        <div class="form-group-item">
+                            <label>問題数（マーク数）</label>
+                            <input type="number" id="new-exam-total-q" class="flora-input" value="30" min="1" max="100">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 問題ファイル登録 -->
+                <div>
+                    <div class="form-section-label">
+                        <span>📄 ステップ2：問題冊子ファイル（PDF または 写真）</span>
+                    </div>
+                    <div style="display: flex; gap: 1rem; margin-bottom: 0.6rem;">
+                        <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.86rem; font-weight: 750; cursor: pointer;">
+                            <input type="radio" name="new-exam-file-type" value="pdf" checked>
+                            <span>📄 PDFファイル（1ファイル）</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.86rem; font-weight: 750; cursor: pointer;">
+                            <input type="radio" name="new-exam-file-type" value="images">
+                            <span>🖼️ 写真・画像（ページ順に複数選択可能）</span>
+                        </label>
+                    </div>
+
+                    <div class="flora-file-dropzone" id="new-exam-dropzone">
+                        <div style="font-size: 1.8rem; margin-bottom: 0.3rem;">📤</div>
+                        <div style="font-weight: 850; font-size: 0.95rem; color: var(--text-primary);" id="dropzone-label">
+                            PDFまたは画像ファイルをここにドラッグ＆ドロップ、またはクリックして選択
+                        </div>
+                        <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 0.25rem;" id="dropzone-sublabel">
+                            対応形式: .pdf / .jpg / .png / .webp（推奨: 1過去問1〜5MB程度）
+                        </div>
+                        <input type="file" id="new-exam-file-input" style="display: none;" accept="application/pdf,image/*">
+                    </div>
+                    <div id="new-exam-file-status" style="font-size: 0.82rem; font-weight: 750; color: #10B981; margin-top: 0.45rem; display: none;"></div>
+                </div>
+
+                <!-- 正解キー＆配点設定 -->
+                <div>
+                    <div class="form-section-label" style="justify-content: space-between;">
+                        <span>🎯 ステップ3：正解キー＆配点の設定</span>
+                        <span style="font-size: 0.74rem; font-weight: 700; color: var(--text-muted);">
+                            配点合計: <span id="new-exam-total-points-display" style="color: var(--brand-primary); font-weight: 850;">90</span>点
+                        </span>
+                    </div>
+
+                    <!-- テキスト一括入力補助 -->
+                    <div style="background: var(--bg-subtle); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.75rem; margin-bottom: 0.75rem;">
+                        <div style="font-size: 0.78rem; font-weight: 750; color: var(--text-secondary); margin-bottom: 0.35rem;">
+                            ⚡ 正解の一括貼り付け（オプション）：
+                        </div>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <input type="text" id="new-exam-quick-keys-input" class="flora-input" placeholder="例: 1:3 2:1 3:4 4:2 5:1... または 3 1 4 2 1..." style="flex: 1; font-size: 0.82rem;">
+                            <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="btn-apply-quick-keys" style="white-space: nowrap; font-weight: 800;">
+                                一括反映
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="exam-answers-edit-grid">
+                        <table class="exam-answers-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 70px;">問番号</th>
+                                    <th>正解番号 (1〜9)</th>
+                                    <th style="width: 100px;">配点 (点)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="new-exam-answers-tbody">
+                                <!-- JSで動的生成 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="create-exam-modal-footer">
+                <button type="button" class="flora-btn flora-btn-ghost btn-md" id="btn-cancel-create-modal">
+                    キャンセル
+                </button>
+                <button type="button" class="flora-btn flora-btn-primary btn-md" id="btn-submit-create-exam" style="font-weight: 850;">
+                    💾 過去問を登録して演習を開始
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- トースト通知コンテナ -->
+    <div class="flora-toast-container" id="flora-toast-container"></div>
+
     <!-- スクリプト群 -->
     <script src="sidebar.js?v=3.5"></script>
     <script src="data/past-exams-data.js?v=1.0"></script>
     <script type="module">
-        import { requestUniversalAICompletion, getActiveProvider } from "./api-key-manager.js?v=3.6";
+        import { callGeminiChat } from "./api-key-manager.js?v=3.6";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { getDatabase, ref, get, set, remove, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+        import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+        import { firebaseConfig } from "./firebase-config.js";
+
+        // ==========================================================================
+        // 🔥 Firebase 初期化
+        // ==========================================================================
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+        const storage = getStorage(app);
+        let loginUid = null;
 
         // ==========================================================================
         // 状態管理
         // ==========================================================================
-        const exam = window.PAST_EXAMS_DATABASE[0];
-        let currentMode = "mock"; // 'mock' | 'section' | 'instant'
-        let currentSectionFilter = "all";
+        const presetExam = window.PAST_EXAMS_DATABASE ? window.PAST_EXAMS_DATABASE[0] : null;
+        let userExams = []; // ユーザーが登録した自作過去問一覧
+        let currentExam = presetExam;
+        let flatQuestions = [];
         let userAnswers = {}; // { [markNumber]: choiceNum }
+        let savedMistakeIds = new Set(); // 誤答ダッシュボードに保存済みのmarkNumber
         let timerSeconds = 60 * 60;
         let timerInterval = null;
         let timerRunning = true;
         let isGraded = false;
         let filterWrongOnly = false;
         let activeAiQuestion = null;
+        let currentMode = "mock";
+        let currentSectionFilter = "all";
 
-        // 全設問のフラットリスト
-        const flatQuestions = [];
-        exam.sections.forEach(sec => {
-            sec.questions.forEach(q => {
-                flatQuestions.push({ ...q, sectionNumber: sec.sectionNumber, sectionTitle: sec.title });
-            });
-        });
+        // 画像ビューア操作状態
+        let currentImgPageIndex = 0;
+        let currentImgZoom = 1.0;
+
+        // 新規登録モーダル状態
+        let uploadedFiles = null; // File | FileList | File[]
+        let modalFileType = "pdf"; // "pdf" | "images"
 
         // ==========================================================================
-        // 初期化 & レンダリング
+        // 🔔 トースト通知ヘルパー
+        // ==========================================================================
+        function showToast(message, type = "info", duration = 3200) {
+            const container = document.getElementById("flora-toast-container");
+            if (!container) return;
+            const toast = document.createElement("div");
+            toast.className = `flora-toast ${type}`;
+            const icon = type === "success" ? "✓" : type === "error" ? "⚠️" : "ℹ️";
+            toast.innerHTML = `<span>${icon}</span><span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = "0";
+                toast.style.transform = "translateY(8px)";
+                setTimeout(() => toast.remove(), 250);
+            }, duration);
+        }
+
+        // ==========================================================================
+        // 🗄️ IndexedDB ストレージ（PDF・画像用フォールバック）
+        // ==========================================================================
+        function openDocIndexedDB() {
+            return new Promise((resolve, reject) => {
+                const req = indexedDB.open("flora_exam_docs_db", 1);
+                req.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains("docs")) {
+                        db.createObjectStore("docs", { keyPath: "id" });
+                    }
+                };
+                req.onsuccess = (e) => resolve(e.target.result);
+                req.onerror = (e) => reject(e);
+            });
+        }
+
+        async function saveDocToIndexedDB(id, blobOrDataUrl) {
+            const db = await openDocIndexedDB();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction("docs", "readwrite");
+                const store = tx.objectStore("docs");
+                store.put({ id, data: blobOrDataUrl });
+                tx.oncomplete = () => resolve();
+                tx.onerror = (e) => reject(e);
+            });
+        }
+
+        async function getDocFromIndexedDB(id) {
+            try {
+                const db = await openDocIndexedDB();
+                return new Promise((resolve) => {
+                    const tx = db.transaction("docs", "readonly");
+                    const store = tx.objectStore("docs");
+                    const req = store.get(id);
+                    req.onsuccess = () => resolve(req.result ? req.result.data : null);
+                    req.onerror = () => resolve(null);
+                });
+            } catch (err) {
+                return null;
+            }
+        }
+
+        // ==========================================================================
+        // 🚀 初期化 & 認証リスナー
         // ==========================================================================
         function initApp() {
-            renderExamSections();
-            renderMarksheet();
-            initTimer();
             setupEventListeners();
-            updateProgress();
+            initModalAnswersGrid(30);
+
+            // 認証監視
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    loginUid = user.uid;
+                    listenUserExams();
+                } else {
+                    loginUid = null;
+                    userExams = [];
+                    updateExamSelectDropdown();
+                }
+            });
+
+            // 初期試験ロード（プリセット）
+            loadExam(presetExam);
         }
 
         if (document.readyState === 'loading') {
@@ -1091,16 +1715,160 @@
             initApp();
         }
 
-        // タイマー処理
+        // ユーザーのカスタム過去問をFirebaseから購読
+        function listenUserExams() {
+            if (!loginUid) return;
+            const examsRef = ref(database, `users/${loginUid}/past_exams`);
+            onValue(examsRef, (snapshot) => {
+                const data = snapshot.val();
+                userExams = [];
+                if (data) {
+                    Object.keys(data).forEach(k => {
+                        userExams.push({ ...data[k], id: k });
+                    });
+                }
+                updateExamSelectDropdown();
+            });
+        }
+
+        // ドロップダウン更新
+        function updateExamSelectDropdown() {
+            const selectEl = document.getElementById("exam-select-dropdown");
+            if (!selectEl) return;
+
+            const currentSelectedVal = selectEl.value;
+            selectEl.innerHTML = "";
+
+            // プリセット
+            if (presetExam) {
+                const optPreset = document.createElement("option");
+                optPreset.value = "preset-2025-kokyo-seikei";
+                optPreset.textContent = `🏛️ ${presetExam.title}【${presetExam.subject}】（公式プリセット）`;
+                selectEl.appendChild(optPreset);
+            }
+
+            // ユーザー登録過去問
+            if (userExams.length > 0) {
+                const group = document.createElement("optgroup");
+                group.label = "📁 あなたが登録した過去問";
+                userExams.forEach(ue => {
+                    const opt = document.createElement("option");
+                    opt.value = ue.id;
+                    opt.textContent = `📄 ${ue.title}【${ue.subject}】(${ue.totalQuestions}問・${ue.timeLimitMinutes}分)`;
+                    group.appendChild(opt);
+                });
+                selectEl.appendChild(group);
+            }
+
+            if (currentExam) {
+                selectEl.value = currentExam.isCustom ? currentExam.id : "preset-2025-kokyo-seikei";
+            }
+        }
+
+        // ==========================================================================
+        // 📖 試験切り替え＆セッション準備
+        // ==========================================================================
+        async function loadExam(targetExam) {
+            if (!targetExam) return;
+            currentExam = targetExam;
+            userAnswers = {};
+            savedMistakeIds.clear();
+            isGraded = false;
+            filterWrongOnly = false;
+            currentImgPageIndex = 0;
+            currentImgZoom = 1.0;
+
+            // 削除ボタンの表示制御
+            const delBtn = document.getElementById("btn-delete-current-exam");
+            if (delBtn) {
+                delBtn.style.display = currentExam.isCustom ? "inline-flex" : "none";
+            }
+
+            // 大問集中演習タブの制御（自作試験はPDF/写真なので大問タブは非表示に）
+            const modeTabs = document.getElementById("exam-mode-tabs");
+            const secRow = document.getElementById("section-selector-row");
+            if (currentExam.isCustom) {
+                if (secRow) secRow.style.display = "none";
+                if (modeTabs) {
+                    const secBtn = document.getElementById("btn-mode-section");
+                    if (secBtn) secBtn.style.display = "none";
+                }
+            } else {
+                if (modeTabs) {
+                    const secBtn = document.getElementById("btn-mode-section");
+                    if (secBtn) secBtn.style.display = "flex";
+                }
+            }
+
+            // タイトル・メタ情報の反映
+            const titleEl = document.getElementById("exam-display-title");
+            const subTitleEl = document.getElementById("exam-display-subtitle");
+            if (titleEl) {
+                titleEl.textContent = `${currentExam.title}【${currentExam.subject}】`;
+            }
+            if (subTitleEl) {
+                subTitleEl.textContent = `全${currentExam.totalQuestions}問 / ${currentExam.totalPoints}点満点 | 制限時間: ${currentExam.timeLimitMinutes}分 | 自動採点・誤答克服連携`;
+            }
+
+            // flatQuestions の構築
+            flatQuestions = [];
+            if (currentExam.isCustom) {
+                // 自作試験（PDF / 写真）
+                (currentExam.questions || []).forEach(q => {
+                    flatQuestions.push({
+                        qIndex: q.markNumber,
+                        qNumber: `問 ${q.markNumber}`,
+                        markNumber: q.markNumber,
+                        points: q.points || 3,
+                        correct: q.correct,
+                        content: q.explanation || `${currentExam.title} 問${q.markNumber}`,
+                        explanation: q.explanation || `正解は選択肢 ${q.correct} です。`,
+                        choices: [1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => ({ num: n, text: `${n}` })),
+                        sectionNumber: 1
+                    });
+                });
+            } else {
+                // プリセット（公共・政経）
+                presetExam.sections.forEach(sec => {
+                    sec.questions.forEach(q => {
+                        flatQuestions.push({
+                            ...q,
+                            sectionNumber: sec.sectionNumber,
+                            sectionTitle: sec.title
+                        });
+                    });
+                });
+            }
+
+            // タイマー初期化
+            timerSeconds = (currentExam.timeLimitMinutes || 60) * 60;
+            initTimer();
+
+            // レンダリング
+            await renderLeftContent();
+            renderMarksheet();
+            updateProgress();
+            updateExamSelectDropdown();
+        }
+
+        // ==========================================================================
+        // ⏱️ タイマー処理
+        // ==========================================================================
         function initTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            timerRunning = true;
             updateTimerDisplay();
+
+            const toggleBtn = document.getElementById("btn-timer-toggle");
+            if (toggleBtn) toggleBtn.textContent = "⏸️ 一時停止";
+
             timerInterval = setInterval(() => {
                 if (timerRunning && timerSeconds > 0) {
                     timerSeconds--;
                     updateTimerDisplay();
                     if (timerSeconds === 0) {
                         clearInterval(timerInterval);
-                        alert("⏱️ 制限時間の60分が経過しました！採点を開始します。");
+                        alert(`⏱️ 制限時間の${currentExam.timeLimitMinutes}分が経過しました！答案を採点します。`);
                         submitExam();
                     }
                 }
@@ -1120,13 +1888,117 @@
             }
         }
 
-        // 大問・問題一覧のレンダリング
-        function renderExamSections() {
+        // ==========================================================================
+        // 📄 左カラム：問題冊子ビューア / 問題カード一覧
+        // ==========================================================================
+        async function renderLeftContent() {
             const container = document.getElementById("exam-questions-container");
             if (!container) return;
             container.innerHTML = "";
 
-            exam.sections.forEach(sec => {
+            if (!currentExam.isCustom) {
+                // 公式プリセット（HTML問題カード展開）
+                renderPresetSections(container);
+                return;
+            }
+
+            // 自作過去問：PDF または 写真ビューア
+            if (currentExam.fileType === "pdf") {
+                let pdfSrc = currentExam.fileUrl;
+                // もしIndexedDB保存ならBlobURLを取得
+                if (currentExam.storageType === "indexeddb") {
+                    const localData = await getDocFromIndexedDB(currentExam.id);
+                    if (localData) {
+                        pdfSrc = typeof localData === "string" ? localData : URL.createObjectURL(localData);
+                    }
+                }
+
+                container.innerHTML = `
+                    <div class="exam-doc-viewer-card">
+                        <div class="exam-doc-toolbar">
+                            <span class="exam-doc-title-badge">
+                                📄 ${currentExam.title}（問題冊子 PDF）
+                            </span>
+                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                ${pdfSrc ? `<a href="${pdfSrc}" target="_blank" class="flora-btn flora-btn-ghost btn-sm" style="font-size: 0.76rem; text-decoration: none;">↗️ 別タブで全画面表示</a>` : ''}
+                            </div>
+                        </div>
+                        <div class="exam-pdf-container">
+                            ${pdfSrc 
+                                ? `<iframe src="${pdfSrc}#toolbar=1" class="exam-pdf-frame"></iframe>` 
+                                : `<div style="color:#ffffff; padding:2rem; text-align:center;">PDFファイルを読み込めませんでした。</div>`}
+                        </div>
+                    </div>
+                `;
+            } else {
+                // 写真・画像ビューア
+                let images = currentExam.imageUrls || [];
+                if (currentExam.storageType === "indexeddb") {
+                    const localData = await getDocFromIndexedDB(currentExam.id);
+                    if (localData && Array.isArray(localData)) {
+                        images = localData;
+                    }
+                }
+
+                if (!images || images.length === 0) {
+                    container.innerHTML = `
+                        <div class="exam-doc-viewer-card" style="align-items: center; justify-content: center; color: var(--text-muted);">
+                            🖼️ 登録された写真画像がありません
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = `
+                    <div class="exam-doc-viewer-card">
+                        <div class="exam-doc-toolbar">
+                            <span class="exam-doc-title-badge">
+                                🖼️ ページ <span id="img-page-num">${currentImgPageIndex + 1}</span> / ${images.length}
+                            </span>
+                            <div style="display: flex; gap: 0.4rem; align-items: center;">
+                                <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="btn-img-prev" ${currentImgPageIndex === 0 ? 'disabled' : ''}>◀ 前へ</button>
+                                <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="btn-img-next" ${currentImgPageIndex === images.length - 1 ? 'disabled' : ''}>次へ ▶</button>
+                                <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="btn-img-zoom-in">🔍 拡大</button>
+                                <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="btn-img-zoom-out">縮小</button>
+                                <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="btn-img-zoom-reset">100%</button>
+                            </div>
+                        </div>
+                        <div class="exam-img-container" id="exam-img-container">
+                            <img src="${images[currentImgPageIndex]}" id="exam-doc-img-el" class="exam-doc-img" style="transform: scale(${currentImgZoom});" alt="問題冊子ページ">
+                        </div>
+                    </div>
+                `;
+
+                // 画像操作イベント設定
+                const prevBtn = document.getElementById("btn-img-prev");
+                const nextBtn = document.getElementById("btn-img-next");
+                const zoomInBtn = document.getElementById("btn-img-zoom-in");
+                const zoomOutBtn = document.getElementById("btn-img-zoom-out");
+                const zoomResetBtn = document.getElementById("btn-img-zoom-reset");
+                const imgEl = document.getElementById("exam-doc-img-el");
+                const pageNumEl = document.getElementById("img-page-num");
+
+                const updateImgView = () => {
+                    if (imgEl) {
+                        imgEl.src = images[currentImgPageIndex];
+                        imgEl.style.transform = `scale(${currentImgZoom})`;
+                    }
+                    if (pageNumEl) pageNumEl.textContent = currentImgPageIndex + 1;
+                    if (prevBtn) prevBtn.disabled = currentImgPageIndex === 0;
+                    if (nextBtn) nextBtn.disabled = currentImgPageIndex === images.length - 1;
+                };
+
+                if (prevBtn) prevBtn.onclick = () => { if (currentImgPageIndex > 0) { currentImgPageIndex--; updateImgView(); } };
+                if (nextBtn) nextBtn.onclick = () => { if (currentImgPageIndex < images.length - 1) { currentImgPageIndex++; updateImgView(); } };
+                if (zoomInBtn) zoomInBtn.onclick = () => { currentImgZoom = Math.min(2.5, currentImgZoom + 0.2); updateImgView(); };
+                if (zoomOutBtn) zoomOutBtn.onclick = () => { currentImgZoom = Math.max(0.6, currentImgZoom - 0.2); updateImgView(); };
+                if (zoomResetBtn) zoomResetBtn.onclick = () => { currentImgZoom = 1.0; updateImgView(); };
+            }
+        }
+
+        // プリセット問題のセクション描画
+        function renderPresetSections(container) {
+            presetExam.sections.forEach(sec => {
                 if (currentSectionFilter !== "all" && currentSectionFilter !== String(sec.sectionNumber)) {
                     return;
                 }
@@ -1147,9 +2019,8 @@
                 `;
 
                 const qListEl = secBlock.querySelector(".exam-section-questions-list");
-
                 sec.questions.forEach(q => {
-                    const qCard = renderQuestionCard(q, sec);
+                    const qCard = renderQuestionCard(q);
                     qListEl.appendChild(qCard);
                 });
 
@@ -1157,30 +2028,21 @@
             });
         }
 
-        // 個別問題カード生成
-        function renderQuestionCard(q, sec) {
+        function renderQuestionCard(q) {
             const card = document.createElement("div");
             card.className = "exam-question-card";
             card.id = `question-card-${q.markNumber}`;
             card.dataset.markNumber = q.markNumber;
 
-            // 資料レンダリング
             let materialsHtml = "";
             if (q.materials && q.materials.length > 0) {
                 q.materials.forEach(mat => {
                     materialsHtml += `<div class="exam-material-card">`;
-                    if (mat.title) {
-                        materialsHtml += `<div class="exam-material-title">📄 ${mat.title}</div>`;
-                    }
+                    if (mat.title) materialsHtml += `<div class="exam-material-title">📄 ${mat.title}</div>`;
                     if (mat.type === "dialogue") {
                         materialsHtml += `<div class="exam-dialogues-wrap">`;
                         mat.dialogues.forEach(d => {
-                            materialsHtml += `
-                                <div class="exam-dialogue-row">
-                                    <div class="exam-dialogue-speaker">${d.speaker}：</div>
-                                    <div class="exam-dialogue-text">${d.text}</div>
-                                </div>
-                            `;
+                            materialsHtml += `<div class="exam-dialogue-row"><div class="exam-dialogue-speaker">${d.speaker}：</div><div class="exam-dialogue-text">${d.text}</div></div>`;
                         });
                         materialsHtml += `</div>`;
                     } else if (mat.type === "table") {
@@ -1201,7 +2063,6 @@
                 });
             }
 
-            // 選択肢レンダリング
             let choicesHtml = `<div class="exam-choices-grid">`;
             q.choices.forEach(ch => {
                 const isSelected = userAnswers[q.markNumber] === ch.num;
@@ -1242,63 +2103,102 @@
                     <div>${q.explanation}</div>
                 </div>
             `;
-
             return card;
         }
 
-        // マークシートのレンダリング
+        // ==========================================================================
+        // 📝 右カラム：1〜9対応マークシートのレンダリング
+        // ==========================================================================
         function renderMarksheet() {
             const listEl = document.getElementById("exam-ms-list");
             if (!listEl) return;
             listEl.innerHTML = "";
 
             flatQuestions.forEach(q => {
-                if (currentSectionFilter !== "all" && currentSectionFilter !== String(q.sectionNumber)) {
+                if (!currentExam.isCustom && currentSectionFilter !== "all" && currentSectionFilter !== String(q.sectionNumber)) {
                     return;
                 }
 
+                const selected = userAnswers[q.markNumber];
+                let isCorrect = isGraded && (selected === q.correct);
+                let isWrong = isGraded && !isCorrect;
+
                 const row = document.createElement("div");
-                row.className = "exam-ms-row";
+                row.className = `exam-ms-row ${isWrong ? 'status-wrong' : ''}`;
                 row.id = `ms-row-${q.markNumber}`;
                 row.dataset.markNumber = q.markNumber;
 
+                // 1〜9のマークバブル
                 let bubblesHtml = "";
-                const totalChoices = q.choices.length;
-                for (let i = 1; i <= totalChoices; i++) {
-                    const isSelected = userAnswers[q.markNumber] === i;
+                for (let i = 1; i <= 9; i++) {
+                    const isBubbleSelected = selected === i;
+                    let bubbleClass = isBubbleSelected ? "selected" : "";
+                    if (isGraded) {
+                        if (isBubbleSelected) {
+                            bubbleClass += isCorrect ? " correct" : " wrong";
+                        } else if (i === q.correct) {
+                            bubbleClass += " correct"; // 正解の番号を緑表示
+                        }
+                    }
+
                     bubblesHtml += `
-                        <div class="exam-ms-bubble ${isSelected ? 'selected' : ''}" data-mark="${q.markNumber}" data-choice="${i}">
+                        <div class="exam-ms-bubble ${bubbleClass}" data-mark="${q.markNumber}" data-choice="${i}">
                             ${i}
                         </div>
                     `;
                 }
 
-                row.innerHTML = `
-                    <div class="exam-ms-num">${q.markNumber}</div>
-                    <div class="exam-ms-bubbles">${bubblesHtml}</div>
+                // マークシート行上部
+                let rowInner = `
+                    <div class="exam-ms-row-main">
+                        <div class="exam-ms-num">${q.markNumber}</div>
+                        <div class="exam-ms-bubbles">${bubblesHtml}</div>
+                    </div>
                 `;
 
+                // 採点後の誤答行フッター（正解バッジ & 誤答ダッシュボード保存ボタン）
+                if (isWrong) {
+                    const isSaved = savedMistakeIds.has(q.markNumber);
+                    rowInner += `
+                        <div class="exam-ms-row-footer">
+                            <span class="exam-correct-ans-pill">正解: [ ${q.correct} ]</span>
+                            <button type="button" class="btn-save-to-wrong-book ${isSaved ? 'saved' : ''}" data-mark="${q.markNumber}" ${isSaved ? 'disabled' : ''}>
+                                ${isSaved ? '✓ 誤答保存済み' : '📥 誤答ダッシュボードへ'}
+                            </button>
+                        </div>
+                    `;
+                }
+
+                row.innerHTML = rowInner;
                 listEl.appendChild(row);
             });
         }
 
-        // 解答選択時の処理
+        // 解答選択
         function selectChoice(markNumber, choiceNum) {
-            userAnswers[markNumber] = choiceNum;
+            // すでに同じ番号が選ばれていた場合はマーク解除
+            if (userAnswers[markNumber] === choiceNum) {
+                delete userAnswers[markNumber];
+            } else {
+                userAnswers[markNumber] = choiceNum;
+            }
 
-            // 1. 問題カード上の選択肢ハイライト更新
+            // 1. 問題カード上の選択肢ハイライト更新（プリセット時）
             const card = document.getElementById(`question-card-${markNumber}`);
             if (card) {
                 card.querySelectorAll(".exam-choice-item").forEach(item => {
                     const cNum = parseInt(item.dataset.choice, 10);
-                    if (cNum === choiceNum) {
+                    if (cNum === userAnswers[markNumber]) {
                         item.classList.add("selected");
                     } else {
                         item.classList.remove("selected");
                     }
                 });
                 const badge = card.querySelector(`#badge-mark-${markNumber}`);
-                if (badge) badge.classList.add("answered");
+                if (badge) {
+                    if (userAnswers[markNumber]) badge.classList.add("answered");
+                    else badge.classList.remove("answered");
+                }
             }
 
             // 2. マークシート上のバブル更新
@@ -1306,7 +2206,7 @@
             if (msRow) {
                 msRow.querySelectorAll(".exam-ms-bubble").forEach(b => {
                     const cNum = parseInt(b.dataset.choice, 10);
-                    if (cNum === choiceNum) {
+                    if (cNum === userAnswers[markNumber]) {
                         b.classList.add("selected");
                     } else {
                         b.classList.remove("selected");
@@ -1314,7 +2214,7 @@
                 });
             }
 
-            // 3. 即時モードなら正誤判定と解説を自動表示
+            // 3. 即時判定モード時
             if (currentMode === "instant") {
                 checkSingleQuestion(markNumber);
             }
@@ -1322,11 +2222,10 @@
             updateProgress();
         }
 
-        // 進捗バー更新
         function updateProgress() {
             const answeredCount = Object.keys(userAnswers).length;
             const total = flatQuestions.length;
-            const percent = Math.round((answeredCount / total) * 100);
+            const percent = total > 0 ? Math.round((answeredCount / total) * 100) : 0;
 
             const countText = document.getElementById("answered-count-text");
             if (countText) countText.textContent = `解答状況: ${answeredCount} / ${total} 問`;
@@ -1338,41 +2237,13 @@
             if (badge) badge.textContent = `${answeredCount} / ${total}`;
         }
 
-        // 1問ごとの正誤チェック（即時判定モード用）
+        // 1問ごとの正誤チェック（即時判定モード）
         function checkSingleQuestion(markNumber) {
             const q = flatQuestions.find(item => item.markNumber === markNumber);
             if (!q) return;
 
             const selected = userAnswers[markNumber];
-            let isCorrect = false;
-
-            if (q.dependsOn && q.correctMap) {
-                const parentChoice = userAnswers[q.dependsOn];
-                const expected = q.correctMap[parentChoice] || q.correct;
-                isCorrect = selected === expected;
-            } else if (q.isBranchChoice) {
-                isCorrect = selected != null;
-            } else {
-                isCorrect = selected === q.correct;
-            }
-
-            const card = document.getElementById(`question-card-${markNumber}`);
-            if (card) {
-                card.classList.remove("status-correct", "status-wrong");
-                card.classList.add(isCorrect ? "status-correct" : "status-wrong");
-
-                // 正解と不正解の選択肢に色をつける
-                card.querySelectorAll(".exam-choice-item").forEach(item => {
-                    const cNum = parseInt(item.dataset.choice, 10);
-                    item.classList.remove("is-correct-answer", "is-wrong-selected");
-                    if (cNum === q.correct) item.classList.add("is-correct-answer");
-                    if (cNum === selected && !isCorrect) item.classList.add("is-wrong-selected");
-                });
-
-                // 解説を自動オープン
-                const expBox = document.getElementById(`exp-box-${markNumber}`);
-                if (expBox) expBox.classList.add("open");
-            }
+            const isCorrect = selected === q.correct;
 
             const msRow = document.getElementById(`ms-row-${markNumber}`);
             if (msRow) {
@@ -1384,118 +2255,475 @@
                     }
                 });
             }
+
+            const card = document.getElementById(`question-card-${markNumber}`);
+            if (card) {
+                card.classList.remove("status-correct", "status-wrong");
+                card.classList.add(isCorrect ? "status-correct" : "status-wrong");
+                const expBox = document.getElementById(`exp-box-${markNumber}`);
+                if (expBox) expBox.classList.add("open");
+            }
         }
 
-        // 一括採点
+        // ==========================================================================
+        // 🎯 採点処理 ＆ 結果モーダル表示
+        // ==========================================================================
         function submitExam() {
             isGraded = true;
             timerRunning = false;
 
             let totalScore = 0;
-            const sectionScores = {};
-
-            exam.sections.forEach(sec => {
-                sectionScores[sec.sectionNumber] = {
-                    title: sec.title.split(" ")[0],
-                    points: sec.points,
-                    earned: 0
-                };
-            });
+            const wrongQuestions = [];
 
             flatQuestions.forEach(q => {
                 const selected = userAnswers[q.markNumber];
-                let isCorrect = false;
-
-                if (q.dependsOn && q.correctMap) {
-                    const parentChoice = userAnswers[q.dependsOn];
-                    const expected = q.correctMap[parentChoice] || q.correct;
-                    isCorrect = selected === expected;
-                } else if (q.isBranchChoice) {
-                    isCorrect = selected != null;
-                } else {
-                    isCorrect = selected === q.correct;
-                }
+                const isCorrect = selected === q.correct;
 
                 if (isCorrect) {
-                    totalScore += q.points;
-                    sectionScores[q.sectionNumber].earned += q.points;
+                    totalScore += (q.points || 3);
+                } else {
+                    wrongQuestions.push(q);
                 }
 
-                // 問題カードの見た目更新
+                // プリセット問題カードの見た目更新
                 const card = document.getElementById(`question-card-${q.markNumber}`);
                 if (card) {
                     card.classList.remove("status-correct", "status-wrong");
                     card.classList.add(isCorrect ? "status-correct" : "status-wrong");
-
                     card.querySelectorAll(".exam-choice-item").forEach(item => {
                         const cNum = parseInt(item.dataset.choice, 10);
                         item.classList.remove("is-correct-answer", "is-wrong-selected");
                         if (cNum === q.correct) item.classList.add("is-correct-answer");
                         if (cNum === selected && !isCorrect) item.classList.add("is-wrong-selected");
                     });
-
-                    // 解説を自動展開
                     const expBox = document.getElementById(`exp-box-${q.markNumber}`);
                     if (expBox) expBox.classList.add("open");
                 }
-
-                // マークシートの見た目更新
-                const msRow = document.getElementById(`ms-row-${q.markNumber}`);
-                if (msRow) {
-                    msRow.querySelectorAll(".exam-ms-bubble").forEach(b => {
-                        const cNum = parseInt(b.dataset.choice, 10);
-                        b.classList.remove("correct", "wrong");
-                        if (cNum === selected) {
-                            b.classList.add(isCorrect ? "correct" : "wrong");
-                        }
-                    });
-                }
             });
+
+            // マークシートを再描画（正解・不正解表示と誤答保存ボタン出現）
+            renderMarksheet();
 
             // 誤答のみ絞り込みボタンを表示
             const wrongToggleBtn = document.getElementById("btn-toggle-wrong-only");
-            if (wrongToggleBtn) wrongToggleBtn.style.display = "inline-flex";
+            if (wrongToggleBtn && !currentExam.isCustom) wrongToggleBtn.style.display = "inline-flex";
 
             // 結果モーダルの表示
-            showResultModal(totalScore, sectionScores);
+            showResultModal(totalScore, wrongQuestions);
         }
 
-        // 採点結果モーダル表示
-        function showResultModal(totalScore, sectionScores) {
+        function showResultModal(totalScore, wrongQuestions) {
             const modal = document.getElementById("exam-result-modal");
             const scoreEl = document.getElementById("result-total-score");
             const timeTakenEl = document.getElementById("result-time-taken");
             const secGrid = document.getElementById("result-section-scores-grid");
+            const wrongBox = document.getElementById("result-wrong-summary-box");
+            const wrongCountText = document.getElementById("result-wrong-count-text");
 
             if (scoreEl) scoreEl.textContent = totalScore;
 
-            const timeSpentSec = (60 * 60) - timerSeconds;
+            const timeLimit = (currentExam.timeLimitMinutes || 60) * 60;
+            const timeSpentSec = Math.max(0, timeLimit - timerSeconds);
             const min = Math.floor(timeSpentSec / 60);
             const sec = timeSpentSec % 60;
-            const accuracy = Math.round((totalScore / exam.totalPoints) * 100);
+            const totalPoints = currentExam.totalPoints || 100;
+            const accuracy = Math.round((totalScore / totalPoints) * 100);
 
             if (timeTakenEl) {
-                timeTakenEl.textContent = `所要時間: ${min}分${sec}秒 | 得点率: ${accuracy}%`;
+                timeTakenEl.textContent = `所要時間: ${min}分${sec}秒 | 得点率: ${accuracy}% (${totalScore} / ${totalPoints} 点)`;
             }
 
+            // 大問別得点（自作試験時は簡易表示）
             if (secGrid) {
                 secGrid.innerHTML = "";
-                Object.values(sectionScores).forEach(s => {
-                    const item = document.createElement("div");
-                    item.className = "exam-sec-score-item";
-                    item.innerHTML = `
-                        <div class="exam-sec-score-title">${s.title}</div>
-                        <div class="exam-sec-score-val">${s.earned} / ${s.points} 点</div>
-                    `;
-                    secGrid.appendChild(item);
-                });
+                if (!currentExam.isCustom && presetExam) {
+                    presetExam.sections.forEach(sec => {
+                        let earned = 0;
+                        sec.questions.forEach(q => {
+                            if (userAnswers[q.markNumber] === q.correct) earned += q.points;
+                        });
+                        const item = document.createElement("div");
+                        item.className = "exam-sec-score-item";
+                        item.innerHTML = `
+                            <div class="exam-sec-score-title">${sec.title.split(" ")[0]}</div>
+                            <div class="exam-sec-score-val">${earned} / ${sec.points} 点</div>
+                        `;
+                        secGrid.appendChild(item);
+                    });
+                }
+            }
+
+            // 誤答連携バナー
+            if (wrongBox) {
+                if (wrongQuestions.length > 0) {
+                    wrongBox.style.display = "block";
+                    if (wrongCountText) wrongCountText.textContent = `${wrongQuestions.length}問`;
+                } else {
+                    wrongBox.style.display = "none";
+                }
             }
 
             if (modal) modal.classList.add("open");
         }
 
-        // イベントリスナーの登録
+        // ==========================================================================
+        // 📥 誤答ダッシュボード（users/{uid}/problems）への保存
+        // ==========================================================================
+        async function saveSingleMistakeToDashboard(markNumber, btnEl) {
+            if (!loginUid) {
+                showToast("誤答ダッシュボードに保存するにはログインが必要です。", "error");
+                return;
+            }
+
+            const q = flatQuestions.find(it => it.markNumber === markNumber);
+            if (!q) return;
+
+            if (btnEl) {
+                btnEl.disabled = true;
+                btnEl.textContent = "⏳ AI解説生成中...";
+            }
+
+            try {
+                // Universal AI による思考プロセス・定石の自動生成
+                let strategyText = "";
+                try {
+                    const aiPrompt = `あなたは共通テスト・大学受験の専門講師です。
+過去問演習で生徒が以下の問題を間違えました。
+生徒が「誤答克服ダッシュボード」で復習し、類題や本番に対応できるように、
+【この問題に対する正しい思考プロセス・着眼点・解法の定石】をわかりやすく論理的にまとめてください（250〜400文字程度）。
+
+【試験情報】
+科目: ${currentExam.subject || '過去問'}
+試験タイトル: ${currentExam.title}
+設問: 問${q.markNumber}（正解番号: 選択肢 ${q.correct}）
+${q.content ? `問題文の要点: ${q.content}` : ''}
+${q.explanation ? `正解・公式解説: ${q.explanation}` : ''}`;
+
+                    strategyText = await callGeminiChat(
+                        [{ role: "user", parts: [{ text: aiPrompt }] }],
+                        "あなたは大学入学共通テスト等の指導に精通した実力派講師です。簡潔で要点を突いた定石を提示してください。"
+                    );
+                } catch (aiErr) {
+                    console.warn("AI strategy generation error:", aiErr);
+                    strategyText = q.explanation || `正解は選択肢 ${q.correct} です。問題冊子の解説を確認して定石を身につけましょう。`;
+                }
+
+                // Firebase Realtime Database への保存
+                const newId = `EXAM_${Date.now()}_Q${markNumber}`;
+                const nowIso = new Date().toISOString();
+
+                const problemPayload = {
+                    id: newId,
+                    title: `【${currentExam.subject || '過去問'}】${currentExam.title} 問${markNumber}`,
+                    short_title: `【過去問】${currentExam.subject || ''} 問${markNumber}`,
+                    subject: currentExam.subject || "共通テスト",
+                    field: currentExam.title || "過去問演習",
+                    trap_description: `正解番号: 選択肢 [ ${q.correct} ]`,
+                    strategyPattern: strategyText,
+                    answerFormula: `正解: 選択肢 ${q.correct}`,
+                    errorCount: 1,
+                    lastAttemptAt: nowIso,
+                    lastResult: false,
+                    createdAt: nowIso,
+                    sourceType: "past-exam",
+                    sourceExamId: currentExam.id,
+                    sourceExamTitle: currentExam.title,
+                    sourceMarkNumber: markNumber
+                };
+
+                await set(ref(database, `users/${loginUid}/problems/${newId}`), problemPayload);
+
+                savedMistakeIds.add(markNumber);
+                if (btnEl) {
+                    btnEl.textContent = "✓ 保存済み";
+                    btnEl.classList.add("saved");
+                    btnEl.disabled = true;
+                }
+                showToast(`🎉 問${markNumber} を誤答克服ダッシュボードに保存しました！`, "success");
+            } catch (err) {
+                console.error("Save mistake error:", err);
+                showToast("保存に失敗しました: " + err.message, "error");
+                if (btnEl) {
+                    btnEl.disabled = false;
+                    btnEl.textContent = "📥 誤答ダッシュボードへ";
+                }
+            }
+        }
+
+        // 誤答一括保存
+        async function batchSaveWrongToDashboard() {
+            if (!loginUid) {
+                showToast("誤答ダッシュボードに保存するにはログインが必要です。", "error");
+                return;
+            }
+
+            const wrongQuestions = flatQuestions.filter(q => userAnswers[q.markNumber] !== q.correct);
+            if (wrongQuestions.length === 0) {
+                showToast("間違えた問題はありません！", "info");
+                return;
+            }
+
+            const btn = document.getElementById("btn-batch-save-wrong");
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = "⏳ 一括保存中...";
+            }
+
+            let savedCount = 0;
+            for (const q of wrongQuestions) {
+                if (savedMistakeIds.has(q.markNumber)) continue;
+                await saveSingleMistakeToDashboard(q.markNumber, null);
+                savedCount++;
+            }
+
+            renderMarksheet(); // マークシート上のボタンも保存済みに反映
+            if (btn) {
+                btn.textContent = "✓ 一括保存完了";
+                btn.classList.add("saved");
+            }
+            showToast(`🎉 間違えた ${savedCount} 問を誤答ダッシュボードに一括保存しました！`, "success", 4000);
+        }
+
+        // ==========================================================================
+        // 🏛️ 過去問新規登録モーダルの操作ロジック
+        // ==========================================================================
+        function initModalAnswersGrid(totalQ) {
+            const tbody = document.getElementById("new-exam-answers-tbody");
+            if (!tbody) return;
+            tbody.innerHTML = "";
+
+            for (let i = 1; i <= totalQ; i++) {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td style="font-weight: 800; color: var(--text-primary);">問 ${i}</td>
+                    <td>
+                        <select class="flora-select modal-ans-select" data-q="${i}" style="font-weight: 800; padding: 0.35rem 0.6rem; width: 90px; text-align: center;">
+                            <option value="1" ${i === 1 ? 'selected' : ''}>① (1)</option>
+                            <option value="2">② (2)</option>
+                            <option value="3">③ (3)</option>
+                            <option value="4">④ (4)</option>
+                            <option value="5">⑤ (5)</option>
+                            <option value="6">⑥ (6)</option>
+                            <option value="7">⑦ (7)</option>
+                            <option value="8">⑧ (8)</option>
+                            <option value="9">⑨ (9)</option>
+                        </select>
+                    </td>
+                    <td>
+                        <input type="number" class="flora-input modal-points-input" data-q="${i}" value="3" min="1" max="20" style="width: 75px; text-align: center; padding: 0.35rem;">
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            }
+            updateModalTotalPoints();
+        }
+
+        function updateModalTotalPoints() {
+            const inputs = document.querySelectorAll(".modal-points-input");
+            let sum = 0;
+            inputs.forEach(inp => { sum += parseInt(inp.value, 10) || 0; });
+            const display = document.getElementById("new-exam-total-points-display");
+            if (display) display.textContent = sum;
+        }
+
+        // 正解キーの一括貼り付け解析
+        function parseQuickKeys(text) {
+            const selects = document.querySelectorAll(".modal-ans-select");
+            if (!text.trim() || selects.length === 0) return;
+
+            // パターン1: "1:3 2:1 3:4" または "1-3, 2-1"
+            const mapPairs = {};
+            const pairMatches = text.matchAll(/(\d+)[:：\-_\s](\d+)/g);
+            for (const m of pairMatches) {
+                mapPairs[parseInt(m[1], 10)] = parseInt(m[2], 10);
+            }
+
+            if (Object.keys(mapPairs).length > 0) {
+                selects.forEach(sel => {
+                    const qNum = parseInt(sel.dataset.q, 10);
+                    if (mapPairs[qNum] && mapPairs[qNum] >= 1 && mapPairs[qNum] <= 9) {
+                        sel.value = String(mapPairs[qNum]);
+                    }
+                });
+                showToast(`正解キーを一括反映しました（${Object.keys(mapPairs).length}問）`, "success");
+                return;
+            }
+
+            // パターン2: "3 1 4 2 1" のような連続数字列
+            const nums = text.match(/[1-9]/g);
+            if (nums && nums.length > 0) {
+                nums.forEach((val, idx) => {
+                    if (idx < selects.length) {
+                        selects[idx].value = val;
+                    }
+                });
+                showToast(`正解キーを一括反映しました（${nums.length}問）`, "success");
+            }
+        }
+
+        // 新規過去問の保存実行
+        async function submitCreateExam() {
+            if (!loginUid) {
+                showToast("過去問を登録するにはログインが必要です。", "error");
+                return;
+            }
+
+            const title = document.getElementById("new-exam-title")?.value.trim();
+            const subject = document.getElementById("new-exam-subject")?.value.trim();
+            const timeLimit = parseInt(document.getElementById("new-exam-time")?.value, 10) || 60;
+            const totalQ = parseInt(document.getElementById("new-exam-total-q")?.value, 10) || 30;
+
+            if (!title) { showToast("試験タイトルを入力してください。", "error"); return; }
+            if (!subject) { showToast("科目名を入力してください。", "error"); return; }
+            if (!uploadedFiles || uploadedFiles.length === 0) {
+                showToast("問題冊子ファイル（PDFまたは写真）を選択してください。", "error");
+                return;
+            }
+
+            const submitBtn = document.getElementById("btn-submit-create-exam");
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = "⏳ ファイルアップロード中...";
+            }
+
+            const examId = `user-exam-${Date.now()}`;
+
+            try {
+                let fileUrl = "";
+                let imageUrls = [];
+                let storageType = "firebase"; // or 'indexeddb'
+
+                if (modalFileType === "pdf") {
+                    const file = uploadedFiles[0] || uploadedFiles;
+                    try {
+                        // 1. Firebase Storage へアップロード試行
+                        const sRef = storageRef(storage, `users/${loginUid}/past_exams/${examId}/${file.name}`);
+                        await uploadBytes(sRef, file);
+                        fileUrl = await getDownloadURL(sRef);
+                    } catch (storageErr) {
+                        console.warn("Firebase Storage failed, falling back to IndexedDB:", storageErr);
+                        // フォールバック: IndexedDB に保存
+                        await saveDocToIndexedDB(examId, file);
+                        fileUrl = URL.createObjectURL(file);
+                        storageType = "indexeddb";
+                    }
+                } else {
+                    // 写真（複数画像）
+                    const filesArr = Array.from(uploadedFiles);
+                    try {
+                        for (let i = 0; i < filesArr.length; i++) {
+                            const file = filesArr[i];
+                            const sRef = storageRef(storage, `users/${loginUid}/past_exams/${examId}/page_${i}_${file.name}`);
+                            await uploadBytes(sRef, file);
+                            const url = await getDownloadURL(sRef);
+                            imageUrls.push(url);
+                        }
+                    } catch (storageErr) {
+                        console.warn("Firebase Storage images failed, falling back to IndexedDB:", storageErr);
+                        // フォールバック: IndexedDB
+                        const dataUrls = await Promise.all(filesArr.map(f => {
+                            return new Promise(res => {
+                                const reader = new FileReader();
+                                reader.onload = () => res(reader.result);
+                                reader.readAsDataURL(f);
+                            });
+                        }));
+                        await saveDocToIndexedDB(examId, dataUrls);
+                        imageUrls = dataUrls;
+                        storageType = "indexeddb";
+                    }
+                }
+
+                // 正解キー＆配点の収集
+                const questions = [];
+                let totalPointsSum = 0;
+                for (let i = 1; i <= totalQ; i++) {
+                    const sel = document.querySelector(`.modal-ans-select[data-q="${i}"]`);
+                    const inp = document.querySelector(`.modal-points-input[data-q="${i}"]`);
+                    const correctVal = sel ? parseInt(sel.value, 10) : 1;
+                    const ptsVal = inp ? parseInt(inp.value, 10) : 3;
+                    questions.push({
+                        markNumber: i,
+                        correct: correctVal,
+                        points: ptsVal
+                    });
+                    totalPointsSum += ptsVal;
+                }
+
+                // 過去問メタデータの生成
+                const newExamObj = {
+                    id: examId,
+                    isCustom: true,
+                    title,
+                    subject,
+                    timeLimitMinutes: timeLimit,
+                    totalQuestions: totalQ,
+                    totalPoints: totalPointsSum,
+                    fileType: modalFileType,
+                    fileUrl,
+                    imageUrls,
+                    storageType,
+                    questions,
+                    createdAt: new Date().toISOString()
+                };
+
+                // Firebase Realtime Database に保存
+                await set(ref(database, `users/${loginUid}/past_exams/${examId}`), newExamObj);
+
+                // モーダルを閉じる
+                document.getElementById("create-exam-modal")?.classList.remove("open");
+                showToast("🎉 過去問を登録しました！演習を開始します。", "success", 4000);
+
+                // 新規試験を即座にロード
+                loadExam(newExamObj);
+
+            } catch (err) {
+                console.error("Create exam error:", err);
+                showToast("過去問の登録に失敗しました: " + err.message, "error");
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = "💾 過去問を登録して演習を開始";
+                }
+            }
+        }
+
+        // 過去問削除処理
+        async function deleteCurrentExam() {
+            if (!currentExam || !currentExam.isCustom || !loginUid) return;
+            if (!confirm(`「${currentExam.title}」を完全に削除しますか？\n（この操作は取り消せません）`)) return;
+
+            try {
+                await remove(ref(database, `users/${loginUid}/past_exams/${currentExam.id}`));
+                showToast("過去問を削除しました。", "info");
+                loadExam(presetExam);
+            } catch (err) {
+                showToast("削除に失敗しました: " + err.message, "error");
+            }
+        }
+
+        // ==========================================================================
+        // 🎧 全体イベントリスナーの登録
+        // ==========================================================================
         function setupEventListeners() {
+            // 過去問セレクター切り替え
+            const examSelectEl = document.getElementById("exam-select-dropdown");
+            if (examSelectEl) {
+                examSelectEl.addEventListener("change", (e) => {
+                    const val = e.target.value;
+                    if (val === "preset-2025-kokyo-seikei") {
+                        loadExam(presetExam);
+                    } else {
+                        const found = userExams.find(it => it.id === val);
+                        if (found) loadExam(found);
+                    }
+                });
+            }
+
+            // 過去問削除ボタン
+            const delExamBtn = document.getElementById("btn-delete-current-exam");
+            if (delExamBtn) delExamBtn.addEventListener("click", deleteCurrentExam);
+
             // モード切替
             const modeTabs = document.getElementById("exam-mode-tabs");
             if (modeTabs) {
@@ -1508,17 +2736,13 @@
 
                     const secRow = document.getElementById("section-selector-row");
                     if (secRow) {
-                        secRow.style.display = currentMode === "section" ? "flex" : "none";
+                        secRow.style.display = (currentMode === "section" && !currentExam.isCustom) ? "flex" : "none";
                     }
-
-                    // タイマー切り替え
-                    if (currentMode === "mock") {
-                        timerRunning = true;
-                    }
+                    if (currentMode === "mock") timerRunning = true;
                 });
             }
 
-            // 大問フィルター切替
+            // 大問フィルター切替（プリセット時）
             const secBtns = document.getElementById("section-filter-btns");
             if (secBtns) {
                 secBtns.addEventListener("click", e => {
@@ -1527,21 +2751,13 @@
                     secBtns.querySelectorAll(".reg-subject-btn").forEach(b => b.classList.remove("active"));
                     btn.classList.add("active");
                     currentSectionFilter = btn.dataset.sec;
-                    renderExamSections();
+                    renderLeftContent();
                     renderMarksheet();
                 });
             }
 
-            // 問題クリック（選択肢選択）
+            // クリックイベント（バブル選択、誤答保存など）
             document.addEventListener("click", e => {
-                const choiceItem = e.target.closest(".exam-choice-item");
-                if (choiceItem) {
-                    const markNumber = parseInt(choiceItem.dataset.mark, 10);
-                    const choiceNum = parseInt(choiceItem.dataset.choice, 10);
-                    selectChoice(markNumber, choiceNum);
-                    return;
-                }
-
                 // マークシートバブルクリック
                 const bubble = e.target.closest(".exam-ms-bubble");
                 if (bubble) {
@@ -1549,7 +2765,7 @@
                     const choiceNum = parseInt(bubble.dataset.choice, 10);
                     selectChoice(markNumber, choiceNum);
 
-                    // 該当問題へスムーズスクロール
+                    // 該当問題へスムーズスクロール（プリセット時）
                     const targetCard = document.getElementById(`question-card-${markNumber}`);
                     if (targetCard) {
                         targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1559,7 +2775,24 @@
                     return;
                 }
 
-                // 解説開閉ボタン
+                // プリセット問題カード上の選択肢クリック
+                const choiceItem = e.target.closest(".exam-choice-item");
+                if (choiceItem) {
+                    const markNumber = parseInt(choiceItem.dataset.mark, 10);
+                    const choiceNum = parseInt(choiceItem.dataset.choice, 10);
+                    selectChoice(markNumber, choiceNum);
+                    return;
+                }
+
+                // マークシート内の「誤答ダッシュボードへ保存」ボタンクリック
+                const wrongSaveBtn = e.target.closest(".btn-save-to-wrong-book");
+                if (wrongSaveBtn && wrongSaveBtn.id !== "btn-batch-save-wrong") {
+                    const markNumber = parseInt(wrongSaveBtn.dataset.mark, 10);
+                    saveSingleMistakeToDashboard(markNumber, wrongSaveBtn);
+                    return;
+                }
+
+                // 解説開閉ボタン（プリセット時）
                 const expBtn = e.target.closest(".btn-toggle-exp");
                 if (expBtn) {
                     const markNumber = parseInt(expBtn.dataset.mark, 10);
@@ -1580,10 +2813,9 @@
                 }
             });
 
-            // 提出・採点ボタン
+            // 答案提出・採点ボタン
             const submitBtn = document.getElementById("btn-submit-exam");
             if (submitBtn) submitBtn.addEventListener("click", submitExam);
-
             const msSubmitBtn = document.getElementById("btn-ms-submit");
             if (msSubmitBtn) msSubmitBtn.addEventListener("click", submitExam);
 
@@ -1599,8 +2831,9 @@
             const timerResetBtn = document.getElementById("btn-timer-reset");
             if (timerResetBtn) {
                 timerResetBtn.addEventListener("click", () => {
-                    if (confirm("タイマーを60分にリセットしますか？")) {
-                        timerSeconds = 60 * 60;
+                    const limit = currentExam.timeLimitMinutes || 60;
+                    if (confirm(`タイマーを${limit}分にリセットしますか？`)) {
+                        timerSeconds = limit * 60;
                         updateTimerDisplay();
                     }
                 });
@@ -1613,7 +2846,7 @@
                     if (confirm("すべてのマーク解答をクリアしますか？")) {
                         userAnswers = {};
                         isGraded = false;
-                        renderExamSections();
+                        renderLeftContent();
                         renderMarksheet();
                         updateProgress();
                     }
@@ -1638,44 +2871,168 @@
                 });
             }
 
-            // モーダル閉じる
+            // 採点結果モーダル内のボタン
             const closeResultBtn = document.getElementById("btn-close-result-modal");
             if (closeResultBtn) {
                 closeResultBtn.addEventListener("click", () => {
-                    document.getElementById("exam-result-modal").classList.remove("open");
+                    document.getElementById("exam-result-modal")?.classList.remove("open");
                 });
             }
 
-            // 誤答再挑戦
             const retryWrongBtn = document.getElementById("btn-retry-wrong-exam");
             if (retryWrongBtn) {
                 retryWrongBtn.addEventListener("click", () => {
-                    document.getElementById("exam-result-modal").classList.remove("open");
-                    // 間違えた問題のみ解答をリセット
+                    document.getElementById("exam-result-modal")?.classList.remove("open");
+                    // 不正解の問題のみ回答をリセット
                     flatQuestions.forEach(q => {
-                        const card = document.getElementById(`question-card-${q.markNumber}`);
-                        if (card && card.classList.contains("status-wrong")) {
+                        if (userAnswers[q.markNumber] !== q.correct) {
                             delete userAnswers[q.markNumber];
-                            card.classList.remove("status-wrong");
-                            card.querySelectorAll(".exam-choice-item").forEach(it => {
-                                it.classList.remove("selected", "is-correct-answer", "is-wrong-selected");
-                            });
                         }
                     });
+                    isGraded = false;
                     renderMarksheet();
                     updateProgress();
                 });
             }
 
-            // AIモーダル閉じる
-            const closeAiBtn = document.getElementById("btn-close-ai-modal");
-            if (closeAiBtn) {
-                closeAiBtn.addEventListener("click", () => {
-                    document.getElementById("exam-ai-modal").classList.remove("open");
+            // 誤答一括保存ボタン
+            const batchSaveBtn = document.getElementById("btn-batch-save-wrong");
+            if (batchSaveBtn) batchSaveBtn.addEventListener("click", batchSaveWrongToDashboard);
+
+            // ======================================================================
+            // 🏛️ 新規過去問追加モーダルのイベント
+            // ======================================================================
+            const openCreateModalBtn = document.getElementById("btn-open-create-exam-modal");
+            const createModal = document.getElementById("create-exam-modal");
+            const closeCreateModalBtn = document.getElementById("btn-close-create-modal");
+            const cancelCreateModalBtn = document.getElementById("btn-cancel-create-modal");
+
+            if (openCreateModalBtn && createModal) {
+                openCreateModalBtn.addEventListener("click", () => {
+                    createModal.classList.add("open");
                 });
             }
 
-            // AIプロンプト送信
+            const closeModalFunc = () => {
+                if (createModal) createModal.classList.remove("open");
+            };
+            if (closeCreateModalBtn) closeCreateModalBtn.addEventListener("click", closeModalFunc);
+            if (cancelCreateModalBtn) cancelCreateModalBtn.addEventListener("click", closeModalFunc);
+
+            // 問題数変更で正解テーブルを再描画
+            const totalQInput = document.getElementById("new-exam-total-q");
+            if (totalQInput) {
+                totalQInput.addEventListener("input", (e) => {
+                    const count = Math.min(100, Math.max(1, parseInt(e.target.value, 10) || 1));
+                    initModalAnswersGrid(count);
+                });
+            }
+
+            // 配点変更時の合計再計算
+            const answersTbody = document.getElementById("new-exam-answers-tbody");
+            if (answersTbody) {
+                answersTbody.addEventListener("input", (e) => {
+                    if (e.target.classList.contains("modal-points-input")) {
+                        updateModalTotalPoints();
+                    }
+                });
+            }
+
+            // 正解一括貼り付けボタン
+            const applyQuickKeysBtn = document.getElementById("btn-apply-quick-keys");
+            const quickKeysInput = document.getElementById("new-exam-quick-keys-input");
+            if (applyQuickKeysBtn && quickKeysInput) {
+                applyQuickKeysBtn.addEventListener("click", () => {
+                    parseQuickKeys(quickKeysInput.value);
+                });
+                quickKeysInput.addEventListener("keydown", (e) => {
+                    if (e.key === "Enter") parseQuickKeys(quickKeysInput.value);
+                });
+            }
+
+            // ファイルタイプ切り替え（PDF / 写真）
+            document.querySelectorAll("input[name='new-exam-file-type']").forEach(radio => {
+                radio.addEventListener("change", (e) => {
+                    modalFileType = e.target.value;
+                    const fileInput = document.getElementById("new-exam-file-input");
+                    const label = document.getElementById("dropzone-label");
+                    const sublabel = document.getElementById("dropzone-sublabel");
+                    if (modalFileType === "pdf") {
+                        if (fileInput) { fileInput.accept = "application/pdf"; fileInput.multiple = false; }
+                        if (label) label.textContent = "PDFファイルをここにドラッグ＆ドロップ、または選択";
+                        if (sublabel) sublabel.textContent = "対応形式: .pdf（1ファイル）";
+                    } else {
+                        if (fileInput) { fileInput.accept = "image/*"; fileInput.multiple = true; }
+                        if (label) label.textContent = "写真・画像ファイルをここにドラッグ＆ドロップ、または選択";
+                        if (sublabel) sublabel.textContent = "対応形式: .jpg / .png / .webp（ページ順に複数選択可能）";
+                    }
+                });
+            });
+
+            // ファイルドラッグ＆ドロップ / クリック選択
+            const dropzone = document.getElementById("new-exam-dropzone");
+            const fileInput = document.getElementById("new-exam-file-input");
+            const fileStatus = document.getElementById("new-exam-file-status");
+
+            if (dropzone && fileInput) {
+                dropzone.addEventListener("click", () => fileInput.click());
+
+                dropzone.addEventListener("dragover", e => {
+                    e.preventDefault();
+                    dropzone.style.borderColor = "var(--brand-primary)";
+                    dropzone.style.background = "var(--brand-light)";
+                });
+                dropzone.addEventListener("dragleave", e => {
+                    e.preventDefault();
+                    dropzone.style.borderColor = "var(--brand-border)";
+                    dropzone.style.background = "var(--bg-subtle)";
+                });
+                dropzone.addEventListener("drop", e => {
+                    e.preventDefault();
+                    dropzone.style.borderColor = "var(--brand-border)";
+                    dropzone.style.background = "var(--bg-subtle)";
+                    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                        handleSelectedFiles(e.dataTransfer.files);
+                    }
+                });
+
+                fileInput.addEventListener("change", e => {
+                    if (e.target.files && e.target.files.length > 0) {
+                        handleSelectedFiles(e.target.files);
+                    }
+                });
+            }
+
+            function handleSelectedFiles(files) {
+                uploadedFiles = files;
+                if (fileStatus) {
+                    fileStatus.style.display = "block";
+                    if (files.length === 1) {
+                        const szMb = (files[0].size / (1024 * 1024)).toFixed(2);
+                        fileStatus.textContent = `✓ 選択中: ${files[0].name} (${szMb} MB)`;
+                    } else {
+                        let totalSize = 0;
+                        Array.from(files).forEach(f => totalSize += f.size);
+                        const szMb = (totalSize / (1024 * 1024)).toFixed(2);
+                        fileStatus.textContent = `✓ 選択中: 合計 ${files.length} 枚の画像 (${szMb} MB)`;
+                    }
+                }
+            }
+
+            // 新規過去問保存ボタン
+            const submitCreateBtn = document.getElementById("btn-submit-create-exam");
+            if (submitCreateBtn) submitCreateBtn.addEventListener("click", submitCreateExam);
+
+            // ======================================================================
+            // 🤖 AI質問モーダル
+            // ======================================================================
+            const closeAiBtn = document.getElementById("btn-close-ai-modal");
+            if (closeAiBtn) {
+                closeAiBtn.addEventListener("click", () => {
+                    document.getElementById("exam-ai-modal")?.classList.remove("open");
+                });
+            }
+
             const sendAiBtn = document.getElementById("btn-send-ai-prompt");
             const aiInput = document.getElementById("ai-user-prompt-input");
             if (sendAiBtn && aiInput) {
@@ -1707,9 +3064,9 @@
             if (chatBody) {
                 chatBody.innerHTML = `
                     <div class="exam-ai-chat-bubble assistant">
-                        <b>【${q.qNumber}の要点】</b><br>
+                        <b>【${q.qNumber}】</b><br>
                         ${q.content}<br><br>
-                        💡 <b>公式解説：</b><br>
+                        💡 <b>公式解説・正解：</b><br>
                         ${q.explanation}<br><br>
                         この問題に関する疑問や、「なぜこの選択肢は違うのか？」「関連する用語を整理してほしい」など、何でも質問してください！
                     </div>
@@ -1724,36 +3081,33 @@
             const chatBody = document.getElementById("exam-ai-chat-body");
             if (!chatBody || !activeAiQuestion) return;
 
-            // ユーザーメッセージ追加
             const userBubble = document.createElement("div");
             userBubble.className = "exam-ai-chat-bubble user";
             userBubble.textContent = promptText;
             chatBody.appendChild(userBubble);
 
-            // ローディングメッセージ
             const aiBubble = document.createElement("div");
             aiBubble.className = "exam-ai-chat-bubble assistant";
             aiBubble.innerHTML = "Thinking... 思考中...";
             chatBody.appendChild(aiBubble);
             chatBody.scrollTop = chatBody.scrollHeight;
 
-            const systemPrompt = `あなたは共通テスト「公共、政治・経済」のプロフェッショナル指導者です。
+            const systemPrompt = `あなたは共通テスト・大学受験の専門指導者です。
 高校生・受験生に向けて、問題の背景知識、選択肢の正誤の根拠、解法の急所をわかりやすく論理的に解説してください。
 
 【現在の対象問題】
+科目: ${currentExam.subject || '過去問'}
+試験: ${currentExam.title}
 問題: ${activeAiQuestion.qNumber} (解答番号: ${activeAiQuestion.markNumber})
 配点: ${activeAiQuestion.points}点
 問題文: ${activeAiQuestion.content}
-公式解説: ${activeAiQuestion.explanation}`;
+正解・解説: ${activeAiQuestion.explanation}`;
 
             try {
-                const response = await requestUniversalAICompletion({
-                    messages: [
-                        { role: "system", content: systemPrompt },
-                        { role: "user", content: promptText }
-                    ],
-                    temperature: 0.5
-                });
+                const response = await callGeminiChat(
+                    [{ role: "user", parts: [{ text: promptText }] }],
+                    systemPrompt
+                );
                 aiBubble.innerHTML = response.replace(/\n/g, "<br>");
             } catch (err) {
                 console.warn("AI response error:", err);
