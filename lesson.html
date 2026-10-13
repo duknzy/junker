@@ -83,6 +83,322 @@
         .badge-style-socratic { background: var(--subj-japanese-bg); border: 1px solid var(--subj-japanese-border); color: var(--subj-japanese); }
         .badge-style-standard { background: var(--subj-physics-bg); border: 1px solid var(--subj-physics-border); color: var(--subj-physics); }
 
+        /* 🧪 化学基礎・完全制覇マスターマップ (全10講統合ビュー) */
+        .chem-map-card {
+            background: var(--bg-surface, #111116);
+            border: 1px solid var(--border-color, #272732);
+            border-radius: var(--radius-lg, 16px);
+            padding: 1.2rem 1.35rem;
+            margin-bottom: 1.2rem;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.22);
+            position: relative;
+            overflow: hidden;
+        }
+        body.has-custom-wallpaper .chem-map-card {
+            background: rgba(17, 17, 22, 0.85) !important;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-color: rgba(255, 255, 255, 0.1) !important;
+        }
+        body.has-custom-wallpaper .chem-unit-section {
+            background: rgba(0, 0, 0, 0.3) !important;
+        }
+        body.has-custom-wallpaper .chem-chapter-card {
+            background: rgba(22, 22, 29, 0.8) !important;
+        }
+        .chem-map-card::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #059669 0%, #10b981 50%, #06b6d4 100%);
+        }
+        .chem-map-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 0.9rem;
+        }
+        .chem-map-title-row {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            margin-bottom: 0.3rem;
+            flex-wrap: wrap;
+        }
+        .chem-map-badge {
+            font-size: 0.72rem;
+            font-weight: 800;
+            color: #10b981;
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid rgba(16, 185, 129, 0.35);
+            border-radius: var(--radius-sm, 6px);
+            padding: 0.2rem 0.55rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .chem-map-title {
+            font-family: var(--font-heading, inherit);
+            font-size: 1.12rem;
+            font-weight: 800;
+            color: var(--text-primary, #fff);
+            margin: 0;
+            letter-spacing: -0.01em;
+        }
+        .chem-map-sub {
+            font-size: 0.76rem;
+            color: var(--text-secondary, #94a3b8);
+            margin: 0;
+            line-height: 1.45;
+        }
+        .chem-map-meta {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 0.45rem;
+        }
+        @media (max-width: 768px) {
+            .chem-map-meta { align-items: flex-start; }
+        }
+        .chem-map-counts {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.76rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .chem-pill {
+            padding: 0.18rem 0.55rem;
+            border-radius: 999px;
+            font-size: 0.71rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        .chem-pill.done {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.35);
+        }
+        .chem-pill.teaching {
+            background: rgba(6, 182, 212, 0.15);
+            color: #06b6d4;
+            border: 1px solid rgba(6, 182, 212, 0.35);
+            animation: chemPillGlow 2.5s infinite ease-in-out;
+        }
+        @keyframes chemPillGlow {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.75; }
+        }
+        .chem-pill.locked {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-muted, #64748b);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .chem-map-progress-outer {
+            width: 100%;
+            height: 7px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 999px;
+            overflow: hidden;
+            margin-bottom: 1.15rem;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+        .chem-map-progress-inner {
+            height: 100%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #059669, #10b981, #06b6d4);
+            transition: width 0.4s ease;
+        }
+        .chem-units-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+        }
+        .chem-unit-section {
+            background: rgba(0, 0, 0, 0.16);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: var(--radius-md, 12px);
+            padding: 0.85rem 1rem;
+        }
+        .chem-unit-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.65rem;
+            padding-bottom: 0.4rem;
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+            flex-wrap: wrap;
+            gap: 0.4rem;
+        }
+        .chem-unit-title {
+            font-size: 0.83rem;
+            font-weight: 800;
+            color: var(--text-bright, #f1f5f9);
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+        }
+        .chem-unit-summary {
+            font-size: 0.72rem;
+            color: var(--text-muted, #94a3b8);
+            font-weight: 600;
+        }
+        .chem-chapters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 0.65rem;
+        }
+        .chem-chapter-card {
+            background: var(--bg-surface-raised, #16161d);
+            border: 1px solid var(--border-color, #272732);
+            border-radius: 10px;
+            padding: 0.75rem 0.85rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 0.5rem;
+            transition: all 0.18s ease;
+            cursor: pointer;
+            position: relative;
+            user-select: none;
+        }
+        .chem-chapter-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+            border-color: var(--brand-primary, #059669);
+        }
+        .chem-chapter-card.is-done {
+            background: rgba(16, 185, 129, 0.06);
+            border-color: rgba(16, 185, 129, 0.35);
+        }
+        .chem-chapter-card.is-done:hover {
+            border-color: #10b981;
+            background: rgba(16, 185, 129, 0.1);
+        }
+        .chem-chapter-card.is-teaching {
+            background: rgba(6, 182, 212, 0.08);
+            border-color: #06b6d4;
+            box-shadow: 0 0 14px rgba(6, 182, 212, 0.2);
+        }
+        .chem-chapter-card.is-teaching:hover {
+            border-color: #38bdf8;
+            background: rgba(6, 182, 212, 0.14);
+        }
+        .chem-chapter-card.is-locked {
+            background: rgba(255, 255, 255, 0.02);
+            border-style: dashed;
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+        .chem-chapter-card.is-locked:hover {
+            border-color: rgba(16, 185, 129, 0.6);
+            border-style: solid;
+            background: rgba(16, 185, 129, 0.04);
+        }
+        .chem-chapter-card-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.4rem;
+        }
+        .chem-chapter-badge {
+            font-size: 0.7rem;
+            font-weight: 800;
+            padding: 0.15rem 0.45rem;
+            border-radius: 5px;
+            color: var(--text-secondary, #94a3b8);
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .chem-chapter-card.is-done .chem-chapter-badge {
+            color: #34d399;
+            background: rgba(16, 185, 129, 0.15);
+        }
+        .chem-chapter-card.is-teaching .chem-chapter-badge {
+            color: #38bdf8;
+            background: rgba(6, 182, 212, 0.18);
+        }
+        .chem-status-tag {
+            font-size: 0.68rem;
+            font-weight: 700;
+            padding: 0.15rem 0.45rem;
+            border-radius: 5px;
+        }
+        .chem-chapter-card.is-done .chem-status-tag {
+            color: #34d399;
+            background: rgba(16, 185, 129, 0.12);
+        }
+        .chem-chapter-card.is-teaching .chem-status-tag {
+            color: #38bdf8;
+            background: rgba(6, 182, 212, 0.15);
+        }
+        .chem-chapter-card.is-locked .chem-status-tag {
+            color: var(--text-muted, #64748b);
+            background: rgba(255, 255, 255, 0.04);
+        }
+        .chem-chapter-card-title {
+            font-size: 0.83rem;
+            font-weight: 700;
+            color: var(--text-primary, #fff);
+            line-height: 1.35;
+            margin: 0.12rem 0 0.08rem;
+        }
+        .chem-chapter-card-desc {
+            font-size: 0.7rem;
+            color: var(--text-secondary, #94a3b8);
+            line-height: 1.35;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .chem-chapter-card-bottom {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.7rem;
+            font-weight: 700;
+            margin-top: 0.15rem;
+            padding-top: 0.35rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .chem-card-action-hint {
+            color: var(--brand-primary, #10b981);
+            display: flex;
+            align-items: center;
+            gap: 0.2rem;
+            font-size: 0.69rem;
+        }
+        .chem-chapter-card.is-teaching .chem-card-action-hint {
+            color: #38bdf8;
+        }
+        .chem-chapter-card.is-locked .chem-card-action-hint {
+            color: var(--text-muted, #94a3b8);
+        }
+        .chem-chapter-card.is-locked:hover .chem-card-action-hint {
+            color: #10b981;
+        }
+        .chem-card-delete-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted, #64748b);
+            cursor: pointer;
+            font-size: 0.72rem;
+            padding: 0.12rem 0.3rem;
+            border-radius: 4px;
+            opacity: 0.55;
+            transition: all 0.15s ease;
+        }
+        .chem-card-delete-btn:hover {
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.12);
+            opacity: 1;
+        }
+
         /* 🪜 単元別レベルロードマップ */
         .roadmap-tile {
             margin-bottom: 0.5rem;
@@ -10739,12 +11055,34 @@ ${levels.map((l, i) => `${i + 1}. 「${l.value}」(${l.label})`).join("\n")}
                 });
             });
 
-            // 📖 公式テキストで即座に授業を開始するボタン
-            el("start-chem-textbook-btn")?.addEventListener("click", async () => {
+            // 📖 公式テキストで即座に授業を開始する共通関数
+            async function startOfficialChemLesson(chapter) {
                 if (!loginUid) {
                     showToast("授業を開始するにはログインしてください", "warning");
                     return;
                 }
+                const targetCh = (typeof chapter === "number") ? chapter : (currentSelectedChemChapter || 1);
+                const tbItem = (typeof CHEM_BASE_TEXTBOOK !== "undefined")
+                    ? (CHEM_BASE_TEXTBOOK.find(t => t.chapter === targetCh) || CHEM_BASE_TEXTBOOK[0])
+                    : null;
+                if (!tbItem) {
+                    showToast("該当の参考書データが見つかりません", "error");
+                    return;
+                }
+
+                // 既にこの講の授業が存在する場合は重複作成せず既存授業へジャンプ
+                const existingLesson = Object.values(lastLessonsSnapshot || {}).find(l => {
+                    if (!l) return false;
+                    if (l.chapter === tbItem.chapter) return true;
+                    if (l.topicKey === tbItem.topicKey && (l.subject === "化学基礎" || l.isOfficialTextbook)) return true;
+                    return false;
+                });
+                if (existingLesson) {
+                    showToast(`📖 第${tbItem.chapter}講「${tbItem.lesson_title}」を開きます`, "info", 2000);
+                    window.location.href = `lesson.html?id=${existingLesson.id}`;
+                    return;
+                }
+
                 const btn = el("start-chem-textbook-btn");
                 if (btn) {
                     btn.disabled = true;
@@ -10752,11 +11090,7 @@ ${levels.map((l, i) => `${i + 1}. 「${l.value}」(${l.label})`).join("\n")}
                 }
 
                 try {
-                    const tbItem = (typeof CHEM_BASE_TEXTBOOK !== "undefined")
-                        ? (CHEM_BASE_TEXTBOOK.find(t => t.chapter === currentSelectedChemChapter) || CHEM_BASE_TEXTBOOK[0])
-                        : null;
-                    if (!tbItem) throw new Error("該当の参考書データが見つかりません");
-
+                    showToast(`⏳ 第${tbItem.chapter}講「${tbItem.lesson_title}」の受講枠を準備中...`, "info", 3000);
                     const newId = "LESSON_" + Date.now();
                     const now = new Date().toISOString();
                     const lessonObj = {
@@ -10800,6 +11134,12 @@ ${levels.map((l, i) => `${i + 1}. 「${l.value}」(${l.label})`).join("\n")}
                         btn.textContent = "📖 この講義を公式テキストで受講開始（待ち時間0秒）";
                     }
                 }
+            }
+            window.startOfficialChemLesson = startOfficialChemLesson;
+
+            // 📖 公式テキストボタンのクリック連動
+            el("start-chem-textbook-btn")?.addEventListener("click", () => {
+                startOfficialChemLesson(currentSelectedChemChapter);
             });
 
             // 🧬 生物基礎クイック単元プリセットボタンのクリック連動
@@ -19620,130 +19960,316 @@ ${promptItems}`;
             const wrap = el("roadmap-wrap");
             const listEl = el("roadmap-list");
             const lessons = Object.values(lessonsObj || {});
-            const topics = {};
+
+            // 🧪 1. 化学基礎（CHEM_BASE_TEXTBOOK 全10講）の判定・集約
+            const chemChapterLessons = {}; // chapter (1..10) -> latest lesson
+            const chemLessonIds = new Set();
+            const chemTopicKeys = new Set();
+
+            if (typeof CHEM_BASE_TEXTBOOK !== "undefined" && Array.isArray(CHEM_BASE_TEXTBOOK)) {
+                CHEM_BASE_TEXTBOOK.forEach(t => {
+                    if (t.topicKey) chemTopicKeys.add(t.topicKey);
+                });
+
+                lessons.forEach(l => {
+                    const tb = getLessonTextbookChapterInfo(l);
+                    if (tb) {
+                        const ch = tb.chapter;
+                        if (!chemChapterLessons[ch] || new Date(l.updatedAt || l.createdAt || 0) > new Date(chemChapterLessons[ch].updatedAt || chemChapterLessons[ch].createdAt || 0)) {
+                            chemChapterLessons[ch] = l;
+                        }
+                        chemLessonIds.add(l.id);
+                        if (l.topicKey) chemTopicKeys.add(l.topicKey);
+                    }
+                });
+            }
+
+            const hasChemLessons = Object.keys(chemChapterLessons).length > 0;
+
+            // 📌 2. その他のトピック（化学基礎公式テキスト以外）を抽出
+            const otherTopics = {};
             lessons.forEach(l => {
                 if (!l.topicKey) return;
-                if (!topics[l.topicKey]) topics[l.topicKey] = [];
-                topics[l.topicKey].push(l);
+                // 化学基礎の公式テキストに属する授業・topicKeyは化学基礎マップ側で統合表示するため除外
+                if (chemTopicKeys.has(l.topicKey) || chemLessonIds.has(l.id)) return;
+                if (!otherTopics[l.topicKey]) otherTopics[l.topicKey] = [];
+                otherTopics[l.topicKey].push(l);
             });
-            const topicKeys = Object.keys(topics);
-            if (topicKeys.length === 0) {
+            const otherTopicKeys = Object.keys(otherTopics);
+
+            // 化学基礎も他のトピックもなければロードマップ全体を非表示
+            if (!hasChemLessons && otherTopicKeys.length === 0) {
                 wrap.style.display = "none";
                 listEl.innerHTML = "";
                 return;
             }
             wrap.style.display = "block";
 
-            const topicEntries = topicKeys.map(key => {
-                const group = topics[key];
-                const sample = group[0] || {};
-                const subj = sample.subject || detectLessonSubject(sample);
-                const track = getSubjectLearningTrack(subj);
-                const levels = TRACK_LEVELS[track] || TRACK_LEVELS["single"];
-                const slots = new Array(levels.length).fill(null);
+            let html = "";
 
-                group.forEach(l => {
-                    const info = getLessonTrackInfo(l);
-                    const idx = info.index;
-                    if (idx >= 0 && idx < slots.length) {
-                        if (!slots[idx] || new Date(l.updatedAt || l.createdAt || 0) > new Date(slots[idx].updatedAt || slots[idx].createdAt || 0)) {
-                            slots[idx] = l;
-                        }
+            // 🧪 化学基礎 全10講・完全制覇マスターマップの生成
+            if (hasChemLessons && typeof CHEM_BASE_TEXTBOOK !== "undefined") {
+                const totalChapters = CHEM_BASE_TEXTBOOK.length; // 10
+                let doneCount = 0;
+                let teachingCount = 0;
+
+                CHEM_BASE_TEXTBOOK.forEach(t => {
+                    const l = chemChapterLessons[t.chapter];
+                    if (l) {
+                        if (l.status === "completed") doneCount++;
+                        else teachingCount++;
                     }
                 });
+                const lockedCount = totalChapters - doneCount - teachingCount;
+                const progressPct = Math.round((doneCount / totalChapters) * 100);
 
-                const syllabus = group.find(l => l.roadmapSyllabus)?.roadmapSyllabus || null;
-                const latestUpdate = group.reduce((max, l) => Math.max(max, new Date(l.updatedAt || l.createdAt || 0).getTime()), 0);
-                return { key, subj, track, levels, slots, latestUpdate, group, syllabus };
-            }).sort((a, b) => b.latestUpdate - a.latestUpdate);
-
-            listEl.innerHTML = topicEntries.map(({ key, subj, track, levels, slots, group, syllabus }) => {
-                const count = group.length;
-                let stepsHtml = "";
-
-                if (track === "single") {
-                    // 🏛️ 1回完結型（社会全般・国語）：1つの完結スマートバッジ
-                    const s = slots[0];
-                    const isDone = s && s.status === "completed";
-                    const isTeaching = s && !isDone;
-                    let cls = "roadmap-step";
-                    let label = "🏆 完全網羅マスター";
-                    let clickAttr = "";
-
-                    if (isDone) {
-                        cls += " rm-done";
-                        label = "✓ 完全網羅（習得済）";
-                        clickAttr = `data-goto-lesson="${s.id}"`;
-                    } else if (isTeaching) {
-                        cls += " rm-teaching";
-                        label = "▶ 受講中（完全網羅）";
-                        clickAttr = `data-goto-lesson="${s.id}"`;
-                    } else if (s) {
-                        cls += " rm-done";
-                        label = "✓ 授業受講済";
-                        clickAttr = `data-goto-lesson="${s.id}"`;
-                    } else {
-                        cls += " rm-locked";
-                        label = "未受講";
+                const CHEM_UNITS = [
+                    {
+                        title: "第1編：物質の構成と粒子",
+                        summary: "純物質・状態変化・原子構造・周期表・化学結合（第1講〜第4講）",
+                        chapters: [1, 2, 3, 4]
+                    },
+                    {
+                        title: "第2編：物質量と化学反応式",
+                        summary: "mol計算・溶液濃度・量的関係・過不足計算（第5講〜第6講）",
+                        chapters: [5, 6]
+                    },
+                    {
+                        title: "第3編：酸・塩基と酸化還元",
+                        summary: "酸塩基の定義・中和滴定・酸化数・電池・グラフ読解（第7講〜第10講）",
+                        chapters: [7, 8, 9, 10]
                     }
+                ];
 
-                    stepsHtml = `
-                        <div class="${cls}" ${clickAttr} style="min-width:170px; justify-content:center; font-weight:700;">
-                            ${label}
-                        </div>
-                        <span style="font-size:0.75rem; color:var(--text-secondary); margin-left:0.4rem; font-weight:500;">
-                            （1回完結：用語・因果関係・入試頻出を一挙マスター）
-                        </span>
-                    `;
-                } else {
-                    // 🎯 2段階 or 3段階のステップ型
-                    let highestCompletedIndex = -1;
-                    slots.forEach((s, i) => { if (s && s.status === "completed") highestCompletedIndex = i; });
-                    const nextIndex = highestCompletedIndex + 1;
+                const unitsHtml = CHEM_UNITS.map(unit => {
+                    const cardsHtml = unit.chapters.map(ch => {
+                        const tbItem = CHEM_BASE_TEXTBOOK.find(t => t.chapter === ch);
+                        if (!tbItem) return "";
+                        const lesson = chemChapterLessons[ch];
+                        const isDone = lesson && lesson.status === "completed";
+                        const isTeaching = lesson && !isDone;
 
-                    stepsHtml = slots.map((s, i) => {
-                        const levelShort = levels[i].short;
-                        const stepInfo = syllabus && Array.isArray(syllabus.steps) ? (syllabus.steps.find(st => st.level_name === levels[i].value) || syllabus.steps[i]) : null;
-                        const stepSubTitle = stepInfo && stepInfo.step_title ? stepInfo.step_title : "";
-                        const tooltipText = stepInfo && Array.isArray(stepInfo.focus_topics) ? `${stepInfo.step_title ? stepInfo.step_title + '：' : ''}${stepInfo.focus_topics.join('、')}` : (stepInfo?.goal || "");
+                        let stateClass = "is-locked";
+                        let statusTag = "⚪ 未受講";
+                        let actionHint = "受講を開始 ❯";
 
-                        let cls = "roadmap-step";
-                        let label = levelShort;
-                        let clickAttr = "";
-                        if (s) {
-                            if (s.status === "completed") { cls += " rm-done"; label = `✓ ${levelShort}`; }
-                            else { cls += " rm-teaching"; label = `▶ ${levelShort}`; }
-                            clickAttr = `data-goto-lesson="${s.id}"`;
-                        } else if (i === nextIndex && highestCompletedIndex >= 0) {
-                            cls += " rm-next"; label = `＋ ${levelShort}`;
-                            clickAttr = `data-start-levelup="${slots[highestCompletedIndex].id}"`;
-                        } else {
-                            cls += " rm-locked"; label = levelShort;
+                        if (isDone) {
+                            stateClass = "is-done";
+                            statusTag = "✓ 習得済";
+                            actionHint = "復習する ❯";
+                        } else if (isTeaching) {
+                            stateClass = "is-teaching";
+                            statusTag = "▶ 受講中";
+                            actionHint = "続きから再開 ❯";
                         }
-                        const subHtml = stepSubTitle ? `<span class="roadmap-step-sub" style="display:block; font-size:0.64rem; font-weight:normal; opacity:0.85; max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:2px;">${stepSubTitle}</span>` : "";
-                        return `<div class="${cls}" ${clickAttr} title="${(tooltipText || label).replace(/"/g, '&quot;')}"><span style="font-weight:700;">${label}</span>${subHtml}</div>`;
-                    }).join(`<span class="roadmap-arrow">→</span>`);
-                }
 
-                const icon = LESSON_SUBJECT_ICONS[subj] || "📎";
+                        const clickAttr = lesson
+                            ? `data-goto-lesson="${lesson.id}"`
+                            : `data-start-chem-ch="${ch}"`;
 
-                return `
-                    <div class="squircle-tile roadmap-tile">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.45rem; gap:0.5rem;">
-                            <div style="display:flex; align-items:center; gap:0.45rem; flex-wrap:wrap;">
-                                <span style="font-size:0.75rem; font-weight:700; color:var(--brand-primary); background:rgba(5, 150, 105, 0.08); padding:0.15rem 0.5rem; border-radius:var(--radius-sm); border:1px solid var(--brand-border);">${icon} ${subj}</span>
-                                <div class="roadmap-topic-title" style="margin-bottom:0;">${key.replace(/</g, "&lt;")}</div>
+                        const deleteBtn = lesson
+                            ? `<button type="button" class="chem-card-delete-btn" data-delete-chem-lesson="${lesson.id}" title="この授業（第${ch}講）を削除">🗑️</button>`
+                            : "";
+
+                        return `
+                            <div class="chem-chapter-card ${stateClass}" ${clickAttr} title="第${ch}講「${tbItem.lesson_title}」">
+                                <div>
+                                    <div class="chem-chapter-card-top">
+                                        <span class="chem-chapter-badge">第${ch}講</span>
+                                        <div style="display:flex; align-items:center; gap:0.25rem;">
+                                            <span class="chem-status-tag">${statusTag}</span>
+                                            ${deleteBtn}
+                                        </div>
+                                    </div>
+                                    <div class="chem-chapter-card-title">${tbItem.topicKey}</div>
+                                    <div class="chem-chapter-card-desc">${tbItem.lesson_title}</div>
+                                </div>
+                                <div class="chem-chapter-card-bottom">
+                                    <span style="color:var(--text-secondary); font-size:0.68rem; font-weight:600;">全${tbItem.parts ? tbItem.parts.length : 3}パート</span>
+                                    <span class="chem-card-action-hint">${actionHint}</span>
+                                </div>
                             </div>
-                            <button type="button" class="lesson-grid-card-delete" data-delete-roadmap-topic="${key.replace(/"/g, '&quot;')}" title="この単元ロードマップ（計${count}件の授業）を削除" style="padding:0.2rem 0.5rem; font-size:0.72rem; flex-shrink:0;">🗑️ 削除</button>
+                        `;
+                    }).join("");
+
+                    return `
+                        <div class="chem-unit-section">
+                            <div class="chem-unit-header">
+                                <div class="chem-unit-title">
+                                    <span>📖</span>
+                                    <span>${unit.title}</span>
+                                </div>
+                                <div class="chem-unit-summary">${unit.summary}</div>
+                            </div>
+                            <div class="chem-chapters-grid">
+                                ${cardsHtml}
+                            </div>
                         </div>
-                        <div class="roadmap-steps" style="display:flex; align-items:center; flex-wrap:wrap; gap:0.35rem;">${stepsHtml}</div>
+                    `;
+                }).join("");
+
+                html += `
+                    <div class="chem-map-card">
+                        <div class="chem-map-header">
+                            <div>
+                                <div class="chem-map-title-row">
+                                    <span class="chem-map-badge">🧪 化学基礎</span>
+                                    <h3 class="chem-map-title">完全制覇カリキュラム・全体マップ（全10講）</h3>
+                                </div>
+                                <p class="chem-map-sub">
+                                    高校化学基礎の全単元を10講に体系化。未受講の講もクリックで即座に学習スタートできます。
+                                </p>
+                            </div>
+                            <div class="chem-map-meta">
+                                <div class="chem-map-counts">
+                                    <span>習得状況: <b>${doneCount}</b> / ${totalChapters} 講 (${progressPct}%)</span>
+                                </div>
+                                <div style="display:flex; gap:0.35rem; align-items:center; flex-wrap:wrap;">
+                                    <span class="chem-pill done">✓ 習得済 <b>${doneCount}</b></span>
+                                    <span class="chem-pill teaching">▶ 受講中 <b>${teachingCount}</b></span>
+                                    <span class="chem-pill locked">⚪ 未受講 <b>${lockedCount}</b></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="chem-map-progress-outer">
+                            <div class="chem-map-progress-inner" style="width: ${progressPct}%;"></div>
+                        </div>
+                        <div class="chem-units-container">
+                            ${unitsHtml}
+                        </div>
                     </div>
                 `;
-            }).join("");
+            }
+
+            // 📌 3. その他のトピック（もしあれば）
+            if (otherTopicKeys.length > 0) {
+                if (hasChemLessons) {
+                    html += `<div style="font-family: var(--font-heading); font-weight:700; font-size:0.95rem; margin: 1.2rem 0 0.6rem; color:var(--text-secondary);">📌 その他の単元別ロードマップ</div>`;
+                }
+                const otherEntries = otherTopicKeys.map(key => {
+                    const group = otherTopics[key];
+                    const sample = group[0] || {};
+                    const subj = sample.subject || detectLessonSubject(sample);
+                    const track = getSubjectLearningTrack(subj);
+                    const levels = TRACK_LEVELS[track] || TRACK_LEVELS["single"];
+                    const slots = new Array(levels.length).fill(null);
+
+                    group.forEach(l => {
+                        const info = getLessonTrackInfo(l);
+                        const idx = info.index;
+                        if (idx >= 0 && idx < slots.length) {
+                            if (!slots[idx] || new Date(l.updatedAt || l.createdAt || 0) > new Date(slots[idx].updatedAt || slots[idx].createdAt || 0)) {
+                                slots[idx] = l;
+                            }
+                        }
+                    });
+
+                    const syllabus = group.find(l => l.roadmapSyllabus)?.roadmapSyllabus || null;
+                    const latestUpdate = group.reduce((max, l) => Math.max(max, new Date(l.updatedAt || l.createdAt || 0).getTime()), 0);
+                    return { key, subj, track, levels, slots, latestUpdate, group, syllabus };
+                }).sort((a, b) => b.latestUpdate - a.latestUpdate);
+
+                html += otherEntries.map(({ key, subj, track, levels, slots, group, syllabus }) => {
+                    const count = group.length;
+                    let stepsHtml = "";
+
+                    if (track === "single") {
+                        const s = slots[0];
+                        const isDone = s && s.status === "completed";
+                        const isTeaching = s && !isDone;
+                        let cls = "roadmap-step";
+                        let label = "🏆 完全網羅マスター";
+                        let clickAttr = "";
+
+                        if (isDone) {
+                            cls += " rm-done";
+                            label = "✓ 完全網羅（習得済）";
+                            clickAttr = `data-goto-lesson="${s.id}"`;
+                        } else if (isTeaching) {
+                            cls += " rm-teaching";
+                            label = "▶ 受講中（完全網羅）";
+                            clickAttr = `data-goto-lesson="${s.id}"`;
+                        } else if (s) {
+                            cls += " rm-done";
+                            label = "✓ 授業受講済";
+                            clickAttr = `data-goto-lesson="${s.id}"`;
+                        } else {
+                            cls += " rm-locked";
+                            label = "未受講";
+                        }
+
+                        stepsHtml = `
+                            <div class="${cls}" ${clickAttr} style="min-width:170px; justify-content:center; font-weight:700;">
+                                ${label}
+                            </div>
+                            <span style="font-size:0.75rem; color:var(--text-secondary); margin-left:0.4rem; font-weight:500;">
+                                （1回完結：用語・因果関係・入試頻出を一挙マスター）
+                            </span>
+                        `;
+                    } else {
+                        let highestCompletedIndex = -1;
+                        slots.forEach((s, i) => { if (s && s.status === "completed") highestCompletedIndex = i; });
+                        const nextIndex = highestCompletedIndex + 1;
+
+                        stepsHtml = slots.map((s, i) => {
+                            const levelShort = levels[i].short;
+                            const stepInfo = syllabus && Array.isArray(syllabus.steps) ? (syllabus.steps.find(st => st.level_name === levels[i].value) || syllabus.steps[i]) : null;
+                            const stepSubTitle = stepInfo && stepInfo.step_title ? stepInfo.step_title : "";
+                            const tooltipText = stepInfo && Array.isArray(stepInfo.focus_topics) ? `${stepInfo.step_title ? stepInfo.step_title + '：' : ''}${stepInfo.focus_topics.join('、')}` : (stepInfo?.goal || "");
+
+                            let cls = "roadmap-step";
+                            let label = levelShort;
+                            let clickAttr = "";
+                            if (s) {
+                                if (s.status === "completed") { cls += " rm-done"; label = `✓ ${levelShort}`; }
+                                else { cls += " rm-teaching"; label = `▶ ${levelShort}`; }
+                                clickAttr = `data-goto-lesson="${s.id}"`;
+                            } else if (i === nextIndex && highestCompletedIndex >= 0) {
+                                cls += " rm-next"; label = `＋ ${levelShort}`;
+                                clickAttr = `data-start-levelup="${slots[highestCompletedIndex].id}"`;
+                            } else {
+                                cls += " rm-locked"; label = levelShort;
+                            }
+                            const subHtml = stepSubTitle ? `<span class="roadmap-step-sub" style="display:block; font-size:0.64rem; font-weight:normal; opacity:0.85; max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:2px;">${stepSubTitle}</span>` : "";
+                            return `<div class="${cls}" ${clickAttr} title="${(tooltipText || label).replace(/"/g, '&quot;')}"><span style="font-weight:700;">${label}</span>${subHtml}</div>`;
+                        }).join(`<span class="roadmap-arrow">→</span>`);
+                    }
+
+                    const icon = LESSON_SUBJECT_ICONS[subj] || "📎";
+
+                    return `
+                        <div class="squircle-tile roadmap-tile">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.45rem; gap:0.5rem;">
+                                <div style="display:flex; align-items:center; gap:0.45rem; flex-wrap:wrap;">
+                                    <span style="font-size:0.75rem; font-weight:700; color:var(--brand-primary); background:rgba(5, 150, 105, 0.08); padding:0.15rem 0.5rem; border-radius:var(--radius-sm); border:1px solid var(--brand-border);">${icon} ${subj}</span>
+                                    <div class="roadmap-topic-title" style="margin-bottom:0;">${key.replace(/</g, "&lt;")}</div>
+                                </div>
+                                <button type="button" class="lesson-grid-card-delete" data-delete-roadmap-topic="${key.replace(/"/g, '&quot;')}" title="この単元ロードマップ（計${count}件の授業）を削除" style="padding:0.2rem 0.5rem; font-size:0.72rem; flex-shrink:0;">🗑️ 削除</button>
+                            </div>
+                            <div class="roadmap-steps" style="display:flex; align-items:center; flex-wrap:wrap; gap:0.35rem;">${stepsHtml}</div>
+                        </div>
+                    `;
+                }).join("");
+            }
+
+            listEl.innerHTML = html;
 
             listEl.querySelectorAll("[data-goto-lesson]").forEach(elm => {
                 elm.addEventListener("click", () => {
                     window.location.href = `lesson.html?id=${elm.getAttribute("data-goto-lesson")}`;
+                });
+            });
+            listEl.querySelectorAll("[data-start-chem-ch]").forEach(elm => {
+                elm.addEventListener("click", () => {
+                    const ch = parseInt(elm.getAttribute("data-start-chem-ch"), 10);
+                    if (ch) startOfficialChemLesson(ch);
+                });
+            });
+            listEl.querySelectorAll("[data-delete-chem-lesson]").forEach(btn => {
+                btn.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    const lessonId = btn.getAttribute("data-delete-chem-lesson");
+                    if (lessonId) deleteLesson(lessonId);
                 });
             });
             listEl.querySelectorAll("[data-start-levelup]").forEach(elm => {
