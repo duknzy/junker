@@ -32,6 +32,7 @@
 
         const tabs = [
             { file: 'lesson.html',      icon: '📖', label: '授業', match: ['lesson.html', 'index.html', ''] },
+            { file: 'timeline.html',    icon: '⏳', label: '年表', match: ['timeline.html'] },
             { file: 'insights.html',    icon: '🎴', label: '暗記', match: ['insights.html'] },
         ];
 
