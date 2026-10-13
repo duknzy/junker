@@ -103,6 +103,27 @@
             --memo-radius-card: 16px;
         }
 
+        html.dark {
+            --memo-bg: #131314;
+            --memo-card-bg: #1e1f20;
+            --memo-primary: #34d399;
+            --memo-primary-dark: #10b981;
+            --memo-primary-light: rgba(52, 211, 153, 0.12);
+            --memo-primary-border: rgba(52, 211, 153, 0.28);
+            --memo-accent: #38bdf8;
+            --memo-danger: #f87171;
+            --memo-danger-bg: rgba(248, 113, 113, 0.12);
+            --memo-warning: #fbbf24;
+            --memo-warning-bg: rgba(251, 191, 36, 0.12);
+            --memo-success: #34d399;
+            --memo-text-main: #e3e3e3;
+            --memo-text-sub: #9aa0a6;
+            --memo-text-muted: #6e7681;
+            --memo-border: rgba(255, 255, 255, 0.1);
+            --memo-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+            --memo-shadow-lg: 0 10px 25px -4px rgba(0, 0, 0, 0.5);
+        }
+
         body {
             background-color: var(--memo-bg);
             color: var(--memo-text-main);
@@ -112,14 +133,16 @@
             -webkit-user-select: none;
         }
 
-        /* 📱 アプリ専用ヘッダー */
+        /* 📱 アプリ専用ヘッダー（超軽量GPU分離・高速化） */
         .memo-app-header {
             position: sticky;
             top: 0;
             z-index: 50;
             background: rgba(255, 255, 255, 0.94);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            transform: translateZ(0);
+            will-change: transform;
             border-bottom: 1px solid var(--memo-border);
             padding: 0.65rem 1rem;
             display: flex;
@@ -771,8 +794,9 @@
             justify-content: space-between;
             gap: 0.85rem;
             background: rgba(10, 16, 30, 0.75);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            transform: translateZ(0);
             border-bottom: 1px solid rgba(255, 255, 255, 0.08);
             z-index: 10;
         }
@@ -1548,31 +1572,44 @@
             color: #FFFFFF;
             display: none;
             flex-direction: column;
-            justify-content: space-between;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
         .quiz-overlay.active {
             display: flex;
         }
         .quiz-body {
             flex: 1;
-            padding: 1rem 1.15rem;
+            padding: 1rem 1.15rem max(calc(env(safe-area-inset-bottom, 1rem) + 2rem), 2.75rem);
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            justify-content: flex-start;
+            max-width: 680px;
+            margin: 0 auto;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .quiz-content-wrap {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
         }
         .quiz-q-card {
             background: rgba(255, 255, 255, 0.08);
             border: 1px solid rgba(255, 255, 255, 0.15);
             border-radius: 20px;
-            padding: 1.5rem 1.2rem;
-            margin-bottom: 1.25rem;
+            padding: 1.4rem 1.2rem;
+            margin-bottom: 1.15rem;
             text-align: center;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
         }
         .quiz-q-text {
-            font-size: 1.25rem;
+            font-size: 1.22rem;
             font-weight: 800;
-            line-height: 1.45;
+            line-height: 1.5;
             color: #FFFFFF;
+            word-break: break-word;
         }
         .quiz-options-grid {
             display: flex;
@@ -1592,25 +1629,30 @@
             cursor: pointer;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
             transition: transform 0.1s, background-color 0.15s, border-color 0.15s;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+            word-break: break-word;
         }
         .quiz-opt-btn:active { transform: scale(0.98); }
         .quiz-opt-btn.correct {
-            background: #ECFDF5;
-            border-color: #10B981;
-            color: #065F46;
+            background: #ECFDF5 !important;
+            border-color: #10B981 !important;
+            color: #065F46 !important;
         }
         .quiz-opt-btn.wrong {
-            background: #FEF2F2;
-            border-color: #EF4444;
-            color: #991B1B;
+            background: #FEF2F2 !important;
+            border-color: #EF4444 !important;
+            color: #991B1B !important;
         }
         .m-quiz-feedback-box {
             margin-top: 0.85rem;
             background: #FFFFFF;
             border-radius: 14px;
-            padding: 0.95rem 1.1rem;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+            padding: 1rem 1.15rem;
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.3);
             animation: modal-pop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            color: #0F172A;
         }
         .m-quiz-feedback-box.is-correct {
             border: 2px solid #10B981;
@@ -1624,19 +1666,161 @@
             color: #FFFFFF;
             border: none;
             border-radius: 12px;
-            padding: 0.75rem 1rem;
-            font-size: 0.95rem;
+            padding: 0.8rem 1rem;
+            font-size: 0.98rem;
             font-weight: 800;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 0.4rem;
-            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35);
+            box-shadow: 0 3px 10px rgba(16, 185, 129, 0.38);
             margin-top: 0.75rem;
             touch-action: manipulation;
         }
         .m-quiz-btn-next:active { transform: scale(0.98); }
+        .m-quiz-ai-btn {
+            background: rgba(0, 243, 255, 0.12);
+            border: 1px solid rgba(0, 243, 255, 0.35);
+            color: #0284c7;
+            border-radius: 10px;
+            padding: 0.45rem 0.75rem;
+            font-size: 0.8rem;
+            font-weight: 800;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            margin-top: 0.4rem;
+            touch-action: manipulation;
+        }
+
+        /* 🏆 4択テスト完了リザルトビュー */
+        .quiz-result-wrap {
+            width: 100%;
+            padding: 0.5rem 0;
+            animation: modal-pop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .quiz-result-card {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            padding: 1.75rem 1.25rem;
+            text-align: center;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            margin-bottom: 1.25rem;
+        }
+        .quiz-result-trophy {
+            font-size: 3rem;
+            line-height: 1;
+            margin-bottom: 0.5rem;
+        }
+        .quiz-result-title {
+            font-size: 1.35rem;
+            font-weight: 900;
+            color: #FFFFFF;
+            margin-bottom: 0.25rem;
+        }
+        .quiz-result-sub {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.75);
+            margin-bottom: 1.25rem;
+        }
+        .quiz-result-score-badge {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.12);
+            border: 1.5px solid rgba(255, 255, 255, 0.2);
+            border-radius: 18px;
+            padding: 0.9rem 1.8rem;
+            margin-bottom: 1.2rem;
+        }
+        .quiz-result-pct {
+            font-size: 2.4rem;
+            font-weight: 900;
+            line-height: 1;
+            color: #34D399;
+            font-family: var(--font-mono, monospace);
+        }
+        .quiz-result-pct-lbl {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 0.25rem;
+            letter-spacing: 0.05em;
+        }
+        .quiz-result-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.65rem;
+            margin-bottom: 0.5rem;
+        }
+        .quiz-result-stat-box {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 0.65rem 0.4rem;
+        }
+        .quiz-result-stat-val {
+            font-size: 1.2rem;
+            font-weight: 800;
+            line-height: 1.2;
+        }
+        .quiz-result-stat-lbl {
+            font-size: 0.72rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: 0.15rem;
+        }
+        .quiz-result-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.65rem;
+        }
+        .quiz-result-btn-retry-failed {
+            width: 100%;
+            background: linear-gradient(135deg, #EF4444, #DC2626);
+            color: #FFFFFF;
+            border: none;
+            border-radius: 14px;
+            padding: 0.95rem 1rem;
+            font-size: 1rem;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.45rem;
+        }
+        .quiz-result-btn-retry-all {
+            width: 100%;
+            background: linear-gradient(135deg, #10B981, #059669);
+            color: #FFFFFF;
+            border: none;
+            border-radius: 14px;
+            padding: 0.95rem 1rem;
+            font-size: 1rem;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.45rem;
+        }
+        .quiz-result-btn-close {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.12);
+            color: #FFFFFF;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 14px;
+            padding: 0.85rem 1rem;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
 
         /* ➕ 新規暗記カード登録モーダル */
         .memo-modal {
@@ -1962,7 +2146,7 @@
         }
         .ct-limit-row {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(5, 1fr);
             gap: 0.35rem;
         }
         .ct-radio-pill-sm {
@@ -2635,6 +2819,448 @@
             align-items: flex-end;
             flex-shrink: 0;
         }
+
+        /* ==========================================================
+           🌙 ダークモード完全対応オーバーライド (高コントラスト・美しい夜間UI)
+           ========================================================== */
+        html.dark body {
+            background-color: var(--memo-bg) !important;
+            color: var(--memo-text-main);
+        }
+        html.dark .memo-app-header {
+            background: rgba(19, 19, 20, 0.94);
+            border-bottom-color: var(--memo-border);
+        }
+        html.dark .memo-icon-btn {
+            background: var(--memo-card-bg);
+            border-color: var(--memo-border);
+            color: var(--memo-text-main);
+        }
+        html.dark .deck-card {
+            background: var(--memo-card-bg);
+            border-color: var(--memo-border);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+        }
+        html.dark .deck-name {
+            color: var(--memo-text-main);
+        }
+        html.dark .deck-meta {
+            color: var(--memo-text-sub);
+        }
+        html.dark .memo-search-box {
+            background: var(--memo-card-bg);
+            border-color: var(--memo-border);
+        }
+        html.dark .memo-search-input {
+            background: var(--memo-card-bg);
+            color: var(--memo-text-main);
+            border-color: var(--memo-border);
+        }
+        html.dark .memo-search-input::placeholder {
+            color: var(--memo-text-muted);
+        }
+        html.dark .memo-unit-picker-btn {
+            background: var(--memo-card-bg);
+            border-color: var(--memo-border);
+            color: var(--memo-text-main);
+        }
+        html.dark .memo-unit-chip {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--memo-border);
+            color: var(--memo-text-main);
+        }
+        html.dark .memo-status-pill {
+            background: var(--memo-card-bg);
+            border-color: var(--memo-border);
+            color: var(--memo-text-sub);
+        }
+        html.dark .memo-status-pill.active {
+            background: var(--memo-primary);
+            color: #064E3B;
+            border-color: var(--memo-primary);
+            font-weight: 800;
+        }
+        html.dark .item-card {
+            background: var(--memo-card-bg);
+            border-color: var(--memo-border);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+        }
+        html.dark .item-q {
+            color: var(--memo-text-main);
+        }
+        html.dark .item-a {
+            color: var(--memo-text-main);
+        }
+        html.dark .item-note {
+            background: rgba(52, 211, 153, 0.08);
+            border-left-color: var(--memo-primary);
+            color: var(--memo-text-sub);
+        }
+        html.dark #btn-load-more-cards,
+        html.dark #btn-load-sample-cards {
+            background: var(--memo-card-bg) !important;
+            border-color: var(--memo-border) !important;
+            color: var(--memo-text-main) !important;
+        }
+        html.dark .card-face {
+            background: var(--memo-card-bg);
+            border-color: var(--memo-border);
+            color: var(--memo-text-main);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+        html.dark .card-back {
+            background: var(--memo-card-bg);
+            border-color: var(--memo-primary);
+            color: var(--memo-text-main);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+        html.dark .card-q-text,
+        html.dark .card-a-text {
+            color: var(--memo-text-main);
+        }
+        html.dark .card-note-box {
+            background: rgba(52, 211, 153, 0.08);
+            border-color: var(--memo-primary-border);
+            color: var(--memo-text-sub);
+        }
+        html.dark .m-card-user-memo-box {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: var(--memo-border);
+            color: var(--memo-text-main);
+        }
+        html.dark #m-card-user-memo-input {
+            background: #18191a;
+            color: var(--memo-text-main);
+            border-color: var(--memo-border);
+        }
+        html.dark .memo-modal-card {
+            background: var(--memo-card-bg);
+            color: var(--memo-text-main);
+            border: 1px solid var(--memo-border);
+        }
+        html.dark .memo-modal-title {
+            color: var(--memo-text-main);
+        }
+        html.dark .memo-label {
+            color: var(--memo-text-sub);
+        }
+        html.dark .memo-input,
+        html.dark .memo-textarea,
+        html.dark .memo-select {
+            background: #18191a;
+            color: var(--memo-text-main);
+            border-color: var(--memo-border);
+        }
+        html.dark .custom-test-modal-container {
+            background: var(--memo-card-bg);
+            color: var(--memo-text-main);
+            border: 1px solid var(--memo-border);
+        }
+        html.dark .custom-test-modal-header {
+            background: var(--memo-card-bg);
+            border-bottom-color: var(--memo-border);
+        }
+        html.dark .custom-test-modal-title {
+            color: var(--memo-text-main);
+        }
+        html.dark .custom-test-tabs-bar {
+            border-bottom-color: var(--memo-border);
+        }
+        html.dark .ct-tab-btn {
+            color: var(--memo-text-sub);
+        }
+        html.dark .ct-tab-btn.active {
+            color: var(--memo-primary);
+            border-bottom-color: var(--memo-primary);
+        }
+        html.dark .custom-test-search-box {
+            background: #18191a;
+            border-color: var(--memo-border);
+        }
+        html.dark .custom-test-search-input {
+            background: transparent;
+            color: var(--memo-text-main);
+        }
+        html.dark .ct-quick-btn {
+            background: #282a2c;
+            border-color: var(--memo-border);
+            color: var(--memo-text-main);
+        }
+        html.dark .custom-test-settings-card {
+            background: #18191a;
+            border-color: var(--memo-border);
+        }
+        html.dark .ct-setting-label {
+            color: var(--memo-text-main);
+        }
+        html.dark .ct-radio-pill {
+            background: var(--memo-card-bg);
+            border-color: var(--memo-border);
+            color: var(--memo-text-main);
+        }
+        html.dark .ct-radio-pill:has(input:checked) {
+            background: rgba(52, 211, 153, 0.15);
+            border-color: var(--memo-primary);
+            color: var(--memo-primary);
+        }
+        html.dark .ct-radio-pill-sm {
+            background: var(--memo-card-bg);
+            border-color: var(--memo-border);
+            color: var(--memo-text-main);
+        }
+        html.dark .ct-radio-pill-sm:has(input:checked) {
+            background: rgba(52, 211, 153, 0.15);
+            border-color: var(--memo-primary);
+            color: var(--memo-primary);
+        }
+        html.dark .ct-lesson-row {
+            background: #18191a;
+            border-color: var(--memo-border);
+        }
+        html.dark .ct-lesson-row.selected {
+            background: rgba(52, 211, 153, 0.1);
+            border-color: rgba(52, 211, 153, 0.35);
+        }
+        html.dark .ct-lesson-name {
+            color: var(--memo-text-main);
+        }
+        html.dark .custom-test-modal-footer {
+            background: var(--memo-card-bg);
+            border-top-color: var(--memo-border);
+        }
+        html.dark .ct-footer-summary {
+            color: var(--memo-text-sub);
+        }
+        html.dark .ct-footer-summary strong {
+            color: var(--memo-primary);
+        }
+        html.dark .ct-view-cards-btn {
+            background: #282a2c;
+            border-color: var(--memo-border);
+            color: var(--memo-text-main);
+        }
+        html.dark .ct-preview-card-item {
+            background: #18191a;
+            border-color: var(--memo-border);
+            color: var(--memo-text-main);
+        }
+        html.dark .ct-preview-q {
+            color: var(--memo-text-main);
+        }
+        html.dark .ct-preview-a {
+            color: var(--memo-text-main);
+        }
+        html.dark .ct-preview-search-bar {
+            background: #18191a;
+            border-color: var(--memo-border);
+        }
+        html.dark .ct-preview-search-input {
+            background: transparent;
+            color: var(--memo-text-main);
+        }
+        html.dark .m-ai-ask-dialog {
+            background: var(--memo-card-bg);
+            color: var(--memo-text-main);
+            border: 1px solid var(--memo-border);
+        }
+        html.dark .m-ai-ask-header {
+            background: var(--memo-card-bg);
+            border-bottom-color: var(--memo-border);
+            color: var(--memo-text-main);
+        }
+        html.dark .m-ai-ask-title {
+            color: var(--memo-text-main) !important;
+        }
+        html.dark .m-ai-ask-sub {
+            color: var(--memo-text-sub) !important;
+        }
+        html.dark .m-ai-ask-footer {
+            background: var(--memo-card-bg);
+            border-top-color: var(--memo-border);
+        }
+        html.dark .m-ai-ask-input {
+            background: #18191a;
+            color: var(--memo-text-main);
+            border-color: var(--memo-border);
+        }
+        html.dark .m-ai-ask-card-box {
+            background: rgba(52, 211, 153, 0.08);
+            border-color: rgba(52, 211, 153, 0.3);
+        }
+        html.dark .red-sheet-toolbar {
+            background: rgba(19, 19, 20, 0.95);
+            border-color: var(--memo-border);
+            color: var(--memo-text-main);
+        }
+        html.dark .red-sheet-toggle-btn {
+            background: var(--memo-card-bg);
+            border-color: var(--memo-border);
+            color: var(--memo-text-main);
+        }
+        html.dark .red-sheet-answer-box.is-revealed {
+            background: rgba(52, 211, 153, 0.08);
+            border-color: rgba(52, 211, 153, 0.3);
+            color: var(--memo-text-main);
+        }
+
+        /* 🏆 4択テスト フィードバック＆リザルト画面 スタイル (Light & Dark) */
+        .m-quiz-feedback-box {
+            margin-top: 1rem;
+            padding: 0.85rem 1rem;
+            border-radius: 14px;
+            background: #F8FAFC;
+            border: 1px solid #E2E8F0;
+        }
+        .m-quiz-feedback-box.is-correct {
+            background: #F0FDF4;
+            border-color: #BBF7D0;
+        }
+        .m-quiz-feedback-box.is-wrong {
+            background: #FEF2F2;
+            border-color: #FECACA;
+        }
+        html.dark .m-quiz-feedback-box {
+            background: #18191a;
+            border-color: var(--memo-border);
+        }
+        html.dark .m-quiz-feedback-box.is-correct {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: rgba(16, 185, 129, 0.35);
+        }
+        html.dark .m-quiz-feedback-box.is-wrong {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.35);
+        }
+        .m-quiz-user-memo {
+            color: #92400E;
+            background: #FEF3C7;
+            border: 1px solid #FDE68A;
+        }
+        html.dark .m-quiz-user-memo {
+            color: #FDE68A;
+            background: rgba(245, 158, 11, 0.15);
+            border-color: rgba(245, 158, 11, 0.35);
+        }
+        .quiz-result-card {
+            background: #FFFFFF;
+            border-radius: 18px;
+            padding: 1.5rem 1rem;
+            text-align: center;
+            border: 1px solid #E2E8F0;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+            margin-bottom: 1.2rem;
+        }
+        html.dark .quiz-result-card {
+            background: #18191a;
+            border-color: var(--memo-border);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+        }
+        .quiz-result-trophy {
+            font-size: 2.8rem;
+            margin-bottom: 0.4rem;
+        }
+        .quiz-result-title {
+            font-size: 1.15rem;
+            font-weight: 900;
+            color: var(--memo-text-main);
+            margin-bottom: 0.25rem;
+        }
+        .quiz-result-sub {
+            font-size: 0.82rem;
+            color: var(--memo-text-sub);
+            margin-bottom: 1.1rem;
+        }
+        .quiz-result-score-badge {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 96px;
+            height: 96px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(6, 182, 212, 0.12));
+            border: 3px solid var(--memo-primary);
+            margin-bottom: 1.2rem;
+        }
+        .quiz-result-pct {
+            font-size: 1.65rem;
+            font-weight: 900;
+            color: var(--memo-primary);
+            line-height: 1;
+        }
+        .quiz-result-pct-lbl {
+            font-size: 0.68rem;
+            font-weight: 700;
+            color: var(--memo-text-muted);
+            margin-top: 2px;
+        }
+        .quiz-result-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.6rem;
+            margin-top: 0.5rem;
+        }
+        .quiz-result-stat-box {
+            background: #F8FAFC;
+            border: 1px solid #E2E8F0;
+            border-radius: 12px;
+            padding: 0.65rem 0.4rem;
+            text-align: center;
+        }
+        html.dark .quiz-result-stat-box {
+            background: #202124;
+            border-color: var(--memo-border);
+        }
+        .quiz-result-stat-val {
+            font-size: 1.35rem;
+            font-weight: 900;
+            line-height: 1.2;
+        }
+        .quiz-result-stat-lbl {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--memo-text-muted);
+            margin-top: 2px;
+        }
+        .quiz-result-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+        .quiz-result-btn-retry-failed,
+        .quiz-result-btn-retry-all,
+        .quiz-result-btn-close {
+            width: 100%;
+            padding: 0.85rem 1rem;
+            border-radius: 12px;
+            font-size: 0.88rem;
+            font-weight: 800;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: transform 0.12s, opacity 0.12s;
+        }
+        .quiz-result-btn-retry-failed {
+            background: linear-gradient(135deg, #EF4444, #DC2626);
+            color: #FFFFFF;
+        }
+        .quiz-result-btn-retry-all {
+            background: linear-gradient(135deg, #10B981, #059669);
+            color: #FFFFFF;
+        }
+        .quiz-result-btn-close {
+            background: #F1F5F9;
+            color: #334155;
+            border: 1px solid #CBD5E1;
+        }
+        html.dark .quiz-result-btn-close {
+            background: #282a2c;
+            color: var(--memo-text-main);
+            border-color: var(--memo-border);
+        }
     </style>
 </head>
 <body>
@@ -3064,6 +3690,10 @@
                                 <span>30問</span>
                             </label>
                             <label class="ct-radio-pill-sm">
+                                <input type="radio" name="m-custom-limit" value="50">
+                                <span>50問</span>
+                            </label>
+                            <label class="ct-radio-pill-sm">
                                 <input type="radio" name="m-custom-limit" value="all">
                                 <span>全問</span>
                             </label>
@@ -3124,23 +3754,30 @@
                 </div>
             </div>
             <div class="session-actions-cluster">
+                <button type="button" class="session-tool-btn session-sound-btn" id="quiz-btn-speak" title="問題文を音声読み上げ">🔊</button>
                 <button type="button" class="session-tool-btn" id="quiz-btn-auto" title="自動送り切替（デフォルトはOFF）" style="font-size:0.75rem; font-weight:800;">⚡ OFF</button>
                 <button type="button" class="session-tool-btn session-wp-btn" id="quiz-btn-wallpaper" title="壁紙 & 透過設定">🖼️</button>
             </div>
         </div>
 
         <div class="quiz-body">
-            <div class="quiz-q-card">
-                <div style="font-size:0.75rem; font-weight:800; color:#10B981; margin-bottom:0.35rem;" id="quiz-q-subj">教科</div>
-                <div class="quiz-q-text tex2jax_process" id="quiz-q-text">問題文</div>
+            <!-- 🎯 問題＆選択肢エリア -->
+            <div class="quiz-content-wrap" id="m-quiz-content-wrap">
+                <div class="quiz-q-card tex2jax_process">
+                    <div style="font-size:0.75rem; font-weight:800; color:#10B981; margin-bottom:0.35rem;" id="quiz-q-subj">教科</div>
+                    <div class="quiz-q-text tex2jax_process" id="quiz-q-text">問題文</div>
+                </div>
+
+                <div class="quiz-options-grid" id="quiz-options-container">
+                    <!-- JSで4つの選択肢を動的生成 -->
+                </div>
+
+                <!-- 🎯 回答後の解説＆次へボタンエリア -->
+                <div id="m-quiz-feedback-box" class="m-quiz-feedback-box" style="display:none;"></div>
             </div>
 
-            <div class="quiz-options-grid" id="quiz-options-container">
-                <!-- JSで4つの選択肢を動的生成 -->
-            </div>
-
-            <!-- 🎯 回答後の解説＆次へボタンエリア -->
-            <div id="m-quiz-feedback-box" class="m-quiz-feedback-box" style="display:none;"></div>
+            <!-- 🏆 4択テスト完了リザルトエリア -->
+            <div id="m-quiz-result-box" class="quiz-result-wrap" style="display:none;"></div>
         </div>
     </div>
 
@@ -3218,18 +3855,18 @@
                 <div style="display: flex; align-items: center; gap: 0.45rem;">
                     <span style="font-size: 1.25rem;">💬</span>
                     <div>
-                        <div style="font-weight: 800; font-size: 0.95rem; color: #0F172A;">教科書・単語 AIメンター</div>
-                        <div style="font-size: 0.68rem; color: #64748B;">質問 ➔ 暗記カードに即座に登録</div>
+                        <div style="font-weight: 800; font-size: 0.95rem; color: var(--memo-text-main);">教科書・単語 AIメンター</div>
+                        <div style="font-size: 0.68rem; color: var(--memo-text-muted);">質問 ➔ 暗記カードに即座に登録</div>
                     </div>
                 </div>
                 <div style="display: flex; align-items: center; gap: 0.4rem;">
                     <button type="button" class="rate-btn-sub" id="m-ai-ask-btn-reset" style="padding: 0.25rem 0.55rem; font-size: 0.72rem;">🔄 新規</button>
-                    <button type="button" style="background: none; border: none; font-size: 1.4rem; color: #94A3B8; cursor: pointer; padding: 0.2rem 0.4rem;" id="m-ai-ask-close-btn">✕</button>
+                    <button type="button" style="background: none; border: none; font-size: 1.4rem; color: var(--memo-text-muted); cursor: pointer; padding: 0.2rem 0.4rem;" id="m-ai-ask-close-btn">✕</button>
                 </div>
             </div>
 
             <div class="m-ai-ask-toolbar" style="display: flex; gap: 0.4rem; overflow-x: auto; padding-bottom: 0.2rem;">
-                <select id="m-ai-ask-subj-select" style="background: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 8px; padding: 0.3rem 0.5rem; font-size: 0.75rem; font-weight: 700;">
+                <select id="m-ai-ask-subj-select" style="background: var(--memo-card-bg); color: var(--memo-text-main); border: 1px solid var(--memo-border); border-radius: 8px; padding: 0.3rem 0.5rem; font-size: 0.75rem; font-weight: 700;">
                     <option value="英語">🔤 英語</option>
                     <option value="数学">📐 数学</option>
                     <option value="物理">⚡ 物理</option>
@@ -3242,13 +3879,13 @@
                     <option value="国語">📖 国語</option>
                     <option value="情報">💻 情報</option>
                 </select>
-                <select id="m-ai-ask-style-select" style="background: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 8px; padding: 0.3rem 0.5rem; font-size: 0.75rem;">
+                <select id="m-ai-ask-style-select" style="background: var(--memo-card-bg); color: var(--memo-text-main); border: 1px solid var(--memo-border); border-radius: 8px; padding: 0.3rem 0.5rem; font-size: 0.75rem;">
                     <option value="explain">💡 本質から解説</option>
                     <option value="analogy">🍎 たとえ話で</option>
                     <option value="mnemonic">🎴 語呂合わせ</option>
                     <option value="exam">🎯 入試の急所</option>
                 </select>
-                <select id="m-ai-ask-model-select" style="background: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 8px; padding: 0.3rem 0.5rem; font-size: 0.75rem; font-weight: 700; color: #047857;">
+                <select id="m-ai-ask-model-select" style="background: var(--memo-card-bg); border: 1px solid var(--memo-border); border-radius: 8px; padding: 0.3rem 0.5rem; font-size: 0.75rem; font-weight: 700; color: var(--memo-primary);">
                     <option value="gemini-3.8-flash">✨ 3.8 Flash (推奨)</option>
                     <option value="gemini-3.7-flash">⚡ 3.7 Flash</option>
                     <option value="gemini-3.6-flash">⚡ 3.6 Flash (安定)</option>
@@ -3266,7 +3903,7 @@
 
             <div class="m-ai-ask-body" id="m-ai-ask-body">
                 <div id="m-ai-ask-transcript" style="display: flex; flex-direction: column; gap: 0.75rem;">
-                    <div id="m-ai-ask-welcome" style="text-align: center; padding: 2rem 1rem; color: #64748B; font-size: 0.82rem; line-height: 1.6; background: #FFFFFF; border-radius: 12px; border: 1px dashed #CBD5E1;">
+                    <div id="m-ai-ask-welcome" style="text-align: center; padding: 2rem 1rem; color: var(--memo-text-sub); font-size: 0.82rem; line-height: 1.6; background: var(--memo-card-bg); border-radius: 12px; border: 1px dashed var(--memo-border);">
                         💡 <strong>教科書で疑問に思った単語や公式を質問！</strong><br>
                         AIが解説し、フラッシュカードの表・裏・覚え方を自動作成します。
                     </div>
@@ -5061,12 +5698,21 @@
         }
 
         // ==========================================================
-        // 🎯 4択スピードテストモード
+        // 🎯 4択スピードテストモード (ハイエンド改修版)
         // ==========================================================
         let quizQueue = [];
+        let quizOriginalPool = [];
         let quizCurrentIndex = 0;
         let quizPoolAllAnswers = [];
         let quizAnswerLocked = false;
+        let quizIsShowingResult = false;
+        let quizSessionStats = {
+            total: 0,
+            correct: 0,
+            wrong: 0,
+            wrongCards: [],
+            title: ""
+        };
         let mQuizAutoAdvance = localStorage.getItem("flora_m_quiz_auto") === "true";
         let mQuizTimer = null;
 
@@ -5085,25 +5731,89 @@
             };
         }
 
-        function startQuizMode(cards, title = "🎯 スピード4択テスト", forceShuffle = true) {
+        // 音声読み上げボタン (🔊)
+        const quizBtnSpeak = document.getElementById("quiz-btn-speak");
+        if (quizBtnSpeak) {
+            quizBtnSpeak.onclick = () => {
+                if (quizIsShowingResult || !quizQueue[quizCurrentIndex]) return;
+                const c = quizQueue[quizCurrentIndex];
+                if (!('speechSynthesis' in window)) {
+                    showToast("音声読み上げに対応していません");
+                    return;
+                }
+                if (window.speechSynthesis.speaking) {
+                    window.speechSynthesis.cancel();
+                    showToast("読み上げを停止しました");
+                    return;
+                }
+                const utter = new SpeechSynthesisUtterance(c.question);
+                utter.lang = "ja-JP";
+                utter.rate = 1.0;
+                window.speechSynthesis.speak(utter);
+                showToast("🔊 問題文を読み上げ中...");
+            };
+        }
+
+        // 安全なクイズ終了
+        function closeQuizMode() {
+            if (mQuizTimer) { clearTimeout(mQuizTimer); mQuizTimer = null; }
+            if ('speechSynthesis' in window && window.speechSynthesis.speaking) {
+                window.speechSynthesis.cancel();
+            }
+            quizAnswerLocked = false;
+            quizIsShowingResult = false;
+            document.body.classList.remove("fc-session-active");
+            const overlay = document.getElementById("quiz-overlay");
+            if (overlay) overlay.classList.remove("active");
+            renderDashboard();
+        }
+
+        // 🎯 4択テスト開始（出題枚数を100%忠実に尊重し、強制切り捨てを根絶）
+        function startQuizMode(cards, title = "🎯 スピード4択テスト", forceShuffle = true, limit = null) {
             const pool = cards && cards.length >= 4 ? cards : getAllCards();
             if (pool.length < 4) {
                 showToast("4択テストにはカードが4枚以上必要です");
                 return;
             }
-            quizQueue = forceShuffle ? shuffleArray(pool) : [...pool];
-            // 制限が指定されていなければ最大15問
-            if (quizQueue.length > 15 && (!cards || cards.length > 15)) {
-                quizQueue = quizQueue.slice(0, 15);
+            quizOriginalPool = [...pool];
+            let q = forceShuffle ? shuffleArray(pool) : [...pool];
+
+            // 🌟 枚数制限（ユーザーが明示的に指定した場合のみスライス。「全問」または指定無しの場合は全問解ける！）
+            if (limit && limit !== "all") {
+                const maxN = parseInt(limit, 10);
+                if (!isNaN(maxN) && maxN > 0 && q.length > maxN) {
+                    q = q.slice(0, maxN);
+                }
             }
+
+            quizQueue = q;
             quizPoolAllAnswers = getAllCards().map(c => c.answer).filter(a => a && a.length > 0);
             quizCurrentIndex = 0;
             quizAnswerLocked = false;
+            quizIsShowingResult = false;
             if (mQuizTimer) { clearTimeout(mQuizTimer); mQuizTimer = null; }
+
+            quizSessionStats = {
+                total: quizQueue.length,
+                correct: 0,
+                wrong: 0,
+                wrongCards: [],
+                title: title
+            };
 
             const overlay = document.getElementById("quiz-overlay");
             const titleEl = document.getElementById("quiz-header-title");
             if (titleEl) titleEl.textContent = title;
+
+            // 表示ビューのリセット
+            const contentWrap = document.getElementById("m-quiz-content-wrap");
+            const resultBox = document.getElementById("m-quiz-result-box");
+            if (contentWrap) contentWrap.style.display = "flex";
+            if (resultBox) {
+                resultBox.style.display = "none";
+                resultBox.innerHTML = "";
+            }
+
             document.body.classList.add("fc-session-active");
             if (overlay) {
                 overlay.classList.add("active");
@@ -5115,14 +5825,9 @@
         function renderNextQuizQuestion() {
             if (mQuizTimer) { clearTimeout(mQuizTimer); mQuizTimer = null; }
 
+            // 全問終了 ➔ リザルト画面を描画
             if (quizCurrentIndex >= quizQueue.length) {
-                // クイズ終了
-                playSound("fanfare");
-                document.body.classList.remove("fc-session-active");
-                const overlay = document.getElementById("quiz-overlay");
-                if (overlay) overlay.classList.remove("active");
-                showToast("🎉 4択テスト完了！進捗を記録しました");
-                renderDashboard();
+                renderQuizResultView();
                 return;
             }
 
@@ -5145,21 +5850,22 @@
             if (progressText) progressText.textContent = `${quizCurrentIndex + 1} / ${quizQueue.length}`;
             if (progressBar) progressBar.style.width = `${Math.round(((quizCurrentIndex) / quizQueue.length) * 100)}%`;
 
-            // 正解 1つ ＋ 一意なダミー 3つ の計4択を確実に生成
+            // 正解 1つ ＋ 一意なダミー 3つ の計4択を確実に生成（5択以上になるバグを完全防止）
             const correctAnswer = (card.answer || "").trim();
             const dummyAnswers = [];
 
-            // 🌟 1. AI生成された紛らわしいダミー（distractors）を最優先で採用
+            // 🌟 1. AI生成された紛らわしいダミー（distractors）を最優先で最大3個採用
             if (Array.isArray(card.distractors) && card.distractors.length > 0) {
-                card.distractors.forEach(d => {
+                for (const d of card.distractors) {
+                    if (dummyAnswers.length >= 3) break;
                     const cleanD = (d || "").trim();
                     if (cleanD && cleanD !== correctAnswer && !dummyAnswers.includes(cleanD)) {
                         dummyAnswers.push(cleanD);
                     }
-                });
+                }
             }
 
-            // 🌟 2. 3つに満たない場合、スマートフォールバック（同一単元・文字数近似・語尾一致）
+            // 🌟 2. 3つに満たない場合、スマートフォールバック（同一教科・同一単元・文字数近似・語尾一致）
             if (dummyAnswers.length < 3) {
                 const allCards = getAllCards();
                 const targetSubj = card.subject;
@@ -5191,15 +5897,18 @@
                 }
             }
             
-            // もしダミーが足りない場合のフェイルセーフ選択肢
-            const fallbackOptions = ["該当事項なし", "条件不十分", "未定義", "常に0"];
+            // 🌟 3. もしそれでもダミーが足りない場合のフェイルセーフ選択肢
+            const fallbackOptions = ["該当事項なし", "条件不十分", "未定義", "常に0", "その他"];
             while (dummyAnswers.length < 3) {
                 const cand = fallbackOptions.find(f => f !== correctAnswer && !dummyAnswers.includes(f));
                 dummyAnswers.push(cand || `選択肢 ${dummyAnswers.length + 1}`);
             }
 
-            // 4つをシャッフル
-            const options = [correctAnswer, ...dummyAnswers].sort(() => Math.random() - 0.5);
+            // 確実に最大3個に制限
+            const finalDummies = dummyAnswers.slice(0, 3);
+
+            // 4つをFisher-Yatesシャッフル
+            const options = shuffleArray([correctAnswer, ...finalDummies]);
 
             if (optionsContainer) {
                 optionsContainer.innerHTML = options.map((opt, i) => `
@@ -5214,6 +5923,14 @@
                         quizAnswerLocked = true;
                         const chosen = btn.getAttribute("data-opt-val");
                         const isCorrect = chosen === correctAnswer;
+
+                        // 統計記録
+                        if (isCorrect) {
+                            quizSessionStats.correct++;
+                        } else {
+                            quizSessionStats.wrong++;
+                            quizSessionStats.wrongCards.push(card);
+                        }
 
                         // SRS進捗の自動更新
                         saveCardSrsRating(card, isCorrect ? "good" : "again");
@@ -5236,30 +5953,63 @@
                             showToast("❌ 不正解！正解を確認しよう");
                         }
 
+                        // 自分用メモの取得
+                        let cardUserMemoText = "";
+                        try {
+                            const cardKey = typeof getMobileCardMemoKey === "function" ? getMobileCardMemoKey(card) : "";
+                            const memoEntry = rawMobileCardUserMemos[cardKey];
+                            if (memoEntry && memoEntry.memo) {
+                                cardUserMemoText = memoEntry.memo.trim();
+                            }
+                        } catch(_) {}
+
+                        const isLastQuestion = quizCurrentIndex === quizQueue.length - 1;
+
                         // フィードバックと解説、次へボタン表示
                         if (feedbackBox) {
                             feedbackBox.style.display = "block";
                             feedbackBox.className = `m-quiz-feedback-box ${isCorrect ? 'is-correct' : 'is-wrong'}`;
                             feedbackBox.innerHTML = `
-                                <div style="font-size:0.95rem; font-weight:800; color:${isCorrect ? '#059669' : '#DC2626'}; margin-bottom:0.35rem;">
-                                    ${isCorrect ? '🎉 正解！お見事！' : '❌ 不正解... 正解と解説を確認しよう'}
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem;">
+                                    <div style="font-size:0.98rem; font-weight:900; color:${isCorrect ? '#059669' : '#DC2626'};">
+                                        ${isCorrect ? '🎉 正解！お見事！' : '❌ 不正解... 正解を確認'}
+                                    </div>
+                                    <button type="button" class="m-quiz-ai-btn" id="m-quiz-btn-ai-explain" title="AIに語呂合わせや詳しい解説を聞く">
+                                        <span>🤖 AI解説</span>
+                                    </button>
                                 </div>
-                                <div style="font-size:0.86rem; color:#0F172A; line-height:1.5; margin-bottom:0.4rem;">
-                                    <strong>正解:</strong> <span style="color:#059669; font-weight:700;">${escapeHtml(correctAnswer)}</span>
+                                <div style="font-size:0.9rem; color:var(--memo-text-main); line-height:1.5; margin-bottom:0.45rem;">
+                                    <strong>正解:</strong> <span style="color:var(--memo-primary); font-weight:800;">${escapeHtml(correctAnswer)}</span>
                                 </div>
-                                ${card.note ? `<div style="font-size:0.8rem; color:#475569; line-height:1.5; border-left:3px solid #10B981; padding-left:0.5rem; margin-bottom:0.45rem;">💡 ${escapeHtml(card.note)}</div>` : ''}
+                                ${card.note ? `<div style="font-size:0.82rem; color:var(--memo-text-sub); line-height:1.5; border-left:3px solid var(--memo-primary); padding-left:0.55rem; margin-bottom:0.45rem;">💡 ${escapeHtml(card.note)}</div>` : ''}
+                                ${cardUserMemoText ? `<div class="m-quiz-user-memo" style="font-size:0.8rem; border-radius:8px; padding:0.4rem 0.6rem; margin-bottom:0.45rem;">📝 <strong>自分メモ:</strong> ${escapeHtml(cardUserMemoText)}</div>` : ''}
                                 <button type="button" class="m-quiz-btn-next" id="m-quiz-next-btn">
-                                    次の問題へ進む ➔
+                                    <span>${isLastQuestion ? '🎉 結果を見る ➔' : '次の問題へ進む ➔'}</span>
                                 </button>
                             `;
 
+                            // AI解説ボタン
+                            const btnAi = document.getElementById("m-quiz-btn-ai-explain");
+                            if (btnAi) {
+                                btnAi.onclick = () => {
+                                    explainWithAi(card);
+                                };
+                            }
+
+                            // 次へボタン
                             const nextBtn = document.getElementById("m-quiz-next-btn");
                             if (nextBtn) {
                                 nextBtn.onclick = () => {
                                     proceedMobileQuiz();
                                 };
                             }
+
                             triggerMathTypeset(feedbackBox);
+
+                            // スマホ画面で見切れないようにスムーズスクロール
+                            requestAnimationFrame(() => {
+                                feedbackBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                            });
                         }
 
                         function proceedMobileQuiz() {
@@ -5273,10 +6023,164 @@
                         }
                     };
                 });
-
-                triggerMathTypeset(optionsContainer);
             }
+
+            // 問題文および選択肢の数式レンダリング (KaTeX/MathJax) を確実に実行
+            const qCard = document.querySelector(".quiz-q-card");
+            if (qCard) triggerMathTypeset(qCard);
+            if (optionsContainer) triggerMathTypeset(optionsContainer);
         }
+
+        // 🏆 4択テスト完了リザルトビューの描画
+        function renderQuizResultView() {
+            quizIsShowingResult = true;
+            if (mQuizTimer) { clearTimeout(mQuizTimer); mQuizTimer = null; }
+            playSound("fanfare");
+
+            const contentWrap = document.getElementById("m-quiz-content-wrap");
+            const resultBox = document.getElementById("m-quiz-result-box");
+            const progressBar = document.getElementById("quiz-progress-bar");
+            const progressText = document.getElementById("quiz-progress-text");
+
+            if (progressBar) progressBar.style.width = "100%";
+            if (progressText) progressText.textContent = `${quizQueue.length} / ${quizQueue.length} 完了`;
+
+            if (contentWrap) contentWrap.style.display = "none";
+            if (!resultBox) return;
+
+            resultBox.style.display = "block";
+
+            const total = quizSessionStats.total;
+            const correct = quizSessionStats.correct;
+            const wrong = quizSessionStats.wrong;
+            const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
+
+            let praiseMsg = "ナイスファイト！復習して確実に定着させましょう🔥";
+            let trophy = "🎯";
+            if (pct === 100) {
+                praiseMsg = "完璧！全問パーフェクト制覇です！🎉";
+                trophy = "🏆";
+            } else if (pct >= 80) {
+                praiseMsg = "素晴らしい正解率！合格圏内です👏";
+                trophy = "🌟";
+            } else if (pct >= 60) {
+                praiseMsg = "よく頑張りました！間違えた問題を復習しましょう👍";
+                trophy = "✨";
+            }
+
+            resultBox.innerHTML = `
+                <div class="quiz-result-card">
+                    <div class="quiz-result-trophy">${trophy}</div>
+                    <div class="quiz-result-title">テスト完了！お疲れ様でした</div>
+                    <div class="quiz-result-sub">${escapeHtml(praiseMsg)}</div>
+
+                    <div class="quiz-result-score-badge">
+                        <div class="quiz-result-pct">${pct}%</div>
+                        <div class="quiz-result-pct-lbl">正答率</div>
+                    </div>
+
+                    <div class="quiz-result-grid">
+                        <div class="quiz-result-stat-box">
+                            <div class="quiz-result-stat-val" style="color:#60A5FA;">${total}</div>
+                            <div class="quiz-result-stat-lbl">出題数</div>
+                        </div>
+                        <div class="quiz-result-stat-box">
+                            <div class="quiz-result-stat-val" style="color:#34D399;">${correct}</div>
+                            <div class="quiz-result-stat-lbl">正解数</div>
+                        </div>
+                        <div class="quiz-result-stat-box">
+                            <div class="quiz-result-stat-val" style="color:#F87171;">${wrong}</div>
+                            <div class="quiz-result-stat-lbl">ミス</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="quiz-result-actions">
+                    ${wrong > 0 ? `
+                        <button type="button" class="quiz-result-btn-retry-failed" id="m-quiz-btn-retry-failed">
+                            <span>🔄 間違えた ${wrong} 問だけを再テスト</span>
+                        </button>
+                    ` : ''}
+                    <button type="button" class="quiz-result-btn-retry-all" id="m-quiz-btn-retry-all">
+                        <span>🔁 同じ範囲（${total}問）をもう一度全問テスト</span>
+                    </button>
+                    <button type="button" class="quiz-result-btn-close" id="m-quiz-btn-result-finish">
+                        <span>✅ 終了してダッシュボードへ戻る</span>
+                    </button>
+                </div>
+            `;
+
+            // 間違えた問題だけを再テスト
+            const btnRetryFailed = document.getElementById("m-quiz-btn-retry-failed");
+            if (btnRetryFailed) {
+                btnRetryFailed.onclick = () => {
+                    const failedCards = quizSessionStats.wrongCards;
+                    if (failedCards && failedCards.length > 0) {
+                        const uniqueFailed = Array.from(new Set(failedCards.map(c => c.id))).map(id => failedCards.find(c => c.id === id));
+                        startQuizMode(uniqueFailed, `🔄 苦手 4択再特訓 (${uniqueFailed.length}問)`, true, "all");
+                    }
+                };
+            }
+
+            // もう一度全問テスト
+            const btnRetryAll = document.getElementById("m-quiz-btn-retry-all");
+            if (btnRetryAll) {
+                btnRetryAll.onclick = () => {
+                    startQuizMode(quizOriginalPool, quizSessionStats.title, true, "all");
+                };
+            }
+
+            // 終了ボタン
+            const btnResultFinish = document.getElementById("m-quiz-btn-result-finish");
+            if (btnResultFinish) {
+                btnResultFinish.onclick = () => {
+                    closeQuizMode();
+                };
+            }
+
+            renderDashboard();
+        }
+
+        // ⌨️ キーボード操作ショートカット対応（外付けキーボード・iPad・PCテスト時の快適操作）
+        window.addEventListener("keydown", (e) => {
+            const overlay = document.getElementById("quiz-overlay");
+            if (!overlay || !overlay.classList.contains("active")) return;
+
+            // リザルト画面表示中
+            if (quizIsShowingResult) {
+                if (e.key === "Escape") {
+                    closeQuizMode();
+                }
+                return;
+            }
+
+            // Escキーでクイズ終了
+            if (e.key === "Escape") {
+                closeQuizMode();
+                return;
+            }
+
+            // 回答選択（1〜4 または A〜D）
+            if (!quizAnswerLocked) {
+                let optIndex = -1;
+                if (["1", "a", "A"].includes(e.key)) optIndex = 0;
+                else if (["2", "b", "B"].includes(e.key)) optIndex = 1;
+                else if (["3", "c", "C"].includes(e.key)) optIndex = 2;
+                else if (["4", "d", "D"].includes(e.key)) optIndex = 3;
+
+                if (optIndex >= 0) {
+                    const btns = overlay.querySelectorAll(".quiz-opt-btn");
+                    if (btns[optIndex]) btns[optIndex].click();
+                }
+            } else {
+                // 回答後: Enter または Space で「次へ進む」
+                if (["Enter", " ", "ArrowRight"].includes(e.key)) {
+                    e.preventDefault();
+                    const nextBtn = document.getElementById("m-quiz-next-btn");
+                    if (nextBtn) nextBtn.click();
+                }
+            }
+        });
 
         // ==========================================================
         // 🎯 範囲指定カスタムテスト (単元選択・条件指定) ロジック
@@ -5798,7 +6702,7 @@
             triggerMathTypeset(listEl);
         }
 
-        // カスタムテストモーダルを開く
+        // カスタムテストモーダルを開く（教科指定時はその教科の全単元を自動で初期選択）
         function openCustomTestModal(initialSubject = null) {
             loadSelectedLessons();
             switchCustomTestModalTab("settings");
@@ -5810,14 +6714,29 @@
             if (chk) {
                 chk.checked = localStorage.getItem("flora_fc_shuffle") !== "false";
             }
-            if (searchInput) {
-                if (initialSubject) {
-                    searchInput.value = initialSubject;
-                    customTestSearchQuery = initialSubject;
-                } else {
-                    searchInput.value = "";
-                    customTestSearchQuery = "";
+
+            if (initialSubject) {
+                if (searchInput) searchInput.value = initialSubject;
+                customTestSearchQuery = initialSubject;
+
+                // 🌟 指定教科のカードを含む全単元を自動で初期選択
+                const allCards = getAllCards();
+                const targetLids = [];
+                Object.entries(allLessons).forEach(([lid, l]) => {
+                    const subj = detectSubjectFromLesson(l);
+                    if (subj === initialSubject) {
+                        const st = getLessonCardStats(lid, allCards);
+                        if (st.total > 0) targetLids.push(lid);
+                    }
+                });
+                if (targetLids.length > 0) {
+                    selectedLessonFilterIds.clear();
+                    targetLids.forEach(id => selectedLessonFilterIds.add(id));
+                    saveSelectedLessons();
                 }
+            } else {
+                if (searchInput) searchInput.value = "";
+                customTestSearchQuery = "";
             }
             if (modal) modal.classList.add("active");
             renderCustomTestLessonList();
@@ -6040,7 +6959,7 @@
                     closeCustomTestModal();
 
                     if (modeVal === "quiz") {
-                        startQuizMode(items, "🎯 カスタム4択テスト", isShuffle);
+                        startQuizMode(items, "🎯 カスタム4択テスト", isShuffle, limitVal);
                     } else if (modeVal === "reverse") {
                         startSession(items, "🔄 リバース想起特訓", "reverse", isShuffle);
                     } else {
@@ -6084,7 +7003,7 @@
             };
         }
 
-        // 2. 4択テスト開始
+        // 2. 4択テスト開始（対象範囲のカードを全問解けるように"all"指定）
         const btnQuiz = document.getElementById("btn-start-quiz-mode");
         if (btnQuiz) {
             btnQuiz.onclick = () => {
@@ -6096,7 +7015,7 @@
                     return;
                 }
                 const title = currentSubjectFilter === "ALL" ? "⚡ スピード4択テスト" : `⚡ ${currentSubjectFilter} 4択テスト`;
-                startQuizMode(activeCards, title);
+                startQuizMode(activeCards, title, true, "all");
             };
         }
 
@@ -6468,9 +7387,7 @@
         const btnCloseQuiz = document.getElementById("quiz-btn-close");
         if (btnCloseQuiz) {
             btnCloseQuiz.onclick = () => {
-                document.body.classList.remove("fc-session-active");
-                const overlay = document.getElementById("quiz-overlay");
-                if (overlay) overlay.classList.remove("active");
+                closeQuizMode();
             };
         }
         const btnSessionWp = document.getElementById("session-btn-wallpaper");
@@ -7322,7 +8239,7 @@
 
                 // 本文
                 const bodyDiv = document.createElement("div");
-                bodyDiv.style.cssText = "font-size:0.86rem; line-height:1.65; color:#1E293B; word-break:break-word;";
+                bodyDiv.style.cssText = "font-size:0.86rem; line-height:1.65; color:var(--memo-text-main); word-break:break-word;";
                 bodyDiv.innerHTML = renderFormattedMarkdown(cleanAiText);
                 aiBubble.appendChild(bodyDiv);
 
@@ -7339,24 +8256,24 @@
                 });
 
                 cardBox.innerHTML = `
-                    <div style="font-size:0.75rem; font-weight:800; color:#047857; display:flex; justify-content:space-between; align-items:center;">
+                    <div style="font-size:0.75rem; font-weight:800; color:var(--memo-primary); display:flex; justify-content:space-between; align-items:center;">
                         <span>🎴 暗記カード自動抽出（編集可）</span>
-                        <span style="font-size:0.68rem; color:#059669;">SRS即時反映</span>
+                        <span style="font-size:0.68rem; color:var(--memo-primary);">SRS即時反映</span>
                     </div>
                     <div>
-                        <div style="font-size:0.68rem; font-weight:700; color:#64748B; margin-bottom:2px;">表面（単語・問い）</div>
+                        <div style="font-size:0.68rem; font-weight:700; color:var(--memo-text-muted); margin-bottom:2px;">表面（単語・問い）</div>
                         <input type="text" id="${boxId}_q" class="memo-input" style="padding:0.4rem 0.6rem; font-size:0.85rem; font-weight:800;" value="${escapeHtml(cardData.term)}">
                     </div>
                     <div>
-                        <div style="font-size:0.68rem; font-weight:700; color:#64748B; margin-bottom:2px;">裏面（コア意味）</div>
+                        <div style="font-size:0.68rem; font-weight:700; color:var(--memo-text-muted); margin-bottom:2px;">裏面（コア意味）</div>
                         <textarea id="${boxId}_a" class="memo-textarea" rows="2" style="padding:0.4rem 0.6rem; font-size:0.82rem;">${escapeHtml(cardData.definition)}</textarea>
                     </div>
                     <div>
-                        <div style="font-size:0.68rem; font-weight:700; color:#64748B; margin-bottom:2px;">✨ 補足・語呂</div>
+                        <div style="font-size:0.68rem; font-weight:700; color:var(--memo-text-muted); margin-bottom:2px;">✨ 補足・語呂</div>
                         <input type="text" id="${boxId}_note" class="memo-input" style="padding:0.35rem 0.6rem; font-size:0.78rem;" value="${escapeHtml(cardData.hint)}">
                     </div>
                     <div>
-                        <div style="font-size:0.68rem; font-weight:700; color:#64748B; margin-bottom:2px;">追加先単元</div>
+                        <div style="font-size:0.68rem; font-weight:700; color:var(--memo-text-muted); margin-bottom:2px;">追加先単元</div>
                         <select id="${boxId}_lesson" class="memo-select" style="padding:0.35rem 0.5rem; font-size:0.78rem;">
                             ${lessonOptions || `<option value="">(新規作成されます)</option>`}
                         </select>
