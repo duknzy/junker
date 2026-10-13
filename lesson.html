@@ -81,7 +81,102 @@
         .lesson-level-badge { display:inline-block; padding:0.15rem 0.5rem; border-radius:var(--radius-sm); background:var(--bg-subtle); border:1px solid var(--border-color); color:var(--text-secondary); font-size:0.72rem; font-weight:600; }
         .lesson-style-badge { display:inline-block; padding:0.15rem 0.5rem; border-radius:var(--radius-sm); font-size:0.72rem; font-weight:700; }
         .badge-style-socratic { background: var(--subj-japanese-bg); border: 1px solid var(--subj-japanese-border); color: var(--subj-japanese); }
-        .badge-style-standard { background: var(--subj-physics-bg); border: 1px solid var(--subj-physics-border); color: var(--subj-physics); }
+        /* 🏯 時代・単元別ブロック（アコーディオン・超軽量グループ化） */
+        .lesson-block-group {
+            margin-bottom: 1.25rem;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: var(--radius-lg, 16px);
+            overflow: hidden;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .lesson-block-group:hover {
+            border-color: rgba(255, 255, 255, 0.16);
+        }
+        .lesson-block-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.85rem 1.15rem;
+            background: rgba(255, 255, 255, 0.035);
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.18s ease;
+            border-bottom: 1px solid transparent;
+        }
+        .lesson-block-header:hover {
+            background: rgba(255, 255, 255, 0.07);
+        }
+        .lesson-block-header-left {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            flex-wrap: wrap;
+        }
+        .lesson-block-icon {
+            font-size: 1.15rem;
+            line-height: 1;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+        }
+        .lesson-block-title {
+            font-size: 0.95rem;
+            font-weight: 800;
+            letter-spacing: -0.01em;
+            color: var(--text-primary, #f3f4f6);
+        }
+        .lesson-block-count {
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 0.18rem 0.55rem;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-secondary, #9ca3af);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .lesson-block-header-right {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+        .lesson-block-state-pill {
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 0.2rem 0.65rem;
+            border-radius: 999px;
+            background: rgba(99, 102, 241, 0.12);
+            color: #818cf8;
+            border: 1px solid rgba(99, 102, 241, 0.28);
+            transition: all 0.2s ease;
+        }
+        .lesson-block-header:hover .lesson-block-state-pill {
+            background: rgba(99, 102, 241, 0.22);
+            border-color: rgba(99, 102, 241, 0.45);
+        }
+        .lesson-block-arrow {
+            font-size: 0.85rem;
+            color: var(--text-muted, #6b7280);
+            transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: rotate(180deg);
+        }
+        .lesson-block-group.is-collapsed .lesson-block-arrow {
+            transform: rotate(0deg);
+        }
+        .lesson-block-group.is-collapsed .lesson-block-state-pill {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-secondary, #9ca3af);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+        .lesson-block-body {
+            padding: 1rem;
+            transition: all 0.25s ease;
+        }
+        /* 超軽量化: 折りたたまれたブロックの中身はレンダリング・レイアウト計算を完全にスキップ */
+        .lesson-block-group.is-collapsed .lesson-block-body {
+            display: none !important;
+        }
+        .lesson-block-group:not(.is-collapsed) .lesson-block-header {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
 
         /* 🧪 化学基礎・完全制覇マスターマップ (全10講統合ビュー) */
         .chem-map-card {
@@ -631,12 +726,91 @@
         .lesson-subject-chip:hover { border-color: #94A3B8; color: var(--text-primary); }
         .lesson-subject-chip.active { background: var(--brand-primary); color: #fff; border-color: var(--brand-primary); }
 
-        .lesson-subject-group { margin-bottom: 1.5rem; }
+        .lesson-subject-group { margin-bottom: 2rem; }
         .lesson-subject-group-header {
-            display: flex; align-items: center; gap: 0.5rem; font-weight: 700; font-size: 0.92rem;
-            color: var(--text-primary); margin-bottom: 0.6rem; padding-left: 0.2rem;
+            display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; font-weight: 700; font-size: 0.96rem;
+            color: var(--text-primary); margin-bottom: 0.75rem; padding-left: 0.2rem; flex-wrap: wrap;
+        }
+        .lesson-subject-group-header-left {
+            display: flex; align-items: center; gap: 0.5rem;
         }
         .lesson-subject-group-count { font-size: 0.72rem; font-weight: 700; color: var(--text-secondary); background: var(--bg-subtle); padding: 0.15rem 0.55rem; border-radius: var(--radius-full); }
+        .lesson-subject-toggle-all-btn {
+            font-size: 0.72rem; font-weight: 600; color: var(--text-secondary); background: var(--bg-surface);
+            border: 1px solid var(--border-color); border-radius: var(--radius-full); padding: 0.2rem 0.6rem;
+            cursor: pointer; transition: all 0.15s ease; display: inline-flex; align-items: center; gap: 0.25rem;
+        }
+        .lesson-subject-toggle-all-btn:hover {
+            color: var(--brand-primary); border-color: var(--brand-border); background: var(--bg-subtle);
+        }
+
+        /* 📚 時代・単元ブロック（アコーディオン） */
+        .lesson-block-group {
+            margin-bottom: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            background: var(--bg-surface);
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+            transition: border-color 0.18s ease, box-shadow 0.18s ease;
+            content-visibility: auto; /* ビューポート外のレイアウト計算をスキップして爆速化 */
+            contain-intrinsic-size: 0 60px;
+        }
+        .lesson-block-group:hover {
+            border-color: var(--brand-border);
+        }
+        .lesson-block-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0.75rem 1.05rem;
+            background: var(--bg-subtle);
+            cursor: pointer; user-select: none;
+            transition: background 0.15s ease;
+        }
+        .lesson-block-header:hover {
+            background: rgba(99, 102, 241, 0.08);
+        }
+        .lesson-block-header-left {
+            display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;
+        }
+        .lesson-block-icon {
+            font-size: 1.15rem; line-height: 1;
+        }
+        .lesson-block-title {
+            font-size: 0.92rem; font-weight: 750; color: var(--text-primary);
+            display: flex; align-items: center; gap: 0.35rem;
+        }
+        .lesson-block-count {
+            font-size: 0.72rem; font-weight: 700; color: var(--text-secondary);
+            background: rgba(0, 0, 0, 0.06); padding: 0.15rem 0.55rem;
+            border-radius: var(--radius-full); border: 1px solid var(--border-color);
+        }
+        .lesson-block-header-right {
+            display: flex; align-items: center; gap: 0.6rem;
+        }
+        .lesson-block-state-pill {
+            font-size: 0.7rem; font-weight: 600; color: var(--text-secondary);
+            background: var(--bg-surface); border: 1px solid var(--border-color);
+            padding: 0.18rem 0.55rem; border-radius: var(--radius-full);
+            transition: all 0.15s ease;
+        }
+        .lesson-block-header:hover .lesson-block-state-pill {
+            color: var(--brand-primary); border-color: var(--brand-border);
+        }
+        .lesson-block-arrow {
+            font-size: 0.8rem; color: var(--text-secondary);
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-block;
+        }
+        .lesson-block-group.is-collapsed .lesson-block-arrow {
+            transform: rotate(-90deg);
+        }
+        .lesson-block-body {
+            padding: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+        .lesson-block-group.is-collapsed .lesson-block-body {
+            display: none !important;
+        }
 
         .lesson-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 1.15rem; }
         @media (max-width: 640px) {
@@ -6953,6 +7127,14 @@
                                             <option value="title_asc">🔤 授業タイトル順</option>
                                         </select>
                                     </div>
+                                    <div class="lesson-block-toggle-toolbar-group" style="display:inline-flex; align-items:center; gap:0.25rem;">
+                                        <button type="button" class="tactile-btn" id="btn-expand-all-blocks" style="font-size:0.75rem; font-weight:700; padding:0.4rem 0.7rem; height:36px; background:var(--bg-surface); color:var(--text-secondary); border:1px solid var(--border-color); border-radius:var(--radius-full); white-space:nowrap; display:inline-flex; align-items:center; gap:0.3rem; cursor:pointer;" title="すべての時代・単元ブロックを展開して中身を一覧表示">
+                                            📂 すべて展開
+                                        </button>
+                                        <button type="button" class="tactile-btn" id="btn-collapse-all-blocks" style="font-size:0.75rem; font-weight:700; padding:0.4rem 0.7rem; height:36px; background:var(--bg-surface); color:var(--text-secondary); border:1px solid var(--border-color); border-radius:var(--radius-full); white-space:nowrap; display:inline-flex; align-items:center; gap:0.3rem; cursor:pointer;" title="すべての時代・単元ブロックを折りたたんで目次表示（表示が超軽量になります）">
+                                            📁 すべて折りたたむ
+                                        </button>
+                                    </div>
                                     <button type="button" class="tactile-btn" id="btn-toolbar-culture-stream" style="font-size:0.75rem; font-weight:700; padding:0.4rem 0.85rem; height:36px; background:rgba(139, 92, 246, 0.1); color:#7c3aed; border:1px solid rgba(139, 92, 246, 0.35); border-radius:var(--radius-full); white-space:nowrap; display:inline-flex; align-items:center; gap:0.35rem; cursor:pointer;" title="全授業から文化史パートを抽出して時代順にまとめ読み">
                                         🏛️ 文化史ストリーム
                                     </button>
@@ -11844,6 +12026,217 @@ ${levels.map((l, i) => `${i + 1}. 「${l.value}」(${l.label})`).join("\n")}
             }
 
             return "その他";
+        }
+
+        // ==============================================================
+        // 📚 時代・単元ブロック自動判定システム（日本史・政経・理科等）
+        // ==============================================================
+        const LESSON_ERA_BLOCKS = {
+            "日本史": [
+                {
+                    key: "ancient",
+                    name: "古代（縄文・弥生・古墳・飛鳥・奈良・平安）",
+                    icon: "🏛️",
+                    order: 1,
+                    pattern: /旧石器|縄文|弥生|古墳|邪馬台|卑弥呼|大和|ヤマト|聖徳太子|推古|飛鳥|大化の改新|白村江|律令|天武|持統|奈良|平城京|天平|遣唐使|行基|鑑真|東大寺|国分寺|平安|平安京|桓武|嵯峨|弘法大師|空海|最澄|天台|真言|藤原|摂関|道長|頼通|国風文化|院政|白河|鳥羽|後白河|平氏|平清盛|保元|平治|源平/i
+                },
+                {
+                    key: "medieval",
+                    name: "中世（鎌倉・南北朝・室町・戦国・安土桃山）",
+                    icon: "⚔️",
+                    order: 2,
+                    pattern: /鎌倉|源頼朝|頼朝|北条|執権|御家人|御恩|奉公|承久の乱|御成敗式目|泰時|元寇|蒙古|文永|弘安|徳政令|建武の新政|後醍醐|南北朝|室町|足利|尊氏|義満|管領|守護大名|勘合貿易|日明貿易|土一揆|正長の土一揆|応仁の乱|戦国|下剋上|分国法|織田信長|信長|楽市楽座|本能寺|豊臣秀吉|秀吉|太閤検地|刀狩|朝鮮出兵|安土桃山|南蛮文化/i
+                },
+                {
+                    key: "early_modern",
+                    name: "近世（江戸時代・幕藩体制・三大改革）",
+                    icon: "🏯",
+                    order: 3,
+                    pattern: /江戸|徳川|家康|秀忠|家光|幕藩体制|大名|親藩|譜代|外様|武家諸法度|参勤交代|禁中並公家諸法度|鎖国|出島|絵踏|宗門改|島原の乱|朱印船|町人|寛永|元禄|近松門左衛門|井原西鶴|松尾芭蕉|享保|吉宗|目安箱|公事方御定書|田沼意次|田沼|寛政|松平定信|白河|化政|天保|水野忠邦|大塩平八郎|藩政改革|幕府|本百姓|水呑百姓|五人組|旗本|御家人|朱子学/i
+                },
+                {
+                    key: "late_modern",
+                    name: "近代（幕末・明治維新・帝国憲法・大正）",
+                    icon: "🌅",
+                    order: 4,
+                    pattern: /幕末|ペリー|黒船|浦賀|日米和親条約|日米修好通商条約|ハリス|井伊直弼|安政の大獄|桜田門外|尊皇|尊王|攘夷|公武合体|薩長|坂本龍馬|長州|薩摩|大政奉還|王政復古|戊辰戦争|明治|明治維新|五箇条の御誓文|版籍奉還|廃藩置県|富国強兵|殖産興業|地租改正|徴兵令|学制|文明開化|西南戦争|自由民権|板垣退助|国会開設|伊藤博文|大日本帝国憲法|帝国憲法|帝国議会|条約改正|陸奥宗光|小村寿太郎|日清戦争|下関条約|三国干渉|日露戦争|ポーツマス|韓国併合|大正|護憲運動|桂太郎|吉野作造|民本主義|政党政治|原敬|加藤高明|普通選挙法|治安維持法|関東大震災/i
+                },
+                {
+                    key: "contemporary",
+                    name: "現代（昭和・世界恐慌・戦中戦後・現代日本）",
+                    icon: "🏙️",
+                    order: 5,
+                    pattern: /昭和|世界恐慌|昭和恐慌|満州事変|満州国|国際連盟脱退|五・一五|二・二六|日中戦争|盧溝橋|国家総動員法|大政翼賛会|太平洋戦争|真珠湾|ミッドウェー|広島|長崎|ポツダム宣言|敗戦|終戦|連合国|ghq|マッカーサー|極東国際軍事裁判|財閥解体|農地改革|日本国憲法|象徴天皇|主権在民|平和憲法|冷戦|朝鮮戦争|サンフランシスコ平和条約|日米安保|高度経済成長|自民党|55年体制|日ソ共同宣言|日中共同声明|石油危機|オイルショック|バブル|平成|令和/i
+                }
+            ],
+            "政治・経済": [
+                {
+                    key: "politics_constitution",
+                    name: "現代政治・日本国憲法・統治機構",
+                    icon: "⚖️",
+                    order: 1,
+                    pattern: /民主政治|民主主義|法の支配|人権|自由権|社会権|参政権|請求権|新しい人権|日本国憲法|憲法|前文|三大原則|国民主権|平和主義|第9条|自衛隊|統治機構|三権分立|国会|衆議院|参議院|立法|内閣|行政|内閣総理大臣|裁判所|司法|違憲立法審査権|司法権|地方自治|住民自治|団体自治|直接請求権|選挙|公職選挙法|政党|与党|野党|世論|圧力団体/i
+                },
+                {
+                    key: "economy_finance",
+                    name: "現代経済・市場機構・金融・財政・景気",
+                    icon: "📈",
+                    order: 2,
+                    pattern: /経済|市場|価格|需要|供給|独占|寡占|市場の失敗|外部経済|外部不経済|公共財|企業|株式会社|コーポレートガバナンス|金融|日本銀行|日銀|中央銀行|金融政策|公開市場操作|金利|預金準備率|マネーストック|通貨|財政|一般会計|租税|税|直接税|間接税|所得税|消費税|累進課税|国債|公債|プライマリーバランス|景気|景気循環|インフレ|デフレ|スタグフレーション|gdp|国内総生産|国民所得|三面等価/i
+                },
+                {
+                    key: "international_welfare",
+                    name: "国際社会・地球環境・社会保障・現代課題",
+                    icon: "🌍",
+                    order: 3,
+                    pattern: /国際|国連|国際連合|安全保障理事会|安保理|総会|国際司法裁判所|icj|unesco|who|国際法|条約|冷戦|軍縮|核兵器|npt|地域統合|eu|asean|貿易|wto|fta|epa|為替|円高|円安|外国為替|国際収支|地球温暖化|sdgs|環境|社会保障|社会保険|公的扶助|社会福祉|公衆衛生|年金|国民皆保険|少子高齢化|合計特殊出生率|労働|労働三法|労働三権|働き方改革|非正規|雇用|格差|消費者|消費者基本法|製造物責任法|クーリングオフ/i
+                }
+            ],
+            "公共": [
+                {
+                    key: "public_society",
+                    name: "公共の扉・人間と社会・倫理思想",
+                    icon: "💡",
+                    order: 1,
+                    pattern: /公共の扉|青年期|アイデンティティ|モラトリアム|自己形成|他者|対話|批判的思考|ソクラテス|プラトン|アリストテレス|カント|功利主義|ベンサム|ミル|ロールズ|正義|自由|平等|契約説|ホッブズ|ロック|ルソー/i
+                },
+                {
+                    key: "public_system",
+                    name: "法・政治・憲法・民主主義",
+                    icon: "⚖️",
+                    order: 2,
+                    pattern: /民主|法|憲法|人権|国会|内閣|裁判所|地方自治|選挙|統治/i
+                },
+                {
+                    key: "public_economy",
+                    name: "経済・市場・グローバル社会・持続可能性",
+                    icon: "🌐",
+                    order: 3,
+                    pattern: /経済|市場|財政|金融|社会保障|国際|環境|sdgs|グローバル/i
+                }
+            ],
+            "化学基礎": [
+                {
+                    key: "chem_matter_structure",
+                    name: "物質の構成と結合（第1講〜第5講）",
+                    icon: "🧪",
+                    order: 1,
+                    pattern: /第[1-5１-５]講|物質の構成|構成粒子|純物質|混合物|同素体|同位体|元素|周期表|周期律|原子|電子配置|最外殻|価電子|イオン|イオン結合|共有結合|配位結合|金属結合|分子|極性|電気陰性度|結晶/i
+                },
+                {
+                    key: "chem_mole_reaction",
+                    name: "物質量と化学変化・酸・塩基・酸化還元（第6講〜第10講）",
+                    icon: "⚖️",
+                    order: 2,
+                    pattern: /第[6-9１-９]講|第10講|物質量|モル|mol|アボガドロ|化学反応式|モル濃度|酸|塩基|アレニウス|ブレンステッド|電離度|ph|中和|中和滴定|塩|酸化|還元|酸化数|半反応式|酸化剤|還元剤|イオン化傾向/i
+                }
+            ],
+            "物理基礎": [
+                {
+                    key: "physics_mechanics",
+                    name: "力と運動（力学）",
+                    icon: "⚡",
+                    order: 1,
+                    pattern: /速度|加速度|等加速度|v-t|自由落下|鉛直投射|水平投射|力|合成|分解|つり合い|作用反作用|摩擦|浮力|運動の法則|運動方程式|仕事|仕事率|運動エネルギー|位置エネルギー|力学的エネルギー/i
+                },
+                {
+                    key: "physics_wave_heat_em",
+                    name: "熱・波・電気とエネルギー",
+                    icon: "🌊",
+                    order: 2,
+                    pattern: /熱|比熱|熱容量|潜熱|熱機関|熱効率|波|波長|振動数|周期|波の伝播|横波|縦波|定常波|固有振動|弦|気柱|ドップラー|電気|電流|電圧|抵抗|オーム|合成抵抗|ジュール熱|電力量|交流|エネルギー/i
+                }
+            ],
+            "生物基礎": [
+                {
+                    key: "bio_cell_gene",
+                    name: "生物の特徴・細胞・遺伝子（DNA）",
+                    icon: "🧬",
+                    order: 1,
+                    pattern: /細胞|原核細胞|真核細胞|細胞小器官|葉緑体|ミトコンドリア|代謝|同化|異化|atp|光合成|呼吸|酵素|dna|rna|塩基|シャルガフ|二重らせん|複製|転写|翻訳|発現|ゲノム/i
+                },
+                {
+                    key: "bio_homeostasis_immune",
+                    name: "体内環境の維持・恒常性・免疫",
+                    icon: "🛡️",
+                    order: 2,
+                    pattern: /体液|血液|恒常性|ホメオスタシス|神経|自律神経|交感|副交感|視床下部|ホルモン|内分泌|甲状腺|副腎|すい臓|インスリン|グルカゴン|血糖|肝臓|腎臓|免疫|自然免疫|獲得免疫|体液性免疫|細胞性免疫|抗原|抗体|ワクチン/i
+                },
+                {
+                    key: "bio_ecology",
+                    name: "植生とバイオーム・生態系と保全",
+                    icon: "🌳",
+                    order: 3,
+                    pattern: /植生|階層構造|遷移|一次遷移|二次遷移|極相|クライマックス|バイオーム|森林|草原|荒原|生態系|食物連鎖|食物網|キーストーン|物質循環|炭素循環|窒素循環|環境問題/i
+                }
+            ]
+        };
+
+        function detectLessonEraBlock(lesson, subject) {
+            if (!lesson) return { key: "other", name: "📁 その他の単元・時代", icon: "📁", order: 99 };
+
+            const blocks = LESSON_ERA_BLOCKS[subject];
+            if (!blocks || blocks.length === 0) {
+                if (lesson.topic) {
+                    return { key: "topic_" + lesson.topic, name: `📖 ${lesson.topic}`, icon: "📖", order: 50 };
+                }
+                return { key: "general", name: `📚 ${subject || "講義"}の学習テーマ`, icon: "📚", order: 50 };
+            }
+
+            const partsText = Array.isArray(lesson.parts)
+                ? lesson.parts.map(p => (p.title || "") + " " + (p.summary || "")).join(" ")
+                : "";
+
+            const text = [
+                lesson.title || "",
+                lesson.topicKey || "",
+                lesson.topic || "",
+                partsText
+            ].join(" ").toLowerCase();
+
+            let bestBlock = null;
+            let maxMatches = 0;
+
+            blocks.forEach(b => {
+                const matches = text.match(new RegExp(b.pattern.source, "gi"));
+                const count = matches ? matches.length : 0;
+                const titleMatches = (lesson.title || "").match(new RegExp(b.pattern.source, "gi"));
+                const titleCount = titleMatches ? titleMatches.length * 3 : 0;
+                const totalScore = count + titleCount;
+
+                if (totalScore > maxMatches) {
+                    maxMatches = totalScore;
+                    bestBlock = b;
+                }
+            });
+
+            if (bestBlock && maxMatches > 0) {
+                return bestBlock;
+            }
+
+            return { key: "other", name: "📁 その他の単元・時代", icon: "📁", order: 99 };
+        }
+
+        function getLessonBlockCollapsedState(blockId, defaultCollapsed = false) {
+            try {
+                const stored = localStorage.getItem("flora_lesson_block_state");
+                if (stored) {
+                    const map = JSON.parse(stored);
+                    if (typeof map[blockId] === "boolean") {
+                        return map[blockId];
+                    }
+                }
+            } catch(e) {}
+            return defaultCollapsed;
+        }
+
+        function setLessonBlockCollapsedState(blockId, isCollapsed) {
+            try {
+                const stored = localStorage.getItem("flora_lesson_block_state");
+                const map = stored ? JSON.parse(stored) : {};
+                map[blockId] = isCollapsed;
+                localStorage.setItem("flora_lesson_block_state", JSON.stringify(map));
+            } catch(e) {}
         }
         let pendingLevelUp = null;
 
@@ -17488,41 +17881,174 @@ ${existingLeads}
             });
             const subjectKeys = Object.keys(groups).sort((a, b) => groups[b].length - groups[a].length);
 
-            listEl.innerHTML = subjectKeys.map(subject => `
-                <div class="lesson-subject-group" data-subject-container="${subject}">
-                    <div class="lesson-subject-group-header">
-                        <span>${LESSON_SUBJECT_ICONS[subject] || "📎"} ${subject}</span>
-                        <span class="lesson-subject-group-count">${groups[subject].length}件</span>
-                    </div>
-                    <div class="lesson-grid">
-                        ${groups[subject].map((l, idx) => renderLessonCardHtml(l, idx, groups[subject].length, subject)).join("")}
-                    </div>
-                </div>
-            `).join("");
+            // 📚 教科内でさらに時代・単元ブロック（江戸時代、幕末、中世等）ごとにグループ化＆折りたたみアコーディオン構築
+            listEl.innerHTML = subjectKeys.map(subject => {
+                const lessonsInSubject = groups[subject];
 
-            // 🖱️ カードクリック（授業受講画面へ遷移）
-                        listEl.querySelectorAll(".lesson-tab-assign-btn").forEach(btn => {
-                btn.addEventListener("click", (e) => {
-                    e.stopPropagation();
-                    const lessonId = btn.getAttribute("data-tab-assign-id");
-                    openTabAssignMenu(btn, lessonId);
+                // 時代・単元ブロックに分類
+                const eraBlockMap = new Map();
+                lessonsInSubject.forEach(l => {
+                    const blockInfo = detectLessonEraBlock(l, subject);
+                    const bKey = blockInfo.key || "other";
+                    if (!eraBlockMap.has(bKey)) {
+                        eraBlockMap.set(bKey, {
+                            info: blockInfo,
+                            lessons: []
+                        });
+                    }
+                    eraBlockMap.get(bKey).lessons.push(l);
                 });
-            });
 
-            listEl.querySelectorAll("[data-lesson-id]").forEach(card => {
-                card.addEventListener("click", (e) => {
-                    if (isDraggingLessonCard) return;
-                    if (e.target.closest("button") || e.target.closest(".lesson-drag-handle") || e.target.closest(".lesson-card-select-wrap")) return;
-                    const cardLessonId = card.getAttribute("data-lesson-id");
-                    if (isBatchLessonDeleteMode) {
-                        const willSelect = !selectedLessonDeleteIds.has(cardLessonId);
-                        toggleSelectLessonForDelete(cardLessonId, willSelect, e);
+                // ブロックの順序でソート（order 昇順）
+                const sortedEraBlocks = Array.from(eraBlockMap.values()).sort((a, b) => {
+                    const orderA = typeof a.info.order === "number" ? a.info.order : 99;
+                    const orderB = typeof b.info.order === "number" ? b.info.order : 99;
+                    return orderA - orderB;
+                });
+
+                const blocksHtml = sortedEraBlocks.map(bObj => {
+                    const block = bObj.info;
+                    const bLessons = bObj.lessons;
+                    const blockId = `${subject}_${block.key}`.replace(/[\s\(\)・]/g, '_');
+                    const isCollapsed = getLessonBlockCollapsedState(blockId, false);
+
+                    return `
+                        <div class="lesson-block-group ${isCollapsed ? "is-collapsed" : ""}" data-era-block-id="${blockId}">
+                            <div class="lesson-block-header" onclick="toggleLessonEraBlock('${blockId}')" role="button" tabindex="0" title="クリックで展開 / 折りたたみ">
+                                <div class="lesson-block-header-left">
+                                    <span class="lesson-block-icon">${block.icon || "📁"}</span>
+                                    <span class="lesson-block-title">${block.name}</span>
+                                    <span class="lesson-block-count">${bLessons.length}講</span>
+                                </div>
+                                <div class="lesson-block-header-right">
+                                    <span class="lesson-block-state-pill">${isCollapsed ? "展開する" : "折りたたむ"}</span>
+                                    <span class="lesson-block-arrow">▾</span>
+                                </div>
+                            </div>
+                            <div class="lesson-block-body" id="era-body-${blockId}">
+                                <div class="lesson-grid">
+                                    ${bLessons.map((l, idx) => renderLessonCardHtml(l, idx, bLessons.length, subject)).join("")}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join("");
+
+                return `
+                    <div class="lesson-subject-group" data-subject-container="${subject}">
+                        <div class="lesson-subject-group-header">
+                            <span>${LESSON_SUBJECT_ICONS[subject] || "📎"} ${subject}</span>
+                            <span class="lesson-subject-group-count">${lessonsInSubject.length}件</span>
+                        </div>
+                        <div class="lesson-era-blocks-container">
+                            ${blocksHtml}
+                        </div>
+                    </div>
+                `;
+            }).join("");
+
+            // ツールバーの全開閉ボタンをバインド
+            bindLessonBlockToolbarControls();
+
+            // ⚡ イベント委譲による高速クリックハンドリング（リスナー量産を防ぎDOM超軽量化）
+            if (!listEl.dataset.delegationBound) {
+                listEl.dataset.delegationBound = "true";
+
+                listEl.addEventListener("click", (e) => {
+                    // タブ割り当てボタン
+                    const tabBtn = e.target.closest(".lesson-tab-assign-btn");
+                    if (tabBtn) {
+                        e.stopPropagation();
+                        const lessonId = tabBtn.getAttribute("data-tab-assign-id");
+                        openTabAssignMenu(tabBtn, lessonId);
                         return;
                     }
-                    window.location.href = `lesson.html?id=${cardLessonId}`;
-                });
 
-                // 🖐️ HTML5 ドラッグ＆ドロップ（PC・タブレット）
+                    // 並べ替えボタン
+                    const moveBtn = e.target.closest("[data-move-lesson]");
+                    if (moveBtn) {
+                        e.stopPropagation();
+                        const id = moveBtn.getAttribute("data-move-lesson");
+                        const dir = parseInt(moveBtn.getAttribute("data-move-dir"), 10);
+                        if (id && !isNaN(dir)) {
+                            moveLessonInGroup(id, dir);
+                        }
+                        return;
+                    }
+
+                    // タイトル変更ボタン
+                    const renameBtn = e.target.closest("[data-rename-lesson-id]");
+                    if (renameBtn) {
+                        e.stopPropagation();
+                        const lessonId = renameBtn.getAttribute("data-rename-lesson-id");
+                        const lesson = (lastLessonsSnapshot || {})[lessonId];
+                        if (lesson) renameLessonById(lessonId, lesson.title);
+                        return;
+                    }
+
+                    // 教科変更ボタン
+                    const changeSubjectBtn = e.target.closest("[data-change-subject-id]");
+                    if (changeSubjectBtn) {
+                        e.stopPropagation();
+                        const lessonId = changeSubjectBtn.getAttribute("data-change-subject-id");
+                        const lesson = (lastLessonsSnapshot || {})[lessonId];
+                        if (lesson) openLessonSubjectChangeModal(lessonId, lesson);
+                        return;
+                    }
+
+                    // レベルアップボタン
+                    const levelupBtn = e.target.closest("[data-levelup-id]");
+                    if (levelupBtn) {
+                        e.stopPropagation();
+                        const lesson = (lastLessonsSnapshot || {})[levelupBtn.getAttribute("data-levelup-id")];
+                        if (lesson) startLevelUp(lesson);
+                        return;
+                    }
+
+                    // 続きから受講ボタン
+                    const continueBtn = e.target.closest("[data-continue-lesson-id]");
+                    if (continueBtn) {
+                        e.stopPropagation();
+                        const lesson = (lastLessonsSnapshot || {})[continueBtn.getAttribute("data-continue-lesson-id")];
+                        if (lesson) startContinuationLesson(lesson);
+                        return;
+                    }
+
+                    // 続編授業へ移動ボタン
+                    const gotoContinuationBtn = e.target.closest("[data-goto-continuation-id]");
+                    if (gotoContinuationBtn) {
+                        e.stopPropagation();
+                        const nextId = gotoContinuationBtn.getAttribute("data-goto-continuation-id");
+                        if (nextId) window.location.href = `lesson.html?id=${nextId}`;
+                        return;
+                    }
+
+                    // 削除ボタン
+                    const deleteBtn = e.target.closest("[data-delete-id]");
+                    if (deleteBtn) {
+                        e.stopPropagation();
+                        deleteLesson(deleteBtn.getAttribute("data-delete-id"));
+                        return;
+                    }
+
+                    // カード本体クリック
+                    const card = e.target.closest("[data-lesson-id]");
+                    if (card) {
+                        if (isDraggingLessonCard) return;
+                        if (e.target.closest("button") || e.target.closest(".lesson-drag-handle") || e.target.closest(".lesson-card-select-wrap") || e.target.closest(".lesson-era-block-header")) return;
+                        const cardLessonId = card.getAttribute("data-lesson-id");
+                        if (isBatchLessonDeleteMode) {
+                            const willSelect = !selectedLessonDeleteIds.has(cardLessonId);
+                            toggleSelectLessonForDelete(cardLessonId, willSelect, e);
+                            return;
+                        }
+                        window.location.href = `lesson.html?id=${cardLessonId}`;
+                    }
+                });
+            }
+
+            // 🖐️ HTML5 ドラッグ＆ドロップ（PC・タブレット）
+            listEl.querySelectorAll("[data-lesson-id]").forEach(card => {
                 card.addEventListener("dragstart", (e) => {
                     draggedLessonCardId = card.getAttribute("data-lesson-id");
                     isDraggingLessonCard = true;
@@ -17564,63 +18090,59 @@ ${existingLeads}
                     }
                 });
             });
+        }
 
-            // ◀ ▶ クイック並べ替えボタン
-            listEl.querySelectorAll("[data-move-lesson]").forEach(btn => {
-                btn.addEventListener("click", (e) => {
-                    e.stopPropagation();
-                    const id = btn.getAttribute("data-move-lesson");
-                    const dir = parseInt(btn.getAttribute("data-move-dir"), 10);
-                    if (id && !isNaN(dir)) {
-                        moveLessonInGroup(id, dir);
-                    }
-                });
-            });
+        // ==============================================================
+        // 📁 時代・単元ブロックの折りたたみ・展開制御
+        // ==============================================================
+        window.toggleLessonEraBlock = function(blockId) {
+            const blockEl = document.querySelector(`[data-era-block-id="${blockId}"]`);
+            if (!blockEl) return;
+            const statePill = blockEl.querySelector(".lesson-block-state-pill");
 
-            listEl.querySelectorAll("[data-rename-lesson-id]").forEach(btn => {
-                btn.addEventListener("click", (e) => {
-                    e.stopPropagation();
-                    const lessonId = btn.getAttribute("data-rename-lesson-id");
-                    const lesson = (lastLessonsSnapshot || {})[lessonId];
-                    if (lesson) renameLessonById(lessonId, lesson.title);
-                });
-            });
+            const isCurrentlyCollapsed = blockEl.classList.contains("is-collapsed");
+            const willCollapse = !isCurrentlyCollapsed;
 
-            listEl.querySelectorAll("[data-change-subject-id]").forEach(btn => {
-                btn.addEventListener("click", (e) => {
-                    e.stopPropagation();
-                    const lessonId = btn.getAttribute("data-change-subject-id");
-                    const lesson = (lastLessonsSnapshot || {})[lessonId];
-                    if (lesson) openLessonSubjectChangeModal(lessonId, lesson);
+            if (willCollapse) {
+                blockEl.classList.add("is-collapsed");
+                if (statePill) statePill.textContent = "展開する";
+            } else {
+                blockEl.classList.remove("is-collapsed");
+                if (statePill) statePill.textContent = "折りたたむ";
+            }
+            setLessonBlockCollapsedState(blockId, willCollapse);
+        };
+
+        function bindLessonBlockToolbarControls() {
+            const btnExpandAll = el("btn-expand-all-blocks");
+            if (btnExpandAll && !btnExpandAll.dataset.listenerBound) {
+                btnExpandAll.dataset.listenerBound = "true";
+                btnExpandAll.addEventListener("click", () => {
+                    document.querySelectorAll(".lesson-block-group").forEach(blockEl => {
+                        const blockId = blockEl.getAttribute("data-era-block-id");
+                        const statePill = blockEl.querySelector(".lesson-block-state-pill");
+                        blockEl.classList.remove("is-collapsed");
+                        if (statePill) statePill.textContent = "折りたたむ";
+                        if (blockId) setLessonBlockCollapsedState(blockId, false);
+                    });
+                    showToast("📂 すべての時代・単元ブロックを展開しました", "info", 1800);
                 });
-            });
-            listEl.querySelectorAll("[data-levelup-id]").forEach(btn => {
-                btn.addEventListener("click", (e) => {
-                    e.stopPropagation();
-                    const lesson = (lastLessonsSnapshot || {})[btn.getAttribute("data-levelup-id")];
-                    if (lesson) startLevelUp(lesson);
+            }
+
+            const btnCollapseAll = el("btn-collapse-all-blocks");
+            if (btnCollapseAll && !btnCollapseAll.dataset.listenerBound) {
+                btnCollapseAll.dataset.listenerBound = "true";
+                btnCollapseAll.addEventListener("click", () => {
+                    document.querySelectorAll(".lesson-block-group").forEach(blockEl => {
+                        const blockId = blockEl.getAttribute("data-era-block-id");
+                        const statePill = blockEl.querySelector(".lesson-block-state-pill");
+                        blockEl.classList.add("is-collapsed");
+                        if (statePill) statePill.textContent = "展開する";
+                        if (blockId) setLessonBlockCollapsedState(blockId, true);
+                    });
+                    showToast("📁 すべての時代・単元ブロックを折りたたみ、超軽量表示にしました", "info", 1800);
                 });
-            });
-            listEl.querySelectorAll("[data-continue-lesson-id]").forEach(btn => {
-                btn.addEventListener("click", (e) => {
-                    e.stopPropagation();
-                    const lesson = (lastLessonsSnapshot || {})[btn.getAttribute("data-continue-lesson-id")];
-                    if (lesson) startContinuationLesson(lesson);
-                });
-            });
-            listEl.querySelectorAll("[data-goto-continuation-id]").forEach(btn => {
-                btn.addEventListener("click", (e) => {
-                    e.stopPropagation();
-                    const nextId = btn.getAttribute("data-goto-continuation-id");
-                    if (nextId) window.location.href = `lesson.html?id=${nextId}`;
-                });
-            });
-            listEl.querySelectorAll("[data-delete-id]").forEach(btn => {
-                btn.addEventListener("click", (e) => {
-                    e.stopPropagation();
-                    deleteLesson(btn.getAttribute("data-delete-id"));
-                });
-            });
+            }
         }
 
         // ==============================================================
