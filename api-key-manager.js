@@ -801,11 +801,13 @@ export async function fetchWithKeyRotation(keys, buildRequest, { requestTimeoutM
 
 // --------------------------------------------------------------------------
 // 🧠 Geminiモデル一覧・機能割り当て
-// 💡 Google公式推奨の 3.8 / 3.7 系統に厳選・集約
+// 💡 Google公式推奨の 3.8 / 3.7 / 3.6 / 3.5 系統
 // --------------------------------------------------------------------------
 export const GEMINI_MODEL_FALLBACK_LIST = [
     'gemini-3.8-flash',
-    'gemini-3.7-flash'
+    'gemini-3.7-flash',
+    'gemini-3.6-flash',
+    'gemini-3.5-flash'
 ];
 
 export const DEEPSEEK_MODELS = [
@@ -1904,7 +1906,7 @@ async function runGeminiFallbackLoop(contents, systemInstruction, options = {}) 
         fallbackAttempts.push({ model: modelName, reason: result.isFormatError ? "JSON解析エラー（再指示後も形式が崩れていた）" : result.reason });
     }
 
-    // 🛡️ 最終防衛ライン: Gemini全モデル（3.8 / 3.7）が失敗した場合、画像入力がなければDeepSeek (deepseek-flash) に自動フォールバック
+    // 🛡️ 最終防衛ライン: Gemini全モデル（3.8 / 3.7 / 3.6 / 3.5）が失敗した場合、画像入力がなければDeepSeek (deepseek-flash) に自動フォールバック
     if (!hasImages) {
         const dsKeys = getDeepseekKeys();
         const hasDsProxy = !isStaticHostingEnvironment() && (typeof window === "undefined" || window.__serverHasDeepseekKey !== false);

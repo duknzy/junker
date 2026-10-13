@@ -1,5 +1,5 @@
-// ⚡ 軽量 Service Worker（Flora v4.1 キャッシュ最適化・自動更新）
-const CACHE_NAME = 'flora-pwa-v4.1'; // ← バージョン更新で旧キャッシュを完全自動削除
+// ⚡ 軽量 Service Worker（Flora v4.2 キャッシュ最適化・自動更新）
+const CACHE_NAME = 'flora-pwa-v4.2'; // ← バージョン更新で旧キャッシュを完全自動削除
 
 // 最低限、オフライン時に救いたい主要シェルだけ事前キャッシュ
 const PRECACHE_URLS = [
@@ -13,7 +13,7 @@ const PRECACHE_URLS = [
     './m/style-m.css',
     './style.css?v=3.5',
     './sidebar.js',
-    './api-key-manager.js?v=4.0',
+    './api-key-manager.js?v=4.1',
     './manifest.json',
     './m/manifest.json'
 ];
