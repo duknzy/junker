@@ -26,8 +26,45 @@
             },
             options: {
                 skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+            },
+            startup: {
+                typeset: false // ページ全体の自動フルスキャンを停止
             }
         };
+    </script>
+    
+    <script>
+        let mathTypesetQueue = Promise.resolve();
+        function safeTypeset(targets) {
+            mathTypesetQueue = mathTypesetQueue.then(async () => {
+                if (!window.MathJax) return;
+                if (!window.MathJax.typesetPromise) {
+                    if (window.MathJax.startup && window.MathJax.startup.promise) {
+                        await window.MathJax.startup.promise.catch(() => {});
+                    }
+                }
+                if (!window.MathJax || !window.MathJax.typesetPromise) return;
+                try {
+                    let els = null;
+                    if (Array.isArray(targets)) els = targets.filter(el => el && el.isConnected);
+                    else if (targets && targets.isConnected) els = [targets];
+                    else if (targets && !targets.isConnected) return;
+
+                    if (typeof MathJax.typesetClear === "function") {
+                        try {
+                            if (els && els.length > 0) MathJax.typesetClear(els);
+                            else if (!targets) MathJax.typesetClear();
+                        } catch (_) {}
+                    }
+                    if (els && els.length > 0) await MathJax.typesetPromise(els);
+                    else if (!targets) await safeTypeset();
+                } catch (e) {
+                    console.debug("MathJax notice (handled):", e.message);
+                }
+            }).catch(err => console.debug("MathJax queue notice:", err));
+            return mathTypesetQueue;
+        }
+        window.safeTypeset = safeTypeset;
     </script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
 
@@ -648,7 +685,7 @@ ${MULTI_QUESTION_INSTRUCTION}
             listEl.style.display = "flex";
             document.getElementById("next-batch-btn").style.display = "block";
 
-            if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise();
+            if (window.MathJax && MathJax.typesetPromise) safeTypeset();
             listEl.scrollIntoView({ behavior: "smooth", block: "start" });
         }
 

@@ -31,6 +31,9 @@
             },
             chtml: {
                 displayAlign: 'left'
+            },
+            startup: {
+                typeset: false // ページ全体の自動フルスキャンを停止
             }
         };
     </script>
@@ -6200,21 +6203,45 @@
             document.getElementById("sprint-timer").textContent = `${min}:${sec}.${ms}`;
         }
 
-        async function forceTriggerMathJax(targetElement = null) {
-            if (window.MathJax && MathJax.typesetPromise) {
-                try {
-                    if (typeof MathJax.typesetClear === "function") {
-                        if (targetElement) MathJax.typesetClear([targetElement]);
-                        else MathJax.typesetClear();
+        let mathTypesetQueue = Promise.resolve();
+        function forceTriggerMathJax(targetElement = null) {
+            mathTypesetQueue = mathTypesetQueue.then(async () => {
+                if (!window.MathJax) return;
+                if (!window.MathJax.typesetPromise) {
+                    if (window.MathJax.startup && window.MathJax.startup.promise) {
+                        await window.MathJax.startup.promise.catch(() => {});
                     }
-                    if (targetElement) {
-                        await MathJax.typesetPromise([targetElement]);
-                    } else {
+                }
+                if (!window.MathJax || !window.MathJax.typesetPromise) return;
+
+                try {
+                    let targets = null;
+                    if (Array.isArray(targetElement)) {
+                        targets = targetElement.filter(el => el && el.isConnected);
+                    } else if (targetElement && targetElement.isConnected) {
+                        targets = [targetElement];
+                    } else if (targetElement && !targetElement.isConnected) {
+                        return; // DOMから切断された要素はスキップ
+                    }
+
+                    if (typeof MathJax.typesetClear === "function") {
+                        try {
+                            if (targets && targets.length > 0) MathJax.typesetClear(targets);
+                            else if (!targetElement) MathJax.typesetClear();
+                        } catch (_) {}
+                    }
+                    if (targets && targets.length > 0) {
+                        await MathJax.typesetPromise(targets);
+                    } else if (!targetElement) {
                         await MathJax.typesetPromise();
                     }
-                } catch (err) { console.log(err.message); }
-            }
-            return Promise.resolve();
+                } catch (err) {
+                    console.debug("MathJax notice (handled):", err.message);
+                }
+            }).catch(err => {
+                console.debug("MathJax queue notice:", err);
+            });
+            return mathTypesetQueue;
         }
 
         // 🧠【移植】insights.html/problem.htmlと共通の数式正規化＆穴埋め枠の修復処理。

@@ -61,8 +61,60 @@
             },
             options: {
                 skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+            },
+            startup: {
+                typeset: false // ページ全体の自動フルスキャンを停止
             }
         };
+    </script>
+    
+    <script>
+        // 🛡️ キュー化された安全なMathJaxレンダリング（同時実行による splitText IndexSizeError / replaceChild null を完全防止）
+        let mathTypesetQueue = Promise.resolve();
+        function safeTypeset(targets) {
+            mathTypesetQueue = mathTypesetQueue.then(async () => {
+                if (!window.MathJax) return;
+                if (!window.MathJax.typesetPromise) {
+                    if (window.MathJax.startup && window.MathJax.startup.promise) {
+                        await window.MathJax.startup.promise.catch(() => {});
+                    }
+                }
+                if (!window.MathJax || !window.MathJax.typesetPromise) return;
+
+                try {
+                    let els = null;
+                    if (Array.isArray(targets)) {
+                        els = targets.filter(el => el && el.isConnected);
+                    } else if (targets && targets.isConnected) {
+                        els = [targets];
+                    } else if (targets && !targets.isConnected) {
+                        return;
+                    }
+
+                    if (els && els.length > 1) {
+                        els = els.filter(el => !els.some(other => other !== el && el.contains(other)));
+                    }
+
+                    if (typeof MathJax.typesetClear === "function") {
+                        try {
+                            if (els && els.length > 0) MathJax.typesetClear(els);
+                            else if (!targets) MathJax.typesetClear();
+                        } catch (_) {}
+                    }
+                    if (els && els.length > 0) {
+                        await MathJax.typesetPromise(els);
+                    } else if (!targets) {
+                        await MathJax.typesetPromise();
+                    }
+                } catch (e) {
+                    console.debug("MathJax notice (handled):", e.message);
+                }
+            }).catch(err => {
+                console.debug("MathJax queue notice:", err);
+            });
+            return mathTypesetQueue;
+        }
+        window.safeTypeset = safeTypeset;
     </script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
 
@@ -2480,7 +2532,7 @@ thumbHtml = `<div class="row-thumb row-thumb-icon ${glowClass} tex2jax_process">
                 if (targets.length > 0) {
                     const idleRunner = window.requestIdleCallback || ((cb) => setTimeout(cb, 16));
                     idleRunner(() => {
-                        window.MathJax.typesetPromise(targets).catch(err => console.log("MathJax notice:", err.message));
+                        safeTypeset(targets);
                     });
                 }
             }, 80);
@@ -2549,7 +2601,7 @@ thumbHtml = `<div class="row-thumb row-thumb-icon ${glowClass} tex2jax_process">
                         if (typeof window.MathJax.typesetClear === "function") {
                             window.MathJax.typesetClear(targets);
                         }
-                        window.MathJax.typesetPromise(targets).catch((err) => console.log(err.message));
+                        safeTypeset(targets);
                     }
                 }
             };
@@ -3420,7 +3472,7 @@ ${glossaryBlock}`;
             qnaArchiveDetailModal.style.display = "flex";
 
             if (window.MathJax && window.MathJax.typesetPromise) {
-                window.MathJax.typesetPromise([qnaArchiveDetailMessages]).catch(err => console.log(err.message));
+                safeTypeset([qnaArchiveDetailMessages]);
             }
         }
 

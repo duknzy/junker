@@ -42,6 +42,7 @@
                 displayAlign: 'left'
             },
             startup: {
+                typeset: false, // ページ全体の自動フルスキャンを停止（DOM生成中の競合・replaceChild nullクラッシュを完全防止）
                 ready: () => {
                     MathJax.startup.defaultReady();
                     if (typeof window.safeTypeset === "function") {
@@ -51,24 +52,39 @@
             }
         };
 
-        // 🛡️ キュー化された安全なMathJaxレンダリング（同時実行による splitText IndexSizeError を完全防止）
+        // 🛡️ キュー化された安全なMathJaxレンダリング（同時実行による splitText IndexSizeError / replaceChild null を完全防止）
         let typesetQueue = Promise.resolve();
         function safeTypeset(targets) {
             typesetQueue = typesetQueue.then(async () => {
+                if (!window.MathJax) return;
+                if (!window.MathJax.typesetPromise) {
+                    if (window.MathJax.startup && window.MathJax.startup.promise) {
+                        await window.MathJax.startup.promise.catch(() => {});
+                    }
+                }
                 if (!window.MathJax || !window.MathJax.typesetPromise) return;
+
                 try {
                     let els = null;
                     if (Array.isArray(targets)) {
-                        els = targets.filter(el => el && el.nodeType === 1);
-                    } else if (targets && targets.nodeType === 1) {
+                        els = targets.filter(el => el && el.nodeType === 1 && el.isConnected);
+                    } else if (targets && targets.nodeType === 1 && targets.isConnected) {
                         els = [targets];
                     }
+
+                    // 🛡️ 祖先・子孫が重複して含まれる場合の解消（子要素を優先し、親による重複レンダリング・DOM衝突を防止）
+                    if (els && els.length > 1) {
+                        els = els.filter(el => !els.some(other => other !== el && el.contains(other)));
+                    }
+
                     if (typeof MathJax.typesetClear === "function") {
-                        if (els && els.length > 0) {
-                            MathJax.typesetClear(els);
-                        } else if (!targets) {
-                            MathJax.typesetClear();
-                        }
+                        try {
+                            if (els && els.length > 0) {
+                                MathJax.typesetClear(els);
+                            } else if (!targets) {
+                                MathJax.typesetClear();
+                            }
+                        } catch (_) {}
                     }
                     if (els && els.length > 0) {
                         await MathJax.typesetPromise(els);
@@ -76,10 +92,10 @@
                         await MathJax.typesetPromise();
                     }
                 } catch (e) {
-                    console.warn("MathJax safeTypeset notice:", e);
+                    console.debug("MathJax safeTypeset notice (handled):", e);
                 }
             }).catch(err => {
-                console.warn("MathJax safeTypeset queue notice:", err);
+                console.debug("MathJax safeTypeset queue notice:", err);
             });
             return typesetQueue;
         }
