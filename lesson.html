@@ -40,6 +40,7 @@
                 displayAlign: 'left'
             },
             startup: {
+                typeset: false, // ページ全体の自動フルスキャンを停止（DOM生成中の競合・replaceChild nullクラッシュを完全防止）
                 ready: () => {
                     MathJax.startup.defaultReady();
                     if (typeof window.forceTriggerMathJax === "function") {
@@ -12448,22 +12449,16 @@ ${levels.map((l, i) => `${i + 1}. 「${l.value}」(${l.label})`).join("\n")}
 
         function el(id) { return document.getElementById(id); }
 
-        let mathJaxRenderTimer = null;
+        let mathTypesetQueue = Promise.resolve();
+
         function containsMathSyntax(text) {
             if (!text || typeof text !== 'string') return false;
             const pure = text.replace(/<[^>]+>/g, '');
-            return /(\$\$|\\\(|\\\[|\\frac|\\sqrt|\\sum|\\int|\\prod|\\lim|\\alpha|\\beta|\\theta|\\gamma|\\omega|\\pm|\\times|\\div|\\neq|\\leqq|\\geqq|\\triangle|\\angle|[a-zA-Z0-9]\^[0-9a-zA-Z]|_[0-9a-zA-Z])/.test(pure)
-                || (/\$[^\$\n]+?\$/.test(pure) && /[\\^_+\-=/]/.test(pure));
+            return /(\$\$|\\\(|\\\[|\\frac|\\sqrt|\\sum|\\int|\\prod|\\lim|\\alpha|\\beta|\\gamma|\\theta|\\omega|\\pm|\\times|\\div|\\neq|\\leqq|\\geqq|\\triangle|\\angle|\\bbox|\\boxed|\\text|\\mathrm|[a-zA-Z0-9]\^[0-9a-zA-Z]|_[0-9a-zA-Z])/.test(pure)
+                || (/\$[^\$\n]+?\$/.test(pure));
         }
 
         async function forceTriggerMathJax(targetElements) {
-            if (!window.MathJax || !MathJax.typesetPromise) {
-                if (mathJaxRenderTimer) clearTimeout(mathJaxRenderTimer);
-                mathJaxRenderTimer = setTimeout(() => forceTriggerMathJax(targetElements), 200);
-                return;
-            }
-
-            // ⚡ 対象要素群に本物の数式構文が存在しない場合は、無駄なLayout/MathJax計算を完全スキップ
             let targets = [];
             if (targetElements && Array.isArray(targetElements)) {
                 targets = targetElements.filter(Boolean);
@@ -12471,34 +12466,49 @@ ${levels.map((l, i) => `${i + 1}. 「${l.value}」(${l.label})`).join("\n")}
                 targets = [targetElements];
             }
 
-            if (targets.length === 0) {
-                // 引数なしで呼ばれた場合、全DOMスキャンを回避し、数式を含む候補要素（.tex2jax_process等）のみをピンポイント収集
-                const candidates = Array.from(document.querySelectorAll('.tex2jax_process, .chat-transcript, .vscode-ide-container'));
-                targets = candidates.filter(el => containsMathSyntax(el.textContent || el.innerText || ''));
-                if (targets.length === 0) {
-                    return; // ページ全体に数式構文なし（日本史・世界史・現代文等）：0ms即座終了！
+            // 🛡️ キューチェーンで順次直列化（MathJax v3の非同期同時実行によるreplaceChild nullクラッシュを100%防止）
+            mathTypesetQueue = mathTypesetQueue.then(async () => {
+                if (!window.MathJax) return;
+                if (!window.MathJax.typesetPromise) {
+                    if (window.MathJax.startup && window.MathJax.startup.promise) {
+                        await window.MathJax.startup.promise.catch(() => {});
+                    }
                 }
-            } else {
-                const hasAnyMath = targets.some(el => containsMathSyntax(el.textContent || el.innerText || ''));
-                if (!hasAnyMath) {
-                    return; // 指定要素内に数式なし：一瞬で終了
-                }
-            }
+                if (!window.MathJax || !window.MathJax.typesetPromise) return;
 
-            try {
-                if (typeof MathJax.typesetClear === "function") {
-                    MathJax.typesetClear(targets);
+                let curTargets = targets;
+                if (curTargets.length === 0) {
+                    const candidates = Array.from(document.querySelectorAll('.tex2jax_process, .chat-transcript, .vscode-ide-container, .choice-drill-card, .memorize-item'));
+                    curTargets = candidates.filter(el => el && el.isConnected && containsMathSyntax(el.textContent || el.innerText || ''));
+                    if (curTargets.length === 0) return;
+                } else {
+                    curTargets = curTargets.filter(el => el && el.isConnected && containsMathSyntax(el.textContent || el.innerText || ''));
+                    if (curTargets.length === 0) return;
                 }
-                await MathJax.typesetPromise(targets);
-            } catch (e) {
-                console.warn("MathJax typeset notice:", e);
+
+                // 🛡️ DOMツリー上に現存しているノード（isConnected）のみを厳選
+                let validTargets = curTargets.filter(el => el && el.isConnected);
+                if (validTargets.length === 0) return;
+
+                // 🛡️ 親子関係の重複解消（子要素を優先し、親による重複レンダリング・DOM衝突・replaceChild nullエラーを完全防止）
+                validTargets = validTargets.filter(el => {
+                    return !validTargets.some(other => other !== el && el.contains(other));
+                });
+                if (validTargets.length === 0) return;
+
                 try {
-                    if (typeof MathJax.typesetClear === "function") MathJax.typesetClear(targets);
-                    if (typeof MathJax.typesetPromise === "function") await MathJax.typesetPromise(targets);
-                } catch (retryErr) {
-                    console.log(retryErr.message);
+                    if (typeof MathJax.typesetClear === "function") {
+                        try { MathJax.typesetClear(validTargets); } catch (_) {}
+                    }
+                    await MathJax.typesetPromise(validTargets);
+                } catch (err) {
+                    console.debug("MathJax typeset notice (handled safely):", err);
                 }
-            }
+            }).catch(err => {
+                console.debug("MathJax typeset queue notice:", err);
+            });
+
+            return mathTypesetQueue;
         }
         window.forceTriggerMathJax = forceTriggerMathJax;
 
@@ -15629,8 +15639,8 @@ ${extractedText.slice(0, 15000)}`;
                 }
             }
 
-            if (window.MathJax && MathJax.typesetPromise) {
-                MathJax.typesetPromise([el("lesson-fc-stage")]).catch(() => {});
+            if (typeof forceTriggerMathJax === "function") {
+                forceTriggerMathJax(el("lesson-fc-stage"));
             }
 
             saveLessonFcSession();
@@ -15843,8 +15853,8 @@ ${extractedText.slice(0, 15000)}`;
                 `;
             }).join("");
 
-            if (window.MathJax && MathJax.typesetPromise) {
-                MathJax.typesetPromise([container]).catch(err => console.log('MathJax typeset error:', err));
+            if (typeof forceTriggerMathJax === "function") {
+                forceTriggerMathJax(container);
             }
         }
 
@@ -16781,8 +16791,8 @@ ${existingLeads}
                 `;
             }).join("");
 
-            if (window.MathJax && MathJax.typesetPromise) {
-                MathJax.typesetPromise([container]).catch(err => console.log('MathJax typeset error:', err));
+            if (typeof forceTriggerMathJax === "function") {
+                forceTriggerMathJax(container);
             }
         }
         window.renderChoiceDrills = renderChoiceDrills;
