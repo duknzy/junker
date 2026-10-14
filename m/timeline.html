@@ -244,7 +244,7 @@
         .m-inspector-body {
             display: none;
             flex-direction: column;
-            gap: 0.5rem;
+            gap: 0.45rem;
             padding: 0.75rem 0.85rem;
             background: var(--bg-subtle);
             border: 1px solid var(--border-color);
@@ -254,6 +254,37 @@
             line-height: 1.5;
         }
         .m-inspector-body.is-open { display: flex; }
+
+        .m-cause-box {
+            background: #FFFBEB;
+            border-left: 3.5px solid #F59E0B;
+            padding: 0.45rem 0.65rem;
+            border-radius: var(--radius-sm);
+        }
+        .m-cause-label { color: #B45309; font-weight: 800; font-size: 0.74rem; display: block; margin-bottom: 0.15rem; }
+        .m-cause-text { color: #78350F; font-size: 0.8rem; }
+        html.dark .m-cause-box {
+            background: rgba(245, 158, 11, 0.12);
+            border-color: #F59E0B;
+        }
+        html.dark .m-cause-label { color: #FCD34D; }
+        html.dark .m-cause-text { color: #FEF3C7; }
+
+        .m-exam-box {
+            background: #FEF2F2;
+            border-left: 3.5px solid #EF4444;
+            padding: 0.45rem 0.65rem;
+            border-radius: var(--radius-sm);
+            margin-top: 0.35rem;
+        }
+        .m-exam-label { color: #B91C1C; font-weight: 800; font-size: 0.74rem; display: block; margin-bottom: 0.15rem; }
+        .m-exam-text { color: #991B1B; font-size: 0.8rem; }
+        html.dark .m-exam-box {
+            background: rgba(239, 68, 68, 0.12);
+            border-color: #EF4444;
+        }
+        html.dark .m-exam-label { color: #FCA5A5; }
+        html.dark .m-exam-text { color: #FEE2E2; }
 
         /* モーダル共通 */
         .m-modal-overlay {
@@ -582,6 +613,23 @@
         }
         window.scrollToEra = scrollToEra;
 
+        // 語呂合わせサニタイザー
+        function cleanMnemonic(mnem, yearStr) {
+            if (!mnem) return "";
+            let s = String(mnem).trim();
+            if (yearStr && /^\d+世紀/.test(yearStr) && /^\d{3,4}年:\s*よれれ/.test(s)) {
+                return "";
+            }
+            s = s.replace(/[（\(]\s*$/, "").trim();
+            const openRound = (s.match(/\(/g) || []).length;
+            const closeRound = (s.match(/\)/g) || []).length;
+            if (openRound > closeRound) s += ")".repeat(openRound - closeRound);
+            const openJp = (s.match(/（/g) || []).length;
+            const closeJp = (s.match(/）/g) || []).length;
+            if (openJp > closeJp) s += "）".repeat(openJp - closeJp);
+            return s;
+        }
+
         // タイムライン描画
         function renderTimeline() {
             const streamEl = document.getElementById("m-timeline-stream");
@@ -590,6 +638,7 @@
 
             const allEvents = collectAllEvents();
             const filtered = allEvents.filter(ev => {
+                if (currentCategoryFilter !== "ALL" && ev.category !== currentCategoryFilter) return false;
                 if (currentSearchQuery) {
                     const text = `${ev.name} ${ev.year} ${ev.category} ${ev.leader || ""} ${ev.cause_effect || ""} ${ev.exam_point || ""} ${ev.intl_context || ""}`.toLowerCase();
                     if (!text.includes(currentSearchQuery)) return false;
@@ -600,11 +649,11 @@
             if (countEl) countEl.textContent = `${filtered.length} 件`;
 
             if (filtered.length === 0) {
-                streamEl.innerHTML = "";
-                emptyEl.style.display = "block";
+                if (streamEl) streamEl.innerHTML = "";
+                if (emptyEl) emptyEl.style.display = "block";
                 return;
             }
-            emptyEl.style.display = "none";
+            if (emptyEl) emptyEl.style.display = "none";
 
             let currentEraLabel = null;
             let html = "";
@@ -615,7 +664,7 @@
                     currentEraLabel = era;
                     html += `
                         <div class="m-era-section-header">
-                            <span>⏳ ${escapeHtml(era)}</span>
+                            <span>🏛️ ${escapeHtml(era)}</span>
                         </div>
                     `;
                 }
@@ -629,46 +678,62 @@
                 if (blindMaskMode === "year") yearClass += ` blind-masked mask-red ${isRevealed ? 'revealed' : ''}`;
                 if (blindMaskMode === "name") nameClass += ` blind-masked mask-blue ${isRevealed ? 'revealed' : ''}`;
 
+                // 語呂合わせサニタイズ
+                const cleanedMnemonics = (ev.mnemonics || [])
+                    .map(m => cleanMnemonic(m, ev.year))
+                    .filter(Boolean);
+                const displayMnemonic = ev.userMnemonic || (cleanedMnemonics.length > 0 ? cleanedMnemonics[0] : null);
+
+                // 国際情勢プレビュー
+                const intlClean = (ev.intl_context || "").replace(/^【.*?】\s*/, '').trim();
+
                 html += `
                     <div class="m-event-card ${ev.isMistake ? 'is-mistake' : ''}">
                         <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <span class="${yearClass}" onclick="toggleMask(event, '${escapeJsString(evKey)}')">${escapeHtml(ev.year)}</span>
+                            <span class="${yearClass}" onclick="toggleMask(event, '${escapeJsString(evKey)}')" style="font-weight:800; font-size:0.92rem; color:var(--brand-primary); cursor:pointer;">📅 ${escapeHtml(ev.year)}</span>
                             <div style="display:flex; gap:0.35rem; align-items:center;">
-                                <span style="font-size:0.68rem; background:var(--bg-subtle); padding:0.1rem 0.4rem; border-radius:var(--radius-full); font-weight:700; color:var(--text-muted);">${escapeHtml(ev.category)}</span>
+                                <span style="font-size:0.68rem; background:rgba(16,185,129,0.1); color:var(--brand-primary); padding:0.12rem 0.45rem; border-radius:var(--radius-full); font-weight:700;">${escapeHtml(ev.category)}</span>
                                 <button type="button" onclick="openNoteModal('${escapeJsString(evKey)}')" style="background:none; border:none; font-size:0.8rem; cursor:pointer;" title="メモ編集">✏️</button>
                             </div>
                         </div>
 
-                        <div class="${nameClass}" onclick="toggleMask(event, '${escapeJsString(evKey)}')">${escapeHtml(ev.name)}</div>
+                        <div class="${nameClass}" onclick="toggleMask(event, '${escapeJsString(evKey)}')" style="font-size:0.98rem; font-weight:750; color:var(--text-primary); margin-top:0.15rem; cursor:pointer;">
+                            ${escapeHtml(ev.name)}
+                        </div>
 
-                        ${ev.leader ? `<div style="font-size:0.75rem; color:var(--text-secondary); font-weight:700;">👤 ${escapeHtml(ev.leader)}</div>` : ''}
+                        ${ev.note ? `<div style="font-size:0.77rem; color:var(--text-secondary); line-height:1.45; border-left:3px solid #10B981; padding-left:0.45rem; margin-top:0.2rem;">💡 ${escapeHtml(ev.note)}</div>` : ''}
 
-                        ${ev.intl_context ? `
-                            <div style="font-size:0.74rem; background:rgba(59,130,246,0.08); border-left:3px solid #3B82F6; padding:0.25rem 0.5rem; border-radius:3px; color:#1D4ED8; font-weight:600;">
-                                🌐 ${escapeHtml(ev.intl_context.replace(/^【.*?】\s*/, ''))}
-                            </div>
-                        ` : ''}
+                        <!-- クイックメタ（人物・語呂・国際情勢） -->
+                        <div style="display:flex; gap:0.3rem; flex-wrap:wrap; align-items:center; margin-top:0.25rem;">
+                            ${ev.leader ? `<span style="font-size:0.72rem; background:rgba(168,85,247,0.12); color:#9333EA; padding:0.12rem 0.45rem; border-radius:9999px; font-weight:700;">👤 ${escapeHtml(ev.leader)}</span>` : ''}
+                            ${displayMnemonic ? `<span style="font-size:0.72rem; background:rgba(245,158,11,0.12); color:#D97706; padding:0.12rem 0.45rem; border-radius:9999px; font-weight:700;">🎴 ${escapeHtml(displayMnemonic)}</span>` : ''}
+                            ${intlClean ? `<span style="font-size:0.72rem; background:rgba(59,130,246,0.12); color:#2563EB; padding:0.12rem 0.45rem; border-radius:9999px; font-weight:700;">🌐 国際情勢</span>` : ''}
+                        </div>
 
-                        ${ev.note ? `<div style="font-size:0.76rem; color:var(--text-secondary); line-height:1.4;">💡 ${escapeHtml(ev.note)}</div>` : ''}
+                        ${ev.userNote ? `<div style="font-size:0.76rem; background:rgba(5,150,105,0.08); border-left:3px solid #059669; padding:0.3rem 0.5rem; border-radius:4px; color:var(--text-primary); margin-top:0.2rem;">📝 <strong>私のメモ:</strong> ${escapeHtml(ev.userNote)}</div>` : ''}
 
-                        ${ev.userNote ? `<div style="font-size:0.75rem; background:rgba(5,150,105,0.08); border-left:3px solid #059669; padding:0.25rem 0.5rem; border-radius:3px; color:#064E3B;">📝 <strong>私のメモ:</strong> ${escapeHtml(ev.userNote)}</div>` : ''}
-
-                        ${(ev.cause_effect || ev.exam_point) ? `
+                        ${(ev.cause_effect || ev.exam_point || ev.intl_context) ? `
                             <button type="button" class="m-inspector-btn" onclick="toggleInspector(event, '${escapeJsString(evKey)}')">
-                                <span>🔍 因果関係・急所</span>
-                                <span>${isOpen ? '▲' : '▼'}</span>
+                                <span>🔍 因果関係・入試の急所</span>
+                                <span style="font-size:0.7rem;">${isOpen ? '▲' : '▼'}</span>
                             </button>
                             <div class="m-inspector-body ${isOpen ? 'is-open' : ''}">
                                 ${ev.cause_effect ? `
-                                    <div>
-                                        <span style="font-weight:800; color:#B45309; display:block; margin-bottom:0.15rem;">📌 背景と歴史的影響:</span>
-                                        <span style="color:#78350F;">${escapeHtml(ev.cause_effect)}</span>
+                                    <div class="m-cause-box">
+                                        <span class="m-cause-label">📌 背景と歴史的因果関係:</span>
+                                        <div class="m-cause-text">${escapeHtml(ev.cause_effect)}</div>
                                     </div>
                                 ` : ''}
                                 ${ev.exam_point ? `
-                                    <div style="margin-top:0.3rem;">
-                                        <span style="font-weight:800; color:#B91C1C; display:block; margin-bottom:0.15rem;">💡 共通テストのツボ:</span>
-                                        <span style="color:#991B1B;">${escapeHtml(ev.exam_point)}</span>
+                                    <div class="m-exam-box">
+                                        <span class="m-exam-label">💡 共通テストのツボ・正誤の急所:</span>
+                                        <div class="m-exam-text">${escapeHtml(ev.exam_point)}</div>
+                                    </div>
+                                ` : ''}
+                                ${ev.intl_context ? `
+                                    <div style="background:rgba(59,130,246,0.08); border-left:3.5px solid #3B82F6; padding:0.45rem 0.65rem; border-radius:var(--radius-sm); margin-top:0.35rem;">
+                                        <span style="font-weight:800; color:#1D4ED8; font-size:0.74rem; display:block; margin-bottom:0.15rem;">🌐 同時代の世界・国際情勢:</span>
+                                        <div style="color:var(--text-primary); font-size:0.8rem; line-height:1.45;">${escapeHtml(ev.intl_context)}</div>
                                     </div>
                                 ` : ''}
                             </div>
@@ -677,7 +742,7 @@
                 `;
             });
 
-            streamEl.innerHTML = html;
+            if (streamEl) streamEl.innerHTML = html;
         }
 
         window.toggleMask = function(e, key) {

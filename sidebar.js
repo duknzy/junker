@@ -245,7 +245,7 @@
             navInsights: '質問・学びアーカイブ',
             navPastExam: '共テ過去問演習',
             navTimelineQuiz: '共テ年代整序特訓',
-            navTimeline: '歴史 統合年表',
+            navTimeline: '歴史・公民 統合年表（整序特訓）',
             navAiSettings: 'AI設定',
             badgeImportant: '重要',
             btnDark: 'ダーク',
@@ -325,7 +325,7 @@
             navInsights: 'Questions & Insights',
             navPastExam: 'Past Exam Drill',
             navTimelineQuiz: 'Chronology Drill',
-            navTimeline: 'History Timeline',
+            navTimeline: 'History Timeline & Drill',
             navAiSettings: 'AI Settings',
             badgeImportant: 'Important',
             btnDark: 'Dark',
@@ -636,9 +636,7 @@
                     { href: 'custom-sprint.html', icon: '⚡', label: t('navCustomSprint'), match: ['custom-sprint.html'] },
                     { href: 'answer-check.html', icon: '✅', label: t('navAnswerCheck'), match: ['answer-check.html'] },
                     { href: 'insights.html', icon: '💡', label: t('navInsights'), match: ['insights.html'] },
-                    { href: 'past-exam.html', icon: '🏛️', label: t('navPastExam'), match: ['past-exam.html'] },
-                    { href: 'timeline.html?quiz=true', icon: '🎯', label: t('navTimelineQuiz'), badge: t('badgeImportant'), match: ['timeline.html?quiz=true'] },
-                    { href: 'timeline.html', icon: '🏛️', label: t('navTimeline'), match: ['timeline.html'] },
+                    { href: 'timeline.html', icon: '🏛️', label: t('navTimeline'), badge: 'Drill', match: ['timeline.html', 'timeline.html?quiz=true'] },
                 ]
             },
             {
