@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Import Updated Distractors to Firebase</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #f8fafc; padding: 2rem; }
+        .card { background: #1e293b; padding: 1.5rem; border-radius: 10px; margin-bottom: 1.5rem; border: 1px solid #334155; }
+        .log-box { background: #090d16; padding: 1rem; border-radius: 8px; max-height: 400px; overflow-y: auto; font-family: monospace; font-size: 0.9rem; line-height: 1.5; color: #94a3b8; }
+        .log-success { color: #10b981; }
+        .log-info { color: #38bdf8; }
+        .log-error { color: #ef4444; }
+        .progress-bar-container { background: #334155; border-radius: 6px; height: 12px; overflow: hidden; margin-top: 1rem; }
+        .progress-bar { background: linear-gradient(90deg, #10b981, #06b6d4); height: 100%; width: 0%; transition: width 0.3s; }
+        button { background: #10b981; color: white; border: none; padding: 0.8rem 1.8rem; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+    <h1>🚀 4択ダミー解答（distractors）一括インポート</h1>
+    <div class="card">
+        <div id="auth-status">Firebase 認証待機中...</div>
+        <div class="progress-bar-container">
+            <div id="progress-bar" class="progress-bar"></div>
+        </div>
+        <div style="margin-top: 1rem; display: flex; justify-content: space-between; align-items: center;">
+            <span id="progress-text">準備完了</span>
+            <button id="start-btn" disabled>Firebaseに反映開始</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>📝 処理ログ</h3>
+        <div id="log-box" class="log-box"></div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { getDatabase, ref, get, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+        import { firebaseConfig } from "./firebase-config.js";
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+
+        const authStatus = document.getElementById("auth-status");
+        const progressBar = document.getElementById("progress-bar");
+        const progressText = document.getElementById("progress-text");
+        const startBtn = document.getElementById("start-btn");
+        const logBox = document.getElementById("log-box");
+
+        let currentUser = null;
+        let updateData = null;
+
+        function addLog(msg, type = "info") {
+            const div = document.createElement("div");
+            const time = new Date().toLocaleTimeString();
+            div.className = `log-${type}`;
+            div.textContent = `[${time}] ${msg}`;
+            logBox.appendChild(div);
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
+        async function loadUpdateData() {
+            try {
+                addLog("ローカル更新データ (updated_distractors.json) を取得中...", "info");
+                const res = await fetch("http://localhost:3001/get-updates");
+                if (!res.ok) throw new Error("updated_distractors.json の取得に失敗しました");
+                updateData = await res.json();
+                addLog(`✅ 更新データを読み込みました: 計 ${updateData.totalUpdated} 問 / ${Object.keys(updateData.lessonsUpdates).length} 授業`, "success");
+                return true;
+            } catch (err) {
+                addLog(`❌ エラー: ${err.message}`, "error");
+                return false;
+            }
+        }
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                authStatus.textContent = "❌ ログインしていません。";
+                addLog("ログインセッションが見つかりません。", "error");
+                return;
+            }
+            currentUser = user;
+            authStatus.innerHTML = `👤 ログイン中: <b>${user.displayName || user.email || user.uid}</b>`;
+            addLog(`ユーザー確認完了: UID=${user.uid}`, "info");
+
+            const loaded = await loadUpdateData();
+            if (loaded) {
+                startBtn.disabled = false;
+                progressText.textContent = `反映準備完了 (${updateData.totalUpdated}問)`;
+                // 自動実行
+                startImport();
+            }
+        });
+
+        async function startImport() {
+            if (!currentUser || !updateData) return;
+            startBtn.disabled = true;
+            addLog("🚀 Firebaseへの反映処理を開始します...", "info");
+
+            const lessonsEntries = Object.entries(updateData.lessonsUpdates);
+            const totalLessons = lessonsEntries.length;
+            let successLessons = 0;
+            let totalCardsUpdated = 0;
+
+            for (let i = 0; i < totalLessons; i++) {
+                const [lessonId, updates] = lessonsEntries[i];
+                const pct = Math.round(((i + 1) / totalLessons) * 100);
+                progressBar.style.width = `${pct}%`;
+                progressText.textContent = `処理中: ${i + 1} / ${totalLessons} 授業 (${pct}%)`;
+
+                try {
+                    addLog(`[${i + 1}/${totalLessons}] 授業データ取得中: ${lessonId}...`, "info");
+                    const snap = await get(ref(database, `users/${currentUser.uid}/lessons/${lessonId}`));
+                    if (!snap.exists()) {
+                        addLog(`⚠️ 授業 ${lessonId} が見つかりませんでした。スキップします。`, "error");
+                        continue;
+                    }
+
+                    const lesson = snap.val();
+                    const points = Array.isArray(lesson.memorizationPoints) ? [...lesson.memorizationPoints] : [];
+
+                    let lessonUpdatedCount = 0;
+                    updates.forEach(u => {
+                        const idx = u.pointIndex;
+                        if (points[idx]) {
+                            points[idx].distractors = u.distractors;
+                            lessonUpdatedCount++;
+                        }
+                    });
+
+                    // Firebaseへ保存
+                    await update(ref(database, `users/${currentUser.uid}/lessons/${lessonId}`), {
+                        memorizationPoints: points,
+                        updatedAt: new Date().toISOString()
+                    });
+
+                    successLessons++;
+                    totalCardsUpdated += lessonUpdatedCount;
+                    addLog(`✅ 授業「${lesson.title || lessonId}」を更新しました（${lessonUpdatedCount}問にダミー解答を保存）`, "success");
+
+                } catch (err) {
+                    addLog(`❌ 授業 ${lessonId} の更新に失敗: ${err.message}`, "error");
+                }
+
+                // サーバー負荷軽減の小休止
+                await new Promise(r => setTimeout(r, 200));
+            }
+
+            progressBar.style.width = "100%";
+            progressText.textContent = `🎉 反映完了！ (成功 ${successLessons}/${totalLessons} 授業, 計 ${totalCardsUpdated} 問)`;
+            addLog(`🏁 すべての反映処理が完了しました！ 計 ${totalCardsUpdated} 問のダミー解答がFirebaseに安全に保存されました。`, "success");
+        }
+
+        startBtn.addEventListener("click", startImport);
+    </script>
+</body>
+</html>
