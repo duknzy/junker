@@ -2309,6 +2309,7 @@
                         : (computedEra !== "その他" ? computedEra : (ev.era || "その他"));
 
                     const key = `${ev.name}_${ev.year || ""}`;
+                    const evMnemonics = Array.isArray(ev.mnemonics) ? [...ev.mnemonics] : (ev.mnemonics ? [ev.mnemonics] : []);
                     if (!eventsMap.has(key)) {
                         eventsMap.set(key, {
                             name: ev.name,
@@ -2320,7 +2321,8 @@
                             intl_context: ev.intl_context || "",
                             cause_effect: ev.cause_effect || "",
                             exam_point: ev.exam_point || "",
-                            mnemonics: [],
+                            note: ev.note || "",
+                            mnemonics: evMnemonics,
                             sources: [],
                             isMistake: false,
                             mistakeCount: 0,
@@ -2332,6 +2334,19 @@
                         });
                     }
                     const item = eventsMap.get(key);
+                    if (!item.note && ev.note) item.note = ev.note;
+                    if (!item.leader && ev.leader) item.leader = ev.leader;
+                    if (!item.cause_effect && ev.cause_effect) item.cause_effect = ev.cause_effect;
+                    if (!item.exam_point && ev.exam_point) item.exam_point = ev.exam_point;
+                    if (!item.intl_context && ev.intl_context) item.intl_context = ev.intl_context;
+                    if (evMnemonics.length > 0) {
+                        evMnemonics.forEach(m => {
+                            if (!item.mnemonics.includes(m)) item.mnemonics.push(m);
+                        });
+                    }
+                    if (ev.axis && (!item.axis || item.axis === "politics")) item.axis = ev.axis;
+                    if (category && (!item.category || item.category === "その他")) item.category = category;
+
                     item.sources.push({
                         type: "lesson",
                         id: l.id,

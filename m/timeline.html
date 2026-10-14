@@ -496,6 +496,52 @@
                 eventsMap.set(key, { ...ev, isMistake: false, mistakeCount: 0, userNote: "", userMnemonic: "", sources: [] });
             });
 
+            // 参考書授業 (lessons) から抽出
+            Object.values(rawLessons).forEach(l => {
+                if (!l || !Array.isArray(l.historicalEvents)) return;
+                const isMatchSubject = (activeHistoryType === "civics")
+                    ? (l.subject === "公共" || l.subject === "政治・経済" || l.subject === "政経" || l.subject === "公民")
+                    : (l.subject === "日本史" || l.subject === "歴史");
+                if (!isMatchSubject) return;
+
+                l.historicalEvents.forEach(ev => {
+                    if (!ev || !ev.name) return;
+                    const key = `${ev.name}_${ev.year || ""}`;
+                    const evMnemonics = Array.isArray(ev.mnemonics) ? [...ev.mnemonics] : (ev.mnemonics ? [ev.mnemonics] : []);
+                    if (!eventsMap.has(key)) {
+                        eventsMap.set(key, {
+                            name: ev.name,
+                            year: ev.year || "年代未詳",
+                            year_sort: ev.year_sort || 0,
+                            category: ev.category || ev.era || "その他",
+                            axis: ev.axis || "politics",
+                            leader: ev.leader || "",
+                            intl_context: ev.intl_context || "",
+                            cause_effect: ev.cause_effect || "",
+                            exam_point: ev.exam_point || "",
+                            note: ev.note || "",
+                            mnemonics: evMnemonics,
+                            sources: [],
+                            isMistake: false,
+                            mistakeCount: 0,
+                            userNote: "",
+                            userMnemonic: ""
+                        });
+                    }
+                    const item = eventsMap.get(key);
+                    if (!item.note && ev.note) item.note = ev.note;
+                    if (!item.leader && ev.leader) item.leader = ev.leader;
+                    if (!item.cause_effect && ev.cause_effect) item.cause_effect = ev.cause_effect;
+                    if (!item.exam_point && ev.exam_point) item.exam_point = ev.exam_point;
+                    if (!item.intl_context && ev.intl_context) item.intl_context = ev.intl_context;
+                    if (evMnemonics.length > 0) {
+                        evMnemonics.forEach(m => {
+                            if (!item.mnemonics.includes(m)) item.mnemonics.push(m);
+                        });
+                    }
+                });
+            });
+
             // ユーザー手書きメモのマージ
             const userNotes = getTimelineUserNotes();
             Object.entries(userNotes).forEach(([k, data]) => {
@@ -817,6 +863,10 @@
             if (user) {
                 onValue(ref(database, 'users/' + user.uid + '/timelineNotes'), snap => {
                     rawTimelineNotes = snap.val() || {};
+                    renderTimeline();
+                });
+                onValue(ref(database, 'users/' + user.uid + '/lessons'), snap => {
+                    rawLessons = snap.val() || {};
                     renderTimeline();
                 });
             }
