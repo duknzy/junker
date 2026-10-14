@@ -2384,6 +2384,12 @@
             color: var(--text-muted);
             border: 1px solid var(--border-color);
         }
+        .badge-toc-ready {
+            background: rgba(16, 185, 129, 0.12);
+            color: #059669;
+            border: 1px solid rgba(16, 185, 129, 0.35);
+            font-weight: 700;
+        }
         .toc-item-summary {
             font-size: 0.76rem;
             color: var(--text-secondary);
@@ -6420,6 +6426,11 @@
             background: var(--bg-surface-raised) !important;
             color: #94a3b8 !important;
             border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        }
+        html.dark .badge-toc-ready {
+            background: rgba(52, 211, 153, 0.15) !important;
+            color: #34d399 !important;
+            border: 1px solid rgba(52, 211, 153, 0.35) !important;
         }
         html.dark .toc-edit-part-btn,
         html.dark .toc-regen-btn {
@@ -22763,8 +22774,9 @@ ${subjectGuide}
                 const isDone = i < currentIdx || currentLesson.status === "completed";
                 const isTaught = i <= currentIdx;
 
-                let badgeClass = isActive ? "badge-toc-active" : (isDone ? "badge-toc-done" : "badge-toc-upcoming");
-                let badgeText = isActive ? "▶ 授業中" : (isDone ? "✓ 完了" : "未講義");
+                const hasPrefetched = !isTaught && p.prefetchedLecture && p.prefetchedLecture.content;
+                let badgeClass = isActive ? "badge-toc-active" : (isDone ? "badge-toc-done" : (hasPrefetched ? "badge-toc-ready" : "badge-toc-upcoming"));
+                let badgeText = isActive ? "▶ 授業中" : (isDone ? "✓ 完了" : (hasPrefetched ? "⚡ 準備完了" : "未講義"));
 
                 const cleanTitle = cleanPartTitle(p.title, i);
 
@@ -22890,6 +22902,7 @@ ${curriculumRulePrompt}
                 // 第1回講義の自動スタート
                 try {
                     await sendTurn(null, "第1回の授業を始めてください。");
+                    setTimeout(() => triggerPartsPrefetch(), 1000);
                 } catch(e) {
                     console.warn(e);
                 }
@@ -26636,6 +26649,93 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
             }
         }
 
+        // --------------------------------------------------------------
+        // ⚡ パート講義バックグラウンド先行生成（プリフェッチ）サブシステム
+        // --------------------------------------------------------------
+        let isPrefetchingParts = false;
+        let activePrefetchPromise = null; // { partIndex, promise, lessonId }
+
+        async function triggerPartsPrefetch() {
+            if (isPrefetchingParts) return;
+            if (!currentLesson || !currentLessonId) return;
+            if (currentLesson.status === "completed") return;
+            if (currentLesson.autogenSettings && currentLesson.autogenSettings.lecture === false) return;
+            if (!Array.isArray(currentLesson.parts) || currentLesson.parts.length <= 1) return;
+
+            const lessonId = currentLessonId;
+            isPrefetchingParts = true;
+
+            try {
+                const parts = currentLesson.parts;
+                for (let idx = 1; idx < parts.length; idx++) {
+                    if (!currentLesson || currentLessonId !== lessonId || currentLesson.status === "completed") {
+                        break;
+                    }
+
+                    // すでに受講中のパート（chatHistoryにすでに第N回が存在する）ならスキップ
+                    const isStarted = (currentLesson.chatHistory || []).some(
+                        m => m.role === "divider" && (m.content.startsWith(`第${idx + 1}回`) || m.content.includes(parts[idx].title))
+                    );
+                    if (isStarted) continue;
+
+                    // すでに先行生成済みならスキップ
+                    if (parts[idx].prefetchedLecture && parts[idx].prefetchedLecture.content) continue;
+
+                    const part = parts[idx];
+                    const instructionForApi = `【指令】第${idx + 1}回「${part.title}」（${part.summary}）の講義を、初回1通目としてわかりやすく始めてください。絶対に前パートのまとめやお礼を言わず、第${idx + 1}回の本題から始めてください。`;
+                    const sysInstruction = buildTeachSystemInstruction(idx);
+
+                    try {
+                        const callPromise = callGeminiChat(
+                            [{ role: "user", parts: [{ text: instructionForApi }] }],
+                            sysInstruction,
+                            {
+                                responseSchema: TEACH_TURN_RESPONSE_SCHEMA,
+                                featureId: "lesson_teach"
+                            }
+                        );
+
+                        activePrefetchPromise = {
+                            partIndex: idx,
+                            lessonId: lessonId,
+                            promise: callPromise
+                        };
+
+                        const aiJson = await callPromise;
+                        activePrefetchPromise = null;
+
+                        if (!currentLesson || currentLessonId !== lessonId) break;
+
+                        const aiPayload = extractAiResponsePayload(aiJson);
+                        const content = (aiPayload.ai_response || "").trim();
+                        const cleanedSvg = sanitizeDiagramSvg(aiPayload.diagram_svg);
+
+                        if (content) {
+                            parts[idx].prefetchedLecture = {
+                                content: content,
+                                ...(cleanedSvg ? { diagramSvg: cleanedSvg } : {}),
+                                generatedAt: new Date().toISOString()
+                            };
+                            await saveLesson();
+                            renderPartsTOC();
+                            renderVscodeMode();
+                        }
+
+                        // APIレートリミット保護のための小休止（1.5秒）
+                        await new Promise(r => setTimeout(r, 1500));
+
+                    } catch (pErr) {
+                        activePrefetchPromise = null;
+                        console.warn(`第${idx + 1}回の先行生成をスキップ:`, pErr);
+                        await new Promise(r => setTimeout(r, 3000));
+                    }
+                }
+            } finally {
+                isPrefetchingParts = false;
+                activePrefetchPromise = null;
+            }
+        }
+
         el("next-part-btn").addEventListener("click", async () => {
             if (!currentLesson) return;
             const btn = el("next-part-btn");
@@ -26673,8 +26773,9 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
             }
 
             currentLesson.currentPartIndex += 1;
-            const part = currentLesson.parts[currentLesson.currentPartIndex];
-            currentLesson.chatHistory.push({ role: "divider", content: `第${currentLesson.currentPartIndex + 1}回: ${part.title}` });
+            const targetIdx = currentLesson.currentPartIndex;
+            const part = currentLesson.parts[targetIdx];
+            currentLesson.chatHistory.push({ role: "divider", content: `第${targetIdx + 1}回: ${part.title}` });
             renderChatTranscript();
             renderVscodeMode();
             updateProgressStrip();
@@ -26683,12 +26784,77 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
             if (drillContainer) drillContainer.innerHTML = "";
             currentActiveDrill = null;
 
+            // ⚡ 1. プリフェッチ済みデータが存在する場合（待機時間0秒！）
+            if (part && part.prefetchedLecture && part.prefetchedLecture.content) {
+                const assistantEntry = {
+                    role: "assistant",
+                    content: part.prefetchedLecture.content
+                };
+                if (part.prefetchedLecture.diagramSvg) {
+                    assistantEntry.diagramSvg = part.prefetchedLecture.diagramSvg;
+                }
+                currentLesson.chatHistory.push(assistantEntry);
+
+                // 使用済みプリフェッチデータの整理
+                delete part.prefetchedLecture;
+
+                await saveLesson();
+                renderChatTranscript();
+                renderVscodeMode();
+                await forceTriggerMathJax();
+
+                btn.disabled = false;
+                updateCompletionUI();
+                renderPartsTOC();
+
+                showToast(`⚡ 第${targetIdx + 1}回の講義を即時ロードしました！`, "info", 1800);
+
+                // 後続パートのプリフェッチを継続
+                setTimeout(() => triggerPartsPrefetch(), 500);
+                return;
+            }
+
+            // ⚡ 2. ちょうど現在このパートを裏で生成中の場合（完了を待機して即反映）
+            if (activePrefetchPromise && activePrefetchPromise.partIndex === targetIdx && activePrefetchPromise.lessonId === currentLessonId) {
+                btn.textContent = "⚡ 仕上げ中...";
+                try {
+                    const aiJson = await activePrefetchPromise.promise;
+                    const aiPayload = extractAiResponsePayload(aiJson);
+                    const assistantEntry = {
+                        role: "assistant",
+                        content: aiPayload.ai_response || "（応答の取得に失敗しました）"
+                    };
+                    const cleanedSvg = sanitizeDiagramSvg(aiPayload.diagram_svg);
+                    if (cleanedSvg) assistantEntry.diagramSvg = cleanedSvg;
+
+                    currentLesson.chatHistory.push(assistantEntry);
+                    delete part.prefetchedLecture;
+
+                    await saveLesson();
+                    renderChatTranscript();
+                    renderVscodeMode();
+                    await forceTriggerMathJax();
+
+                    btn.disabled = false;
+                    updateCompletionUI();
+                    renderPartsTOC();
+
+                    setTimeout(() => triggerPartsPrefetch(), 500);
+                    return;
+                } catch (e) {
+                    console.warn("進行中プリフェッチの待機に失敗、通常生成にフォールバック:", e);
+                }
+            }
+
+            // ⚡ 3. プリフェッチ未完了の場合は通常生成
             btn.textContent = "⚙️ 準備中...";
             try {
                 await sendTurn(
                     null,
-                    `【指令】第${currentLesson.currentPartIndex + 1}回「${part.title}」（${part.summary}）の講義を、初回1通目としてわかりやすく始めてください。絶対に前パートのまとめやお礼を言わず、第${currentLesson.currentPartIndex + 1}回の本題から始めてください。`
+                    `【指令】第${targetIdx + 1}回「${part.title}」（${part.summary}）の講義を、初回1通目としてわかりやすく始めてください。絶対に前パートのまとめやお礼を言わず、第${targetIdx + 1}回の本題から始めてください。`
                 );
+                // 生成完了後、後続パートのプリフェッチを開始
+                setTimeout(() => triggerPartsPrefetch(), 1000);
             } catch (err) {
                 console.error(err);
                 showToast("授業の生成に失敗しました。原因: " + err.message, "error", 8000);
@@ -27952,6 +28118,7 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
                 if (autogen.lecture !== false) {
                     try {
                         await sendTurn(null, "このパートの授業を始めてください。");
+                        setTimeout(() => triggerPartsPrefetch(), 1000);
                     } catch (err) {
                         console.error(err);
                         showToast("授業の生成に失敗しました。原因: " + err.message, "error", 8000);
@@ -27963,6 +28130,7 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
                 renderChatTranscript();
                 renderVscodeMode();
                 await forceTriggerMathJax();
+                setTimeout(() => triggerPartsPrefetch(), 1200);
             }
 
             // 🔍 授業内キーワード検索等からのジャンプ＆ハイライト連携
