@@ -28200,23 +28200,41 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
                 } catch(e) {}
             }
 
-            // Firebase常時同期（授業受講中も全授業データを常に最新保持）
-            onValue(ref(database, 'users/' + loginUid + '/lessons'), (snapshot) => {
-                lastLessonsSnapshot = snapshot.val() || {};
-                if (window.floraCacheDB) {
-                    window.floraCacheDB.set('flora_cached_lessons_' + loginUid, lastLessonsSnapshot).catch(() => {});
-                }
-                if (!REQUESTED_ID) {
-                    renderContinueCard(lastLessonsSnapshot);
-                    renderLessonList(lastLessonsSnapshot);
-                    renderContinuationOptions(lastLessonsSnapshot);
-                    renderTopicRoadmap(lastLessonsSnapshot);
-                }
-            });
-
+            // 🛡️【データ転送料激減対策】
+            // 授業受講画面（REQUESTED_IDあり）の場合は全レッスン（6MB超）の購読を完全にスキップ！
+            // 受講中の1レッスン（数十KB）のみを取得することで、アクセスごとの大容量通信を根本遮断する。
             if (REQUESTED_ID) {
                 await loadLessonView(loginUid, REQUESTED_ID);
             } else {
+                // 授業一覧画面：キャッシュがあれば即時0秒描画し、直近5分以内の再ダウンロードをスキップ
+                const FETCH_TTL_MS = 5 * 60 * 1000; // 5分間キャッシュ有効
+                const lastFetchTs = parseInt(sessionStorage.getItem('flora_lessons_last_fetch_' + loginUid) || '0', 10);
+                const isCacheFresh = (Date.now() - lastFetchTs) < FETCH_TTL_MS;
+
+                async function fetchFullLessonsFromCloud(isForce = false) {
+                    try {
+                        const snap = await get(ref(database, 'users/' + loginUid + '/lessons'));
+                        if (snap.exists()) {
+                            lastLessonsSnapshot = snap.val() || {};
+                            if (window.floraCacheDB) {
+                                await window.floraCacheDB.set('flora_cached_lessons_' + loginUid, lastLessonsSnapshot).catch(() => {});
+                            }
+                            sessionStorage.setItem('flora_lessons_last_fetch_' + loginUid, String(Date.now()));
+                            renderContinueCard(lastLessonsSnapshot);
+                            renderLessonList(lastLessonsSnapshot);
+                            renderContinuationOptions(lastLessonsSnapshot);
+                            renderTopicRoadmap(lastLessonsSnapshot);
+                        }
+                    } catch (err) {
+                        console.warn('[DataSaver] lessons fetch error:', err);
+                    }
+                }
+                window.refreshAllLessonsFromCloud = fetchFullLessonsFromCloud;
+
+                if (!isCacheFresh || !lastLessonsSnapshot || Object.keys(lastLessonsSnapshot).length === 0) {
+                    await fetchFullLessonsFromCloud();
+                }
+
                 await handleLessonHandoff();
             }
         });

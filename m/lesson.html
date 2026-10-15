@@ -3629,34 +3629,70 @@
             setTimeout(() => { if (!auth.currentUser) window.floraTestLogin(); }, 500);
         }
 
-        // ==================== Firebase監視 ====================
-        function listenToLessons(uid) {
-            onValue(ref(database, `users/${uid}/lessons`), (snap) => {
-                lessonsCache = snap.val() || {};
-                renderLessonList();
-                renderMobileContinuationOptions(lessonsCache);
-                checkMobileLessonHandoff();
-
-                // 🎯 暗記事項・ノート等から「授業を開く」で渡された特定授業へ直行
-                if (requestedLessonId && !initialLessonOpened) {
-                    if (lessonsCache[requestedLessonId]) {
+        // ==================== Firebase監視 (データ転送量激減最適化) ====================
+        async function listenToLessons(uid) {
+            // 🎯 特定授業が指定されている場合：全件（6MB超）の購読は一切行わず、その1件のみを取得！
+            if (requestedLessonId) {
+                try {
+                    // キャッシュにあれば即利用
+                    if (window.floraCacheDB) {
+                        const cachedObj = await window.floraCacheDB.get('flora_cached_lessons_' + uid);
+                        if (cachedObj && cachedObj[requestedLessonId]) {
+                            lessonsCache = cachedObj;
+                            initialLessonOpened = true;
+                            openLesson(requestedLessonId);
+                            return;
+                        }
+                    }
+                    const s = await get(ref(database, `users/${uid}/lessons/${requestedLessonId}`));
+                    if (s.exists()) {
                         initialLessonOpened = true;
+                        lessonsCache[requestedLessonId] = s.val();
                         openLesson(requestedLessonId);
                     } else {
-                        // キャッシュにまだ反映されていない場合のフェイルセーフ単体取得
-                        get(ref(database, `users/${uid}/lessons/${requestedLessonId}`)).then((s) => {
-                            if (s.exists() && !initialLessonOpened) {
-                                initialLessonOpened = true;
-                                lessonsCache[requestedLessonId] = s.val();
-                                openLesson(requestedLessonId);
-                            } else if (!initialLessonOpened) {
-                                initialLessonOpened = true;
-                                if (window.mToast) mToast("⚠️ 指定された授業が見つかりませんでした");
-                            }
-                        }).catch(() => {});
+                        initialLessonOpened = true;
+                        if (window.mToast) mToast("⚠️ 指定された授業が見つかりませんでした");
                     }
+                } catch (e) {
+                    console.warn('[DataSaver Mobile] single lesson fetch error:', e);
                 }
-            });
+                return;
+            }
+
+            // 📚 一覧画面の場合：IndexedDBキャッシュから即時復元し、5分以内の再ダウンロードを遮断
+            if (window.floraCacheDB) {
+                try {
+                    const cached = await window.floraCacheDB.get('flora_cached_lessons_' + uid);
+                    if (cached && Object.keys(cached).length > 0) {
+                        lessonsCache = cached;
+                        renderLessonList();
+                        renderMobileContinuationOptions(lessonsCache);
+                        checkMobileLessonHandoff();
+                    }
+                } catch (e) {}
+            }
+
+            const FETCH_TTL_MS = 5 * 60 * 1000;
+            const lastFetchTs = parseInt(sessionStorage.getItem('flora_mobile_lessons_last_fetch_' + uid) || '0', 10);
+            const isCacheFresh = (Date.now() - lastFetchTs) < FETCH_TTL_MS;
+
+            if (!isCacheFresh || !lessonsCache || Object.keys(lessonsCache).length === 0) {
+                try {
+                    const snap = await get(ref(database, `users/${uid}/lessons`));
+                    if (snap.exists()) {
+                        lessonsCache = snap.val() || {};
+                        if (window.floraCacheDB) {
+                            await window.floraCacheDB.set('flora_cached_lessons_' + uid, lessonsCache).catch(() => {});
+                        }
+                        sessionStorage.setItem('flora_mobile_lessons_last_fetch_' + uid, String(Date.now()));
+                        renderLessonList();
+                        renderMobileContinuationOptions(lessonsCache);
+                        checkMobileLessonHandoff();
+                    }
+                } catch (err) {
+                    console.warn('[DataSaver Mobile] lessons fetch error:', err);
+                }
+            }
         }
 
         // ==================== 検索 & フィルター & 並び替え ====================

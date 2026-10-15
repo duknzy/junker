@@ -7909,15 +7909,59 @@
                     }, 200);
                 }
 
-                onValue(ref(database, `users/${user.uid}/lessons`), snap => {
-                    allLessons = snap.val() || {};
-                    debouncedSaveOffline("flora_offline_all_lessons", allLessons, 600);
-                    handleMobileSync();
-                });
-                onValue(ref(database, `users/${user.uid}/problems`), snap => {
-                    allProblems = snap.val() || {};
-                    handleMobileSync();
-                });
+                // 🛡️【データ転送量激減対策】
+                // 巨大な lessons(6.2MB) と problems(1MB) の常時onValueを遮断し、
+                // IndexedDBキャッシュ優先＋5分TTLの安全な単発取得に切り替え
+                (async () => {
+                    let hasCachedLessons = false;
+                    let hasCachedProblems = false;
+
+                    if (window.floraCacheDB) {
+                        try {
+                            const cached = await window.floraCacheDB.get("flora_offline_all_lessons");
+                            if (cached && Object.keys(cached).length > 0) {
+                                allLessons = cached;
+                                hasCachedLessons = true;
+                            }
+                        } catch(e) {}
+                    }
+                    try {
+                        const cachedProb = JSON.parse(localStorage.getItem('cached_problems_' + user.uid) || '{}');
+                        if (cachedProb && Object.keys(cachedProb).length > 0) {
+                            allProblems = cachedProb;
+                            hasCachedProblems = true;
+                        }
+                    } catch(e) {}
+
+                    if (hasCachedLessons || hasCachedProblems) {
+                        handleMobileSync();
+                    }
+
+                    const FETCH_TTL_MS = 5 * 60 * 1000;
+                    const lastFetchTs = parseInt(sessionStorage.getItem('flora_m_insights_last_fetch_' + user.uid) || '0', 10);
+                    const isFresh = (Date.now() - lastFetchTs) < FETCH_TTL_MS;
+
+                    if (!isFresh || !hasCachedLessons || !hasCachedProblems) {
+                        try {
+                            const [probSnap, lessonSnap] = await Promise.all([
+                                get(ref(database, `users/${user.uid}/problems`)),
+                                get(ref(database, `users/${user.uid}/lessons`))
+                            ]);
+                            if (probSnap.exists()) {
+                                allProblems = probSnap.val() || {};
+                                try { localStorage.setItem('cached_problems_' + user.uid, JSON.stringify(allProblems)); } catch(e) {}
+                            }
+                            if (lessonSnap.exists()) {
+                                allLessons = lessonSnap.val() || {};
+                                debouncedSaveOffline("flora_offline_all_lessons", allLessons, 600);
+                            }
+                            sessionStorage.setItem('flora_m_insights_last_fetch_' + user.uid, String(Date.now()));
+                            handleMobileSync();
+                        } catch(err) {
+                            console.warn('[DataSaver m/insights] fetch error:', err);
+                        }
+                    }
+                })();
                 onValue(ref(database, `users/${user.uid}/memorizeProgress`), snap => {
                     const remoteData = snap.val();
                     if (!snap.exists() || !remoteData || Object.keys(remoteData).length === 0) {

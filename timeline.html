@@ -3512,24 +3512,66 @@
             }, 500);
         }
 
-        // Firebase 認証＆データ監視
-        onAuthStateChanged(auth, (user) => {
+        // Firebase 認証＆データ読み込み (データ転送量激減対策)
+        onAuthStateChanged(auth, async (user) => {
             if (!user) {
                 // 未ログイン時の自動テスターログイン待機
                 return;
             }
 
-            // 問題データの監視
-            onValue(ref(database, 'users/' + user.uid + '/problems'), (snapshot) => {
-                rawProblems = snapshot.val() || {};
-                renderTimeline();
-            });
+            // 🗄️ 1. まず IndexedDB キャッシュから即時0秒描画
+            let hasLessonCache = false;
+            let hasProblemCache = false;
 
-            // 授業データの監視
-            onValue(ref(database, 'users/' + user.uid + '/lessons'), (snapshot) => {
-                rawLessons = snapshot.val() || {};
+            if (window.floraCacheDB) {
+                try {
+                    const cachedLessons = await window.floraCacheDB.get('flora_cached_lessons_' + user.uid);
+                    if (cachedLessons && Object.keys(cachedLessons).length > 0) {
+                        rawLessons = cachedLessons;
+                        hasLessonCache = true;
+                    }
+                } catch(e) {}
+            }
+            try {
+                const cachedProblems = JSON.parse(localStorage.getItem('cached_problems_' + user.uid) || '{}');
+                if (cachedProblems && Object.keys(cachedProblems).length > 0) {
+                    rawProblems = cachedProblems;
+                    hasProblemCache = true;
+                }
+            } catch(e) {}
+
+            if (hasLessonCache || hasProblemCache) {
                 renderTimeline();
-            });
+            }
+
+            // ⏱️ 2. 直近5分以内の再ダウンロードを遮断し、通信量を大幅カット
+            const FETCH_TTL_MS = 5 * 60 * 1000;
+            const lastFetchTs = parseInt(sessionStorage.getItem('flora_timeline_last_fetch_' + user.uid) || '0', 10);
+            const isFresh = (Date.now() - lastFetchTs) < FETCH_TTL_MS;
+
+            if (!isFresh || !hasLessonCache || !hasProblemCache) {
+                try {
+                    const [probSnap, lessonSnap] = await Promise.all([
+                        get(ref(database, 'users/' + user.uid + '/problems')),
+                        get(ref(database, 'users/' + user.uid + '/lessons'))
+                    ]);
+
+                    if (probSnap.exists()) {
+                        rawProblems = probSnap.val() || {};
+                        try { localStorage.setItem('cached_problems_' + user.uid, JSON.stringify(rawProblems)); } catch(e) {}
+                    }
+                    if (lessonSnap.exists()) {
+                        rawLessons = lessonSnap.val() || {};
+                        if (window.floraCacheDB) {
+                            await window.floraCacheDB.set('flora_cached_lessons_' + user.uid, rawLessons).catch(() => {});
+                        }
+                    }
+                    sessionStorage.setItem('flora_timeline_last_fetch_' + user.uid, String(Date.now()));
+                    renderTimeline();
+                } catch (err) {
+                    console.warn('[DataSaver Timeline] fetch error:', err);
+                }
+            }
         });
     </script>
 </body>
