@@ -54,6 +54,8 @@
                 align-items: stretch;
                 height: var(--bottom-nav-height, 64px);
                 padding-bottom: env(safe-area-inset-bottom, 0px);
+                padding-left: max(0.5rem, env(safe-area-inset-left, 0px));
+                padding-right: max(0.5rem, env(safe-area-inset-right, 0px));
                 background: rgba(255, 255, 255, 0.96);
                 border-top: 1px solid rgba(226, 232, 240, 0.85);
                 box-shadow: 0 -2px 12px rgba(15, 23, 42, 0.05);
@@ -131,8 +133,35 @@
                 letter-spacing: 0.02em;
             }
 
+            /* 📱 モバイル横画面（Landscape）最適化: ナビ高さを圧縮しアイコン＋ラベルを横並びに */
+            @media (orientation: landscape) and (max-height: 550px) {
+                #flora-bottom-nav {
+                    height: var(--bottom-nav-height, 46px);
+                }
+                .bnav-tab {
+                    flex-direction: row;
+                    gap: 0.45rem;
+                    padding: 0.15rem 0.5rem;
+                    min-height: 40px;
+                }
+                .bnav-icon {
+                    font-size: 1.15rem;
+                }
+                .bnav-label {
+                    font-size: 0.78rem;
+                }
+                .bnav-tab.active::before {
+                    width: 28px;
+                    height: 2.5px;
+                }
+                .bnav-tab.active .bnav-icon {
+                    transform: scale(1.06);
+                }
+            }
+
             /* モバイルでは右下に被るAPIキーのフローティング黒丸ボタンを非表示にし、設定タブに集約 */
             #api-key-floating-btn,
+            #apikm-fab,
             .api-key-fab-button,
             [data-api-key-fab] {
                 display: none !important;
