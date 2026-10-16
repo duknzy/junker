@@ -4669,9 +4669,14 @@
 
             // 1. 授業の暗記事項 (Core: PC版 buildMemorizationItems と完全同期)
             Object.entries(allLessons).forEach(([lid, l]) => {
-                if (!l || !Array.isArray(l.memorizationPoints)) return;
+                if (!l) return;
+                let mPoints = l.memorizationPoints;
+                if (mPoints && !Array.isArray(mPoints) && typeof mPoints === "object") {
+                    mPoints = Object.values(mPoints);
+                }
+                if (!Array.isArray(mPoints) || mPoints.length === 0) return;
                 const subj = detectSubjectFromLesson(l);
-                l.memorizationPoints.forEach((mp, idx) => {
+                mPoints.forEach((mp, idx) => {
                     const mpId = mp.id || `idx${idx}`;
                     // PC版の正規 progressKey (mem_${lid}_${mpId})
                     const progressKey = sanitizeDbKey(`mem_${lid}_${mpId}`);

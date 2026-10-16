@@ -7170,12 +7170,17 @@
             if (_cachedBuildMemorizationItems) return _cachedBuildMemorizationItems;
             const items = [];
             Object.entries(rawLessons).forEach(([lessonId, lesson]) => {
-                if (!lesson || !Array.isArray(lesson.memorizationPoints)) return;
+                if (!lesson) return;
+                let mPoints = lesson.memorizationPoints;
+                if (mPoints && !Array.isArray(mPoints) && typeof mPoints === "object") {
+                    mPoints = Object.values(mPoints);
+                }
+                if (!Array.isArray(mPoints) || mPoints.length === 0) return;
                 let lessonSubj = lesson.subject;
                 if (!lessonSubj || lessonSubj === "未分類" || lessonSubj === "その他") {
                     lessonSubj = detectSubjectFromLesson(lesson);
                 }
-                lesson.memorizationPoints.forEach((mp, idx) => {
+                mPoints.forEach((mp, idx) => {
                     const content = stripFurigana(mp.content || "").trim();
                     const question = stripFurigana(mp.question || "").trim();
                     const answer = stripFurigana(mp.answer || "").trim();

@@ -5622,7 +5622,7 @@ ${!isMathOrScienceSubject(subjectName) ? '※LaTeX記法（$記号や\\fbox等�
         }
 
         function renderMobileMemorizationPoints(state, errorMessage) {
-            const container = document.getElementById("m-memorize-points-list");
+            const container = document.getElementById("m-memorize-list") || document.getElementById("m-memorize-points-list");
             if (!container || !activeLessonId) return;
             const lesson = lessonsCache[activeLessonId];
             if (!lesson) return;
@@ -5742,11 +5742,11 @@ ${!isMathOrScienceSubject(subjectName) ? '※LaTeX記法（$記号や\\fbox等�
             if (!target) return;
 
             editingMemorizePointId = id;
-            const catEl = document.getElementById("m-new-mem-cat");
-            const qEl = document.getElementById("m-new-mem-q");
-            const aEl = document.getElementById("m-new-mem-a");
-            const noteEl = document.getElementById("m-new-mem-note");
-            const saveBtn = document.getElementById("m-btn-save-new-mem");
+            const catEl = document.getElementById("m-memorize-add-cat") || document.getElementById("m-new-mem-cat");
+            const qEl = document.getElementById("m-memorize-add-q") || document.getElementById("m-new-mem-q");
+            const aEl = document.getElementById("m-memorize-add-a") || document.getElementById("m-new-mem-a");
+            const noteEl = document.getElementById("m-memorize-add-note") || document.getElementById("m-new-mem-note");
+            const saveBtn = document.getElementById("m-btn-save-add-memorize") || document.getElementById("m-btn-save-new-mem");
 
             if (catEl) catEl.value = target.category || "重要用語";
             if (qEl) qEl.value = target.question || "";
@@ -5755,7 +5755,8 @@ ${!isMathOrScienceSubject(subjectName) ? '※LaTeX記法（$記号や\\fbox等�
             if (saveBtn) saveBtn.textContent = "💾 更新する";
 
             toggleAddMemorizePointForm(true);
-            document.getElementById("m-add-memorize-form")?.scrollIntoView({ behavior: "smooth" });
+            const form = document.getElementById("m-memorize-add-form") || document.getElementById("m-add-memorize-form");
+            form?.scrollIntoView({ behavior: "smooth" });
         }
 
         async function regenerateMobileMemorizationPoints() {
@@ -5789,18 +5790,19 @@ ${!isMathOrScienceSubject(subjectName) ? '※LaTeX記法（$記号や\\fbox等�
         }
 
         function toggleAddMemorizePointForm(show) {
-            const form = document.getElementById("m-add-memorize-form");
+            const form = document.getElementById("m-memorize-add-form") || document.getElementById("m-add-memorize-form");
             if (!form) return;
             form.style.display = show ? "block" : "none";
             if (show) {
-                document.getElementById("m-new-mem-q")?.focus();
+                const qEl = document.getElementById("m-memorize-add-q") || document.getElementById("m-new-mem-q");
+                qEl?.focus();
             } else {
                 editingMemorizePointId = null;
-                const saveBtn = document.getElementById("m-btn-save-new-mem");
-                if (saveBtn) saveBtn.textContent = "登録する";
-                const qEl = document.getElementById("m-new-mem-q");
-                const aEl = document.getElementById("m-new-mem-a");
-                const noteEl = document.getElementById("m-new-mem-note");
+                const saveBtn = document.getElementById("m-btn-save-add-memorize") || document.getElementById("m-btn-save-new-mem");
+                if (saveBtn) saveBtn.textContent = "＋ 追加保存";
+                const qEl = document.getElementById("m-memorize-add-q") || document.getElementById("m-new-mem-q");
+                const aEl = document.getElementById("m-memorize-add-a") || document.getElementById("m-new-mem-a");
+                const noteEl = document.getElementById("m-memorize-add-note") || document.getElementById("m-new-mem-note");
                 if (qEl) qEl.value = "";
                 if (aEl) aEl.value = "";
                 if (noteEl) noteEl.value = "";
@@ -5812,10 +5814,15 @@ ${!isMathOrScienceSubject(subjectName) ? '※LaTeX記法（$記号や\\fbox等�
             const lesson = lessonsCache[activeLessonId];
             if (!lesson) return;
 
-            const cat = (document.getElementById("m-new-mem-cat")?.value || "重要用語").trim();
-            const q = (document.getElementById("m-new-mem-q")?.value || "").trim();
-            const a = (document.getElementById("m-new-mem-a")?.value || "").trim();
-            const note = (document.getElementById("m-new-mem-note")?.value || "").trim();
+            const catEl = document.getElementById("m-memorize-add-cat") || document.getElementById("m-new-mem-cat");
+            const qEl = document.getElementById("m-memorize-add-q") || document.getElementById("m-new-mem-q");
+            const aEl = document.getElementById("m-memorize-add-a") || document.getElementById("m-new-mem-a");
+            const noteEl = document.getElementById("m-memorize-add-note") || document.getElementById("m-new-mem-note");
+
+            const cat = (catEl?.value || "重要用語").trim();
+            const q = (qEl?.value || "").trim();
+            const a = (aEl?.value || "").trim();
+            const note = (noteEl?.value || "").trim();
 
             if (!q && !a) {
                 if (window.mToast) mToast("⚠️ 問いまたは答えを入力してください");
@@ -5855,11 +5862,11 @@ ${!isMathOrScienceSubject(subjectName) ? '※LaTeX記法（$記号や\\fbox等�
             });
 
             // フォームクリア＆閉じる
-            document.getElementById("m-new-mem-q").value = "";
-            document.getElementById("m-new-mem-a").value = "";
-            document.getElementById("m-new-mem-note").value = "";
-            const saveBtn = document.getElementById("m-btn-save-new-mem");
-            if (saveBtn) saveBtn.textContent = "登録する";
+            if (qEl) qEl.value = "";
+            if (aEl) aEl.value = "";
+            if (noteEl) noteEl.value = "";
+            const saveBtn = document.getElementById("m-btn-save-add-memorize") || document.getElementById("m-btn-save-new-mem");
+            if (saveBtn) saveBtn.textContent = "＋ 追加保存";
             toggleAddMemorizePointForm(false);
             renderMobileMemorizationPoints();
             if (window.mToast) mToast("✅ 暗記事項を保存しました");
@@ -5877,6 +5884,10 @@ ${!isMathOrScienceSubject(subjectName) ? '※LaTeX記法（$記号や\\fbox等�
             renderMobileMemorizationPoints();
             if (window.mToast) mToast("🗑️ 暗記事項を削除しました");
         }
+
+        // 手動追加フォームのボタンイベントバインド
+        document.getElementById("m-btn-cancel-add-memorize")?.addEventListener("click", () => toggleAddMemorizePointForm(false));
+        document.getElementById("m-btn-save-add-memorize")?.addEventListener("click", () => saveNewMemorizationPoint());
 
         async function cleanMobileMemorizeFurigana() {
             if (!activeLessonId || !currentUser) return;
