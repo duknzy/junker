@@ -15064,895 +15064,1407 @@
             });
         });
 
-        // ==========================================
-        // 📅 暗記ペースメーカー（学習計画＆デイリーノルマ管理）
-        // ==========================================
-        let rawMemorizePlans = {};
-        let rawMemorizePlanLogs = {};
-        let activePlanId = localStorage.getItem("flora_active_memorize_plan_id") || null;
-        let currentPlannerQuotaCards = [];
-        window.plannerFilterQuotaKeys = null;
-        window._activePlannerSession = null;
+// ========================================================
+// 📅 新・暗記ペースメーカー（学習計画・遅延自動検知・スマートリスケジュール）
+// ========================================================
+let rawMemorizePlans = {};
+let rawMemorizePlanLogs = {};
+let activePlanId = localStorage.getItem("flora_active_memorize_plan_id") || null;
+let currentPlannerQuotaCards = [];
+window.plannerFilterQuotaKeys = null;
+window._activePlannerSession = null;
 
-        function getTodayDateStr() {
-            const d = new Date();
-            const y = d.getFullYear();
-            const m = String(d.getMonth() + 1).padStart(2, '0');
-            const date = String(d.getDate()).padStart(2, '0');
-            return `${y}-${m}-${date}`;
-        }
+function getTodayDateStr() {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const date = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${date}`;
+}
 
-        function getPlanTargetLessons(plan) {
-            if (!plan) return { targetLessons: [], allPlanCards: [] };
-            let lessonEntries = Object.entries(rawLessons).filter(([lid, les]) => Boolean(les));
+function dateDiffInDays(d1Str, d2Str) {
+    if (!d1Str || !d2Str) return 0;
+    const t1 = new Date(d1Str + "T00:00:00").getTime();
+    const t2 = new Date(d2Str + "T00:00:00").getTime();
+    return Math.round((t1 - t2) / (1000 * 60 * 60 * 24));
+}
 
-            // 教科絞り込み
-            if (plan.subject && plan.subject !== "ALL") {
-                lessonEntries = lessonEntries.filter(([lid, les]) => {
-                    const lSubj = les.subject || detectSubjectFromLesson(les) || "未分類";
-                    return lSubj === plan.subject;
-                });
-            }
+function addDaysToDate(dateStr, n) {
+    const d = new Date(dateStr + "T00:00:00");
+    d.setDate(d.getDate() + n);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const date = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${date}`;
+}
 
-            // 授業選択絞り込み
-            if (Array.isArray(plan.lessonIds) && plan.lessonIds.length > 0) {
-                const selSet = new Set(plan.lessonIds);
-                lessonEntries = lessonEntries.filter(([lid]) => selSet.has(lid));
-            }
+// 🗓️ 今週（月〜日）の7日間の日付と曜日を生成
+function getWeekDaysList(centerDateStr) {
+    const base = new Date(centerDateStr + "T00:00:00");
+    const dayOfWeek = base.getDay(); // 0:日, 1:月, ...
+    // 月曜始まりに補正 (月=0, ..., 日=6)
+    const mondayOffset = (dayOfWeek + 6) % 7;
+    const monday = new Date(base);
+    monday.setDate(monday.getDate() - mondayOffset);
 
-            // 並び順（授業順 or 復習優先）
-            if (plan.orderType === "srs_priority") {
-                const mems = buildMemorizationItems();
-                const memsByLid = {};
-                mems.forEach(m => {
-                    if (!memsByLid[m.lessonId]) memsByLid[m.lessonId] = [];
-                    memsByLid[m.lessonId].push(m);
-                });
-                // 未学習カードが多い授業を優先
-                lessonEntries.sort(([idA, lesA], [idB, lesB]) => {
-                    const unlearnedA = (memsByLid[idA] || []).filter(c => (c.boxLevel || 0) === 0).length;
-                    const unlearnedB = (memsByLid[idB] || []).filter(c => (c.boxLevel || 0) === 0).length;
-                    return unlearnedB - unlearnedA;
-                });
-            } else {
-                lessonEntries.sort(([idA, lesA], [idB, lesB]) => {
-                    const ordA = typeof lesA.orderIndex === "number" ? lesA.orderIndex : 999999;
-                    const ordB = typeof lesB.orderIndex === "number" ? lesB.orderIndex : 999999;
-                    if (ordA !== ordB) return ordA - ordB;
-                    const timeA = lesA.createdAt || 0;
-                    const timeB = lesB.createdAt || 0;
-                    if (timeA !== timeB) return timeA - timeB;
-                    return idA.localeCompare(idB);
-                });
-            }
+    const week = [];
+    const dayNames = ["月", "火", "水", "木", "金", "土", "日"];
+    for (let i = 0; i < 7; i++) {
+        const cur = new Date(monday);
+        cur.setDate(cur.getDate() + i);
+        const y = cur.getFullYear();
+        const m = String(cur.getMonth() + 1).padStart(2, '0');
+        const date = String(cur.getDate()).padStart(2, '0');
+        const dStr = `${y}-${m}-${date}`;
+        week.push({
+            dateStr: dStr,
+            dayLabel: dayNames[i],
+            dateNum: cur.getDate(),
+            isToday: dStr === centerDateStr,
+            isPast: dStr < centerDateStr,
+            isFuture: dStr > centerDateStr
+        });
+    }
+    return week;
+}
 
-            const allMems = buildMemorizationItems();
-            const memsByLesson = {};
-            allMems.forEach(m => {
-                if (!memsByLesson[m.lessonId]) memsByLesson[m.lessonId] = [];
-                memsByLesson[m.lessonId].push(m);
-            });
+function getPlanTargetLessons(plan) {
+    if (!plan) return { targetLessons: [], allPlanCards: [] };
+    let lessonEntries = Object.entries(rawLessons).filter(([lid, les]) => Boolean(les));
 
-            const targetLessons = [];
-            const allPlanCards = [];
+    // 教科絞り込み
+    if (plan.subject && plan.subject !== "ALL") {
+        lessonEntries = lessonEntries.filter(([lid, les]) => {
+            const lSubj = les.subject || detectSubjectFromLesson(les) || "未分類";
+            return lSubj === plan.subject;
+        });
+    }
 
-            lessonEntries.forEach(([lid, les]) => {
-                const cards = memsByLesson[lid] || [];
-                if (cards.length > 0) {
-                    const seqNum = targetLessons.length + 1;
-                    const lObj = {
-                        lessonId: lid,
-                        title: les.title || lid,
-                        subject: les.subject || detectSubjectFromLesson(les) || "未分類",
-                        cards: cards,
-                        cardCount: cards.length,
-                        seqNumber: seqNum
-                    };
-                    targetLessons.push(lObj);
-                    cards.forEach(c => {
-                        c._planLessonIndex = seqNum;
-                        c._planSeqNumber = allPlanCards.length + 1;
-                        allPlanCards.push(c);
-                    });
-                }
-            });
+    // 授業選択絞り込み
+    if (Array.isArray(plan.lessonIds) && plan.lessonIds.length > 0) {
+        const selSet = new Set(plan.lessonIds);
+        lessonEntries = lessonEntries.filter(([lid]) => selSet.has(lid));
+    }
 
-            return { targetLessons, allPlanCards };
-        }
+    // 並び順（授業順 or 復習優先）
+    if (plan.orderType === "srs_priority") {
+        const mems = buildMemorizationItems();
+        const memsByLid = {};
+        mems.forEach(m => {
+            if (!memsByLid[m.lessonId]) memsByLid[m.lessonId] = [];
+            memsByLid[m.lessonId].push(m);
+        });
+        lessonEntries.sort(([idA, lesA], [idB, lesB]) => {
+            const unlearnedA = (memsByLid[idA] || []).filter(c => (c.boxLevel || 0) === 0).length;
+            const unlearnedB = (memsByLid[idB] || []).filter(c => (c.boxLevel || 0) === 0).length;
+            return unlearnedB - unlearnedA;
+        });
+    } else {
+        lessonEntries.sort(([idA, lesA], [idB, lesB]) => {
+            const ordA = typeof lesA.orderIndex === "number" ? lesA.orderIndex : 999999;
+            const ordB = typeof lesB.orderIndex === "number" ? lesB.orderIndex : 999999;
+            if (ordA !== ordB) return ordA - ordB;
+            const timeA = lesA.createdAt || 0;
+            const timeB = lesB.createdAt || 0;
+            if (timeA !== timeB) return timeA - timeB;
+            return idA.localeCompare(idB);
+        });
+    }
 
-        function calculatePlanQuota(plan, planData) {
-            const today = getTodayDateStr();
-            const yesterday = addDaysToDate(today, -1);
-            const { targetLessons, allPlanCards } = planData;
-            const totalLessons = targetLessons.length;
-            const totalCards = allPlanCards.length;
+    const allMems = buildMemorizationItems();
+    const memsByLesson = {};
+    allMems.forEach(m => {
+        if (!memsByLesson[m.lessonId]) memsByLesson[m.lessonId] = [];
+        memsByLesson[m.lessonId].push(m);
+    });
 
-            // 1日あたりの目標授業数（デフォルト 1 授業/日）
-            const dailyTargetLessons = Math.max(1, parseInt(plan.dailyTarget, 10) || 1);
+    const targetLessons = [];
+    const allPlanCards = [];
 
-            const todayLogKey = `${plan.id}_${today}`;
-            const todayLog = rawMemorizePlanLogs[todayLogKey] || null;
-
-            let startLessonIdx = 0;
-            let endLessonIdx = 0;
-
-            if (todayLog && typeof todayLog.startLessonIdx === "number" && typeof todayLog.endLessonIdx === "number") {
-                startLessonIdx = Math.max(0, todayLog.startLessonIdx);
-                endLessonIdx = Math.min(totalLessons, todayLog.endLessonIdx);
-            } else {
-                startLessonIdx = Math.min(totalLessons, Math.max(0, parseInt(plan.currentIndex, 10) || 0));
-                endLessonIdx = Math.min(totalLessons, startLessonIdx + dailyTargetLessons);
-            }
-
-            const quotaLessons = targetLessons.slice(startLessonIdx, endLessonIdx);
-            const quotaCards = [];
-            quotaLessons.forEach(l => quotaCards.push(...l.cards));
-            const quotaCount = quotaCards.length;
-
-            const completedSet = new Set((todayLog && Array.isArray(todayLog.completedIds)) ? todayLog.completedIds : []);
-            let completedCount = 0;
-            quotaCards.forEach(c => {
-                const key1 = c.progressKey || c.id;
-                const key2 = c.memoId;
-                if (completedSet.has(key1) || (key2 && completedSet.has(key2))) {
-                    completedCount++;
-                }
-            });
-
-            const isFinished = quotaCount > 0 && completedCount >= quotaCount;
-            const progressPct = quotaCount > 0 ? Math.min(100, Math.round((completedCount / quotaCount) * 100)) : 100;
-
-            // 昨日の実績ログ
-            const yesterdayLogKey = `${plan.id}_${yesterday}`;
-            const yesterdayLog = rawMemorizePlanLogs[yesterdayLogKey] || null;
-
-            // 全体進捗（授業単位）
-            const doneLessons = Math.min(totalLessons, parseInt(plan.currentIndex, 10) || 0);
-            const overallPct = totalLessons > 0 ? Math.min(100, Math.round((doneLessons / totalLessons) * 100)) : 100;
-            const remainingLessons = Math.max(0, totalLessons - doneLessons);
-            const remainingDays = Math.ceil(remainingLessons / dailyTargetLessons);
-
-            // 消化済みカード換算
-            let doneCardsCount = 0;
-            for (let i = 0; i < doneLessons; i++) {
-                if (targetLessons[i]) doneCardsCount += targetLessons[i].cardCount;
-            }
-
-            let finishDateStr = "--";
-            if (remainingDays > 0) {
-                finishDateStr = addDaysToDate(today, remainingDays);
-            } else {
-                finishDateStr = "本日達成予定！";
-            }
-
-            return {
-                today,
-                yesterday,
-                totalLessons,
-                totalCards,
-                dailyTargetLessons,
-                startLessonIdx,
-                endLessonIdx,
-                startLessonNum: totalLessons > 0 ? startLessonIdx + 1 : 0,
-                endLessonNum: endLessonIdx,
-                quotaLessons,
-                quotaCards,
-                quotaCount,
-                completedCount,
-                isFinished,
-                progressPct,
-                yesterdayLog,
-                doneLessons,
-                doneCardsCount,
-                overallPct,
-                remainingLessons,
-                remainingDays,
-                finishDateStr
+    lessonEntries.forEach(([lid, les]) => {
+        const cards = memsByLesson[lid] || [];
+        if (cards.length > 0) {
+            const seqNum = targetLessons.length + 1;
+            const lObj = {
+                lessonId: lid,
+                title: les.title || lid,
+                subject: les.subject || detectSubjectFromLesson(les) || "未分類",
+                cards: cards,
+                cardCount: cards.length,
+                seqNumber: seqNum
             };
+            targetLessons.push(lObj);
+            cards.forEach(c => {
+                c._planLessonIndex = seqNum;
+                c._planSeqNumber = allPlanCards.length + 1;
+                allPlanCards.push(c);
+            });
         }
+    });
 
-        function renderPlannerUI() {
-            const container = document.getElementById("memorize-planner-container");
-            if (!container) return;
-            if (activeTab !== "memorize") {
-                container.style.display = "none";
-                return;
+    return { targetLessons, allPlanCards };
+}
+
+// ==========================================
+// 🎯 高度な計画・遅延・ノルマ計算エンジン
+// ==========================================
+function calculatePlanQuota(plan, planData) {
+    const today = getTodayDateStr();
+    const yesterday = addDaysToDate(today, -1);
+    const { targetLessons, allPlanCards } = planData;
+    const totalLessons = targetLessons.length;
+    const totalCards = allPlanCards.length;
+
+    const paceMode = plan.paceMode || "pace"; // "deadline" or "pace"
+    const quotaUnit = plan.quotaUnit || (plan.paceUnit === "cards" ? "cards" : "cards"); // デフォルトカード数均等
+    const startDate = plan.startDate || (plan.createdAt ? plan.createdAt.slice(0, 10) : today);
+    const daysElapsed = Math.max(1, dateDiffInDays(today, startDate) + 1);
+
+    // 消化済みカード数の算出
+    let doneCardsCount = 0;
+    if (typeof plan.currentCardIndex === "number" && plan.currentCardIndex > 0) {
+        doneCardsCount = Math.min(totalCards, plan.currentCardIndex);
+    } else {
+        const doneLessons = Math.min(totalLessons, parseInt(plan.currentIndex, 10) || 0);
+        for (let i = 0; i < doneLessons; i++) {
+            if (targetLessons[i]) doneCardsCount += targetLessons[i].cardCount;
+        }
+    }
+    const remainingCards = Math.max(0, totalCards - doneCardsCount);
+
+    // 目標期日モードでの残日数＆理想ペース計算
+    let targetDate = plan.targetDate || addDaysToDate(today, 30);
+    let daysRemaining = Math.max(0, dateDiffInDays(targetDate, today));
+    let idealDailyCards = daysRemaining > 0 ? Math.ceil(remainingCards / daysRemaining) : remainingCards;
+    if (idealDailyCards <= 0) idealDailyCards = 1;
+
+    // 遅延（ビハインド）の計算
+    let expectedCardsByToday = 0;
+    let delayCards = 0;
+    let delayDays = 0;
+    let isDelayed = false;
+    let isAhead = false;
+    let isOnTrack = true;
+
+    if (paceMode === "deadline") {
+        const totalPlannedDays = Math.max(1, dateDiffInDays(targetDate, startDate) + 1);
+        expectedCardsByToday = Math.min(totalCards, Math.round(totalCards * Math.min(1, daysElapsed / totalPlannedDays)));
+        delayCards = expectedCardsByToday - doneCardsCount;
+        delayDays = idealDailyCards > 0 ? Math.ceil(delayCards / idealDailyCards) : 0;
+    } else {
+        const dailyPaceCards = quotaUnit === "cards" 
+            ? (parseInt(plan.dailyCardsTarget, 10) || 50) 
+            : ((parseInt(plan.dailyTarget, 10) || 1) * Math.round(totalCards / Math.max(1, totalLessons)));
+        expectedCardsByToday = Math.min(totalCards, daysElapsed * dailyPaceCards);
+        delayCards = expectedCardsByToday - doneCardsCount;
+        delayDays = dailyPaceCards > 0 ? Math.ceil(delayCards / dailyPaceCards) : 0;
+    }
+
+    if (delayCards > 20 && delayDays >= 1) {
+        isDelayed = true;
+        isOnTrack = false;
+    } else if (delayCards < -30) {
+        isAhead = true;
+        isOnTrack = false;
+    }
+
+    // 今日の出題カード（quotaCards）の特定
+    const todayLogKey = `${plan.id}_${today}`;
+    const todayLog = rawMemorizePlanLogs[todayLogKey] || null;
+
+    let quotaCards = [];
+    let startLessonIdx = 0;
+    let endLessonIdx = 0;
+    let startCardIdx = doneCardsCount;
+    let endCardIdx = doneCardsCount;
+
+    if (quotaUnit === "cards") {
+        // カード数均等モード
+        const dailyTargetCards = paceMode === "deadline" ? idealDailyCards : (parseInt(plan.dailyCardsTarget, 10) || 50);
+        
+        if (todayLog && typeof todayLog.startCardIdx === "number" && typeof todayLog.endCardIdx === "number") {
+            startCardIdx = Math.max(0, todayLog.startCardIdx);
+            endCardIdx = Math.min(totalCards, todayLog.endCardIdx);
+        } else {
+            startCardIdx = Math.min(totalCards, doneCardsCount);
+            endCardIdx = Math.min(totalCards, startCardIdx + dailyTargetCards);
+        }
+        quotaCards = allPlanCards.slice(startCardIdx, endCardIdx);
+    } else {
+        // 授業単位モード
+        const dailyTargetLessons = Math.max(1, parseInt(plan.dailyTarget, 10) || 1);
+        if (todayLog && typeof todayLog.startLessonIdx === "number" && typeof todayLog.endLessonIdx === "number") {
+            startLessonIdx = Math.max(0, todayLog.startLessonIdx);
+            endLessonIdx = Math.min(totalLessons, todayLog.endLessonIdx);
+        } else {
+            startLessonIdx = Math.min(totalLessons, parseInt(plan.currentIndex, 10) || 0);
+            endLessonIdx = Math.min(totalLessons, startLessonIdx + dailyTargetLessons);
+        }
+        const quotaLessons = targetLessons.slice(startLessonIdx, endLessonIdx);
+        quotaLessons.forEach(l => quotaCards.push(...l.cards));
+    }
+
+    const quotaCount = quotaCards.length;
+
+    // 今日の達成状況
+    const completedSet = new Set((todayLog && Array.isArray(todayLog.completedIds)) ? todayLog.completedIds : []);
+    let completedCount = 0;
+    quotaCards.forEach(c => {
+        const key1 = c.progressKey || c.id;
+        const key2 = c.memoId;
+        if (completedSet.has(key1) || (key2 && completedSet.has(key2))) {
+            completedCount++;
+        }
+    });
+
+    const isFinished = quotaCount > 0 && completedCount >= quotaCount;
+    const progressPct = quotaCount > 0 ? Math.min(100, Math.round((completedCount / quotaCount) * 100)) : 100;
+
+    // 全体進捗
+    const overallPct = totalCards > 0 ? Math.min(100, Math.round((doneCardsCount / totalCards) * 100)) : 100;
+
+    // 完走予測日
+    let finishDateStr = "--";
+    if (paceMode === "deadline") {
+        finishDateStr = targetDate;
+    } else {
+        const dailyPaceCards = quotaUnit === "cards" ? (parseInt(plan.dailyCardsTarget, 10) || 50) : 50;
+        const remDays = Math.ceil(remainingCards / dailyPaceCards);
+        finishDateStr = remDays > 0 ? addDaysToDate(today, remDays) : "本日達成予定！";
+    }
+
+    // 週間タイムライン集約
+    const weekList = getWeekDaysList(today).map(w => {
+        const logKey = `${plan.id}_${w.dateStr}`;
+        const log = rawMemorizePlanLogs[logKey];
+        let status = "future";
+        let icon = "⚪";
+        if (w.isToday) {
+            status = "today";
+            icon = isFinished ? "💮" : (completedCount > 0 ? "🟡" : "🎯");
+        } else if (w.isPast) {
+            if (log && (log.isFinished || (log.completedCount >= log.targetCount && log.targetCount > 0))) {
+                status = "done";
+                icon = "💮";
+            } else if (log && log.completedCount > 0) {
+                status = "partial";
+                icon = "🟡";
+            } else {
+                status = "missed";
+                icon = "🔴";
             }
-            container.style.display = "block";
+        }
+        return { ...w, status, icon, completed: log ? log.completedCount : 0, target: log ? log.targetCount : 0 };
+    });
 
-            const planKeys = Object.keys(rawMemorizePlans || {});
-            if (planKeys.length === 0) {
-                container.innerHTML = `
-                    <div class="planner-card" style="border: 1.5px dashed var(--border-color); text-align: center; padding: 2rem 1.5rem; background: var(--bg-surface);">
-                        <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">📅</div>
-                        <div style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.4rem;">
-                            暗記ペースメーカー（学習計画＆デイリーノルマ管理）
-                        </div>
-                        <div style="font-size: 0.82rem; color: var(--text-secondary); max-width: 520px; margin: 0 auto 1.2rem auto; line-height: 1.6;">
-                            「日本史を毎日1授業ずつ」「物理を毎日2授業ずつ」など、授業単位で無理のない学習計画を立てられます。<br>
-                            本日の対象授業と前日の実績が自動集計され、全端末でリアルタイム共有されます。
-                        </div>
-                        <button type="button" id="btn-create-first-plan" class="planner-primary-btn" style="font-size: 0.9rem; padding: 0.65rem 1.5rem; margin: 0 auto;">
-                            ＋ 最初の暗記計画を作成する
-                        </button>
-                    </div>
-                `;
-                const btnFirst = document.getElementById("btn-create-first-plan");
-                if (btnFirst) btnFirst.onclick = () => openPlannerModal();
-                return;
-            }
+    // 昨日の実績ログ
+    const yesterdayLogKey = `${plan.id}_${yesterday}`;
+    const yesterdayLog = rawMemorizePlanLogs[yesterdayLogKey] || null;
 
-            if (!activePlanId || !rawMemorizePlans[activePlanId]) {
-                activePlanId = planKeys[0];
-                localStorage.setItem("flora_active_memorize_plan_id", activePlanId);
-            }
-            const plan = rawMemorizePlans[activePlanId];
-            if (!plan) return;
+    return {
+        today,
+        yesterday,
+        startDate,
+        targetDate,
+        paceMode,
+        quotaUnit,
+        totalLessons,
+        totalCards,
+        doneCardsCount,
+        remainingCards,
+        daysElapsed,
+        daysRemaining,
+        idealDailyCards,
+        delayCards,
+        delayDays,
+        isDelayed,
+        isAhead,
+        isOnTrack,
+        startLessonIdx,
+        endLessonIdx,
+        startCardIdx,
+        endCardIdx,
+        quotaCards,
+        quotaCount,
+        completedCount,
+        isFinished,
+        progressPct,
+        overallPct,
+        finishDateStr,
+        weekList,
+        yesterdayLog
+    };
+}
 
-            const planData = getPlanTargetLessons(plan);
-            const q = calculatePlanQuota(plan, planData);
-            currentPlannerQuotaCards = q.quotaCards;
 
-            // 今日の対象授業タイトル表示
-            let todayLessonTitleHtml = "対象授業なし";
-            if (q.quotaLessons.length === 1) {
-                todayLessonTitleHtml = `【 授業 #${q.startLessonNum}: ${escapeHtml(q.quotaLessons[0].title)} 】`;
-            } else if (q.quotaLessons.length > 1) {
-                todayLessonTitleHtml = `【 授業 #${q.startLessonNum} 〜 #${q.endLessonNum} (計${q.quotaLessons.length}授業) 】`;
-            }
+// ==========================================
+// ⚡ ワンクリック・スマートリスケジュール処理
+// ==========================================
+async function smartReschedule(action) {
+    if (!activePlanId || !rawMemorizePlans[activePlanId]) return;
+    const plan = rawMemorizePlans[activePlanId];
+    const planData = getPlanTargetLessons(plan);
+    const q = calculatePlanQuota(plan, planData);
 
-            // 昨日の実績テキスト
-            let yesterdayHtml = `<span style="color:var(--text-muted); font-size:0.75rem;">まだ昨日の学習記録はありません</span>`;
-            if (q.yesterdayLog) {
-                const yTitle = q.yesterdayLog.lessonTitle || `授業 #${q.yesterdayLog.startLessonNum || 1}`;
-                const yDone = q.yesterdayLog.completedCount || 0;
-                const yTarget = q.yesterdayLog.targetCount || 0;
-                const isYFinished = q.yesterdayLog.isFinished || (yDone >= yTarget);
-                yesterdayHtml = `
-                    <div class="planner-history-item" style="background:rgba(16,185,129,0.06); border-color:rgba(16,185,129,0.25);">
-                        <div style="display:flex; align-items:center; gap:0.4rem; flex:1; min-width:0;">
-                            <span style="flex-shrink:0;">🗓️ 昨日 (${escapeHtml(q.yesterday)})</span>
-                            <span style="font-weight:800; color:var(--text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                                ${escapeHtml(yTitle)}
-                            </span>
-                        </div>
-                        <div style="display:flex; align-items:center; gap:0.4rem; flex-shrink:0;">
-                            <span style="font-weight:800; color:#059669;">${yDone} / ${yTarget}問 完了</span>
-                            ${isYFinished ? '<span style="font-size:0.95rem;">💮</span>' : ''}
-                        </div>
-                    </div>
-                `;
-            }
+    const today = getTodayDateStr();
 
-            const optionsHtml = planKeys.map(k => {
-                const p = rawMemorizePlans[k];
-                const isSelected = k === activePlanId ? "selected" : "";
-                return `<option value="${escapeHtml(k)}" ${isSelected}>${escapeHtml(p.title || "無題の計画")} (${escapeHtml(p.subject || "全体")})</option>`;
-            }).join("");
+    if (action === "rebalance") {
+        // 残り日数で均等に割り直す
+        if (q.daysRemaining <= 0) {
+            showToast("目標期日を先に未来の日付に変更してください。", "warning");
+            return;
+        }
+        plan.paceMode = "deadline";
+        plan.quotaUnit = "cards";
+        plan.dailyCardsTarget = q.idealDailyCards;
+        plan.updatedAt = new Date().toISOString();
 
-            const isQuotaFiltered = window.plannerFilterQuotaKeys !== null;
+        if (currentUser && currentUser.uid) {
+            try {
+                await update(ref(database, `users/${currentUser.uid}/memorizePlans/${plan.id}`), {
+                    paceMode: plan.paceMode,
+                    quotaUnit: plan.quotaUnit,
+                    dailyCardsTarget: plan.dailyCardsTarget,
+                    updatedAt: plan.updatedAt
+                });
+            } catch(e) { console.warn(e); }
+        }
+        showToast(`⚡ 残り ${q.daysRemaining} 日で均等に割り直しました！（1日のノルマ: 約 ${q.idealDailyCards} 問）`, "success", 4000);
+    } else if (action === "extend") {
+        // 遅れた日数分だけ目標完了日を後ろに延長
+        const daysToExtend = Math.max(1, q.delayDays || 1);
+        const newTargetDate = addDaysToDate(q.targetDate, daysToExtend);
+        plan.targetDate = newTargetDate;
+        plan.updatedAt = new Date().toISOString();
 
-            container.innerHTML = `
-                <div class="planner-card">
-                    <!-- ヘッダー行 -->
-                    <div class="planner-header-row">
-                        <div class="planner-title-wrap">
-                            <span style="font-size:1.35rem;">📅</span>
-                            <div class="planner-title">
-                                暗記ペースメーカー
-                            </div>
-                            <select class="planner-plan-select" id="planner-plan-selector" title="学習計画を切り替えます">
-                                ${optionsHtml}
-                            </select>
-                        </div>
-                        <div style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap;">
-                            <button type="button" class="planner-secondary-btn" id="btn-planner-open-history" title="過去の学習記録を一覧表示">
-                                🗓️ 達成履歴
-                            </button>
-                            <button type="button" class="planner-secondary-btn" id="btn-planner-edit-plan" title="現在の計画設定を変更">
-                                ⚙️ 計画を編集
-                            </button>
-                            <button type="button" class="planner-secondary-btn" id="btn-planner-reset-srs" style="color:var(--danger, #ef4444); border-color:rgba(239,68,68,0.3);" title="すべての暗記カードのSRS学習データ・ペースメーカー履歴をリセット">
-                                🔄 SRS完全リセット
-                            </button>
-                            <button type="button" class="planner-secondary-btn" id="btn-planner-new-plan" style="color:var(--brand-primary); font-weight:800;" title="別の教科や授業で新しい計画を作成">
-                                ＋ 新規計画
-                            </button>
-                        </div>
-                    </div>
+        if (currentUser && currentUser.uid) {
+            try {
+                await update(ref(database, `users/${currentUser.uid}/memorizePlans/${plan.id}`), {
+                    targetDate: plan.targetDate,
+                    updatedAt: plan.updatedAt
+                });
+            } catch(e) { console.warn(e); }
+        }
+        showToast(`📅 目標期日を ${daysToExtend} 日延長しました！（新目標日: ${newTargetDate}）`, "success", 4000);
+    } else if (action === "reset_today") {
+        // 遅延をリセットして今日から改めてスタート
+        plan.startDate = today;
+        plan.updatedAt = new Date().toISOString();
 
-                    <!-- 今日のノルマ強調ボックス（授業単位） -->
-                    <div class="planner-quota-box">
-                        <div class="planner-quota-header">
-                            <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;">
-                                <span class="planner-quota-tag">🎯 本日のノルマ</span>
-                                <span class="planner-quota-range" style="font-size:1.05rem;">
-                                    ${todayLessonTitleHtml}
-                                </span>
-                                <span style="font-size:0.8rem; font-weight:700; color:var(--text-secondary);">
-                                    (暗記事項: 全${q.quotaCount}問)
-                                </span>
-                            </div>
-                            <div style="font-size:0.75rem; color:var(--text-muted);">
-                                📚 教科: ${escapeHtml(plan.subject || "全般")} │ ペース: 毎日 ${q.dailyTargetLessons} 授業
-                            </div>
-                        </div>
+        if (currentUser && currentUser.uid) {
+            try {
+                await update(ref(database, `users/${currentUser.uid}/memorizePlans/${plan.id}`), {
+                    startDate: plan.startDate,
+                    updatedAt: plan.updatedAt
+                });
+            } catch(e) { console.warn(e); }
+        }
+        showToast("🎯 本日を新しい起点としてリスケジュールしました！今日から無理なく進めましょう。", "success", 4000);
+    }
 
-                        <!-- 進捗バー -->
-                        <div class="planner-progress-wrap">
-                            <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.78rem;">
-                                <span style="font-weight:700; color:var(--text-secondary);">
-                                    本日の達成状況: <strong style="font-size:0.92rem; color:${q.isFinished ? '#059669' : 'var(--text-primary)'};">${q.completedCount} / ${q.quotaCount} 問</strong>
-                                </span>
-                                <span style="font-weight:800; color:${q.isFinished ? '#059669' : 'var(--brand-primary)'};">
-                                    ${q.isFinished ? '💮 本日の授業ノルマ達成！' : `${q.progressPct}% 完了`}
-                                </span>
-                            </div>
-                            <div class="planner-progress-bar-bg">
-                                <div class="planner-progress-bar-fill" style="width: ${q.progressPct}%; background:${q.isFinished ? 'linear-gradient(90deg, #10B981, #059669)' : 'linear-gradient(90deg, #10B981, #06B6D4)'};"></div>
-                            </div>
-                        </div>
+    renderPlannerUI();
+}
 
-                        <!-- アクションボタン群 -->
-                        <div class="planner-action-group" style="margin-top:0.3rem;">
-                            <button type="button" class="planner-primary-btn" id="btn-planner-start-quota" ${q.quotaCount === 0 ? 'disabled style="opacity:0.6;"' : ''}>
-                                ▶ 今日の授業 (${q.quotaCount}問) を演習
-                            </button>
-                            <button type="button" class="planner-secondary-btn" id="btn-planner-filter-quota" style="${isQuotaFiltered ? 'background:var(--brand-primary); color:#fff; border-color:var(--brand-primary); font-weight:800;' : ''}">
-                                ${isQuotaFiltered ? '📋 全カード表示に戻す' : `📋 今日の${q.quotaCount}問を一覧表示`}
-                            </button>
-                            <button type="button" class="planner-secondary-btn" id="btn-planner-mark-completed" title="演習をスキップして今日の授業を完了済みに更新します">
-                                💮 本日分を完了にする
-                            </button>
-                        </div>
-                    </div>
+// ==========================================
+// 🌟「本日の総学習（要復習＋新規計画）」一括スタート
+// ==========================================
+function startCombinedDailyDrill() {
+    if (!activePlanId || !rawMemorizePlans[activePlanId]) {
+        showToast("有効な学習計画がありません。", "warning");
+        return;
+    }
+    const plan = rawMemorizePlans[activePlanId];
+    const planData = getPlanTargetLessons(plan);
+    const q = calculatePlanQuota(plan, planData);
 
-                    <!-- 昨日の実績と直近ログ -->
-                    <div style="margin-bottom:0.75rem;">
-                        <div style="font-size:0.76rem; font-weight:800; color:var(--text-secondary); margin-bottom:0.4rem; display:flex; align-items:center; gap:0.35rem;">
-                            <span>⏮️ 昨日の実績:</span>
-                        </div>
-                        ${yesterdayHtml}
-                    </div>
+    // 1. 本日のSRS要復習カードを抽出
+    const srsDueCards = [];
+    const allMems = buildMemorizationItems();
+    const today = getTodayDateStr();
 
-                    <!-- 全体進捗＆完走予測インサイト（授業単位） -->
-                    <div class="planner-info-grid">
-                        <div class="planner-info-cell">
-                            <span class="planner-info-label">📊 計画全体の進捗</span>
-                            <span class="planner-info-value" style="color:var(--brand-primary);">
-                                ${q.doneLessons} / ${q.totalLessons} 授業完了 (${q.overallPct}%)
-                                <span style="font-size:0.74rem; font-weight:600; color:var(--text-muted); margin-left:0.3rem;">(${q.doneCardsCount} / ${q.totalCards}問)</span>
-                            </span>
-                        </div>
-                        <div class="planner-info-cell">
-                            <span class="planner-info-label">🏁 完走予定日（予測）</span>
-                            <span class="planner-info-value" style="color:#059669;">
-                                ${q.remainingLessons === 0 ? '🎉 全授業制覇完了！' : `あと ${q.remainingLessons} 授業 (${q.remainingDays}日: ${q.finishDateStr})`}
-                            </span>
-                        </div>
-                        <div class="planner-info-cell">
-                            <span class="planner-info-label">⚡ 学習ペース設定</span>
-                            <span class="planner-info-value">
-                                毎日 ${plan.dailyTarget || 1} 授業ずつ (${plan.orderType === 'srs_priority' ? '復習優先' : '授業順'})
-                            </span>
-                        </div>
+    allMems.forEach(c => {
+        // 対象教科で絞り込み
+        if (plan.subject && plan.subject !== "ALL" && c.subject !== plan.subject) return;
+        if (c.nextReviewDate && c.nextReviewDate <= today) {
+            srsDueCards.push(c);
+        }
+    });
+
+    // 2. 本日の新規ノルマカード
+    const quotaCards = q.quotaCards || [];
+
+    // 重複を排除しつつマージ (復習カード優先)
+    const seenKeys = new Set();
+    const combinedCards = [];
+
+    srsDueCards.forEach(c => {
+        const k = c.progressKey || c.id || c.memoId;
+        if (!seenKeys.has(k)) {
+            seenKeys.add(k);
+            c._isSrsReview = true;
+            combinedCards.push(c);
+        }
+    });
+
+    quotaCards.forEach(c => {
+        const k = c.progressKey || c.id || c.memoId;
+        if (!seenKeys.has(k)) {
+            seenKeys.add(k);
+            c._isNewQuota = true;
+            combinedCards.push(c);
+        }
+    });
+
+    if (combinedCards.length === 0) {
+        showToast("🎉 本日やるべき復習・新規カードはありません！完璧です！", "success");
+        return;
+    }
+
+    // 計画セッション情報も登録
+    window._activePlannerSession = {
+        planId: plan.id,
+        date: q.today,
+        startLessonIdx: q.startLessonIdx,
+        endLessonIdx: q.endLessonIdx,
+        startCardIdx: q.startCardIdx,
+        endCardIdx: q.endCardIdx,
+        lessonTitle: `${plan.title} (復習 ${srsDueCards.length}問 ＋ 新規 ${quotaCards.length}問)`,
+        targetCount: q.quotaCount
+    };
+
+    const flashcards = combinedCards.map(p => convertToFlashcard(p, 'memorize'));
+    openFlashcardModal(flashcards, 0);
+    showToast(`🚀 本日の総演習を開始します（復習 ${srsDueCards.length}問 ＋ 新規 ${quotaCards.length}問）`, "info", 3000);
+}
+
+// ==========================================
+// 🎨 ダッシュボード UI 描画
+// ==========================================
+function renderPlannerUI() {
+    const container = document.getElementById("memorize-planner-container");
+    if (!container) return;
+    if (activeTab !== "memorize") {
+        container.style.display = "none";
+        return;
+    }
+    container.style.display = "block";
+
+    const planKeys = Object.keys(rawMemorizePlans || {});
+    if (planKeys.length === 0) {
+        container.innerHTML = `
+            <div class="planner-card" style="border: 1.5px dashed var(--border-color); text-align: center; padding: 2rem 1.5rem; background: var(--bg-surface);">
+                <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">📅</div>
+                <div style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.4rem;">
+                    暗記ペースメーカー（学習計画＆遅延自動リカバリー）
+                </div>
+                <div style="font-size: 0.82rem; color: var(--text-secondary); max-width: 520px; margin: 0 auto 1.2rem auto; line-height: 1.6;">
+                    「試験日までに政経を制覇」「毎日50問ずつ無理なく暗記」など、目標に合わせたスマートな学習計画を立てられます。<br>
+                    万が一サボったり遅れても、ワンクリックで自動リスケジュールして無理なく挽回できます。
+                </div>
+                <button type="button" id="btn-create-first-plan" class="planner-primary-btn" style="font-size: 0.9rem; padding: 0.65rem 1.5rem; margin: 0 auto;">
+                    ＋ 最初の学習計画を作成する
+                </button>
+            </div>
+        `;
+        const btnFirst = document.getElementById("btn-create-first-plan");
+        if (btnFirst) btnFirst.onclick = () => openPlannerModal();
+        return;
+    }
+
+    if (!activePlanId || !rawMemorizePlans[activePlanId]) {
+        activePlanId = planKeys[0];
+        localStorage.setItem("flora_active_memorize_plan_id", activePlanId);
+    }
+    const plan = rawMemorizePlans[activePlanId];
+    if (!plan) return;
+
+    const planData = getPlanTargetLessons(plan);
+    const q = calculatePlanQuota(plan, planData);
+    currentPlannerQuotaCards = q.quotaCards;
+
+    // 1. 遅延・順調アラートバナーの構築
+    let alertBannerHtml = "";
+    if (q.isDelayed) {
+        alertBannerHtml = `
+            <div class="planner-delay-box">
+                <div class="planner-delay-header">
+                    <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+                        <span class="planner-delay-tag">⚠️ 計画遅延 (${q.delayDays}日分 / 約${q.delayCards}問 遅れ)</span>
+                        <span style="font-size:0.78rem; font-weight:700; color:#b91c1c;">
+                            目標期日 (${q.targetDate}) に向けて少し遅れが発生しています。無理のない方法でリスケジュールできます：
+                        </span>
                     </div>
                 </div>
-            `;
+                <div class="planner-delay-actions">
+                    <button type="button" class="planner-reschedule-btn" id="btn-reschedule-rebalance" title="残りの日数で無理なく均等に割り直します">
+                        ⚡ 残日数で均等に割り直す (毎日 ${q.idealDailyCards}問)
+                    </button>
+                    <button type="button" class="planner-reschedule-btn" id="btn-reschedule-extend" title="1日のペースは維持し、期日を遅れた分だけ延長します">
+                        📅 目標期日を ${q.delayDays}日 延長する
+                    </button>
+                    <button type="button" class="planner-reschedule-btn" id="btn-reschedule-reset" title="今日を新しい起点として再スタートします" style="color:var(--text-secondary); border-color:var(--border-color);">
+                        🎯 本日起点でリセット
+                    </button>
+                </div>
+            </div>
+        `;
+    } else if (q.isAhead) {
+        alertBannerHtml = `
+            <div class="planner-ahead-box">
+                <div style="display:flex; align-items:center; gap:0.5rem;">
+                    <span style="font-size:1.15rem;">🚀</span>
+                    <span style="font-size:0.8rem; font-weight:800; color:#047857;">
+                        計画より先行しています！予定より約 ${Math.abs(q.delayCards)} 問前倒しで進んでいます。素晴らしいペースです！
+                    </span>
+                </div>
+                <span style="font-size:0.75rem; color:#065f46; font-weight:700;">順調 💮</span>
+            </div>
+        `;
+    }
 
-            // イベント割り当て
-            const selPlan = document.getElementById("planner-plan-selector");
-            if (selPlan) {
-                selPlan.onchange = (e) => {
-                    activePlanId = e.target.value;
-                    localStorage.setItem("flora_active_memorize_plan_id", activePlanId);
-                    window.plannerFilterQuotaKeys = null;
-                    if (currentUser && currentUser.uid) {
-                        set(ref(database, `users/${currentUser.uid}/memorizeActivePlanId`), activePlanId);
-                    }
-                    renderPlannerUI();
-                    if (activeTab === "memorize") renderMemorize();
-                };
-            }
+    // 2. 週間ミニ進捗ストリップ
+    const weekStripHtml = `
+        <div class="planner-week-strip" title="今週の学習リズムと達成状況">
+            ${q.weekList.map(w => `
+                <div class="planner-week-day ${w.isToday ? 'today' : ''}">
+                    <span style="font-size:0.68rem; color:${w.isToday ? 'var(--brand-primary)' : 'var(--text-muted)'}; font-weight:800;">${w.dayLabel}</span>
+                    <span style="font-size:0.78rem; font-weight:700; color:var(--text-primary);">${w.dateNum}</span>
+                    <span class="planner-week-status">${w.icon}</span>
+                </div>
+            `).join('')}
+        </div>
+    `;
 
-            const btnNewPlan = document.getElementById("btn-planner-new-plan");
-            if (btnNewPlan) btnNewPlan.onclick = () => openPlannerModal();
+    // 3. 昨日の実績テキスト
+    let yesterdayHtml = `<span style="color:var(--text-muted); font-size:0.75rem;">まだ昨日の学習記録はありません</span>`;
+    if (q.yesterdayLog) {
+        const yDone = q.yesterdayLog.completedCount || 0;
+        const yTarget = q.yesterdayLog.targetCount || 0;
+        const isYFinished = q.yesterdayLog.isFinished || (yDone >= yTarget);
+        yesterdayHtml = `
+            <div class="planner-history-item" style="background:rgba(16,185,129,0.06); border-color:rgba(16,185,129,0.25);">
+                <div style="display:flex; align-items:center; gap:0.4rem; flex:1; min-width:0;">
+                    <span style="flex-shrink:0;">🗓️ 昨日 (${escapeHtml(q.yesterday)})</span>
+                    <span style="font-weight:800; color:var(--text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                        ${escapeHtml(q.yesterdayLog.lessonTitle || "本日のノルマ")}
+                    </span>
+                </div>
+                <div style="display:flex; align-items:center; gap:0.4rem; flex-shrink:0;">
+                    <span style="font-weight:800; color:#059669;">${yDone} / ${yTarget}問 完了</span>
+                    ${isYFinished ? '<span style="font-size:0.95rem;">💮</span>' : ''}
+                </div>
+            </div>
+        `;
+    }
 
-            const btnEditPlan = document.getElementById("btn-planner-edit-plan");
-            if (btnEditPlan) btnEditPlan.onclick = () => openPlannerModal(activePlanId);
+    // 4. 今日の要復習カード枚数の取得
+    const allMems = buildMemorizationItems();
+    const srsDueCount = allMems.filter(c => {
+        if (plan.subject && plan.subject !== "ALL" && c.subject !== plan.subject) return false;
+        return c.nextReviewDate && c.nextReviewDate <= q.today;
+    }).length;
 
-            const btnResetSrs = document.getElementById("btn-planner-reset-srs");
-            if (btnResetSrs) btnResetSrs.onclick = () => window.resetAllSrsProgress();
+    const optionsHtml = planKeys.map(k => {
+        const p = rawMemorizePlans[k];
+        const isSelected = k === activePlanId ? "selected" : "";
+        return `<option value="${escapeHtml(k)}" ${isSelected}>${escapeHtml(p.title || "無題の計画")} (${escapeHtml(p.subject || "全体")})</option>`;
+    }).join("");
 
-            const btnStartQuota = document.getElementById("btn-planner-start-quota");
-            if (btnStartQuota) btnStartQuota.onclick = () => startPlannerQuotaDrill();
+    const isQuotaFiltered = window.plannerFilterQuotaKeys !== null;
 
-            const btnFilterQuota = document.getElementById("btn-planner-filter-quota");
-            if (btnFilterQuota) {
-                btnFilterQuota.onclick = () => {
-                    if (window.plannerFilterQuotaKeys) {
-                        window.plannerFilterQuotaKeys = null;
-                    } else {
-                        window.plannerFilterQuotaKeys = q.quotaCards.map(c => c.progressKey || c.id || c.memoId);
-                    }
-                    renderPlannerUI();
-                    renderMemorize();
-                };
-            }
+    container.innerHTML = `
+        <div class="planner-card">
+            <!-- ヘッダー行 -->
+            <div class="planner-header-row">
+                <div class="planner-title-wrap">
+                    <span style="font-size:1.35rem;">📅</span>
+                    <div class="planner-title">
+                        暗記ペースメーカー
+                    </div>
+                    <select class="planner-plan-select" id="planner-plan-selector" title="学習計画を切り替えます">
+                        ${optionsHtml}
+                    </select>
+                </div>
+                <div style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap;">
+                    <button type="button" class="planner-secondary-btn" id="btn-planner-open-history" title="過去の学習記録を一覧表示">
+                        🗓️ 達成履歴
+                    </button>
+                    <button type="button" class="planner-secondary-btn" id="btn-planner-edit-plan" title="現在の計画設定を変更">
+                        ⚙️ 計画を編集
+                    </button>
+                    <button type="button" class="planner-secondary-btn" id="btn-planner-reset-srs" style="color:var(--danger, #ef4444); border-color:rgba(239,68,68,0.3);" title="すべての暗記カードのSRS学習データ・ペースメーカー履歴をリセット">
+                        🔄 SRS完全リセット
+                    </button>
+                    <button type="button" class="planner-secondary-btn" id="btn-planner-new-plan" style="color:var(--brand-primary); font-weight:800;" title="別の教科や授業で新しい計画を作成">
+                        ＋ 新規計画
+                    </button>
+                </div>
+            </div>
 
-            const btnMarkCompleted = document.getElementById("btn-planner-mark-completed");
-            if (btnMarkCompleted) btnMarkCompleted.onclick = () => markTodayQuotaCompleted();
+            <!-- 遅延 / 順調バナー -->
+            ${alertBannerHtml}
 
-            const btnHistory = document.getElementById("btn-planner-open-history");
-            if (btnHistory) btnHistory.onclick = () => openPlannerHistoryModal();
-        }
+            <!-- 🎯 本日の学習統合アクションボックス -->
+            <div class="planner-quota-box">
+                <div class="planner-quota-header">
+                    <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;">
+                        <span class="planner-quota-tag">🎯 本日の学習ノルマ</span>
+                        <span class="planner-quota-range" style="font-size:1.05rem;">
+                            全 ${q.quotaCount} 問
+                        </span>
+                        <span style="font-size:0.8rem; font-weight:700; color:var(--text-secondary);">
+                            (教科: ${escapeHtml(plan.subject || "全般")})
+                        </span>
+                    </div>
+                    <div style="font-size:0.75rem; color:var(--text-muted);">
+                        ${plan.paceMode === "deadline" ? `🏁 目標完了日: ${q.targetDate} (あと${q.daysRemaining}日)` : `⚡ ペース: 毎日 ${q.quotaUnit === 'cards' ? (plan.dailyCardsTarget || 50) + '問' : (plan.dailyTarget || 1) + '授業'}`}
+                    </div>
+                </div>
 
-        function openPlannerModal(editingPlanId = null) {
-            const modal = document.getElementById("planner-modal");
-            if (!modal) return;
+                <!-- 進捗バー -->
+                <div class="planner-progress-wrap">
+                    <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.78rem;">
+                        <span style="font-weight:700; color:var(--text-secondary);">
+                            本日の達成状況: <strong style="font-size:0.92rem; color:${q.isFinished ? '#059669' : 'var(--text-primary)'};">${q.completedCount} / ${q.quotaCount} 問</strong>
+                        </span>
+                        <span style="font-weight:800; color:${q.isFinished ? '#059669' : 'var(--brand-primary)'};">
+                            ${q.isFinished ? '💮 本日のノルマ達成！' : `${q.progressPct}% 完了`}
+                        </span>
+                    </div>
+                    <div class="planner-progress-bar-bg">
+                        <div class="planner-progress-bar-fill" style="width: ${q.progressPct}%; background:${q.isFinished ? 'linear-gradient(90deg, #10B981, #059669)' : 'linear-gradient(90deg, #10B981, #06B6D4)'};"></div>
+                    </div>
+                </div>
 
-            const titleEl = document.getElementById("planner-modal-title-text");
-            const idInput = document.getElementById("planner-form-id");
-            const titleInput = document.getElementById("planner-form-title");
-            const subjSelect = document.getElementById("planner-form-subject");
-            const lessonsList = document.getElementById("planner-form-lessons-list");
-            const lessonSearch = document.getElementById("planner-form-lesson-search");
-            const dailyTargetInput = document.getElementById("planner-form-daily-target");
-            const orderSelect = document.getElementById("planner-form-order-type");
-            const currentIndexInput = document.getElementById("planner-form-current-index");
-            const deleteBtn = document.getElementById("planner-modal-btn-delete");
+                <!-- アクションボタン群 -->
+                <div class="planner-action-group" style="margin-top:0.35rem;">
+                    <!-- 🌟 統合一括スタート -->
+                    <button type="button" class="planner-dual-start-btn" id="btn-planner-combined-drill" title="エビングハウス忘却曲線の要復習と今日の新規計画をまとめて連続演習します">
+                        🚀 本日の総学習を一括スタート (${srsDueCount > 0 ? `要復習 ${srsDueCount}問 ＋ ` : ''}新規 ${q.quotaCount}問)
+                    </button>
+                    <button type="button" class="planner-primary-btn" id="btn-planner-start-quota" ${q.quotaCount === 0 ? 'disabled style="opacity:0.6;"' : ''}>
+                        ▶ 新規ノルマのみ演習 (${q.quotaCount}問)
+                    </button>
+                    <button type="button" class="planner-secondary-btn" id="btn-planner-filter-quota" style="${isQuotaFiltered ? 'background:var(--brand-primary); color:#fff; border-color:var(--brand-primary); font-weight:800;' : ''}">
+                        ${isQuotaFiltered ? '📋 全カード表示に戻す' : `📋 今日の${q.quotaCount}問を一覧表示`}
+                    </button>
+                    <button type="button" class="planner-secondary-btn" id="btn-planner-mark-completed" title="演習をスキップして今日のノルマを完了済みに更新します">
+                        💮 本日分を完了にする
+                    </button>
+                </div>
+            </div>
 
-            const isEdit = Boolean(editingPlanId && rawMemorizePlans[editingPlanId]);
-            const plan = isEdit ? rawMemorizePlans[editingPlanId] : null;
+            <!-- 🗓️ 週間ミニタイムライン -->
+            <div style="margin-bottom:0.65rem;">
+                <div style="font-size:0.75rem; font-weight:800; color:var(--text-secondary); margin-bottom:0.25rem;">
+                    🗓️ 今週の学習リズム（月〜日）:
+                </div>
+                ${weekStripHtml}
+            </div>
 
-            if (titleEl) titleEl.textContent = isEdit ? "暗記ペースメーカー：計画を編集" : "暗記ペースメーカー：新しい学習計画を作成";
-            if (idInput) idInput.value = isEdit ? plan.id : `plan_${Date.now()}`;
-            if (titleInput) titleInput.value = isEdit ? (plan.title || "") : "";
+            <!-- 昨日の実績 -->
+            <div style="margin-bottom:0.75rem;">
+                <div style="font-size:0.76rem; font-weight:800; color:var(--text-secondary); margin-bottom:0.35rem; display:flex; align-items:center; gap:0.35rem;">
+                    <span>⏮️ 昨日の実績:</span>
+                </div>
+                ${yesterdayHtml}
+            </div>
 
-            // 🎯 実際に暗記事項（カード）が存在する教科・科目のみを動的抽出して選択肢を生成
-            const allMemsForSubj = buildMemorizationItems();
-            const subjectCardCounts = {};
-            allMemsForSubj.forEach(m => {
-                const s = m.subject || "未分類";
-                subjectCardCounts[s] = (subjectCardCounts[s] || 0) + 1;
-            });
+            <!-- 全体進捗＆完走予測インサイト -->
+            <div class="planner-info-grid">
+                <div class="planner-info-cell">
+                    <span class="planner-info-label">📊 計画全体の進捗</span>
+                    <span class="planner-info-value" style="color:var(--brand-primary);">
+                        ${q.doneCardsCount} / ${q.totalCards} 問完了 (${q.overallPct}%)
+                        <span style="font-size:0.74rem; font-weight:600; color:var(--text-muted); margin-left:0.3rem;">(全${q.totalLessons}授業)</span>
+                    </span>
+                </div>
+                <div class="planner-info-cell">
+                    <span class="planner-info-label">🏁 目標完了日・予測</span>
+                    <span class="planner-info-value" style="color:#059669;">
+                        ${q.remainingCards === 0 ? '🎉 全問制覇完了！' : `${q.finishDateStr} (残り ${q.remainingCards}問)`}
+                    </span>
+                </div>
+                <div class="planner-info-cell">
+                    <span class="planner-info-label">⚡ 学習ペース設定</span>
+                    <span class="planner-info-value">
+                        ${plan.paceMode === 'deadline' ? `期日逆算 (毎日約${q.idealDailyCards}問)` : `毎日 ${plan.quotaUnit === 'cards' ? (plan.dailyCardsTarget || 50) + '問' : (plan.dailyTarget || 1) + '授業'}`}
+                        <span style="font-size:0.72rem; color:var(--text-muted); margin-left:0.3rem;">(${plan.orderType === 'srs_priority' ? '復習優先' : '授業順'})</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+    `;
 
-            if (subjSelect) {
-                const targetSubj = isEdit ? (plan.subject || "ALL") : "ALL";
-                let optionsHtml = `<option value="ALL">すべての教科・科目（全体: ${allMemsForSubj.length}個）</option>`;
-                
-                const sortedSubjects = Object.keys(subjectCardCounts).sort((a, b) => a.localeCompare(b, "ja"));
-                sortedSubjects.forEach(s => {
-                    const count = subjectCardCounts[s];
-                    optionsHtml += `<option value="${escapeHtml(s)}">${escapeHtml(s)} (${count}個)</option>`;
-                });
-
-                subjSelect.innerHTML = optionsHtml;
-                subjSelect.value = targetSubj;
-                if (!subjSelect.value) subjSelect.value = "ALL";
-            }
-
-            // 1日の目標授業数（デフォルト 1 授業/日）
-            if (dailyTargetInput) dailyTargetInput.value = isEdit ? (plan.dailyTarget || 1) : 1;
-            if (orderSelect) orderSelect.value = isEdit ? (plan.orderType || "sequential") : "sequential";
-            if (currentIndexInput) currentIndexInput.value = isEdit ? (plan.currentIndex || 0) : 0;
-            if (deleteBtn) deleteBtn.style.display = isEdit ? "inline-flex" : "none";
-
-            // 授業リスト描画
-            let selectedLessonIds = new Set(isEdit && Array.isArray(plan.lessonIds) ? plan.lessonIds : []);
-            let isAllSelected = !isEdit || selectedLessonIds.size === 0;
-
-            function updateLessonsListHtml() {
-                const curSubj = subjSelect ? subjSelect.value : "ALL";
-                const q = lessonSearch ? lessonSearch.value.trim().toLowerCase() : "";
-
-                const allMems = buildMemorizationItems();
-                const lessonCounts = {};
-                allMems.forEach(m => {
-                    lessonCounts[m.lessonId] = (lessonCounts[m.lessonId] || 0) + 1;
-                });
-
-                const lessonEntries = Object.entries(rawLessons).filter(([lid, les]) => {
-                    if (!les) return false;
-                    const lSubj = les.subject || detectSubjectFromLesson(les) || "未分類";
-                    if (curSubj !== "ALL" && lSubj !== curSubj) return false;
-                    if (q) {
-                        const title = (les.title || "").toLowerCase();
-                        if (!title.includes(q)) return false;
-                    }
-                    return (lessonCounts[lid] || 0) > 0; // 暗記事項がある授業のみ
-                });
-
-                if (lessonEntries.length === 0) {
-                    lessonsList.innerHTML = `<div style="font-size:0.75rem; color:var(--text-muted); padding:0.5rem;">該当する授業が見つかりません</div>`;
-                    updatePreviewCounts();
-                    return;
-                }
-
-                lessonsList.innerHTML = lessonEntries.map(([lid, les]) => {
-                    const count = lessonCounts[lid] || 0;
-                    const checked = isAllSelected || selectedLessonIds.has(lid) ? "checked" : "";
-                    return `
-                        <label style="display:flex; align-items:center; gap:0.5rem; font-size:0.78rem; padding:0.25rem 0.4rem; border-radius:var(--radius-sm); cursor:pointer; background:var(--bg-surface); border:1px solid var(--border-color);">
-                            <input type="checkbox" class="planner-form-lesson-check" data-lesson-id="${escapeHtml(lid)}" ${checked}>
-                            <span style="font-weight:700; color:var(--text-primary); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                                ${escapeHtml(les.title || lid)}
-                            </span>
-                            <span style="font-size:0.7rem; color:var(--text-muted); background:var(--bg-subtle); padding:0.1rem 0.4rem; border-radius:4px;">
-                                ${count}個
-                            </span>
-                        </label>
-                    `;
-                }).join("");
-
-                lessonsList.querySelectorAll(".planner-form-lesson-check").forEach(chk => {
-                    chk.onchange = () => {
-                        const lid = chk.dataset.lessonId;
-                        if (chk.checked) {
-                            selectedLessonIds.add(lid);
-                        } else {
-                            selectedLessonIds.delete(lid);
-                        }
-                        isAllSelected = false;
-                        updatePreviewCounts();
-                    };
-                });
-
-                updatePreviewCounts();
-            }
-
-            function updatePreviewCounts() {
-                const curSubj = subjSelect ? subjSelect.value : "ALL";
-                const allMems = buildMemorizationItems();
-                const lessonCounts = {};
-                allMems.forEach(m => {
-                    lessonCounts[m.lessonId] = (lessonCounts[m.lessonId] || 0) + 1;
-                });
-
-                const eligibleLessons = Object.entries(rawLessons).filter(([lid, les]) => {
-                    if (!les) return false;
-                    const lSubj = les.subject || detectSubjectFromLesson(les) || "未分類";
-                    if (curSubj !== "ALL" && lSubj !== curSubj) return false;
-                    if (!isAllSelected && !selectedLessonIds.has(lid)) return false;
-                    return (lessonCounts[lid] || 0) > 0;
-                });
-
-                let totalCardCount = 0;
-                eligibleLessons.forEach(([lid]) => {
-                    totalCardCount += (lessonCounts[lid] || 0);
-                });
-
-                const previewLessonEl = document.getElementById("planner-form-preview-count");
-                if (previewLessonEl) previewLessonEl.textContent = eligibleLessons.length;
-                const previewCardEl = document.getElementById("planner-form-preview-cards-count");
-                if (previewCardEl) previewCardEl.textContent = totalCardCount;
-
-                const dailyTarget = parseInt(dailyTargetInput?.value, 10) || 1;
-                const days = Math.ceil(eligibleLessons.length / dailyTarget);
-                const calcDaysEl = document.getElementById("planner-form-calc-days");
-                if (calcDaysEl) calcDaysEl.textContent = days > 0 ? days : 1;
-            }
-
-            if (subjSelect) subjSelect.onchange = () => {
-                selectedLessonIds.clear();
-                isAllSelected = true;
-                updateLessonsListHtml();
-            };
-            if (lessonSearch) lessonSearch.oninput = () => updateLessonsListHtml();
-
-            const btnSelAll = document.getElementById("planner-form-btn-select-all");
-            if (btnSelAll) btnSelAll.onclick = () => {
-                isAllSelected = true;
-                selectedLessonIds.clear();
-                lessonsList.querySelectorAll(".planner-form-lesson-check").forEach(c => c.checked = true);
-                updatePreviewCounts();
-            };
-            const btnClearAll = document.getElementById("planner-form-btn-clear-all");
-            if (btnClearAll) btnClearAll.onclick = () => {
-                isAllSelected = false;
-                selectedLessonIds.clear();
-                lessonsList.querySelectorAll(".planner-form-lesson-check").forEach(c => c.checked = false);
-                updatePreviewCounts();
-            };
-
-            // プリセットチップ（授業単位）
-            modal.querySelectorAll(".planner-preset-chip").forEach(btn => {
-                btn.onclick = () => {
-                    modal.querySelectorAll(".planner-preset-chip").forEach(b => {
-                        b.classList.remove("active");
-                        b.style.background = "";
-                        b.style.color = "";
-                        b.style.borderColor = "";
-                    });
-                    btn.classList.add("active");
-                    btn.style.background = "var(--brand-primary)";
-                    btn.style.color = "#fff";
-                    btn.style.borderColor = "var(--brand-primary)";
-                    if (dailyTargetInput) {
-                        dailyTargetInput.value = btn.dataset.count;
-                        updatePreviewCounts();
-                    }
-                };
-            });
-
-            if (dailyTargetInput) dailyTargetInput.oninput = () => updatePreviewCounts();
-
-            updateLessonsListHtml();
-            modal.style.display = "flex";
-
-            // 保存ボタン
-            const saveBtn = document.getElementById("planner-modal-btn-save");
-            if (saveBtn) {
-                saveBtn.onclick = async () => {
-                    const id = idInput.value.trim() || `plan_${Date.now()}`;
-                    const title = titleInput.value.trim();
-                    if (!title) {
-                        showToast("計画タイトルを入力してください。", "warning");
-                        return;
-                    }
-                    const subject = subjSelect.value;
-                    const dailyTarget = Math.max(1, parseInt(dailyTargetInput.value, 10) || 1);
-                    const orderType = orderSelect.value;
-                    const currentIndex = Math.max(0, parseInt(currentIndexInput.value, 10) || 0);
-                    const lessonIds = isAllSelected ? [] : Array.from(selectedLessonIds);
-
-                    const planData = {
-                        id,
-                        title,
-                        subject,
-                        lessonIds,
-                        dailyTarget, // 1日あたりの目標授業数
-                        orderType,
-                        currentIndex, // 消化済み授業数
-                        paceUnit: "lesson",
-                        updatedAt: new Date().toISOString()
-                    };
-                    if (!isEdit) {
-                        planData.createdAt = new Date().toISOString();
-                        planData.startDate = getTodayDateStr();
-                    } else if (plan && plan.createdAt) {
-                        planData.createdAt = plan.createdAt;
-                        planData.startDate = plan.startDate || getTodayDateStr();
-                    }
-
-                    rawMemorizePlans[id] = planData;
-                    activePlanId = id;
-                    localStorage.setItem("flora_active_memorize_plan_id", id);
-
-                    if (currentUser && currentUser.uid) {
-                        try {
-                            await update(ref(database, `users/${currentUser.uid}/memorizePlans/${id}`), planData);
-                            await set(ref(database, `users/${currentUser.uid}/memorizeActivePlanId`), id);
-                        } catch (err) {
-                            console.warn("[Flora Planner] Save failed:", err);
-                        }
-                    }
-
-                    showToast("授業単位の学習計画を保存しました！全端末で共有されます。", "success");
-                    modal.style.display = "none";
-                    renderPlannerUI();
-                };
-            }
-
-            // 削除ボタン
-            if (deleteBtn) {
-                deleteBtn.onclick = async () => {
-                    if (!confirm(`計画「${plan.title}」を削除してもよろしいですか？`)) return;
-                    delete rawMemorizePlans[plan.id];
-                    if (activePlanId === plan.id) {
-                        const remaining = Object.keys(rawMemorizePlans);
-                        activePlanId = remaining.length > 0 ? remaining[0] : null;
-                        if (activePlanId) {
-                            localStorage.setItem("flora_active_memorize_plan_id", activePlanId);
-                        } else {
-                            localStorage.removeItem("flora_active_memorize_plan_id");
-                        }
-                    }
-                    if (currentUser && currentUser.uid) {
-                        try {
-                            await remove(ref(database, `users/${currentUser.uid}/memorizePlans/${plan.id}`));
-                            await set(ref(database, `users/${currentUser.uid}/memorizeActivePlanId`), activePlanId || null);
-                        } catch (err) {
-                            console.warn("[Flora Planner] Delete failed:", err);
-                        }
-                    }
-                    showToast("計画を削除しました。", "info");
-                    modal.style.display = "none";
-                    renderPlannerUI();
-                };
-            }
-
-            const cancelBtn = document.getElementById("planner-modal-btn-cancel");
-            if (cancelBtn) cancelBtn.onclick = () => modal.style.display = "none";
-            const closeBtn = document.getElementById("planner-modal-close-btn");
-            if (closeBtn) closeBtn.onclick = () => modal.style.display = "none";
-        }
-
-        function startPlannerQuotaDrill() {
-            if (!activePlanId || !rawMemorizePlans[activePlanId]) {
-                showToast("有効な学習計画がありません。", "warning");
-                return;
-            }
-            const plan = rawMemorizePlans[activePlanId];
-            const planData = getPlanTargetLessons(plan);
-            const q = calculatePlanQuota(plan, planData);
-            if (q.quotaCards.length === 0) {
-                showToast("本日の出題対象カードがありません。", "info");
-                return;
-            }
-
-            const lessonTitleSummary = q.quotaLessons.length === 1
-                ? q.quotaLessons[0].title
-                : `${q.quotaLessons[0].title} ほか ${q.quotaLessons.length - 1}授業`;
-
-            window._activePlannerSession = {
-                planId: plan.id,
-                date: q.today,
-                startLessonIdx: q.startLessonIdx,
-                endLessonIdx: q.endLessonIdx,
-                startLessonNum: q.startLessonNum,
-                endLessonNum: q.endLessonNum,
-                lessonTitle: lessonTitleSummary,
-                targetCount: q.quotaCount
-            };
-
-            const flashcards = q.quotaCards.map(p => convertToFlashcard(p, 'memorize'));
-            openFlashcardModal(flashcards, 0);
-        }
-
-        function handlePlannerCardAnswered(card, rating) {
-            if (!window._activePlannerSession) return;
-            const session = window._activePlannerSession;
-            const plan = rawMemorizePlans[session.planId];
-            if (!plan) return;
-
-            const today = session.date;
-            const logKey = `${plan.id}_${today}`;
-            const log = rawMemorizePlanLogs[logKey] || {
-                planId: plan.id,
-                date: today,
-                startLessonIdx: session.startLessonIdx,
-                endLessonIdx: session.endLessonIdx,
-                startLessonNum: session.startLessonNum,
-                endLessonNum: session.endLessonNum,
-                lessonTitle: session.lessonTitle,
-                targetCount: session.targetCount,
-                completedIds: [],
-                completedCount: 0,
-                isFinished: false,
-                updatedAt: new Date().toISOString()
-            };
-
-            const cardKey = card.progressKey || card.id || card.memoId;
-            if (cardKey && !log.completedIds.includes(cardKey)) {
-                log.completedIds.push(cardKey);
-            }
-            log.completedCount = log.completedIds.length;
-
-            if (log.completedCount >= log.targetCount && !log.isFinished) {
-                log.isFinished = true;
-                const totalLessons = getPlanTargetLessons(plan).targetLessons.length;
-                plan.currentIndex = Math.min(totalLessons, session.endLessonIdx);
-                plan.updatedAt = new Date().toISOString();
-                if (currentUser && currentUser.uid) {
-                    update(ref(database, `users/${currentUser.uid}/memorizePlans/${plan.id}`), {
-                        currentIndex: plan.currentIndex,
-                        updatedAt: plan.updatedAt
-                    });
-                }
-                showToast("🎉 おめでとうございます！本日の授業ノルマを完全達成しました！💮", "success");
-            }
-
-            log.updatedAt = new Date().toISOString();
-            rawMemorizePlanLogs[logKey] = log;
-
+    // イベント割り当て
+    const selPlan = document.getElementById("planner-plan-selector");
+    if (selPlan) {
+        selPlan.onchange = (e) => {
+            activePlanId = e.target.value;
+            localStorage.setItem("flora_active_memorize_plan_id", activePlanId);
+            window.plannerFilterQuotaKeys = null;
             if (currentUser && currentUser.uid) {
-                set(ref(database, `users/${currentUser.uid}/memorizePlanLogs/${logKey}`), log);
+                set(ref(database, `users/${currentUser.uid}/memorizeActivePlanId`), activePlanId);
             }
             renderPlannerUI();
+            if (activeTab === "memorize") renderMemorize();
+        };
+    }
+
+    // スマートリスケジュールボタン
+    const btnRebalance = document.getElementById("btn-reschedule-rebalance");
+    if (btnRebalance) btnRebalance.onclick = () => smartReschedule("rebalance");
+
+    const btnExtend = document.getElementById("btn-reschedule-extend");
+    if (btnExtend) btnExtend.onclick = () => smartReschedule("extend");
+
+    const btnReset = document.getElementById("btn-reschedule-reset");
+    if (btnReset) btnReset.onclick = () => smartReschedule("reset_today");
+
+    // 一括演習ボタン
+    const btnCombined = document.getElementById("btn-planner-combined-drill");
+    if (btnCombined) btnCombined.onclick = () => startCombinedDailyDrill();
+
+    const btnNewPlan = document.getElementById("btn-planner-new-plan");
+    if (btnNewPlan) btnNewPlan.onclick = () => openPlannerModal();
+
+    const btnEditPlan = document.getElementById("btn-planner-edit-plan");
+    if (btnEditPlan) btnEditPlan.onclick = () => openPlannerModal(activePlanId);
+
+    const btnResetSrs = document.getElementById("btn-planner-reset-srs");
+    if (btnResetSrs) btnResetSrs.onclick = () => window.resetAllSrsProgress();
+
+    const btnStartQuota = document.getElementById("btn-planner-start-quota");
+    if (btnStartQuota) btnStartQuota.onclick = () => startPlannerQuotaDrill();
+
+    const btnFilterQuota = document.getElementById("btn-planner-filter-quota");
+    if (btnFilterQuota) {
+        btnFilterQuota.onclick = () => {
+            if (window.plannerFilterQuotaKeys) {
+                window.plannerFilterQuotaKeys = null;
+            } else {
+                window.plannerFilterQuotaKeys = q.quotaCards.map(c => c.progressKey || c.id || c.memoId);
+            }
+            renderPlannerUI();
+            renderMemorize();
+        };
+    }
+
+    const btnMarkCompleted = document.getElementById("btn-planner-mark-completed");
+    if (btnMarkCompleted) btnMarkCompleted.onclick = () => markTodayQuotaCompleted();
+
+    const btnHistory = document.getElementById("btn-planner-open-history");
+    if (btnHistory) btnHistory.onclick = () => openPlannerHistoryModal();
+}
+
+
+// ==========================================
+// ⚙️ 計画作成・編集モーダル制御
+// ==========================================
+function openPlannerModal(editingPlanId = null) {
+    const modal = document.getElementById("planner-modal");
+    if (!modal) return;
+
+    const titleEl = document.getElementById("planner-modal-title-text");
+    const idInput = document.getElementById("planner-form-id");
+    const titleInput = document.getElementById("planner-form-title");
+    const subjSelect = document.getElementById("planner-form-subject");
+    const lessonsList = document.getElementById("planner-form-lessons-list");
+    const lessonSearch = document.getElementById("planner-form-lesson-search");
+    
+    // モード制御
+    const paceModeInput = document.getElementById("planner-form-pace-mode");
+    const tabDeadline = document.getElementById("planner-tab-btn-deadline");
+    const tabPace = document.getElementById("planner-tab-btn-pace");
+    const boxDeadline = document.getElementById("planner-mode-box-deadline");
+    const boxPace = document.getElementById("planner-mode-box-pace");
+    const targetDateInput = document.getElementById("planner-form-target-date");
+    
+    // 単位制御
+    const unitCardsRadio = document.getElementById("planner-unit-cards");
+    const unitLessonRadio = document.getElementById("planner-unit-lesson");
+    const wrapCards = document.getElementById("planner-input-wrap-cards");
+    const wrapLesson = document.getElementById("planner-input-wrap-lesson");
+    const dailyCardsInput = document.getElementById("planner-form-daily-cards-target");
+    const dailyTargetInput = document.getElementById("planner-form-daily-target");
+    
+    const orderSelect = document.getElementById("planner-form-order-type");
+    const currentIndexInput = document.getElementById("planner-form-current-index");
+    const deleteBtn = document.getElementById("planner-modal-btn-delete");
+    const simTextEl = document.getElementById("planner-form-sim-text");
+
+    const isEdit = Boolean(editingPlanId && rawMemorizePlans[editingPlanId]);
+    const plan = isEdit ? rawMemorizePlans[editingPlanId] : null;
+
+    if (titleEl) titleEl.textContent = isEdit ? "暗記ペースメーカー：計画を編集" : "暗記ペースメーカー：新しい学習計画を作成";
+    if (idInput) idInput.value = isEdit ? plan.id : `plan_${Date.now()}`;
+    if (titleInput) titleInput.value = isEdit ? (plan.title || "") : "";
+
+    // モード初期値
+    let curPaceMode = isEdit && plan.paceMode ? plan.paceMode : "deadline";
+    let curUnit = isEdit && plan.quotaUnit ? plan.quotaUnit : "cards";
+
+    function setPaceMode(mode) {
+        curPaceMode = mode;
+        if (paceModeInput) paceModeInput.value = mode;
+        if (mode === "deadline") {
+            if (tabDeadline) tabDeadline.classList.add("active");
+            if (tabPace) tabPace.classList.remove("active");
+            if (boxDeadline) boxDeadline.style.display = "flex";
+            if (boxPace) boxPace.style.display = "none";
+        } else {
+            if (tabDeadline) tabDeadline.classList.remove("active");
+            if (tabPace) tabPace.classList.add("active");
+            if (boxDeadline) boxDeadline.style.display = "none";
+            if (boxPace) boxPace.style.display = "flex";
+        }
+        updatePreviewCounts();
+    }
+
+    if (tabDeadline) tabDeadline.onclick = () => setPaceMode("deadline");
+    if (tabPace) tabPace.onclick = () => setPaceMode("pace");
+
+    // 日付初期値
+    const todayStr = getTodayDateStr();
+    if (targetDateInput) {
+        targetDateInput.value = isEdit && plan.targetDate ? plan.targetDate : addDaysToDate(todayStr, 30);
+        targetDateInput.min = todayStr;
+        targetDateInput.onchange = () => updatePreviewCounts();
+    }
+
+    // プリセット日付ボタン
+    modal.querySelectorAll(".planner-date-preset-btn").forEach(btn => {
+        btn.onclick = () => {
+            const days = parseInt(btn.dataset.days, 10) || 30;
+            if (targetDateInput) {
+                targetDateInput.value = addDaysToDate(todayStr, days);
+                updatePreviewCounts();
+            }
+        };
+    });
+
+    // 単位切り替え
+    function setUnit(u) {
+        curUnit = u;
+        if (u === "cards") {
+            if (unitCardsRadio) unitCardsRadio.checked = true;
+            if (wrapCards) wrapCards.style.display = "flex";
+            if (wrapLesson) wrapLesson.style.display = "none";
+        } else {
+            if (unitLessonRadio) unitLessonRadio.checked = true;
+            if (wrapCards) wrapCards.style.display = "none";
+            if (wrapLesson) wrapLesson.style.display = "flex";
+        }
+        updatePreviewCounts();
+    }
+
+    if (unitCardsRadio) unitCardsRadio.onchange = () => setUnit("cards");
+    if (unitLessonRadio) unitLessonRadio.onchange = () => setUnit("lesson");
+
+    if (dailyCardsInput) {
+        dailyCardsInput.value = isEdit ? (plan.dailyCardsTarget || 50) : 50;
+        dailyCardsInput.oninput = () => updatePreviewCounts();
+    }
+    if (dailyTargetInput) {
+        dailyTargetInput.value = isEdit ? (plan.dailyTarget || 1) : 1;
+        dailyTargetInput.oninput = () => updatePreviewCounts();
+    }
+
+    // カードプリセットチップ
+    modal.querySelectorAll(".planner-preset-chip-cards").forEach(btn => {
+        btn.onclick = () => {
+            modal.querySelectorAll(".planner-preset-chip-cards").forEach(b => {
+                b.classList.remove("active");
+                b.style.background = "";
+                b.style.color = "";
+            });
+            btn.classList.add("active");
+            btn.style.background = "var(--brand-primary)";
+            btn.style.color = "#fff";
+            if (dailyCardsInput) {
+                dailyCardsInput.value = btn.dataset.count;
+                updatePreviewCounts();
+            }
+        };
+    });
+
+    // 授業プリセットチップ
+    modal.querySelectorAll(".planner-preset-chip").forEach(btn => {
+        btn.onclick = () => {
+            modal.querySelectorAll(".planner-preset-chip").forEach(b => {
+                b.classList.remove("active");
+                b.style.background = "";
+                b.style.color = "";
+            });
+            btn.classList.add("active");
+            btn.style.background = "var(--brand-primary)";
+            btn.style.color = "#fff";
+            if (dailyTargetInput) {
+                dailyTargetInput.value = btn.dataset.count;
+                updatePreviewCounts();
+            }
+        };
+    });
+
+    if (orderSelect) orderSelect.value = isEdit ? (plan.orderType || "sequential") : "sequential";
+    if (currentIndexInput) currentIndexInput.value = isEdit ? (plan.currentIndex || 0) : 0;
+    if (deleteBtn) deleteBtn.style.display = isEdit ? "inline-flex" : "none";
+
+    setPaceMode(curPaceMode);
+    setUnit(curUnit);
+
+    // 教科選択肢の生成
+    const allMemsForSubj = buildMemorizationItems();
+    const subjectCardCounts = {};
+    allMemsForSubj.forEach(m => {
+        const s = m.subject || "未分類";
+        subjectCardCounts[s] = (subjectCardCounts[s] || 0) + 1;
+    });
+
+    if (subjSelect) {
+        const targetSubj = isEdit ? (plan.subject || "ALL") : "ALL";
+        let optionsHtml = `<option value="ALL">すべての教科・科目（全体: ${allMemsForSubj.length}個）</option>`;
+        const sortedSubjects = Object.keys(subjectCardCounts).sort((a, b) => a.localeCompare(b, "ja"));
+        sortedSubjects.forEach(s => {
+            const count = subjectCardCounts[s];
+            optionsHtml += `<option value="${escapeHtml(s)}">${escapeHtml(s)} (${count}個)</option>`;
+        });
+        subjSelect.innerHTML = optionsHtml;
+        subjSelect.value = targetSubj;
+        if (!subjSelect.value) subjSelect.value = "ALL";
+    }
+
+    // 授業リスト
+    let selectedLessonIds = new Set(isEdit && Array.isArray(plan.lessonIds) ? plan.lessonIds : []);
+    let isAllSelected = !isEdit || selectedLessonIds.size === 0;
+
+    function updateLessonsListHtml() {
+        const curSubj = subjSelect ? subjSelect.value : "ALL";
+        const q = lessonSearch ? lessonSearch.value.trim().toLowerCase() : "";
+
+        const allMems = buildMemorizationItems();
+        const lessonCounts = {};
+        allMems.forEach(m => {
+            lessonCounts[m.lessonId] = (lessonCounts[m.lessonId] || 0) + 1;
+        });
+
+        const lessonEntries = Object.entries(rawLessons).filter(([lid, les]) => {
+            if (!les) return false;
+            const lSubj = les.subject || detectSubjectFromLesson(les) || "未分類";
+            if (curSubj !== "ALL" && lSubj !== curSubj) return false;
+            if (q) {
+                const title = (les.title || "").toLowerCase();
+                if (!title.includes(q)) return false;
+            }
+            return (lessonCounts[lid] || 0) > 0;
+        });
+
+        if (lessonEntries.length === 0) {
+            lessonsList.innerHTML = `<div style="font-size:0.75rem; color:var(--text-muted); padding:0.5rem;">該当する授業が見つかりません</div>`;
+            updatePreviewCounts();
+            return;
         }
 
-        async function markTodayQuotaCompleted() {
-            if (!activePlanId || !rawMemorizePlans[activePlanId]) return;
-            const plan = rawMemorizePlans[activePlanId];
-            const planData = getPlanTargetLessons(plan);
-            const q = calculatePlanQuota(plan, planData);
-            if (q.quotaCount === 0) return;
+        lessonsList.innerHTML = lessonEntries.map(([lid, les]) => {
+            const count = lessonCounts[lid] || 0;
+            const checked = isAllSelected || selectedLessonIds.has(lid) ? "checked" : "";
+            return `
+                <label style="display:flex; align-items:center; gap:0.5rem; font-size:0.78rem; padding:0.25rem 0.4rem; border-radius:var(--radius-sm); cursor:pointer; background:var(--bg-surface); border:1px solid var(--border-color);">
+                    <input type="checkbox" class="planner-form-lesson-check" data-lesson-id="${escapeHtml(lid)}" ${checked}>
+                    <span style="font-weight:700; color:var(--text-primary); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                        ${escapeHtml(les.title || lid)}
+                    </span>
+                    <span style="font-size:0.7rem; color:var(--text-muted); background:var(--bg-subtle); padding:0.1rem 0.4rem; border-radius:4px;">
+                        ${count}問
+                    </span>
+                </label>
+            `;
+        }).join("");
 
-            const titleSummary = q.quotaLessons.length === 1
-                ? q.quotaLessons[0].title
-                : `${q.quotaLessons[0].title} ほか計${q.quotaLessons.length}授業`;
+        lessonsList.querySelectorAll(".planner-form-lesson-check").forEach(chk => {
+            chk.onchange = () => {
+                const lid = chk.dataset.lessonId;
+                if (chk.checked) {
+                    selectedLessonIds.add(lid);
+                } else {
+                    selectedLessonIds.delete(lid);
+                }
+                isAllSelected = false;
+                updatePreviewCounts();
+            };
+        });
 
-            if (!confirm(`本日の授業ノルマ【 ${titleSummary} 】(全${q.quotaCount}問) を完了済みにしますか？`)) return;
+        updatePreviewCounts();
+    }
 
-            const today = q.today;
-            const logKey = `${plan.id}_${today}`;
-            const allQuotaKeys = q.quotaCards.map(c => c.progressKey || c.id || c.memoId);
+    function updatePreviewCounts() {
+        const curSubj = subjSelect ? subjSelect.value : "ALL";
+        const allMems = buildMemorizationItems();
+        const lessonCounts = {};
+        allMems.forEach(m => {
+            lessonCounts[m.lessonId] = (lessonCounts[m.lessonId] || 0) + 1;
+        });
 
-            const log = {
-                planId: plan.id,
-                date: today,
-                startLessonIdx: q.startLessonIdx,
-                endLessonIdx: q.endLessonIdx,
-                startLessonNum: q.startLessonNum,
-                endLessonNum: q.endLessonNum,
-                lessonTitle: titleSummary,
-                targetCount: q.quotaCount,
-                completedIds: allQuotaKeys,
-                completedCount: q.quotaCount,
-                isFinished: true,
+        const eligibleLessons = Object.entries(rawLessons).filter(([lid, les]) => {
+            if (!les) return false;
+            const lSubj = les.subject || detectSubjectFromLesson(les) || "未分類";
+            if (curSubj !== "ALL" && lSubj !== curSubj) return false;
+            if (!isAllSelected && !selectedLessonIds.has(lid)) return false;
+            return (lessonCounts[lid] || 0) > 0;
+        });
+
+        let totalCardCount = 0;
+        eligibleLessons.forEach(([lid]) => {
+            totalCardCount += (lessonCounts[lid] || 0);
+        });
+
+        const previewLessonEl = document.getElementById("planner-form-preview-count");
+        if (previewLessonEl) previewLessonEl.textContent = eligibleLessons.length;
+        const previewCardEl = document.getElementById("planner-form-preview-cards-count");
+        if (previewCardEl) previewCardEl.textContent = totalCardCount;
+
+        // シミュレーション文言の生成
+        if (simTextEl) {
+            const today = getTodayDateStr();
+            if (curPaceMode === "deadline") {
+                const targetD = targetDateInput?.value || addDaysToDate(today, 30);
+                const remDays = Math.max(1, dateDiffInDays(targetD, today));
+                const dailyReq = Math.ceil(totalCardCount / remDays);
+                simTextEl.innerHTML = `
+                    目標期日 <strong>${escapeHtml(targetD)}</strong> (あと <strong>${remDays}</strong> 日) までに全 <strong>${totalCardCount}</strong> 問を制覇するには、<br>
+                    <strong>毎日 約 ${dailyReq} 問</strong> のペースが最適です！
+                `;
+            } else {
+                if (curUnit === "cards") {
+                    const daily = parseInt(dailyCardsInput?.value, 10) || 50;
+                    const days = Math.ceil(totalCardCount / Math.max(1, daily));
+                    const estFin = addDaysToDate(today, days);
+                    simTextEl.innerHTML = `
+                        毎日 <strong>${daily} 問</strong> ペースなら、約 <strong>${days} 日</strong> (<strong>${estFin}</strong> 頃) に全 <strong>${totalCardCount}</strong> 問を制覇できます！
+                    `;
+                } else {
+                    const dailyLes = parseInt(dailyTargetInput?.value, 10) || 1;
+                    const days = Math.ceil(eligibleLessons.length / Math.max(1, dailyLes));
+                    const estFin = addDaysToDate(today, days);
+                    simTextEl.innerHTML = `
+                        毎日 <strong>${dailyLes} 授業</strong> ペースなら、約 <strong>${days} 日</strong> (<strong>${estFin}</strong> 頃) に全 <strong>${eligibleLessons.length} 授業</strong> を制覇できます！
+                    `;
+                }
+            }
+        }
+    }
+
+    if (subjSelect) subjSelect.onchange = () => {
+        selectedLessonIds.clear();
+        isAllSelected = true;
+        updateLessonsListHtml();
+    };
+    if (lessonSearch) lessonSearch.oninput = () => updateLessonsListHtml();
+
+    const btnSelAll = document.getElementById("planner-form-btn-select-all");
+    if (btnSelAll) btnSelAll.onclick = () => {
+        isAllSelected = true;
+        selectedLessonIds.clear();
+        lessonsList.querySelectorAll(".planner-form-lesson-check").forEach(c => c.checked = true);
+        updatePreviewCounts();
+    };
+    const btnClearAll = document.getElementById("planner-form-btn-clear-all");
+    if (btnClearAll) btnClearAll.onclick = () => {
+        isAllSelected = false;
+        selectedLessonIds.clear();
+        lessonsList.querySelectorAll(".planner-form-lesson-check").forEach(c => c.checked = false);
+        updatePreviewCounts();
+    };
+
+    updateLessonsListHtml();
+    modal.style.display = "flex";
+
+    // 保存ボタン
+    const saveBtn = document.getElementById("planner-modal-btn-save");
+    if (saveBtn) {
+        saveBtn.onclick = async () => {
+            const id = idInput.value.trim() || `plan_${Date.now()}`;
+            const title = titleInput.value.trim();
+            if (!title) {
+                showToast("計画タイトルを入力してください。", "warning");
+                return;
+            }
+            const subject = subjSelect.value;
+            const paceMode = curPaceMode;
+            const targetDate = targetDateInput ? targetDateInput.value : addDaysToDate(todayStr, 30);
+            const quotaUnit = curUnit;
+            const dailyCardsTarget = Math.max(5, parseInt(dailyCardsInput?.value, 10) || 50);
+            const dailyTarget = Math.max(1, parseInt(dailyTargetInput?.value, 10) || 1);
+            const orderType = orderSelect.value;
+            const currentIndex = Math.max(0, parseInt(currentIndexInput.value, 10) || 0);
+            const lessonIds = isAllSelected ? [] : Array.from(selectedLessonIds);
+
+            const planData = {
+                id,
+                title,
+                subject,
+                lessonIds,
+                paceMode,
+                targetDate,
+                quotaUnit,
+                dailyCardsTarget,
+                dailyTarget,
+                orderType,
+                currentIndex,
+                currentCardIndex: isEdit && typeof plan.currentCardIndex === "number" ? plan.currentCardIndex : 0,
                 updatedAt: new Date().toISOString()
             };
-            rawMemorizePlanLogs[logKey] = log;
 
-            plan.currentIndex = Math.min(q.totalLessons, q.endLessonIdx);
-            plan.updatedAt = new Date().toISOString();
+            if (!isEdit) {
+                planData.createdAt = new Date().toISOString();
+                planData.startDate = getTodayDateStr();
+            } else if (plan && plan.createdAt) {
+                planData.createdAt = plan.createdAt;
+                planData.startDate = plan.startDate || getTodayDateStr();
+            }
+
+            rawMemorizePlans[id] = planData;
+            activePlanId = id;
+            localStorage.setItem("flora_active_memorize_plan_id", id);
 
             if (currentUser && currentUser.uid) {
                 try {
-                    await set(ref(database, `users/${currentUser.uid}/memorizePlanLogs/${logKey}`), log);
-                    await update(ref(database, `users/${currentUser.uid}/memorizePlans/${plan.id}`), {
-                        currentIndex: plan.currentIndex,
-                        updatedAt: plan.updatedAt
-                    });
-                } catch (e) {
-                    console.warn(e);
+                    await update(ref(database, `users/${currentUser.uid}/memorizePlans/${id}`), planData);
+                    await set(ref(database, `users/${currentUser.uid}/memorizeActivePlanId`), id);
+                } catch (err) {
+                    console.warn("[Flora Planner] Save failed:", err);
                 }
             }
-            showToast("本日の授業ノルマを完了にしました！💮", "success");
+
+            showToast("学習計画を保存しました！全端末でリアルタイム共有されます。", "success");
+            modal.style.display = "none";
             renderPlannerUI();
-        }
+        };
+    }
 
-        function openPlannerHistoryModal() {
-            const modal = document.getElementById("planner-history-modal");
-            const listEl = document.getElementById("planner-history-list");
-            if (!modal || !listEl) return;
-
-            if (!activePlanId || !rawMemorizePlans[activePlanId]) {
-                showToast("有効な学習計画がありません。", "warning");
-                return;
+    // 削除ボタン
+    if (deleteBtn) {
+        deleteBtn.onclick = async () => {
+            if (!confirm(`計画「${plan.title}」を削除してもよろしいですか？`)) return;
+            delete rawMemorizePlans[plan.id];
+            if (activePlanId === plan.id) {
+                const remaining = Object.keys(rawMemorizePlans);
+                activePlanId = remaining.length > 0 ? remaining[0] : null;
+                if (activePlanId) {
+                    localStorage.setItem("flora_active_memorize_plan_id", activePlanId);
+                } else {
+                    localStorage.removeItem("flora_active_memorize_plan_id");
+                }
             }
-            const plan = rawMemorizePlans[activePlanId];
+            if (currentUser && currentUser.uid) {
+                try {
+                    await remove(ref(database, `users/${currentUser.uid}/memorizePlans/${plan.id}`));
+                    await set(ref(database, `users/${currentUser.uid}/memorizeActivePlanId`), activePlanId || null);
+                } catch (err) {
+                    console.warn("[Flora Planner] Delete failed:", err);
+                }
+            }
+            showToast("計画を削除しました。", "info");
+            modal.style.display = "none";
+            renderPlannerUI();
+        };
+    }
 
-            const planLogs = Object.values(rawMemorizePlanLogs)
-                .filter(l => l && l.planId === plan.id)
-                .sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+    const cancelBtn = document.getElementById("planner-modal-btn-cancel");
+    if (cancelBtn) cancelBtn.onclick = () => modal.style.display = "none";
+    const closeBtn = document.getElementById("planner-modal-close-btn");
+    if (closeBtn) closeBtn.onclick = () => modal.style.display = "none";
+}
 
-            if (planLogs.length === 0) {
-                listEl.innerHTML = `<div style="text-align:center; padding:2rem; font-size:0.82rem; color:var(--text-muted);">まだ学習履歴がありません。日々の授業ノルマを演習すると自動で記録されます。</div>`;
-            } else {
-                listEl.innerHTML = planLogs.map(l => {
-                    const done = l.completedCount || 0;
-                    const target = l.targetCount || 0;
-                    const isFin = l.isFinished || (done >= target);
-                    const lTitle = l.lessonTitle || `授業 #${l.startLessonNum || 1}`;
-                    return `
-                        <div class="planner-history-item" style="padding:0.6rem 0.8rem; background:var(--bg-surface);">
-                            <div style="flex:1; min-width:0; padding-right:0.5rem;">
-                                <div style="font-weight:800; font-size:0.85rem; color:var(--text-primary); display:flex; align-items:center; gap:0.4rem;">
-                                    <span>🗓️ ${escapeHtml(l.date)}</span>
-                                </div>
-                                <div style="font-size:0.78rem; font-weight:700; color:var(--brand-primary); margin-top:0.15rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                                    ${escapeHtml(lTitle)}
-                                </div>
-                                <div style="font-size:0.72rem; color:var(--text-muted); margin-top:0.15rem;">
-                                    暗記事項: ${target} 問中 ${done} 問完了
-                                </div>
-                            </div>
-                            <div style="text-align:right; flex-shrink:0;">
-                                ${isFin ? '<span style="font-weight:800; color:#059669; font-size:0.85rem;">達成 💮</span>' : `<span style="font-weight:700; color:var(--text-secondary); font-size:0.82rem;">${target > 0 ? Math.round((done / target) * 100) : 0}%</span>`}
-                            </div>
+// ==========================================
+// 演習実行・回答記録・完了マーク処理
+// ==========================================
+function startPlannerQuotaDrill() {
+    if (!activePlanId || !rawMemorizePlans[activePlanId]) {
+        showToast("有効な学習計画がありません。", "warning");
+        return;
+    }
+    const plan = rawMemorizePlans[activePlanId];
+    const planData = getPlanTargetLessons(plan);
+    const q = calculatePlanQuota(plan, planData);
+    if (q.quotaCards.length === 0) {
+        showToast("本日の出題対象カードがありません。", "info");
+        return;
+    }
+
+    window._activePlannerSession = {
+        planId: plan.id,
+        date: q.today,
+        startLessonIdx: q.startLessonIdx,
+        endLessonIdx: q.endLessonIdx,
+        startCardIdx: q.startCardIdx,
+        endCardIdx: q.endCardIdx,
+        lessonTitle: `${plan.title} (本日ノルマ ${q.quotaCount}問)`,
+        targetCount: q.quotaCount
+    };
+
+    const flashcards = q.quotaCards.map(p => convertToFlashcard(p, 'memorize'));
+    openFlashcardModal(flashcards, 0);
+}
+
+function handlePlannerCardAnswered(card, rating) {
+    if (!window._activePlannerSession) return;
+    const session = window._activePlannerSession;
+    const plan = rawMemorizePlans[session.planId];
+    if (!plan) return;
+
+    const today = session.date;
+    const logKey = `${plan.id}_${today}`;
+    const log = rawMemorizePlanLogs[logKey] || {
+        planId: plan.id,
+        date: today,
+        startLessonIdx: session.startLessonIdx,
+        endLessonIdx: session.endLessonIdx,
+        startCardIdx: session.startCardIdx,
+        endCardIdx: session.endCardIdx,
+        lessonTitle: session.lessonTitle,
+        targetCount: session.targetCount,
+        completedIds: [],
+        completedCount: 0,
+        isFinished: false,
+        updatedAt: new Date().toISOString()
+    };
+
+    const cardKey = card.progressKey || card.id || card.memoId;
+    if (cardKey && !log.completedIds.includes(cardKey)) {
+        log.completedIds.push(cardKey);
+    }
+    log.completedCount = log.completedIds.length;
+
+    if (log.completedCount >= log.targetCount && !log.isFinished) {
+        log.isFinished = true;
+        const totalCards = getPlanTargetLessons(plan).allPlanCards.length;
+        if (typeof session.endCardIdx === "number") {
+            plan.currentCardIndex = Math.min(totalCards, session.endCardIdx);
+        }
+        if (typeof session.endLessonIdx === "number") {
+            plan.currentIndex = session.endLessonIdx;
+        }
+        plan.updatedAt = new Date().toISOString();
+        if (currentUser && currentUser.uid) {
+            update(ref(database, `users/${currentUser.uid}/memorizePlans/${plan.id}`), {
+                currentCardIndex: plan.currentCardIndex || 0,
+                currentIndex: plan.currentIndex || 0,
+                updatedAt: plan.updatedAt
+            });
+        }
+        showToast("🎉 おめでとうございます！本日の学習ノルマを完全達成しました！💮", "success");
+    }
+
+    log.updatedAt = new Date().toISOString();
+    rawMemorizePlanLogs[logKey] = log;
+
+    if (currentUser && currentUser.uid) {
+        set(ref(database, `users/${currentUser.uid}/memorizePlanLogs/${logKey}`), log);
+    }
+    renderPlannerUI();
+}
+
+async function markTodayQuotaCompleted() {
+    if (!activePlanId || !rawMemorizePlans[activePlanId]) return;
+    const plan = rawMemorizePlans[activePlanId];
+    const planData = getPlanTargetLessons(plan);
+    const q = calculatePlanQuota(plan, planData);
+    if (q.quotaCount === 0) return;
+
+    if (!confirm(`本日の学習ノルマ (全${q.quotaCount}問) を完了済みにしますか？`)) return;
+
+    const today = q.today;
+    const logKey = `${plan.id}_${today}`;
+    const allQuotaKeys = q.quotaCards.map(c => c.progressKey || c.id || c.memoId);
+
+    const log = {
+        planId: plan.id,
+        date: today,
+        startLessonIdx: q.startLessonIdx,
+        endLessonIdx: q.endLessonIdx,
+        startCardIdx: q.startCardIdx,
+        endCardIdx: q.endCardIdx,
+        lessonTitle: `${plan.title} (本日ノルマ ${q.quotaCount}問)`,
+        targetCount: q.quotaCount,
+        completedIds: allQuotaKeys,
+        completedCount: q.quotaCount,
+        isFinished: true,
+        updatedAt: new Date().toISOString()
+    };
+    rawMemorizePlanLogs[logKey] = log;
+
+    plan.currentCardIndex = Math.min(q.totalCards, q.endCardIdx);
+    plan.currentIndex = Math.min(q.totalLessons, q.endLessonIdx);
+    plan.updatedAt = new Date().toISOString();
+
+    if (currentUser && currentUser.uid) {
+        try {
+            await set(ref(database, `users/${currentUser.uid}/memorizePlanLogs/${logKey}`), log);
+            await update(ref(database, `users/${currentUser.uid}/memorizePlans/${plan.id}`), {
+                currentCardIndex: plan.currentCardIndex,
+                currentIndex: plan.currentIndex,
+                updatedAt: plan.updatedAt
+            });
+        } catch (e) {
+            console.warn(e);
+        }
+    }
+    showToast("本日のノルマを完了にしました！💮", "success");
+    renderPlannerUI();
+}
+
+function openPlannerHistoryModal() {
+    const modal = document.getElementById("planner-history-modal");
+    const listEl = document.getElementById("planner-history-list");
+    if (!modal || !listEl) return;
+
+    if (!activePlanId || !rawMemorizePlans[activePlanId]) {
+        showToast("有効な学習計画がありません。", "warning");
+        return;
+    }
+    const plan = rawMemorizePlans[activePlanId];
+
+    const planLogs = Object.values(rawMemorizePlanLogs)
+        .filter(l => l && l.planId === plan.id)
+        .sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+
+    if (planLogs.length === 0) {
+        listEl.innerHTML = `<div style="text-align:center; padding:2rem; font-size:0.82rem; color:var(--text-muted);">まだ学習履歴がありません。日々のノルマを演習すると自動で記録されます。</div>`;
+    } else {
+        listEl.innerHTML = planLogs.map(l => {
+            const done = l.completedCount || 0;
+            const target = l.targetCount || 0;
+            const isFin = l.isFinished || (done >= target);
+            const lTitle = l.lessonTitle || "本日のノルマ";
+            return `
+                <div class="planner-history-item" style="padding:0.6rem 0.8rem; background:var(--bg-surface);">
+                    <div style="flex:1; min-width:0; padding-right:0.5rem;">
+                        <div style="font-weight:800; font-size:0.85rem; color:var(--text-primary); display:flex; align-items:center; gap:0.4rem;">
+                            <span>🗓️ ${escapeHtml(l.date)}</span>
                         </div>
-                    `;
-                }).join("");
-            }
+                        <div style="font-size:0.78rem; font-weight:700; color:var(--brand-primary); margin-top:0.15rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                            ${escapeHtml(lTitle)}
+                        </div>
+                        <div style="font-size:0.72rem; color:var(--text-muted); margin-top:0.15rem;">
+                            暗記事項: ${target} 問中 ${done} 問完了
+                        </div>
+                    </div>
+                    <div style="text-align:right; flex-shrink:0;">
+                        ${isFin ? '<span style="font-weight:800; color:#059669; font-size:0.85rem;">達成 💮</span>' : `<span style="font-weight:700; color:var(--text-secondary); font-size:0.82rem;">${target > 0 ? Math.round((done / target) * 100) : 0}%</span>`}
+                    </div>
+                </div>
+            `;
+        }).join("");
+    }
 
-            modal.style.display = "flex";
-            const closeBtn = document.getElementById("planner-history-modal-close");
-            if (closeBtn) closeBtn.onclick = () => modal.style.display = "none";
-            const okBtn = document.getElementById("planner-history-modal-ok");
-            if (okBtn) okBtn.onclick = () => modal.style.display = "none";
-        }
+    modal.style.display = "flex";
+    const closeBtn = document.getElementById("planner-history-modal-close");
+    if (closeBtn) closeBtn.onclick = () => modal.style.display = "none";
+    const okBtn = document.getElementById("planner-history-modal-ok");
+    if (okBtn) okBtn.onclick = () => modal.style.display = "none";
+}
+
     </script>
     <script>
         if ('serviceWorker' in navigator) {

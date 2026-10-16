@@ -8088,38 +8088,56 @@
             const { targetLessons, allPlanCards } = planData;
             const totalLessons = targetLessons.length;
             const totalCards = allPlanCards.length;
-            const dailyTargetLessons = Math.max(1, parseInt(plan.dailyTarget, 10) || 1);
 
+            const isCardUnit = plan.quotaUnit === "cards";
             const todayLogKey = `${plan.id}_${today}`;
             const todayLog = rawMobileMemorizePlanLogs[todayLogKey] || null;
 
+            let quotaCards = [];
             let startLessonIdx = 0;
             let endLessonIdx = 0;
 
-            if (todayLog && typeof todayLog.startLessonIdx === "number" && typeof todayLog.endLessonIdx === "number") {
-                startLessonIdx = Math.max(0, todayLog.startLessonIdx);
-                endLessonIdx = Math.min(totalLessons, todayLog.endLessonIdx);
+            if (isCardUnit) {
+                const dailyCards = parseInt(plan.dailyCardsTarget, 10) || 50;
+                let startCardIdx = typeof plan.currentCardIndex === "number" ? Math.min(totalCards, plan.currentCardIndex) : 0;
+                let endCardIdx = Math.min(totalCards, startCardIdx + dailyCards);
+                if (todayLog && typeof todayLog.startCardIdx === "number" && typeof todayLog.endCardIdx === "number") {
+                    startCardIdx = Math.max(0, todayLog.startCardIdx);
+                    endCardIdx = Math.min(totalCards, todayLog.endCardIdx);
+                }
+                quotaCards = allPlanCards.slice(startCardIdx, endCardIdx);
             } else {
-                startLessonIdx = Math.min(totalLessons, Math.max(0, parseInt(plan.currentIndex, 10) || 0));
-                endLessonIdx = Math.min(totalLessons, startLessonIdx + dailyTargetLessons);
+                const dailyTargetLessons = Math.max(1, parseInt(plan.dailyTarget, 10) || 1);
+                if (todayLog && typeof todayLog.startLessonIdx === "number" && typeof todayLog.endLessonIdx === "number") {
+                    startLessonIdx = Math.max(0, todayLog.startLessonIdx);
+                    endLessonIdx = Math.min(totalLessons, todayLog.endLessonIdx);
+                } else {
+                    startLessonIdx = Math.min(totalLessons, Math.max(0, parseInt(plan.currentIndex, 10) || 0));
+                    endLessonIdx = Math.min(totalLessons, startLessonIdx + dailyTargetLessons);
+                }
+                const quotaLessons = targetLessons.slice(startLessonIdx, endLessonIdx);
+                quotaLessons.forEach(l => quotaCards.push(...l.cards));
             }
 
-            const quotaLessons = targetLessons.slice(startLessonIdx, endLessonIdx);
-            const quotaCards = [];
-            quotaLessons.forEach(l => quotaCards.push(...l.cards));
             const quotaCount = quotaCards.length;
-
             const completedSet = new Set((todayLog && Array.isArray(todayLog.completedIds)) ? todayLog.completedIds : []);
             let doneCount = 0;
             quotaCards.forEach(c => {
-                const k = c.progressKey || c.id;
+                const k = c.progressKey || c.id || c.memoId;
                 if (completedSet.has(k)) doneCount++;
             });
 
             const isFin = quotaCount > 0 && doneCount >= quotaCount;
             const pct = quotaCount > 0 ? Math.min(100, Math.round((doneCount / quotaCount) * 100)) : 100;
-            const doneLessons = Math.min(totalLessons, parseInt(plan.currentIndex, 10) || 0);
-            const overallPct = totalLessons > 0 ? Math.min(100, Math.round((doneLessons / totalLessons) * 100)) : 100;
+            
+            let doneCardsCount = 0;
+            if (typeof plan.currentCardIndex === "number") {
+                doneCardsCount = Math.min(totalCards, plan.currentCardIndex);
+            } else {
+                const dl = Math.min(totalLessons, parseInt(plan.currentIndex, 10) || 0);
+                for (let i = 0; i < dl; i++) if (targetLessons[i]) doneCardsCount += targetLessons[i].cardCount;
+            }
+            const overallPct = totalCards > 0 ? Math.min(100, Math.round((doneCardsCount / totalCards) * 100)) : 100;
 
             const yesterdayLogKey = `${plan.id}_${yesterday}`;
             const yesterdayLog = rawMobileMemorizePlanLogs[yesterdayLogKey] || null;
@@ -8129,18 +8147,18 @@
                 yesterday,
                 totalLessons,
                 totalCards,
-                dailyTargetLessons,
+                dailyTargetLessons: plan.dailyTarget || 1,
                 startLessonIdx,
                 endLessonIdx,
                 startLessonNum: totalLessons > 0 ? startLessonIdx + 1 : 0,
                 endLessonNum: endLessonIdx,
-                quotaLessons,
+                quotaLessons: targetLessons.slice(startLessonIdx, endLessonIdx),
                 quotaCards,
                 quotaCount,
                 doneCount,
                 isFin,
                 pct,
-                doneLessons,
+                doneLessons: Math.min(totalLessons, parseInt(plan.currentIndex, 10) || 0),
                 overallPct,
                 yesterdayLog
             };
