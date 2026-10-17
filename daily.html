@@ -294,6 +294,94 @@
             color: var(--text-secondary);
             background: var(--bg-subtle);
         }
+
+        /* 🛠️ スプリント設定モーダル専用スタイル */
+        .sprint-config-box {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        .sprint-config-section {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+        .sprint-config-label {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .sprint-config-sub {
+            font-size: 0.74rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        .sprint-chip-group {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .sprint-subject-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.45rem 0.9rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            background: var(--bg-surface);
+            color: var(--text-secondary);
+            font-size: 0.84rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            user-select: none;
+        }
+        .sprint-subject-chip:hover {
+            border-color: var(--brand-border);
+            color: var(--text-primary);
+            background: var(--bg-subtle);
+        }
+        .sprint-subject-chip.selected {
+            background: var(--brand-light);
+            border-color: var(--brand-primary);
+            color: var(--brand-primary);
+            font-weight: 700;
+            box-shadow: 0 0 0 1px var(--brand-primary);
+        }
+        .sprint-subject-chip input {
+            display: none;
+        }
+        .modal-action-row {
+            display: flex;
+            gap: 0.8rem;
+            justify-content: flex-end;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+        .quick-select-links {
+            display: flex;
+            gap: 0.6rem;
+            font-size: 0.74rem;
+        }
+        .quick-select-link {
+            color: var(--brand-primary);
+            cursor: pointer;
+            text-decoration: underline;
+            font-weight: 600;
+        }
+        .resume-banner {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: var(--radius-md);
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.5rem;
+        }
     </style>
 </head>
 <body>
@@ -333,8 +421,11 @@
                     </div>
 
                     <div style="display: flex; gap: 0.5rem; align-items: center;">
-                        <button type="button" class="sprint-action-btn" id="btn-force-reroll" title="直近と被らない全く新しい10問を引き直す">
-                            🔄 別の10問を引き直す
+                        <button type="button" class="sprint-action-btn" id="btn-open-config-modal" title="出題単元やAIモデル、問題数を変更する">
+                            ⚙️ 特訓条件を変更
+                        </button>
+                        <button type="button" class="sprint-action-btn" id="btn-force-reroll" title="直近と被らない全く新しい問題を引き直す">
+                            🔄 引き直す
                         </button>
                     </div>
                 </div>
@@ -412,6 +503,129 @@
             </div>
         </main>
     </div>
+    
+    <!-- 🎛️ デイリースプリント開始・設定モーダル -->
+    <div class="modal-overlay" id="sprint-config-modal">
+        <div class="modal-content" style="max-width: 640px; padding: 2.2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem;">
+                <div style="display: flex; align-items: center; gap: 0.6rem;">
+                    <span style="font-size: 1.5rem;">🏁</span>
+                    <h2 style="font-family: var(--font-heading); font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin: 0;">
+                        計算デイリースプリント特訓設定
+                    </h2>
+                </div>
+                <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="btn-close-modal" style="font-size: 1.2rem; padding: 0.2rem 0.5rem; display: none;">✕</button>
+            </div>
+
+            <!-- 💡 前回の続きがある場合の復帰バナー -->
+            <div class="resume-banner" id="resume-session-banner">
+                <div>
+                    <div style="font-weight: 700; font-size: 0.85rem; color: #1e40af;">💡 本日の進行中セッションがあります</div>
+                    <div style="font-size: 0.76rem; color: #3b82f6;" id="resume-session-desc">Q. 1 / 10問目から再開可能です</div>
+                </div>
+                <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="btn-resume-session">
+                    ▶ 続きを再開
+                </button>
+            </div>
+
+            <div class="sprint-config-box">
+                <!-- 1. 使用AIモデル -->
+                <div class="sprint-config-section">
+                    <label class="sprint-config-label" for="modal-ai-model">
+                        <span>🤖 使用するAIモデル</span>
+                        <span class="sprint-config-sub">問題作成を担当する頭脳</span>
+                    </label>
+                    <select class="flora-input" id="modal-ai-model" style="width: 100%;">
+                        <option value="gemini-3.8-flash">✨ Gemini 3.8 Flash（推奨・最新・超高速）</option>
+                        <option value="gemini-3.7-flash">✨ Gemini 3.7 Flash（高精度・安定）</option>
+                        <option value="gemini-3.6-flash">✨ Gemini 3.6 Flash</option>
+                        <option value="gemini-3.5-flash">✨ Gemini 3.5 Flash</option>
+                        <option value="deepseek-flash">🐋 DeepSeek Flash</option>
+                    </select>
+                </div>
+
+                <!-- 2. 特訓モード -->
+                <div class="sprint-config-section">
+                    <div class="sprint-config-label">
+                        <span>🎯 特訓モード / 難易度</span>
+                        <span class="sprint-config-sub">本日のフォーカスを選択</span>
+                    </div>
+                    <div class="sprint-mode-group" id="modal-mode-group" style="width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; padding: 0.4rem;">
+                        <button type="button" class="sprint-mode-btn active" data-mode="allround" style="justify-content: center; padding: 0.6rem;">
+                            🎯 全単元バランス
+                        </button>
+                        <button type="button" class="sprint-mode-btn" data-mode="weakness" style="justify-content: center; padding: 0.6rem;">
+                            ⚡ 弱点リベンジ強化
+                        </button>
+                        <button type="button" class="sprint-mode-btn" data-mode="hard" style="justify-content: center; padding: 0.6rem;">
+                            🏆 思考力・難問特訓
+                        </button>
+                        <button type="button" class="sprint-mode-btn" data-mode="speed" style="justify-content: center; padding: 0.6rem;">
+                            🏃 共通テスト速算
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 3. 出題対象の単元・科目 -->
+                <div class="sprint-config-section">
+                    <div class="sprint-config-label">
+                        <span>📚 出題対象の単元・科目</span>
+                        <div class="quick-select-links">
+                            <span class="quick-select-link" id="btn-select-all-subjects">全選択</span>
+                            <span>/</span>
+                            <span class="quick-select-link" id="btn-clear-subjects">全解除</span>
+                        </div>
+                    </div>
+                    <div class="sprint-chip-group" id="subject-chips-container">
+                        <label class="sprint-subject-chip selected" data-subject="数学I">
+                            <input type="checkbox" value="数学I" checked> 数学I（数と式・2次関数・図形計量）
+                        </label>
+                        <label class="sprint-subject-chip selected" data-subject="数学A">
+                            <input type="checkbox" value="数学A" checked> 数学A（確率・整数・図形の性質）
+                        </label>
+                        <label class="sprint-subject-chip selected" data-subject="数学II">
+                            <input type="checkbox" value="数学II" checked> 数学II（式証明・三角対数・微積分）
+                        </label>
+                        <label class="sprint-subject-chip selected" data-subject="数学B">
+                            <input type="checkbox" value="数学B" checked> 数学B（数列・統計推測）
+                        </label>
+                        <label class="sprint-subject-chip selected" data-subject="数学C">
+                            <input type="checkbox" value="数学C" checked> 数学C（ベクトル・平面曲線）
+                        </label>
+                    </div>
+                    <div style="font-size: 0.72rem; color: var(--text-secondary);">
+                        ※絞り込んだ科目の範囲内から、日替わりの斬新な解法テーマを均等に配合して出題します。
+                    </div>
+                </div>
+
+                <!-- 4. 出題問題数 -->
+                <div class="sprint-config-section">
+                    <div class="sprint-config-label">
+                        <span>⏱️ 出題問題数</span>
+                        <span class="sprint-config-sub">演習ボリューム</span>
+                    </div>
+                    <div class="sprint-chip-group" id="qcount-chips-container">
+                        <label class="sprint-subject-chip selected" data-count="10">
+                            <input type="radio" name="sprint-qcount" value="10" checked> ⚡ 10問（標準デイリースプリント）
+                        </label>
+                        <label class="sprint-subject-chip" data-count="5">
+                            <input type="radio" name="sprint-qcount" value="5"> ☕ 5問（ハーフ・サクッと特訓）
+                        </label>
+                        <label class="sprint-subject-chip" data-count="3">
+                            <input type="radio" name="sprint-qcount" value="3"> 🏃 3問（超高速ミニスプリント）
+                        </label>
+                    </div>
+                </div>
+
+                <!-- アクションボタン -->
+                <div class="modal-action-row">
+                    <button type="button" class="flora-btn flora-btn-primary btn-lg" id="btn-start-sprint" style="width: 100%; font-size: 1.05rem; padding: 0.85rem; font-weight: 800;">
+                        🚀 この条件でスプリント開始！
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="sidebar.js"></script>
 
@@ -458,10 +672,23 @@
         let currentTodayStr = null;
         let currentSprintCacheRef = null;
         let currentMode = localStorage.getItem("RE_MIND_DAILY_SPRINT_MODE") || "allround";
+        let selectedModel = localStorage.getItem("RE_MIND_DAILY_SPRINT_MODEL") || "gemini-3.8-flash";
+        let selectedSubjects = ["数学I", "数学A", "数学II", "数学B", "数学C"];
+        try {
+            const savedSubs = localStorage.getItem("RE_MIND_DAILY_SPRINT_SUBJECTS");
+            if (savedSubs) {
+                const parsed = JSON.parse(savedSubs);
+                if (Array.isArray(parsed) && parsed.length > 0) selectedSubjects = parsed;
+            }
+        } catch (_) {}
+        let targetQuestionCount = parseInt(localStorage.getItem("RE_MIND_DAILY_SPRINT_QCOUNT") || "10", 10);
+        if (![3, 5, 10].includes(targetQuestionCount)) targetQuestionCount = 10;
+
         let questionResults = []; // [{ id, subject, field, topic, result: "correct" | "wrong" }]
         let userWeakFields = [];
         let recentPastTitles = [];
         let rerollCount = 0;
+        let cachedExistingSprint = null;
 
         // ==========================================================================
         // 📚【10スロット カリキュラム & 日替わり解法テクニック定義】
@@ -615,39 +842,46 @@
             }
         ];
 
-        // 🎲 日付とシード（再生成回数）から今日の日替わりサブトピックを決定
-        function getDailySlotAssignments(todayStr, seed = 0, mode = "allround", weakList = []) {
+        // 🎲 日付とシード・選択科目・問題数から出題スロットを決定
+        function getDailySlotAssignments(todayStr, seed = 0, mode = "allround", weakList = [], allowedSubjects = [], qCount = 10) {
             let hash = 0;
-            const str = `${todayStr}_seed_${seed}_mode_${mode}`;
+            const str = `${todayStr}_seed_${seed}_mode_${mode}_${allowedSubjects.join(",")}_${qCount}`;
             for (let i = 0; i < str.length; i++) {
                 hash = (hash << 5) - hash + str.charCodeAt(i);
                 hash |= 0;
             }
             hash = Math.abs(hash);
 
-            return SPRINT_SLOTS.map((slotDef, idx) => {
-                const topicIndex = (hash + idx * 7) % slotDef.topics.length;
+            // ユーザーが選択した科目に対応するスロット定義のみを抽出
+            let availableSlots = SPRINT_SLOTS.filter(s => allowedSubjects.includes(s.subject));
+            if (availableSlots.length === 0) availableSlots = SPRINT_SLOTS;
+
+            const results = [];
+            for (let i = 0; i < qCount; i++) {
+                const slotDef = availableSlots[i % availableSlots.length];
+                const topicIndex = (hash + i * 7 + Math.floor(i / availableSlots.length) * 3) % slotDef.topics.length;
                 let topic = slotDef.topics[topicIndex];
                 let isWeaknessSlot = false;
 
-                // 弱点リベンジモード、または弱点が検出された場合、Slot 4 や Slot 10 等を生徒の苦手分野に最適化
-                if ((mode === "weakness" || weakList.length > 0) && (idx === 3 || idx === 9) && weakList.length > 0) {
-                    const weakField = weakList[idx === 3 ? 0 : Math.min(1, weakList.length - 1)];
+                // 弱点リベンジモード、または弱点が検出された場合、特定の問を苦手克服枠に最適化
+                if ((mode === "weakness" || weakList.length > 0) && (i === 1 || i === qCount - 1) && weakList.length > 0) {
+                    const weakField = weakList[i === 1 ? 0 : Math.min(1, weakList.length - 1)];
                     if (weakField) {
                         topic = `【生徒の苦手克服】${weakField}の典型的な盲点・ミスしやすい計算`;
                         isWeaknessSlot = true;
                     }
                 }
 
-                return {
-                    slot: slotDef.slot,
+                results.push({
+                    slot: i + 1,
                     subject: slotDef.subject,
                     field: slotDef.field,
                     shortField: slotDef.shortField,
                     topic: topic,
                     isWeaknessSlot: isWeaknessSlot
-                };
-            });
+                });
+            }
+            return results;
         }
 
         // ==========================================================================
@@ -663,7 +897,8 @@
                     currentQuestionIndex: currentQuestionIndex,
                     elapsedMs: Date.now() - startTime,
                     questionResults: questionResults,
-                    mode: currentMode
+                    mode: currentMode,
+                    questionCount: selectedQuestions.length
                 };
                 localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(payload));
             } catch (e) {
@@ -678,7 +913,8 @@
                     finished: true,
                     finalTime: finalTimeText,
                     questionResults: questionResults,
-                    mode: currentMode
+                    mode: currentMode,
+                    questionCount: selectedQuestions.length
                 };
                 localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(payload));
             } catch (e) {
@@ -713,13 +949,16 @@
         // 🛠【関数定義群】
         // ==========================================================================
 
-        // 💊 進捗ピルバーの描画・更新
+        // 💊 進捗ピルバーの描画・更新（可変長問題数に対応）
         function renderPills() {
             const container = document.getElementById("sprint-pills-container");
             if (!container) return;
 
+            const total = selectedQuestions.length > 0 ? selectedQuestions.length : (targetQuestionCount || 10);
+            container.style.gridTemplateColumns = `repeat(${Math.min(total, 10)}, 1fr)`;
+
             let html = "";
-            for (let i = 0; i < 10; i++) {
+            for (let i = 0; i < total; i++) {
                 const q = selectedQuestions[i];
                 const res = questionResults[i];
                 let statusClass = "";
@@ -748,13 +987,224 @@
             container.innerHTML = html;
         }
 
-        // ✨ クラウドキャッシュ確認＆AI生成パイプライン
+        // ==========================================================================
+        // 🎛️【スプリント開始・設定モーダル】コントローラー
+        // ==========================================================================
+        function openSprintConfigModal(isInitial = false) {
+            const modal = document.getElementById("sprint-config-modal");
+            if (!modal) return;
+
+            // ×閉じるボタン：初回表示時は設定を促すため非表示、演習中は表示
+            const closeBtn = document.getElementById("btn-close-modal");
+            if (closeBtn) {
+                closeBtn.style.display = (isInitial && selectedQuestions.length === 0) ? "none" : "block";
+            }
+
+            // AIモデルの初期選択
+            const modelSelect = document.getElementById("modal-ai-model");
+            if (modelSelect) modelSelect.value = selectedModel;
+
+            // 特訓モードの初期選択
+            const modeGroup = document.getElementById("modal-mode-group");
+            if (modeGroup) {
+                modeGroup.querySelectorAll(".sprint-mode-btn").forEach(btn => {
+                    btn.classList.toggle("active", btn.getAttribute("data-mode") === currentMode);
+                });
+            }
+
+            // 科目チップの初期選択
+            const subjectContainer = document.getElementById("subject-chips-container");
+            if (subjectContainer) {
+                subjectContainer.querySelectorAll(".sprint-subject-chip").forEach(label => {
+                    const sub = label.getAttribute("data-subject");
+                    const isChecked = selectedSubjects.includes(sub);
+                    label.classList.toggle("selected", isChecked);
+                    const inp = label.querySelector("input");
+                    if (inp) inp.checked = isChecked;
+                });
+            }
+
+            // 問題数ピルの初期選択
+            const countContainer = document.getElementById("qcount-chips-container");
+            if (countContainer) {
+                countContainer.querySelectorAll(".sprint-subject-chip").forEach(label => {
+                    const c = parseInt(label.getAttribute("data-count"), 10);
+                    const isChecked = (c === targetQuestionCount);
+                    label.classList.toggle("selected", isChecked);
+                    const inp = label.querySelector("input");
+                    if (inp) inp.checked = isChecked;
+                });
+            }
+
+            // 💡 前回のスプリントデータが存在するかチェックし、復帰バナーを表示
+            const banner = document.getElementById("resume-session-banner");
+            const session = currentTodayStr ? loadSessionForToday(currentTodayStr) : null;
+            if (cachedExistingSprint && banner) {
+                banner.style.display = "flex";
+                const desc = document.getElementById("resume-session-desc");
+                if (session && session.finished) {
+                    desc.textContent = `本日クリア済み（所要時間: ${session.finalTime || "00:00.00"}）の結果を閲覧・復習できます`;
+                } else if (session && typeof session.currentQuestionIndex === "number") {
+                    desc.textContent = `Q. ${session.currentQuestionIndex + 1} / ${cachedExistingSprint.questions.length}問目からタイマーを再開できます`;
+                } else {
+                    desc.textContent = `本日作成済みの10問（Q. 1〜${cachedExistingSprint.questions.length}）をそのまま開始できます`;
+                }
+            } else if (banner) {
+                banner.style.display = "none";
+            }
+
+            modal.classList.add("open");
+        }
+
+        function closeSprintConfigModal() {
+            const modal = document.getElementById("sprint-config-modal");
+            if (modal) modal.classList.remove("open");
+        }
+
+        // モーダル内の全UIイベントリスナーを初期化
+        function setupModalControls() {
+            // ✕ 閉じるボタン
+            document.getElementById("btn-close-modal")?.addEventListener("click", closeSprintConfigModal);
+
+            // AIモデル変更
+            document.getElementById("modal-ai-model")?.addEventListener("change", (e) => {
+                selectedModel = e.target.value;
+                localStorage.setItem("RE_MIND_DAILY_SPRINT_MODEL", selectedModel);
+            });
+
+            // モードボタングループ
+            document.getElementById("modal-mode-group")?.querySelectorAll(".sprint-mode-btn").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    const mode = btn.getAttribute("data-mode");
+                    currentMode = mode;
+                    localStorage.setItem("RE_MIND_DAILY_SPRINT_MODE", mode);
+                    document.getElementById("modal-mode-group")?.querySelectorAll(".sprint-mode-btn").forEach(b => b.classList.remove("active"));
+                    btn.classList.add("active");
+
+                    // ページ上部のツールバーにも同期
+                    const topGroup = document.getElementById("sprint-mode-selector");
+                    if (topGroup) {
+                        topGroup.querySelectorAll(".sprint-mode-btn").forEach(b => {
+                            b.classList.toggle("active", b.getAttribute("data-mode") === mode);
+                        });
+                    }
+                });
+            });
+
+            // 科目チェックボックストグル（input の change イベントで確実に同期）
+            document.getElementById("subject-chips-container")?.querySelectorAll(".sprint-subject-chip").forEach(label => {
+                const inp = label.querySelector("input");
+                if (!inp) return;
+                inp.addEventListener("change", () => {
+                    label.classList.toggle("selected", inp.checked);
+                    syncSelectedSubjectsFromUI();
+                });
+            });
+
+            // 全選択 / 全解除リンク
+            document.getElementById("btn-select-all-subjects")?.addEventListener("click", () => {
+                document.getElementById("subject-chips-container")?.querySelectorAll(".sprint-subject-chip").forEach(label => {
+                    label.classList.add("selected");
+                    const inp = label.querySelector("input");
+                    if (inp) inp.checked = true;
+                });
+                syncSelectedSubjectsFromUI();
+            });
+
+            document.getElementById("btn-clear-subjects")?.addEventListener("click", () => {
+                document.getElementById("subject-chips-container")?.querySelectorAll(".sprint-subject-chip").forEach(label => {
+                    label.classList.remove("selected");
+                    const inp = label.querySelector("input");
+                    if (inp) inp.checked = false;
+                });
+                syncSelectedSubjectsFromUI();
+            });
+
+            function syncSelectedSubjectsFromUI() {
+                const subs = [];
+                document.getElementById("subject-chips-container")?.querySelectorAll(".sprint-subject-chip").forEach(label => {
+                    const inp = label.querySelector("input");
+                    if (inp && inp.checked) {
+                        subs.push(label.getAttribute("data-subject"));
+                    }
+                });
+                selectedSubjects = subs;
+                localStorage.setItem("RE_MIND_DAILY_SPRINT_SUBJECTS", JSON.stringify(subs));
+            }
+
+            // 問題数ピルの切り替え（input の change イベントで確実に同期）
+            document.getElementById("qcount-chips-container")?.querySelectorAll(".sprint-subject-chip").forEach(label => {
+                const inp = label.querySelector("input");
+                if (!inp) return;
+                inp.addEventListener("change", () => {
+                    document.getElementById("qcount-chips-container")?.querySelectorAll(".sprint-subject-chip").forEach(l => {
+                        const r = l.querySelector("input");
+                        l.classList.toggle("selected", !!(r && r.checked));
+                    });
+                    const count = parseInt(label.getAttribute("data-count"), 10);
+                    targetQuestionCount = count;
+                    localStorage.setItem("RE_MIND_DAILY_SPRINT_QCOUNT", String(count));
+                });
+            });
+
+            // 🚀 この条件でスプリント開始！ボタン
+            document.getElementById("btn-start-sprint")?.addEventListener("click", async () => {
+                syncSelectedSubjectsFromUI();
+                if (selectedSubjects.length === 0) {
+                    showToast("出題対象の単元を少なくとも1つ選択してください。", "warning");
+                    return;
+                }
+                closeSprintConfigModal();
+                await regenerateSprint(true);
+            });
+
+            // ▶ 前回の続きを再開ボタン
+            document.getElementById("btn-resume-session")?.addEventListener("click", () => {
+                if (!cachedExistingSprint) return;
+                closeSprintConfigModal();
+                resumeExistingSprint(cachedExistingSprint);
+            });
+
+            // ツールバーの「⚙️ 特訓条件を変更」ボタン
+            document.getElementById("btn-open-config-modal")?.addEventListener("click", () => {
+                openSprintConfigModal(false);
+            });
+        }
+
+        // 🔁 既存スプリントデータの再開
+        function resumeExistingSprint(cacheData) {
+            selectedQuestions = cacheData.questions;
+            const session = loadSessionForToday(currentTodayStr);
+
+            if (session && Array.isArray(session.questionResults)) {
+                questionResults = session.questionResults;
+            } else {
+                questionResults = [];
+            }
+
+            if (session && session.finished) {
+                document.getElementById("sprint-play-zone").style.display = "none";
+                document.getElementById("sprint-result-zone").style.display = "flex";
+                document.getElementById("final-time-display").textContent = session.finalTime || "00:00.00";
+                showFinalResultSummary();
+            } else if (session && typeof session.currentQuestionIndex === "number" && session.currentQuestionIndex < selectedQuestions.length) {
+                currentQuestionIndex = session.currentQuestionIndex;
+                startSprintTimer(session.elapsedMs || 0);
+            } else {
+                currentQuestionIndex = 0;
+                startSprintTimer(0);
+            }
+            renderPills();
+        }
+
+        // ✨ 画面アクセス時の初期化（モーダルを開いてユーザー選択を待機）
         function setupDailySprintAI(uid) {
             const now = new Date();
             const todayStr = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
             currentTodayStr = todayStr;
 
-            // モードセレクターの初期状態反映
+            // モーダルとツールバーのUIイベントリスナーを登録
+            setupModalControls();
             initModeSelectorUI();
 
             const sprintCacheRef = ref(database, 'users/' + uid + '/daily_sprint/' + todayStr);
@@ -762,48 +1212,25 @@
 
             onValue(sprintCacheRef, async (snapshot) => {
                 const cacheData = snapshot.val();
-                if (cacheData && cacheData.questions && cacheData.questions.length >= 10) {
-                    selectedQuestions = cacheData.questions;
-                    const session = loadSessionForToday(todayStr);
-
-                    if (session && Array.isArray(session.questionResults)) {
-                        questionResults = session.questionResults;
-                    } else {
-                        questionResults = [];
-                    }
-
-                    if (session && session.finished) {
-                        document.getElementById("sprint-play-zone").style.display = "none";
-                        document.getElementById("sprint-result-zone").style.display = "flex";
-                        document.getElementById("final-time-display").textContent = session.finalTime || "00:00.00";
-                        showFinalResultSummary();
-                    } else if (session && typeof session.currentQuestionIndex === "number" && session.currentQuestionIndex < selectedQuestions.length) {
-                        currentQuestionIndex = session.currentQuestionIndex;
-                        startSprintTimer(session.elapsedMs || 0);
-                    } else {
-                        currentQuestionIndex = 0;
-                        startSprintTimer(0);
-                    }
-                    renderPills();
+                if (cacheData && Array.isArray(cacheData.questions) && cacheData.questions.length > 0) {
+                    cachedExistingSprint = cacheData;
                 } else {
-                    // 今日まだ作ってないなら、過去履歴と苦手データをスキャンしてAIに生成させる
-                    await generateSprintWithAI(uid, todayStr, sprintCacheRef);
+                    cachedExistingSprint = null;
                 }
+
+                // 🚨【改善】いきなり自動生成するのではなく、まず特訓設定モーダルを開く！
+                openSprintConfigModal(true);
             }, { onlyOnce: true });
         }
 
-        // 🎛️ モード切り替えUIの制御
+        // 🎛️ ツールバーのモード切り替えUIの制御
         function initModeSelectorUI() {
             const group = document.getElementById("sprint-mode-selector");
             if (!group) return;
 
             group.querySelectorAll(".sprint-mode-btn").forEach(btn => {
                 const mode = btn.getAttribute("data-mode");
-                if (mode === currentMode) {
-                    btn.classList.add("active");
-                } else {
-                    btn.classList.remove("active");
-                }
+                btn.classList.toggle("active", mode === currentMode);
 
                 btn.addEventListener("click", async () => {
                     if (currentMode === mode) return;
@@ -813,7 +1240,7 @@
                     group.querySelectorAll(".sprint-mode-btn").forEach(b => b.classList.remove("active"));
                     btn.classList.add("active");
 
-                    showToast(`特訓モードを「${btn.textContent.trim()}」に変更しました。新しい10問を生成します！`, "info", 3000);
+                    showToast(`特訓モードを「${btn.textContent.trim()}」に変更しました。`, "info", 2000);
                     await regenerateSprint(true);
                 });
             });
@@ -824,7 +1251,7 @@
             }
         }
 
-        // 🔄 10問を再生成してリロール
+        // 🔄 スプリントを再生成してリロール
         async function regenerateSprint(forceNewSeed = false) {
             if (!loginUid || !currentTodayStr || !currentSprintCacheRef) return;
 
@@ -843,8 +1270,9 @@
             document.getElementById("sprint-progress").textContent = "ANALYZING...";
             document.getElementById("sprint-reveal-zone").style.display = "none";
             document.getElementById("btn-reveal-ans").style.display = "none";
-            document.getElementById("problem-title-display").innerHTML = "🤖 過去出題と被らない新しい特訓問題10問を生成しています。少々お待ちください（約5秒）...";
+            document.getElementById("problem-title-display").innerHTML = `🤖 【${selectedModel}】が指定条件（${selectedSubjects.join(", ")} / ${targetQuestionCount}問）で特訓問題を生成しています。少々お待ちください（約5秒）...`;
 
+            renderPills();
             await generateSprintWithAI(loginUid, currentTodayStr, currentSprintCacheRef);
         }
 
@@ -921,8 +1349,9 @@
             }
         }
 
-        // ✨ Geminiによるデイリースプリント10問生成
+        // ✨ Geminiによるデイリースプリント問題生成
         async function generateSprintWithAI(uid, todayStr, sprintCacheRef) {
+            const qCount = targetQuestionCount || 10;
             // 1. ユーザーの弱点単元と、過去7日分の出題タイトルを並列取得
             const [weakFields, pastTitles] = await Promise.all([
                 fetchUserWeaknesses(uid),
@@ -931,8 +1360,8 @@
             userWeakFields = weakFields;
             recentPastTitles = pastTitles;
 
-            // 2. 本日の10スロット別出題計画（単元＋解法サブトピック）を決定
-            const slotPlan = getDailySlotAssignments(todayStr, rerollCount, currentMode, weakFields);
+            // 2. 本日のスロット別出題計画（単元＋解法サブトピック）を決定
+            const slotPlan = getDailySlotAssignments(todayStr, rerollCount, currentMode, weakFields, selectedSubjects, qCount);
 
             // 3. モード別の難易度・フォーカス指示
             let modeInstruction = "";
@@ -943,7 +1372,7 @@
             } else if (currentMode === "speed") {
                 modeInstruction = `【🏃 共通テスト速算モード】大学入学共通テストの本番で素早く解くためのスピード＆正確性を重視した計算問題としてください。1問あたり1〜2分で暗算または最小限の筆算で解ける鮮やかな変形問題を構成してください。`;
             } else {
-                modeInstruction = `【🎯 全10単元バランスモード】数学I・A・II・B・Cの全10単元から、国立大学入学レベル（標準〜やや難）の良質な計算特訓問題をバランスよく構成してください。`;
+                modeInstruction = `【🎯 バランスモード】選択された単元（${selectedSubjects.join(", ")}）から、国立大学入学レベル（標準〜やや難）の良質な計算特訓問題をバランスよく構成してください。`;
             }
 
             // 4. 重複回避の過去問リストテキスト
@@ -958,7 +1387,7 @@
 
             const systemPrompt = `
 あなたは日本の高校数学教育に精通した、世界最高峰のAI数学講師です。
-生徒の数学的思考力と計算瞬発力を限界まで引き上げるため、本日の【数学I, A, II, B, C】の計算特訓タイムアタック問題を【厳密に10問】作成してください（数学IIIは完全に除外）。
+生徒の数学的思考力と計算瞬発力を限界まで引き上げるため、本日の【${selectedSubjects.join(", ")}】の計算特訓タイムアタック問題を【厳密に${qCount}問】作成してください（数学IIIは完全に除外）。
 
 【🚫 除外分野・禁止事項（厳守）】
 - 「軌跡」「軌跡と領域」に関する問題は完全に除外してください。
@@ -968,7 +1397,7 @@
 
 ${modeInstruction}
 
-【🎯 10問の厳格な単元スロット＆指定テーマ（必ずこの通りに1問ずつ構成すること）】
+【🎯 ${qCount}問の厳格な単元スロット＆指定テーマ（必ずこの通りに1問ずつ構成すること）】
 ${slotPlanText}
 
 【🚫 過去に出題された直近の問題（完全重複厳禁・類似解法禁止）】
@@ -1000,18 +1429,24 @@ ${pastTitlesText}
                     throw new Error("GeminiのAPIキーがブラウザに設定されていません。右下の🔑ボタンから登録してください。");
                 }
 
-                // 🚀 temperature: 0.8 に引き上げ、高い多様性と創造性を実現！
+                // 🚀 選択されたモデル（preferredModel: selectedModel）、temperature: 0.8
                 const aiQuestions = await callGeminiJSON(
                     [{ text: systemPrompt }],
-                    "あなたは優秀なAI数学教師です。指定された10スロットの出題テーマに厳密に従い、JSON配列のみを返してください。",
-                    { temperature: 0.8, arrayMode: true, responseSchema: DAILY_SPRINT_RESPONSE_SCHEMA, featureId: "daily" }
+                    `あなたは優秀なAI数学教師です。指定された${qCount}スロットの出題テーマに厳密に従い、JSON配列のみを返してください。`,
+                    { 
+                        preferredModel: selectedModel,
+                        temperature: 0.8, 
+                        arrayMode: true, 
+                        responseSchema: DAILY_SPRINT_RESPONSE_SCHEMA, 
+                        featureId: "daily" 
+                    }
                 );
 
-                if (!Array.isArray(aiQuestions) || aiQuestions.length < 5) {
+                if (!Array.isArray(aiQuestions) || aiQuestions.length === 0) {
                     throw new Error("AIの応答が有効な配列形式ではありませんでした。");
                 }
 
-                const uniqueAiQuestions = aiQuestions.slice(0, 10).map((q, idx) => {
+                const uniqueAiQuestions = aiQuestions.slice(0, qCount).map((q, idx) => {
                     const fallbackSlot = slotPlan[idx] || {};
                     return {
                         ...q,
@@ -1028,6 +1463,9 @@ ${pastTitlesText}
                 await set(sprintCacheRef, { 
                     questions: uniqueAiQuestions, 
                     mode: currentMode,
+                    model: selectedModel,
+                    subjects: selectedSubjects,
+                    questionCount: uniqueAiQuestions.length,
                     generatedAt: new Date().toISOString() 
                 });
 
@@ -1039,20 +1477,24 @@ ${pastTitlesText}
 
             } catch (error) {
                 console.error("AI問題生成エラー:", error);
-                showToast("Geminiによる問題生成に失敗したため、厳選予備問題バンクからバランスよく10問抽出して特訓を開始します。\n（" + error.message + "）", "error", 6000);
+                showToast("AIによる問題生成に失敗したため、厳選予備問題バンクから抽出して特訓を開始します。\n（" + error.message + "）", "error", 6000);
 
-                // Fisher-Yates シャッフルで偏りなく10問を抽出
-                const pool = [...dailyProblemBank];
+                // 選択された科目の問題があればそれを優先
+                let pool = dailyProblemBank.filter(p => !p.subject || selectedSubjects.includes(p.subject));
+                if (pool.length === 0) pool = [...dailyProblemBank];
+
                 for (let i = pool.length - 1; i > 0; i--) {
                     const j = Math.floor(Math.random() * (i + 1));
                     [pool[i], pool[j]] = [pool[j], pool[i]];
                 }
 
-                selectedQuestions = pool.slice(0, 10).map((q, idx) => {
-                    const fallbackSlot = SPRINT_SLOTS[idx] || {};
+                selectedQuestions = pool.slice(0, qCount).map((q, idx) => {
+                    const fallbackSlot = slotPlan[idx] || SPRINT_SLOTS[idx % SPRINT_SLOTS.length] || {};
                     return {
                         ...q,
                         slot: idx + 1,
+                        subject: q.subject || fallbackSlot.subject || "数学",
+                        field: q.field || fallbackSlot.field || "計算",
                         shortField: fallbackSlot.shortField || q.field || `第${idx + 1}問`,
                         topic: "厳選計算良問",
                         isWeaknessSlot: false,
