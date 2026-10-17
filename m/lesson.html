@@ -6639,26 +6639,53 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
             }
 
             let formatInstruction = "";
-            if (selectedVersion === "combination") {
-                formatInstruction = `【出題形式：⚔️ 2文正誤組み合わせ判定（最頻出形式）に特化】\n全問を「type: combination」として作成し、文X・文Yを提示して①正-正 ②正-誤 ③誤-正 ④誤-誤の4択としてください。`;
-            } else if (selectedVersion === "true_false") {
-                formatInstruction = `【出題形式：🔍 4択正誤判定（王道形式）に特化】\n全問を4択正誤問題として作成し、「正しいものを一つ選べ」または「誤っているものを一つ選べ」と指示してください。`;
-            } else if (selectedVersion === "chronological") {
-                formatInstruction = `【出題形式：⏳ 年代・因果関係整序（配列問題）に特化】\n全問を整序問題として作成し、出来事Ⅰ〜Ⅲの正しい前後関係を選ばせてください。`;
-            } else if (selectedVersion === "cloze") {
-                formatInstruction = `【出題形式：📝 空欄補充型に特化】\nリード文中の空欄［ア］［イ］に入る語句の正しい組み合わせを選ばせてください。`;
+            const isChem = /化学|chemistry/i.test(subject || "");
+
+            if (isChem) {
+                if (selectedVersion === "combination") {
+                    formatInstruction = `【出題形式：🧩 2文正誤判定／空欄［ア］［イ］組み合わせ（共テ頻出）に特化】\n全問を「type: combination」として作成し、文a・文bの正誤判定（①正-正 ②正-誤 ③誤-正 ④誤-誤）、またはリード文中の空欄［ア］［イ］に入る語句・数値の組み合わせを出題してください。`;
+                } else if (selectedVersion === "true_false") {
+                    formatInstruction = `【出題形式：⚖️ 4択正誤判定（共テ最頻出）に特化】\n全問を4択問題として作成し、「最も適当なものを一つ選べ」または「下線部①〜④のうち誤りを含むものを一つ選べ」と指示してください。`;
+                } else if (selectedVersion === "chronological") {
+                    formatInstruction = `【出題形式：🧪 実験操作・順序整序（共テ頻出形式）に特化】\n全問を「type: chronological」として作成し、二叉試験管の操作順序、中和滴定の手順、気体発生の開始・停止手順など、操作ア〜ウの正しい順序（①ア→イ→ウ 等）を選ばせてください。`;
+                } else if (selectedVersion === "cloze") {
+                    formatInstruction = `【出題形式：📝 空欄補充・数値・語句組み合わせ特化】\nリード文中の空欄［ア］［イ］に入る語句や数値の正しい組み合わせを選ばせてください。`;
+                } else {
+                    formatInstruction = `【出題形式：🌟 共通テスト化学基礎本番バランス（全種混合）】\n実験操作・順序整序（二叉試験管・滴定・気体発生）、4択正誤判定（正文選択・誤文判定）、2文正誤組み合わせ、4択量的関係計算（mol・過不足・段階的添加）をバランスよく織り交ぜて出題してください。`;
+                }
             } else {
-                formatInstruction = `【出題形式：🌟 共通テスト本番バランス（全種混合）】\n2文正誤判定、年代整序、4択正誤判定、空欄補充をバランスよく織り交ぜて多彩に出題してください。`;
+                if (selectedVersion === "combination") {
+                    formatInstruction = `【出題形式：⚔️ 2文正誤組み合わせ判定（最頻出形式）に特化】\n全問を「type: combination」として作成し、文X・文Yを提示して①正-正 ②正-誤 ③誤-正 ④誤-誤の4択としてください。`;
+                } else if (selectedVersion === "true_false") {
+                    formatInstruction = `【出題形式：🔍 4択正誤判定（王道形式）に特化】\n全問を4択正誤問題として作成し、「正しいものを一つ選べ」または「誤っているものを一つ選べ」と指示してください。`;
+                } else if (selectedVersion === "chronological") {
+                    formatInstruction = `【出題形式：⏳ 年代・因果関係整序（配列問題）に特化】\n全問を整序問題として作成し、出来事Ⅰ〜Ⅲの正しい前後関係を選ばせてください。`;
+                } else if (selectedVersion === "cloze") {
+                    formatInstruction = `【出題形式：📝 空欄補充型に特化】\nリード文中の空欄［ア］［イ］に入る語句の正しい組み合わせを選ばせてください。`;
+                } else {
+                    formatInstruction = `【出題形式：🌟 共通テスト本番バランス（全種混合）】\n2文正誤判定、年代整序、4択正誤判定、空欄補充をバランスよく織り交ぜて多彩に出題してください。`;
+                }
             }
 
             const isScience = isMathOrScienceSubject(subject);
             const mathRuleText = isScience
-                ? `3. 数式表記：数式は必ず $ $ または $$ $$ で記述すること。`
+                ? `3. 数式・化学式表記：数式および化学式・イオン式・単位は必ず完全なLaTeX記法（$ $ または $$ $$）で記述すること。平文のCaCO3やCO3^2-等は禁止。`
                 : `3. 【最重要：LaTeX記法の完全禁止】社会・文系科目のため、$ や $$ や \\fbox 等の LaTeX 記法は【一切使用禁止】です。穴埋め・選択肢は【 】や［ ］を使い、すべてプレーンテキストで記述すること。`;
 
             let subjectTrapGuideline = "";
             const subLower = (subject || "").toLowerCase();
-            if (subLower.includes("日") || subLower.includes("世") || subLower.includes("歴")) {
+            if (isChem) {
+                subjectTrapGuideline = `【⚠️ 共通テスト化学基礎の出題者トラップ指針】
+・【発展化学の完全排除】：理系個別の発展化学（気体状態方程式PV=nRT、化学平衡、熱化学、有機化学、錯イオン等）は出題厳禁。高校「化学基礎」に100%特化すること。
+1. 係数比と質量比の混同（モル質量換算の見落とし）
+2. 過不足・限界反応物の看落とし（どちらかが余る全量反応の錯覚）
+3. イオン反応式の電荷不一致・沈殿物質の電離誤記（CaCO3等の電離間違い）
+4. 実験器具の取り扱い・共洗いの誤認（メスフラスコ、ビュレット、二叉試験管）
+5. 同素体と同位体の定義混同、元素と単体の区別
+6. 気体モル体積（22.4 L/mol）を液体等に適用してしまう誤り
+7. 段階的添加実験のグラフの軸・折れ曲がり点の誤読
+8. 化学式・イオン式・反応式・単位は必ず完全なLaTeX記法（$\\text{CaCO}_3$, $\\text{CO}_3^{2-}$ 等）で記述すること。`;
+            } else if (subLower.includes("日") || subLower.includes("世") || subLower.includes("歴")) {
                 subjectTrapGuideline = `【⚠️ 歴史科目の出題者トラップ指針】
 1. 時期・世紀・前後関係のすり替え（例: 17世紀初頭を18世紀、天保の改革を寛政の改革にすり替え）
 2. 主語・人物・治績のすり替え（例: 秀忠の業績を家康、第1次内閣と第2次内閣の混同）
@@ -6790,6 +6817,7 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
 
             const isMultiPart = parts.length >= 2;
             const textToUse = (extractedText || "").trim();
+            const isChem = /化学|chemistry/i.test(subjectName || "");
 
             const schema = {
                 type: "OBJECT",
@@ -6822,7 +6850,18 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
                 required: ["choice_drills"]
             };
 
-            const systemInstruction = `あなたは大学入学共通テスト・大学入試の選択問題作成における最高峰のエキスパートAIです。
+            const systemInstruction = isChem ? `あなたは大学入学共通テスト「化学基礎」の作問委員・予備校特任講師AIです。
+渡された講義ノート・教材から、共通テスト本番に完全準拠した極めて実戦的で質の高い多肢選択式演習問題を作成してください。
+
+【発展化学の完全排除】
+気体状態方程式PV=nRT、化学平衡、熱化学、有機化学、錯イオン等は絶対禁止。高校「化学基礎」の範囲（物質の構成・結合、量的関係・mol、酸塩基・滴定、酸化還元、実験探究）に100%特化してください。
+
+【落とし穴（罠）の徹底解析】
+必ず各問題に受験生が引っかかる典型的な誤答トラップの理由（trap_reason: 係数比と質量比の混同、過不足の看落とし、イオン反応式の電荷不一致、器具共洗い、同素体と同位体など）と論理的な正解根拠（explanation）を詳しく記述してください。
+
+【問題形式】
+combination(2文正誤判定・空欄組み合わせ)、chronological(実験操作・順序整序)、true_false(4択正誤判定)、single_choice(量的関係計算・読解)をバランスよく出題してください。
+ふりがな括弧は厳禁です。化学式・数式は必ず完全なLaTeX記法（$ ... $）で記述してください。正解番号 correct_number は 1〜4 の整数にしてください。` : `あなたは大学入学共通テスト・大学入試の選択問題作成における最高峰のエキスパートAIです。
 渡された講義ノート・教材から、共通テスト本番で出題される極めて実戦的で質の高い多肢選択式演習問題を作成してください。
 
 【落とし穴（罠）の徹底解析】
@@ -6835,7 +6874,18 @@ combination(2文正誤判定)、chronological(年代整序)、true_false(4択正
 
             if (isMultiPart) {
                 const partTasks = parts.map(async (part, pIdx) => {
-                    const prompt = `【教科：${subjectName}】
+                    const prompt = isChem ? `【教科：化学基礎（共通テスト特化）】
+【授業タイトル：${lessonTitle}】
+【第${pIdx + 1}回パート：${part.title}】
+【パートの要約・学習範囲】
+${part.summary || "（パート要約なし）"}
+
+【原本テキスト・講義ノート抜粋】
+${textToUse ? textToUse.slice(0, 8000) : "講義ノートなし"}
+
+上記に基づき、第${pIdx + 1}回「${part.title}」の範囲から共通テスト化学基礎形式の実戦選択問題を【${countPerPart}問】作成してください。
+形式（実験操作順序整序、正文/誤文判定、2文正誤組み合わせ、4択量的関係計算）をバランスよく配分し、出題者の罠（係数比と質量比の混同、過不足、器具共洗い等）を明記してください。
+化学式・イオン式・反応式は必ず完全なLaTeX記法（$\\text{CaCO}_3$, $\\text{CO}_3^{2-}$ 等）で記述してください。` : `【教科：${subjectName}】
 【授業タイトル：${lessonTitle}】
 【第${pIdx + 1}回パート：${part.title}】
 【パートの要約・学習範囲】

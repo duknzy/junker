@@ -16115,6 +16115,104 @@ ${extractedText.slice(0, 15000)}`;
             required: ["choice_drills"]
         };
 
+        function isChemBaseSubject(subject) {
+            if (!subject || typeof subject !== 'string') return false;
+            return /化学|化学基礎|chemistry/i.test(subject);
+        }
+
+        // 🧪 化学基礎フォーマッタ：化学式・イオン式・反応式をLaTeX記法に自動整形
+        function formatChemistryFormulaToTex(formula) {
+            if (!formula) return "";
+            let trimmed = formula.trim();
+            let coeffMatch = trimmed.match(/^(\d+)/);
+            let coeff = coeffMatch ? coeffMatch[1] : "";
+            let rest = coeff ? trimmed.slice(coeff.length) : trimmed;
+
+            let charge = "";
+            let chargeMatch = rest.match(/\^?([0-9]*[+\-]|[+\-][0-9]*)$/);
+            if (chargeMatch && chargeMatch[0]) {
+                charge = chargeMatch[1];
+                rest = rest.slice(0, rest.length - chargeMatch[0].length);
+            }
+
+            let body = rest.replace(/([A-Z][a-z]?|\([A-Za-z0-9]+\))(\d+)?/g, (_, sym, sub) => {
+                return sym + (sub ? `_{${sub}}` : "");
+            });
+
+            let res = (coeff ? coeff : "") + "\\text{" + body + "}";
+            res = res.replace(/_\{(\d+)\}/g, "}_{$1}\\text{");
+            res = res.replace(/\\text\{\}/g, "");
+            if (charge) {
+                res += `^{${charge}}`;
+            }
+            return res;
+        }
+
+        function formatChemistryNotation(text) {
+            if (!text || typeof text !== 'string') return text;
+            const mathBlocks = [];
+            const saveMath = (tex) => {
+                mathBlocks.push(tex);
+                return `%%%MATH_${mathBlocks.length - 1}%%%`;
+            };
+
+            let clean = text.replace(/(\$\$[\s\S]*?\$\$|\$[^\$\n]+?\$)/g, (match) => saveMath(match));
+
+            // 1. 完全な化学反応式・イオン反応式（→ や ＝ を含む反応式）
+            clean = clean.replace(/([0-9]*[A-Z][A-Za-z0-9()^+\-]*(?:\s+[+＋]\s+[0-9]*[A-Z][A-Za-z0-9()^+\-]*)*\s*(?:→|->|＝|=)\s*[0-9]*[A-Z][A-Za-z0-9()^+\-]*(?:\s+[+＋]\s+[0-9]*[A-Z][A-Za-z0-9()^+\-]*)*)/g, (eq) => {
+                const parts = eq.split(/(\s+[+＋]\s+|\s*(?:→|->)\s*|\s*[＝=]\s*)/);
+                const texParts = parts.map(p => {
+                    if (/^\s+[+＋]\s+$/.test(p)) return ' + ';
+                    if (/^\s*(?:→|->)\s*$/.test(p)) return ' \\rightarrow ';
+                    if (/^\s*[＝=]\s*$/.test(p)) return ' = ';
+                    const trimmed = p.trim();
+                    if (!trimmed) return p;
+                    return formatChemistryFormulaToTex(trimmed);
+                });
+                return saveMath('$' + texParts.join('') + '$');
+            });
+
+            // 2. 単独のイオン式（CO3^2-, 2H+, Ca^2+, Cl-, OH- 等）
+            clean = clean.replace(/(?:^|(?<=[^A-Za-z0-9_]))([0-9]*[A-Z][a-z]?(?:\d+)?)\^([0-9]*[+\-]|[+\-][0-9]*)(?=[^A-Za-z0-9_]|$)/g, (m, body, charge) => {
+                return saveMath('$' + formatChemistryFormulaToTex(body + '^' + charge) + '$');
+            });
+
+            // 3. 単独の化学式
+            const knownFormulas = [
+                "CaCO3", "CaCl2", "Ca(OH)2", "H2O", "CO2", "HCl", "NaCl", "NaOH", "H2SO4", "HNO3",
+                "AgNO3", "AgCl", "CuSO4", "NH3", "NH4Cl", "CH4", "C2H6", "C3H8", "C2H4", "C2H2",
+                "O2", "H2", "N2", "Cl2", "Br2", "I2", "Fe2O3", "Al2O3", "MgO", "BaSO4"
+            ];
+            const formulaRegex = new RegExp('(?:^|(?<=[^A-Za-z0-9_]))(' + knownFormulas.map(f => f.replace(/[()]/g, '\\$&')).join('|') + ')(?=[^A-Za-z0-9_]|$)', 'g');
+            clean = clean.replace(formulaRegex, (m, f) => {
+                return saveMath('$' + formatChemistryFormulaToTex(f) + '$');
+            });
+
+            // 4. 単位の整形
+            clean = clean.replace(/(?:^|(?<=[^A-Za-z0-9_]))(mol\/L|g\/mol|g\/cm3|L\/mol)(?=[^A-Za-z0-9_]|$)/g, (m, u) => {
+                if (u === 'g/cm3') return saveMath('$\\text{g/cm}^3$');
+                return saveMath(`$\\text{${u}}$`);
+            });
+
+            clean = clean.replace(/%%%MATH_(\d+)%%%/g, (_, idx) => mathBlocks[idx]);
+            return clean;
+        }
+
+        // 🏷️ 罠タグの教科別正規化（化学基礎なら歴史用語の罠を化学の落とし穴名に自動置換）
+        function normalizeChemistryTrapType(trapType, subject = "") {
+            if (!trapType) return "頻出の落とし穴";
+            const isChem = isChemBaseSubject(subject || (typeof currentLesson !== "undefined" && currentLesson?.subject) || (typeof detectLessonSubject === "function" && typeof currentLesson !== "undefined" ? detectLessonSubject(currentLesson) : ""));
+            if (!isChem) return trapType;
+
+            const t = String(trapType).trim();
+            if (/時期|世紀|前後/.test(t)) return "実験操作・手順・反応順序の誤認";
+            if (/対象|法律|条約|地名/.test(t)) return "物質・化学式・イオン・定義の混同";
+            if (/主語|人物/.test(t)) return "反応物・生成物・イオンのすり替え";
+            if (/因果/.test(t)) return "反応機構・酸化還元・比例関係の逆転";
+            if (/極端|限定/.test(t)) return "完全電離/部分電離・例外の極端化";
+            return t;
+        }
+
         const CHOICE_DRILLS_SYSTEM_INSTRUCTION = `あなたは大学入学共通テスト・大学入試の選択問題作成における最高峰のエキスパートAIです。
 渡された「授業ノート・教科書本文」から、共通テスト本番で出題される極めて実戦的で質の高い【選択式演習問題】を作成してください。
 
@@ -16167,6 +16265,87 @@ ${extractedText.slice(0, 15000)}`;
 3. explanation（詳細解説）には、正解の理由だけでなく、誤りの選択肢のどこが違うのか（どう直せば正文になるか）を明確に解説してください。
 4. 正解番号（correct_option）は必ず 1, 2, 3, 4 のいずれか（options 配列の number と一致）にしてください。`;
 
+        // 🧪【新設】大学入学共通テスト「化学基礎」特化型 選択問題生成システム指示
+        const CHEM_BASE_CHOICE_DRILLS_SYSTEM_INSTRUCTION = `あなたは大学入学共通テスト「化学基礎」の作問委員・予備校特命講師AIです。
+渡された講義ノート・教科書本文から、共通テスト本番に完全準拠した極めて実戦的で質の高い【選択式演習問題】を作成してください。
+
+【🚨 絶対厳守：出題範囲（スコープ）の厳格限定】
+生徒は大学入学共通テスト「化学基礎」（30〜50点満点）を受験します。
+理系個別試験で扱うような「化学（発展化学）」の範囲（気体の状態方程式 PV=nRT、蒸気圧・浸透圧・コロイド、化学平衡・電離平衡・緩衝液・溶解度積、熱化学方程式・反応エンタルピー、無機の各族各論・錯イオン・金属イオン系統分離、有機化学全般・高分子化合物など）は【絶対に出題・言及しない】こと。
+化学基礎の出題範囲（①物質の構成と化学結合、②物質の変化と量的関係、酸と塩基・中和滴定、酸化還元反応、身のまわりの化学と実験探究）に100%特化してください。
+
+【🎯 最重要指針：共通テスト化学基礎特有の「落とし穴（罠）」の徹底網羅】
+共通テスト化学基礎では、単なる用語暗記ではなく、「係数比と質量比の混同」「過不足の看落とし」「実験器具の操作順序や共洗い理由」などの盲点を突いた出題が合否を分けます。
+必ず各問題に「出題者が仕掛けた罠のタイプ（trap_type）」と「なぜ受験生が引っかかるのか・見破る急所（trap_explanation）」を克明に記述してください。
+
+化学基礎の代表的な罠タイプ（trap_type）:
+1. 「係数比と質量比の混同」（例: 反応式の係数比 1:2 をそのまま質量の比と錯覚し、モル質量換算を忘れる罠）
+2. 「過不足・限界反応物の看落とし」（例: 反応物が2種類あるのにどちらかが先に尽きることを確認せず、全量反応すると勘違いする罠）
+3. 「イオン反応式の電荷不一致・沈殿の電離誤記」（例: 炭酸カルシウムを電離させてしまったり、左右の電荷の合計が一致していない式を選ぶ罠）
+4. 「実験器具の取り扱い・共洗いの誤認」（例: メスフラスコやコニカルビーカーを共洗いしてしまう、二叉試験管の薬品配置や傾ける向きを取り違える罠）
+5. 「同素体と同位体の定義混同」（例: 同素体（単体）と同位体（原子）の定義すり替え、元素と単体の区別の罠）
+6. 「気体モル体積の誤適用」（例: 標準状態での気体 22.4 L/mol を液体である水や固体にそのまま適用してしまう罠）
+7. 「モル濃度と質量パーセント濃度・密度の混同」（例: 溶液 1 L 中の mol と、溶液 100 g 中の溶質 g の取り違え罠）
+8. 「酸・塩基の強弱と濃淡・価数の混同」（例: 2価の弱酸を1価の強酸より強いと錯覚する、希薄な強酸と濃厚な弱酸の液性の取り違え罠）
+9. 「pHと水素イオン濃度の逆転」（例: 水素イオン濃度が大きいほど pH が「小さく」なる関係の逆転罠）
+10. 「酸化数の増減と酸化剤/還元剤の役割逆転」（例: 自身が還元される物質が酸化剤であるという主客逆転トラップ）
+11. 「段階的添加実験グラフの軸・折れ曲がり点の誤読」（例: 縦軸が「気体発生量」なのか「全体の質量」なのか「溶け残り」なのかの読み違い罠）
+12. 「価電子と最外殻電子数の混同」（例: 希ガスの最外殻電子は8（Heは2）だが、価電子は「0」であるという定義トラップ）
+
+【問題形式のバリエーション（type）】
+パートごとに以下の形式をバランスよく配分して出題してください:
+- "chronological": 【実験手順・操作順序整序問題】
+  二叉試験管での気体発生・停止手順、中和滴定の器具調製・滴定手順、綿栓を用いた気体発生の質量測定、混合物の分離（ろ過・蒸留・再結晶・抽出）など、操作ア〜ウの正しい順序を問う。
+  lead_text: 「〇〇に関する実験操作ア〜ウについて、行う順序として最も適当なものを、下の①〜④（または①〜⑥）のうちから一つ選べ。」
+  statements: ["ア 〇〇の操作...", "イ △△の操作...", "ウ □□の操作..."]
+  options: [
+    {"number": 1, "text": "ア → イ → ウ"},
+    {"number": 2, "text": "ア → ウ → イ"},
+    {"number": 3, "text": "イ → ア → ウ"},
+    {"number": 4, "text": "イ → ウ → ア"}
+  ]
+- "true_false": 【正文選択・誤文判定問題】
+  共通テスト最頻出の「最も適当なものを一つ選べ」「誤りを含むものを一つ選べ」。
+  lead_text: 「〇〇について述べた文として最も適当なもの（または誤りを含むもの）を、次の①〜④のうちから一つ選べ。」
+  options: [
+    {"number": 1, "text": "選択肢文1..."},
+    {"number": 2, "text": "選択肢文2..."},
+    {"number": 3, "text": "選択肢文3..."},
+    {"number": 4, "text": "選択肢文4..."}
+  ]
+- "combination": 【2文正誤組み合わせ／空欄補充組み合わせ問題】
+  lead_text: 「〇〇について述べた次の文 a・b の正誤の組み合わせとして最も適当なものを、下の①〜④のうちから一つ選べ。」
+  statements: ["a 〇〇に関する記述...", "b △△に関する記述..."]
+  options: [
+    {"number": 1, "text": "a-正　b-正"},
+    {"number": 2, "text": "a-正　b-誤"},
+    {"number": 3, "text": "a-誤　b-正"},
+    {"number": 4, "text": "a-誤　b-誤"}
+  ]
+  または空欄［ ア ］［ イ ］に入る語句・数値の組み合わせ形式（① ア: ○○ / イ: △△ など）。
+- "single_choice": 【4択思考・量的関係計算・グラフ読解問題】
+  物質量（mol）の計算、3段表を用いた過不足反応、段階的添加実験の折れ曲がり点推理、中和滴定の濃度計算、電子配置や周期表の性質を問う4択。
+  lead_text: 「〇〇に関する設問...」
+  options: 4択の選択肢
+
+【ルール】
+1. ふりがな（ひらがな・括弧）は【絶対厳禁】。一般の共通テスト問題用紙と同様に正式な漢字表記のみでスッキリ出力してください。
+2. 【最重要：化学式・数式のLaTeX表記】
+   化学式、イオン式、反応式、単位、数値は必ず完全なLaTeX形式（$ ... $）で記述してください。
+   ・正例：$\\text{CaCO}_3 + 2\\text{HCl} \\rightarrow \\text{CaCl}_2 + \\text{H}_2\\text{O} + \\text{CO}_2$
+   ・正例：$\\text{CO}_3^{2-} + 2\\text{H}^+ \\rightarrow \\text{H}_2\\text{O} + \\text{CO}_2$
+   ・正例：$0.050\\,\\text{mol/L}$, $22.4\\,\\text{L/mol}$, $1.2 \\times 10^{23}$ 個
+   ・誤例：CaCO3 + 2HCl -> CaCl2 + H2O + CO2（平文の化学式や上付き・下付きの欠落は厳禁）
+3. explanation（詳細解説）には、正解の理由だけでなく、誤りの選択肢のどこが違うのか（どう直せば正しい記述になるか、計算の立式手順）を論理的に解説してください。
+4. 正解番号（correct_option）は必ず 1, 2, 3, 4 のいずれか（options 配列の number と一致）にしてください。`;
+
+        function getChoiceDrillsSystemInstruction(subjectName) {
+            if (isChemBaseSubject(subjectName)) {
+                return CHEM_BASE_CHOICE_DRILLS_SYSTEM_INSTRUCTION;
+            }
+            return CHOICE_DRILLS_SYSTEM_INSTRUCTION;
+        }
+
         let choiceDrillStatusFilter = "all";
         const lessonRecentlyAnsweredDrillIds = new Set();
         const lessonInspectedDrillOptions = new Map();
@@ -16197,10 +16376,23 @@ ${extractedText.slice(0, 15000)}`;
 
             const isMultiPart = parts.length >= 2;
             const textToUse = (extractedText || "").trim();
+            const isChem = isChemBaseSubject(subjectName);
+            const sysInstruction = getChoiceDrillsSystemInstruction(subjectName);
 
             if (isMultiPart) {
                 const partTasks = parts.map(async (part, pIdx) => {
-                    const prompt = `【教科：${subjectName}】
+                    const prompt = isChem ? `【教科：化学基礎（大学入学共通テスト特化）】
+【授業タイトル：${lessonTitle}】
+【第${pIdx + 1}回パート：${part.title}】
+【パートの要約・学習範囲】
+${part.summary || "（パート要約なし）"}
+
+【原本テキスト・講義ノート】
+${textToUse ? textToUse.slice(0, 10000) : "講義ノートなし"}
+
+上記の内容に基づき、第${pIdx + 1}回パート「${part.title}」の範囲から、大学入学共通テスト化学基礎形式の【極めて実戦的で質の高い選択問題】を【${countPerPart}問】作成してください。
+形式（実験操作・順序整序、正文/誤文判定、2文正誤組み合わせ/空欄補充、4択思考・量的関係計算）をバランスよく配分し、出題者の引っかけ罠（係数比と質量比の混同、過不足の看落とし、イオン反応式の電荷不一致、器具共洗い、同素体・同位体など）を克明に解析してください。
+化学式・イオン式・反応式・単位は必ず完全なLaTeX記法（$\\text{CaCO}_3$, $\\text{CO}_3^{2-}$ 等）で記述してください。` : `【教科：${subjectName}】
 【授業タイトル：${lessonTitle}】
 【第${pIdx + 1}回パート：${part.title}】
 【パートの要約・学習範囲】
@@ -16215,7 +16407,7 @@ ${textToUse ? textToUse.slice(0, 10000) : "講義ノートなし"}
                     try {
                         const res = await callGeminiJSON(
                             [{ text: prompt }],
-                            CHOICE_DRILLS_SYSTEM_INSTRUCTION,
+                            sysInstruction,
                             {
                                 responseSchema: CHOICE_DRILLS_RESPONSE_SCHEMA,
                                 featureId: "memorization_points",
@@ -16232,7 +16424,7 @@ ${textToUse ? textToUse.slice(0, 10000) : "講義ノートなし"}
                             statements: Array.isArray(item.statements) ? item.statements.map(s => stripFurigana(s)) : [],
                             options: Array.isArray(item.options) ? item.options.map(o => ({ number: Number(o.number) || 1, text: stripFurigana(o.text || "") })) : [],
                             correct_option: Number(item.correct_option) || 1,
-                            trap_type: stripFurigana(item.trap_type || "引っかけの急所"),
+                            trap_type: stripFurigana(normalizeChemistryTrapType(item.trap_type || "引っかけの急所", subjectName)),
                             trap_explanation: stripFurigana(item.trap_explanation || ""),
                             explanation: stripFurigana(item.explanation || ""),
                             userAnswer: null,
@@ -16256,7 +16448,14 @@ ${textToUse ? textToUse.slice(0, 10000) : "講義ノートなし"}
             } else {
                 // 単一パート
                 const singleCount = Math.max(8, countPerPart * 2);
-                const prompt = `【教科：${subjectName}】
+                const prompt = isChem ? `【教科：化学基礎（大学入学共通テスト特化）】
+【授業タイトル：${lessonTitle}】
+【講義ノート全文】
+${textToUse ? textToUse.slice(0, 10000) : "講義ノートなし"}
+
+上記の内容から、大学入学共通テスト化学基礎形式の【極めて実戦的で質の高い選択問題】を【${singleCount}問】作成してください。
+形式（実験操作・順序整序、正文/誤文判定、2文正誤組み合わせ/空欄補充、4択思考・量的関係計算）を網羅し、係数比と質量比の混同、過不足の看落とし、器具共洗い、同素体・同位体などの引っかけ罠を徹底解析してください。
+化学式・イオン式・反応式・単位は必ず完全なLaTeX記法（$\\text{CaCO}_3$, $\\text{CO}_3^{2-}$ 等）で記述してください。` : `【教科：${subjectName}】
 【授業タイトル：${lessonTitle}】
 【講義ノート全文】
 ${textToUse ? textToUse.slice(0, 10000) : "講義ノートなし"}
@@ -16266,7 +16465,7 @@ ${textToUse ? textToUse.slice(0, 10000) : "講義ノートなし"}
 
                 const res = await callGeminiJSON(
                     [{ text: prompt }],
-                    CHOICE_DRILLS_SYSTEM_INSTRUCTION,
+                    sysInstruction,
                     {
                         responseSchema: CHOICE_DRILLS_RESPONSE_SCHEMA,
                         featureId: "memorization_points"
@@ -16282,7 +16481,7 @@ ${textToUse ? textToUse.slice(0, 10000) : "講義ノートなし"}
                     statements: Array.isArray(item.statements) ? item.statements.map(s => stripFurigana(s)) : [],
                     options: Array.isArray(item.options) ? item.options.map(o => ({ number: Number(o.number) || 1, text: stripFurigana(o.text || "") })) : [],
                     correct_option: Number(item.correct_option) || 1,
-                    trap_type: stripFurigana(item.trap_type || "引っかけの急所"),
+                    trap_type: stripFurigana(normalizeChemistryTrapType(item.trap_type || "引っかけの急所", subjectName)),
                     trap_explanation: stripFurigana(item.trap_explanation || ""),
                     explanation: stripFurigana(item.explanation || ""),
                     userAnswer: null,
@@ -16332,8 +16531,22 @@ ${textToUse ? textToUse.slice(0, 10000) : "講義ノートなし"}
                 const subject = currentLesson.subject || detectLessonSubject(currentLesson) || "その他";
                 const activePartIdx = currentLesson.currentPartIndex || 0;
                 const activePart = (currentLesson.parts && currentLesson.parts[activePartIdx]) ? currentLesson.parts[activePartIdx] : null;
+                const isChem = isChemBaseSubject(subject);
+                const sysInstruction = getChoiceDrillsSystemInstruction(subject);
 
-                const prompt = `【教科：${subject}】
+                const prompt = isChem ? `【教科：化学基礎（大学入学共通テスト特化）】
+【授業タイトル：${currentLesson.title}】
+${activePart ? `【現在学習中のパート：第${activePartIdx + 1}回 ${activePart.title}】（${activePart.summary}）` : ''}
+
+【講義ノート】
+${(currentLesson.extractedText || "").slice(0, 10000)}
+
+【直近で出題済みのテーマ（これらとは異なる新たな罠・視点で出題すること）】
+${existingLeads}
+
+上記の内容から、大学入学共通テスト化学基礎形式の極めて良質な選択問題を【5問】追加作成してください。
+実験操作・順序整序、正文/誤文判定、正誤組み合わせ、4択量的関係計算を取り混ぜ、係数比と質量比の混同、過不足の看落とし、イオン反応式の電荷不一致などの化学基礎頻出トラップを克明に解析してください。
+化学式・イオン式・反応式・単位は必ず完全なLaTeX記法（$\\text{CaCO}_3$, $\\text{CO}_3^{2-}$ 等）で記述してください。` : `【教科：${subject}】
 【授業タイトル：${currentLesson.title}】
 ${activePart ? `【現在学習中のパート：第${activePartIdx + 1}回 ${activePart.title}】（${activePart.summary}）` : ''}
 
@@ -16348,7 +16561,7 @@ ${existingLeads}
 
                 const res = await callGeminiJSON(
                     [{ text: prompt }],
-                    CHOICE_DRILLS_SYSTEM_INSTRUCTION,
+                    sysInstruction,
                     {
                         responseSchema: CHOICE_DRILLS_RESPONSE_SCHEMA,
                         featureId: "memorization_points"
@@ -16365,7 +16578,7 @@ ${existingLeads}
                     statements: Array.isArray(item.statements) ? item.statements.map(s => stripFurigana(s)) : [],
                     options: Array.isArray(item.options) ? item.options.map(o => ({ number: Number(o.number) || 1, text: stripFurigana(o.text || "") })) : [],
                     correct_option: Number(item.correct_option) || 1,
-                    trap_type: stripFurigana(item.trap_type || "引っかけの急所"),
+                    trap_type: stripFurigana(normalizeChemistryTrapType(item.trap_type || "引っかけの急所", subject)),
                     trap_explanation: stripFurigana(item.trap_explanation || ""),
                     explanation: stripFurigana(item.explanation || ""),
                     userAnswer: null,
@@ -16769,15 +16982,46 @@ ${existingLeads}
                 }
             }
 
+            const currentSubj = currentLesson?.subject || (typeof detectLessonSubject === "function" ? detectLessonSubject(currentLesson) : "");
+            const isChem = isChemBaseSubject(currentSubj);
+
+            // 形式フィルターの選択肢を教科に合わせて動的更新
+            const typeFilterEl = el("choice-drills-type-filter");
+            if (typeFilterEl) {
+                const curVal = typeFilterEl.value;
+                const desiredHtml = isChem ? `
+                    <option value="all">全形式</option>
+                    <option value="combination">🧩 正誤・空欄組み合わせ</option>
+                    <option value="chronological">🧪 実験操作・順序整序</option>
+                    <option value="true_false">⚖️ 正誤文判定</option>
+                    <option value="single_choice">📊 4択思考・計算</option>
+                ` : `
+                    <option value="all">全形式</option>
+                    <option value="combination">2文正誤組み合わせ</option>
+                    <option value="chronological">年代・順序整序</option>
+                    <option value="true_false">正誤文判定</option>
+                    <option value="single_choice">4択問題</option>
+                `;
+                if (typeFilterEl.getAttribute("data-applied-subj") !== (isChem ? "chem" : "other")) {
+                    typeFilterEl.innerHTML = desiredHtml;
+                    typeFilterEl.setAttribute("data-applied-subj", isChem ? "chem" : "other");
+                    if (curVal) typeFilterEl.value = curVal;
+                }
+            }
+
             if (allDrills.length === 0) {
+                const introDesc = isChem
+                    ? "実験操作・順序整序、正文/誤文判定、正誤組み合わせ、出題者の罠（係数比と質量比の混同・過不足の看落とし・器具共洗い誤認）を突いた共テ化学基礎実戦問題を一括作成できます。"
+                    : "正誤組み合わせ、年代整序、出題者の罠（主語すり替え・時期ズレ・因果逆転）を突いた実戦問題を各パート網羅で一括作成できます。お好みの作成方法を選択してください。";
+
                 container.innerHTML = `
                     <div style="padding:1.8rem 1rem; text-align:center;">
-                        <div style="font-size:1.8rem; margin-bottom:0.5rem;">🎯</div>
+                        <div style="font-size:1.8rem; margin-bottom:0.5rem;">${isChem ? '🧪' : '🎯'}</div>
                         <div style="font-size:0.86rem; font-weight:700; color:var(--text-primary); margin-bottom:0.4rem;">
-                            共通テスト形式 選択問題演習
+                            ${isChem ? '共通テスト化学基礎 選択問題演習' : '共通テスト形式 選択問題演習'}
                         </div>
-                        <div style="font-size:0.78rem; color:var(--text-secondary); line-height:1.6; margin-bottom:1rem; max-width:420px; margin-left:auto; margin-right:auto;">
-                            正誤組み合わせ、年代整序、出題者の罠（主語すり替え・時期ズレ・因果逆転）を突いた実戦問題を各パート網羅で一括作成できます。お好みの作成方法を選択してください。
+                        <div style="font-size:0.78rem; color:var(--text-secondary); line-height:1.6; margin-bottom:1rem; max-width:440px; margin-left:auto; margin-right:auto;">
+                            ${introDesc}
                         </div>
                         <div style="display:flex; justify-content:center; gap:0.6rem; flex-wrap:wrap;">
                             <button type="button" class="flora-btn flora-btn-primary" style="font-size:0.8rem; padding:0.48rem 1.15rem; font-weight:800; background:linear-gradient(135deg, #4F46E5, #4338CA); border:none;" onclick="openByotDrillsModalWithTab('api')">
@@ -16794,7 +17038,6 @@ ${existingLeads}
 
             // フィルター適用
             const selectedPart = partFilterEl ? partFilterEl.value : "all";
-            const typeFilterEl = el("choice-drills-type-filter");
             const selectedType = typeFilterEl ? typeFilterEl.value : "all";
 
             const filteredDrills = allDrills.filter(d => {
@@ -16816,7 +17059,12 @@ ${existingLeads}
                 return;
             }
 
-            const TYPE_LABELS = {
+            const TYPE_LABELS = isChem ? {
+                combination: { label: "🧩 正誤・空欄組み合わせ", class: "pill-type-combination" },
+                chronological: { label: "🧪 実験操作・順序整序", class: "pill-type-chronological" },
+                true_false: { label: "⚖️ 正誤文判定", class: "pill-type-true_false" },
+                single_choice: { label: "📊 4択思考・計算", class: "pill-type-single_choice" }
+            } : {
                 combination: { label: "2文正誤組み合わせ", class: "pill-type-combination" },
                 chronological: { label: "年代・順序整序", class: "pill-type-chronological" },
                 true_false: { label: "正誤文判定", class: "pill-type-true_false" },
@@ -16832,6 +17080,7 @@ ${existingLeads}
 
                 const cardStatusClass = isAnswered ? (isCorrect ? "status-correct" : "status-wrong") : "";
                 const typeInfo = TYPE_LABELS[d.type] || { label: "選択問題", class: "pill-type-single_choice" };
+                const normTrapType = normalizeChemistryTrapType(d.trap_type || "引っかけの急所", currentSubj);
 
                 // 選択肢HTML
                 const optionsHtml = (d.options || []).map(opt => {
@@ -16862,7 +17111,7 @@ ${existingLeads}
                     return `
                         <button type="button" class="choice-drill-option-btn ${optClass}" onclick="${clickFn}" title="${isAnswered ? 'クリックしてこの選択肢の内容・解説を確認' : 'クリックして解答'}">
                             <span class="choice-drill-option-num">${optNumLabel}</span>
-                            <span style="flex:1; min-width:0; word-break:break-word;">${renderFormattedMarkdown(opt.text)}</span>
+                            <span style="flex:1; min-width:0; word-break:break-word;">${renderFormattedMarkdown(opt.text, currentSubj)}</span>
                             ${optBadgeHtml}
                         </button>
                     `;
@@ -16895,7 +17144,7 @@ ${existingLeads}
                                         ` : ''}
                                     </div>
                                     <div style="color:var(--text-primary); font-size:0.8rem; line-height:1.5;">
-                                        ${renderFormattedMarkdown(targetOptObj.text)}
+                                        ${renderFormattedMarkdown(targetOptObj.text, currentSubj)}
                                     </div>
                                 </div>
                             `;
@@ -16914,10 +17163,10 @@ ${existingLeads}
                             <!-- ⚠️ 出題者の罠（引っかけ急所） -->
                             <div class="choice-drill-trap-box">
                                 <div style="font-weight:800; color:#d97706; font-size:0.78rem; margin-bottom:0.25rem; display:flex; align-items:center; gap:0.35rem;">
-                                    <span>⚠️ 共通テストの罠：${(d.trap_type || "引っかけの急所").replace(/</g, "&lt;")}</span>
+                                    <span>⚠️ 共通テストの罠：${normTrapType.replace(/</g, "&lt;")}</span>
                                 </div>
                                 <div style="color:var(--text-primary); font-size:0.8rem; line-height:1.5;">
-                                    ${renderFormattedMarkdown(d.trap_explanation || "")}
+                                    ${renderFormattedMarkdown(d.trap_explanation || "", currentSubj)}
                                 </div>
                             </div>
 
@@ -16927,7 +17176,7 @@ ${existingLeads}
                                     💡 設問・選択肢の詳細解説
                                 </div>
                                 <div style="line-height:1.55;">
-                                    ${renderFormattedMarkdown(d.explanation || "")}
+                                    ${renderFormattedMarkdown(d.explanation || "", currentSubj)}
                                 </div>
                             </div>
 
@@ -16958,7 +17207,7 @@ ${existingLeads}
                             ${d.statements.map((stmt, sIdx) => `
                                 <div class="choice-drill-statement-item">
                                     <span class="choice-drill-statement-tag">${tagLabels[sIdx] || `文${sIdx + 1}`}</span>
-                                    <span style="flex:1; min-width:0; word-break:break-word;">${renderFormattedMarkdown(stmt)}</span>
+                                    <span style="flex:1; min-width:0; word-break:break-word;">${renderFormattedMarkdown(stmt, currentSubj)}</span>
                                 </div>
                             `).join("")}
                         </div>
@@ -16980,7 +17229,7 @@ ${existingLeads}
                                 ${batchCheckboxHtml}
                                 <span class="choice-drill-pill-type ${typeInfo.class}">${typeInfo.label}</span>
                                 ${d.partTitle ? `<span style="font-size:0.68rem; color:var(--text-muted); background:var(--bg-subtle); padding:0.1rem 0.4rem; border-radius:4px; border:1px solid var(--border-color);">${(d.partTitle).replace(/</g, "&lt;")}</span>` : ''}
-                                ${d.trap_type ? `<span style="font-size:0.68rem; color:#d97706; background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.25); padding:0.1rem 0.4rem; border-radius:4px;">罠: ${(d.trap_type).replace(/</g, "&lt;")}</span>` : ''}
+                                ${d.trap_type ? `<span style="font-size:0.68rem; color:#d97706; background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.25); padding:0.1rem 0.4rem; border-radius:4px;">罠: ${normTrapType.replace(/</g, "&lt;")}</span>` : ''}
                             </div>
                             <div style="display:flex; align-items:center; gap:0.4rem;" onclick="event.stopPropagation();">
                                 <button type="button" class="flora-btn flora-btn-ghost btn-sm" onclick="deleteSingleChoiceDrill('${d.id}')" title="この選択問題を削除" style="font-size:0.75rem; padding:0.15rem 0.4rem; color:var(--text-muted); cursor:pointer;">🗑️</button>
@@ -16991,7 +17240,7 @@ ${existingLeads}
                         </div>
 
                         <div class="choice-drill-lead tex2jax_process">
-                            ${renderFormattedMarkdown(d.lead_text)}
+                            ${renderFormattedMarkdown(d.lead_text, currentSubj)}
                         </div>
 
                         ${statementsHtml}
@@ -21514,8 +21763,14 @@ ${socraticInstructionBlock}
         function normalizeMathSyntax(str, subject = "") {
             if (!str) return "";
             let s = String(str);
-            const activeSubject = subject || (typeof currentLessonData !== "undefined" && currentLessonData?.subject) || "";
+            const activeSubject = subject || (typeof currentLesson !== "undefined" && currentLesson?.subject) || (typeof currentLessonData !== "undefined" && currentLessonData?.subject) || (typeof detectLessonSubject === "function" && typeof currentLesson !== "undefined" ? detectLessonSubject(currentLesson) : "") || "";
             const isScience = isMathOrScienceSubject(activeSubject);
+            const isChem = isChemBaseSubject(activeSubject);
+
+            // 🧪 化学基礎の場合、平文の化学反応式・イオン式・化学式・単位を自動的にLaTeXに整形
+            if (isChem && typeof formatChemistryNotation === "function") {
+                s = formatChemistryNotation(s);
+            }
 
             const unwrapText = (text) => {
                 let res = text;
@@ -26159,24 +26414,42 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
             }
 
             let formatInstruction = "";
-            if (selectedVersion === "combination") {
-                formatInstruction = `【出題形式：⚔️ 2文正誤組み合わせ判定（共通テスト最頻出・文X・文Y判定）に特化】\n全問を「type: combination」として作成してください。\n・lead_text: 「次の文 X・Y について、その正誤の組み合わせとして最も適当なものを、下の①〜④のうちから一つ選べ。」\n・statements: ["X: ○○に関する記述...", "Y: △△に関する記述..."] の2文を提示。\n・options: ① X-正 / Y-正, ② X-正 / Y-誤, ③ X-誤 / Y-正, ④ X-誤 / Y-誤\n・XとYそれぞれに明確な根拠を持たせ、一見正しそうに見える巧妙な引っかけを盛り込んでください。`;
-            } else if (selectedVersion === "true_false") {
-                formatInstruction = `【出題形式：🔍 4択正誤判定（共通テスト王道形式：正文・誤文選択）に特化】\n全問を「type: single_choice」または「type: true_false」として作成してください。\n・lead_text: 「正しいものを一つ選べ」または「誤っているものを一つ選べ」と指示。\n・options: 4つの選択肢（①〜④）を提示。\n・誤文には「主語と述語の入れ替え」「似た法令・用語の混同」「原因と結果の逆転」「年代の前後すり替え」などの典型的トラップを仕込んでください。`;
-            } else if (selectedVersion === "chronological") {
-                formatInstruction = `【出題形式：⏳ 年代・因果関係整序（配列問題：Ⅰ〜Ⅲの順序）に特化】\n全問を「type: chronological」として作成してください。\n・lead_text: 「次のⅠ〜Ⅲの出来事について、古いものから順に正しく配列したものを、下の①〜⑥のうちから一つ選べ。」\n・statements: ["Ⅰ: ...", "Ⅱ: ...", "Ⅲ: ..."] の3つの出来事やプロセスを提示。\n・options: ① Ⅰ-Ⅱ-Ⅲ, ② Ⅰ-Ⅲ-Ⅱ, ③ Ⅱ-Ⅰ-Ⅲ, ④ Ⅱ-Ⅲ-Ⅰ, ⑤ Ⅲ-Ⅰ-Ⅱ, ⑥ Ⅲ-Ⅱ-Ⅰ\n・同時代や因果関係で直結する微妙な前後関係を問う良問にしてください。`;
-            } else if (selectedVersion === "cloze") {
-                formatInstruction = `【出題形式：📝 空欄補充・対立概念特化（二連空欄の語句組み合わせ）に特化】\n全問を「type: combination」として作成してください。\n・lead_text: リード文中に［ ア ］［ イ ］の空欄を設け、「空欄［ ア ］・［ イ ］に入る語句の組み合わせとして最も適当なものを一つ選べ。」とする。\n・options: ① ア: ○○ / イ: △△ などの4択\n・混同しやすい対立概念や関連語句を配置してください。`;
+            const isChem = isChemBaseSubject(subject);
+
+            if (isChem) {
+                if (selectedVersion === "combination") {
+                    formatInstruction = `【出題形式：🧩 2文正誤・空欄組み合わせ判定（共テ化学基礎頻出）に特化】\n全問を「type: combination」として作成してください。\n・lead_text: 「次の文 a・b について、その正誤の組み合わせとして最も適当なものを、下の①〜④のうちから一つ選べ。」または「空欄［ ア ］・［ イ ］に入る語句・数値の組み合わせとして最も適当なものを、下の①〜④のうちから一つ選べ。」\n・statements: ["a: ○○に関する記述...", "b: △△に関する記述..."] の2文を提示。\n・options: ① a-正 / b-正, ② a-正 / b-誤, ③ a-誤 / b-正, ④ a-誤 / b-誤（または ① ア: ○○ / イ: △△）\n・化学基礎の盲点を突く巧妙な引っかけを盛り込んでください。`;
+                } else if (selectedVersion === "true_false") {
+                    formatInstruction = `【出題形式：⚖️ 4択正誤判定（共テ化学基礎最頻出：正文選択・誤文判定）に特化】\n全問を「type: single_choice」または「type: true_false」として作成してください。\n・lead_text: 「最も適当なものを一つ選べ」または「下線部①〜④のうちから、誤りを含むものを一つ選べ」と指示。\n・options: 4つの選択肢（①〜④）を提示。\n・誤文には「係数比と質量比の混同」「同素体と同位体のすり替え」「弱酸・強酸の強弱と濃淡の混同」「酸化剤・還元剤の主客逆転」などの典型的トラップを仕込んでください。`;
+                } else if (selectedVersion === "chronological") {
+                    formatInstruction = `【出題形式：🧪 実験操作・順序整序（共テ頻出：操作ア〜ウの正しい手順）に特化】\n全問を「type: chronological」として作成してください。\n・lead_text: 「次の実験・操作ア〜ウについて、行う順序として最も適当なものを、下の①〜④（または①〜⑥）のうちから一つ選べ。」\n・statements: ["ア: ○○の操作...", "イ: △△の操作...", "ウ: □□の操作..."] の3つの操作手順を提示。\n・options: ① ア→イ→ウ, ② ア→ウ→イ, ③ イ→ア→ウ, ④ イ→ウ→ア\n・二叉試験管の操作順序、中和滴定の器具調製・滴定手順、綿栓を用いた気体発生の質量測定、分離操作（ろ過・再結晶・抽出）などの実戦問題を問うてください。`;
+                } else if (selectedVersion === "cloze") {
+                    formatInstruction = `【出題形式：📝 空欄補充・数値・語句組み合わせ（共テ頻出形式）に特化】\n全問を「type: combination」として作成してください。\n・lead_text: リード文中に［ ア ］［ イ ］の空欄を設け、「空欄［ ア ］・［ イ ］に入る語句や数値の組み合わせとして最も適当なものを一つ選べ。」とする。\n・options: ① ア: ○○ / イ: △△ などの4択\n・混同しやすい物質名・化学式・モル計算数値を配置してください。`;
+                } else {
+                    formatInstruction = `【出題形式：🌟 共通テスト化学基礎本番バランス（全種混合）】\n以下の形式をバランス良く織り交ぜて全問を作成してください：\n1. 実験操作・順序整序（chronological）：二叉試験管、滴定、気体発生、器具の共洗い・乾燥など\n2. 4択正誤判定（single_choice / true_false）：正文選択、誤りを含むものの指摘\n3. 2文正誤・空欄組み合わせ（combination）：文aと文bの正誤判定、空欄［ア］［イ］の組み合わせ\n4. 4択量的関係・グラフ推理（single_choice）：mol計算、過不足反応、段階的添加実験の折れ曲がり点推理`;
+                }
             } else {
-                formatInstruction = `【出題形式：🌟 共通テスト本番バランス（全種混合）】\n以下の形式をバランス良く織り交ぜて全問を作成してください：\n1. 2文正誤の組み合わせ判定（combination）：文Xと文Yの正誤判定（①正-正、②正-誤、③誤-正、④誤-誤）\n2. 年代整序・因果関係順序（chronological）：Ⅰ〜Ⅲの出来事の正しい前後関係\n3. 4択正誤判定（single_choice / true_false）：正しい文・誤っている文を1つ選ばせる良問\n4. 空欄補充型：リード文の［ ア ］［ イ ］に入る語句の組み合わせ`;
+                if (selectedVersion === "combination") {
+                    formatInstruction = `【出題形式：⚔️ 2文正誤組み合わせ判定（共通テスト最頻出・文X・文Y判定）に特化】\n全問を「type: combination」として作成してください。\n・lead_text: 「次の文 X・Y について、その正誤の組み合わせとして最も適当なものを、下の①〜④のうちから一つ選べ。」\n・statements: ["X: ○○に関する記述...", "Y: △△に関する記述..."] の2文を提示。\n・options: ① X-正 / Y-正, ② X-正 / Y-誤, ③ X-誤 / Y-正, ④ X-誤 / Y-誤\n・XとYそれぞれに明確な根拠を持たせ、一見正しそうに見える巧妙な引っかけを盛り込んでください。`;
+                } else if (selectedVersion === "true_false") {
+                    formatInstruction = `【出題形式：🔍 4択正誤判定（共通テスト王道形式：正文・誤文選択）に特化】\n全問を「type: single_choice」または「type: true_false」として作成してください。\n・lead_text: 「正しいものを一つ選べ」または「誤っているものを一つ選べ」と指示。\n・options: 4つの選択肢（①〜④）を提示。\n・誤文には「主語と述語の入れ替え」「似た法令・用語の混同」「原因と結果の逆転」「年代の前後すり替え」などの典型的トラップを仕込んでください。`;
+                } else if (selectedVersion === "chronological") {
+                    formatInstruction = `【出題形式：⏳ 年代・因果関係整序（配列問題：Ⅰ〜Ⅲの順序）に特化】\n全問を「type: chronological」として作成してください。\n・lead_text: 「次のⅠ〜Ⅲの出来事について、古いものから順に正しく配列したものを、下の①〜⑥のうちから一つ選べ。」\n・statements: ["Ⅰ: ...", "Ⅱ: ...", "Ⅲ: ..."] の3つの出来事やプロセスを提示。\n・options: ① Ⅰ-Ⅱ-Ⅲ, ② Ⅰ-Ⅲ-Ⅱ, ③ Ⅱ-Ⅰ-Ⅲ, ④ Ⅱ-Ⅲ-Ⅰ, ⑤ Ⅲ-Ⅰ-Ⅱ, ⑥ Ⅲ-Ⅱ-Ⅰ\n・同時代や因果関係で直結する微妙な前後関係を問う良問にしてください。`;
+                } else if (selectedVersion === "cloze") {
+                    formatInstruction = `【出題形式：📝 空欄補充・対立概念特化（二連空欄の語句組み合わせ）に特化】\n全問を「type: combination」として作成してください。\n・lead_text: リード文中に［ ア ］［ イ ］の空欄を設け、「空欄［ ア ］・［ イ ］に入る語句の組み合わせとして最も適当なものを一つ選べ。」とする。\n・options: ① ア: ○○ / イ: △△ などの4択\n・混同しやすい対立概念や関連語句を配置してください。`;
+                } else {
+                    formatInstruction = `【出題形式：🌟 共通テスト本番バランス（全種混合）】\n以下の形式をバランス良く織り交ぜて全問を作成してください：\n1. 2文正誤の組み合わせ判定（combination）：文Xと文Yの正誤判定（①正-正、②正-誤、③誤-正、④誤-誤）\n2. 年代整序・因果関係順序（chronological）：Ⅰ〜Ⅲの出来事の正しい前後関係\n3. 4択正誤判定（single_choice / true_false）：正しい文・誤っている文を1つ選ばせる良問\n4. 空欄補充型：リード文の［ ア ］［ イ ］に入る語句の組み合わせ`;
+                }
             }
 
             let subjectSpecificRule = "";
-            if (subject.includes("歴史") || subject.includes("日本史") || subject.includes("世界史")) {
+            if (isChem) {
+                subjectSpecificRule = `【🧪 共通テスト「化学基礎」特命作問ルール】\n・【発展化学の完全排除】：理系個別の発展化学（気体状態方程式PV=nRT、化学平衡、熱化学、有機化学全般、錯イオン等）は【絶対に出題・解説しない】こと。高校「化学基礎」の範囲（①物質の構成・結合、②物質の変化・量的関係・酸塩基・酸化還元・実験探究）に100%特化すること。\n・共テ頻出トラップ重点：\n  1. 係数比と質量比の混同（モル質量換算の見落とし）\n  2. 過不足・限界反応物の看落とし（どちらかが余る全量反応錯覚）\n  3. イオン反応式の電荷不一致・沈殿の電離誤記（CaCO3等の電離間違い）\n  4. 実験器具の取り扱い・共洗いの誤認（メスフラスコ、ビュレット、二叉試験管）\n  5. 同素体と同位体の定義混同、元素と単体の区別\n  6. 気体モル体積（22.4 L/mol）を液体等に適用してしまう誤り\n  7. 段階的添加実験のグラフの軸・折れ曲がり点の誤読\n・化学式・イオン式・反応式・単位は必ず完全なLaTeX記法（$\\text{CaCO}_3$, $\\text{CO}_3^{2-}$ 等）で記述すること。`;
+            } else if (subject.includes("歴史") || subject.includes("日本史") || subject.includes("世界史")) {
                 subjectSpecificRule = `【⛩️ 歴史科の共テ頻出トラップ重点】\n・年代整序（出来事の前後関係）や因果関係（原因と結果のすり替え）を問う良問を必ず含めてください。\n・誤文選択肢には「主語と述語の入れ替え」「同時代の別人物・別政策のすり替え」「世紀・時期のすり替え」「似た条約・法令の混同」を巧妙に仕込んでください。`;
             } else if (subject.includes("公民") || subject.includes("政治") || subject.includes("経済") || subject.includes("公共") || subject.includes("倫理")) {
                 subjectSpecificRule = `【🏛️ 公民科の共テ頻出トラップ重点】\n・制度・統治機構の仕組み、対立概念（直接税/間接税、物価上昇/下落、公的年金/社会保険など）のすり替えを盛り込んでください。\n・憲法条文の文言すり替え、重要判例の合憲/違憲の根拠の違いを問う問題を含めてください。`;
-            } else if (subject.includes("物理") || subject.includes("化学") || subject.includes("生物") || subject.includes("地学") || subject.includes("理科")) {
+            } else if (subject.includes("物理") || subject.includes("生物") || subject.includes("地学") || subject.includes("理科")) {
                 subjectSpecificRule = `【⚡ 理科の共テ頻出トラップ重点】\n・実験条件や操作手順の変更による結果の変化、現象発生のメカニズム・因果関係の逆転を問う問題を含めてください。\n・数式や化学反応式は必ず完全なLaTeX記法で記述してください。`;
             } else if (subject.includes("数学")) {
                 subjectSpecificRule = `【📐 数学科の共テ頻出トラップ重点】\n・必要十分条件、反例の存在、定義域・値域の境界値、公式・定理の前提条件が満たされているかどうかの落とし穴を含めてください。\n・数式は必ず完全なLaTeX記法（$ $）で記述してください。`;
@@ -26184,7 +26457,7 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
 
             const isScience = isMathOrScienceSubject(subject);
             const mathRuleText = isScience
-                ? `3. 数式表記：\n   - 数式は必ず $ $ または $$ $$ で記述すること。`
+                ? `3. 数式・化学式表記：\n   - 数式・化学式は必ず完全なLaTeX記法（$ $ または $$ $$）で記述すること。化学式には \\text{...} を活用すること。`
                 : `3. 【最重要：LaTeX記法の完全禁止】\n   - 社会・文系科目のため、$ や $$ や \\fbox などの LaTeX 記法は【一切使用禁止】です。\n   - 空欄や選択肢は通常の日本語記号【 】や［ ］を使い、すべてプレーンテキストで記述すること。`;
 
             let prompt = `あなたは大学入学共通テストの作問委員・予備校の特任講師AIです。
@@ -26199,7 +26472,7 @@ ${subjectSpecificRule ? "\n" + subjectSpecificRule : ""}
 
 【🚨 最重要作問ルール】
 1. 引っかけ罠（trap_reason）の徹底：
-   - 単なる用語想起ではなく、受験生が陥りやすい「主語と目的語のすり替え」「似た概念・法令・公式の混同」「因果関係の逆転」「年代の前後トラップ」を巧妙に配置すること。
+   - 単なる用語想起ではなく、受験生が陥りやすい盲点（${isChem ? '係数比と質量比の混同、過不足の見落とし、イオン式の電荷不一致、器具共洗い、同素体と同位体等' : '主語と目的語のすり替え、似た概念・法令・公式の混同、因果関係の逆転、年代の前後トラップ等'}）を巧妙に配置すること。
    - trap_reason には、「受験生がなぜその誤答を選んでしまうのか、どのような心理的・知識的落とし穴があるか」を明快に解説すること。
 2. 詳細な解説（explanation）：
    - 正解の根拠だけでなく、不正解の各選択肢のどこがどう間違っているかを論理的・学術的に解説すること。

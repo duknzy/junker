@@ -10677,6 +10677,26 @@
             single_choice: { label: "4択問題", class: "pill-type-single_choice" }
         };
 
+        const CHEM_DRILL_TYPE_LABELS = {
+            combination: { label: "🧩 正誤・空欄組み合わせ", class: "pill-type-combination" },
+            chronological: { label: "🧪 実験操作・順序整序", class: "pill-type-chronological" },
+            true_false: { label: "⚖️ 正誤文判定", class: "pill-type-true_false" },
+            single_choice: { label: "📊 4択思考・計算", class: "pill-type-single_choice" }
+        };
+
+        function normalizeChemistryTrapType(trapType, subject = "") {
+            if (!trapType) return "引っかけの急所";
+            const isChem = /化学|chemistry/i.test(subject || "");
+            if (!isChem) return trapType;
+            const t = String(trapType).trim();
+            if (/時期|世紀|前後/.test(t)) return "実験操作・手順・反応順序の誤認";
+            if (/対象|法律|条約|地名/.test(t)) return "物質・化学式・イオン・定義の混同";
+            if (/主語|人物/.test(t)) return "反応物・生成物・イオンのすり替え";
+            if (/因果/.test(t)) return "反応機構・酸化還元・比例関係の逆転";
+            if (/極端|限定/.test(t)) return "完全電離/部分電離・例外の極端化";
+            return t;
+        }
+
         let expandedDrillUnits = new Set();
         let drillUnitItemsDataMap = {};
         let drillCardsDisplayCount = 30;
@@ -10702,7 +10722,8 @@
             const isRecentlyAnswered = recentlyAnsweredDrillIds.has(drillKey);
             const inspectedOpt = inspectedDrillOptions.get(drillKey) || (isAnswered ? d.correct_option : null);
             const cardStatusClass = isAnswered ? (isCorrect ? "status-correct" : "status-wrong") : "";
-            const typeInfo = DRILL_TYPE_LABELS[d.type] || { label: "選択問題", class: "pill-type-single_choice" };
+            const isChem = /化学|chemistry/i.test(d.subject || "");
+            const typeInfo = (isChem ? CHEM_DRILL_TYPE_LABELS[d.type] : DRILL_TYPE_LABELS[d.type]) || { label: "選択問題", class: "pill-type-single_choice" };
             const subjBadge = getSubjectColorBadge(d.subject || "その他");
 
             const isScience = isMathOrScienceSubject(d.subject);
@@ -10815,7 +10836,7 @@
                         ${(d.trap_type || d.trap_explanation) ? `
                             <div class="choice-drill-trap-box ${texIgnoreClass}">
                                 <div style="font-weight:800; color:#d97706; font-size:0.8rem; margin-bottom:0.3rem; display:flex; align-items:center; gap:0.35rem;">
-                                    <span>⚠️ 共通テストの罠：${escapeHtml(d.trap_type || "引っかけの急所")}</span>
+                                    <span>⚠️ 共通テストの罠：${escapeHtml(normalizeChemistryTrapType(d.trap_type || "引っかけの急所", d.subject))}</span>
                                 </div>
                                 <div style="color:var(--text-primary); font-size:0.82rem; line-height:1.55;">
                                     ${renderFormattedMarkdown(d.trap_explanation || "")}
