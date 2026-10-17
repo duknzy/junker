@@ -1826,8 +1826,149 @@
             box-shadow: var(--shadow-sm);
             transform: translateY(-1px);
         }
-        .bubble-action-btn:active {
-            transform: scale(0.97);
+        /* ❝ 講義解説・原本 引用プレビューボックス */
+        .chat-quote-preview-box {
+            display: none;
+            align-items: flex-start;
+            gap: 0.55rem;
+            background: rgba(5, 150, 105, 0.08);
+            border: 1px solid rgba(5, 150, 105, 0.25);
+            border-left: 3.5px solid var(--brand-primary, #059669);
+            border-radius: var(--radius-md);
+            padding: 0.5rem 0.75rem;
+            margin-bottom: 0.55rem;
+            font-size: 0.76rem;
+            color: var(--text-primary);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            animation: quoteSlideIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes quoteSlideIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .chat-quote-preview-box.visible {
+            display: flex;
+        }
+        .chat-quote-preview-box .quote-badge-icon {
+            font-size: 0.95rem;
+            color: var(--brand-primary, #059669);
+            font-weight: 900;
+            line-height: 1;
+            margin-top: 0.1rem;
+            flex-shrink: 0;
+        }
+        .chat-quote-preview-box .quote-body {
+            flex: 1;
+            min-width: 0;
+        }
+        .chat-quote-preview-box .quote-header-title {
+            font-size: 0.65rem;
+            font-weight: 800;
+            color: var(--brand-primary, #059669);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            margin-bottom: 0.15rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .chat-quote-preview-box .quote-label {
+            font-size: 0.62rem;
+            padding: 0.05rem 0.35rem;
+            background: rgba(5, 150, 105, 0.15);
+            border-radius: var(--radius-sm);
+            color: var(--brand-primary, #059669);
+        }
+        .chat-quote-preview-box .quote-content {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            line-height: 1.45;
+            font-style: italic;
+            color: var(--text-secondary);
+        }
+        .chat-quote-preview-box .quote-clear-btn {
+            background: rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.75rem;
+            width: 1.35rem;
+            height: 1.35rem;
+            border-radius: var(--radius-full);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+            flex-shrink: 0;
+            transition: all 120ms ease;
+            margin-top: -0.1rem;
+        }
+        .chat-quote-preview-box .quote-clear-btn:hover {
+            color: #FFFFFF;
+            background: #EF4444;
+            border-color: #EF4444;
+            transform: scale(1.08);
+        }
+
+        /* 🎯 フローティング引用質問ボタン（テキスト選択時に出現） */
+        .selection-quote-tooltip {
+            position: fixed;
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            gap: 0.35rem;
+            background: #0f172a;
+            border: 1.5px solid var(--brand-primary, #10b981);
+            color: #FFFFFF;
+            padding: 0.38rem 0.8rem;
+            border-radius: var(--radius-full);
+            font-size: 0.78rem;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35), 0 0 12px rgba(16, 185, 129, 0.35);
+            transition: transform 120ms ease, opacity 120ms ease;
+            user-select: none;
+        }
+        .selection-quote-tooltip:hover {
+            background: #1e293b;
+            border-color: #34d399;
+            transform: translateY(-2px) scale(1.03);
+        }
+        .selection-quote-tooltip .tooltip-icon {
+            color: var(--brand-primary, #10b981);
+            font-size: 0.85rem;
+        }
+
+        /* 💬 ここを質問 ボタン特別スタイル */
+        .bubble-action-btn.ask-quote-btn {
+            color: var(--brand-primary, #059669);
+            border-color: rgba(5, 150, 105, 0.3);
+            background: rgba(5, 150, 105, 0.08);
+            font-weight: 700;
+        }
+        .bubble-action-btn.ask-quote-btn:hover {
+            background: var(--brand-primary, #059669);
+            color: #FFFFFF;
+            border-color: var(--brand-primary, #059669);
+        }
+
+        html.dark .chat-quote-preview-box {
+            background: rgba(5, 150, 105, 0.12);
+            border-color: rgba(52, 211, 153, 0.25);
+            border-left-color: #34d399;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+        }
+        html.dark .chat-quote-preview-box .quote-clear-btn {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+        html.dark .bubble-action-btn.ask-quote-btn {
+            color: #34d399;
+            border-color: rgba(52, 211, 153, 0.35);
+            background: rgba(52, 211, 153, 0.1);
         }
 
         /* 📊 AI図解・概念マップの視認性特化コンテナ（文字・矢印・ネオン枠を美しく表示） */
@@ -3193,23 +3334,59 @@
         .lesson-selection-quote-tooltip {
             position: fixed;
             z-index: 99999;
-            background: #1e1b4b;
+            background: #0f172a;
+            border: 1px solid rgba(255, 255, 255, 0.15);
             color: #ffffff;
-            padding: 0.35rem 0.75rem;
-            border-radius: 20px;
+            padding: 0.25rem 0.35rem;
+            border-radius: 24px;
             font-size: 0.74rem;
             font-weight: 700;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 12px rgba(16, 185, 129, 0.2);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.2rem;
+            animation: tooltipPop 0.15s ease-out;
+            pointer-events: auto;
+            user-select: none;
+        }
+        .lesson-selection-quote-tooltip .lesson-tooltip-btn {
+            background: none;
+            border: none;
+            color: #f8fafc;
+            padding: 0.25rem 0.55rem;
+            border-radius: 16px;
+            font-size: 0.74rem;
+            font-weight: 700;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
-            gap: 0.3rem;
-            animation: tooltipPop 0.15s ease-out;
-            pointer-events: auto;
+            gap: 0.25rem;
+            transition: all 0.12s ease;
+            white-space: nowrap;
         }
-        .lesson-selection-quote-tooltip:hover {
-            background: #312e81;
-            transform: translateY(-1px);
+        .lesson-selection-quote-tooltip .lesson-tooltip-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: scale(1.02);
+        }
+        .lesson-selection-quote-tooltip .lesson-tooltip-btn.ask-btn {
+            color: #34d399;
+        }
+        .lesson-selection-quote-tooltip .lesson-tooltip-btn.ask-btn:hover {
+            background: rgba(16, 185, 129, 0.22);
+            color: #6ee7b7;
+        }
+        .lesson-selection-quote-tooltip .lesson-tooltip-btn.note-btn {
+            color: #93c5fd;
+        }
+        .lesson-selection-quote-tooltip .lesson-tooltip-btn.note-btn:hover {
+            background: rgba(59, 130, 246, 0.22);
+            color: #bfdbfe;
+        }
+        .lesson-selection-quote-tooltip .lesson-tooltip-divider {
+            width: 1px;
+            height: 14px;
+            background: rgba(255, 255, 255, 0.2);
+            margin: 0 1px;
         }
         @keyframes tooltipPop {
             from { opacity: 0; transform: translateY(4px) scale(0.95); }
@@ -7564,6 +7741,20 @@
 
                                 <div class="chat-input-wrap" id="chat-input-wrap">
                                     <div class="chat-image-thumb-row" id="chat-image-thumb-row"></div>
+
+                                    <!-- ❝ 講義解説・原本 引用プレビューボックス -->
+                                    <div class="chat-quote-preview-box" id="chat-quote-preview-box" style="display: none;">
+                                        <span class="quote-badge-icon">❝</span>
+                                        <div class="quote-body">
+                                            <div class="quote-header-title">
+                                                <span>引用箇所</span>
+                                                <span class="quote-label" id="chat-quote-label">解説の引用</span>
+                                            </div>
+                                            <div class="quote-content" id="chat-quote-content"></div>
+                                        </div>
+                                        <button type="button" class="quote-clear-btn" id="chat-quote-clear-btn" onclick="window.clearChatQuote && window.clearChatQuote()" title="引用を解除">✕</button>
+                                    </div>
+
                                     <!-- 🤖 講義チャット直上のAIクイック設定バー -->
                                     <div class="chat-ai-quick-bar" id="chat-ai-quick-bar">
                                         <div class="chat-ai-quick-item">
@@ -8134,6 +8325,18 @@
                                                     <button type="button" class="vsc-term-tool-btn" id="vsc-term-next-step-btn">▶ Next Part</button>
                                                 </div>
                                                 <div class="chat-image-thumb-row" id="vsc-term-image-thumb-row" style="margin-top:2px;"></div>
+                                                <!-- ❝ ターミナル用引用プレビューボックス -->
+                                                <div class="chat-quote-preview-box" id="vsc-term-quote-preview-box" style="display: none; margin: 4px 0 6px 0;">
+                                                    <span class="quote-badge-icon">❝</span>
+                                                    <div class="quote-body">
+                                                        <div class="quote-header-title">
+                                                            <span>引用箇所</span>
+                                                            <span class="quote-label" id="vsc-term-quote-label">解説の引用</span>
+                                                        </div>
+                                                        <div class="quote-content" id="vsc-term-quote-content"></div>
+                                                    </div>
+                                                    <button type="button" class="quote-clear-btn" id="vsc-term-quote-clear-btn" onclick="window.clearChatQuote && window.clearChatQuote()" title="引用を解除">✕</button>
+                                                </div>
                                                 <div class="vsc-term-input-row">
                                                     <span class="vsc-term-ps1">student@flora:~$</span>
                                                     <input type="text" class="vsc-term-input" id="vsc-terminal-input" placeholder="質問・回答を入力してEnter (例: 展開の公式を詳しく / help でコマンド一覧)">
@@ -21230,8 +21433,11 @@ ${parts.map((p, i) => `${i + 1}. ${p.title} - ${p.summary}`).join("\n")}
 
 【今回実際に授業するパート】
 第${idx + 1}回: ${parts[idx].title}（${parts[idx].summary}）
-
 ${socraticInstructionBlock}
+
+【引用質問への対応ルール】：
+生徒のメッセージに「【引用箇所】」が含まれている場合、生徒は以前の講義解説や原本テキストの特定の一節を引用して質問しています。
+生徒が何に疑問を持っているのかを引用箇所から正確に汲み取り、一般的な解説にとどまらず、その引用された箇所・記述・数式・用語に直接フォーカスしてピンポイントかつ論理的に分かりやすく答えてください。
 
 【図解ルール（diagram_svg）】：
 生徒のメッセージが「【図解リクエスト】」で始まっている場合、または図・イメージ・関係図・概念マップ・グラフでの説明を明確に求めている場合は、diagram_svgに視覚的な図解SVGコード（<svg>〜</svg>）を必ず入れること。
@@ -21535,6 +21741,9 @@ ${socraticInstructionBlock}
                     ? ""
                     : `
                         <div class="bubble-actions">
+                            <button type="button" class="bubble-action-btn ask-quote-btn" onclick="quoteLessonMsgToChat(${idx})" title="この解説を引用して質問する">
+                                💬 ここを質問
+                            </button>
                             <button type="button" class="bubble-action-btn quote-btn" onclick="quoteLessonMsgToNote(${idx})" title="この講義解説を授業ノートに引用・挿入する">
                                 📝 ノートに引用
                             </button>
@@ -23711,6 +23920,121 @@ ${curriculumRulePrompt}
                 .trim();
         }
 
+        // ==========================================================================
+        // ❝ 講義・解説・原本の引用質問サブシステム
+        // ==========================================================================
+        let currentChatQuote = null;
+        let currentChatQuoteLabel = "";
+
+        function setChatQuote(text, label = "解説の引用") {
+            if (!text || typeof text !== "string") return;
+            const trimmed = text.trim();
+            if (!trimmed) return;
+            currentChatQuote = trimmed;
+            currentChatQuoteLabel = label || "解説の引用";
+
+            // 通常ビューの引用プレビューボックス
+            const quoteBox = el("chat-quote-preview-box");
+            const quoteContent = el("chat-quote-content");
+            const quoteLabel = el("chat-quote-label");
+            const chatInput = el("chat-input");
+
+            if (quoteContent) quoteContent.textContent = trimmed;
+            if (quoteLabel) quoteLabel.textContent = currentChatQuoteLabel;
+            if (quoteBox) {
+                quoteBox.style.display = "flex";
+                quoteBox.classList.add("visible");
+            }
+
+            // VS Code モード用の引用プレビューボックス
+            const vscQuoteBox = el("vsc-term-quote-preview-box");
+            const vscQuoteContent = el("vsc-term-quote-content");
+            const vscQuoteLabel = el("vsc-term-quote-label");
+            const vscInput = el("vsc-terminal-input");
+
+            if (vscQuoteContent) vscQuoteContent.textContent = trimmed;
+            if (vscQuoteLabel) vscQuoteLabel.textContent = currentChatQuoteLabel;
+            if (vscQuoteBox) {
+                vscQuoteBox.style.display = "flex";
+                vscQuoteBox.classList.add("visible");
+            }
+
+            // フォーカスとスクロール
+            if (currentLessonViewMode === "vscode") {
+                if (vscInput) {
+                    vscInput.focus();
+                    vscQuoteBox?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+                }
+            } else {
+                if (chatInput) {
+                    chatInput.placeholder = "この引用箇所について質問を入力...（空欄のまま送信でもOK）";
+                    chatInput.focus();
+                    quoteBox?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+                }
+            }
+
+            if (typeof showToast === "function") {
+                showToast("💬 解説を引用しました。入力欄から質問できます。", "info", 2000);
+            }
+        }
+
+        function clearChatQuote() {
+            currentChatQuote = null;
+            currentChatQuoteLabel = "";
+
+            const quoteBox = el("chat-quote-preview-box");
+            if (quoteBox) {
+                quoteBox.style.display = "none";
+                quoteBox.classList.remove("visible");
+            }
+
+            const vscQuoteBox = el("vsc-term-quote-preview-box");
+            if (vscQuoteBox) {
+                vscQuoteBox.style.display = "none";
+                vscQuoteBox.classList.remove("visible");
+            }
+
+            const chatInput = el("chat-input");
+            if (chatInput) {
+                chatInput.placeholder = "このパートについて質問する...（📷で写真を添付可）";
+            }
+        }
+
+        window.setChatQuote = setChatQuote;
+        window.clearChatQuote = clearChatQuote;
+
+        // 講義吹き出しのワンクリック引用質問
+        window.quoteLessonMsgToChat = function(msgIdx) {
+            if (!currentLesson || !Array.isArray(currentLesson.chatHistory) || !currentLesson.chatHistory[msgIdx]) return;
+            const msg = currentLesson.chatHistory[msgIdx];
+
+            let quoteText = "";
+            const sel = window.getSelection ? window.getSelection() : null;
+            const selString = sel ? sel.toString().trim() : "";
+
+            if (selString && sel && sel.rangeCount > 0) {
+                quoteText = extractCleanLectureTextFromRange(sel.getRangeAt(0));
+            }
+
+            if (!quoteText) {
+                quoteText = cleanLectureQuotedText(
+                    (msg.content || "")
+                        .replace(/<svg[\s\S]*?<\/svg>/gi, "")
+                        .replace(/<[^>]+>/g, "")
+                );
+            }
+
+            if (!quoteText) return;
+
+            // 長すぎる場合は最初の600文字程度にスマート切り出し
+            if (quoteText.length > 600) {
+                quoteText = quoteText.slice(0, 580) + " …（省略）";
+            }
+
+            const partNum = (typeof currentLesson.currentPartIndex === "number") ? currentLesson.currentPartIndex + 1 : 1;
+            setChatQuote(quoteText, `第${partNum}回 講義の解説`);
+        };
+
         // Markdown引用ブロック（> ...）の整形組み立て
         function buildFormattedQuoteMarkdown(cleanText, headerLabel) {
             if (!cleanText) return "";
@@ -23719,7 +24043,7 @@ ${curriculumRulePrompt}
             return `\n> 📖 **${headerLabel}:**\n${quotedLines.join("\n")}\n\n`;
         }
 
-        // 講義吹き出しのワンクリック引用
+        // 講義吹き出しのワンクリック引用（ノートへ）
         window.quoteLessonMsgToNote = function(msgIdx) {
             if (!currentLesson || !Array.isArray(currentLesson.chatHistory) || !currentLesson.chatHistory[msgIdx]) return;
             const msg = currentLesson.chatHistory[msgIdx];
@@ -23750,14 +24074,12 @@ ${curriculumRulePrompt}
             appendContentToNote(quoteMd, "📝 講義の解説を授業ノートに引用しました！");
         };
 
-        // 講義チャット選択時のフローティング引用ツールチップ
+        // 講義チャット・原本・ノート選択時のフローティング引用ツールチップ
         function initChatSelectionQuoteListener() {
             if (hasInitSelectionQuoteListener) return;
             hasInitSelectionQuoteListener = true;
 
             const transcript = el("chat-transcript");
-            if (!transcript) return;
-
             let tooltip = null;
 
             const removeTooltip = () => {
@@ -23768,7 +24090,8 @@ ${curriculumRulePrompt}
             };
 
             // チャットスクロール時にフローティングツールチップを安全に非表示化
-            transcript.addEventListener("scroll", removeTooltip, { passive: true });
+            transcript?.addEventListener("scroll", removeTooltip, { passive: true });
+            document.addEventListener("scroll", removeTooltip, { passive: true });
 
             document.addEventListener("mouseup", (e) => {
                 if (e.target.closest(".lesson-selection-quote-tooltip") || e.target.closest("button, input, textarea")) return;
@@ -23785,9 +24108,18 @@ ${curriculumRulePrompt}
                     return;
                 }
 
-                // 選択範囲がチャット本文内にあるか判定
+                // 選択範囲がチャット本文、原本テキスト、ノート、VS Codeエディタ内にあるか判定
                 const anchorNode = sel.anchorNode;
-                if (!transcript.contains(anchorNode)) {
+                const sourcePanel = el("tab-source");
+                const notesPanel = el("tab-notes");
+                const vscEditor = el("vsc-editor-content");
+
+                const isInChat = transcript && transcript.contains(anchorNode);
+                const isInSource = sourcePanel && sourcePanel.contains(anchorNode);
+                const isInNotes = notesPanel && notesPanel.contains(anchorNode);
+                const isInVsc = vscEditor && vscEditor.contains(anchorNode);
+
+                if (!isInChat && !isInSource && !isInNotes && !isInVsc) {
                     removeTooltip();
                     return;
                 }
@@ -23798,26 +24130,65 @@ ${curriculumRulePrompt}
 
                 removeTooltip();
 
+                // 出典ラベルの決定
+                let sourceLabel = "解説の引用";
+                if (isInSource) sourceLabel = "原本テキストの引用";
+                else if (isInNotes) sourceLabel = "授業ノートの引用";
+                else if (typeof currentLesson?.currentPartIndex === "number") {
+                    sourceLabel = `第${currentLesson.currentPartIndex + 1}回の解説`;
+                }
+
                 tooltip = document.createElement("div");
                 tooltip.className = "lesson-selection-quote-tooltip";
-                tooltip.innerHTML = `<span>📝 選択部分をノートに引用</span>`;
-                tooltip.style.left = `${Math.max(10, rect.left + (rect.width / 2) - 80)}px`;
-                tooltip.style.top = `${Math.max(10, rect.top - 36)}px`;
+                tooltip.innerHTML = `
+                    <button type="button" class="lesson-tooltip-btn ask-btn" id="tooltip-action-ask" title="選択した部分を引用して質問する">
+                        💬 ここを質問
+                    </button>
+                    <div class="lesson-tooltip-divider"></div>
+                    <button type="button" class="lesson-tooltip-btn note-btn" id="tooltip-action-note" title="選択した部分をノートに書き写す">
+                        📝 ノートに引用
+                    </button>
+                `;
 
-                tooltip.onmousedown = (te) => {
-                    te.preventDefault();
-                    te.stopPropagation();
+                const tooltipWidth = 195;
+                const left = Math.max(10, Math.min(window.innerWidth - tooltipWidth - 10, rect.left + (rect.width / 2) - (tooltipWidth / 2)));
+                const top = Math.max(10, rect.top - 42);
 
-                    // DOMレンジから数式・記法・テキストを美しく抽出
-                    const cleanText = extractCleanLectureTextFromRange(range);
-                    if (cleanText) {
-                        const partNum = (typeof currentLesson?.currentPartIndex === "number") ? currentLesson.currentPartIndex + 1 : 1;
-                        const quoteMd = buildFormattedQuoteMarkdown(cleanText, `第${partNum}回 講義より抜粋`);
-                        appendContentToNote(quoteMd, "📝 選択した解説をノートに引用しました！");
-                    }
-                    removeTooltip();
-                    if (window.getSelection) window.getSelection().removeAllRanges();
-                };
+                tooltip.style.left = `${left}px`;
+                tooltip.style.top = `${top}px`;
+
+                // 💬 ここを質問 ボタン
+                const askBtn = tooltip.querySelector("#tooltip-action-ask");
+                if (askBtn) {
+                    askBtn.onmousedown = (te) => {
+                        te.preventDefault();
+                        te.stopPropagation();
+
+                        const cleanText = extractCleanLectureTextFromRange(range) || selText;
+                        if (cleanText) {
+                            setChatQuote(cleanText, sourceLabel);
+                        }
+                        removeTooltip();
+                    };
+                }
+
+                // 📝 ノートに引用 ボタン
+                const noteBtn = tooltip.querySelector("#tooltip-action-note");
+                if (noteBtn) {
+                    noteBtn.onmousedown = (te) => {
+                        te.preventDefault();
+                        te.stopPropagation();
+
+                        const cleanText = extractCleanLectureTextFromRange(range) || selText;
+                        if (cleanText) {
+                            const partNum = (typeof currentLesson?.currentPartIndex === "number") ? currentLesson.currentPartIndex + 1 : 1;
+                            const quoteMd = buildFormattedQuoteMarkdown(cleanText, `第${partNum}回 講義より抜粋`);
+                            appendContentToNote(quoteMd, "📝 選択した解説をノートに引用しました！");
+                        }
+                        removeTooltip();
+                        if (window.getSelection) window.getSelection().removeAllRanges();
+                    };
+                }
 
                 document.body.appendChild(tooltip);
             });
@@ -23826,6 +24197,16 @@ ${curriculumRulePrompt}
                 if (!e.target.closest(".lesson-selection-quote-tooltip")) {
                     removeTooltip();
                 }
+            });
+
+            // 引用解除ボタンのバインド
+            el("chat-quote-clear-btn")?.addEventListener("click", () => {
+                clearChatQuote();
+                if (typeof showToast === "function") showToast("引用を解除しました", "info", 1500);
+            });
+            el("vsc-term-quote-clear-btn")?.addEventListener("click", () => {
+                clearChatQuote();
+                if (typeof showToast === "function") showToast("引用を解除しました", "info", 1500);
             });
         }
 
@@ -26593,6 +26974,10 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
         el("send-chat-btn").addEventListener("click", () => submitChatInput());
         el("chat-input").addEventListener("keydown", (e) => { if (e.key === "Enter") submitChatInput(); });
 
+        el("chat-quote-clear-btn")?.addEventListener("click", () => clearChatQuote());
+        el("vsc-term-quote-clear-btn")?.addEventListener("click", () => clearChatQuote());
+        initChatSelectionQuoteListener();
+
         el("request-diagram-btn").addEventListener("click", () => {
             const row = el("diagram-request-row");
             row.classList.toggle("hidden");
@@ -26628,10 +27013,20 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
 
         async function submitChatInput() {
             const input = el("chat-input");
-            const text = input.value.trim();
+            const rawText = input.value.trim();
             const imagesToSend = chatSelectedImages.slice();
-            if ((!text && imagesToSend.length === 0) || !currentLesson) return;
-            const displayText = text || "（参考書のページ写真を添付して質問しています）";
+            if ((!rawText && imagesToSend.length === 0 && !currentChatQuote) || !currentLesson) return;
+
+            let displayText = rawText;
+            if (currentChatQuote) {
+                const userQuestion = rawText || "この引用箇所について、考え方や計算手順、なぜそうなるのかを詳しく教えてください。";
+                const labelText = currentChatQuoteLabel ? `【引用箇所（${currentChatQuoteLabel}）】` : "【引用箇所】";
+                displayText = `${labelText}\n> ${currentChatQuote}\n\n【質問】\n${userQuestion}`;
+                clearChatQuote();
+            } else if (!displayText && imagesToSend.length > 0) {
+                displayText = "（参考書のページ写真を添付して質問しています）";
+            }
+
             input.value = "";
             chatSelectedImages = [];
             renderChatImageThumbs();
@@ -27543,6 +27938,14 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
             }
 
             // 2. 通常の質問として Gemini API に送信
+            let questionCmd = cmd;
+            if (currentChatQuote) {
+                const userQ = cmd || "この引用箇所について、考え方や計算手順、なぜそうなるのかを詳しく教えてください。";
+                const labelText = currentChatQuoteLabel ? `【引用箇所（${currentChatQuoteLabel}）】` : "【引用箇所】";
+                questionCmd = `${labelText}\n> ${currentChatQuote}\n\n【質問】\n${userQ}`;
+                clearChatQuote();
+            }
+
             const imagesToSend = chatSelectedImages.slice();
             chatSelectedImages = [];
             renderChatImageThumbs();
@@ -27551,7 +27954,7 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
             if (sendBtn) { sendBtn.disabled = true; sendBtn.textContent = "Executing..."; }
 
             try {
-                await sendTurn(cmd, null, imagesToSend);
+                await sendTurn(questionCmd, null, imagesToSend);
             } catch (err) {
                 console.error(err);
                 showToast("コマンド実行に失敗しました: " + err.message, "error", 8000);
@@ -30074,6 +30477,12 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
                 <div id="omni-search-timing-info" style="font-size:0.7rem; color:var(--text-muted);">IndexedDB 即時検索</div>
             </div>
         </div>
+    </div>
+
+    <!-- 🎯 テキスト選択時に出現する「💬 引用して質問」フローティングボタン -->
+    <div class="selection-quote-tooltip" id="selection-quote-tooltip" title="選択したテキストを引用して質問する">
+        <span class="tooltip-icon">❝</span>
+        <span>この部分を質問</span>
     </div>
 
 </body>
