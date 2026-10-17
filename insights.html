@@ -15936,21 +15936,23 @@ function calculatePlanQuota(plan, planData) {
     const totalCards = allPlanCards.length;
 
     const paceMode = plan.paceMode || "pace"; // "deadline" or "pace"
-    const quotaUnit = plan.quotaUnit || (plan.paceUnit === "cards" ? "cards" : "cards"); // デフォルトカード数均等
+    // ユニット判定: quotaUnit, paceUnit, または dailyCardsTarget の有無から正確に判定
+    const quotaUnit = plan.quotaUnit || (plan.paceUnit ? plan.paceUnit : (plan.dailyCardsTarget ? "cards" : "lesson"));
     const startDate = plan.startDate || (plan.createdAt ? plan.createdAt.slice(0, 10) : today);
     const daysElapsed = Math.max(1, dateDiffInDays(today, startDate) + 1);
 
-    // 消化済みカード数の算出
+    // 消化済み授業数とカード数の算出
+    let doneLessons = Math.min(totalLessons, parseInt(plan.currentIndex, 10) || 0);
     let doneCardsCount = 0;
     if (typeof plan.currentCardIndex === "number" && plan.currentCardIndex > 0) {
         doneCardsCount = Math.min(totalCards, plan.currentCardIndex);
     } else {
-        const doneLessons = Math.min(totalLessons, parseInt(plan.currentIndex, 10) || 0);
         for (let i = 0; i < doneLessons; i++) {
             if (targetLessons[i]) doneCardsCount += targetLessons[i].cardCount;
         }
     }
     const remainingCards = Math.max(0, totalCards - doneCardsCount);
+    const remainingLessons = Math.max(0, totalLessons - doneLessons);
 
     // 目標期日モードでの残日数＆理想ペース計算
     let targetDate = plan.targetDate || addDaysToDate(today, 30);
@@ -15972,12 +15974,25 @@ function calculatePlanQuota(plan, planData) {
         delayCards = expectedCardsByToday - doneCardsCount;
         delayDays = idealDailyCards > 0 ? Math.ceil(delayCards / idealDailyCards) : 0;
     } else {
-        const dailyPaceCards = quotaUnit === "cards" 
-            ? (parseInt(plan.dailyCardsTarget, 10) || 50) 
-            : ((parseInt(plan.dailyTarget, 10) || 1) * Math.round(totalCards / Math.max(1, totalLessons)));
-        expectedCardsByToday = Math.min(totalCards, daysElapsed * dailyPaceCards);
-        delayCards = expectedCardsByToday - doneCardsCount;
-        delayDays = dailyPaceCards > 0 ? Math.ceil(delayCards / dailyPaceCards) : 0;
+        if (quotaUnit === "cards") {
+            const dailyPaceCards = Math.max(1, parseInt(plan.dailyCardsTarget, 10) || 50);
+            expectedCardsByToday = Math.min(totalCards, daysElapsed * dailyPaceCards);
+            delayCards = expectedCardsByToday - doneCardsCount;
+            delayDays = dailyPaceCards > 0 ? Math.ceil(delayCards / dailyPaceCards) : 0;
+        } else {
+            // 授業単位モード: 1日の授業数から正確に算出
+            const dailyLessons = Math.max(1, parseInt(plan.dailyTarget, 10) || 1);
+            const expectedLessonsByToday = Math.min(totalLessons, daysElapsed * dailyLessons);
+            let expectedCardsSum = 0;
+            for (let i = 0; i < expectedLessonsByToday; i++) {
+                if (targetLessons[i]) expectedCardsSum += targetLessons[i].cardCount;
+            }
+            expectedCardsByToday = expectedCardsSum;
+            delayCards = expectedCardsByToday - doneCardsCount;
+            const avgCardsPerLesson = totalLessons > 0 ? (totalCards / totalLessons) : 50;
+            const dailyPaceCards = Math.max(1, Math.round(dailyLessons * avgCardsPerLesson));
+            delayDays = dailyPaceCards > 0 ? Math.ceil(delayCards / dailyPaceCards) : 0;
+        }
     }
 
     if (delayCards > 20 && delayDays >= 1) {
@@ -16043,14 +16058,22 @@ function calculatePlanQuota(plan, planData) {
     // 全体進捗
     const overallPct = totalCards > 0 ? Math.min(100, Math.round((doneCardsCount / totalCards) * 100)) : 100;
 
-    // 完走予測日
+    // 完走予測日の正確な計算
     let finishDateStr = "--";
+    let remPaceDays = 0;
     if (paceMode === "deadline") {
         finishDateStr = targetDate;
+        remPaceDays = Math.max(0, dateDiffInDays(targetDate, today));
     } else {
-        const dailyPaceCards = quotaUnit === "cards" ? (parseInt(plan.dailyCardsTarget, 10) || 50) : 50;
-        const remDays = Math.ceil(remainingCards / dailyPaceCards);
-        finishDateStr = remDays > 0 ? addDaysToDate(today, remDays) : "本日達成予定！";
+        if (quotaUnit === "cards") {
+            const dailyCards = Math.max(1, parseInt(plan.dailyCardsTarget, 10) || 50);
+            remPaceDays = Math.ceil(remainingCards / dailyCards);
+        } else {
+            // 授業単位モード: 残り授業数 / 1日の授業数
+            const dailyLessons = Math.max(1, parseInt(plan.dailyTarget, 10) || 1);
+            remPaceDays = Math.ceil(remainingLessons / dailyLessons);
+        }
+        finishDateStr = remPaceDays > 0 ? addDaysToDate(today, remPaceDays) : "本日達成予定！";
     }
 
     // 週間タイムライン集約
@@ -16092,6 +16115,8 @@ function calculatePlanQuota(plan, planData) {
         totalCards,
         doneCardsCount,
         remainingCards,
+        remainingLessons,
+        remPaceDays,
         daysElapsed,
         daysRemaining,
         idealDailyCards,
@@ -16508,13 +16533,13 @@ function renderPlannerUI() {
                     <span class="planner-info-label">📊 計画全体の進捗</span>
                     <span class="planner-info-value" style="color:var(--brand-primary);">
                         ${q.doneCardsCount} / ${q.totalCards} 問完了 (${q.overallPct}%)
-                        <span style="font-size:0.74rem; font-weight:600; color:var(--text-muted); margin-left:0.3rem;">(全${q.totalLessons}授業)</span>
+                        <span style="font-size:0.74rem; font-weight:600; color:var(--text-muted); margin-left:0.3rem;">(${q.quotaUnit === 'lesson' ? `残り ${q.remainingLessons}授業 / 全${q.totalLessons}授業` : `全${q.totalLessons}授業`})</span>
                     </span>
                 </div>
                 <div class="planner-info-cell">
                     <span class="planner-info-label">🏁 目標完了日・予測</span>
                     <span class="planner-info-value" style="color:#10b981;">
-                        ${q.remainingCards === 0 ? '🎉 全問制覇完了！' : `${q.finishDateStr} (残り ${q.remainingCards}問)`}
+                        ${q.remainingCards === 0 ? '🎉 全問制覇完了！' : `${q.finishDateStr} <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600;">(あと${q.remPaceDays}日 / 残り ${q.quotaUnit === 'lesson' ? `${q.remainingLessons}授業・` : ''}${q.remainingCards}問)</span>`}
                     </span>
                 </div>
                 <div class="planner-info-cell">
