@@ -13660,7 +13660,7 @@ ${levels.map((l, i) => `${i + 1}. 「${l.value}」(${l.label})`).join("\n")}
                 return m ? m[0] : String(y).replace(/[\s\u3000年]/g, "");
             };
 
-            const seenKeys = new Set();
+            const seenMap = new Map();
             const merged = [];
 
             [...listPrev, ...listNew].forEach(ev => {
@@ -13669,16 +13669,8 @@ ${levels.map((l, i) => `${i + 1}. 「${l.value}」(${l.label})`).join("\n")}
                 const cYear = cleanYear(ev.year, ev.year_sort);
                 if (!cName) return;
 
-                // 同一年号かつ同一名（または年号が一致し名称の主要部分が重複）の場合に名寄せ
                 const dedupeKey = `${cYear}___${cName}`;
-                if (seenKeys.has(dedupeKey)) return;
-
-                // 年号未指定の場合の名称単体重複チェック
-                if (!cYear && seenKeys.has(`noyear___${cName}`)) return;
-
-                seenKeys.add(dedupeKey);
-                if (!cYear) seenKeys.add(`noyear___${cName}`);
-
+                
                 // year_sort の補正（未設定または数値でない場合パース、YYYYMMDD形式の補正）
                 let sortVal = typeof ev.year_sort === "number" && !isNaN(ev.year_sort) ? ev.year_sort : 0;
                 if (Math.abs(sortVal) >= 100000) {
@@ -13691,13 +13683,52 @@ ${levels.map((l, i) => `${i + 1}. 「${l.value}」(${l.label})`).join("\n")}
                     if (!isNaN(parsed)) sortVal = parsed;
                 }
 
-                merged.push({
+                const evMnemonics = Array.isArray(ev.mnemonics) ? [...ev.mnemonics] : (ev.mnemonics ? [String(ev.mnemonics)] : []);
+
+                // 既に登録済みの場合はリッチ属性を補完マージ
+                if (seenMap.has(dedupeKey)) {
+                    const existing = seenMap.get(dedupeKey);
+                    if (!existing.leader && ev.leader) existing.leader = ev.leader;
+                    if ((!existing.axis || existing.axis === "politics") && ev.axis) existing.axis = ev.axis;
+                    if (!existing.note && (ev.note || ev.description)) existing.note = ev.note || ev.description;
+                    if (!existing.cause_effect && ev.cause_effect) existing.cause_effect = ev.cause_effect;
+                    if (!existing.exam_point && ev.exam_point) existing.exam_point = ev.exam_point;
+                    if (!existing.intl_context && ev.intl_context) existing.intl_context = ev.intl_context;
+                    if (evMnemonics.length > 0) {
+                        existing.mnemonics = Array.from(new Set([...(existing.mnemonics || []), ...evMnemonics]));
+                    }
+                    return;
+                }
+
+                // 年代なしの単体名重複チェック
+                if (!cYear && seenMap.has(`noyear___${cName}`)) {
+                    const existing = seenMap.get(`noyear___${cName}`);
+                    if (!existing.leader && ev.leader) existing.leader = ev.leader;
+                    if (!existing.note && (ev.note || ev.description)) existing.note = ev.note || ev.description;
+                    if (!existing.cause_effect && ev.cause_effect) existing.cause_effect = ev.cause_effect;
+                    if (!existing.exam_point && ev.exam_point) existing.exam_point = ev.exam_point;
+                    if (!existing.intl_context && ev.intl_context) existing.intl_context = ev.intl_context;
+                    return;
+                }
+
+                const item = {
                     name: String(ev.name).trim(),
                     year: String(ev.year || "年代未詳").trim(),
                     year_sort: sortVal,
                     era: ev.era || "",
-                    region: ev.region || "日本"
-                });
+                    region: ev.region || "日本",
+                    axis: ev.axis === "culture_economy" ? "culture_economy" : "politics",
+                    leader: ev.leader || "",
+                    note: ev.note || ev.description || "",
+                    cause_effect: ev.cause_effect || "",
+                    exam_point: ev.exam_point || "",
+                    intl_context: ev.intl_context || "",
+                    mnemonics: evMnemonics
+                };
+
+                seenMap.set(dedupeKey, item);
+                if (!cYear) seenMap.set(`noyear___${cName}`, item);
+                merged.push(item);
             });
 
             // 年代順にソート（昇順）
@@ -14983,14 +15014,24 @@ ${extractedText || "（本文なし）"}
                     items: {
                         type: "OBJECT",
                         properties: {
-                            name: { type: "STRING", description: "出来事・事件・法制・戦乱・制度・条約・文化などの名称（例: 白村江の戦い, 大化の改新, 武家諸法度, 版籍奉還）" },
-                            year: { type: "STRING", description: "年代表記（例: 663年, 1603年, 前4世紀頃, 1869年）" },
-                            year_sort: { type: "INTEGER", description: "並べ替え用の西暦整数値（例: 712, 1603, -400, 1869。※YYYYMMDD形式は不可。必ず西暦年そのものを整数で出力）" },
-                            era: { type: "STRING", description: "日本史の時代区分（弥生・古墳, 飛鳥, 奈良, 平安, 鎌倉, 室町・戦国, 安土桃山, 江戸, 明治・大正, 昭和・現代）" },
-                            region: { type: "STRING", description: "公共・政治経済の場合は分野カテゴリ（思想・哲学・人権宣言, 日本国憲法・法制度・判例, 政治・統治機構・国際情勢, 経済・金融・社会保障・環境）" },
-                            description: { type: "STRING", description: "その出来事の背景、原因、重要点、影響・結果の簡潔な解説（1〜2文）" }
+                            name: { type: "STRING", description: "出来事・事件・法制・戦乱・制度・条約・文化・判例などの正式名称（ふりがな括弧や装飾は付けない。例: 白村江の戦い, 大化の改新, 武家諸法度, 版籍奉還, 満洲事変）" },
+                            year: { type: "STRING", description: "年代表記（例: 663年, 1603年, 前4世紀頃, 1869年, 1931年）" },
+                            year_sort: { type: "INTEGER", description: "並べ替え用の西暦整数値（例: 712, 1603, -400, 1869, 1931。※YYYYMMDD形式は不可。必ず西暦年そのものを整数で出力）" },
+                            era: { type: "STRING", description: "日本史の時代区分（弥生・古墳, 飛鳥, 奈良, 平安, 鎌倉, 室町・戦国, 安土桃山, 江戸, 明治・大正, 昭和・現代）または公共の分野区分" },
+                            region: { type: "STRING", description: "地域・国（日本, 中国, 朝鮮, 欧米, 国際社会 等）" },
+                            axis: { type: "STRING", enum: ["politics", "culture_economy"], description: "2軸分類: 'politics'（政治・外交・軍事・統治機構・法制・政変）、'culture_economy'（文化・思想・社会経済・産業・学問・国民生活）" },
+                            leader: { type: "STRING", description: "当時の政権担当者・首相・将軍・中心指導者（例: 第2次若槻礼次郎、犬養毅、徳川家康、藤原道長、伊藤博文）" },
+                            note: { type: "STRING", description: "出来事の簡潔な1行要約・概要（アプリ年表カードのメイン説明文）" },
+                            cause_effect: { type: "STRING", description: "【背景・歴史的因果関係】なぜ起きたのか（原因・背景）➔ どのような経緯を経て、結果どうなったのか。論述や因果関係把握に直結する解説（2〜3文）" },
+                            exam_point: { type: "STRING", description: "【共通テストのツボ・正誤の急所】入試や共通テストの正誤判定で狙われる引っかけポイント、紛らわしい他事件・条約・人物とのすり替え、受験生が陥りやすい盲点（2〜3文）" },
+                            intl_context: { type: "STRING", description: "【国際関係・同時代の世界の動き】同時代に世界や他国で何が起きていたか、国際連盟・世界恐慌・列強動向・対外関係などグローバルな視点での背景（1〜2文）" },
+                            mnemonics: {
+                                type: "ARRAY",
+                                items: { type: "STRING" },
+                                description: "年代暗記用の語呂合わせの配列（例: ['1931年: 行くぞ(193)一番(1)満洲へ']）"
+                            }
                         },
-                        required: ["name", "year", "year_sort"]
+                        required: ["name", "year", "year_sort", "axis", "note", "cause_effect", "exam_point"]
                     }
                 }
             },
@@ -15019,22 +15060,29 @@ ${extractedText || "（本文なし）"}
             const promptText = `【教科：${subjectName || (isCivics ? "公共" : "日本史")}】
 【単元名】${lessonTitle}
 
-以下の授業原本テキスト・講義ノートを詳細に解析し、${targetScope}の入試・共通テストで必須となる【年号・年代・出来事・事件・法制・条約・重要判例・政権交代・改革・社会経済の動き】を【漏れなく全て】抽出してください。
+以下の授業原本テキスト・講義ノートを詳細に解析し、アプリ内部の【統合年表システム】および【年代整序ドリル】でフル活用できる、入試・共通テスト必須の歴史的出来事・事件・法制・条約・重要判例・改革・社会経済動向を【漏れなく全て】抽出してください。
 
-【厳格ルール】
-1. 年代（西暦・世紀・元号）が伴う歴史的・法的イベントを最優先で抽出すること。
-2. name: 正式な教科書用語（例: 日本史なら「白村江の戦い」「大化の改新」「武家諸法度」、公共なら「日本国憲法公布」「日米安保条約」「プラザ合意」「尊属殺重罰規定違憲判決」「男女雇用機会均等法」等）。ふりがな括弧や煽り文句は付けないこと。
-3. year: 覚えやすい標準年代表記（例: 「1946年」「1985年」「1600年」「645年」）。
-4. year_sort: 並び替え用の西暦整数値（紀元前はマイナス数値。例: 1946, 1985, 1600, 645。※YYYYMMDD形式は厳禁、必ず西暦年そのものの整数）。
-5. era: 
+【出力仕様・厳格ルール】
+1. name: 正式な教科書用語（例: 「満洲事変」「大化の改新」「武家諸法度」「日本国憲法公布」「プラザ合意」等）。ふりがな括弧や煽り文句は付けないこと。
+2. year: 標準年代表記（例: 「1931年」「1946年」「645年」「1603年」）。
+3. year_sort: 並び替え用の西暦整数値（例: 1931, 1946, 645。※YYYYMMDD形式は厳禁、必ず西暦年そのものの整数）。
+4. era: 
    - 日本史の場合: 時代区分（「弥生・古墳」「飛鳥」「奈良」「平安」「鎌倉」「室町・戦国」「安土桃山」「江戸」「明治・大正」「昭和・現代」から選択）。
    - 公共・政治経済の場合: 分野区分（「思想・人権」「憲法・法制度」「政治・国際」「経済・金融」「社会・労働・環境」から選択）。
-6. description: その出来事の背景、何が起きたか（違憲審査の争点や法改正の意図等）、その後の社会・歴史に与えた影響を1〜2文で明快に要約。
+5. axis: 
+   - "politics": 政治・政変・外交・軍事・戦争・統治機構・条約・法制
+   - "culture_economy": 文化・社会・経済・金融・産業・学問・思想・国民生活
+6. leader: 当時の政権担当者・首相・将軍・中心人物（例: 「第2次若槻礼次郎」「犬養毅」「徳川家康」「藤原道長」等）。
+7. note: 出来事の概要（年表カードに表示される1〜2文の要約）。
+8. cause_effect: 【背景・歴史的因果関係】なぜ起きたのか（原因・背景・動機）➔ どのような経緯を経て、結果どうなったのか。因果の流れを明快に解説（2〜3文）。
+9. exam_point: 【共通テストのツボ・正誤の急所】共通テストや大学入試の正誤問題で問われる引っかけ・盲点（同時代他事件との混同、人物や内閣のすり替え、法改正の前後の順序すり替え等）を具体的に指摘（2〜3文）。
+10. intl_context: 【国際関係・同時代の世界の動き】同時代に世界や周辺国で何が起きていたか（世界恐慌、列強の動向、国際連盟、冷戦など）の国際的視野（1〜2文）。
+11. mnemonics: 年代暗記用の語呂合わせ（例: ["1931年: 行くぞ(193)一番(1)満洲へ"]）。
 
 【授業原本テキスト】
 ${extractedText.slice(0, 15000)}`;
 
-            const systemPrompt = `あなたは高校・大学受験の社会科（日本史および公共・政治経済）専門プロ講師です。提供された原本テキストから、年代整序ドリルおよび統合年表に必要な出来事リスト（historical_events）を網羅的に抽出し、指定のJSON形式で出力してください。`;
+            const systemPrompt = `あなたは高校・大学受験の社会科（日本史および公共・政治経済）専門プロ講師です。提供された原本テキストから、アプリの統合年表インスペクター（因果関係・共通テストの急所・国際関係・語呂合わせ）に必要な出来事リスト（historical_events）を最高精度で網羅的に抽出し、指定のJSON形式で出力してください。`;
 
             const callOpts = {
                 responseSchema: HISTORICAL_EVENTS_SCHEMA,
