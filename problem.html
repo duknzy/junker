@@ -2487,7 +2487,7 @@ extracted_textには、写真やテキストに含まれる問題文を一字一
         function normalizeMathSyntax(str, subject = "") {
             if (!str) return "";
             let s = String(str);
-            const activeSubject = subject || (typeof currentProblem !== "undefined" && currentProblem?.subject) || "";
+            const activeSubject = subject || (typeof currentProblemData !== "undefined" && currentProblemData?.subject) || (typeof currentProblem !== "undefined" && currentProblem?.subject) || "";
             const isScience = isMathOrScienceSubject(activeSubject);
 
             const unwrapText = (text) => {
@@ -2577,9 +2577,10 @@ extracted_textには、写真やテキストに含まれる問題文を一字一
         // ・"(1)" "(2)" のような大問内の小問番号の前で段落を分ける
         // ・"(i)" "(ii)" のようなローマ数字の小問番号の前でも改行する
         // ・f(x) や g(t) のような関数表記の "(" は、直前が英数字・かな漢字なので誤爆しない
-        function formatQuestionText(raw) {
+        function formatQuestionText(raw, subject = "") {
             if (!raw) return "";
-            let t = normalizeMathSyntax(raw);
+            const activeSubj = subject || (typeof currentProblemData !== "undefined" && currentProblemData?.subject) || (typeof currentProblem !== "undefined" && currentProblem?.subject) || "";
+            let t = normalizeMathSyntax(raw, activeSubj);
             t = t
                 .replace(/\\n/g, '\n')
                 .replace(/\r\n?/g, '\n')
@@ -3522,52 +3523,94 @@ ${glossaryBlock}`;
             }).join("");
         }
 
-        // 🏛️ 共通テスト誤答ノート専用：マーク枠インライン正誤フォーマッタ
-        function formatKyotsuTextWithInlineMarks(rawText, marks, userAnswers) {
+        // 🏛️ 共通テスト誤答ノート専用：マーク枠インライン正誤フォーマッタ（数式ブロック内外の完全分離）
+        function formatKyotsuTextWithInlineMarks(rawText, marks, userAnswers, subject = "") {
             if (!rawText) return "";
-            let formatted = formatQuestionText(rawText);
+            const activeSubj = subject || (typeof currentProblemData !== "undefined" && currentProblemData?.subject) || "数学";
+            let formatted = formatQuestionText(rawText, activeSubj);
             const markMap = {};
             (marks || []).forEach(m => { markMap[m.id] = m; });
 
-            // [ア], [イ] などのマーク枠をインライン正誤タグに置換
-            formatted = formatted.replace(/\[\s*([ア-ンa-zA-Z0-9±]{1,4})\s*\]/g, (match, markId) => {
-                const mark = markMap[markId];
-                if (!mark) return match;
-                const userVal = userAnswers ? userAnswers[markId] : null;
-                if (userVal === undefined || userVal === null || userVal === "") {
-                    return `<span class="kyotsu-inline-mark normal">[${escapeHtml(markId)}]</span>`;
-                }
-                const isCorrect = String(userVal).trim().toLowerCase() === String(mark.answer || "").trim().toLowerCase();
-                if (isCorrect) {
-                    return `<span class="kyotsu-inline-mark correct" title="あなたの解答: ${escapeHtml(String(userVal))}（正解！）">[${escapeHtml(markId)}] <span class="mark-sub">正解: ${escapeHtml(String(mark.answer))} ✓</span></span>`;
+            // 数式ブロック（$$...$$ および $...$）と通常テキストに分割
+            const parts = formatted.split(/(\$\$[\s\S]*?\$\$|\$[^\$\n]+?\$)/g);
+
+            for (let i = 0; i < parts.length; i++) {
+                const isMath = i % 2 === 1; // 奇数は数式ブロック
+                if (isMath) {
+                    // 数式ブロック内：MathJaxが安全にパースできるTeXマクロ(\bbox)で枠と数値を描画
+                    parts[i] = parts[i].replace(/\[\s*([ア-ンa-zA-Z0-9±]{1,4})\s*\]/g, (match, markId) => {
+                        const mark = markMap[markId];
+                        if (!mark) return match;
+                        const userVal = userAnswers ? userAnswers[markId] : null;
+                        const hasAnswer = userVal !== undefined && userVal !== null && String(userVal).trim() !== "";
+                        const isCorrect = hasAnswer && String(userVal).trim().toLowerCase() === String(mark.answer || "").trim().toLowerCase();
+
+                        if (isCorrect) {
+                            return `\\bbox[2px 5px, border: 1.5px solid #10b981, background: rgba(16,185,129,0.15)]{\\mathbf{\\color{#10b981}[${markId}]\\text{ ${mark.answer}}}}`;
+                        } else if (hasAnswer) {
+                            return `\\bbox[2px 5px, border: 1.5px solid #ef4444, background: rgba(239,68,68,0.15)]{\\mathbf{\\color{#ef4444}[${markId}]\\text{ ${userVal}\\to${mark.answer}}}}`;
+                        } else {
+                            return `\\bbox[2px 5px, border: 1.5px solid #64748b, background: rgba(100,116,139,0.15)]{\\mathbf{\\color{#94a3b8}[${markId}]}}`;
+                        }
+                    });
                 } else {
-                    return `<span class="kyotsu-inline-mark wrong" title="あなたの解答: ${escapeHtml(String(userVal))} ➔ 正解: ${escapeHtml(String(mark.answer))}">[${escapeHtml(markId)}] <span class="mark-sub">${escapeHtml(String(userVal))} ➔ 正解:${escapeHtml(String(mark.answer))} ✗</span></span>`;
+                    // 通常テキスト（数式外）：リッチなHTMLタグでマーク枠・正誤を表示
+                    parts[i] = parts[i].replace(/\[\s*([ア-ンa-zA-Z0-9±]{1,4})\s*\]/g, (match, markId) => {
+                        const mark = markMap[markId];
+                        if (!mark) return match;
+                        const userVal = userAnswers ? userAnswers[markId] : null;
+                        if (userVal === undefined || userVal === null || String(userVal).trim() === "") {
+                            return `<span class="kyotsu-inline-mark normal">[${escapeHtml(markId)}]</span>`;
+                        }
+                        const isCorrect = String(userVal).trim().toLowerCase() === String(mark.answer || "").trim().toLowerCase();
+                        if (isCorrect) {
+                            return `<span class="kyotsu-inline-mark correct" title="あなたの解答: ${escapeHtml(String(userVal))}（正解！）">[${escapeHtml(markId)}] <span class="mark-sub">正解: ${escapeHtml(String(mark.answer))} ✓</span></span>`;
+                        } else {
+                            return `<span class="kyotsu-inline-mark wrong" title="あなたの解答: ${escapeHtml(String(userVal))} ➔ 正解: ${escapeHtml(String(mark.answer))}">[${escapeHtml(markId)}] <span class="mark-sub">${escapeHtml(String(userVal))} ➔ 正解:${escapeHtml(String(mark.answer))} ✗</span></span>`;
+                        }
+                    });
                 }
-            });
-            return formatted;
+            }
+            return parts.join("");
         }
 
-        // 🏛️ 共通テスト誤答ノート専用：解説本文用マーク確定タグフォーマッタ
-        function formatKyotsuExplanationWithMarks(rawExp, marks, userAnswers) {
+        // 🏛️ 共通テスト誤答ノート専用：解説本文用マーク確定タグフォーマッタ（数式ブロック内外の完全分離）
+        function formatKyotsuExplanationWithMarks(rawExp, marks, userAnswers, subject = "") {
             if (!rawExp) return "";
-            let formatted = formatQuestionText(rawExp);
+            const activeSubj = subject || (typeof currentProblemData !== "undefined" && currentProblemData?.subject) || "数学";
+            let formatted = formatQuestionText(rawExp, activeSubj);
             const markMap = {};
             (marks || []).forEach(m => { markMap[m.id] = m; });
 
-            formatted = formatted.replace(/\[\s*([ア-ンa-zA-Z0-9±]{1,4})\s*\]/g, (match, markId) => {
-                const mark = markMap[markId];
-                if (!mark) return match;
-                const userVal = userAnswers ? userAnswers[markId] : null;
-                const isCorrect = userVal !== undefined && userVal !== null && userVal !== "" && String(userVal).trim().toLowerCase() === String(mark.answer || "").trim().toLowerCase();
-                if (isCorrect) {
-                    return `<span class="kyotsu-sol-mark-pill correct"><strong>[${escapeHtml(markId)}]</strong> = ${escapeHtml(String(mark.answer))} ✓</span>`;
-                } else if (userVal !== undefined && userVal !== null && userVal !== "") {
-                    return `<span class="kyotsu-sol-mark-pill wrong"><strong>[${escapeHtml(markId)}]</strong> = ${escapeHtml(String(mark.answer))} (あなた: ${escapeHtml(String(userVal))})</span>`;
+            const parts = formatted.split(/(\$\$[\s\S]*?\$\$|\$[^\$\n]+?\$)/g);
+
+            for (let i = 0; i < parts.length; i++) {
+                const isMath = i % 2 === 1;
+                if (isMath) {
+                    // 数式ブロック内：TeXマクロで置換
+                    parts[i] = parts[i].replace(/\[\s*([ア-ンa-zA-Z0-9±]{1,4})\s*\]/g, (match, markId) => {
+                        const mark = markMap[markId];
+                        if (!mark) return match;
+                        return `\\bbox[2px 5px, border: 1.5px solid #10b981, background: rgba(16,185,129,0.15)]{\\mathbf{\\color{#10b981}[${markId}] = \\text{${mark.answer}}}}`;
+                    });
                 } else {
-                    return `<span class="kyotsu-sol-mark-pill correct"><strong>[${escapeHtml(markId)}]</strong> = ${escapeHtml(String(mark.answer))}</span>`;
+                    // 通常テキスト：HTMLタグで置換
+                    parts[i] = parts[i].replace(/\[\s*([ア-ンa-zA-Z0-9±]{1,4})\s*\]/g, (match, markId) => {
+                        const mark = markMap[markId];
+                        if (!mark) return match;
+                        const userVal = userAnswers ? userAnswers[markId] : null;
+                        const isCorrect = userVal !== undefined && userVal !== null && userVal !== "" && String(userVal).trim().toLowerCase() === String(mark.answer || "").trim().toLowerCase();
+                        if (isCorrect) {
+                            return `<span class="kyotsu-sol-mark-pill correct"><strong>[${escapeHtml(markId)}]</strong> = ${escapeHtml(String(mark.answer))} ✓</span>`;
+                        } else if (userVal !== undefined && userVal !== null && userVal !== "") {
+                            return `<span class="kyotsu-sol-mark-pill wrong"><strong>[${escapeHtml(markId)}]</strong> = ${escapeHtml(String(mark.answer))} (あなた: ${escapeHtml(String(userVal))})</span>`;
+                        } else {
+                            return `<span class="kyotsu-sol-mark-pill correct"><strong>[${escapeHtml(markId)}]</strong> = ${escapeHtml(String(mark.answer))}</span>`;
+                        }
+                    });
                 }
-            });
-            return formatted;
+            }
+            return parts.join("");
         }
 
         // 🏛️ 共通テスト誤答ノート専用：問題本文（試験紙面風レイアウト）のHTML生成
@@ -3614,7 +3657,7 @@ ${glossaryBlock}`;
                 html += `</div>`;
 
                 // 本文（マーク枠をインライン正誤スタイルで埋め込み、問題文の間に巨大ブロックを挟まない）
-                const bodyText = formatKyotsuTextWithInlineMarks(sec.section_text || '', sectionMarks, userAnswers);
+                const bodyText = formatKyotsuTextWithInlineMarks(sec.section_text || '', sectionMarks, userAnswers, currentProblemData?.subject);
                 html += `<div class="kyotsu-section-text">${bodyText}</div>`;
 
                 // 解答群
@@ -3793,7 +3836,7 @@ ${glossaryBlock}`;
                             </div>
                         </div>
                         <div class="kyotsu-stream-step-body">
-                            ${formatKyotsuExplanationWithMarks(sec.explanation || '（解説がありません）', sectionMarks, userAnswers)}
+                            ${formatKyotsuExplanationWithMarks(sec.explanation || '（解説がありません）', sectionMarks, userAnswers, currentProblemData?.subject)}
                         </div>
                     </div>
                 `;
