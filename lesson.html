@@ -1780,7 +1780,36 @@
             line-height: 1.65;
             box-shadow: 0 1px 4px rgba(16, 185, 129, 0.15);
         }
-        .bubble-divider {
+                .divider-ask-btn {
+            margin-left: 0.5rem;
+            padding: 0.12rem 0.45rem;
+            font-size: 0.68rem;
+            color: var(--brand-primary);
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.15s ease;
+        }
+        .divider-ask-btn:hover {
+            background: var(--brand-primary);
+            color: #fff;
+        }
+        .target-part-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.7rem;
+            font-weight: 750;
+            color: var(--brand-primary);
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid rgba(16, 185, 129, 0.28);
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            margin-bottom: 0.4rem;
+        }
+.bubble-divider {
             align-self: center;
             font-size: 0.72rem;
             color: var(--brand-primary);
@@ -7734,12 +7763,31 @@
                                     <div id="level-up-cta-wrap" style="margin-top:0.6rem; display:none;">
                                         <button type="button" class="flora-btn flora-btn-primary btn-sm" id="level-up-cta-btn"></button>
                                     </div>
-                                    <div id="continuation-cta-wrap" style="margin-top:0.6rem; display:none;">
+                                                                        <div style="margin-top: 0.85rem; display: flex; justify-content: center; gap: 0.6rem; flex-wrap: wrap;">
+                                        <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="ask-in-completed-btn" style="font-weight: 700; display: inline-flex; align-items: center; gap: 0.35rem;">
+                                            💬 この授業について質問する
+                                        </button>
+                                        <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="revert-completion-btn" style="font-size: 0.78rem; color: var(--text-secondary); border: 1px solid var(--border-color); display: inline-flex; align-items: center; gap: 0.35rem;" title="修了を取り消して受講中ステータスに戻します">
+                                            🔓 修了を取り消して受講中に戻す
+                                        </button>
+                                    </div>
+<div id="continuation-cta-wrap" style="margin-top:0.6rem; display:none;">
                                         <button type="button" class="flora-btn flora-btn-primary btn-sm" id="continuation-cta-btn" style="background:var(--brand-primary); color:#fff; font-weight:700;">🔗 この授業の続き（次の時代・単元）を作成する</button>
                                     </div>
                                 </div>
 
-                                <div class="chat-input-wrap" id="chat-input-wrap">
+                                                                <div class="chat-input-wrap" id="chat-input-wrap">
+                                    <!-- 🎯 質問対象パート切り替えバー -->
+                                    <div class="chat-target-part-row" id="chat-target-part-row" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.4rem; padding: 0.3rem 0.65rem; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: var(--radius-sm); font-size: 0.76rem;">
+                                        <span style="font-weight: 750; color: var(--brand-primary); display: inline-flex; align-items: center; gap: 0.25rem; white-space: nowrap;">
+                                            🎯 質問対象パート:
+                                        </span>
+                                        <select id="chat-target-part-select" class="flora-select" style="font-size: 0.75rem; padding: 0.2rem 0.5rem; height: 26px; border-radius: 4px; flex: 1; max-width: 320px; font-weight: 600; background: var(--bg-surface); color: var(--text-primary); border: 1px solid var(--border-color);">
+                                        </select>
+                                        <button type="button" id="reset-target-part-btn" style="border: none; background: none; color: var(--text-secondary); cursor: pointer; font-size: 0.72rem; padding: 0.15rem 0.4rem; text-decoration: underline;" title="最新の講義パートに戻す">
+                                            最新回に戻す
+                                        </button>
+                                    </div>
                                     <div class="chat-image-thumb-row" id="chat-image-thumb-row"></div>
 
                                     <!-- ❝ 講義解説・原本 引用プレビューボックス -->
@@ -21930,7 +21978,14 @@ ${socraticInstructionBlock}
             const history = currentLesson.chatHistory || [];
 
             wrap.innerHTML = history.map((m, idx) => {
-                if (m.role === "divider") return `<div class="bubble-divider">──── ${m.content} ────</div>`;
+                if (m.role === "divider") {
+                    const dividerPartMatch = (m.content || "").match(/第(\d+)回/);
+                    const dPartIdx = dividerPartMatch ? parseInt(dividerPartMatch[1], 10) - 1 : 0;
+                    return `<div class="bubble-divider">
+                        <span>──── ${m.content} ────</span>
+                        <button type="button" class="divider-ask-btn" onclick="setChatTargetPart(${dPartIdx}, true)" title="第${dPartIdx + 1}回について質問する">💬 この回を質問</button>
+                    </div>`;
+                }
 
                 const isEditing = editingMsgIndex === idx;
 
@@ -22039,7 +22094,7 @@ ${socraticInstructionBlock}
 
                 const contentBody = isRegenerating
                     ? `<div class="bubble-regenerating-overlay"><span>⚙️ 回答を再生成中...</span></div>`
-                    : `<div class="bubble-content-text tex2jax_process">${renderFormattedMarkdown(m.content)}${diagramHtml}</div>`;
+                    : `${(m.targetPartIndex !== undefined && m.targetPartIndex !== null && m.targetPartIndex !== currentLesson.currentPartIndex) ? `<div class="target-part-badge">🎯 第${m.targetPartIndex + 1}回への質問</div>` : ''}<div class="bubble-content-text tex2jax_process">${renderFormattedMarkdown(m.content)}${diagramHtml}</div>`;
 
                 const actionsHtml = isRegenerating
                     ? ""
@@ -23312,6 +23367,7 @@ ${subjectGuide}
                             <span style="font-size:0.75rem; color:var(--text-secondary);">クリックで該当位置へ移動</span>
                             <div style="display:flex; gap:0.35rem; align-items:center;">
                                 ${cultureStreamBtn}
+                                <button type="button" class="toc-ask-part-btn" onclick="event.stopPropagation(); setChatTargetPart(${i}, true);" title="この回について質問する" style="padding:0.18rem 0.5rem; font-size:0.72rem; color:var(--brand-primary); background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.25); border-radius:var(--radius-sm); cursor:pointer; font-weight:700;">💬 質問</button>
                                 <button type="button" class="toc-edit-part-btn" data-edit-part="${i}" title="この回のタイトルを変更（短くスッキリ編集）" style="padding:0.18rem 0.5rem; font-size:0.72rem; color:var(--text-secondary); background:var(--bg-subtle); border:1px solid var(--border-color); border-radius:var(--radius-sm); cursor:pointer;">✏️ タイトル変更</button>
                                 ${regenBtn}
                             </div>
@@ -24335,7 +24391,9 @@ ${curriculumRulePrompt}
                 quoteText = quoteText.slice(0, 580) + " …（省略）";
             }
 
-            const partNum = (typeof currentLesson.currentPartIndex === "number") ? currentLesson.currentPartIndex + 1 : 1;
+            const detectedPartIdx = getPartIndexForMessage(msgIdx);
+            setChatTargetPart(detectedPartIdx, false);
+            const partNum = detectedPartIdx + 1;
             setChatQuote(quoteText, `第${partNum}回 講義の解説`);
         };
 
@@ -27169,13 +27227,139 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
             }
         }
 
-        function updateCompletionUI() {
+                // 🔓 完了授業のチャット開放フラグ & 質問対象パート管理
+        let isChatUnlockedForCompleted = false;
+        let currentChatTargetPartIndex = null; // null = 最新の講義パート
+
+        // 授業修了ステータスの解除
+        async function revertLessonCompletion() {
+            if (!currentLesson || !loginUid) return;
+            const ok = confirm("この授業の「修了」を取り消して、受講中ステータスに戻しますか？\n\n・いつでも続きの受講や質問ができるようになります。");
+            if (!ok) return;
+
+            currentLesson.status = "in_progress";
+            currentLesson.completedAt = null;
+            currentLesson.updatedAt = new Date().toISOString();
+            isChatUnlockedForCompleted = false;
+            await saveLesson();
+            updateCompletionUI();
+            updateProgressStrip();
+            showToast("🔓 授業を受講中に戻しました！チャットや進行が再開できます。", "success");
+        }
+        window.revertLessonCompletion = revertLessonCompletion;
+
+        // 完了状態でも質問できるようにチャット欄をオープン
+        function unlockChatInCompleted() {
+            isChatUnlockedForCompleted = true;
+            updateCompletionUI();
+            const input = el("chat-input");
+            if (input) {
+                input.focus();
+                input.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
+        }
+        window.unlockChatInCompleted = unlockChatInCompleted;
+
+        // メッセージが属するパート番号（0-indexed）を取得
+        function getPartIndexForMessage(msgIdx) {
+            if (!currentLesson || !Array.isArray(currentLesson.chatHistory)) return 0;
+            let partIdx = 0;
+            let dividerCount = 0;
+            for (let i = 0; i <= msgIdx && i < currentLesson.chatHistory.length; i++) {
+                if (currentLesson.chatHistory[i].role === "divider") {
+                    partIdx = dividerCount;
+                    dividerCount++;
+                }
+            }
+            return partIdx;
+        }
+
+        // 質問対象パートのUI同期（セレクトボックス・プレースホルダー）
+        function updateTargetPartUI() {
+            const select = el("chat-target-part-select");
+            const input = el("chat-input");
+            if (!select || !currentLesson || !Array.isArray(currentLesson.parts)) return;
+
+            const total = currentLesson.parts.length;
+            const activeIdx = (currentChatTargetPartIndex !== null) ? currentChatTargetPartIndex : (currentLesson.currentPartIndex || 0);
+
+            // セレクトボックスのオプション生成
+            select.innerHTML = currentLesson.parts.map((p, i) => {
+                const isCurrent = i === currentLesson.currentPartIndex;
+                const cleanT = typeof cleanPartTitle === "function" ? cleanPartTitle(p.title, i) : (p.title || "");
+                const tag = isCurrent ? "（現在進行中）" : (i < currentLesson.currentPartIndex ? "（過去パート）" : "");
+                return `<option value="${i}" ${i === activeIdx ? 'selected' : ''}>第${i + 1}回: ${cleanT} ${tag}</option>`;
+            }).join("");
+
+            // プレースホルダーの更新
+            const targetPart = currentLesson.parts[activeIdx];
+            if (targetPart && input) {
+                const cleanT = typeof cleanPartTitle === "function" ? cleanPartTitle(targetPart.title, activeIdx) : (targetPart.title || "");
+                input.placeholder = `第${activeIdx + 1}回「${cleanT}」について質問する...（📷で写真を添付可）`;
+            }
+        }
+
+        // 質問対象パートの設定
+        function setChatTargetPart(partIndex, focusInput = true) {
+            if (!currentLesson || !Array.isArray(currentLesson.parts)) return;
+            if (partIndex < 0 || partIndex >= currentLesson.parts.length) return;
+
+            currentChatTargetPartIndex = partIndex;
+            isChatUnlockedForCompleted = true; // 完了していても開く
+            updateCompletionUI();
+            updateTargetPartUI();
+
+            const select = el("chat-target-part-select");
+            if (select) select.value = String(partIndex);
+
+            const row = el("chat-target-part-row");
+            if (row) {
+                row.style.background = "rgba(16, 185, 129, 0.2)";
+                setTimeout(() => { if (row) row.style.background = "rgba(16, 185, 129, 0.08)"; }, 800);
+            }
+
+            if (focusInput) {
+                const input = el("chat-input");
+                if (input) {
+                    input.focus();
+                    input.scrollIntoView({ behavior: "smooth", block: "center" });
+                }
+            }
+        }
+        window.setChatTargetPart = setChatTargetPart;
+
+function updateCompletionUI() {
             const isCompleted = currentLesson.status === "completed";
             el("completed-banner").classList.toggle("hidden", !isCompleted);
-            el("chat-input-wrap").classList.toggle("hidden", isCompleted);
+            el("chat-input-wrap").classList.toggle("hidden", isCompleted && !isChatUnlockedForCompleted);
             el("next-part-btn").classList.toggle("hidden", isCompleted);
             const isLastPart = currentLesson.currentPartIndex >= currentLesson.parts.length - 1;
             el("next-part-btn").textContent = isLastPart ? "🏁 この授業を完了する" : "▶ 次のパートへ進む";
+            updateTargetPartUI();
+
+            // 完了バナーのボタンバインド
+            const revertBtn = el("revert-completion-btn");
+            if (revertBtn) revertBtn.onclick = () => revertLessonCompletion();
+            const askBtn = el("ask-in-completed-btn");
+            if (askBtn) askBtn.onclick = () => unlockChatInCompleted();
+
+            // 質問対象パートセレクトのバインド
+            const partSelect = el("chat-target-part-select");
+            if (partSelect && !partSelect.dataset.hasChangeListener) {
+                partSelect.dataset.hasChangeListener = "true";
+                partSelect.onchange = (e) => {
+                    const idx = parseInt(e.target.value, 10);
+                    setChatTargetPart(idx, false);
+                };
+            }
+            const resetBtn = el("reset-target-part-btn");
+            if (resetBtn) {
+                resetBtn.onclick = () => {
+                    currentChatTargetPartIndex = null;
+                    updateTargetPartUI();
+                    showToast("🎯 質問対象を最新回に戻しました", "info");
+                };
+            }
 
             // 🧪 公式参考書（全10講）の直通判定
             const tbItem = getLessonTextbookChapterInfo(currentLesson);
@@ -27270,19 +27454,20 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
             }
             contentsWithRoles.push({ role: "user", parts: currentTurnParts });
 
-            const aiJson = await callGeminiChat(contentsWithRoles, buildTeachSystemInstruction(), {
+            const effectivePart = (currentChatTargetPartIndex !== null && currentChatTargetPartIndex !== undefined) ? currentChatTargetPartIndex : currentLesson.currentPartIndex;
+            const aiJson = await callGeminiChat(contentsWithRoles, buildTeachSystemInstruction(effectivePart), {
                 responseSchema: TEACH_TURN_RESPONSE_SCHEMA, featureId: "lesson_teach"
             });
 
             const aiPayload = extractAiResponsePayload(aiJson);
             if (userDisplayText) {
-                const userEntry = { role: "user", content: userDisplayText };
+                const userEntry = { role: "user", content: userDisplayText, targetPartIndex: effectivePart };
                 if (Array.isArray(turnImages) && turnImages.length > 0) {
                     userEntry.images = turnImages.map(img => ({ mimeType: img.mimeType, data: img.data }));
                 }
                 currentLesson.chatHistory.push(userEntry);
             }
-            const assistantEntry = { role: "assistant", content: aiPayload.ai_response || "（応答の取得に失敗しました）" };
+            const assistantEntry = { role: "assistant", content: aiPayload.ai_response || "（応答の取得に失敗しました）", targetPartIndex: effectivePart };
             const cleanedSvg = sanitizeDiagramSvg(aiPayload.diagram_svg);
             if (cleanedSvg) assistantEntry.diagramSvg = cleanedSvg;
             currentLesson.chatHistory.push(assistantEntry);
@@ -27339,7 +27524,14 @@ Google AI Studioの Structured outputs（構造化出力）で設定したスキ
             const imagesToSend = chatSelectedImages.slice();
             if ((!rawText && imagesToSend.length === 0 && !currentChatQuote) || !currentLesson) return;
 
+            const effectivePart = (currentChatTargetPartIndex !== null && currentChatTargetPartIndex !== undefined) ? currentChatTargetPartIndex : currentLesson.currentPartIndex;
+            const isDifferentPart = effectivePart !== currentLesson.currentPartIndex;
+            const partTitle = (currentLesson.parts && currentLesson.parts[effectivePart]) ? (cleanPartTitle(currentLesson.parts[effectivePart].title, effectivePart) || "") : "";
+
             let displayText = rawText;
+            if (isDifferentPart && displayText && !displayText.includes(`第${effectivePart + 1}回`)) {
+                displayText = `【第${effectivePart + 1}回「${partTitle}」についての質問】\n${displayText}`;
+            }
             if (currentChatQuote) {
                 const userQuestion = rawText || "この引用箇所について、考え方や計算手順、なぜそうなるのかを詳しく教えてください。";
                 const labelText = currentChatQuoteLabel ? `【引用箇所（${currentChatQuoteLabel}）】` : "【引用箇所】";
