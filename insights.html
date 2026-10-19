@@ -7188,9 +7188,10 @@
                     const note = stripFurigana(mp.note || "").trim();
                     if (!content && !answer && !question) return;
                     const mpId = mp.id || `idx${idx}`;
-                    let pointSubj = mp.subject;
-                    if (!pointSubj || pointSubj === "未分類" || pointSubj === "その他") {
-                        pointSubj = lessonSubj;
+                    // 🛡️ 親授業の教科を最優先し、文字化けや不整合による単元分裂を根本防止
+                    let pointSubj = lessonSubj || mp.subject || "その他";
+                    if (!pointSubj || pointSubj === "未分類" || pointSubj === "その他" || pointSubj.includes("\ufffd")) {
+                        pointSubj = lessonSubj || "その他";
                     }
 
                     const progressKey = sanitizeDbKey(`mem_${lessonId}_${mpId}`);
