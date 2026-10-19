@@ -1107,6 +1107,7 @@
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
+        window.auth = auth;
         setPersistence(auth, browserLocalPersistence).catch(err => {
             console.warn("[Flora] Auth persistence setup error:", err);
         });
@@ -1465,6 +1466,30 @@ async function checkAndLoadLinkedLesson(uid) {
 
             if (user) {
                 currentUser = user;
+                window.currentUser = user;
+                console.log("%c[Flora] ログイン中 UID: " + user.uid, "color: #00ff00; font-weight: bold;");
+
+                // 🔄 旧UIDからの自動データ引き継ぎ
+                const OLD_UID = "Pk6gs31GEbWTNEe8tqlRdso4xxD2";
+                if (user.uid !== OLD_UID) {
+                    get(ref(database, 'users/' + user.uid + '/problems')).then(async (snap) => {
+                        if (!snap.exists() || Object.keys(snap.val() || {}).length === 0) {
+                            console.log("[Flora Migration] 新UIDにデータがないため、旧UIDから引き継ぎます...");
+                            if (typeof showToast === "function") showToast("🔄 旧アカウントから全データを引き継ぎ中...", "info");
+                            try {
+                                const oldSnap = await get(ref(database, 'users/' + OLD_UID));
+                                if (oldSnap.exists()) {
+                                    await set(ref(database, 'users/' + user.uid), oldSnap.val());
+                                    console.log("[Flora Migration] 全データの引き継ぎに成功しました！");
+                                    if (typeof showToast === "function") showToast("🎉 データの引き継ぎが完了しました！リロードします...", "success");
+                                    setTimeout(() => location.reload(), 1200);
+                                }
+                            } catch(err) {
+                                console.error("[Flora Migration] 引き継ぎ失敗:", err);
+                            }
+                        }
+                    }).catch(e => console.warn("[Flora Migration] チェックエラー:", e));
+                }
                 try {
                     const saveFn = window.safeLocalStorageSet || ((k, v) => localStorage.setItem(k, v));
                     saveFn('flora_user', JSON.stringify({
@@ -1527,7 +1552,17 @@ async function checkAndLoadLinkedLesson(uid) {
                     console.warn("signInWithRedirect fallback:", e);
                 }
             }
-            signInWithPopup(auth, provider).catch(e => console.error(e));
+            try {
+                await signInWithPopup(auth, provider);
+            } catch(e) {
+                console.warn("[Flora] Popup sign-in error, falling back to redirect:", e);
+                try {
+                    await signInWithRedirect(auth, provider);
+                } catch(re) {
+                    console.error("[Flora] Redirect sign-in failed:", re);
+                    showToast("⚠️ ログインエラー: " + re.message, "error");
+                }
+            }
         }
         document.getElementById("main-login-btn").addEventListener("click", doLogin);
 
