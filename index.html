@@ -353,6 +353,49 @@
         .row-stat-label { font-size: 0.68rem; color: var(--text-muted); font-weight: 600; margin-top: 0.2rem; }
 
         /* 🎨 2段階スマートフィルターバー */
+        
+        /* 🔢 通し番号バッジ */
+        .badge-problem-number {
+            background: rgba(16, 185, 129, 0.12);
+            color: var(--brand-primary);
+            border: 1px solid rgba(16, 185, 129, 0.35);
+            font-weight: 800;
+            font-size: 0.74rem;
+            padding: 0.15rem 0.45rem;
+            border-radius: var(--radius-sm);
+            letter-spacing: 0.02em;
+            font-family: var(--font-mono, monospace);
+            display: inline-flex;
+            align-items: center;
+        }
+        html.dark .badge-problem-number {
+            background: rgba(16, 185, 129, 0.22);
+            color: #34d399;
+            border-color: rgba(52, 211, 153, 0.45);
+        }
+
+        /* 🏃 全問走破マラソンカード */
+        .marathon-card {
+            grid-column: span 12;
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.07) 0%, rgba(99, 102, 241, 0.06) 100%);
+            border: 1px solid rgba(16, 185, 129, 0.25);
+            border-radius: var(--radius-lg);
+            padding: 1.15rem 1.35rem;
+            box-shadow: var(--shadow-xs);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .marathon-card:hover {
+            border-color: var(--brand-primary);
+            box-shadow: var(--shadow-sm);
+        }
+        html.dark .marathon-card {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(99, 102, 241, 0.1) 100%);
+            border-color: rgba(52, 211, 153, 0.3);
+        }
+
         .filter-section-wrapper {
             display: flex;
             flex-direction: column;
@@ -674,6 +717,7 @@
                     <div class="filter-row" style="align-items: center; gap: 0.6rem;">
                         <span class="filter-label">🔀 並べ替え：</span>
                         <div id="problem-sort-pills" style="display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center;">
+                            <button type="button" class="sort-pill-btn" data-sort="oldest">🔢 通し番号順 (#1〜)</button>
                             <button type="button" class="sort-pill-btn active" data-sort="priority">🎯 復習優先度</button>
                             <button type="button" class="sort-pill-btn" data-sort="errorsDesc">🔥 誤答数（苦手順）</button>
                             <button type="button" class="sort-pill-btn" data-sort="newest">📅 追加が新しい順</button>
@@ -685,7 +729,7 @@
                             <option value="errorsDesc">🔥 誤答数が多い順（苦手・要注意順）</option>
                             <option value="errorsAsc">📉 誤答数が少ない順</option>
                             <option value="newest">📅 追加日が新しい順</option>
-                            <option value="oldest">🗓️ 追加日が古い順</option>
+                            <option value="oldest">🔢 通し番号順（#1〜#247・古い順）</option>
                             <option value="lastAttemptNewest">🕒 直近に復習・解いた順</option>
                             <option value="lastAttemptOldest">⏳ しばらく復習していない順</option>
                             <option value="insightNewest">🧠 気づき・極意の更新が新しい順</option>
@@ -753,7 +797,51 @@
                         <div class="mini-sub">今日復習を完了した問題</div>
                     </div>
 
-                                        <!-- 🗂️ 一括操作・削除バー（選択モード時のみ表示） -->
+                                        
+                    <!-- 🏃 全問走破マラソン（通し演習）パネル -->
+                    <div class="flora-card marathon-card" id="marathon-panel">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                <div style="width: 44px; height: 44px; border-radius: var(--radius-md); background: rgba(16, 185, 129, 0.15); display: flex; align-items: center; justify-content: center; font-size: 1.4rem;">
+                                    🏃‍♂️
+                                </div>
+                                <div>
+                                    <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                                        <h3 style="margin: 0; font-size: 1.05rem; font-weight: 800; color: var(--text-primary); letter-spacing: -0.01em;">
+                                            全問走破マラソン
+                                        </h3>
+                                        <span class="badge badge-problem-number" id="marathon-total-badge" style="font-size: 0.75rem;">全247問</span>
+                                    </div>
+                                    <div id="marathon-status-text" style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">
+                                        登録されているすべての問題を #1 から順番に演習できます
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                                <button type="button" class="flora-btn flora-btn-primary" id="marathon-resume-btn" style="font-weight: 700; padding: 0.5rem 1.1rem; box-shadow: 0 2px 10px rgba(16, 185, 129, 0.35);">
+                                    ▶️ 続きから再開 (第1問〜)
+                                </button>
+                                <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="marathon-restart-btn" title="第1問から最初に戻って演習">
+                                    ⏮️ 最初から
+                                </button>
+                                <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="marathon-view-sorted-btn" title="通し番号順（#1〜）にリストを並べ替え">
+                                    🔢 番号順に整列
+                                </button>
+                            </div>
+                        </div>
+                        <!-- 進捗バー -->
+                        <div style="width: 100%; margin-top: 0.15rem;">
+                            <div style="display: flex; justify-content: space-between; font-size: 0.78rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 0.35rem;">
+                                <span id="marathon-progress-label">走破進捗</span>
+                                <span id="marathon-progress-percent" style="color: var(--brand-primary); font-family: var(--font-mono, monospace);">0 / 247 問 (0%)</span>
+                            </div>
+                            <div style="width: 100%; height: 8px; background: var(--bg-subtle); border-radius: 4px; overflow: hidden; border: 1px solid var(--border-subtle);">
+                                <div id="marathon-progress-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #10B981, #6366F1); border-radius: 4px; transition: width 0.4s ease;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 🗂️ 一括操作・削除バー（選択モード時のみ表示） -->
                     <div id="bulk-action-bar" class="bulk-action-panel" style="display: none;">
                         <div class="bulk-action-info">
                             <span class="bulk-action-badge">☑️ 選択モード</span>
@@ -2127,12 +2215,139 @@ function resolveCreatedAt(p) {
     return safeHtml + suffix;
 }
 
+        
+        // 🔢 全問通し番号マップとソート済みID配列（登録日昇順）
+        let globalProblemNumberMap = new Map();
+        let globalSortedProblemIds = [];
+
+        function computeGlobalProblemNumbers(problemsSnapshot) {
+            const list = Object.entries(problemsSnapshot || {}).map(([id, p]) => ({ id, ...p }));
+            list.sort((a, b) => {
+                const dateA = resolveCreatedAt(a);
+                const dateB = resolveCreatedAt(b);
+                const timeA = dateA ? dateA.date.getTime() : 0;
+                const timeB = dateB ? dateB.date.getTime() : 0;
+                if (timeA !== timeB) return timeA - timeB;
+                return (a.id || "").localeCompare(b.id || "");
+            });
+
+            globalProblemNumberMap = new Map();
+            globalSortedProblemIds = [];
+            list.forEach((p, idx) => {
+                const num = idx + 1;
+                globalProblemNumberMap.set(p.id, num);
+                globalSortedProblemIds.push(p.id);
+            });
+        }
+
+        function getMarathonProgress() {
+            const total = globalSortedProblemIds.length;
+            let lastId = localStorage.getItem("flora_marathon_last_id") || "";
+            let lastIndex = parseInt(localStorage.getItem("flora_marathon_last_index") || "0", 10);
+            if (lastId && globalProblemNumberMap.has(lastId)) {
+                lastIndex = globalProblemNumberMap.get(lastId);
+            }
+            return { lastId, lastIndex, total };
+        }
+
+        function recordMarathonProgress(probId) {
+            if (!probId || !globalProblemNumberMap.has(probId)) return;
+            const num = globalProblemNumberMap.get(probId);
+            localStorage.setItem("flora_marathon_last_id", probId);
+            localStorage.setItem("flora_marathon_last_index", String(num));
+            localStorage.setItem("flora_marathon_last_time", new Date().toISOString());
+        }
+
+        function updateMarathonPanel() {
+            const total = globalSortedProblemIds.length;
+            const totalBadge = document.getElementById("marathon-total-badge");
+            const statusText = document.getElementById("marathon-status-text");
+            const progressPercent = document.getElementById("marathon-progress-percent");
+            const progressBar = document.getElementById("marathon-progress-bar");
+            const resumeBtn = document.getElementById("marathon-resume-btn");
+            const restartBtn = document.getElementById("marathon-restart-btn");
+            const viewSortedBtn = document.getElementById("marathon-view-sorted-btn");
+
+            if (totalBadge) totalBadge.textContent = "全" + total + "問";
+            if (total === 0) return;
+
+            const { lastIndex } = getMarathonProgress();
+
+            if (lastIndex > 0 && lastIndex <= total) {
+                const pct = Math.round((lastIndex / total) * 100);
+                if (progressPercent) progressPercent.textContent = lastIndex + " / " + total + " 問 (" + pct + "%)";
+                if (progressBar) progressBar.style.width = pct + "%";
+
+                if (lastIndex >= total) {
+                    if (statusText) statusText.innerHTML = "🎉 <strong>全" + total + "問 走破達成！</strong> お疲れ様でした！もう一度復習もできます。";
+                    if (resumeBtn) {
+                        resumeBtn.innerHTML = "🔄 最初から再挑戦 (第1問〜)";
+                        resumeBtn.onclick = () => startMarathon(1);
+                    }
+                } else {
+                    const nextIdx = lastIndex + 1;
+                    const remaining = total - lastIndex;
+                    if (statusText) statusText.textContent = "🔥 第" + lastIndex + "問まで演習中（残り " + remaining + " 問）";
+                    if (resumeBtn) {
+                        resumeBtn.innerHTML = "▶️ 続きから再開 (第" + nextIdx + "問〜)";
+                        resumeBtn.onclick = () => startMarathon(nextIdx);
+                    }
+                }
+            } else {
+                if (progressPercent) progressPercent.textContent = "0 / " + total + " 問 (0%)";
+                if (progressBar) progressBar.style.width = "0%";
+                if (statusText) statusText.textContent = "登録されているすべての問題を #1 から順番に演習できます";
+                if (resumeBtn) {
+                    resumeBtn.innerHTML = "🚀 全問演習をスタート (第1問〜)";
+                    resumeBtn.onclick = () => startMarathon(1);
+                }
+            }
+
+            if (restartBtn) {
+                restartBtn.onclick = () => {
+                    if (lastIndex > 0 && !confirm("第1問から演習をやり直しますか？")) return;
+                    startMarathon(1);
+                };
+            }
+
+            if (viewSortedBtn) {
+                viewSortedBtn.onclick = () => {
+                    currentProblemSortMode = "oldest";
+                    syncFilterStateToStorageAndUrl();
+                    rebuildFilterBarAndCards();
+                };
+            }
+        }
+
+        function startMarathon(targetNumber = 1) {
+            if (globalSortedProblemIds.length === 0) {
+                showToast("演習できる問題がありません", "info");
+                return;
+            }
+            const safeIdx = Math.max(1, Math.min(targetNumber, globalSortedProblemIds.length));
+            const targetProbId = globalSortedProblemIds[safeIdx - 1];
+
+            try {
+                sessionStorage.setItem("flora_active_filtered_ids", JSON.stringify(globalSortedProblemIds));
+                sessionStorage.setItem("flora_marathon_mode", "true");
+                sessionStorage.removeItem("flora_active_search_query");
+                sessionStorage.removeItem("flora_active_subj_filter");
+                sessionStorage.removeItem("flora_active_field_filter");
+            } catch(e) {}
+
+            recordMarathonProgress(targetProbId);
+            location.href = "problem.html?id=" + encodeURIComponent(targetProbId) + "&marathon=1";
+        }
+
         function rebuildFilterBarAndCards() {
             const dynamicArea = document.getElementById("dynamic-cards-area");
             const subjectContainer = document.getElementById("subject-tab-container");
             const fieldRow = document.getElementById("field-filter-row");
             const fieldSelect = document.getElementById("field-filter-select");
             if (!dynamicArea || !subjectContainer) return;
+
+            computeGlobalProblemNumbers(lastCloudProblemsSnapshot);
+            updateMarathonPanel();
 
             // 1. クラウド上のデータから「存在する教科」と「教科ごとの単元」を抽出
             const subjectMap = {}; // { "数学II": Set(["式と証明", "図形と方程式"]), ... }
@@ -2359,6 +2574,8 @@ thumbHtml = `<div class="row-thumb row-thumb-icon ${glowClass} tex2jax_process">
                     .map(f => `<span class="badge field-chip">${f}</span>`)
                     .join("");
 
+                const probNum = globalProblemNumberMap.get(p.id) || "-";
+                const numberBadgeHtml = `<span class="badge badge-problem-number" title="通し番号 #${probNum}">#${probNum}</span>`;
                 const rowColor = urgencyColorMap[timeBadgeClass] || "var(--accent-cyan)";
 
                 const rowHtml = `

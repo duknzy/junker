@@ -1488,6 +1488,11 @@
                         </div>
                     </div>
                     <div class="page-actions" style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+
+                        <!-- 🏁 通し演習インジケーターチップ -->
+                        <div id="marathon-indicator-chip" style="display: none; align-items: center; gap: 0.4rem; background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(99, 102, 241, 0.15)); border: 1px solid rgba(16, 185, 129, 0.4); color: var(--brand-primary); font-size: var(--fs-xs); font-weight: 800; padding: 0.35rem 0.75rem; border-radius: var(--radius-full);">
+                            <span id="marathon-indicator-label">🏁 通し演習 No. -- / --</span>
+                        </div>
                         <!-- 🔍 絞り込みコンテキスト表示チップ（三角関数など検索時に自動表示） -->
                         <div id="search-context-chip" style="display: none; align-items: center; gap: 0.4rem; background: rgba(5, 150, 105, 0.12); border: 1px solid rgba(5, 150, 105, 0.35); color: var(--brand-primary); font-size: var(--fs-xs); font-weight: 700; padding: 0.35rem 0.75rem; border-radius: var(--radius-full);">
                             <span id="search-context-label">🔍 "三角関数" (2 / 5問)</span>
@@ -3249,6 +3254,7 @@ ${glossaryBlock}`;
 
                 // ピッカーとナビゲーションの初期化
                 setupProblemPicker();
+                updateMarathonStatusInProblem();
 
                 // 🖼️【新設】フル画像を先に取得してから問題本体を描画する
                 await loadProblemFullImages(user.uid, activeProblemId);
@@ -3367,6 +3373,50 @@ ${glossaryBlock}`;
         }
 
         // 📚 問題ピッカー＆ナビゲーション制御
+        
+        // 🔢 通し番号（古い順）の計算とマラソン進捗更新
+        function updateMarathonStatusInProblem() {
+            if (!Array.isArray(cachedAllUserProblems) || cachedAllUserProblems.length === 0) return;
+            
+            const MIN_PLAUSIBLE_TS = Date.UTC(2020, 0, 1);
+            function resolveCreated(p) {
+                if (p.createdAt) return { date: new Date(p.createdAt), estimated: false };
+                if (p.id) {
+                    const parts = p.id.split('_');
+                    const ts = parts.map(Number).find(n => !isNaN(n) && n >= MIN_PLAUSIBLE_TS);
+                    if (ts) return { date: new Date(ts), estimated: false };
+                }
+                if (p.lastAttemptAt) return { date: new Date(p.lastAttemptAt), estimated: true };
+                return null;
+            }
+
+            const sortedList = [...cachedAllUserProblems].sort((a, b) => {
+                const dateA = resolveCreated(a);
+                const dateB = resolveCreated(b);
+                const timeA = dateA ? dateA.date.getTime() : 0;
+                const timeB = dateB ? dateB.date.getTime() : 0;
+                if (timeA !== timeB) return timeA - timeB;
+                return (a.id || "").localeCompare(b.id || "");
+            });
+
+            const total = sortedList.length;
+            const curIdx = sortedList.findIndex(p => p.id === PROBLEM_ID);
+            const probNumber = curIdx !== -1 ? curIdx + 1 : 1;
+
+            // ローカルストレージに「最後に開いた問題」として記録
+            localStorage.setItem("flora_marathon_last_id", PROBLEM_ID);
+            localStorage.setItem("flora_marathon_last_index", String(probNumber));
+            localStorage.setItem("flora_marathon_last_time", new Date().toISOString());
+
+            // チップの表示更新
+            const chipEl = document.getElementById("marathon-indicator-chip");
+            const labelEl = document.getElementById("marathon-indicator-label");
+            if (chipEl && labelEl) {
+                labelEl.textContent = "🏁 通し演習 No. " + probNumber + " / " + total;
+                chipEl.style.display = "inline-flex";
+            }
+        }
+
         function setupProblemPicker() {
             const pickerModal = document.getElementById("problem-picker-modal");
             const openBtn = document.getElementById("btn-open-problem-picker");
