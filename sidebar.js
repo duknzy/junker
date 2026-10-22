@@ -239,6 +239,7 @@
             navProblem: '問題演習セッション',
             navLesson: '参考書・授業モード',
             navRefbook: '一問一答',
+            navBunkeiMath: '文系の数学（完全習得）',
             navDaily: 'デイリースプリント10',
             navCustomSprint: 'カスタムスプリント',
             navAnswerCheck: 'クイック答え合わせ',
@@ -319,6 +320,7 @@
             navProblem: 'Practice Session',
             navLesson: 'Reference & Lessons',
             navRefbook: 'Flashcards / Q&A',
+            navBunkeiMath: 'Bunkei Math Drill',
             navDaily: 'Daily Sprint 10',
             navCustomSprint: 'Custom Sprint',
             navAnswerCheck: 'Quick Answer Check',
@@ -632,6 +634,7 @@
             {
                 title: t('navSectionPractice'),
                 items: [
+                    { href: 'bunkei-math.html', icon: '📐', label: t('navBunkeiMath'), match: ['bunkei-math.html'] },
                     { href: 'daily.html', icon: '📅', label: t('navDaily'), match: ['daily.html'] },
                     { href: 'custom-sprint.html', icon: '⚡', label: t('navCustomSprint'), match: ['custom-sprint.html'] },
                     { href: 'answer-check.html', icon: '✅', label: t('navAnswerCheck'), match: ['answer-check.html'] },
