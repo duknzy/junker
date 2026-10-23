@@ -1661,5 +1661,353 @@ $$(a - 1)(a - 9) < 0 \\implies \\mathbf{1 < a < 9}$$`,
 すべての実数 $x$ に対して $ax^2 + bx + c > 0$（ただし $a > 0$）が成り立つ条件：
 手法1：平方完成をして「(頂点の $y$ 座標) $> 0$」を考える
 手法2：$ax^2 + bx + c = 0$ の判別式を準備して「$D < 0$」を考える`
+  },
+  22: {
+    id: 22,
+    chapter: "2次関数",
+    title: "p ≦ x ≦ q において2次不等式が成り立つ条件",
+    sources: ["秋田大"],
+    question: `$f(x) = 2x^2 - 4ax + a + 1$ ($a$ は定数) とする。$0 \\leqq x \\leqq 4$ においてつねに $f(x) > 0$ が成り立つような $a$ の値の範囲を求めよ。`,
+    answer: `$f(x) = 2x^2 - 4ax + a + 1 = 2(x - a)^2 - 2a^2 + a + 1$
+となるので、$y = f(x)$ のグラフは、軸が $x = a$ で下に凸の放物線である。
+
+(ア) $a < 0$ のとき、
+$0 \\leqq x \\leqq 4$ における最小値は $f(0) = a + 1$ であり、つねに $f(x) > 0$ となる条件は、
+$$a + 1 > 0 \\implies a > -1$$
+$a < 0$ も考えると、
+$$-1 < a < 0 \\quad \\cdots ①$$
+
+(イ) $0 \\leqq a \\leqq 4$ のとき、
+$0 \\leqq x \\leqq 4$ における最小値は $-2a^2 + a + 1$ (頂点の $y$ 座標) であり、つねに $f(x) > 0$ となる条件は、
+$$-2a^2 + a + 1 > 0 \\implies 2a^2 - a - 1 < 0 \\implies (2a + 1)(a - 1) < 0$$
+よって、$-\\frac{1}{2} < a < 1$
+$0 \\leqq a \\leqq 4$ も考えると、
+$$0 \\leqq a < 1 \\quad \\cdots ②$$
+
+(ウ) $4 < a$ のとき、
+$0 \\leqq x \\leqq 4$ における最小値は $f(4) = -15a + 33$ であり、つねに $f(x) > 0$ となる条件は、
+$$-15a + 33 > 0 \\implies a < \\frac{11}{5}$$
+となるが、これは $4 < a$ を満たしていない（解なし）。
+
+(ア), (イ), (ウ) より、求める $a$ の値の範囲は、①と②をまとめて、
+$$\\mathbf{-1 < a < 1}$$`,
+    explanation: `例題21と同様にして、グラフが一番下にきている部分（つまり最小値）に注目する。例題21は「すべての実数 $x$ に対して $f(x) > 0$ となる条件」であったから、最小値をとる頂点に注目した。
+本問は「$0 \\leqq x \\leqq 4$ のすべての $x$ に対して $f(x) > 0$ となる条件」であるから、$0 \\leqq x \\leqq 4$ における最小値に注目する。その際、$y = f(x)$ のグラフは文字 $a$ を含んでいて軸の位置が変化する。そこで、例題18で学習したように、軸が $0 \\leqq x \\leqq 4$ に含まれる場合と含まれない場合に分けて考えている。`,
+    key_point: `【文系数学の必勝ポイント：区間内でつねに不等式が成り立つ条件】
+区間 $p \\leqq x \\leqq q$ においてつねに $ax^2 + bx + c > 0$ が成り立つ条件：
+$p \\leqq x \\leqq q$ における最小値を求めて、「[最小値] $> 0$」を考える`
+  },
+  23: {
+    id: 23,
+    chapter: "2次関数",
+    title: "2次方程式の解の配置問題",
+    sources: ["青山学院大"],
+    question: `$x$ の2次方程式 $x^2 - 2mx + m + 2 = 0 \\quad \\cdots ①$ について、
+(1) ①が 1 より大きな異なる2つの実数解をもつような $m$ の値の範囲を求めよ。
+(2) ①が 1 より大きな解と 1 より小さな解をもつような $m$ の値の範囲を求めよ。`,
+    answer: `$f(x) = x^2 - 2mx + m + 2$ とすると、
+$$f(x) = (x - m)^2 - m^2 + m + 2$$
+(1) $y = f(x)$ のグラフが $x > 1$ の部分で $x$ 軸と異なる2点で交わればよいから、
+$$\\begin{cases}
+\\text{頂点の } y \\text{ 座標} : -m^2 + m + 2 < 0 & \\cdots ② \\\\
+\\text{軸の位置} : m > 1 & \\cdots ③ \\\\
+\\text{端点の値} : f(1) = -m + 3 > 0 & \\cdots ④
+\\end{cases}$$
+②より、$m^2 - m - 2 > 0$ となり、
+$$(m + 1)(m - 2) > 0 \\implies m < -1, \\; 2 < m$$
+④より、
+$$m < 3$$
+以上より、②, ③, ④を同時に満たす $m$ の範囲を求めると、
+$$\\mathbf{2 < m < 3}$$
+
+(2) $y = f(x)$ のグラフが $x = 1$ の両側で $x$ 軸と交わればよいから、
+$$f(1) = -m + 3 < 0$$
+であればよい。したがって、
+$$\\mathbf{m > 3}$$`,
+    explanation: `2次方程式 $f(x) = 0$ がある条件を満たす解をもつように未知数の条件を決定する問題を「解の配置問題」と呼ぶことがある。解の配置問題はグラフを使って考えることが重要である。
+$y = f(x)$ で $y = 0$ にすると $f(x) = 0$ となる。よって、方程式 $f(x) = 0$ の解を求めることとは、$y = f(x)$ のグラフで $y = 0$ になるときの $x$、つまり $y = f(x)$ と $x$ 軸との交点の $x$ 座標を求めていることになる。したがって、(1)では $f(x) = 0$ の2つの解がともに 1 より大きくなってほしいから、$y = f(x)$ と $x$ 軸との交点の $x$ 座標が2つとも 1 より大きくなるグラフを考えている。
+解の配置問題では、条件を満たすグラフをイメージして、そのグラフを手に入れるために必要な条件を絞り込んでいく。条件を絞り込むときには、
+(I) 頂点の $y$ 座標の正負（または判別式 $D$ の正負）
+(II) 軸の位置
+(III) 範囲の端の値（特定のところの $y$ の値）の正負
+の3つに注目することが多い。ただし、いつでもこの3つのすべてを考えるというわけではない。(2)では軸の位置はどこにあっても $f(1) < 0$ であれば条件を満たすグラフになる。また、$f(1) < 0$ であれば下に凸の放物線が $x$ 軸より上に浮かび上がることはなく、必ず $x$ 軸と異なる2点で交わるので、頂点の $y$ 座標（判別式）の条件も必要ない。
+なお、頂点の $y$ 座標の正負のかわりに、①の判別式 $D$ の正負を考えてもよい。(1)では $D > 0$ を考えると解答の②式が得られる。
+暗記するのではなく、練習を通して条件の絞り込み方を身につけよう。`,
+    key_point: `【文系数学の必勝ポイント：2次方程式の解の配置問題】
+条件を満たすグラフをイメージして、条件の絞り込みを行う。特に注目すべき点は、
+(I) 頂点の $y$ 座標の正負（判別式の正負）
+(II) 軸の位置
+(III) 範囲の端の値の正負`
+  },
+  24: {
+    id: 24,
+    chapter: "三角比",
+    title: "三角比の相互関係",
+    sources: ["松山大","立教大"],
+    question: `[1] $\\tan\\theta = -\\frac{1}{4}$ ($90^\\circ < \\theta < 180^\\circ$) のとき、$\\cos\\theta$, $\\sin\\theta$ の値を求めよ。
+[2] $\\sin\\theta + \\cos\\theta = \\frac{2}{3}$ のとき、$\\sin\\theta\\cos\\theta$, $\\sin^3\\theta + \\cos^3\\theta$ の値を求めよ。`,
+    answer: `[1] $\\tan\\theta = -\\frac{1}{4}$ であるから、$1 + \\tan^2\\theta = \\frac{1}{\\cos^2\\theta}$ より、
+$$1 + \\frac{1}{16} = \\frac{1}{\\cos^2\\theta} \\implies \\cos^2\\theta = \\frac{16}{17}$$
+$90^\\circ < \\theta < 180^\\circ$ より $\\cos\\theta < 0$ であるから、
+$$\\mathbf{\\cos\\theta = -\\frac{4}{\\sqrt{17}} = -\\frac{4\\sqrt{17}}{17}}$$
+次に、$\\tan\\theta = \\frac{\\sin\\theta}{\\cos\\theta}$ より、
+$$\\mathbf{\\sin\\theta} = \\tan\\theta \\times \\cos\\theta = -\\frac{1}{4} \\times \\left(-\\frac{4\\sqrt{17}}{17}\\right) = \\mathbf{\\frac{\\sqrt{17}}{17}}$$
+
+[2] $\\sin\\theta + \\cos\\theta = \\frac{2}{3}$ の両辺を2乗すると、
+$$\\sin^2\\theta + 2\\sin\\theta\\cos\\theta + \\cos^2\\theta = \\frac{4}{9}$$
+$\\sin^2\\theta + \\cos^2\\theta = 1$ より、
+$$1 + 2\\sin\\theta\\cos\\theta = \\frac{4}{9} \\implies 2\\sin\\theta\\cos\\theta = -\\frac{5}{9} \\implies \\mathbf{\\sin\\theta\\cos\\theta = -\\frac{5}{18}}$$
+さらに、
+$$\\begin{aligned}
+\\sin^3\\theta + \\cos^3\\theta &= (\\sin\\theta + \\cos\\theta)(\\sin^2\\theta - \\sin\\theta\\cos\\theta + \\cos^2\\theta) \\\\
+&= \\frac{2}{3} \\left(1 + \\frac{5}{18}\\right) = \\frac{2}{3} \\times \\frac{23}{18} = \\mathbf{\\frac{23}{27}}
+\\end{aligned}$$`,
+    explanation: `$\\sin\\theta$, $\\cos\\theta$, $\\tan\\theta$ の間には、次の3つの関係が成り立っている。
+(I) $\\sin^2\\theta + \\cos^2\\theta = 1$
+(II) $\\tan\\theta = \\frac{\\sin\\theta}{\\cos\\theta}$
+(III) $1 + \\tan^2\\theta = \\frac{1}{\\cos^2\\theta}$
+$\\sin\\theta$, $\\cos\\theta$, $\\tan\\theta$ のうちの1つが分かると、これらを用いて、残り2つを求めることができる。その際、[1]の解答のように、求める三角比の値の正負（角度の範囲）にも注意を払いたい。
+[2]の $\\sin^3\\theta + \\cos^3\\theta$ は、因数分解でなく、対称式の考え方を用いて、
+$$\\sin^3\\theta + \\cos^3\\theta = (\\sin\\theta + \\cos\\theta)^3 - 3\\sin\\theta\\cos\\theta(\\sin\\theta + \\cos\\theta)$$
+に条件の値を代入して求めてもよい。例題2を見直そう。`,
+    key_point: `【文系数学の必勝ポイント：三角比の相互関係】
+(I) $\\sin^2\\theta + \\cos^2\\theta = 1$
+(II) $\\tan\\theta = \\frac{\\sin\\theta}{\\cos\\theta}$
+(III) $1 + \\tan^2\\theta = \\frac{1}{\\cos^2\\theta}$`
+  },
+  25: {
+    id: 25,
+    chapter: "三角比",
+    title: "余弦定理・正弦定理・面積公式・内接円の半径",
+    sources: ["慶應義塾大","名城大"],
+    question: `[1] 三角形 $\\mathrm{ABC}$ において、$\\mathrm{AB} = 5$, $\\mathrm{AC} = 8$, $\\angle\\mathrm{BAC} = 60^\\circ$ であるとする。
+(1) $\\mathrm{BC}$ の長さを求めよ。
+(2) 三角形 $\\mathrm{ABC}$ の外接円の半径 $R$ を求めよ。
+(3) 三角形 $\\mathrm{ABC}$ の面積 $S$ を求めよ。
+(4) 三角形 $\\mathrm{ABC}$ の内接円の半径 $r$ を求めよ。
+[2] 三角形 $\\mathrm{ABC}$ において、$\\mathrm{AC} = 4$, $\\angle\\mathrm{BAC} = 120^\\circ$, $\\sin B = \\frac{2}{\\sqrt{7}}$ であるとする。辺 $\\mathrm{BC}$、辺 $\\mathrm{AB}$ の長さをそれぞれ求めよ。`,
+    answer: `[1]
+(1) 余弦定理を用いると、
+$$\\mathrm{BC}^2 = 8^2 + 5^2 - 2 \\cdot 8 \\cdot 5 \\cdot \\cos 60^\\circ = 64 + 25 - 2 \\cdot 8 \\cdot 5 \\cdot \\frac{1}{2} = 49$$
+$\\mathrm{BC} > 0$ より、$$\\mathbf{\\mathrm{BC} = 7}$$
+
+(2) 正弦定理を用いると、$\\frac{\\mathrm{BC}}{\\sin A} = 2R$ となるから、
+$$R = \\frac{\\mathrm{BC}}{2\\sin A} = \\frac{7}{2\\sin 60^\\circ} = \\frac{7}{2 \\cdot \\frac{\\sqrt{3}}{2}} = \\mathbf{\\frac{7}{\\sqrt{3}} = \\frac{7\\sqrt{3}}{3}}$$
+
+(3) 面積公式より、
+$$S = \\frac{1}{2} \\mathrm{AC} \\cdot \\mathrm{AB} \\cdot \\sin A = \\frac{1}{2} \\cdot 8 \\cdot 5 \\cdot \\sin 60^\\circ = \\frac{1}{2} \\cdot 8 \\cdot 5 \\cdot \\frac{\\sqrt{3}}{2} = \\mathbf{10\\sqrt{3}}$$
+
+(4) $S = \\frac{1}{2}r(\\mathrm{BC} + \\mathrm{CA} + \\mathrm{AB})$ が成り立つから、
+$$10\\sqrt{3} = \\frac{1}{2}r(7 + 8 + 5) \\implies 10\\sqrt{3} = 10r \\implies \\mathbf{r = \\sqrt{3}}$$
+
+[2] 正弦定理より、$\\frac{\\mathrm{BC}}{\\sin A} = \\frac{\\mathrm{AC}}{\\sin B}$ となるから、
+$$\\mathbf{\\mathrm{BC}} = \\frac{\\mathrm{AC}}{\\sin B} \\times \\sin A = \\frac{4}{\\frac{2}{\\sqrt{7}}} \\times \\sin 120^\\circ = 2\\sqrt{7} \\times \\frac{\\sqrt{3}}{2} = \\mathbf{\\sqrt{21}}$$
+また、余弦定理より、
+$$\\mathrm{BC}^2 = \\mathrm{AB}^2 + \\mathrm{AC}^2 - 2 \\cdot \\mathrm{AB} \\cdot \\mathrm{AC} \\cdot \\cos 120^\\circ$$
+となるから、$\\mathrm{AB} = x$ とすると、
+$$21 = x^2 + 16 - 2 \\cdot x \\cdot 4 \\cdot \\left(-\\frac{1}{2}\\right)$$
+$$21 = x^2 + 16 + 4x \\implies x^2 + 4x - 5 = 0 \\implies (x + 5)(x - 1) = 0$$
+$x > 0$ より $x = 1$ であるから、
+$$\\mathbf{\\mathrm{AB} = 1}$$`,
+    explanation: `三角比の分野の図形問題で特によく使う公式は、次の4つである。
+(I) 余弦定理 : $a^2 = b^2 + c^2 - 2bc\\cos A$
+(II) 正弦定理 : $\\frac{a}{\\sin A} = \\frac{b}{\\sin B} = \\frac{c}{\\sin C} = 2R$ （$R$ は外接円の半径）
+(III) 面積公式 : $\\triangle\\mathrm{ABC} = \\frac{1}{2}bc\\sin A$
+(IV) 内接円の半径 $r$ の関係式 : $\\triangle\\mathrm{ABC} = \\frac{1}{2}r(a + b + c)$
+公式を文字通り“暗記”することも必要であるが、その特徴や使い方を練習を通じて習得することがもっと大切である。
+- 余弦定理は、3辺の長さが与えられている場合や、2辺とその間の角が与えられている場合に特に有効である。
+- 正弦定理は、角の情報が多く分かっている場合に余弦定理よりも使いやすい。
+- 面積公式は、「2辺とその間の角のサインで面積は計算できる（$\\triangle\\mathrm{ABC} = \\frac{1}{2}ca\\sin B$ などでもよい）」と覚えておくとよい。
+また、[2]の辺 $\\mathrm{AB}$ の長さは求められただろうか？余弦定理を使うことが分かっても、
+$$\\mathrm{AB}^2 = \\mathrm{BC}^2 + \\mathrm{CA}^2 - 2 \\cdot \\mathrm{BC} \\cdot \\mathrm{CA} \\cdot \\cos\\angle\\mathrm{ACB}$$
+と立式すると、$\\cos\\angle\\mathrm{ACB}$ の値が分からず困ってしまう。$\\mathrm{AB}$ を求めたいから $\\mathrm{AB}^2 = \\cdots$ と立式するのではなく、分かっている角 $\\angle\\mathrm{BAC} = 120^\\circ$ を生かすように立式することが大切である。`,
+    key_point: `【文系数学の必勝ポイント：三角比の重要定理・公式】
+(I) 余弦定理 : $a^2 = b^2 + c^2 - 2bc\\cos A$
+(II) 正弦定理 : $\\frac{a}{\\sin A} = \\frac{b}{\\sin B} = \\frac{c}{\\sin C} = 2R$ ($R$ は外接円の半径)
+(III) 面積 : $\\triangle\\mathrm{ABC} = \\frac{1}{2}bc\\sin A$
+(IV) 内接円の半径 $r$ : $\\triangle\\mathrm{ABC} = \\frac{1}{2}r(a + b + c)$`
+  },
+  26: {
+    id: 26,
+    chapter: "三角比",
+    title: "角の二等分線",
+    sources: ["学習院大","実践女子大"],
+    question: `[1] $\\mathrm{AB} = 2$, $\\mathrm{BC} = 4$, $\\mathrm{CA} = 3$ の三角形 $\\mathrm{ABC}$ において、$\\angle\\mathrm{A}$ の二等分線が辺 $\\mathrm{BC}$ と交わる点を $\\mathrm{D}$ とする。次の値を求めよ。
+(1) $\\cos B$
+(2) 線分 $\\mathrm{BD}$
+(3) 線分 $\\mathrm{AD}$
+[2] $\\mathrm{AB} = 5$, $\\mathrm{BC} = 7$, $\\mathrm{CA} = 3$ の三角形 $\\mathrm{ABC}$ において、$\\angle\\mathrm{A}$ の二等分線が辺 $\\mathrm{BC}$ と交わる点を $\\mathrm{D}$ とするとき、$\\angle\\mathrm{A}$ の大きさと線分 $\\mathrm{AD}$ の長さをそれぞれ求めよ。`,
+    answer: `[1]
+(1) 三角形 $\\mathrm{ABC}$ に余弦定理を用いると、
+$$\\mathbf{\\cos B} = \\frac{2^2 + 4^2 - 3^2}{2 \\cdot 2 \\cdot 4} = \\mathbf{\\frac{11}{16}}$$
+(2) 直線 $\\mathrm{AD}$ は $\\angle\\mathrm{A}$ を二等分するから、
+$$\\mathrm{BD} : \\mathrm{DC} = \\mathrm{AB} : \\mathrm{AC} = 2 : 3$$
+よって、
+$$\\mathbf{\\mathrm{BD}} = \\mathrm{BC} \\times \\frac{2}{2 + 3} = 4 \\times \\frac{2}{5} = \\mathbf{\\frac{8}{5}}$$
+(3) 三角形 $\\mathrm{ABD}$ に余弦定理を用いると、
+$$\\mathrm{AD}^2 = \\mathrm{AB}^2 + \\mathrm{BD}^2 - 2 \\cdot \\mathrm{AB} \\cdot \\mathrm{BD} \\cdot \\cos B = 4 + \\frac{64}{25} - 2 \\cdot 2 \\cdot \\frac{8}{5} \\cdot \\frac{11}{16} = \\frac{54}{25}$$
+$\\mathrm{AD} > 0$ であるから、
+$$\\mathbf{\\mathrm{AD} = \\frac{3\\sqrt{6}}{5}}$$
+
+[2] 余弦定理より、
+$$\\cos A = \\frac{3^2 + 5^2 - 7^2}{2 \\cdot 3 \\cdot 5} = \\frac{9 + 25 - 49}{30} = -\\frac{15}{30} = -\\frac{1}{2}$$
+となるから、
+$$\\mathbf{\\angle\\mathrm{A} = 120^\\circ}$$
+また、面積について $\\triangle\\mathrm{ABD} + \\triangle\\mathrm{ACD} = \\triangle\\mathrm{ABC}$ が成り立つから、
+$$\\frac{1}{2} \\cdot 5 \\cdot \\mathrm{AD} \\cdot \\sin 60^\\circ + \\frac{1}{2} \\cdot 3 \\cdot \\mathrm{AD} \\cdot \\sin 60^\\circ = \\frac{1}{2} \\cdot 5 \\cdot 3 \\cdot \\sin 120^\\circ$$
+$$\\frac{1}{2} \\cdot 5 \\cdot \\mathrm{AD} \\cdot \\frac{\\sqrt{3}}{2} + \\frac{1}{2} \\cdot 3 \\cdot \\mathrm{AD} \\cdot \\frac{\\sqrt{3}}{2} = \\frac{1}{2} \\cdot 5 \\cdot 3 \\cdot \\frac{\\sqrt{3}}{2}$$
+両辺に 4 を掛けて分母を払い、さらに両辺を $\\sqrt{3}$ で割ると、
+$$5\\mathrm{AD} + 3\\mathrm{AD} = 15 \\implies 8\\mathrm{AD} = 15 \\implies \\mathbf{\\mathrm{AD} = \\frac{15}{8}}$$`,
+    explanation: `数学Aで学習する角の二等分線の性質を用いる三角比の問題は、入試でも頻出である。$\\angle\\mathrm{A}$ の二等分線を引いたとき、
+$$\\mathrm{BD} : \\mathrm{DC} = \\mathrm{AB} : \\mathrm{AC}$$
+が成り立つ。
+ここでは、「角の二等分線の問題」の2つのタイプの解法の違いも理解しておきたい。
+[1]、[2]ともに、$\\angle\\mathrm{A}$ の二等分線を引いて辺 $\\mathrm{BC}$ との交点を $\\mathrm{D}$ とし、$\\mathrm{AD}$ の長さを求める問題になっている。[1]では誘導に従って余弦定理を使った計算を行って $\\mathrm{AD}$ を求めているが、[2]では面積に注目して $\\mathrm{AD}$ を求めている。「(左の面積) + (右の面積) = (全体の面積)」という当たり前の式を立てているだけであるが、この考え方も使えるようにしていきたい。
+なお、面積に注目する解法は「二等分する角が $60^\\circ$ や $120^\\circ$ のような三角比の値が計算できる角の場合に有効」ということまで知っておくとよい。(数学IIの2倍角の公式を使えば、その他の場合でも使えることもあるが、入試においては稀である)`,
+    key_point: `【文系数学の必勝ポイント：角の二等分線】
+角の二等分線の長さ：
+二等分する角の三角比が分かる場合（二等分する角が $60^\\circ$ や $120^\\circ$ の場合）、
+(左の面積) + (右の面積) = (全体の面積) に注目する
+角の二等分線の性質：
+$\\mathrm{BD} : \\mathrm{DC} = \\mathrm{AB} : \\mathrm{AC}$`
+  },
+  27: {
+    id: 27,
+    chapter: "三角比",
+    title: "三角形の成立条件",
+    sources: ["奈良女子大"],
+    question: `$x$ は正の実数とする。三角形 $\\mathrm{ABC}$ において、$\\mathrm{AB} = x$, $\\mathrm{BC} = x + 1$, $\\mathrm{CA} = x + 2$ とする。
+(1) $x$ のとり得る値の範囲を求めよ。
+(2) $\\angle\\mathrm{ABC} = \\theta$ とするとき、$\\cos\\theta$ を $x$ を用いて表せ。
+(3) 三角形 $\\mathrm{ABC}$ が鈍角三角形になるような $x$ の値の範囲を求めよ。`,
+    answer: `(1) 三角形 $\\mathrm{ABC}$ の辺のうち最大のものは、辺 $\\mathrm{CA}$ である。
+よって、三角形 $\\mathrm{ABC}$ が成立する条件は、$\\mathrm{CA} < \\mathrm{AB} + \\mathrm{BC}$ より、
+$$x + 2 < x + (x + 1) \\implies \\mathbf{x > 1}$$
+
+(2) 余弦定理より、
+$$\\mathbf{\\cos\\theta} = \\frac{x^2 + (x + 1)^2 - (x + 2)^2}{2x(x + 1)} = \\frac{x^2 - 2x - 3}{2x(x + 1)} = \\frac{(x - 3)(x + 1)}{2x(x + 1)} = \\mathbf{\\frac{x - 3}{2x}}$$
+
+(3) 最大の辺が辺 $\\mathrm{CA}$ であるから、$\\angle\\mathrm{ABC} = \\theta$ が三角形 $\\mathrm{ABC}$ の最大の角である。
+よって、三角形 $\\mathrm{ABC}$ が鈍角三角形になる条件は $\\theta > 90^\\circ$、すなわち $\\cos\\theta < 0$ が成り立つことである。したがって、(2)の結果を用いると、
+$$\\frac{x - 3}{2x} < 0$$
+(1)より $x > 1$ なので、(分母) $= 2x > 0$ である。よって、(分子) $< 0$ であればよいから、
+$$x - 3 < 0 \\implies x < 3$$
+これと(1)の結果 $x > 1$ をあわせて、
+$$\\mathbf{1 < x < 3}$$`,
+    explanation: `たとえば、3辺の長さが 10, 3, 5 の三角形は存在しない。長さ 10 の辺を置いたとき、その両端に長さ 3 と 5 の辺を取り付けても、この2辺の長さの合計は 8 しかないから、この2本の辺をつなげることはできない。
+したがって、3辺の長さが $a, b, c$ ($0 < a \\leqq b \\leqq c$) のときに三角形が存在できる条件は、
+$$c < a + b \\quad \\text{つまり、(最大辺の長さ) $<$ (残り2辺の長さの和)}$$
+である。
+3辺 $a, b, c$ の大小関係が不明な場合は、「$a < b + c$, $b < c + a$, $c < a + b$」の連立不等式を考えればよい。(これらを整理して得られる $|a - b| < c < a + b$ という不等式を使うこともできる)`,
+    key_point: `【文系数学の必勝ポイント：三角形の成立条件】
+(最大辺の長さ) $<$ (残り2辺の長さの和) にならないと三角形は作れない`
+  },
+  28: {
+    id: 28,
+    chapter: "三角比",
+    title: "sin A : sin B : sin C = a : b : c",
+    sources: ["慶應義塾大"],
+    question: `$\\triangle\\mathrm{ABC}$ において、$\\sin A : \\sin B : \\sin C = 3 : 7 : 8$ が成り立っているとき、$\\cos C$ の値、および $\\triangle\\mathrm{ABC}$ の面積が $54\\sqrt{3}$ であるときの $\\triangle\\mathrm{ABC}$ の内接円の半径 $r$ の値を求めよ。`,
+    answer: `3辺の長さを $\\mathrm{BC} = a$, $\\mathrm{CA} = b$, $\\mathrm{AB} = c$ とすると、正弦定理から、
+$$\\sin A : \\sin B : \\sin C = a : b : c$$
+である。よって、$\\sin A : \\sin B : \\sin C = 3 : 7 : 8$ であるから、
+$$a : b : c = 3 : 7 : 8$$
+となる。そこで、
+$$a = 3k, \\quad b = 7k, \\quad c = 8k \\quad (k > 0)$$
+とおくと、余弦定理より、
+$$\\mathbf{\\cos C} = \\frac{(3k)^2 + (7k)^2 - (8k)^2}{2 \\cdot 3k \\cdot 7k} = \\frac{9 + 49 - 64}{42} = -\\frac{6}{42} = \\mathbf{-\\frac{1}{7}} \\quad \\cdots ①$$
+また、$0^\\circ < C < 180^\\circ$ より $\\sin C > 0$ であるから、
+$$\\sin C = \\sqrt{1 - \\left(-\\frac{1}{7}\\right)^2} = \\sqrt{\\frac{48}{49}} = \\frac{4\\sqrt{3}}{7}$$
+さらに、$\\triangle\\mathrm{ABC}$ の面積を $S$ とすると、
+$$S = \\frac{1}{2}ab\\sin C = \\frac{1}{2} \\cdot 3k \\cdot 7k \\cdot \\frac{4\\sqrt{3}}{7} = 6k^2\\sqrt{3}$$
+ゆえに、$S = 54\\sqrt{3}$ であるとき、
+$$6k^2\\sqrt{3} = 54\\sqrt{3} \\implies k^2 = 9$$
+$k > 0$ であるから $k = 3$ となり、
+$$a = 9, \\quad b = 21, \\quad c = 24$$
+したがって、内接円の半径 $r$ は、$S = \\frac{1}{2}r(a + b + c)$ より、
+$$54\\sqrt{3} = \\frac{1}{2}r(9 + 21 + 24) \\implies 54\\sqrt{3} = 27r \\implies \\mathbf{r = 2\\sqrt{3}}$$`,
+    explanation: `$\\frac{x}{a} = \\frac{y}{b}$ と $a : b = x : y$ は、変形するとどちらの式も $ay = bx$ となる。つまり、2つの式は見た目が違うだけであり、互いに書きかえることができる。同様にして、$\\frac{x}{a} = \\frac{y}{b} = \\frac{z}{c}$ という式は、$a : b : c = x : y : z$ と書きかえることができる。
+したがって、正弦定理の $\\frac{a}{\\sin A} = \\frac{b}{\\sin B} = \\frac{c}{\\sin C}$ という式も、
+$$\\sin A : \\sin B : \\sin C = a : b : c$$
+と書きかえる（表現を変える）ことができる。`,
+    key_point: `【文系数学の必勝ポイント：正弦定理の比の表現】
+正弦定理から「$\\sin A : \\sin B : \\sin C = a : b : c$」が成り立つ`
+  },
+  29: {
+    id: 29,
+    chapter: "三角比",
+    title: "円に内接する四角形",
+    sources: ["中京大"],
+    question: `円に内接する四角形 $\\mathrm{ABCD}$ が、$\\mathrm{AB} = 2$, $\\mathrm{BC} = 3$, $\\mathrm{CD} = 4$, $\\mathrm{DA} = 2$ を満たすとき、対角線 $\\mathrm{BD}$ の長さ、および四角形 $\\mathrm{ABCD}$ の面積を求めよ。`,
+    answer: `四角形 $\\mathrm{ABCD}$ は円に内接しているから、対角の和は $180^\\circ$ である。
+よって、$\\angle\\mathrm{BAD} = \\theta$ とすると、
+$$\\angle\\mathrm{BCD} = 180^\\circ - \\theta$$
+まず、三角形 $\\mathrm{ABD}$ に余弦定理を用いると、
+$$\\mathrm{BD}^2 = 2^2 + 2^2 - 2 \\cdot 2 \\cdot 2 \\cdot \\cos\\theta = 8 - 8\\cos\\theta \\quad \\cdots ①$$
+一方、三角形 $\\mathrm{BCD}$ に余弦定理を用いると、$\\cos(180^\\circ - \\theta) = -\\cos\\theta$ より、
+$$\\mathrm{BD}^2 = 3^2 + 4^2 - 2 \\cdot 3 \\cdot 4 \\cdot \\cos(180^\\circ - \\theta) = 25 + 24\\cos\\theta \\quad \\cdots ②$$
+①、②より、
+$$8 - 8\\cos\\theta = 25 + 24\\cos\\theta \\implies -32\\cos\\theta = 17 \\implies \\cos\\theta = -\\frac{17}{32}$$
+これを①の $\\mathrm{BD}^2 = 8(1 - \\cos\\theta)$ に代入すると、
+$$\\mathrm{BD}^2 = 8\\left(1 + \\frac{17}{32}\\right) = 8 \\cdot \\frac{49}{32} = \\frac{49}{4}$$
+$\\mathrm{BD} > 0$ であるから、
+$$\\mathbf{\\mathrm{BD} = \\frac{7}{2}}$$
+次に、四角形 $\\mathrm{ABCD}$ の面積を $S$ とすると、$\\sin(180^\\circ - \\theta) = \\sin\\theta$ より、
+$$S = \\triangle\\mathrm{BAD} + \\triangle\\mathrm{BCD} = \\frac{1}{2} \\cdot 2 \\cdot 2 \\cdot \\sin\\theta + \\frac{1}{2} \\cdot 3 \\cdot 4 \\cdot \\sin(180^\\circ - \\theta) = 2\\sin\\theta + 6\\sin\\theta = 8\\sin\\theta \\quad \\cdots ③$$
+$0^\\circ < \\theta < 180^\\circ$ より $\\sin\\theta > 0$ であるから、
+$$\\sin\\theta = \\sqrt{1 - \\cos^2\\theta} = \\sqrt{1 - \\left(-\\frac{17}{32}\\right)^2} = \\frac{\\sqrt{32^2 - 17^2}}{32} = \\frac{\\sqrt{(32 + 17)(32 - 17)}}{32} = \\frac{\\sqrt{49 \\cdot 15}}{32} = \\frac{7\\sqrt{15}}{32}$$
+したがって、③より、
+$$\\mathbf{S} = 8 \\cdot \\frac{7\\sqrt{15}}{32} = \\mathbf{\\frac{7\\sqrt{15}}{4}}$$`,
+    explanation: `本問のような「円に内接する四角形」を題材にした三角比の問題は、極めて頻出である。円に内接する四角形で最も重要な事柄は、
+「円に内接する四角形は、対角の和が $180^\\circ$ である」
+ということであり、
+$$\\sin(180^\\circ - \\theta) = \\sin\\theta, \\quad \\cos(180^\\circ - \\theta) = -\\cos\\theta$$
+という関係を使って解く設問が非常に多い。
+また、“対角線の長さ”を求める問題も定番の設問である。与えられた条件に応じて解き方は変わるが、解答のように「対角線を共有する2つの三角形に注目して、余弦定理の連立方程式（本問では①と②）を立てて考える」という方法は覚えておこう。`,
+    key_point: `【文系数学の必勝ポイント：円に内接する四角形】
+円に内接する四角形で覚えておくべきこと：
+(I) 「対角の和が $180^\\circ$」であり、次の関係に注意する
+$$\\sin(180^\\circ - \\theta) = \\sin\\theta, \\quad \\cos(180^\\circ - \\theta) = -\\cos\\theta$$
+(II) 対角線の長さは、余弦定理を連立して求める方法がある`
+  },
+  30: {
+    id: 30,
+    chapter: "三角比",
+    title: "立体の計量",
+    sources: ["広島工業大"],
+    question: `四面体 $\\mathrm{OABC}$ において、$\\mathrm{OA} = \\mathrm{OB} = \\mathrm{OC} = 7$, $\\mathrm{AB} = 5$, $\\mathrm{BC} = 7$, $\\mathrm{CA} = 8$ とする。$\\mathrm{O}$ から平面 $\\mathrm{ABC}$ に下ろした垂線を $\\mathrm{OH}$ とするとき、次の問いに答えよ。
+(1) $\\angle\\mathrm{BAC}$ の大きさを求めよ。
+(2) 三角形 $\\mathrm{ABC}$ の面積 $S$ を求めよ。
+(3) 線分 $\\mathrm{AH}$、$\\mathrm{OH}$ の長さをそれぞれ求めよ。
+(4) 四面体 $\\mathrm{OABC}$ の体積 $V$ を求めよ。`,
+    answer: `(1) 三角形 $\\mathrm{ABC}$ に余弦定理を用いると、
+$$\\cos\\angle\\mathrm{BAC} = \\frac{5^2 + 8^2 - 7^2}{2 \\cdot 5 \\cdot 8} = \\frac{25 + 64 - 49}{80} = \\frac{40}{80} = \\frac{1}{2}$$
+となるから、
+$$\\mathbf{\\angle\\mathrm{BAC} = 60^\\circ}$$
+
+(2) 面積公式より、
+$$\\mathbf{S} = \\frac{1}{2} \\cdot \\mathrm{AB} \\cdot \\mathrm{AC} \\cdot \\sin 60^\\circ = \\frac{1}{2} \\cdot 5 \\cdot 8 \\cdot \\frac{\\sqrt{3}}{2} = \\mathbf{10\\sqrt{3}}$$
+
+(3) 3つの直角三角形 $\\triangle\\mathrm{OHA}$, $\\triangle\\mathrm{OHB}$, $\\triangle\\mathrm{OHC}$ において、
+$$\\mathrm{OA} = \\mathrm{OB} = \\mathrm{OC} = 7, \\quad \\mathrm{OH} \\text{ は共通}$$
+斜辺と他の1辺がそれぞれ等しいから、直角三角形の合同条件を満たし、
+$$\\triangle\\mathrm{OHA} \\equiv \\triangle\\mathrm{OHB} \\equiv \\triangle\\mathrm{OHC}$$
+よって、対応する辺の長さは等しいから、
+$$\\mathrm{HA} = \\mathrm{HB} = \\mathrm{HC}$$
+が成り立つ。したがって、$\\mathrm{H}$ は三角形 $\\mathrm{ABC}$ の外心であり、$\\mathrm{AH}$ の長さは三角形 $\\mathrm{ABC}$ の外接円の半径 $R$ を求めればよい。
+三角形 $\\mathrm{ABC}$ に正弦定理を用いると、$\\frac{\\mathrm{BC}}{\\sin 60^\\circ} = 2R \\; (= 2\\mathrm{AH})$ より、
+$$\\mathbf{\\mathrm{AH}} = \\frac{\\mathrm{BC}}{2\\sin 60^\\circ} = \\frac{7}{2 \\cdot \\frac{\\sqrt{3}}{2}} = \\mathbf{\\frac{7}{\\sqrt{3}} = \\frac{7\\sqrt{3}}{3}}$$
+次に、直角三角形 $\\mathrm{OHA}$ に三平方の定理を用いると、
+$$\\mathbf{\\mathrm{OH}} = \\sqrt{\\mathrm{OA}^2 - \\mathrm{AH}^2} = \\sqrt{49 - \\frac{49}{3}} = \\sqrt{\\frac{2}{3} \\cdot 49} = \\mathbf{\\frac{7\\sqrt{6}}{3}}$$
+
+(4) 体積 $V$ は、底面を三角形 $\\mathrm{ABC}$、高さを $\\mathrm{OH}$ と考えて、
+$$\\mathbf{V} = \\frac{1}{3} \\cdot \\triangle\\mathrm{ABC} \\cdot \\mathrm{OH} = \\frac{1}{3} \\cdot 10\\sqrt{3} \\cdot \\frac{7\\sqrt{6}}{3} = \\mathbf{\\frac{70\\sqrt{2}}{3}}$$`,
+    explanation: `三角比の問題は、いろいろな立体が題材となるので「こうすればよい」という魔法の解き方は存在しない。出題者が何を要求しているかをよく考え、どの部分（もっと言えば、どの三角形）に注目すればよいかを考える。(1)(3)では $\\angle\\mathrm{BAC}$ や $\\mathrm{AH}$ を問われているので、底面の三角形 $\\mathrm{ABC}$ に注目する。さらに、$\\mathrm{AH}$ を求めた上で $\\mathrm{OH}$ を求めたいから、そのときは直角三角形 $\\mathrm{OHA}$ に注目する。切断面を考える場合などもあり、いろいろな問題に挑戦してみることが大切である。
+
+＜One Point コラム＞
+$\\mathrm{OA} = \\mathrm{OB} = \\mathrm{OC}$ のように1つの頂点から残り3つの頂点までの長さが等しい四面体は、しばしば入試に登場する。このとき $\\mathrm{O}$ から平面 $\\mathrm{ABC}$ に下ろした垂線の足 $\\mathrm{H}$ が三角形 $\\mathrm{ABC}$ の外心になることは、(3)の解答のなかで考えた通りである。$\\mathrm{OA} = \\mathrm{OB} = \\mathrm{OC}$ でさらに三角形 $\\mathrm{ABC}$ が正三角形であれば（たとえば、$\\mathrm{OABC}$ が正四面体の場合）、正三角形 $\\mathrm{ABC}$ において外心と重心は一致するから、$\\mathrm{H}$ は三角形 $\\mathrm{ABC}$ の重心であると言ってもよい。`,
+    key_point: `【文系数学の必勝ポイント：立体の計量】
+問われている内容から、どの三角形に注目すればよいかを考える
+※等しい側稜（$\\mathrm{OA}=\\mathrm{OB}=\\mathrm{OC}$）から底面に下ろした垂線の足 $\\mathrm{H}$ は底面の外心となる`
   }
 };
