@@ -186,33 +186,6 @@
             background: var(--brand-light);
         }
 
-        /* エンジン切り替えボタングループ */
-        .engine-toggle-group {
-            display: inline-flex;
-            background: var(--bg-subtle);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-full);
-            padding: 2px;
-            gap: 2px;
-        }
-        .engine-btn {
-            background: transparent;
-            border: none;
-            color: var(--text-secondary);
-            font-size: 0.72rem;
-            font-weight: 700;
-            padding: 0.2rem 0.6rem;
-            border-radius: var(--radius-full);
-            cursor: pointer;
-            transition: all 0.15s ease;
-            white-space: nowrap;
-        }
-        .engine-btn.active {
-            background: var(--brand-primary);
-            color: #fff;
-            box-shadow: var(--shadow-sm);
-        }
-
         /* 指導方針バー */
         .chat-teaching-styles-section {
             margin-bottom: 0.5rem;
@@ -695,10 +668,6 @@
                                 </div>
                                 <h3 style="font-family: var(--font-heading); font-size: 1rem; font-weight: 700; margin-top: 0.3rem;" id="current-step">弱点克服フェーズ</h3>
                             </div>
-                            <div class="engine-toggle-group" id="engine-toggle-group">
-                                <button type="button" class="engine-btn active" id="engine-btn-gemini" data-engine="gemini">✨ Gemini</button>
-                                <button type="button" class="engine-btn" id="engine-btn-deepseek" data-engine="deepseek">🐋 DeepSeek</button>
-                            </div>
                         </div>
 
                         <!-- 🎛️ 指導方針セグメンテッドコントロール -->
@@ -785,7 +754,7 @@
     <!-- メインスクリプト -->
     <script type="module">
         import { BUNKEI_MATH_CHAPTERS, BUNKEI_MATH_CATALOG, BUNKEI_MATH_PROBLEMS } from "./data/bunkei-math-data.js?v=20261023_2011";
-        import { getGeminiKeys, getDeepseekKeys, initApiKeyManager, showToast } from "./api-key-manager.js?v=3.5";
+        import { callGeminiChat, hasAvailableGeminiKey, hasAvailableDeepseekKey, initApiKeyManager, showToast } from "./api-key-manager.js?v=4.2";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
         import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
@@ -1014,10 +983,9 @@
         }
 
         // -------------------------------------------------------------------------
-        // 🎛️ 指導方針 ＆ エンジン切り替え
+        // 🎛️ 指導方針（モデル・キー・思考レベルはAI設定でカスタマイズ）
         // -------------------------------------------------------------------------
         let activeTeachingStyle = 'standard';
-        let activeEngine = 'gemini';
 
         const styleBadge = document.getElementById('chat-styles-active-badge');
         const styleBtns = document.querySelectorAll('.teaching-style-btn');
@@ -1036,21 +1004,6 @@
                 if (styleBadge) styleBadge.textContent = styleLabels[activeTeachingStyle] || '標準丁寧';
             });
         });
-
-        const engineGeminiBtn = document.getElementById('engine-btn-gemini');
-        const engineDeepseekBtn = document.getElementById('engine-btn-deepseek');
-        if (engineGeminiBtn && engineDeepseekBtn) {
-            engineGeminiBtn.onclick = () => {
-                engineGeminiBtn.classList.add('active');
-                engineDeepseekBtn.classList.remove('active');
-                activeEngine = 'gemini';
-            };
-            engineDeepseekBtn.onclick = () => {
-                engineDeepseekBtn.classList.add('active');
-                engineGeminiBtn.classList.remove('active');
-                activeEngine = 'deepseek';
-            };
-        }
 
         // URLパラメータ処理
         const params = new URLSearchParams(window.location.search);
@@ -1397,28 +1350,24 @@ ${contextText}`;
             const loadingBubble = appendChatBubble('考え中...', 'ai');
 
             try {
-                const keys = getGeminiKeys();
-                const apiKey = keys.geminiKey || (keys.geminiKeys && keys.geminiKeys[0]);
-                if (!apiKey) {
-                    loadingBubble.textContent = "⚠️ Gemini APIキーが設定されていません。AI設定画面から登録してください。";
+                // Gemini / DeepSeek のどちらか利用可能なキーがあればOK
+                if (!hasAvailableGeminiKey() && !hasAvailableDeepseekKey()) {
+                    loadingBubble.textContent = "⚠️ AIのAPIキーが設定されていません。右下の🔑ボタン（AI設定）から登録してください。";
                     return;
                 }
 
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [
-                            { role: 'user', parts: [{ text: `${systemPrompt}\n\n生徒からの質問: ${query}` }] }
-                        ],
-                        generationConfig: { maxOutputTokens: 1000, temperature: 0.5 }
-                    })
-                });
+                // モデル・キー・思考レベルはAI設定の「問題についてのAIチャット」で
+                // ユーザーが自由にカスタマイズできる（未設定時は既定のモデルリストを使用）
+                const reply = await callGeminiChat(
+                    [{ role: 'user', parts: [{ text: `生徒からの質問: ${query}` }] }],
+                    systemPrompt,
+                    {
+                        temperature: 0.5,
+                        featureId: 'chat'
+                    }
+                );
 
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                const data = await res.json();
-                const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "回答を生成できませんでした。";
-                loadingBubble.textContent = reply;
+                loadingBubble.textContent = reply || "回答を生成できませんでした。";
                 await safeTypeset([loadingBubble]);
             } catch (err) {
                 console.error("AI TUTOR エラー:", err);

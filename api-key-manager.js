@@ -1799,12 +1799,49 @@ async function runGeminiFallbackLoop(contents, systemInstruction, options = {}) 
                     if (signal?.aborted) {
                         throw new Error("ユーザーによりAIリクエストが中断されました。");
                     }
-                    proxyResp = await fetch("/api/gemini/generate", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ model: modelName, ...requestBodyObj }),
-                        signal: signal || undefined
-                    });
+                    // 💡 ローカルキー経由と同じ「手動タイムアウト／中断」バーをプロキシ経由でも使えるよう、
+                    //    共通のリクエストレジストリに登録する
+                    const proxyController = new AbortController();
+                    const reqId = ++activeRequestCounter;
+                    const reqEntry = {
+                        id: reqId,
+                        controller: proxyController,
+                        modelName,
+                        featureId,
+                        startTime: Date.now(),
+                        abortReason: null
+                    };
+                    activeRequestRegistry.set(reqId, reqEntry);
+                    updateActiveRequestUI();
+
+                    const onExternalAbort = () => {
+                        reqEntry.abortReason = "user_cancel";
+                        try { proxyController.abort("user_cancel"); } catch (_) {}
+                    };
+                    if (signal) {
+                        if (signal.aborted) onExternalAbort();
+                        else signal.addEventListener("abort", onExternalAbort, { once: true });
+                    }
+                    try {
+                        proxyResp = await fetch("/api/gemini/generate", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ model: modelName, ...requestBodyObj }),
+                            signal: proxyController.signal
+                        });
+                    } catch (err) {
+                        if (reqEntry.abortReason === "user_cancel") {
+                            throw new Error("ユーザーによりAIリクエストが中断されました。");
+                        }
+                        if (reqEntry.abortReason === "user_timeout") {
+                            return { ok: false, isFormatError: false, reason: "手動タイムアウト", error: err };
+                        }
+                        throw err;
+                    } finally {
+                        activeRequestRegistry.delete(reqId);
+                        updateActiveRequestUI();
+                        if (signal) signal.removeEventListener("abort", onExternalAbort);
+                    }
                     if (proxyResp.status === 503 && pAttempt < maxProxyRetries) {
                         const backoffMs = Math.round(1200 * Math.pow(1.8, pAttempt) + Math.random() * 500);
                         console.warn(`⚠️ [${modelName}] サーバープロキシ経由で一時的過負荷（503） → ${backoffMs}ms待機後に再試行 (${pAttempt + 1}/${maxProxyRetries})...`);
@@ -1829,6 +1866,10 @@ async function runGeminiFallbackLoop(contents, systemInstruction, options = {}) 
                 }
             }
         } catch (err) {
+            // ユーザーによる中断はフォールバックせず即座に伝播させる
+            if (signal?.aborted || err?.message === "ユーザーによりAIリクエストが中断されました。") {
+                throw new Error("ユーザーによりAIリクエストが中断されました。");
+            }
             return { ok: false, isFormatError: false, reason: err?.message || "不明な通信エラー", error: err };
         }
 
