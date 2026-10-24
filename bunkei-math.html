@@ -31,8 +31,7 @@
                 displayMath: [['$$', '$$'], ['\\[', '\\]']],
                 processEscapes: true,
                 macros: {
-                    fbox: ["\\bbox[2px,border:1px solid currentColor;min-width:28px;min-height:20px;display:inline-block;]{#1}", 1],
-                    boxed: ["\\bbox[2px,border:1px solid currentColor;min-width:28px;min-height:20px;display:inline-block;]{#1}", 1]
+                    fbox: ["\\bbox[border:1px solid currentColor, 2px]{#1}", 1]
                 }
             },
             options: {
@@ -234,6 +233,20 @@
             background: var(--brand-primary);
             color: #fff;
             border-color: var(--brand-primary);
+        }
+
+        .math-fbox-blank {
+            display: inline-block;
+            min-width: 28px;
+            height: 1.25em;
+            border: 1.5px solid currentColor;
+            border-radius: 3px;
+            vertical-align: -0.2em;
+            margin: 0 4px;
+            background: rgba(0, 0, 0, 0.02);
+        }
+        html.dark .math-fbox-blank {
+            background: rgba(255, 255, 255, 0.04);
         }
 
         .main-question-tile {
@@ -511,6 +524,39 @@
             align-items: center;
             gap: 1rem;
         }
+
+        /* 📘 例題 / 📝 演習問題 切替タブ */
+        .mode-tabs-container {
+            display: flex;
+            gap: 0.6rem;
+            margin-bottom: 1.1rem;
+            flex-wrap: wrap;
+        }
+        .flora-tab-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1.15rem;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border: 1px solid var(--border-color);
+            background: var(--bg-surface);
+            color: var(--text-secondary);
+            transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .flora-tab-btn:hover {
+            border-color: var(--brand-primary);
+            color: var(--text-primary);
+            background: var(--bg-subtle);
+        }
+        .flora-tab-btn.active {
+            background: var(--brand-primary) !important;
+            color: #ffffff !important;
+            border-color: var(--brand-primary) !important;
+            box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25);
+        }
     </style>
 </head>
 <body class="tex2jax_ignore">
@@ -522,6 +568,16 @@
         <!-- 💻 メインコンテンツ -->
         <main class="app-main">
             <div class="workspace-content-wrap">
+
+                <!-- 📘 例題 / 📝 演習問題 切替タブ -->
+                <div class="mode-tabs-container">
+                    <button type="button" class="flora-tab-btn active" id="tab-mode-reidai">
+                        <span>📘</span> 例題編 (全158題)
+                    </button>
+                    <button type="button" class="flora-tab-btn" id="tab-mode-exercise">
+                        <span>📝</span> 演習問題編 (全115題)
+                    </button>
+                </div>
 
                 <!-- ページヘッダー（problem.html と完全同一構造） -->
                 <div class="page-header" style="margin-bottom: 1.25rem;">
@@ -572,6 +628,13 @@
                                         出題: 京都産業大など
                                     </span>
                                 </div>
+                            </div>
+
+                            <!-- 🔗 例題・演習問題 相互ジャンプバナー -->
+                            <div id="cross-link-container" style="margin: 0.2rem 0 0.8rem 0; display: none;">
+                                <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="btn-cross-link" style="font-size: 0.8rem; padding: 0.35rem 0.85rem; border-color: var(--brand-primary); color: var(--brand-primary); font-weight: 700; background: rgba(5, 150, 105, 0.08); display: inline-flex; align-items: center; gap: 0.4rem; border-radius: 8px;">
+                                    🔗 <span id="cross-link-text">対応例題を開く</span>
+                                </button>
                             </div>
 
                             <div class="question-collapsible-area" id="question-collapsible-area">
@@ -753,7 +816,8 @@
 
     <!-- メインスクリプト -->
     <script type="module">
-        import { BUNKEI_MATH_CHAPTERS, BUNKEI_MATH_CATALOG, BUNKEI_MATH_PROBLEMS } from "./data/bunkei-math-data.js?v=20261024_1";
+        import { BUNKEI_MATH_CHAPTERS, BUNKEI_MATH_CATALOG, BUNKEI_MATH_PROBLEMS } from "./data/bunkei-math-data.js?v=20261024_115";
+        import { BUNKEI_MATH_EXERCISES_CATALOG, BUNKEI_MATH_EXERCISES } from "./data/bunkei-math-exercises-data.js?v=20261024_115";
         import { callGeminiChat, hasAvailableGeminiKey, hasAvailableDeepseekKey, initApiKeyManager, showToast } from "./api-key-manager.js?v=4.2";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
@@ -777,13 +841,21 @@
         initApiKeyManager({ needGemini: true, needDeepseek: false });
 
         let currentUser = null;
+        let currentMode = 'reidai'; // 'reidai' | 'exercise'
         let currentProblemId = 1;
+        let currentExerciseId = 1;
+
         let progressMap = {};
+        let exerciseProgressMap = {};
 
         // ローカル進捗のロード
         try {
             const raw = localStorage.getItem('flora_bunkei_math_progress');
             if (raw) progressMap = JSON.parse(raw);
+        } catch (_) {}
+        try {
+            const rawEx = localStorage.getItem('flora_bunkei_math_ex_progress');
+            if (rawEx) exerciseProgressMap = JSON.parse(rawEx);
         } catch (_) {}
 
         // Firebase 認証監視
@@ -794,7 +866,14 @@
                 onValue(progRef, (snap) => {
                     if (snap.exists()) {
                         progressMap = Object.assign({}, progressMap, snap.val());
-                        updateHeaderProgress();
+                        if (currentMode === 'reidai') updateHeaderProgress();
+                    }
+                });
+                const exProgRef = ref(database, `users/${user.uid}/bunkeiMathExProgress`);
+                onValue(exProgRef, (snap) => {
+                    if (snap.exists()) {
+                        exerciseProgressMap = Object.assign({}, exerciseProgressMap, snap.val());
+                        if (currentMode === 'exercise') updateHeaderProgress();
                     }
                 });
             }
@@ -960,9 +1039,31 @@
         // -------------------------------------------------------------------------
         // 📝 数式・テキストの整形（文字崩れ＆不自然な改行の解消）
         // -------------------------------------------------------------------------
+        function sanitizeMathText(text) {
+            if (!text) return "";
+            let t = String(text);
+            // 壊れた制御文字（\x0c フォームフィード、\x08 バックスペースなど）の救済
+            t = t.replace(/\x0cbox/g, "\\fbox");
+            t = t.replace(/\x08eta/g, "\\beta");
+            t = t.replace(/\x08egin/g, "\\begin");
+            t = t.replace(/\x08mathbf/g, "\\mathbf");
+            
+            // \text{\fbox{...}} や \text{\boxed{...}} のアンラップ（MathJaxのテキストモードでマクロが素通しされるバグの防止）
+            t = t.replace(/\\text\{\s*\\(fbox|boxed)\{([^}]*)\}\s*\}/g, "\\$1{$2}");
+
+            // 空白の \fbox や \boxed （全角空白・半角空白・空文字）を \fbox{\quad} / \boxed{\quad} に正規化
+            t = t.replace(/\\(fbox|boxed)\{\s*[　\s]*\}/g, "\\$1{\\quad}");
+
+            // 数式内の全角スペースを \quad に変換（TeXパーサ破綻防止）
+            t = t.replace(/\$([^$]+)\$/g, (match, inner) => {
+                return '$' + inner.replace(/　/g, ' \\quad ') + '$';
+            });
+            return t;
+        }
+
         function formatQuestionText(raw) {
             if (!raw) return "";
-            let t = String(raw).trim();
+            let t = sanitizeMathText(raw).trim();
 
             // 小問番号 (1)〜(10) の前で段落改行
             t = t.replace(/(?<![0-9A-Za-zぁ-んァ-ヶー一-龠々'’])\(\s*([1-9]|10)\s*\)(?!\d)/g, "\n\n($1) ");
@@ -978,7 +1079,7 @@
 
         function formatMathContent(raw) {
             if (!raw) return "";
-            let t = String(raw).trim();
+            let t = sanitizeMathText(raw).trim();
             return t.replace(/\n/g, "<br>");
         }
 
@@ -1005,26 +1106,82 @@
             });
         });
 
+        // -------------------------------------------------------------------------
+        // 🗺️ 例題 ⇄ 演習問題 相互リンク用マップ
+        // -------------------------------------------------------------------------
+        const reidaiToExerciseMap = {};
+        BUNKEI_MATH_EXERCISES_CATALOG.forEach(ex => {
+            if (ex.target_reidai) {
+                if (!reidaiToExerciseMap[ex.target_reidai]) {
+                    reidaiToExerciseMap[ex.target_reidai] = [];
+                }
+                reidaiToExerciseMap[ex.target_reidai].push(ex.id);
+            }
+        });
+
+        // -------------------------------------------------------------------------
+        // 📘 例題 / 📝 演習問題 モード切替
+        // -------------------------------------------------------------------------
+        const tabReidai = document.getElementById('tab-mode-reidai');
+        const tabExercise = document.getElementById('tab-mode-exercise');
+        const crossLinkContainer = document.getElementById('cross-link-container');
+        const crossLinkBtn = document.getElementById('btn-cross-link');
+        const crossLinkText = document.getElementById('cross-link-text');
+
+        function switchMode(newMode, targetId = null) {
+            currentMode = newMode;
+            if (currentMode === 'reidai') {
+                if (tabReidai) tabReidai.classList.add('active');
+                if (tabExercise) tabExercise.classList.remove('active');
+                if (targetId) currentProblemId = targetId;
+                renderProblem(currentProblemId);
+            } else {
+                if (tabExercise) tabExercise.classList.add('active');
+                if (tabReidai) tabReidai.classList.remove('active');
+                if (targetId) currentExerciseId = targetId;
+                renderProblem(currentExerciseId);
+            }
+            initPickerChapters();
+        }
+
+        if (tabReidai) tabReidai.addEventListener('click', () => switchMode('reidai'));
+        if (tabExercise) tabExercise.addEventListener('click', () => switchMode('exercise'));
+
         // URLパラメータ処理
         const params = new URLSearchParams(window.location.search);
+        if (params.get('mode') === 'exercise') {
+            currentMode = 'exercise';
+            if (tabExercise) tabExercise.classList.add('active');
+            if (tabReidai) tabReidai.classList.remove('active');
+        }
         if (params.has('id')) {
             const pId = parseInt(params.get('id'), 10);
-            if (pId >= 1 && pId <= 158) currentProblemId = pId;
+            if (currentMode === 'reidai' && pId >= 1 && pId <= 158) {
+                currentProblemId = pId;
+            } else if (currentMode === 'exercise' && pId >= 1 && pId <= 115) {
+                currentExerciseId = pId;
+            }
         }
 
         // -------------------------------------------------------------------------
         // 問題の描画
         // -------------------------------------------------------------------------
         async function renderProblem(id) {
-            currentProblemId = id;
+            const isReidai = (currentMode === 'reidai');
+            if (isReidai) currentProblemId = id;
+            else currentExerciseId = id;
+
             const url = new URL(window.location);
+            url.searchParams.set('mode', currentMode);
             url.searchParams.set('id', id);
             window.history.replaceState({}, '', url);
 
             updateHeaderProgress();
 
-            const p = BUNKEI_MATH_PROBLEMS[id];
-            const cat = BUNKEI_MATH_CATALOG.find(c => c.id === id);
+            const p = isReidai ? BUNKEI_MATH_PROBLEMS[id] : BUNKEI_MATH_EXERCISES[id];
+            const cat = isReidai 
+                ? BUNKEI_MATH_CATALOG.find(c => c.id === id)
+                : BUNKEI_MATH_EXERCISES_CATALOG.find(c => c.id === id);
 
             const qSection = document.getElementById('tile-question-section');
             const aSection = document.getElementById('tile-answer-section');
@@ -1035,12 +1192,35 @@
             revealZone.style.display = 'none';
             revealBtn.style.display = 'block';
 
+            // 相互リンクボタンの更新
+            if (crossLinkContainer && crossLinkBtn && crossLinkText) {
+                if (isReidai) {
+                    const exIds = reidaiToExerciseMap[id];
+                    if (exIds && exIds.length > 0) {
+                        crossLinkContainer.style.display = 'block';
+                        crossLinkText.textContent = `演習問題 ${exIds.join('・')} に挑戦する →`;
+                        crossLinkBtn.onclick = () => switchMode('exercise', exIds[0]);
+                    } else {
+                        crossLinkContainer.style.display = 'none';
+                    }
+                } else {
+                    if (p && p.target_reidai) {
+                        crossLinkContainer.style.display = 'block';
+                        crossLinkText.textContent = `対応例題: 例題 ${p.target_reidai} を復習する →`;
+                        crossLinkBtn.onclick = () => switchMode('reidai', p.target_reidai);
+                    } else {
+                        crossLinkContainer.style.display = 'none';
+                    }
+                }
+            }
+
             if (!p) {
                 qSection.style.display = 'none';
                 aSection.style.display = 'none';
                 emptySection.style.display = 'flex';
-                document.getElementById('header-problem-name').textContent = cat ? `例題 ${id}: ${cat.title}` : `例題 ${id}`;
-                document.getElementById('empty-title').textContent = cat ? `例題 ${id}: ${cat.title} の写真データを準備中` : `例題 ${id} の写真データを準備中`;
+                const label = isReidai ? `例題 ${id}` : `演習問題 ${id}`;
+                document.getElementById('header-problem-name').textContent = cat ? `${label}: ${cat.title}` : label;
+                document.getElementById('empty-title').textContent = cat ? `${label}: ${cat.title} のデータを準備中` : `${label} のデータを準備中`;
                 return;
             }
 
@@ -1050,17 +1230,24 @@
 
             // ヘッダー情報
             document.getElementById('header-problem-name').textContent = p.title;
-            document.getElementById('question-badge').textContent = `数学 // ${p.chapter} // 例題 ${p.id}`;
+            const badgePrefix = isReidai ? `例題 ${p.id}` : `演習問題 ${p.id}`;
+            document.getElementById('question-badge').textContent = `数学 // ${p.chapter} // ${badgePrefix}`;
             document.getElementById('question-source-tag').textContent = p.sources && p.sources.length > 0 ? `出題: ${p.sources.join('、')}` : '出題: 河合塾';
 
             // 問題本文（美しい段落・改行整形）
             document.getElementById('question-text-block').innerHTML = formatQuestionText(p.question);
 
-            // 定石ボックス（文系数学の必勝ポイント）
-            document.getElementById('target-strategy-pattern').innerHTML = formatMathContent(p.key_point || '');
+            // 定石ボックス（文系数学の必勝ポイント / 着眼点）
+            const pointText = isReidai ? (p.key_point || '') : (p.commentary || '');
+            document.getElementById('target-strategy-pattern').innerHTML = formatMathContent(pointText);
 
             // 解答＆解説講義
-            const combined = `【模範解答】\n${p.answer}\n\n【解説講義】\n${p.explanation}`;
+            let combined = '';
+            if (isReidai) {
+                combined = `【模範解答】\n${p.answer}\n\n【解説講義】\n${p.explanation}`;
+            } else {
+                combined = `【模範解答】\n${p.answer}\n\n【解説・研究】\n${p.commentary || ''}`;
+            }
             document.getElementById('target-model-answer').innerHTML = formatMathContent(combined);
 
             // 数式レンダリング
@@ -1072,7 +1259,11 @@
         }
 
         function updateHeaderProgress() {
-            document.getElementById('pill-progress-no').textContent = `通し演習 No. ${currentProblemId} / 158`;
+            if (currentMode === 'reidai') {
+                document.getElementById('pill-progress-no').textContent = `例題 No. ${currentProblemId} / 158`;
+            } else {
+                document.getElementById('pill-progress-no').textContent = `演習問題 No. ${currentExerciseId} / 115`;
+            }
         }
 
         // -------------------------------------------------------------------------
@@ -1089,27 +1280,39 @@
 
         // ⭕ 合ってた
         document.getElementById('btn-judge-right').addEventListener('click', async () => {
-            await recordProgress(currentProblemId, 'cleared');
-            showToast(`🎉 例題 ${currentProblemId} 克服完了！お見事です！`, "success");
+            const isReidai = (currentMode === 'reidai');
+            const activeId = isReidai ? currentProblemId : currentExerciseId;
+            const maxCount = isReidai ? 158 : 115;
+            const label = isReidai ? `例題 ${activeId}` : `演習問題 ${activeId}`;
+
+            await recordProgress(activeId, 'cleared');
+            showToast(`🎉 ${label} 克服完了！お見事です！`, "success");
             setTimeout(() => {
-                if (currentProblemId < 158) renderProblem(currentProblemId + 1);
+                if (activeId < maxCount) renderProblem(activeId + 1);
             }, 600);
         });
 
         // ❌ 間違えた（誤答ノートへ即時登録）
         document.getElementById('btn-judge-wrong').addEventListener('click', async () => {
-            await recordProgress(currentProblemId, 'mistake');
-            await registerMistakeProblem(currentProblemId);
+            const isReidai = (currentMode === 'reidai');
+            const activeId = isReidai ? currentProblemId : currentExerciseId;
+            await recordProgress(activeId, 'mistake');
+            await registerMistakeProblem(activeId);
         });
 
         async function recordProgress(id, status) {
-            progressMap[id] = { status, timestamp: new Date().toISOString() };
+            const isReidai = (currentMode === 'reidai');
+            const targetMap = isReidai ? progressMap : exerciseProgressMap;
+            const storageKey = isReidai ? 'flora_bunkei_math_progress' : 'flora_bunkei_math_ex_progress';
+            const fbPath = isReidai ? 'bunkeiMathProgress' : 'bunkeiMathExProgress';
+
+            targetMap[id] = { status, timestamp: new Date().toISOString() };
             try {
-                localStorage.setItem('flora_bunkei_math_progress', JSON.stringify(progressMap));
+                localStorage.setItem(storageKey, JSON.stringify(targetMap));
             } catch (_) {}
             if (currentUser) {
                 try {
-                    await set(ref(database, `users/${currentUser.uid}/bunkeiMathProgress/${id}`), progressMap[id]);
+                    await set(ref(database, `users/${currentUser.uid}/${fbPath}/${id}`), targetMap[id]);
                 } catch (e) {
                     console.warn("進捗同期エラー:", e);
                 }
@@ -1117,21 +1320,24 @@
         }
 
         async function registerMistakeProblem(problemId) {
-            const p = BUNKEI_MATH_PROBLEMS[problemId];
+            const isReidai = (currentMode === 'reidai');
+            const p = isReidai ? BUNKEI_MATH_PROBLEMS[problemId] : BUNKEI_MATH_EXERCISES[problemId];
             if (!p) return;
 
-            const newId = "BUNKEI_MATH_" + problemId + "_" + Date.now();
+            const newId = (isReidai ? "BUNKEI_MATH_" : "BUNKEI_MATH_EX_") + problemId + "_" + Date.now();
             const nowIso = new Date().toISOString();
-            const combinedAnswer = `【解答】\n${p.answer || ""}\n\n【解説講義】\n${p.explanation || ""}`;
+            const combinedAnswer = isReidai 
+                ? `【解答】\n${p.answer || ""}\n\n【解説講義】\n${p.explanation || ""}`
+                : `【解答】\n${p.answer || ""}\n\n【解説・研究】\n${p.commentary || ""}`;
 
             const mistakeProblem = {
                 id: newId,
                 title: p.question || "",
-                short_title: `文系の数学 例題${p.id} ${p.title}`,
+                short_title: isReidai ? `文系の数学 例題${p.id} ${p.title}` : `文系の数学 演習${p.id} ${p.title}`,
                 subject: "数学",
-                field: `文系の数学（${p.chapter}）`,
+                field: isReidai ? `文系の数学（${p.chapter}）` : `文系の数学・演習（${p.chapter}）`,
                 trap_description: "解法の着眼点、または計算プロセスの見落とし",
-                strategyPattern: p.key_point || "",
+                strategyPattern: (isReidai ? p.key_point : p.commentary) || "",
                 errorCount: 1,
                 lastAttemptAt: nowIso,
                 lastResult: false,
@@ -1142,7 +1348,8 @@
                 events: [],
                 createdAt: nowIso,
                 sourceBook: "文系の数学 重要事項完全習得編",
-                sourceBookProblemId: p.id
+                sourceBookProblemId: p.id,
+                mode: currentMode
             };
 
             if (currentUser) {
@@ -1164,20 +1371,29 @@
 
         // 次へ進む
         document.getElementById('btn-quick-next-problem').addEventListener('click', () => {
-            if (currentProblemId < 158) renderProblem(currentProblemId + 1);
+            const isReidai = (currentMode === 'reidai');
+            const activeId = isReidai ? currentProblemId : currentExerciseId;
+            const maxCount = isReidai ? 158 : 115;
+            if (activeId < maxCount) renderProblem(activeId + 1);
         });
 
         // 前の問題・次の問題
         document.getElementById('btn-prev-problem').addEventListener('click', () => {
-            if (currentProblemId > 1) renderProblem(currentProblemId - 1);
+            const isReidai = (currentMode === 'reidai');
+            const activeId = isReidai ? currentProblemId : currentExerciseId;
+            if (activeId > 1) renderProblem(activeId - 1);
         });
         document.getElementById('btn-next-problem').addEventListener('click', () => {
-            if (currentProblemId < 158) renderProblem(currentProblemId + 1);
+            const isReidai = (currentMode === 'reidai');
+            const activeId = isReidai ? currentProblemId : currentExerciseId;
+            const maxCount = isReidai ? 158 : 115;
+            if (activeId < maxCount) renderProblem(activeId + 1);
         });
         document.getElementById('btn-random-problem').addEventListener('click', () => {
-            const availableIds = Object.keys(BUNKEI_MATH_PROBLEMS).map(Number);
-            const next = availableIds[Math.floor(Math.random() * availableIds.length)];
-            renderProblem(next);
+            const isReidai = (currentMode === 'reidai');
+            const pool = isReidai ? BUNKEI_MATH_CATALOG : BUNKEI_MATH_EXERCISES_CATALOG;
+            const next = pool[Math.floor(Math.random() * pool.length)];
+            if (next) renderProblem(next.id);
         });
         document.getElementById('btn-back-to-problem1').addEventListener('click', () => {
             renderProblem(1);
@@ -1193,12 +1409,15 @@
 
         // キーボードショートカット (Alt + ←, Alt + →)
         window.addEventListener('keydown', (e) => {
+            const isReidai = (currentMode === 'reidai');
+            const activeId = isReidai ? currentProblemId : currentExerciseId;
+            const maxCount = isReidai ? 158 : 115;
             if (e.altKey && e.key === 'ArrowRight') {
                 e.preventDefault();
-                if (currentProblemId < 158) renderProblem(currentProblemId + 1);
+                if (activeId < maxCount) renderProblem(activeId + 1);
             } else if (e.altKey && e.key === 'ArrowLeft') {
                 e.preventDefault();
-                if (currentProblemId > 1) renderProblem(currentProblemId - 1);
+                if (activeId > 1) renderProblem(activeId - 1);
             }
         });
 
@@ -1211,14 +1430,46 @@
         const pickerList = document.getElementById('picker-modal-list');
         const chapterSelect = document.getElementById('picker-chapter-select');
         const filterInput = document.getElementById('picker-filter-input');
+        const pickerTitleEl = pickerModal ? pickerModal.querySelector('.picker-modal-header h3') : null;
 
-        // 章セレクトの初期化
-        BUNKEI_MATH_CHAPTERS.forEach(ch => {
-            const opt = document.createElement('option');
-            opt.value = ch.title;
-            opt.textContent = `${ch.title} (例題${ch.range[0]}〜${ch.range[1]})`;
-            chapterSelect.appendChild(opt);
-        });
+        function initPickerChapters() {
+            if (!chapterSelect) return;
+            chapterSelect.innerHTML = '';
+
+            const isReidai = (currentMode === 'reidai');
+            if (pickerTitleEl) {
+                pickerTitleEl.textContent = isReidai 
+                    ? `📚 『文系の数学』全158題から問題を選択`
+                    : `📝 『文系の数学』演習問題（全115題）から問題を選択`;
+            }
+
+            const defaultOpt = document.createElement('option');
+            defaultOpt.value = '';
+            defaultOpt.textContent = isReidai ? 'すべての章 (全158題)' : 'すべての章 (全115題)';
+            chapterSelect.appendChild(defaultOpt);
+
+            if (isReidai) {
+                BUNKEI_MATH_CHAPTERS.forEach(ch => {
+                    const opt = document.createElement('option');
+                    opt.value = ch.title;
+                    opt.textContent = `${ch.title} (例題${ch.range[0]}〜${ch.range[1]})`;
+                    chapterSelect.appendChild(opt);
+                });
+            } else {
+                const chapters = [];
+                BUNKEI_MATH_EXERCISES_CATALOG.forEach(ex => {
+                    if (ex.chapter && !chapters.includes(ex.chapter)) chapters.push(ex.chapter);
+                });
+                chapters.forEach(ch => {
+                    const opt = document.createElement('option');
+                    opt.value = ch;
+                    opt.textContent = ch;
+                    chapterSelect.appendChild(opt);
+                });
+            }
+        }
+
+        initPickerChapters();
 
         openPickerBtn.addEventListener('click', () => {
             renderPickerList();
@@ -1236,21 +1487,27 @@
 
         function renderPickerList() {
             pickerList.innerHTML = '';
+            const isReidai = (currentMode === 'reidai');
+            const activeId = isReidai ? currentProblemId : currentExerciseId;
+            const targetCatalog = isReidai ? BUNKEI_MATH_CATALOG : BUNKEI_MATH_EXERCISES_CATALOG;
+            const targetMap = isReidai ? progressMap : exerciseProgressMap;
+            const targetProblems = isReidai ? BUNKEI_MATH_PROBLEMS : BUNKEI_MATH_EXERCISES;
+
             const selectedChapter = chapterSelect.value;
             const keyword = filterInput.value.trim().toLowerCase();
 
-            BUNKEI_MATH_CATALOG.forEach(item => {
+            targetCatalog.forEach(item => {
                 if (selectedChapter && item.chapter !== selectedChapter) return;
                 if (keyword && !item.title.toLowerCase().includes(keyword) && !item.chapter.toLowerCase().includes(keyword)) return;
 
                 const row = document.createElement('div');
                 row.className = 'picker-item-row';
-                if (item.id === currentProblemId) row.classList.add('active');
+                if (item.id === activeId) row.classList.add('active');
 
-                const stat = progressMap[item.id]?.status;
-                const hasData = !!BUNKEI_MATH_PROBLEMS[item.id];
+                const stat = targetMap[item.id]?.status;
+                const hasData = !!targetProblems[item.id];
 
-                let statusBadge = '<span class="flora-badge" style="font-size:0.72rem; opacity:0.6;">📷 写真待ち</span>';
+                let statusBadge = '<span class="flora-badge" style="font-size:0.72rem; opacity:0.6;">📷 準備中</span>';
                 if (stat === 'cleared') {
                     statusBadge = '<span class="flora-badge" style="background:#ECFDF5; color:#059669; font-size:0.72rem;">✅ 習得済</span>';
                 } else if (stat === 'mistake') {
@@ -1259,11 +1516,14 @@
                     statusBadge = '<span class="flora-badge" style="background:var(--brand-light); color:var(--brand-primary); font-size:0.72rem;">解ける</span>';
                 }
 
+                const prefix = isReidai ? `例題 ${item.id}` : `演習 ${item.id}`;
+                const subInfo = item.target_reidai ? ` (例題 ${item.target_reidai} に対応)` : '';
+
                 row.innerHTML = `
                     <div style="display:flex; align-items:center; gap:0.8rem; overflow:hidden;">
-                        <strong style="font-size:0.85rem; color:var(--brand-primary); width:70px; flex-shrink:0;">例題 ${item.id}</strong>
+                        <strong style="font-size:0.85rem; color:var(--brand-primary); width:70px; flex-shrink:0;">${prefix}</strong>
                         <div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                            <span style="font-size:0.72rem; color:var(--text-muted); display:block;">${item.chapter}</span>
+                            <span style="font-size:0.72rem; color:var(--text-muted); display:block;">${item.chapter}${subInfo}</span>
                             <span style="font-size:0.9rem; font-weight:700; color:var(--text-primary);">${item.title}</span>
                         </div>
                     </div>
@@ -1316,10 +1576,14 @@
             // ユーザー発言追加
             appendChatBubble(query, 'user');
 
-            const p = BUNKEI_MATH_PROBLEMS[currentProblemId];
+            const isReidai = (currentMode === 'reidai');
+            const activeId = isReidai ? currentProblemId : currentExerciseId;
+            const p = isReidai ? BUNKEI_MATH_PROBLEMS[activeId] : BUNKEI_MATH_EXERCISES[activeId];
+            const typeLabel = isReidai ? '例題' : '演習問題';
+
             const contextText = p ? `
 【現在解いている問題】
-- 番号: 例題 ${p.id}
+- 区分: ${typeLabel} ${p.id}
 - 単元: ${p.chapter}（${p.title}）
 - 問題文:
 ${p.question}
@@ -1327,9 +1591,9 @@ ${p.question}
 - 模範解答:
 ${p.answer}
 
-- 文系数学の必勝ポイント:
-${p.key_point}
-` : `【現在解いている問題番号】: 例題 ${currentProblemId}`;
+- 着眼点・ポイント:
+${isReidai ? p.key_point : (p.commentary || '')}
+` : `【現在解いている問題番号】: ${typeLabel} ${activeId}`;
 
             const styleInstructions = {
                 standard: "【指導方針：標準丁寧】基礎からステップを踏んで親身に解説してください。",
@@ -1340,7 +1604,7 @@ ${p.key_point}
             const currentStyleInstruction = styleInstructions[activeTeachingStyle] || styleInstructions.standard;
 
             const systemPrompt = `あなたは高校文系数学のプロ講師AI（AI TUTOR）です。
-生徒が河合塾の参考書『文系の数学 重要事項 完全習得編』の例題に取り組んでいます。
+生徒が河合塾の参考書『文系の数学 重要事項 完全習得編』の${typeLabel}に取り組んでいます。
 ${currentStyleInstruction}
 生徒の疑問に対して、親切・的確・論理的・直感的に分かりやすく答えてください。
 数式は必ずLaTeX形式（インラインは $...$、別行は $$...$$）で記述してください。
@@ -1385,7 +1649,7 @@ ${contextText}`;
         }
 
         // 初期ロード実行
-        renderProblem(currentProblemId);
+        renderProblem(currentMode === 'reidai' ? currentProblemId : currentExerciseId);
     </script>
 </body>
 </html>
