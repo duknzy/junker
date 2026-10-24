@@ -423,12 +423,37 @@
             gap: 0.75rem;
         }
         .chat-bubble {
-            padding: 0.75rem 1rem;
+            padding: 0.8rem 1.05rem;
             border-radius: var(--radius-lg);
             font-size: 0.88rem;
-            line-height: 1.7;
-            max-width: 90%;
+            line-height: 1.75;
+            max-width: 92%;
             word-break: break-word;
+            white-space: normal;
+        }
+        .chat-bubble p {
+            margin: 0.4rem 0;
+        }
+        .chat-bubble p:first-child {
+            margin-top: 0;
+        }
+        .chat-bubble p:last-child {
+            margin-bottom: 0;
+        }
+        .chat-bubble h4 {
+            margin: 0.6rem 0 0.3rem;
+            font-size: 0.95rem;
+            font-weight: 700;
+        }
+        .chat-bubble ul, .chat-bubble ol {
+            margin: 0.4rem 0 0.4rem 1.2rem;
+            padding: 0;
+        }
+        .chat-bubble li {
+            margin-bottom: 0.25rem;
+        }
+        .chat-bubble mjx-container {
+            margin: 0 0.12em !important;
         }
         .bubble-ai {
             background: var(--bg-subtle);
@@ -440,6 +465,91 @@
             background: var(--brand-primary);
             color: #fff;
             align-self: flex-end;
+        }
+
+        /* 💬 AIバブル内アクションバー（気づきメモ転記・コピー） */
+        .ai-bubble-action-bar {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 0.4rem;
+            margin-top: 0.65rem;
+            padding-top: 0.45rem;
+            border-top: 1px dashed var(--border-color);
+            flex-wrap: wrap;
+        }
+        .ai-bubble-action-btn {
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 0.22rem 0.55rem;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-color);
+            background: var(--bg-surface);
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            transition: all 120ms ease;
+        }
+        .ai-bubble-action-btn:hover {
+            color: var(--text-primary);
+            border-color: var(--brand-primary);
+            background: rgba(5, 150, 105, 0.08);
+        }
+        .ai-bubble-action-btn.save-insight-btn-highlight {
+            border-color: rgba(99, 102, 241, 0.4);
+            color: #6366F1;
+            background: rgba(99, 102, 241, 0.08);
+        }
+        .ai-bubble-action-btn.save-insight-btn-highlight:hover {
+            border-color: #6366F1;
+            background: rgba(99, 102, 241, 0.16);
+            color: #4F46E5;
+        }
+        html.dark .ai-bubble-action-btn.save-insight-btn-highlight {
+            color: #A5B4FC;
+            background: rgba(99, 102, 241, 0.15);
+        }
+
+        /* 🧠 気づきメモ用サイドドロワー（モーダル） */
+        .insight-drawer-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: stretch;
+            justify-content: flex-end;
+            z-index: 100000;
+        }
+        .insight-drawer-overlay.active {
+            display: flex;
+        }
+        .insight-drawer-content {
+            width: min(540px, 94vw);
+            height: 100%;
+            background: var(--bg-surface);
+            border-left: 1px solid var(--border-color);
+            box-shadow: var(--shadow-xl);
+            padding: 1.8rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            animation: slideInInsightDrawer 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes slideInInsightDrawer {
+            from { transform: translateX(28px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .insight-drawer-answer-ref {
+            margin-top: 1.2rem;
+            padding: 1.1rem;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            max-height: 35vh;
+            overflow-y: auto;
         }
 
         .chat-quick-chips-wrap {
@@ -661,8 +771,11 @@
 
                         <!-- 2. 解答・自己採点セクション -->
                         <section class="answer-formula-tile" id="tile-answer-section">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; gap: 0.6rem; flex-wrap: wrap;">
                                 <h3 style="font-family: var(--font-heading); font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">📝 解答・自己採点</h3>
+                                <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="open-insight-modal-btn" style="border-color: rgba(99, 102, 241, 0.4); color: #6366F1; font-weight: 700; background: rgba(99, 102, 241, 0.06); display: inline-flex; align-items: center; gap: 0.35rem;">
+                                    🧠 この問題の「気づき・極意」をメモする
+                                </button>
                             </div>
 
                             <div class="self-check-container">
@@ -702,6 +815,9 @@
                                     <div style="display: flex; gap: 0.8rem; width: 100%; flex-wrap: wrap; margin-top: 0.4rem;">
                                         <button type="button" class="flora-btn flora-btn-secondary" id="activate-ai-question-btn" style="flex: 1;">
                                             💡 AIに質問する
+                                        </button>
+                                        <button type="button" class="flora-btn flora-btn-secondary" id="open-insight-modal-btn-sub" style="flex: 1; border-color: rgba(99, 102, 241, 0.4); color: #6366F1; font-weight: 700; background: rgba(99, 102, 241, 0.04);">
+                                            🧠 気づきメモを書く
                                         </button>
                                         <button type="button" class="flora-btn flora-btn-secondary" id="btn-quick-next-problem" style="flex: 1; border-color: var(--brand-primary); color: var(--brand-primary); font-weight:700;">
                                             ▶ 次の問題へ進む (Alt + →)
@@ -786,6 +902,43 @@
         </main>
     </div>
 
+    <!-- 🧠 気づき・極意メモ ドロワー（モーダル） -->
+    <div class="insight-drawer-overlay" id="insight-modal">
+        <div class="insight-drawer-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.8rem; margin-bottom: 1rem;">
+                <h3 style="font-family: var(--font-heading); font-size: 1.1rem; font-weight: 700; color: var(--text-primary);" id="insight-modal-title">🧠 気づき・極意メモ</h3>
+                <button type="button" class="modal-close-btn" id="close-insight-btn" style="border:none; background:none; font-size:1.4rem; cursor:pointer; color:var(--text-muted);">✕</button>
+            </div>
+            
+            <p style="font-size: 0.84rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 0.8rem;">
+                次回同じ問題を解くときに思い出すべき「解法のキモ」や「典型的な罠」「AI解説からの要点」をメモしておきましょう。
+            </p>
+
+            <textarea class="flora-textarea" id="insight-text-input" rows="6" placeholder="例：『$x^2+y^2=1$ を見たら $x=\cos\theta, y=\sin\theta$ と置換する』&#10;『相加・相乗平均を使うときは等号成立条件を必ず確認する』など" style="width: 100%; box-sizing: border-box; font-family: inherit; font-size: 0.9rem; line-height: 1.6; padding: 0.8rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-subtle); color: var(--text-primary); resize: vertical;"></textarea>
+
+            <!-- 💡 数式リアルタイムプレビュー表示エリア -->
+            <div id="insight-preview-box" style="display: none; margin-top: 0.8rem; padding: 0.8rem 1rem; background: var(--brand-light); border: 1px dashed var(--brand-border); border-radius: var(--radius-md); font-size: 0.9rem; line-height: 1.6; color: var(--text-primary); word-break: break-word;">
+                <div style="font-size: 0.75rem; color: var(--brand-primary); font-weight: 700; margin-bottom: 0.4rem;">👁️ 数式プレビュー (MathJax)</div>
+                <div id="insight-preview-content" class="tex2jax_process" style="font-weight: 600; white-space: pre-wrap;"></div>
+            </div>
+
+            <div style="display: flex; gap: 0.8rem; justify-content: flex-end; width: 100%; margin-top: 1.2rem;">
+                <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="close-insight-modal-btn">キャンセル</button>
+                <button type="button" class="flora-btn flora-btn-primary btn-sm" id="save-insight-btn">💾 クラウドに保存</button>
+            </div>
+
+            <!-- 🧠 解説を見ながら書けるよう、模範解答の参照ビューをドロワー内にも表示 -->
+            <div class="insight-drawer-answer-ref">
+                <div style="font-size:0.75rem; color:var(--text-secondary); font-weight:700; margin-bottom:0.6rem;">📖 この問題の解説（参照用）</div>
+                <div id="insight-drawer-strategy-box" style="display:none; margin-bottom: 0.8rem; padding-bottom: 0.8rem; border-bottom: 1px dashed var(--border-color);">
+                    <div style="font-size:0.72rem; color: var(--warning, #B45309); font-weight:700; margin-bottom:0.3rem;">🧭 考え方の定石</div>
+                    <div class="model-answer-text" id="insight-drawer-strategy-text" style="background:transparent; border:none; padding:0; font-size:0.86rem;"></div>
+                </div>
+                <div class="model-answer-text tex2jax_process" id="insight-drawer-answer-text" style="background:transparent; border:none; padding:0; font-size:0.86rem;"></div>
+            </div>
+        </div>
+    </div>
+
     <!-- 📚 問題選択モーダル（右上の「他の問題を選ぶ」で開く） -->
     <div class="picker-modal-overlay" id="picker-modal-overlay">
         <div class="picker-modal-card">
@@ -848,8 +1001,9 @@
 
         let progressMap = {};
         let exerciseProgressMap = {};
+        let insightMap = {}; // { 'reidai_1': 'メモ内容', 'exercise_1': 'メモ内容' }
 
-        // ローカル進捗のロード
+        // ローカル進捗 ＆ 気づきメモのロード
         try {
             const raw = localStorage.getItem('flora_bunkei_math_progress');
             if (raw) progressMap = JSON.parse(raw);
@@ -857,6 +1011,10 @@
         try {
             const rawEx = localStorage.getItem('flora_bunkei_math_ex_progress');
             if (rawEx) exerciseProgressMap = JSON.parse(rawEx);
+        } catch (_) {}
+        try {
+            const rawIns = localStorage.getItem('flora_bunkei_math_insights');
+            if (rawIns) insightMap = JSON.parse(rawIns);
         } catch (_) {}
 
         // Firebase 認証監視
@@ -875,6 +1033,48 @@
                     if (snap.exists()) {
                         exerciseProgressMap = Object.assign({}, exerciseProgressMap, snap.val());
                         if (currentMode === 'exercise') updateHeaderProgress();
+                    }
+                });
+
+                // 気づきメモのリアルタイム同期
+                const insRef = ref(database, `users/${user.uid}/bunkeiMathInsights`);
+                onValue(insRef, (snap) => {
+                    if (snap.exists()) {
+                        const val = snap.val();
+                        Object.keys(val).forEach(k => {
+                            if (val[k] && val[k].memo) {
+                                insightMap[k] = val[k].memo;
+                            }
+                        });
+                        try {
+                            localStorage.setItem('flora_bunkei_math_insights', JSON.stringify(insightMap));
+                        } catch (_) {}
+                        updateInsightButtonState();
+                    }
+                });
+
+                // 既存の problems ノード（insights.html共有）からの気づきメモ吸い上げ
+                const probListRef = ref(database, `users/${user.uid}/problems`);
+                onValue(probListRef, (snap) => {
+                    if (snap.exists()) {
+                        const probs = snap.val();
+                        let changed = false;
+                        Object.values(probs).forEach(p => {
+                            if (p && p.insight && p.sourceBookProblemId) {
+                                const mode = p.mode || (p.id && p.id.startsWith("BUNKEI_MATH_EX") ? 'exercise' : 'reidai');
+                                const key = `${mode}_${p.sourceBookProblemId}`;
+                                if (!insightMap[key]) {
+                                    insightMap[key] = p.insight;
+                                    changed = true;
+                                }
+                            }
+                        });
+                        if (changed) {
+                            try {
+                                localStorage.setItem('flora_bunkei_math_insights', JSON.stringify(insightMap));
+                            } catch (_) {}
+                            updateInsightButtonState();
+                        }
                     }
                 });
             }
@@ -1178,6 +1378,8 @@
             window.history.replaceState({}, '', url);
 
             updateHeaderProgress();
+            updateInsightButtonState();
+            resetChatForProblem();
 
             const p = isReidai ? BUNKEI_MATH_PROBLEMS[id] : BUNKEI_MATH_EXERCISES[id];
             const cat = isReidai 
@@ -1542,11 +1744,332 @@
         }
 
         // -------------------------------------------------------------------------
+        // 🧠 気づき・極意メモ（ドロワーモーダル & Firebase/localStorage同期）
+        // -------------------------------------------------------------------------
+        const insightModal = document.getElementById('insight-modal');
+        const openInsightBtn = document.getElementById('open-insight-modal-btn');
+        const openInsightBtnSub = document.getElementById('open-insight-modal-btn-sub');
+        const closeInsightBtn = document.getElementById('close-insight-btn');
+        const closeInsightModalBtn = document.getElementById('close-insight-modal-btn');
+        const saveInsightBtn = document.getElementById('save-insight-btn');
+        const insightTextInput = document.getElementById('insight-text-input');
+        const insightModalTitle = document.getElementById('insight-modal-title');
+        const insightPreviewBox = document.getElementById('insight-preview-box');
+        const insightPreviewContent = document.getElementById('insight-preview-content');
+
+        function getProblemInsightKey(mode, id) {
+            return `${mode}_${id}`;
+        }
+
+        function getProblemFixedDbId(mode, id) {
+            return mode === 'reidai' ? `BUNKEI_MATH_${id}` : `BUNKEI_MATH_EX_${id}`;
+        }
+
+        function updateInsightButtonState() {
+            const activeId = (currentMode === 'reidai') ? currentProblemId : currentExerciseId;
+            const activeKey = getProblemInsightKey(currentMode, activeId);
+            const existingMemo = (insightMap[activeKey] || "").trim();
+            const openBtn = document.getElementById('open-insight-modal-btn');
+            const openBtnSub = document.getElementById('open-insight-modal-btn-sub');
+
+            if (existingMemo) {
+                if (openBtn) {
+                    openBtn.innerHTML = '🧠 メモ記録済み（クリックで確認・編集）';
+                    openBtn.style.background = 'rgba(99, 102, 241, 0.16)';
+                    openBtn.style.color = '#4F46E5';
+                    openBtn.style.borderColor = '#6366F1';
+                }
+                if (openBtnSub) {
+                    openBtnSub.innerHTML = '🧠 メモ編集';
+                    openBtnSub.style.background = 'rgba(99, 102, 241, 0.14)';
+                }
+            } else {
+                if (openBtn) {
+                    openBtn.innerHTML = '🧠 この問題の「気づき・極意」をメモする';
+                    openBtn.style.background = 'rgba(99, 102, 241, 0.06)';
+                    openBtn.style.color = '#6366F1';
+                    openBtn.style.borderColor = 'rgba(99, 102, 241, 0.4)';
+                }
+                if (openBtnSub) {
+                    openBtnSub.innerHTML = '🧠 気づきメモを書く';
+                    openBtnSub.style.background = 'rgba(99, 102, 241, 0.04)';
+                }
+            }
+        }
+
+        function openInsightModal() {
+            if (!insightModal) return;
+            const isReidai = (currentMode === 'reidai');
+            const activeId = isReidai ? currentProblemId : currentExerciseId;
+            const activeKey = getProblemInsightKey(currentMode, activeId);
+            const p = isReidai ? BUNKEI_MATH_PROBLEMS[activeId] : BUNKEI_MATH_EXERCISES[activeId];
+            const cat = isReidai 
+                ? BUNKEI_MATH_CATALOG.find(c => c.id === activeId)
+                : BUNKEI_MATH_EXERCISES_CATALOG.find(c => c.id === activeId);
+
+            const titleText = (p && p.title) ? p.title : (cat ? cat.title : "");
+            const label = isReidai ? `例題 ${activeId}` : `演習 ${activeId}`;
+            if (insightModalTitle) {
+                insightModalTitle.textContent = titleText ? `🧠 【${label}: ${titleText}】の気づきメモ` : `🧠 【${label}】の気づきメモ`;
+            }
+
+            if (insightTextInput) {
+                insightTextInput.value = insightMap[activeKey] || "";
+            }
+
+            // ドロワー内の解説参照エリアを更新
+            const drawerStrategyBox = document.getElementById('insight-drawer-strategy-box');
+            const drawerStrategyText = document.getElementById('insight-drawer-strategy-text');
+            const drawerAnswerText = document.getElementById('insight-drawer-answer-text');
+            const sourceStrategyBox = document.getElementById('strategy-pattern-box');
+            const sourceStrategyText = document.getElementById('target-strategy-pattern');
+            const sourceAnswerText = document.getElementById('target-model-answer');
+
+            if (drawerStrategyBox && drawerStrategyText) {
+                if (sourceStrategyBox && sourceStrategyBox.style.display !== 'none' && sourceStrategyText && sourceStrategyText.innerHTML.trim()) {
+                    drawerStrategyText.innerHTML = sourceStrategyText.innerHTML;
+                    drawerStrategyBox.style.display = 'block';
+                } else {
+                    drawerStrategyBox.style.display = 'none';
+                }
+            }
+            if (drawerAnswerText) {
+                drawerAnswerText.innerHTML = (sourceAnswerText && sourceAnswerText.innerHTML.trim()) 
+                    ? sourceAnswerText.innerHTML 
+                    : (p ? formatMathContent(`【解答】\n${p.answer}\n\n【解説】\n${isReidai ? p.explanation : (p.commentary || '')}`) : '問題データを準備中です。');
+            }
+
+            safeTypeset([insightModalTitle, drawerStrategyText, drawerAnswerText]);
+
+            updateInsightPreview();
+            insightModal.classList.add('active');
+            if (insightTextInput) insightTextInput.focus();
+        }
+
+        function closeInsightModal() {
+            if (insightModal) insightModal.classList.remove('active');
+        }
+
+        function updateInsightPreview() {
+            if (!insightPreviewBox || !insightPreviewContent) return;
+            const val = insightTextInput ? insightTextInput.value.trim() : "";
+            if (val) {
+                insightPreviewContent.innerHTML = renderFormattedMarkdown(val);
+                insightPreviewBox.style.display = 'block';
+                safeTypeset([insightPreviewContent]);
+            } else {
+                insightPreviewBox.style.display = 'none';
+                insightPreviewContent.innerHTML = "";
+            }
+        }
+
+        async function saveInsight() {
+            const isReidai = (currentMode === 'reidai');
+            const activeId = isReidai ? currentProblemId : currentExerciseId;
+            const activeKey = getProblemInsightKey(currentMode, activeId);
+            const fixedDbId = getProblemFixedDbId(currentMode, activeId);
+            const memoText = insightTextInput ? insightTextInput.value.trim() : "";
+
+            if (saveInsightBtn) {
+                saveInsightBtn.textContent = '💾 保存中...';
+                saveInsightBtn.disabled = true;
+            }
+
+            try {
+                insightMap[activeKey] = memoText;
+                try {
+                    localStorage.setItem('flora_bunkei_math_insights', JSON.stringify(insightMap));
+                } catch (_) {}
+
+                // Firebase への保存
+                if (currentUser) {
+                    // 1. 文系数学専用 insights ノード
+                    await set(ref(database, `users/${currentUser.uid}/bunkeiMathInsights/${activeKey}`), {
+                        memo: memoText,
+                        updatedAt: new Date().toISOString(),
+                        problemId: activeId,
+                        mode: currentMode
+                    });
+
+                    // 2. Flora全体のナレッジベース（insights.html）と統合するための problems ノード
+                    const p = isReidai ? BUNKEI_MATH_PROBLEMS[activeId] : BUNKEI_MATH_EXERCISES[activeId];
+                    const probRef = ref(database, `users/${currentUser.uid}/problems/${fixedDbId}`);
+                    const nowIso = new Date().toISOString();
+                    const combinedAnswer = p 
+                        ? (isReidai ? `【解答】\n${p.answer || ""}\n\n【解説講義】\n${p.explanation || ""}` : `【解答】\n${p.answer || ""}\n\n【解説・研究】\n${p.commentary || ""}`)
+                        : "";
+
+                    const problemPayload = {
+                        id: fixedDbId,
+                        title: (p && p.question) || (isReidai ? `文系の数学 例題${activeId}` : `文系の数学 演習${activeId}`),
+                        short_title: isReidai ? `文系の数学 例題${activeId} ${(p && p.title) || ''}` : `文系の数学 演習${activeId} ${(p && p.title) || ''}`,
+                        subject: "数学",
+                        field: isReidai ? `文系の数学（${(p && p.chapter) || ''}）` : `文系の数学・演習（${(p && p.chapter) || ''}）`,
+                        trap_description: "解法の着眼点、または計算プロセスの見落とし",
+                        strategyPattern: (p ? (isReidai ? p.key_point : p.commentary) : "") || "",
+                        answerFormula: combinedAnswer,
+                        insight: memoText,
+                        insightUpdatedAt: nowIso,
+                        createdAt: nowIso,
+                        sourceBook: "文系の数学 重要事項完全習得編",
+                        sourceBookProblemId: activeId,
+                        mode: currentMode
+                    };
+
+                    await set(probRef, problemPayload);
+                }
+
+                updateInsightButtonState();
+                showToast("🧠 気づきメモをクラウドに保存しました！", "success", 2500);
+                closeInsightModal();
+            } catch (err) {
+                console.error("気づきメモ保存エラー:", err);
+                showToast("保存に失敗しました: " + (err?.message || err), "error");
+            } finally {
+                if (saveInsightBtn) {
+                    saveInsightBtn.textContent = '💾 クラウドに保存';
+                    saveInsightBtn.disabled = false;
+                }
+            }
+        }
+
+        // イベントリスナーの登録
+        if (openInsightBtn) openInsightBtn.addEventListener('click', openInsightModal);
+        if (openInsightBtnSub) openInsightBtnSub.addEventListener('click', openInsightModal);
+        if (closeInsightBtn) closeInsightBtn.addEventListener('click', closeInsightModal);
+        if (closeInsightModalBtn) closeInsightModalBtn.addEventListener('click', closeInsightModal);
+        if (saveInsightBtn) saveInsightBtn.addEventListener('click', saveInsight);
+        if (insightModal) {
+            insightModal.addEventListener('click', (e) => {
+                if (e.target === insightModal) closeInsightModal();
+            });
+        }
+        if (insightTextInput) {
+            insightTextInput.addEventListener('input', updateInsightPreview);
+        }
+
+        // 🧠 AI回答から気づきメモへの転記
+        window.saveAiResponseToInsight = function(rawText) {
+            if (!rawText) return;
+            openInsightModal();
+            const isReidai = (currentMode === 'reidai');
+            const activeId = isReidai ? currentProblemId : currentExerciseId;
+            const p = isReidai ? BUNKEI_MATH_PROBLEMS[activeId] : BUNKEI_MATH_EXERCISES[activeId];
+            const label = isReidai ? `例題 ${activeId}` : `演習 ${activeId}`;
+            const title = (p && p.title) ? ` ${p.title}` : "";
+
+            const addition = `【💡 AI解説からの要点 (${label}${title})】\n${rawText.trim()}`;
+            if (insightTextInput) {
+                if (insightTextInput.value.trim()) {
+                    insightTextInput.value += `\n\n---\n\n${addition}`;
+                } else {
+                    insightTextInput.value = addition;
+                }
+                updateInsightPreview();
+            }
+            showToast("🧠 AIの解説を気づきメモに転記しました！確認して保存してください。", "success", 3500);
+        };
+
+        // -------------------------------------------------------------------------
         // 🤖 AI TUTOR チャット相談（Gemini / DeepSeek）
         // -------------------------------------------------------------------------
         const chatHistoryBox = document.getElementById('chat-history-box');
         const aiChatInput = document.getElementById('ai-chat-input');
         const aiChatSendBtn = document.getElementById('ai-chat-send-btn');
+        let chatConversationHistory = []; // マルチターン履歴保持
+
+        function resetChatForProblem() {
+            chatConversationHistory = [];
+            if (chatHistoryBox) {
+                chatHistoryBox.innerHTML = `
+                    <div class="chat-bubble bubble-ai" id="initial-ai-bubble">
+                        演習お疲れ様です！この問題は過去の出題頻度が高い超重要テーマです。解法の定石や典型的な罠、途中式の変形など、納得いくまで何でも質問してください！
+                    </div>
+                `;
+            }
+        }
+
+        function renderFormattedMarkdown(text) {
+            if (!text) return "";
+            let clean = sanitizeMathText(text);
+
+            // 数式ブロックを退避
+            const mathBlocks = [];
+            let placeholderText = clean.replace(/(\$\$[\s\S]*?\$\$|\$[^\$\n]+?\$)/g, (match) => {
+                mathBlocks.push(match);
+                return `%%%MATH_${mathBlocks.length - 1}%%%`;
+            });
+
+            let formatted = placeholderText
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;");
+
+            formatted = formatted.replace(/^###\s*(.+)$/gm, '<h4 style="font-size:0.95rem; font-weight:700; color:var(--brand-primary); margin:0.6rem 0 0.3rem 0; border-bottom:1px solid var(--border-color); padding-bottom:0.2rem;">$1</h4>');
+            formatted = formatted.replace(/^##\s*(.+)$/gm, '<h3 style="font-size:1rem; font-weight:800; color:var(--brand-primary); margin:0.7rem 0 0.35rem 0;">$1</h3>');
+            formatted = formatted.replace(/^---\s*$/gm, '<hr style="border:none; border-top:1px dashed var(--border-color); margin:0.6rem 0;">');
+            formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong style="font-weight:700;">$1</strong>');
+            formatted = formatted.replace(/^(\d+\.)\s*/gm, '<span style="color:var(--brand-primary); font-weight:800; margin-right:0.3rem;">$1</span>');
+            formatted = formatted.replace(/^[-*]\s+(.+)$/gm, '<li style="margin-left: 1.2rem; list-style-type: disc;">$1</li>');
+
+            // 数式ブロック復元
+            formatted = formatted.replace(/%%%MATH_(\d+)%%%/g, (_, idx) => mathBlocks[idx]);
+            formatted = formatted.replace(/\n/g, '<br>');
+            formatted = formatted.replace(/(<\/h[34]>|<\/li>|<hr[^>]*>)\s*<br>/gi, '$1');
+            return formatted;
+        }
+
+        function appendChatBubble(text, sender) {
+            const bubble = document.createElement('div');
+            bubble.className = `chat-bubble bubble-${sender} tex2jax_process`;
+            bubble.textContent = text;
+            chatHistoryBox.appendChild(bubble);
+            chatHistoryBox.scrollTop = chatHistoryBox.scrollHeight;
+            return bubble;
+        }
+
+        function appendAiBubbleWithActions(htmlContent, rawTextForMemo) {
+            const bubble = document.createElement('div');
+            bubble.className = 'chat-bubble bubble-ai tex2jax_process';
+
+            const bodyDiv = document.createElement('div');
+            bodyDiv.className = 'ai-bubble-body';
+            bodyDiv.innerHTML = htmlContent;
+            bubble.appendChild(bodyDiv);
+
+            // アクションバー（気づきメモ保存 & コピー）
+            const actionBar = document.createElement('div');
+            actionBar.className = 'ai-bubble-action-bar';
+
+            const saveInsightBtn = document.createElement('button');
+            saveInsightBtn.type = 'button';
+            saveInsightBtn.className = 'ai-bubble-action-btn save-insight-btn-highlight';
+            saveInsightBtn.innerHTML = '🧠 気づきメモに保存';
+            saveInsightBtn.title = 'このAI解説を気づき・極意メモに転記して保存';
+            saveInsightBtn.onclick = () => window.saveAiResponseToInsight(rawTextForMemo || bodyDiv.innerText);
+
+            const copyBtn = document.createElement('button');
+            copyBtn.type = 'button';
+            copyBtn.className = 'ai-bubble-action-btn';
+            copyBtn.innerHTML = '📋 コピー';
+            copyBtn.title = '解説テキストをクリップボードにコピー';
+            copyBtn.onclick = async () => {
+                try {
+                    await navigator.clipboard.writeText(rawTextForMemo || bodyDiv.innerText);
+                    showToast('📋 解説テキストをコピーしました！', 'success', 2000);
+                } catch (_) {
+                    showToast('コピーに失敗しました', 'error');
+                }
+            };
+
+            actionBar.appendChild(saveInsightBtn);
+            actionBar.appendChild(copyBtn);
+            bubble.appendChild(actionBar);
+
+            chatHistoryBox.appendChild(bubble);
+            chatHistoryBox.scrollTop = chatHistoryBox.scrollHeight;
+            return bubble;
+        }
 
         aiChatSendBtn.addEventListener('click', () => sendAiQuery());
         aiChatInput.addEventListener('keydown', (e) => {
@@ -1574,6 +2097,9 @@
 
             if (!customText) aiChatInput.value = '';
 
+            aiChatSendBtn.disabled = true;
+            aiChatSendBtn.textContent = '...';
+
             // ユーザー発言追加
             appendChatBubble(query, 'user');
 
@@ -1594,7 +2120,7 @@ ${p.answer}
 
 - 着眼点・ポイント:
 ${isReidai ? p.key_point : (p.commentary || '')}
-` : `【現在解いている問題番号】: ${typeLabel} ${activeId}`;
+` : `【現在解いている問題番号】: ${typeLabel} ${activeId}（※問題文データ準備中。生徒の質問に即して柔軟に解説してください）`;
 
             const styleInstructions = {
                 standard: "【指導方針：標準丁寧】基礎からステップを踏んで親身に解説してください。",
@@ -1609,6 +2135,7 @@ ${isReidai ? p.key_point : (p.commentary || '')}
 ${currentStyleInstruction}
 生徒の疑問に対して、親切・的確・論理的・直感的に分かりやすく答えてください。
 数式は必ずLaTeX形式（インラインは $...$、別行は $$...$$）で記述してください。
+見出しには「### 見出し名」、太字には「**重要ポイント**」を用いて構造化してください。
 
 ${contextText}`;
 
@@ -1621,10 +2148,14 @@ ${contextText}`;
                     return;
                 }
 
-                // モデル・キー・思考レベルはAI設定の「問題についてのAIチャット」で
-                // ユーザーが自由にカスタマイズできる（未設定時は既定のモデルリストを使用）
+                // マルチターン会話履歴に追加
+                chatConversationHistory.push({
+                    role: 'user',
+                    parts: [{ text: `生徒からの質問: ${query}` }]
+                });
+
                 const reply = await callGeminiChat(
-                    [{ role: 'user', parts: [{ text: `生徒からの質問: ${query}` }] }],
+                    chatConversationHistory,
                     systemPrompt,
                     {
                         temperature: 0.5,
@@ -1632,21 +2163,44 @@ ${contextText}`;
                     }
                 );
 
-                loadingBubble.textContent = reply || "回答を生成できませんでした。";
-                await safeTypeset([loadingBubble]);
+                let replyText = "";
+                if (typeof reply === "string") {
+                    if (reply.trim().startsWith("{") && reply.trim().endsWith("}")) {
+                        try {
+                            const parsed = JSON.parse(reply);
+                            replyText = parsed.ai_response || parsed.text || reply;
+                        } catch (_) {
+                            replyText = reply;
+                        }
+                    } else {
+                        replyText = reply;
+                    }
+                } else if (reply && typeof reply === "object") {
+                    replyText = reply.ai_response || reply.text || JSON.stringify(reply);
+                } else {
+                    replyText = "回答を生成できませんでした。";
+                }
+
+                // AI回答を会話履歴に追加
+                chatConversationHistory.push({
+                    role: 'model',
+                    parts: [{ text: replyText }]
+                });
+
+                // ローディングバブルを削除し、リッチ描画＋アクション付きバブルを追加
+                loadingBubble.remove();
+                const formattedHtml = renderFormattedMarkdown(replyText);
+                const newBubble = appendAiBubbleWithActions(formattedHtml, replyText);
+                await safeTypeset([newBubble]);
+
             } catch (err) {
                 console.error("AI TUTOR エラー:", err);
                 loadingBubble.textContent = `⚠️ AIからの回答取得に失敗しました (${err.message})`;
+                chatConversationHistory.pop();
+            } finally {
+                aiChatSendBtn.disabled = false;
+                aiChatSendBtn.textContent = '送信';
             }
-        }
-
-        function appendChatBubble(text, sender) {
-            const bubble = document.createElement('div');
-            bubble.className = `chat-bubble bubble-${sender} tex2jax_process`;
-            bubble.textContent = text;
-            chatHistoryBox.appendChild(bubble);
-            chatHistoryBox.scrollTop = chatHistoryBox.scrollHeight;
-            return bubble;
         }
 
         // 初期ロード実行
