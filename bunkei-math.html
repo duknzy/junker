@@ -283,6 +283,33 @@
             margin: 0 0.12em !important;
         }
 
+        /* 図が無いと解けない問題用の埋め込み図 */
+        .problem-figure {
+            margin: 1rem 0 0.35rem;
+            padding: 0.9rem 0.75rem 0.65rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            background: var(--bg-subtle);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        .problem-figure svg {
+            display: block;
+            width: 100%;
+            max-width: 720px;
+            height: auto;
+            overflow: visible;
+        }
+        .problem-figure figcaption {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            font-weight: 600;
+            line-height: 1.55;
+            text-align: center;
+        }
+
         .question-collapsible-area {
             position: relative;
             overflow: hidden;
@@ -970,8 +997,9 @@
 
     <!-- メインスクリプト -->
     <script type="module">
-        import { BUNKEI_MATH_CHAPTERS, BUNKEI_MATH_CATALOG, BUNKEI_MATH_PROBLEMS } from "./data/bunkei-math-data.js?v=20261024_all158";
+        import { BUNKEI_MATH_CHAPTERS, BUNKEI_MATH_CATALOG, BUNKEI_MATH_PROBLEMS } from "./data/bunkei-math-data.js?v=20261025_figures";
         import { BUNKEI_MATH_EXERCISES_CATALOG, BUNKEI_MATH_EXERCISES } from "./data/bunkei-math-exercises-data.js?v=20261024_all158";
+        import { BUNKEI_MATH_FIGURES } from "./data/bunkei-math-figures.js?v=20261025_audit";
         import { callGeminiChat, hasAvailableGeminiKey, hasAvailableDeepseekKey, initApiKeyManager, showToast } from "./api-key-manager.js?v=4.2";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
@@ -1284,6 +1312,13 @@
             return t.replace(/\n/g, "<br>");
         }
 
+        // 埋め込み図（問題文・解答の下に表示）
+        function renderFigure(fig) {
+            if (!fig || !fig.svg) return "";
+            const caption = fig.caption ? `<figcaption>${fig.caption}</figcaption>` : "";
+            return `<figure class="problem-figure tex2jax_ignore">${fig.svg}${caption}</figure>`;
+        }
+
         // -------------------------------------------------------------------------
         // 🎛️ 指導方針（モデル・キー・思考レベルはAI設定でカスタマイズ）
         // -------------------------------------------------------------------------
@@ -1382,6 +1417,7 @@
             resetChatForProblem();
 
             const p = isReidai ? BUNKEI_MATH_PROBLEMS[id] : BUNKEI_MATH_EXERCISES[id];
+            const figSet = (BUNKEI_MATH_FIGURES[isReidai ? 'reidai' : 'exercise'] || {})[id] || {};
             const cat = isReidai 
                 ? BUNKEI_MATH_CATALOG.find(c => c.id === id)
                 : BUNKEI_MATH_EXERCISES_CATALOG.find(c => c.id === id);
@@ -1438,20 +1474,25 @@
             document.getElementById('question-source-tag').textContent = p.sources && p.sources.length > 0 ? `出題: ${p.sources.join('、')}` : '出題: 河合塾';
 
             // 問題本文（美しい段落・改行整形）
-            document.getElementById('question-text-block').innerHTML = formatQuestionText(p.question);
+            let questionHtml = formatQuestionText(p.question);
+            questionHtml += renderFigure(figSet.question || p.figure);
+            document.getElementById('question-text-block').innerHTML = questionHtml;
 
             // 定石ボックス（文系数学の必勝ポイント / 着眼点）
             const pointText = isReidai ? (p.key_point || '') : (p.commentary || '');
             document.getElementById('target-strategy-pattern').innerHTML = formatMathContent(pointText);
 
-            // 解答＆解説講義
+            // 解答＆解説講義（図は模範解答の直後に差し込む）
+            const ANSWER_FIGURE_TOKEN = '%%BUNKEI_ANSWER_FIGURE%%';
             let combined = '';
             if (isReidai) {
-                combined = `【模範解答】\n${p.answer}\n\n【解説講義】\n${p.explanation}`;
+                combined = `【模範解答】\n${p.answer}\n\n${ANSWER_FIGURE_TOKEN}\n\n【解説講義】\n${p.explanation}`;
             } else {
-                combined = `【模範解答】\n${p.answer}\n\n【解説・研究】\n${p.commentary || ''}`;
+                combined = `【模範解答】\n${p.answer}\n\n${ANSWER_FIGURE_TOKEN}\n\n【解説・研究】\n${p.commentary || ''}`;
             }
-            document.getElementById('target-model-answer').innerHTML = formatMathContent(combined);
+            const answerEl = document.getElementById('target-model-answer');
+            answerEl.innerHTML = formatMathContent(combined);
+            answerEl.innerHTML = answerEl.innerHTML.replace(ANSWER_FIGURE_TOKEN, renderFigure(figSet.answer));
 
             // 数式レンダリング
             await safeTypeset([
