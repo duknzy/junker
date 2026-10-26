@@ -2565,11 +2565,34 @@
             color: var(--text-secondary);
             line-height: 1.45;
             margin-top: 0.2rem;
-            margin-bottom: 0.4rem;
+            margin-bottom: 0.3rem;
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
+            cursor: pointer;
+            transition: max-height 0.2s ease;
+        }
+        .toc-item-summary.expanded {
+            display: block;
+            -webkit-line-clamp: unset;
+            overflow: visible;
+        }
+        .toc-summary-more-btn {
+            font-size: 0.7rem;
+            color: var(--brand-primary);
+            background: transparent;
+            border: none;
+            padding: 0;
+            margin-bottom: 0.4rem;
+            cursor: pointer;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.2rem;
+        }
+        .toc-summary-more-btn:hover {
+            text-decoration: underline;
         }
         .toc-regen-btn {
             display: inline-flex;
@@ -5911,7 +5934,7 @@
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             z-index: 10000;
-            display: flex;
+            display: none;
             align-items: flex-start;
             justify-content: center;
             padding: 4rem 1rem 2rem 1rem;
@@ -5925,6 +5948,7 @@
             }
         }
         .omni-search-backdrop.active {
+            display: flex;
             opacity: 1;
             pointer-events: auto;
         }
@@ -23356,14 +23380,21 @@ ${subjectGuide}
                 const cultureBadge = isCulture ? `<span style="font-size:0.68rem; background:rgba(139,92,246,0.12); color:#8b5cf6; border:1px solid rgba(139,92,246,0.3); padding:0.1rem 0.45rem; border-radius:4px; font-weight:750; margin-left:0.35rem;">🏛️ 文化史</span>` : "";
                 const cultureStreamBtn = isCulture ? `<button type="button" onclick="event.stopPropagation(); openCultureStreamView();" style="padding:0.18rem 0.5rem; font-size:0.72rem; color:#8b5cf6; background:rgba(139,92,246,0.08); border:1px solid rgba(139,92,246,0.25); border-radius:var(--radius-sm); cursor:pointer; font-weight:700;" title="全授業の文化史パートを時系列順に串刺し通読">🏛️ 文化史通読</button>` : "";
 
+                const summaryText = p.summary || '';
+                const isLongSummary = summaryText.length > 55;
+                const summaryMoreBtn = isLongSummary
+                    ? `<button type="button" class="toc-summary-more-btn" onclick="event.stopPropagation(); toggleTocSummary(${i}, this)" title="あらすじを全文表示">もっと見る ▼</button>`
+                    : '';
+
                 return `
-                    <div class="toc-item ${isActive ? 'current-active' : ''}" data-toc-part="${i}" style="cursor:pointer;">
+                    <div class="toc-item ${isActive ? 'current-active' : ''}" data-toc-part="${i}" style="cursor:pointer;" id="toc-part-card-${i}">
                         <div class="toc-item-header">
                             <span class="toc-item-title tex2jax_process">第${i + 1}回: ${cleanTitle} ${cultureBadge}</span>
                             <span class="toc-status-badge ${badgeClass}">${badgeText}</span>
                         </div>
-                        <div class="toc-item-summary tex2jax_process">${p.summary || ''}</div>
-                        <div style="margin-top:0.6rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.35rem;">
+                        <div class="toc-item-summary tex2jax_process" id="toc-item-summary-${i}" onclick="event.stopPropagation(); toggleTocSummary(${i});" title="クリックで概要を全文展開/折りたたみ">${summaryText}</div>
+                        ${summaryMoreBtn}
+                        <div style="margin-top:0.4rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.35rem;">
                             <span style="font-size:0.75rem; color:var(--text-secondary);">クリックで該当位置へ移動</span>
                             <div style="display:flex; gap:0.35rem; align-items:center;">
                                 ${cultureStreamBtn}
@@ -23377,6 +23408,20 @@ ${subjectGuide}
             }).join("");
             forceTriggerMathJax(container);
         }
+
+        // 💡 パート目次の概要（あらすじ）全文展開トグル
+        window.toggleTocSummary = function(partIndex, btnEl) {
+            const summaryEl = document.getElementById(`toc-item-summary-${partIndex}`);
+            if (!summaryEl) return;
+            const isExpanded = summaryEl.classList.toggle("expanded");
+            if (!btnEl) {
+                const card = document.getElementById(`toc-part-card-${partIndex}`);
+                btnEl = card ? card.querySelector(".toc-summary-more-btn") : null;
+            }
+            if (btnEl) {
+                btnEl.innerHTML = isExpanded ? "閉じる ▲" : "もっと見る ▼";
+            }
+        };
 
         // 🤖 原本テキストを基にAIで論理的なパート構成を再設計（本文・注釈等の小見出し崩れを美しく解消）
         window.replanLessonPartsWithAI = async function() {
@@ -29982,6 +30027,29 @@ function updateCompletionUI() {
             // 2. パート位置へのスクロール
             if (opt.partIndex !== undefined) {
                 scrollToPartDivider(opt.partIndex);
+
+                // パート目次（あらすじ）のヒット時は右サイドバーの該当カードを展開＆ハイライト！
+                if (opt.msgIndex === undefined) {
+                    setTimeout(() => {
+                        switchLessonSidebarTab("tab-parts");
+                        const tocCard = document.getElementById(`toc-part-card-${opt.partIndex}`);
+                        if (tocCard) {
+                            tocCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
+                            const summaryEl = document.getElementById(`toc-item-summary-${opt.partIndex}`);
+                            if (summaryEl) {
+                                summaryEl.classList.add("expanded");
+                                const moreBtn = tocCard.querySelector(".toc-summary-more-btn");
+                                if (moreBtn) moreBtn.innerHTML = "閉じる ▲";
+                                if (opt.keyword) {
+                                    highlightTextInsideElement(summaryEl, opt.keyword);
+                                }
+                            }
+                            tocCard.classList.remove("omni-jump-target-flash");
+                            void tocCard.offsetWidth;
+                            tocCard.classList.add("omni-jump-target-flash");
+                        }
+                    }, 250);
+                }
             }
 
             // 3. 該当のチャット吹き出し（講義本文）へのスクロール＆発光
