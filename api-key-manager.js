@@ -4,7 +4,9 @@
    - 旧・単一キー保存("RE_MIND_GEMINI_KEY"等)は自動的に新形式へ移行
    - 追加/削除できる管理モーダルUIをその場で注入
    - fetchWithKeyRotation() で「1つのキーが失敗(429やエラー)したら次のキーへ」を共通化
-   - 429（クォータ上限）時は「モデル × キー」単位で日次リセットまでお休みに設定
+   - 429は「RPM(RetryInfoあり)」「RPD(日次)」「RetryInfoなし(モデル全体の容量/クォータ)」に分類して扱う
+   - RetryInfoなし429では残キーを叩かず、モデル自体を数分スキップして次モデルへフォールバック
+   - 直近成功したモデルを優先し、過負荷モデルを毎回試さない
    ========================================================================== */
 
 const STORAGE = {
@@ -160,11 +162,19 @@ export function setKeyLabel(engine, key, label) {
 
 // --------------------------------------------------------------------------
 // 🩺「モデル × キー」単位の429（一時お休み）管理
-// Geminiの無料枠クォータは「モデルごと」に独立してカウントされるため、
-// キー単位ではなく「モデル名:キー」でクールダウンを管理する。
-// 429が返ってきた場合は、日次リセット（太平洋時間深夜0時＝日本時間16:00/17:00）までお休みさせる。
+// Geminiの無料枠クォータは「モデルごと」に独立してカウントされます。
+// 429には3種類あります:
+// 1) 短時間枠（RPM: Requests Per Minute / TPM）超過: RetryInfo(retryDelay)付き → 数十秒の一時待機
+// 2) 日次枠（RPD: Requests Per Day）超過: 太平洋時間深夜0時（日本時間16:00/17:00）まで待機
+// 3) RetryInfoなしの429: プロジェクト/モデル全体のクォータ枯渇・容量制限。
+//    同一Google Cloudプロジェクトの別キーへ切り替えても回復しないため、モデル自体を数分スキップする。
+// 従来はすべての429を誤って日次上限（最大24時間お休み）と判定していたため、
+// 一時的なRPM超過でキーが丸一日ロックされる不具合が発生していました。
+// 本モジュールではRPD確定時のみ日次お休みにし、通常は短時間クールダウンを適用します。
+// また「全キーお休み中」でも自動解除はせず、ユーザーが明示的にリセットした時だけ解除します
+// （自動解除は429の連打＝クォータ消費の高速化を招くため）。
 // --------------------------------------------------------------------------
-const KEY_COOLDOWN_STORAGE = "RE_MIND_KEY_COOLDOWN"; // { [modelName:key]: お休み終了時刻(ms, epoch) }
+const KEY_COOLDOWN_STORAGE = "RE_MIND_KEY_COOLDOWN"; // { [modelName:key]: { until: epochMs, isDaily: boolean } }
 
 function getCooldownStorageKey(modelName, key) {
     return modelName ? `${modelName}:${key}` : key;
@@ -179,11 +189,21 @@ function loadCooldowns() {
     } catch (e) {
         map = {};
     }
-    // 期限切れのエントリを間引く
+    // 期限切れのエントリを間引く ＆ レガシーな過剰クールダウン（日次確定でない数時間のロック）を自動救済
     const now = Date.now();
     let changed = false;
     for (const k of Object.keys(map)) {
-        if (typeof map[k] !== "number" || map[k] <= now) {
+        const entry = map[k];
+        const until = (typeof entry === "object" && entry) ? entry.until : entry;
+        const isDaily = (typeof entry === "object" && entry) ? !!entry.isDaily : false;
+
+        if (typeof until !== "number" || until <= now) {
+            delete map[k];
+            changed = true;
+        } else if (typeof entry !== "object" && (until - now > 60 * 1000)) {
+            // 過去バージョンで誤って記録された数時間〜24時間のレガシーロック（数値形式のみ）を自動解除
+            // ※現行形式（{until,isDaily}）は短時間の容量制限クールダウンも保持するため削除しない
+            console.info(`🔄 [APIKeyManager] 未確認の長時間クールダウン(${k})を自動解除しました`);
             delete map[k];
             changed = true;
         }
@@ -197,22 +217,39 @@ function loadCooldowns() {
 export function isKeyCoolingDown(key, modelName = "") {
     const map = loadCooldowns();
     const cKey = getCooldownStorageKey(modelName, key);
-    const until = map[cKey];
+    const entry = map[cKey];
+    const until = (typeof entry === "object" && entry) ? entry.until : entry;
     return typeof until === "number" && Date.now() < until;
 }
 
-export function setKeyCooldown(key, modelName = "", ms = null) {
+export function isKeyDailyCoolingDown(key, modelName = "") {
     const map = loadCooldowns();
     const cKey = getCooldownStorageKey(modelName, key);
-    const duration = (typeof ms === "number" && ms > 0) ? ms : Math.max(0, nextGeminiQuotaResetAt() - Date.now());
-    map[cKey] = Date.now() + duration;
+    const entry = map[cKey];
+    if (!entry) return false;
+    const until = (typeof entry === "object" && entry) ? entry.until : entry;
+    const isDaily = (typeof entry === "object" && entry) ? !!entry.isDaily : false;
+    return isDaily && typeof until === "number" && Date.now() < until;
+}
+
+export function setKeyCooldown(key, modelName = "", ms = null, { isDaily = false } = {}) {
+    const map = loadCooldowns();
+    const cKey = getCooldownStorageKey(modelName, key);
+    const duration = (typeof ms === "number" && ms > 0)
+        ? ms
+        : (isDaily ? Math.max(0, nextGeminiQuotaResetAt() - Date.now()) : 45000);
+    map[cKey] = {
+        until: Date.now() + duration,
+        isDaily: !!isDaily
+    };
     try { localStorage.setItem(KEY_COOLDOWN_STORAGE, JSON.stringify(map)); } catch (e) { /* noop */ }
 }
 
 export function getKeyCooldownRemainingMs(key, modelName = "") {
     const map = loadCooldowns();
     const cKey = getCooldownStorageKey(modelName, key);
-    const until = map[cKey];
+    const entry = map[cKey];
+    const until = (typeof entry === "object" && entry) ? entry.until : entry;
     if (typeof until !== "number") return null;
     const remaining = until - Date.now();
     return remaining > 0 ? remaining : null;
@@ -233,6 +270,7 @@ export function clearAllKeyCooldowns() {
     } catch (e) {
         /* noop */
     }
+    clearAllModelBlocks();
     return count;
 }
 
@@ -273,12 +311,15 @@ export function getKeyCooldownDetails(key) {
     const map = loadCooldowns();
     const now = Date.now();
     const matches = [];
-    for (const [k, until] of Object.entries(map)) {
+    for (const [k, entry] of Object.entries(map)) {
+        const until = (typeof entry === "object" && entry) ? entry.until : entry;
+        const isDaily = (typeof entry === "object" && entry) ? !!entry.isDaily : false;
         if (typeof until === "number" && until > now) {
             if (k === key || k.endsWith(`:${key}`)) {
                 const modelName = k.includes(":") ? k.split(":")[0] : "(全般)";
-                const remainingMin = Math.ceil((until - now) / 60000);
-                matches.push({ keyStr: k, modelName, remainingMin, until });
+                const remainingSec = Math.ceil((until - now) / 1000);
+                const remainingMin = Math.ceil(remainingSec / 60);
+                matches.push({ keyStr: k, modelName, remainingMin, remainingSec, until, isDaily });
             }
         }
     }
@@ -290,11 +331,44 @@ export function getAllKeyCooldowns() {
     return loadCooldowns();
 }
 
+// --------------------------------------------------------------------------
+// 🚧 モデル単位クールダウン
+// RetryInfo（retryDelay）が付かない429は、キー単体ではなく
+// 「プロジェクト × モデル」全体のクォータ枯渇/容量制限であることが多いため、
+// 残りのキーを叩かずモデル自体を一定時間スキップする。
+// --------------------------------------------------------------------------
+const MODEL_BLOCK_DEFAULT_MS = 5 * 60 * 1000; // 5分
+const modelBlockUntil = new Map(); // modelName -> epochMs
+
+export function setModelBlocked(modelName, ms = MODEL_BLOCK_DEFAULT_MS) {
+    if (!modelName) return;
+    const duration = (typeof ms === "number" && ms > 0) ? ms : MODEL_BLOCK_DEFAULT_MS;
+    modelBlockUntil.set(modelName, Date.now() + duration);
+}
+
+export function getModelBlockRemainingMs(modelName) {
+    if (!modelName) return 0;
+    const until = modelBlockUntil.get(modelName) || 0;
+    const remaining = until - Date.now();
+    if (remaining <= 0) {
+        modelBlockUntil.delete(modelName);
+        return 0;
+    }
+    return remaining;
+}
+
+export function clearAllModelBlocks() {
+    modelBlockUntil.clear();
+}
+
 if (typeof window !== "undefined") {
     window.clearAllKeyCooldowns = clearAllKeyCooldowns;
     window.clearKeyCooldown = clearKeyCooldown;
     window.getKeyCooldownDetails = getKeyCooldownDetails;
     window.getAllKeyCooldowns = getAllKeyCooldowns;
+    window.setModelBlocked = setModelBlocked;
+    window.getModelBlockRemainingMs = getModelBlockRemainingMs;
+    window.clearAllModelBlocks = clearAllModelBlocks;
 }
 
 // Gemini(Google AI Studio)無料枠の日次クォータがリセットされる「次のタイミング」を返す。
@@ -659,7 +733,15 @@ export async function fetchWithKeyRotation(keys, buildRequest, { requestTimeoutM
 
     if (availableIndices.length === 0) {
         const tag = modelName ? `[${modelName}] ` : "";
-        throw new Error(`${tag}全キーが日次利用上限のためお休み中です`);
+        // 残り時間が最も短いキーを案内する
+        const remainingList = keys
+            .map(k => getKeyCooldownRemainingMs(k, modelName))
+            .filter(ms => typeof ms === "number" && ms > 0);
+        const minRemaining = remainingList.length > 0 ? Math.min(...remainingList) : 0;
+        const waitText = minRemaining > 0
+            ? `（最短であと約${Math.max(1, Math.ceil(minRemaining / 60000))}分）`
+            : "";
+        throw new Error(`${tag}全キーが利用制限のためお休み中です${waitText}。AI設定画面またはチャット内のボタンから「上限リセット」できます。💡 同じGoogle Cloudプロジェクトで発行した複数のAPIキーは無料枠を共有するため、キーを増やしても上限は増えません。`);
     }
 
     // 💡 生きているキーの配列に対して startIndex のオフセットを適用する
@@ -669,6 +751,8 @@ export async function fetchWithKeyRotation(keys, buildRequest, { requestTimeoutM
 
     let lastError = null;
     const max503RetriesPerKey = 2; // 過負荷(503)時の最大リトライ回数
+    const maxModelWideProbes = 2;   // RetryInfoなし429で「別プロジェクトのキー」を確認する最大回数
+    let modelWide429Count = 0;
 
     for (const item of order) {
         const key = item.key;
@@ -721,12 +805,71 @@ export async function fetchWithKeyRotation(keys, buildRequest, { requestTimeoutM
                 updateActiveRequestUI();
 
                 if (response.status === 429) {
-                    const cooldownMs = Math.max(0, nextGeminiQuotaResetAt() - Date.now());
-                    setKeyCooldown(key, modelName, cooldownMs);
-                    const hoursLeft = Math.max(1, Math.round(cooldownMs / 3600000));
+                    let errBody = {};
+                    try {
+                        errBody = await response.json();
+                    } catch (_) {}
+                    const errStr = JSON.stringify(errBody).toLowerCase();
+
+                    // 日次クォータ（RPD: Requests Per Day）枯渇かどうか厳密に判定
+                    const isDailyQuota = errStr.includes("perday") || 
+                                         errStr.includes("per_day") || 
+                                         errStr.includes("queries per day") || 
+                                         errStr.includes("requests per day") || 
+                                         errStr.includes("daily_quota") ||
+                                         errStr.includes("quota exceeded for quota metric 'queries' and limit 'queries per day'");
+
+                    // RetryInfo または retryDelay があるか抽出（例: "25s", "15.2s"）
+                    let retryDelayMs = null;
+                    const retryDetail = errBody?.error?.details?.find?.(d => d?.retryDelay || (d?.["@type"] && d["@type"].includes("RetryInfo")));
+                    if (retryDetail?.retryDelay) {
+                        const sMatch = String(retryDetail.retryDelay).match(/([\d.]+)s?/);
+                        if (sMatch) retryDelayMs = Math.ceil(parseFloat(sMatch[1]) * 1000);
+                    }
+                    // 💡 RetryInfoが無い429 = キー単体ではなく「プロジェクト×モデル」全体の
+                    //    クォータ枯渇（RPD）または容量制限。別キーへ切り替えても回復しない。
+                    const hasRetryInfo = typeof retryDelayMs === "number";
+                    const isModelWideQuota = !isDailyQuota && !hasRetryInfo;
+
+                    let cooldownMs;
+                    if (isDailyQuota) {
+                        cooldownMs = Math.max(0, nextGeminiQuotaResetAt() - Date.now());
+                    } else if (hasRetryInfo) {
+                        // 短時間枠（RPM/TPM）レート制限: 10〜120秒
+                        cooldownMs = Math.min(120000, Math.max(10000, retryDelayMs + 2000));
+                    } else {
+                        // 容量制限・プロジェクト単位の枯渇: 数分で回復することが多い
+                        cooldownMs = MODEL_BLOCK_DEFAULT_MS;
+                    }
+
+                    setKeyCooldown(key, modelName, cooldownMs, { isDaily: isDailyQuota });
                     const tag = modelName ? `[${modelName}] ` : "";
-                    console.warn(`⚠️ ${tag}キー#${i + 1} が上限（429）に達しました → 日次リセット（あと約${hoursLeft}時間）までお休みに設定し、次のキーへ`);
-                    lastError = new Error(`レート制限(429): ${tag}キー#${i + 1}`);
+                    if (isDailyQuota) {
+                        const hoursLeft = Math.max(1, Math.round(cooldownMs / 3600000));
+                        console.warn(`⚠️ ${tag}キー#${i + 1} が日次上限（RPD: 429）に達しました → 日次リセット（あと約${hoursLeft}時間）までお休みに設定し、次のキーへ`);
+                        lastError = new Error(`日次利用上限(429): ${tag}キー#${i + 1}`);
+                        shouldTryNextKey = true;
+                        break;
+                    }
+
+                    if (isModelWideQuota) {
+                        modelWide429Count++;
+                        const minLeft = Math.max(1, Math.ceil(cooldownMs / 60000));
+                        console.warn(`⚠️ ${tag}キー#${i + 1} がRetryInfoなしの429（プロジェクト/モデル全体のクォータ・容量制限）を検知 → ${minLeft}分間このモデルをスキップ (${modelWide429Count}/${maxModelWideProbes})`);
+                        lastError = new Error(`モデル全体のクォータ/容量制限(429): ${tag.trim()}（あと約${minLeft}分）`);
+                        // 別プロジェクトのキーが生きている可能性だけ確認する（最大maxModelWideProbes回）
+                        if (modelWide429Count >= maxModelWideProbes || order.length === 1) {
+                            setModelBlocked(modelName, cooldownMs);
+                            lastError.code = "MODEL_WIDE_429";
+                            throw lastError; // 同モデルの残キーは叩かず、次のモデルへ
+                        }
+                        shouldTryNextKey = true;
+                        break;
+                    }
+
+                    const secLeft = Math.ceil(cooldownMs / 1000);
+                    console.warn(`⚠️ ${tag}キー#${i + 1} が短時間レート制限（RPM/TPM: 429）を検知 → ${secLeft}秒間の一時待機に設定し、次のキーへ`);
+                    lastError = new Error(`短時間レート制限(429): ${tag}キー#${i + 1}（あと${secLeft}秒）`);
                     shouldTryNextKey = true;
                     break;
                 }
@@ -737,13 +880,15 @@ export async function fetchWithKeyRotation(keys, buildRequest, { requestTimeoutM
                         retry503Count++;
                         // 1回目: ~1.2s-1.7s, 2回目: ~2.2s-2.8s
                         const backoffMs = Math.round(1200 * Math.pow(1.8, retry503Count - 1) + Math.random() * 500);
-                        console.warn(`⚠️ ${tag}キー#${i + 1} で一時的な過負荷（503）を検知 → ${backoffMs}ms待機後に再試行します (${retry503Count}/${max503RetriesPerKey})...`);
+                        console.warn(`⚠️ ${tag}キー#${i + 1} で一時的な過負荷（503）を検知 → ${backoffMs}ms待機後に再試行 (${retry503Count}/${max503RetriesPerKey})...`);
                         await sleepWithSignal(backoffMs, signal);
                         continue; // 同一キーで再試行
                     }
                     console.warn(`⚠️ ${tag}過負荷（503）が継続（リトライ${max503RetriesPerKey}回上限） → 次のモデルへフォールバック`);
                     lastError = new Error(`モデル過負荷(503)`);
                     // 503はクラスタ全体の過負荷のため、同モデルの他キーは叩かず次のモデルへ脱出
+                    // さらに数分間はこのモデルをスキップして、毎回の再試行待ちを避ける
+                    setModelBlocked(modelName, 2 * 60 * 1000);
                     throw lastError;
                 }
 
@@ -755,6 +900,8 @@ export async function fetchWithKeyRotation(keys, buildRequest, { requestTimeoutM
                     break;
                 }
 
+                // 成功したらこのモデル×キーのクールダウンを確実にクリア
+                clearKeyCooldown(key, modelName);
                 return response;
             } catch (networkErr) {
                 if (timeoutId) clearTimeout(timeoutId);
@@ -763,6 +910,12 @@ export async function fetchWithKeyRotation(keys, buildRequest, { requestTimeoutM
 
                 if (networkErr?.message === "モデル過負荷(503)") {
                     throw networkErr; // 次のモデルへフォールバックさせるため再送出
+                }
+
+                // 🚧 RetryInfoなし429（モデル全体のクォータ/容量制限）は
+                //    残りのキーを叩かず、そのまま次のモデルへ抜ける
+                if (networkErr?.code === "MODEL_WIDE_429") {
+                    throw networkErr;
                 }
 
                 const reason = reqEntry.abortReason;
@@ -1075,7 +1228,13 @@ export function getEffectiveModelList(featureId) {
         const entry = getFeatureEntry(featureId);
         if (entry.models && entry.models.length > 0) {
             const validModels = entry.models.filter(m => ALL_AVAILABLE_MODELS.includes(m));
-            if (validModels.length > 0) list = validModels;
+            if (validModels.length > 0) {
+                // 💡 割り当てモデルを優先しつつ、429（モデル単位のクォータ枯渇）や
+                //    過負荷で全滅しないよう、未選択のモデルも後段のフォールバックとして残す。
+                //    （従来は割り当てモデルだけになり、1モデルでも429だと即全滅していた）
+                const rest = GEMINI_MODEL_FALLBACK_LIST.filter(m => !validModels.includes(m));
+                list = [...validModels, ...rest];
+            }
         }
     }
     // 💡 Proモデル除外設定が有効な場合は除外
@@ -1646,7 +1805,7 @@ async function runDeepseekFallbackLoop(contents, systemInstruction, options = {}
             }
         }
         if (result.ok) {
-            if (typeof window !== "undefined") window.__lastSuccessfulAIModel = modelName;
+            rememberLastGoodModel(modelName);
             if (typeof options.onModelUsed === "function") {
                 try { options.onModelUsed(modelName); } catch (_) {}
             }
@@ -1687,6 +1846,31 @@ function sanitizeGeminiContents(rawContents) {
 }
 
 // --------------------------------------------------------------------------
+// ♻️ 直近成功したモデルの記憶（3.8が恒常的に過負荷でも毎回3.8から試して待たされるのを防ぐ）
+// --------------------------------------------------------------------------
+const LAST_GOOD_MODEL_STORAGE = "RE_MIND_LAST_GOOD_MODEL";
+
+export function getLastGoodModel() {
+    try {
+        if (typeof window !== "undefined" && window.__lastSuccessfulAIModel) {
+            return window.__lastSuccessfulAIModel;
+        }
+        if (typeof localStorage !== "undefined") {
+            return localStorage.getItem(LAST_GOOD_MODEL_STORAGE) || null;
+        }
+    } catch (_) { /* noop */ }
+    return null;
+}
+
+export function rememberLastGoodModel(modelName) {
+    if (!modelName) return;
+    try {
+        if (typeof window !== "undefined") window.__lastSuccessfulAIModel = modelName;
+        if (typeof localStorage !== "undefined") localStorage.setItem(LAST_GOOD_MODEL_STORAGE, modelName);
+    } catch (_) { /* noop */ }
+}
+
+// --------------------------------------------------------------------------
 // 🧠 Gemini フォールバック実行ループ
 // --------------------------------------------------------------------------
 async function runGeminiFallbackLoop(contents, systemInstruction, options = {}) {
@@ -1707,6 +1891,12 @@ async function runGeminiFallbackLoop(contents, systemInstruction, options = {}) 
     let modelList = getEffectiveModelList(featureId);
     if (preferredModel && typeof preferredModel === "string") {
         modelList = [preferredModel, ...modelList.filter(m => m !== preferredModel)];
+    } else {
+        // ♻️ 直近成功したモデルを先頭に（例: 3.8が恒常的に過負荷でも毎回3.8から試して待たされるのを防ぐ）
+        const lastGood = getLastGoodModel();
+        if (lastGood && !isDeepseekModel(lastGood) && modelList.includes(lastGood)) {
+            modelList = [lastGood, ...modelList.filter(m => m !== lastGood)];
+        }
     }
 
     // 🐋 もし優先モデルがDeepSeek、あるいはモデルリストの先頭がDeepSeekならDeepSeekループへ移譲
@@ -1788,6 +1978,8 @@ async function runGeminiFallbackLoop(contents, systemInstruction, options = {}) 
                     url: buildGeminiUrl(modelName, key),
                     options: {
                         method: "POST",
+                        // 🧊 429等のエラーレスポンスがブラウザキャッシュから即座に再利用されるのを防ぐ
+                        cache: "no-store",
                         headers: { "Content-Type": "application/json", "x-goog-api-key": key },
                         body: requestBody
                     }
@@ -1926,6 +2118,15 @@ async function runGeminiFallbackLoop(contents, systemInstruction, options = {}) 
     }
 
     for (const modelName of effectiveGeminiModels) {
+        const blockMs = getModelBlockRemainingMs(modelName);
+        if (blockMs > 0) {
+            const reason = `モデル全体クールダウン中（あと約${Math.max(1, Math.ceil(blockMs / 60000))}分）`;
+            console.warn(`⏭️ ${modelName} は${reason} → リクエストせず次のモデルへ`);
+            fallbackAttempts.push({ model: modelName, reason });
+            lastError = new Error(`${modelName}: ${reason}`);
+            continue;
+        }
+
         let result = await attemptOnce(modelName, systemInstruction);
 
         if (!result.ok && result.isFormatError) {
@@ -1934,7 +2135,7 @@ async function runGeminiFallbackLoop(contents, systemInstruction, options = {}) 
         }
 
         if (result.ok) {
-            if (typeof window !== "undefined") window.__lastSuccessfulAIModel = modelName;
+            rememberLastGoodModel(modelName);
             if (typeof options.onModelUsed === "function") {
                 try { options.onModelUsed(modelName); } catch (_) {}
             }
@@ -1961,7 +2162,7 @@ async function runGeminiFallbackLoop(contents, systemInstruction, options = {}) 
                     allowedModels: ["deepseek-flash"],
                     silentFallback: false
                 });
-                if (typeof window !== "undefined") window.__lastSuccessfulAIModel = "deepseek-flash";
+                rememberLastGoodModel("deepseek-flash");
                 if (typeof options.onModelUsed === "function") {
                     try { options.onModelUsed("deepseek-flash"); } catch (_) {}
                 }
@@ -1975,7 +2176,11 @@ async function runGeminiFallbackLoop(contents, systemInstruction, options = {}) 
     }
 
     if (!silentFallback) notifyModelFallback(fallbackAttempts, null);
-    throw new Error(`全モデルが利用できませんでした（レート制限または不正な応答）。時間を置いて再度お試しください。\n最終エラー: ${lastError?.message || "不明"}`);
+    const lastMsg = lastError?.message || "不明";
+    const quotaHint = /429|quota|クォータ|クールダウン|上限/i.test(lastMsg)
+        ? "\n💡 同じGoogle Cloudプロジェクトで発行した複数のAPIキーは無料枠を共有します。キーを増やしても上限は増えません。別モデル（3.6-flash等）が生きている場合もあるため、AI設定で使用モデルを確認してください。"
+        : "";
+    throw new Error(`全モデルが利用できませんでした（レート制限または不正な応答）。時間を置いて再度お試しください。\n最終エラー: ${lastMsg}${quotaHint}`);
 }
 
 export async function callGeminiJSON(parts, systemInstruction, options = {}) {
@@ -2150,7 +2355,8 @@ function injectStylesAndModal() {
             <div class="apikm-title">🔑 APIキー管理</div>
             <div class="apikm-sub">
                 各AIにつき複数のAPIキーを登録できます。1つが利用上限（429）や無効エラーになった場合、
-                自動で次のキーに切り替えて再試行します。キーはこの端末のブラウザ内だけに保存され、サーバーには送信・保存されません。
+                自動で次のキーに切り替えて再試行します。キーはこの端末のブラウザ内だけに保存され、サーバーには送信・保存されません。<br>
+                <span style="color:#f59e0b; font-weight:700;">⚠️ 同じGoogle Cloudプロジェクトで発行した複数のGemini APIキーは、無料枠（429の上限）を共有します。キーを増やしても枠は増えません。</span>
             </div>
             <div class="apikm-section" data-engine-section="gemini">
                 <div class="apikm-section-label">✨ Gemini キー</div>
@@ -2217,8 +2423,8 @@ function injectStylesAndModal() {
             const cdDetails = getKeyCooldownDetails(k);
             const isCooling = cdDetails.length > 0;
             const cdBadge = isCooling ? `
-                <button type="button" class="apikm-cooldown-tag" data-clear-cooldown="${k}" style="background:rgba(239,68,68,0.22); border:1px solid #ef4444; color:#ff8080; font-size:0.65rem; font-weight:800; border-radius:6px; padding:0.15rem 0.45rem; cursor:pointer;" title="クリックでこのキーの上限記録（${cdDetails.map(d=>d.modelName).join(', ')}）を解除">
-                    ⚠️ 上限記録中（解除）
+                <button type="button" class="apikm-cooldown-tag" data-clear-cooldown="${k}" style="background:rgba(239,68,68,0.22); border:1px solid #ef4444; color:#ff8080; font-size:0.65rem; font-weight:800; border-radius:6px; padding:0.15rem 0.45rem; cursor:pointer;" title="クリックでこのキーの上限記録（${cdDetails.map(d=>d.modelName + (d.isDaily ? ' 日次上限' : ' 一時待機')).join(', ')}）を解除">
+                    ⚠️ ${cdDetails.some(d => d.isDaily) ? "日次上限中" : "一時待機中"}（解除）
                 </button>
             ` : "";
             return `

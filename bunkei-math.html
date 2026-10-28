@@ -186,6 +186,33 @@
             background: var(--brand-light);
         }
 
+        /* エンジン切り替えボタングループ */
+        .engine-toggle-group {
+            display: inline-flex;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-full);
+            padding: 2px;
+            gap: 2px;
+        }
+        .engine-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 0.2rem 0.6rem;
+            border-radius: var(--radius-full);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+        }
+        .engine-btn.active {
+            background: var(--brand-primary);
+            color: #fff;
+            box-shadow: var(--shadow-sm);
+        }
+
         /* 指導方針バー */
         .chat-teaching-styles-section {
             margin-bottom: 0.5rem;
@@ -875,6 +902,10 @@
                                 </div>
                                 <h3 style="font-family: var(--font-heading); font-size: 1rem; font-weight: 700; margin-top: 0.3rem;" id="current-step">弱点克服フェーズ</h3>
                             </div>
+                            <div class="engine-toggle-group" id="engine-toggle-group" title="使用するAIエンジンを切り替え">
+                                <button type="button" class="engine-btn active" id="engine-btn-gemini" data-engine="gemini">✨ Gemini</button>
+                                <button type="button" class="engine-btn" id="engine-btn-deepseek" data-engine="deepseek">🐋 DeepSeek</button>
+                            </div>
                         </div>
 
                         <!-- 🎛️ 指導方針セグメンテッドコントロール -->
@@ -1000,7 +1031,7 @@
         import { BUNKEI_MATH_CHAPTERS, BUNKEI_MATH_CATALOG, BUNKEI_MATH_PROBLEMS } from "./data/bunkei-math-data.js?v=20261025_figures";
         import { BUNKEI_MATH_EXERCISES_CATALOG, BUNKEI_MATH_EXERCISES } from "./data/bunkei-math-exercises-data.js?v=20261024_all158";
         import { BUNKEI_MATH_FIGURES } from "./data/bunkei-math-figures.js?v=20261025_audit";
-        import { callGeminiChat, hasAvailableGeminiKey, hasAvailableDeepseekKey, initApiKeyManager, showToast } from "./api-key-manager.js?v=4.2";
+        import { callGeminiChat, hasAvailableGeminiKey, hasAvailableDeepseekKey, initApiKeyManager, showToast, clearAllKeyCooldowns, openApiKeyManager } from "./api-key-manager.js?v=4.4";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
         import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
@@ -1020,7 +1051,49 @@
         const auth = getAuth(app);
         const database = getDatabase(app);
 
-        initApiKeyManager({ needGemini: true, needDeepseek: false });
+        initApiKeyManager({ needGemini: true, needDeepseek: true });
+
+        // 🧠 AIエンジン選択（Gemini / DeepSeek）
+        let activeEngine = 'gemini';
+        try {
+            const saved = localStorage.getItem('flora_bunkei_math_engine');
+            if (saved === 'deepseek' || saved === 'gemini') {
+                activeEngine = saved;
+            }
+        } catch (_) {}
+
+        const engineGeminiBtn = document.getElementById('engine-btn-gemini');
+        const engineDeepseekBtn = document.getElementById('engine-btn-deepseek');
+
+        function updateEngineUI() {
+            if (engineGeminiBtn && engineDeepseekBtn) {
+                if (activeEngine === 'deepseek') {
+                    engineDeepseekBtn.classList.add('active');
+                    engineGeminiBtn.classList.remove('active');
+                } else {
+                    engineGeminiBtn.classList.add('active');
+                    engineDeepseekBtn.classList.remove('active');
+                }
+            }
+        }
+        updateEngineUI();
+
+        if (engineGeminiBtn) {
+            engineGeminiBtn.addEventListener('click', () => {
+                activeEngine = 'gemini';
+                try { localStorage.setItem('flora_bunkei_math_engine', 'gemini'); } catch (_) {}
+                updateEngineUI();
+                showToast('✨ AIエンジンを Gemini に切り替えました', 'info', 1500);
+            });
+        }
+        if (engineDeepseekBtn) {
+            engineDeepseekBtn.addEventListener('click', () => {
+                activeEngine = 'deepseek';
+                try { localStorage.setItem('flora_bunkei_math_engine', 'deepseek'); } catch (_) {}
+                updateEngineUI();
+                showToast('🐋 AIエンジンを DeepSeek に切り替えました', 'info', 1500);
+            });
+        }
 
         let currentUser = null;
         let currentMode = 'reidai'; // 'reidai' | 'exercise'
@@ -2183,10 +2256,53 @@ ${contextText}`;
             const loadingBubble = appendChatBubble('考え中...', 'ai');
 
             try {
-                // Gemini / DeepSeek のどちらか利用可能なキーがあればOK
-                if (!hasAvailableGeminiKey() && !hasAvailableDeepseekKey()) {
-                    loadingBubble.textContent = "⚠️ AIのAPIキーが設定されていません。右下の🔑ボタン（AI設定）から登録してください。";
-                    return;
+                // 選択中エンジンに応じたAPIキーチェック
+                if (activeEngine === 'deepseek') {
+                    if (!hasAvailableDeepseekKey()) {
+                        loadingBubble.innerHTML = `
+                            <div>⚠️ DeepSeekのAPIキーが設定されていません。</div>
+                            <div style="margin-top:0.4rem; display:flex; gap:0.4rem;">
+                                <button type="button" class="flora-btn flora-btn-secondary flora-btn-sm" id="chat-open-settings-deepseek-btn" style="font-size:0.75rem; padding:0.25rem 0.6rem;">🔑 AI設定を開く</button>
+                                <button type="button" class="flora-btn flora-btn-primary flora-btn-sm" id="chat-switch-to-gemini-btn" style="font-size:0.75rem; padding:0.25rem 0.6rem;">✨ Geminiに切り替え</button>
+                            </div>
+                        `;
+                        const setBtn = loadingBubble.querySelector('#chat-open-settings-deepseek-btn');
+                        if (setBtn) setBtn.onclick = () => openApiKeyManager();
+                        const swBtn = loadingBubble.querySelector('#chat-switch-to-gemini-btn');
+                        if (swBtn) {
+                            swBtn.onclick = () => {
+                                activeEngine = 'gemini';
+                                try { localStorage.setItem('flora_bunkei_math_engine', 'gemini'); } catch (_) {}
+                                updateEngineUI();
+                                loadingBubble.remove();
+                                sendAiQuery(query);
+                            };
+                        }
+                        return;
+                    }
+                } else {
+                    if (!hasAvailableGeminiKey()) {
+                        loadingBubble.innerHTML = `
+                            <div>⚠️ GeminiのAPIキーが設定されていません。</div>
+                            <div style="margin-top:0.4rem; display:flex; gap:0.4rem;">
+                                <button type="button" class="flora-btn flora-btn-secondary flora-btn-sm" id="chat-open-settings-gemini-btn" style="font-size:0.75rem; padding:0.25rem 0.6rem;">🔑 AI設定を開く</button>
+                                <button type="button" class="flora-btn flora-btn-primary flora-btn-sm" id="chat-switch-to-deepseek-btn" style="font-size:0.75rem; padding:0.25rem 0.6rem;">🐋 DeepSeekに切り替え</button>
+                            </div>
+                        `;
+                        const setBtn = loadingBubble.querySelector('#chat-open-settings-gemini-btn');
+                        if (setBtn) setBtn.onclick = () => openApiKeyManager();
+                        const swBtn = loadingBubble.querySelector('#chat-switch-to-deepseek-btn');
+                        if (swBtn) {
+                            swBtn.onclick = () => {
+                                activeEngine = 'deepseek';
+                                try { localStorage.setItem('flora_bunkei_math_engine', 'deepseek'); } catch (_) {}
+                                updateEngineUI();
+                                loadingBubble.remove();
+                                sendAiQuery(query);
+                            };
+                        }
+                        return;
+                    }
                 }
 
                 // マルチターン会話履歴に追加
@@ -2200,7 +2316,8 @@ ${contextText}`;
                     systemPrompt,
                     {
                         temperature: 0.5,
-                        featureId: 'chat'
+                        featureId: 'chat',
+                        preferredModel: (activeEngine === 'deepseek' ? 'deepseek-flash' : null)
                     }
                 );
 
@@ -2236,7 +2353,58 @@ ${contextText}`;
 
             } catch (err) {
                 console.error("AI TUTOR エラー:", err);
-                loadingBubble.textContent = `⚠️ AIからの回答取得に失敗しました (${err.message})`;
+                const errMsg = err?.message || String(err);
+                const isLimitOrCooldown = /(上限|お休み|429|クールダウン|レート制限|exhausted|quota|demand)/i.test(errMsg);
+
+                if (isLimitOrCooldown) {
+                    loadingBubble.innerHTML = `
+                        <div style="font-size:0.85rem; line-height:1.5;">
+                            <div style="color:var(--danger, #ef4444); font-weight:700; margin-bottom:0.25rem;">
+                                ⚠️ AIの利用制限・お休み通知
+                            </div>
+                            <div style="color:var(--text-secondary); font-size:0.78rem; margin-bottom:0.5rem; word-break:break-all;">
+                                ${errMsg.replace(/</g, "&lt;").replace(/>/g, "&gt;")}
+                            </div>
+                            <div style="display:flex; flex-wrap:wrap; gap:0.4rem;">
+                                <button type="button" class="flora-btn flora-btn-primary flora-btn-sm" id="chat-rescue-retry-btn" style="font-size:0.75rem; padding:0.25rem 0.6rem;">
+                                    🔄 上限記録を解除して再試行
+                                </button>
+                                <button type="button" class="flora-btn flora-btn-secondary flora-btn-sm" id="chat-switch-engine-btn" style="font-size:0.75rem; padding:0.25rem 0.6rem;">
+                                    ${activeEngine === 'gemini' ? '🐋 DeepSeekに切り替えて質問' : '✨ Geminiに切り替えて質問'}
+                                </button>
+                                <button type="button" class="flora-btn flora-btn-secondary flora-btn-sm" id="chat-open-settings-btn" style="font-size:0.75rem; padding:0.25rem 0.6rem;">
+                                    🔑 AI設定
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    const rescueBtn = loadingBubble.querySelector('#chat-rescue-retry-btn');
+                    if (rescueBtn) {
+                        rescueBtn.onclick = () => {
+                            clearAllKeyCooldowns();
+                            showToast('🔄 クールダウン記録をすべて解除しました。再試行します...', 'info', 2000);
+                            loadingBubble.remove();
+                            sendAiQuery(query);
+                        };
+                    }
+                    const switchBtn = loadingBubble.querySelector('#chat-switch-engine-btn');
+                    if (switchBtn) {
+                        switchBtn.onclick = () => {
+                            activeEngine = (activeEngine === 'gemini') ? 'deepseek' : 'gemini';
+                            try { localStorage.setItem('flora_bunkei_math_engine', activeEngine); } catch (_) {}
+                            updateEngineUI();
+                            showToast(activeEngine === 'gemini' ? '✨ Geminiに切り替えました' : '🐋 DeepSeekに切り替えました', 'info', 1500);
+                            loadingBubble.remove();
+                            sendAiQuery(query);
+                        };
+                    }
+                    const settingsBtn = loadingBubble.querySelector('#chat-open-settings-btn');
+                    if (settingsBtn) {
+                        settingsBtn.onclick = () => openApiKeyManager();
+                    }
+                } else {
+                    loadingBubble.textContent = `⚠️ AIからの回答取得に失敗しました (${errMsg})`;
+                }
                 chatConversationHistory.pop();
             } finally {
                 aiChatSendBtn.disabled = false;
