@@ -187,11 +187,11 @@ const REIDAI = {
                 ]),
                 dots([[156, 160], [80, 240], [300, 240], [168, 240]])
             ])),
-            caption: "AD は ∠A の二等分線で、BD : DC = AB : AC = 2 : 3"
+            caption: "AD は ∠A の二等分線である。"
         }
     },
     28: {
-        question: {
+        answer: {
             svg: svg(440, 330, "3辺の比が3対7対8の三角形ABCとその内接円。", figureBody([
                 poly([[280, 121], [360, 260], [300, 260]]),
                 circle(320, 237, 23, S_THIN),
@@ -267,7 +267,7 @@ const REIDAI = {
         }
     },
     40: {
-        question: {
+        answer: {
             svg: svg(520, 390, "正八角形A1A2A3A4A5A6A7A8。各頂点に印をつける。", figureBody([
                 poly([[260, 60], [352, 98], [390, 190], [352, 282], [260, 320], [168, 282], [130, 190], [168, 98]]),
                 dots([[260, 60], [352, 98], [390, 190], [352, 282], [260, 320], [168, 282], [130, 190], [168, 98]], 5),
@@ -415,7 +415,7 @@ const REIDAI = {
         }
     },
     72: {
-        question: {
+        answer: {
             svg: svg(520, 380, "座標平面上の3点A(2,0)、B(4,2)、C(3,7)と、内分点D、外分点E、重心G。", figureBody([
                 `<g ${S_GRID}>` + [110, 140, 170, 200, 230, 260].map(x => line(x, 90, x, 330)).join("") + [90, 120, 150, 180, 210, 240, 270, 300].map(y => line(80, y, 290, y)).join("") + `</g>`,
                 arrow(60, 330, 310, 330),
@@ -439,7 +439,7 @@ const REIDAI = {
         }
     },
     80: {
-        question: {
+        answer: {
             svg: svg(560, 430, "座標平面上の2点A(-2,0)、B(1,0)と、PA対PBが2対1となる点Pの軌跡である円。", figureBody([
                 arrow(30, 215, 525, 215),
                 arrow(255, 385, 255, 45),
@@ -461,7 +461,7 @@ const REIDAI = {
         }
     },
     107: {
-        question: {
+        answer: {
             svg: svg(520, 400, "半径1の球に内接する円柱と、球の中心O、上面の中心A、上面の円周上の点Bからなる三角形OAB。", figureBody([
                 circle(260, 190, 130, S_THIN),
                 `<ellipse cx="260" cy="100" rx="94" ry="18" ${S_MAIN}/>`,
@@ -1558,11 +1558,11 @@ const EX_FIG = {
                     [208, 190, "9", { size: 17, anchor: "start" }]
                 ])
             ])),
-            caption: "AB = 7, BC = 5, CA = 9。余弦定理 → 面積 → 外接円 → 内接円の順に求める。"
+            caption: "AB = 7, BC = 5, CA = 9 の三角形 ABC。"
         }
     },
     18: {
-        question: {
+        answer: {
             svg: svg(520, 380, "三角形ABC。AB=14、BC=10、CA=12 で、角Bの二等分線BDがACと交わる。", figureBody([
                 poly([[60, 310], [360, 44], [420, 310]]),
                 seg([360, 44], [270, 310], S_THIN),
@@ -1581,7 +1581,7 @@ const EX_FIG = {
         }
     },
     19: {
-        question: {
+        answer: {
             svg: svg(480, 360, "三角形ABC。AB=3、AC=2、角A=60度で、角Aの二等分線ADがBCと交わる。", figureBody([
                 poly([[100, 300], [370, 300], [190, 144]]),
                 seg([100, 300], [262, 207], S_THIN),
@@ -1600,7 +1600,7 @@ const EX_FIG = {
         }
     },
     20: {
-        question: {
+        answer: {
             svg: svg(480, 380, "円に内接する四角形ABCD。AB=2、BC=3、CD=1、DA=2。対角線ACとBDの交点E。", figureBody([
                 circle(226, 239, 137, S_THIN),
                 poly([[226, 102], [90, 220], [345, 308], [362, 220]]),
@@ -1648,11 +1648,11 @@ const EX_FIG = {
                     [120, 178, "F", { size: 14, anchor: "end" }]
                 ])
             ])),
-            caption: "BD : DC = 5 : 3、AE : ED = 2 : 1、F = AB ∩ CE。メネラウスの定理を2回使う。"
+            caption: "BD : DC = 5 : 3、AE : ED = 2 : 1、F = AB ∩ CE。"
         }
     },
     38: {
-        question: {
+        answer: {
             svg: svg(560, 340, "PQを直径とする円。Qにおける接線と直線PRの交点S。PR=9、RS=7。", figureBody([
                 circle(260, 270, 120, S_THIN),
                 seg([140, 270], [380, 270], S_MAIN),
@@ -1771,7 +1771,7 @@ const EX_FIG = {
         }
     },
     69: {
-        question: {
+        answer: {
             svg: svg(700, 340, "1辺10cmの正方形の四隅から1辺xの正方形を切り取り、直方体の箱を作る。", figureBody([
                 `<rect x="50" y="50" width="200" height="200" fill="none" stroke="currentColor" stroke-width="2"/>`,
                 `<g fill="${ACCENT}" fill-opacity="0.22" stroke="currentColor" stroke-width="1.4">` + [
@@ -1817,7 +1817,7 @@ const EX_FIG = {
         }
     },
     94: {
-        question: {
+        answer: {
             svg: svg(580, 380, "三角形ABCの内部の点P。直線APとBCの交点D。BD対DCが3対5。", figureBody([
                 poly([[80, 60], [80, 330], [520, 330]]),
                 seg([80, 60], [245, 330], S_THIN),
@@ -1832,7 +1832,7 @@ const EX_FIG = {
         }
     },
     95: {
-        question: {
+        answer: {
             svg: svg(520, 380, "三角形OAB。OA=2、OB=3、OAとOBのなす角は鈍角。", figureBody([
                 poly([[240, 320], [400, 320], [180, 88]]),
                 path("M 280 320 A 40 40 0 0 0 230 281", S_THIN),
@@ -1866,7 +1866,7 @@ const EX_FIG = {
         }
     },
     98: {
-        question: {
+        answer: {
             svg: svg(520, 380, "半径1の円周上の3点A,B,C。7OA+5OB+3OC=0。直線COとABの交点H。", figureBody([
                 circle(260, 210, 130, S_THIN),
                 seg([260, 210], [139, 258], S_THIN),
@@ -1929,7 +1929,7 @@ const EX_FIG = {
 
 const EX_REGION = {
     55: {
-        question: {
+        answer: {
             svg: svg(560, 420, "円(x-1)²+y²=25の内部で直線y=-x/2+3/2より上側の領域D。", figureBody([
                 arcShade(240, 220, 120, -0.2838, 2.4981),
                 circle(240, 220, 120, S_THIN),
