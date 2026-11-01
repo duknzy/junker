@@ -2239,41 +2239,55 @@
             };
         }
 
-        // 年号パースヘルパー（紀元前・BC・世紀表記・YYYYMMDD形式を精密ソート・9999フォールバック）
+        // 年号パースヘルパー（紀元前・BC・世紀表記・万年前/千年前・YYYYMMDD形式を精密ソート・9999フォールバック）
         function parseYearSort(yearStr, fallbackSort) {
-            // 1. fallbackSort の正規化（AIがYYYYMMDD形式 [例: 7120000, 15820600] で出力した場合の補正）
+            // 1. fallbackSort の正規化（AIがYYYYMMDD形式 [例: 7120000, 15820600] で出力した場合のみ補正）
+            // ※ 先史時代の負数（例: -7000000, -38000）はそのまま正しく保持する
             let num = (typeof fallbackSort === "number" && !isNaN(fallbackSort)) ? fallbackSort : null;
-            if (num !== null) {
-                if (Math.abs(num) >= 100000) {
-                    num = num < 0 ? -Math.floor(Math.abs(num) / 10000) : Math.floor(num / 10000);
-                } else if (Math.abs(num) >= 10000 && Math.abs(num) > 3000) {
-                    num = num < 0 ? -Math.floor(Math.abs(num) / 100) : Math.floor(num / 100);
+            if (num !== null && num > 3000) {
+                if (num >= 1000000) {
+                    num = Math.floor(num / 10000);
+                } else if (num >= 10000) {
+                    num = Math.floor(num / 100);
                 }
             }
 
-            // 2. yearStr の解析（世紀表記、紀元前、年号テキスト）
+            // 2. yearStr の解析（万年前/千年前、世紀表記、紀元前、年号テキスト）
             if (yearStr != null) {
                 const s = String(yearStr).trim();
                 if (s) {
+                    // 2.1 「約700万年前」「約3万8000年前」等の先史時代表記
+                    const mMan = s.match(/(\d+)\s*万\s*(\d+)?\s*年前/);
+                    if (mMan) {
+                        const high = parseInt(mMan[1], 10) * 10000;
+                        const low = mMan[2] ? parseInt(mMan[2], 10) : 0;
+                        return -(high + low);
+                    }
+                    const mSen = s.match(/(\d+)\s*年前/);
+                    if (mSen) {
+                        return -parseInt(mSen[1], 10);
+                    }
+
                     const isBc = /^(前|紀元前|bc|b\.c\.)/i.test(s) || /前\s*\d+/.test(s) || /-\d+/.test(s);
-                    // 世紀表記（例: "19世紀前半", "前4世紀頃"）
-                    const centMatch = s.match(/(\d+)\s*世紀\s*(前半|初頭|中頃|後半|末)?/);
+                    
+                    // 2.2 世紀表記（例: "19世紀前半", "17世紀初め", "8世紀初頭", "前4世紀頃"）
+                    const centMatch = s.match(/(\d+)\s*世紀\s*(初め|初頭|前期|前半|中頃|半ば|後期|後半|末)?/);
                     if (centMatch) {
                         const cent = parseInt(centMatch[1], 10);
                         const part = centMatch[2] || '';
                         let y = (cent - 1) * 100 + 50;
-                        if (part === '初頭') y = (cent - 1) * 100 + 10;
+                        if (part === '初頭' || part === '初め' || part === '前期') y = (cent - 1) * 100 + 10;
                         else if (part === '前半') y = (cent - 1) * 100 + 25;
-                        else if (part === '中頃') y = (cent - 1) * 100 + 50;
-                        else if (part === '後半') y = (cent - 1) * 100 + 75;
+                        else if (part === '中頃' || part === '半ば') y = (cent - 1) * 100 + 50;
+                        else if (part === '後半' || part === '後期') y = (cent - 1) * 100 + 75;
                         else if (part === '末') y = (cent - 1) * 100 + 90;
                         return isBc ? -y : y;
                     }
+
                     const m = s.match(/\d+/);
                     if (m) {
                         const parsedNum = parseInt(m[0], 10);
-                        // fallbackSortが未設定、または3000超の異常値の場合はyearStrの数値を最優先
-                        if (num === null || num > 3000 || num < -100000) {
+                        if (num === null || num > 3000) {
                             return isBc ? -parsedNum : parsedNum;
                         }
                     }
@@ -2287,6 +2301,7 @@
         // 日本史の時代判定ヘルパー（高校日本史・共通テスト準拠）
         function getJapanEraCategory(yearSort) {
             if (yearSort === 9999 || typeof yearSort !== "number" || isNaN(yearSort)) return "その他";
+            if (yearSort <= -300) return "旧石器・縄文";
             if (yearSort <= 592) return "弥生・古墳";
             if (yearSort <= 710) return "飛鳥";
             if (yearSort <= 794) return "奈良";
@@ -2306,6 +2321,7 @@
             if (activeHistoryType === "japan") {
                 const era = getJapanEraCategory(yearSort);
                 const eraLabelMap = {
+                    "旧石器・縄文": "旧石器・縄文時代（約700万年前〜前4世紀頃）",
                     "弥生・古墳": "弥生・古墳時代（前4世紀〜6世紀末）",
                     "飛鳥": "飛鳥時代（592年〜710年）",
                     "奈良": "奈良時代（710年〜794年）",
