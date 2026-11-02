@@ -1367,16 +1367,46 @@
             if (!raw) return "";
             let t = sanitizeMathText(raw).trim();
 
-            // 小問番号 (1)〜(10) の前で段落改行
-            t = t.replace(/(?<![0-9A-Za-zぁ-んァ-ヶー一-龠々'’])\(\s*([1-9]|10)\s*\)(?!\d)/g, "\n\n($1) ");
+            // 1. 数式ブロック（$$...$$ および $...$）を一時退避して内部のカッコ数字や記号を保護
+            const mathBlocks = [];
+            t = t.replace(/(\$\$[\s\S]*?\$\$|\$[^\$\n]+?\$)/g, (match) => {
+                mathBlocks.push(match);
+                return `%%%MATH_BLOCK_${mathBlocks.length - 1}%%%`;
+            });
 
-            // ローマ数字の小問番号 (i)〜(iv) の前で改行
-            t = t.replace(/(?<![0-9A-Za-zぁ-んァ-ヶー一-龠々'’])\(\s*(i{1,3}|iv)\s*\)/gi, "\n($1) ");
+            // 2. 句点「。」等の直後に小問番号が直接続いている場合があれば改行（文脈参照 (1)で・(1)より 等は除外）
+            t = t.replace(/([。．；])\s*(\(\s*([1-9]|10|[ivx]+)\s*\)|\[\s*([1-9]|10)\s*\])(?!\s*(で|より|を|に|の|から|と|が|を利用|の結果))/gi, "$1\n$2");
+
+            // 3. 行ごとに分割して行頭の小問番号の前に適度な空行を確保
+            const lines = t.split(/\r?\n/);
+            const formattedLines = [];
+
+            for (let i = 0; i < lines.length; i++) {
+                let line = lines[i].trim();
+                if (!line) {
+                    formattedLines.push("");
+                    continue;
+                }
+
+                // 行頭が小問番号 (1)〜(10) または (i)〜(iv) または [1]〜[10] の場合
+                const isSubquestionHeader = /^\s*(\(\s*([1-9]|10|[ivx]+)\s*\)|\[\s*([1-9]|10)\s*\])/i.test(line);
+
+                if (isSubquestionHeader && formattedLines.length > 0 && formattedLines[formattedLines.length - 1] !== "") {
+                    formattedLines.push("");
+                }
+
+                formattedLines.push(line);
+            }
+
+            let result = formattedLines.join("\n");
 
             // 3つ以上の連続改行を2つに圧縮
-            t = t.replace(/\n{3,}/g, "\n\n").trim();
+            result = result.replace(/\n{3,}/g, "\n\n").trim();
 
-            return t.replace(/\n/g, "<br>");
+            // 4. 数式ブロックの復元
+            result = result.replace(/%%%MATH_BLOCK_(\d+)%%%/g, (_, idx) => mathBlocks[idx]);
+
+            return result.replace(/\n/g, "<br>");
         }
 
         function formatMathContent(raw) {
