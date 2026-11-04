@@ -51,6 +51,59 @@
     })();
 
     // ==========================================================================
+    // ⚡ Cache Storage 自動最適化＆旧バージョンキャッシュ完全一掃
+    // ==========================================================================
+    const CURRENT_SW_CACHE_NAME = 'flora-pwa-v5.0';
+    (function cleanObsoleteCaches() {
+        if ('caches' in window) {
+            window.caches.keys().then((keys) => {
+                keys.forEach((key) => {
+                    if (key !== CURRENT_SW_CACHE_NAME) {
+                        console.log('[Flora Storage] Purging obsolete cache from client:', key);
+                        window.caches.delete(key).catch(() => {});
+                    }
+                });
+            }).catch(() => {});
+        }
+    })();
+
+    // ⚡ グローバルストレージ最適化ユーティリティ
+    window.optimizeFloraStorage = async function() {
+        console.log('[Flora Storage] Optimizing client storage...');
+        let deletedCaches = 0;
+        if ('caches' in window) {
+            const keys = await window.caches.keys();
+            for (const key of keys) {
+                if (key !== CURRENT_SW_CACHE_NAME) {
+                    await window.caches.delete(key);
+                    deletedCaches++;
+                }
+            }
+        }
+        if ('serviceWorker' in navigator) {
+            const reg = await navigator.serviceWorker.getRegistration();
+            if (reg) {
+                reg.update().catch(() => {});
+                if (reg.active) {
+                    reg.active.postMessage({ type: 'PURGE_OLD_CACHES' });
+                }
+            }
+        }
+        console.log(`[Flora Storage] Optimization complete. Removed ${deletedCaches} obsolete cache buckets.`);
+        return { success: true, deletedCaches };
+    };
+
+    // ⚡ サービスワーカー自動登録＆最新化
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js').then((reg) => {
+                reg.update().catch(() => {});
+            }).catch((err) => {
+                console.warn('[Flora SW Register]', err);
+            });
+        });
+    }
+
     // 🗄️ IndexedDB 汎用キャッシュストレージ (flora_cache_db)
     // 数百MB〜数GBの容量が安全に利用可能。localStorage を一切消費しない。
     // ==========================================================================

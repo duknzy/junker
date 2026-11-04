@@ -247,6 +247,33 @@
     })();
 
     // ==========================================================================
+    // ⚡ Cache Storage 自動最適化＆旧バージョンキャッシュ完全一掃
+    // ==========================================================================
+    const CURRENT_SW_CACHE_NAME = 'flora-pwa-v5.0';
+    (function cleanObsoleteCachesMobile() {
+        if ('caches' in window) {
+            window.caches.keys().then((keys) => {
+                keys.forEach((key) => {
+                    if (key !== CURRENT_SW_CACHE_NAME) {
+                        console.log('[Flora Mobile Storage] Purging obsolete cache:', key);
+                        window.caches.delete(key).catch(() => {});
+                    }
+                });
+            }).catch(() => {});
+        }
+    })();
+
+    // ⚡ サービスワーカー自動登録＆最新化 (モバイル)
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('../sw.js').then((reg) => {
+                reg.update().catch(() => {});
+            }).catch((err) => {
+                console.warn('[Flora Mobile SW Register]', err);
+            });
+        });
+    }
+
     // 🗄️ IndexedDB 汎用キャッシュストレージ (flora_cache_db)
     // ==========================================================================
     const CACHE_DB_NAME = 'flora_cache_db';
