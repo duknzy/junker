@@ -48,8 +48,8 @@ for (const f of files) {
   }
 }
 
-// 2. Copy directories: icons, m
-for (const sub of ['icons', 'm']) {
+// 2. Copy directories: icons, m, assets, images
+for (const sub of ['icons', 'm', 'assets', 'images']) {
   const srcSub = path.join(rootDir, sub);
   const destSub = path.join(wwwDir, sub);
   if (fs.existsSync(srcSub)) {

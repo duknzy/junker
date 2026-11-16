@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flora | 日本史5授業 一括インポーター</title>
+    <style>
+        :root {
+            --primary: #059669;
+            --primary-hover: #10b981;
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --border: #334155;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 2rem;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 860px;
+        }
+        .header {
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0 0 0.5rem 0;
+            font-size: 2rem;
+            background: linear-gradient(135deg, #34d399, #059669);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .header p {
+            color: var(--text-muted);
+            margin: 0;
+            font-size: 0.95rem;
+        }
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            padding: 0.9rem 2rem;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            width: 100%;
+        }
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+        }
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .lesson-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .lesson-item {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .lesson-title {
+            font-weight: 600;
+            font-size: 1.05rem;
+            margin-bottom: 0.3rem;
+        }
+        .lesson-meta {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            display: flex;
+            gap: 1rem;
+        }
+        .log-box {
+            background: #090d16;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 1rem;
+            max-height: 280px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            color: #94a3b8;
+        }
+        .log-success { color: #34d399; }
+        .log-info { color: #38bdf8; }
+        .log-error { color: #f87171; }
+        .open-btn {
+            background: #334155;
+            color: #f8fafc;
+            text-decoration: none;
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        .open-btn:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌸 Flora 日本史 授業一括インポーター</h1>
+            <p>DeepSeek API で生成した全5授業（プラン・講義本文・暗記事項・年表・重要用語）を Firebase に即時反映します</p>
+        </div>
+
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem;">
+                <span id="auth-status" class="status-badge">Firebase 認証待機中...</span>
+                <span id="data-status" style="font-size: 0.9rem; color: var(--text-muted);">データ読み込み中...</span>
+            </div>
+
+            <button id="import-btn" class="btn-primary" disabled>
+                🚀 全5授業を Firebase にインポートする
+            </button>
+        </div>
+
+        <div class="card">
+            <h3 style="margin: 0 0 1rem 0;">📚 インポート対象の授業プレビュー</h3>
+            <div id="lesson-preview" class="lesson-list">
+                <div style="color: var(--text-muted); text-align: center; padding: 2rem;">データ読み込み待機中...</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 style="margin: 0 0 1rem 0;">📝 処理ログ</h3>
+            <div id="log-box" class="log-box"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+        import { firebaseConfig } from "./firebase-config.js";
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+
+        const authStatus = document.getElementById("auth-status");
+        const dataStatus = document.getElementById("data-status");
+        const importBtn = document.getElementById("import-btn");
+        const previewContainer = document.getElementById("lesson-preview");
+        const logBox = document.getElementById("log-box");
+
+        let currentUser = null;
+        let lessonsData = null;
+
+        function log(msg, type = "info") {
+            const div = document.createElement("div");
+            const time = new Date().toLocaleTimeString();
+            div.className = `log-${type}`;
+            div.textContent = `[${time}] ${msg}`;
+            logBox.appendChild(div);
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
+        // 1. JSONデータのロード
+        async function loadLessonsData() {
+            try {
+                const res = await fetch("日本史/generated/all_lessons.json");
+                if (!res.ok) throw new Error("all_lessons.json が見つかりません");
+                lessonsData = await res.json();
+                dataStatus.textContent = `✅ 全${lessonsData.length}授業の生成データを取得完了`;
+                renderPreview();
+                checkReady();
+            } catch (err) {
+                dataStatus.textContent = "❌ データ取得失敗: " + err.message;
+                log("データ取得エラー: " + err.message, "error");
+            }
+        }
+
+        function renderPreview() {
+            if (!lessonsData || lessonsData.length === 0) return;
+            previewContainer.innerHTML = "";
+            lessonsData.forEach((l, idx) => {
+                const div = document.createElement("div");
+                div.className = "lesson-item";
+                const partsCount = (l.parts || []).length;
+                const termsCount = (l.keyTerms || []).length;
+                const eventsCount = (l.historicalEvents || []).length;
+                const memoCount = (l.memorizationPoints || []).length;
+                div.innerHTML = `
+                    <div>
+                        <div class="lesson-title">第${idx+1}授業: ${l.title}</div>
+                        <div class="lesson-meta">
+                            <span>📖 ${partsCount}パート（講義本文完備）</span>
+                            <span>⚡ 暗記カード ${memoCount}枚</span>
+                            <span>📅 年表 ${eventsCount}件</span>
+                            <span>🔑 用語 ${termsCount}個</span>
+                        </div>
+                    </div>
+                    <a href="lesson.html?id=${l.id}" target="_blank" class="open-btn" id="open-btn-${l.id}" style="display: none;">授業を開く →</a>
+                `;
+                previewContainer.appendChild(div);
+            });
+        }
+
+        function checkReady() {
+            if (currentUser && lessonsData && lessonsData.length > 0) {
+                importBtn.disabled = false;
+                importBtn.innerHTML = "🚀 全5授業を Firebase にインポートする";
+            }
+        }
+
+        // 2. Auth監視
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+            if (user) {
+                authStatus.textContent = `👤 ログイン中: ${user.email || user.uid}`;
+                authStatus.style.background = "rgba(16, 185, 129, 0.15)";
+                authStatus.style.color = "#34d399";
+                log(`Firebase認証成功: UID=${user.uid}`, "success");
+                checkReady();
+            } else {
+                authStatus.textContent = "⚠️ 未ログイン（Floraで一度ログインしてください）";
+                authStatus.style.background = "rgba(239, 68, 68, 0.15)";
+                authStatus.style.color = "#f87171";
+                importBtn.disabled = true;
+                log("Firebase未ログイン状態です。別タブで Flora (index.html) を開いてログインしてください。", "error");
+            }
+        });
+
+        // 3. インポート実行
+        importBtn.addEventListener("click", async () => {
+            if (!currentUser || !lessonsData) return;
+            importBtn.disabled = true;
+            importBtn.textContent = "⏳ インポート中...";
+            log(`インポート処理を開始します（UID: ${currentUser.uid}）...`, "info");
+
+            let successCount = 0;
+            for (let i = 0; i < lessonsData.length; i++) {
+                const lesson = lessonsData[i];
+                const lessonId = lesson.id;
+                try {
+                    log(`[${i+1}/${lessonsData.length}] 授業「${lesson.title}」を書き込み中...`, "info");
+                    const lessonRef = ref(database, `users/${currentUser.uid}/lessons/${lessonId}`);
+                    await set(lessonRef, lesson);
+                    log(`  ✓ 授業「${lesson.title}」反映完了！`, "success");
+                    
+                    const openBtn = document.getElementById(`open-btn-${lessonId}`);
+                    if (openBtn) openBtn.style.display = "inline-block";
+                    successCount++;
+                } catch (err) {
+                    log(`  ✗ 授業「${lesson.title}」エラー: ${err.message}`, "error");
+                }
+            }
+
+            if (successCount === lessonsData.length) {
+                importBtn.textContent = "🎉 全5授業のインポートが完了しました！";
+                importBtn.style.background = "#059669";
+                log("全授業のインポートが正常に完了しました！上の「授業を開く」から各パート待ち時間なしで受講できます。", "success");
+            } else {
+                importBtn.disabled = false;
+                importBtn.textContent = "⚠️ 一部失敗（再試行可能）";
+            }
+        });
+
+        loadLessonsData();
+    </script>
+</body>
+</html>

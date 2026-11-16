@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ページが見つかりません | Flora</title>
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+    <link rel="stylesheet" href="./style.css?v=3.5">
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background: var(--bg-base, #0b0f19);
+            color: var(--text-main, #f8fafc);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            text-align: center;
+            padding: 1.5rem;
+        }
+        .error-card {
+            background: var(--card-bg, #111827);
+            border: 1px solid var(--border-color, #1f2937);
+            border-radius: 16px;
+            padding: 2.5rem 2rem;
+            max-width: 480px;
+            width: 100%;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+        }
+        .error-icon {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+        }
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 0.8rem;
+            color: var(--accent-cyan, #00f3ff);
+        }
+        p {
+            font-size: 0.95rem;
+            color: var(--text-muted, #94a3b8);
+            line-height: 1.6;
+            margin-bottom: 1.8rem;
+        }
+        .home-btn {
+            display: inline-block;
+            background: var(--accent-cyan, #00f3ff);
+            color: #000;
+            text-decoration: none;
+            font-weight: 800;
+            padding: 0.8rem 1.8rem;
+            border-radius: 12px;
+            transition: opacity 0.2s;
+        }
+        .home-btn:hover {
+            opacity: 0.85;
+        }
+    </style>
+</head>
+<body>
+    <div class="error-card">
+        <div class="error-icon">🔍</div>
+        <h1>404 - ページが見つかりません</h1>
+        <p>
+            指定されたページは移動したか、URLが正しくない可能性があります。<br>
+            Flora ダッシュボードへ戻りましょう。
+        </p>
+        <a href="index.html" class="home-btn" id="redirect-btn">ダッシュボードへ戻る</a>
+    </div>
+
+    <script>
+        // GitHub Pages のリポジトリパスを考慮したホーム遷移
+        (function() {
+            const pathSegments = window.location.pathname.split('/').filter(Boolean);
+            const btn = document.getElementById('redirect-btn');
+            // リポジトリ配下の GitHub Pages の場合 (例: /username/repo/...)
+            if (pathSegments.length > 0) {
+                // 最上位ディレクトリ直下の index.html へ戻る
+                btn.href = 'index.html';
+            }
+        })();
+    </script>
+</body>
+</html>

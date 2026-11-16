@@ -954,9 +954,12 @@ export async function fetchWithKeyRotation(keys, buildRequest, { requestTimeoutM
 
 // --------------------------------------------------------------------------
 // 🧠 Geminiモデル一覧・機能割り当て
-// 💡 Google公式推奨の 3.8 / 3.7 / 3.6 / 3.5 系統
+// 💡 Google公式推奨の Gemini 4 Hydrogen / 3.8 / 3.7 / 3.6 / 3.5 系統
+//    Gemini 4 Hydrogen (gemini-4-hydrogen) は 2026/11/12 GA。
+//    1M統合コンテキスト・Structured Outputs対応・無料枠あり。
 // --------------------------------------------------------------------------
 export const GEMINI_MODEL_FALLBACK_LIST = [
+    'gemini-4-hydrogen',
     'gemini-3.8-flash',
     'gemini-3.7-flash',
     'gemini-3.6-flash',
@@ -1025,6 +1028,7 @@ export const GEMINI_THINKING_LEVELS = [
     { id: 'low',     label: 'low（低思考・高速応答）', description: '要約・抽出・定型処理向け・高速' },
     { id: 'medium',  label: 'medium（中思考・標準バランス）', description: '標準的な推論と応答速度のバランス' },
     { id: 'high',    label: 'high（高思考・深層推論）', description: '論理思考・難問解説・深層推論（※Lite系統は自動でこれに固定）' },
+    { id: 'xhigh',   label: 'xhigh（超高思考・最深推論）', description: 'Gemini 4 Hydrogen専用。難問の多段推論向け（非対応モデルはhighへ自動補正）' },
     { id: 'minimal', label: 'minimal（極小・最速）', description: '思考を極小化（非対応モデルはlowに自動補正）' }
 ];
 
@@ -1466,7 +1470,11 @@ export function getActiveThinkingIdForEngine(rawThinking, isDeepseek, modelName 
         if (clean === "medium") return "high";
         return "default";
     } else {
-        if (["minimal", "low", "medium", "high"].includes(clean)) return clean;
+        if (["minimal", "low", "medium", "high", "xhigh"].includes(clean)) {
+            // xhigh は Gemini 4 系専用。それ以外は high として扱う。
+            if (clean === "xhigh" && modelName && !modelName.includes("gemini-4")) return "high";
+            return clean;
+        }
         if (clean === "none") return "minimal";
         if (clean === "max") return "high";
         return "default";
@@ -1543,10 +1551,15 @@ export function buildGeminiThinkingConfig(modelName, thinkingLevel) {
         return { thinkingConfig: { thinkingBudget: budget } };
     }
 
-    // Gemini 3系（gemini-3.8-flash, gemini-3.1-pro-preview, gemini-3.1-flash-lite 等）
+    // Gemini 3/4系（gemini-4-hydrogen, gemini-3.8-flash, gemini-3.1-pro-preview 等）
     let targetLevel = cleanLvl;
     if (targetLevel === "none") targetLevel = "minimal";
     if (targetLevel === "max") targetLevel = "high";
+
+    // 💡 xhigh は Gemini 4 系のみ対応。それ以外は high へ安全にクランプする。
+    if (targetLevel === "xhigh" && !(modelName && modelName.includes("gemini-4"))) {
+        targetLevel = "high";
+    }
 
     // 💡 重要: gemini-3.8-flash や gemini-3.1-pro-preview は "minimal" を受け付けず
     // HTTP 400 "Thinking level MINIMAL is not supported for this model" になるため、
@@ -1555,7 +1568,7 @@ export function buildGeminiThinkingConfig(modelName, thinkingLevel) {
         targetLevel = "low";
     }
 
-    if (!["minimal", "low", "medium", "high"].includes(targetLevel)) {
+    if (!["minimal", "low", "medium", "high", "xhigh"].includes(targetLevel)) {
         targetLevel = "medium";
     }
 
@@ -1573,7 +1586,7 @@ export function mapThinkingLevelToDeepseekReasoning(level) {
 
 export function normalizeGeminiThinkingLevel(level) {
     if (!level || level === "default" || level === "auto") return null;
-    if (["minimal", "low", "medium", "high"].includes(level)) return level;
+    if (["minimal", "low", "medium", "high", "xhigh"].includes(level)) return level;
     if (level === "none") return "minimal";
     if (level === "max") return "high";
     return null;

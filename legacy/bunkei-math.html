@@ -1,0 +1,2449 @@
+<!DOCTYPE html>
+<html lang="ja" class="notranslate" translate="no">
+<head>
+    <meta name="google" content="notranslate">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#059669" id="meta-theme-color">
+    <script>
+        (function() {
+            const stored = localStorage.getItem('flora-dark-mode');
+            const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (stored === 'true' || (!stored && prefersDark)) {
+                document.documentElement.classList.add('dark');
+            }
+        })();
+    </script>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="icons/icon.png">
+    <link rel="apple-touch-icon" href="icons/icon.png">
+    <link rel="stylesheet" href="style.css?v=3.5">
+
+    <title>Flora | 文系の数学 重要事項完全習得編</title>
+
+    <!-- MathJax設定（problem.html と完全同一） -->
+    <script>
+        window.MathJax = {
+            loader: { load: ['[tex]/bbox', '[tex]/color'] },
+            tex: {
+                packages: { '[+]': ['bbox', 'color'] },
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true,
+                macros: {
+                    fbox: ["\\bbox[border:1.5px solid currentColor, 3px]{\\vphantom{A}#1}", 1],
+                    boxed: ["\\bbox[border:1.5px solid currentColor, 3px]{\\vphantom{A}#1}", 1]
+                }
+            },
+            options: {
+                ignoreHtmlClass: 'tex2jax_ignore',
+                processHtmlClass: 'tex2jax_process',
+                skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+            },
+            chtml: { displayAlign: 'left' },
+            startup: {
+                typeset: false,
+                ready: () => {
+                    MathJax.startup.defaultReady();
+                    if (typeof window.safeTypeset === "function") {
+                        window.safeTypeset();
+                    }
+                }
+            }
+        };
+
+        let typesetQueue = Promise.resolve();
+        function safeTypeset(targets) {
+            typesetQueue = typesetQueue.then(async () => {
+                if (!window.MathJax) return;
+                if (!window.MathJax.typesetPromise) {
+                    if (window.MathJax.startup && window.MathJax.startup.promise) {
+                        await window.MathJax.startup.promise.catch(() => {});
+                    }
+                }
+                if (!window.MathJax || !window.MathJax.typesetPromise) return;
+
+                try {
+                    let els = null;
+                    if (Array.isArray(targets)) {
+                        els = targets.filter(el => el && el.nodeType === 1 && el.isConnected);
+                    } else if (targets && targets.nodeType === 1 && targets.isConnected) {
+                        els = [targets];
+                    }
+                    if (els && els.length > 1) {
+                        els = els.filter(el => !els.some(other => other !== el && el.contains(other)));
+                    }
+                    if (typeof MathJax.typesetClear === "function") {
+                        try {
+                            if (els && els.length > 0) MathJax.typesetClear(els);
+                            else if (!targets) MathJax.typesetClear();
+                        } catch (_) {}
+                    }
+                    if (els && els.length > 0) await MathJax.typesetPromise(els);
+                    else if (!targets) await MathJax.typesetPromise();
+                } catch (e) {
+                    console.debug("MathJax notice (handled):", e);
+                }
+            }).catch(err => console.debug("MathJax queue notice:", err));
+            return typesetQueue;
+        }
+        window.safeTypeset = safeTypeset;
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
+    <style>
+        /* ==========================================================================
+           problem.html 完全互換レイアウト & 2カラムグリッド（リサイズ対応）
+           ========================================================================== */
+        .problem-bento-grid {
+            --problem-chat-width: 380px;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) var(--problem-chat-width);
+            gap: 1.5rem;
+            align-items: start;
+            position: relative;
+            transition: grid-template-columns 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .problem-bento-grid.is-resizing {
+            transition: none !important;
+            user-select: none !important;
+        }
+        @media (max-width: 1024px) {
+            .problem-bento-grid {
+                grid-template-columns: 1fr !important;
+            }
+            .chat-resize-handle {
+                display: none !important;
+            }
+        }
+
+        /* ↔ 質問チャットパネルのリサイズハンドル */
+        .chat-resize-handle {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 14px;
+            cursor: col-resize;
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            touch-action: none;
+            transition: background 0.15s ease;
+        }
+        .chat-resize-handle:hover,
+        .chat-resize-handle.is-active {
+            background: rgba(5, 150, 105, 0.08);
+        }
+        html.dark .chat-resize-handle:hover,
+        html.dark .chat-resize-handle.is-active {
+            background: rgba(52, 211, 153, 0.12);
+        }
+        .chat-resize-grip {
+            width: 3px;
+            height: 38px;
+            border-radius: 9999px;
+            background: var(--border-color);
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        .chat-resize-handle:hover .chat-resize-grip,
+        .chat-resize-handle.is-active .chat-resize-grip {
+            background: var(--brand-primary);
+            opacity: 1;
+            height: 56px;
+            width: 4px;
+            box-shadow: 0 0 10px rgba(5, 150, 105, 0.5);
+        }
+        body.chat-is-resizing {
+            cursor: col-resize !important;
+            user-select: none !important;
+            -webkit-user-select: none !important;
+        }
+
+        /* ↔ 広げる・縮めるボタン */
+        .ai-expand-toggle-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 0.2rem 0.55rem;
+            border-radius: var(--radius-full);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+        }
+        .ai-expand-toggle-btn:hover {
+            color: var(--brand-primary);
+            border-color: var(--brand-border);
+            background: var(--brand-light);
+        }
+
+        /* エンジン切り替えボタングループ */
+        .engine-toggle-group {
+            display: inline-flex;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-full);
+            padding: 2px;
+            gap: 2px;
+        }
+        .engine-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 0.2rem 0.6rem;
+            border-radius: var(--radius-full);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+        }
+        .engine-btn.active {
+            background: var(--brand-primary);
+            color: #fff;
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* 指導方針バー */
+        .chat-teaching-styles-section {
+            margin-bottom: 0.5rem;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 0.4rem 0.5rem;
+        }
+        .chat-styles-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.68rem;
+            margin-bottom: 0.3rem;
+        }
+        .chat-styles-micro-label {
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+        .chat-styles-active-badge {
+            color: var(--brand-primary);
+            font-weight: 700;
+        }
+        .chat-teaching-styles-bar {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.25rem;
+        }
+        .teaching-style-btn {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-size: 0.68rem;
+            font-weight: 700;
+            padding: 0.25rem 0.2rem;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.1rem;
+            white-space: nowrap;
+        }
+        .teaching-style-btn.active {
+            background: var(--brand-primary);
+            color: #fff;
+            border-color: var(--brand-primary);
+        }
+
+        .math-fbox-blank {
+            display: inline-block;
+            min-width: 28px;
+            height: 1.25em;
+            border: 1.5px solid currentColor;
+            border-radius: 3px;
+            vertical-align: -0.2em;
+            margin: 0 4px;
+            background: rgba(0, 0, 0, 0.02);
+        }
+        html.dark .math-fbox-blank {
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .main-question-tile {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-xl);
+            padding: 1.8rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .answer-formula-tile {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-xl);
+            padding: 1.8rem;
+            box-shadow: var(--shadow-sm);
+            margin-top: 1.25rem;
+        }
+
+        .question-text-block {
+            color: var(--text-primary);
+            font-weight: 600;
+            line-height: 1.85;
+            text-align: left;
+            width: 100%;
+            padding: 0.5rem 0;
+            font-size: 1.12rem;
+            word-break: break-word;
+        }
+        .question-text-block mjx-container,
+        .model-answer-text mjx-container,
+        .strategy-pattern-content mjx-container {
+            margin: 0 0.12em !important;
+        }
+
+        /* 図が無いと解けない問題用の埋め込み図 */
+        .problem-figure {
+            margin: 1rem 0 0.35rem;
+            padding: 0.9rem 0.75rem 0.65rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            background: var(--bg-subtle);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        .problem-figure svg {
+            display: block;
+            width: 100%;
+            max-width: 720px;
+            height: auto;
+            overflow: visible;
+        }
+        .problem-figure figcaption {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            font-weight: 600;
+            line-height: 1.55;
+            text-align: center;
+        }
+
+        .question-collapsible-area {
+            position: relative;
+            overflow: hidden;
+            max-height: 12000px;
+            transition: max-height 0.3s ease;
+        }
+        .question-collapsible-area.is-collapsed {
+            max-height: 160px;
+        }
+        .question-collapse-toggle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.3rem;
+            width: 100%;
+            margin-top: 0.6rem;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-size: var(--fs-xs);
+            font-weight: 700;
+            padding: 0.4rem 0.8rem;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .question-collapse-toggle:hover {
+            color: var(--text-primary);
+            background: #E2E8F0;
+        }
+
+        .reveal-zone {
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+            width: 100%;
+            margin-top: 1.2rem;
+        }
+
+        .model-answer-text {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 1.4rem;
+            font-size: 0.98rem;
+            line-height: 1.85;
+            color: var(--text-primary);
+            overflow-x: auto;
+            word-break: break-word;
+        }
+
+        /* 🧭 定石ボックス（文系数学の必勝ポイント） */
+        .strategy-pattern-box {
+            background: #FFFBEB;
+            border: 1px solid #FDE68A;
+            border-radius: var(--radius-lg);
+            padding: 1.2rem 1.4rem;
+            color: #78350F;
+            transition: background 0.2s ease, border-color 0.2s ease;
+        }
+        .strategy-pattern-title {
+            font-size: 0.84rem;
+            color: #B45309;
+            font-weight: 700;
+            margin-bottom: 0.45rem;
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        .strategy-pattern-content {
+            background: transparent !important;
+            border: none !important;
+            padding: 0 !important;
+            line-height: 1.8 !important;
+            font-size: 0.95rem;
+            color: #78350F !important;
+            font-weight: 600;
+            word-break: break-word;
+        }
+        html.dark .strategy-pattern-box {
+            background: rgba(245, 158, 11, 0.09) !important;
+            border: 1px solid rgba(245, 158, 11, 0.32) !important;
+            box-shadow: inset 0 1px 0 rgba(251, 191, 36, 0.12), 0 2px 10px rgba(0, 0, 0, 0.25);
+            color: #FEF3C7 !important;
+        }
+        html.dark .strategy-pattern-title {
+            color: #FBBF24 !important;
+            text-shadow: 0 0 14px rgba(251, 191, 36, 0.35);
+        }
+        html.dark .strategy-pattern-content {
+            color: #FEF3C7 !important;
+        }
+        html.dark .strategy-pattern-box mjx-container {
+            color: #FEF3C7 !important;
+            fill: #FEF3C7 !important;
+        }
+
+        .judgment-buttons {
+            display: flex;
+            gap: 1rem;
+            width: 100%;
+            margin-top: 0.5rem;
+        }
+
+        .btn-correct {
+            background: var(--brand-primary);
+            color: #fff;
+            border: none;
+        }
+        .btn-correct:hover {
+            background: var(--brand-hover);
+            transform: translateY(-1px);
+        }
+
+        /* 🤖 右サイドバー：AI TUTOR パネル */
+        .ai-sidebar-tile {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-xl);
+            padding: 1.4rem;
+            box-shadow: var(--shadow-sm);
+            position: sticky;
+            top: 1.5rem;
+            height: calc(100vh - 5rem);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .chat-history {
+            flex-grow: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            min-width: 0;
+            width: 100%;
+            padding: 0.5rem 0.2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .chat-bubble {
+            padding: 0.8rem 1.05rem;
+            border-radius: var(--radius-lg);
+            font-size: 0.88rem;
+            line-height: 1.75;
+            max-width: 92%;
+            word-break: break-word;
+            white-space: normal;
+        }
+        .chat-bubble p {
+            margin: 0.4rem 0;
+        }
+        .chat-bubble p:first-child {
+            margin-top: 0;
+        }
+        .chat-bubble p:last-child {
+            margin-bottom: 0;
+        }
+        .chat-bubble h4 {
+            margin: 0.6rem 0 0.3rem;
+            font-size: 0.95rem;
+            font-weight: 700;
+        }
+        .chat-bubble ul, .chat-bubble ol {
+            margin: 0.4rem 0 0.4rem 1.2rem;
+            padding: 0;
+        }
+        .chat-bubble li {
+            margin-bottom: 0.25rem;
+        }
+        .chat-bubble mjx-container {
+            margin: 0 0.12em !important;
+        }
+        .bubble-ai {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            align-self: flex-start;
+        }
+        .bubble-user {
+            background: var(--brand-primary);
+            color: #fff;
+            align-self: flex-end;
+        }
+
+        /* 💬 AIバブル内アクションバー（気づきメモ転記・コピー） */
+        .ai-bubble-action-bar {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 0.4rem;
+            margin-top: 0.65rem;
+            padding-top: 0.45rem;
+            border-top: 1px dashed var(--border-color);
+            flex-wrap: wrap;
+        }
+        .ai-bubble-action-btn {
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 0.22rem 0.55rem;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-color);
+            background: var(--bg-surface);
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            transition: all 120ms ease;
+        }
+        .ai-bubble-action-btn:hover {
+            color: var(--text-primary);
+            border-color: var(--brand-primary);
+            background: rgba(5, 150, 105, 0.08);
+        }
+        .ai-bubble-action-btn.save-insight-btn-highlight {
+            border-color: rgba(99, 102, 241, 0.4);
+            color: #6366F1;
+            background: rgba(99, 102, 241, 0.08);
+        }
+        .ai-bubble-action-btn.save-insight-btn-highlight:hover {
+            border-color: #6366F1;
+            background: rgba(99, 102, 241, 0.16);
+            color: #4F46E5;
+        }
+        html.dark .ai-bubble-action-btn.save-insight-btn-highlight {
+            color: #A5B4FC;
+            background: rgba(99, 102, 241, 0.15);
+        }
+
+        /* 🧠 気づきメモ用サイドドロワー（モーダル） */
+        .insight-drawer-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: stretch;
+            justify-content: flex-end;
+            z-index: 100000;
+        }
+        .insight-drawer-overlay.active {
+            display: flex;
+        }
+        .insight-drawer-content {
+            width: min(540px, 94vw);
+            height: 100%;
+            background: var(--bg-surface);
+            border-left: 1px solid var(--border-color);
+            box-shadow: var(--shadow-xl);
+            padding: 1.8rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            animation: slideInInsightDrawer 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes slideInInsightDrawer {
+            from { transform: translateX(28px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .insight-drawer-answer-ref {
+            margin-top: 1.2rem;
+            padding: 1.1rem;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            max-height: 35vh;
+            overflow-y: auto;
+        }
+
+        .chat-quick-chips-wrap {
+            display: flex;
+            gap: 0.35rem;
+            flex-wrap: wrap;
+            margin-top: 0.6rem;
+            padding-top: 0.6rem;
+            border-top: 1px solid var(--border-subtle);
+        }
+        .chat-quick-chip-btn {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            border-radius: var(--radius-full);
+            padding: 0.25rem 0.6rem;
+            font-size: 0.72rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.12s ease;
+        }
+        .chat-quick-chip-btn:hover {
+            color: var(--brand-primary);
+            border-color: var(--brand-border);
+            background: var(--brand-light);
+        }
+
+        .chat-input-wrapper {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+            background: var(--bg-subtle);
+            padding: 0.6rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+        }
+        .chat-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-size: var(--fs-sm);
+            outline: none;
+            resize: none;
+            min-height: 38px;
+            font-family: inherit;
+        }
+
+        /* 📚 問題選択モーダル */
+        .picker-modal-overlay {
+            position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px);
+            z-index: 10000; display: none; align-items: center; justify-content: center; padding: 1.5rem;
+        }
+        .picker-modal-overlay.open { display: flex; }
+        .picker-modal-card {
+            background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-xl); width: 100%; max-width: 820px; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden;
+        }
+        .picker-modal-header {
+            padding: 1.2rem 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between;
+        }
+        .picker-modal-body {
+            padding: 1.2rem 1.5rem; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 0.8rem;
+        }
+        .picker-item-row {
+            padding: 0.85rem 1.1rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);
+            background: var(--bg-subtle); display: flex; align-items: center; justify-content: space-between;
+            gap: 1rem; cursor: pointer; transition: all 120ms ease;
+        }
+        .picker-item-row:hover {
+            border-color: var(--brand-primary); background: rgba(5, 150, 105, 0.05); transform: translateY(-1px);
+        }
+        .picker-item-row.active {
+            border-color: var(--brand-primary); background: rgba(5, 150, 105, 0.1); border-left: 4px solid var(--brand-primary);
+        }
+
+        /* 準備中表示 */
+        .empty-problem-state {
+            text-align: center;
+            padding: 4rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        /* 📘 例題 / 📝 演習問題 切替タブ */
+        .mode-tabs-container {
+            display: flex;
+            gap: 0.6rem;
+            margin-bottom: 1.1rem;
+            flex-wrap: wrap;
+        }
+        .flora-tab-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1.15rem;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border: 1px solid var(--border-color);
+            background: var(--bg-surface);
+            color: var(--text-secondary);
+            transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .flora-tab-btn:hover {
+            border-color: var(--brand-primary);
+            color: var(--text-primary);
+            background: var(--bg-subtle);
+        }
+        .flora-tab-btn.active {
+            background: var(--brand-primary) !important;
+            color: #ffffff !important;
+            border-color: var(--brand-primary) !important;
+            box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25);
+        }
+    </style>
+</head>
+<body class="tex2jax_ignore">
+
+    <div class="app-layout">
+        <!-- 🌿 左側共通サイドバー -->
+        <div id="flora-sidebar"></div>
+
+        <!-- 💻 メインコンテンツ -->
+        <main class="app-main">
+            <div class="workspace-content-wrap">
+
+                <!-- 📘 例題 / 📝 演習問題 切替タブ -->
+                <div class="mode-tabs-container">
+                    <button type="button" class="flora-tab-btn active" id="tab-mode-reidai">
+                        <span>📘</span> 例題編 (全158題)
+                    </button>
+                    <button type="button" class="flora-tab-btn" id="tab-mode-exercise">
+                        <span>📝</span> 演習問題編 (全115題)
+                    </button>
+                </div>
+
+                <!-- ページヘッダー（problem.html と完全同一構造） -->
+                <div class="page-header" style="margin-bottom: 1.25rem;">
+                    <div class="page-title-group">
+                        <h1 class="page-title" id="page-problem-title" style="font-size: 1.35rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                            問題名: <span id="header-problem-name">読み込み中...</span>
+                        </h1>
+                        <p class="page-subtitle" id="header-problem-sub">
+                            河合出版『文系の数学 重要事項完全習得編 改訂版』// 例題演習モード
+                        </p>
+                    </div>
+
+                    <!-- 右上ボタン群 -->
+                    <div class="page-actions" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                        <span class="flora-badge badge-math" id="pill-progress-no" style="font-weight: 800; padding: 0.4rem 0.8rem; font-size: 0.82rem;">
+                            通し演習 No. 1 / 158
+                        </span>
+                        <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="btn-prev-problem" title="前の問題へ戻る (Alt + ←)">
+                            ◀ 前の問題
+                        </button>
+                        <button type="button" class="flora-btn flora-btn-primary btn-sm" id="btn-next-problem" title="次の問題へ進む (Alt + →)">
+                            ▶ 次の問題
+                        </button>
+                        <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="btn-open-problem-picker">
+                            📚 他の問題を選ぶ
+                        </button>
+                        <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="btn-random-problem" title="登録問題からランダムで出題">
+                            🎲 ランダム
+                        </button>
+                        <a href="index.html" class="flora-btn flora-btn-ghost btn-sm" id="btn-back-to-dashboard">
+                            ← ダッシュボード
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 2カラムグリッド（左：問題＆解答、右：AI TUTOR） -->
+                <div class="problem-bento-grid">
+
+                    <!-- 左カラム：問題 ＆ 解答・自己採点 -->
+                    <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+
+                        <!-- 1. 問題表示セクション -->
+                        <section class="main-question-tile" id="tile-question-section">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; flex-wrap: wrap; gap: 0.6rem;">
+                                <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                                    <span class="flora-badge badge-math" id="question-badge">数学 // 数と式 // 例題 1</span>
+                                    <span id="question-source-tag" class="flora-badge" style="background:var(--bg-subtle); color:var(--text-secondary); font-size:0.75rem;">
+                                        出題: 京都産業大など
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- 🔗 例題・演習問題 相互ジャンプバナー -->
+                            <div id="cross-link-container" style="margin: 0.2rem 0 0.8rem 0; display: none;">
+                                <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="btn-cross-link" style="font-size: 0.8rem; padding: 0.35rem 0.85rem; border-color: var(--brand-primary); color: var(--brand-primary); font-weight: 700; background: rgba(5, 150, 105, 0.08); display: inline-flex; align-items: center; gap: 0.4rem; border-radius: 8px;">
+                                    🔗 <span id="cross-link-text">対応例題を開く</span>
+                                </button>
+                            </div>
+
+                            <div class="question-collapsible-area" id="question-collapsible-area">
+                                <div class="tex2jax_process question-text-block" id="question-text-block">
+                                    <!-- 数式がMathJaxで展開される -->
+                                </div>
+                            </div>
+                            <button type="button" class="question-collapse-toggle" id="question-collapse-toggle">▲ 折りたたむ</button>
+                        </section>
+
+                        <!-- 写真準備中プレースホルダー（例題22〜158） -->
+                        <section class="main-question-tile empty-problem-state" id="tile-empty-section" style="display: none;">
+                            <div style="font-size: 2.8rem;">📷</div>
+                            <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary);" id="empty-title">例題の写真データを準備中</h3>
+                            <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.7; max-width: 500px;">
+                                この例題の問題写真はすでに撮影されています。<br>
+                                チャットに写真を送っていただければ、即座に問題・解答・必勝ポイントがデータ化され、この画面で解けるようになります！
+                            </p>
+                            <button type="button" class="flora-btn flora-btn-secondary" id="btn-back-to-problem1">
+                                例題1へ戻る
+                            </button>
+                        </section>
+
+                        <!-- 2. 解答・自己採点セクション -->
+                        <section class="answer-formula-tile" id="tile-answer-section">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; gap: 0.6rem; flex-wrap: wrap;">
+                                <h3 style="font-family: var(--font-heading); font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">📝 解答・自己採点</h3>
+                                <button type="button" class="flora-btn flora-btn-secondary btn-sm" id="open-insight-modal-btn" style="border-color: rgba(99, 102, 241, 0.4); color: #6366F1; font-weight: 700; background: rgba(99, 102, 241, 0.06); display: inline-flex; align-items: center; gap: 0.35rem;">
+                                    🧠 この問題の「気づき・極意」をメモする
+                                </button>
+                            </div>
+
+                            <div class="self-check-container">
+                                <!-- 模範解答表示ボタン -->
+                                <div class="reveal-btn-area" id="reveal-btn-wrap" style="display: flex; gap: 0.6rem; flex-direction: column;">
+                                    <button type="button" class="flora-btn flora-btn-primary btn-lg" id="show-answer-btn" style="width:100%;">
+                                        👁️ 模範解答を表示して答え合わせする
+                                    </button>
+                                </div>
+
+                                <!-- 展開ゾーン（解答・定石・採点） -->
+                                <div class="reveal-zone" id="answer-reveal-zone" style="display: none;">
+
+                                    <!-- 🧭 文系数学の必勝ポイント（定石ボックス） -->
+                                    <div id="strategy-pattern-box" class="strategy-pattern-box">
+                                        <div class="strategy-pattern-title">🧭 考え方の定石（文系数学の必勝ポイント）</div>
+                                        <div class="tex2jax_process strategy-pattern-content" id="target-strategy-pattern"></div>
+                                    </div>
+
+                                    <!-- 模範解答 & 解説講義 -->
+                                    <div>
+                                        <div style="font-size:0.8rem; color:var(--text-secondary); font-weight:700; margin-bottom:0.4rem;">💡 模範解答 & 解説講義</div>
+                                        <div class="tex2jax_process model-answer-text" id="target-model-answer"></div>
+                                    </div>
+
+                                    <!-- 自己採点ボタン -->
+                                    <div class="judgment-buttons">
+                                        <button type="button" class="flora-btn flora-btn-danger btn-lg" id="btn-judge-wrong" style="flex: 1;">
+                                            ❌ 間違えた（再挑戦）
+                                        </button>
+                                        <button type="button" class="flora-btn btn-correct btn-lg" id="btn-judge-right" style="flex: 1;">
+                                            🎉 合ってた（克服完了！）
+                                        </button>
+                                    </div>
+
+                                    <!-- アクションボタン群 -->
+                                    <div style="display: flex; gap: 0.8rem; width: 100%; flex-wrap: wrap; margin-top: 0.4rem;">
+                                        <button type="button" class="flora-btn flora-btn-secondary" id="activate-ai-question-btn" style="flex: 1;">
+                                            💡 AIに質問する
+                                        </button>
+                                        <button type="button" class="flora-btn flora-btn-secondary" id="open-insight-modal-btn-sub" style="flex: 1; border-color: rgba(99, 102, 241, 0.4); color: #6366F1; font-weight: 700; background: rgba(99, 102, 241, 0.04);">
+                                            🧠 気づきメモを書く
+                                        </button>
+                                        <button type="button" class="flora-btn flora-btn-secondary" id="btn-quick-next-problem" style="flex: 1; border-color: var(--brand-primary); color: var(--brand-primary); font-weight:700;">
+                                            ▶ 次の問題へ進む (Alt + →)
+                                        </button>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </section>
+
+                    </div>
+
+                    <!-- 右カラム：AI TUTOR パネル（problem.html 完全同一） -->
+                    <aside class="ai-sidebar-tile">
+                        <!-- ↔ パネル幅のドラッグリサイズハンドル -->
+                        <div class="chat-resize-handle" id="chat-resize-handle" title="ドラッグして幅を自由に変更（ダブルクリックで380pxにリセット）">
+                            <div class="chat-resize-grip"></div>
+                        </div>
+
+                        <!-- ヘッダー -->
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; gap: 0.4rem;">
+                            <div>
+                                <div style="display: flex; align-items: center; gap: 0.4rem;">
+                                    <span class="flora-badge badge-safe" id="ai-status">AI TUTOR</span>
+                                    <button type="button" class="ai-expand-toggle-btn" id="toggle-chat-width-btn" title="質問画面の幅を広げる / 戻す">
+                                        <span id="toggle-chat-width-icon">↔</span> <span id="toggle-chat-width-label">広げる</span>
+                                    </button>
+                                </div>
+                                <h3 style="font-family: var(--font-heading); font-size: 1rem; font-weight: 700; margin-top: 0.3rem;" id="current-step">弱点克服フェーズ</h3>
+                            </div>
+                            <div class="engine-toggle-group" id="engine-toggle-group" title="使用するAIエンジンを切り替え">
+                                <button type="button" class="engine-btn active" id="engine-btn-gemini" data-engine="gemini">✨ Gemini</button>
+                                <button type="button" class="engine-btn" id="engine-btn-deepseek" data-engine="deepseek">🐋 DeepSeek</button>
+                            </div>
+                        </div>
+
+                        <!-- 🎛️ 指導方針セグメンテッドコントロール -->
+                        <div class="chat-teaching-styles-section">
+                            <div class="chat-styles-header">
+                                <span class="chat-styles-micro-label">指導方針</span>
+                                <span class="chat-styles-active-badge" id="chat-styles-active-badge">標準丁寧</span>
+                            </div>
+                            <div class="chat-teaching-styles-bar" id="chat-teaching-styles-bar" role="tablist">
+                                <button type="button" class="teaching-style-btn active" data-style="standard" title="標準的で丁寧なステップ解説">
+                                    <span class="style-icon">🎯</span>
+                                    <span class="style-text">標準丁寧</span>
+                                </button>
+                                <button type="button" class="teaching-style-btn" data-style="easy" title="専門用語を控え、直感的なイメージや日常の例えで解説">
+                                    <span class="style-icon">💡</span>
+                                    <span class="style-text">噛み砕き</span>
+                                </button>
+                                <button type="button" class="teaching-style-btn" data-style="speed" title="試験本番で使える秒殺テクニック・裏技・グラフでの判断">
+                                    <span class="style-icon">⚡</span>
+                                    <span class="style-text">最速裏技</span>
+                                </button>
+                                <button type="button" class="teaching-style-btn" data-style="strict" title="定理の背景や前提条件を漏らさない厳密な数学的論理展開">
+                                    <span class="style-icon">📐</span>
+                                    <span class="style-text">厳密論理</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- チャット履歴 -->
+                        <div class="tex2jax_process chat-history" id="chat-history-box">
+                            <div class="chat-bubble bubble-ai" id="initial-ai-bubble">演習お疲れ様です！この問題は過去の出題頻度が高い超重要テーマです。解法の定石や典型的な罠、途中式の変形など、納得いくまで何でも質問してください！</div>
+                        </div>
+
+                        <!-- ⚡ クイック質問チップ列 -->
+                        <div class="chat-quick-chips-wrap">
+                            <button type="button" class="chat-quick-chip-btn" data-quick="途中式の計算を一歩ずつもっと細かく展開して教えて">⚡ 途中式を詳しく</button>
+                            <button type="button" class="chat-quick-chip-btn" data-quick="なぜこの方針・着眼点を使うのか、発想のきっかけを直感的に教えて">💡 なぜこの解法？</button>
+                            <button type="button" class="chat-quick-chip-btn" data-quick="他の解き方（別解や試験での時短テクニック）はありますか？">🔍 別解はある？</button>
+                            <button type="button" class="chat-quick-chip-btn" data-quick="この問題で受験生がハマりやすい典型的なミスや落とし穴を教えて">⚠️ よくあるミス</button>
+                        </div>
+
+                        <!-- チャット入力欄 -->
+                        <div class="chat-input-wrapper">
+                            <textarea class="chat-input" id="ai-chat-input" rows="1" placeholder="解説の疑問点や解き方を質問...（Shift+Enterで改行）"></textarea>
+                            <button type="button" class="flora-btn flora-btn-primary btn-sm" id="ai-chat-send-btn">送信</button>
+                        </div>
+                    </aside>
+
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- 🧠 気づき・極意メモ ドロワー（モーダル） -->
+    <div class="insight-drawer-overlay" id="insight-modal">
+        <div class="insight-drawer-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.8rem; margin-bottom: 1rem;">
+                <h3 style="font-family: var(--font-heading); font-size: 1.1rem; font-weight: 700; color: var(--text-primary);" id="insight-modal-title">🧠 気づき・極意メモ</h3>
+                <button type="button" class="modal-close-btn" id="close-insight-btn" style="border:none; background:none; font-size:1.4rem; cursor:pointer; color:var(--text-muted);">✕</button>
+            </div>
+            
+            <p style="font-size: 0.84rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 0.8rem;">
+                次回同じ問題を解くときに思い出すべき「解法のキモ」や「典型的な罠」「AI解説からの要点」をメモしておきましょう。
+            </p>
+
+            <textarea class="flora-textarea" id="insight-text-input" rows="6" placeholder="例：『$x^2+y^2=1$ を見たら $x=\cos\theta, y=\sin\theta$ と置換する』&#10;『相加・相乗平均を使うときは等号成立条件を必ず確認する』など" style="width: 100%; box-sizing: border-box; font-family: inherit; font-size: 0.9rem; line-height: 1.6; padding: 0.8rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-subtle); color: var(--text-primary); resize: vertical;"></textarea>
+
+            <!-- 💡 数式リアルタイムプレビュー表示エリア -->
+            <div id="insight-preview-box" style="display: none; margin-top: 0.8rem; padding: 0.8rem 1rem; background: var(--brand-light); border: 1px dashed var(--brand-border); border-radius: var(--radius-md); font-size: 0.9rem; line-height: 1.6; color: var(--text-primary); word-break: break-word;">
+                <div style="font-size: 0.75rem; color: var(--brand-primary); font-weight: 700; margin-bottom: 0.4rem;">👁️ 数式プレビュー (MathJax)</div>
+                <div id="insight-preview-content" class="tex2jax_process" style="font-weight: 600; white-space: pre-wrap;"></div>
+            </div>
+
+            <div style="display: flex; gap: 0.8rem; justify-content: flex-end; width: 100%; margin-top: 1.2rem;">
+                <button type="button" class="flora-btn flora-btn-ghost btn-sm" id="close-insight-modal-btn">キャンセル</button>
+                <button type="button" class="flora-btn flora-btn-primary btn-sm" id="save-insight-btn">💾 クラウドに保存</button>
+            </div>
+
+            <!-- 🧠 解説を見ながら書けるよう、模範解答の参照ビューをドロワー内にも表示 -->
+            <div class="insight-drawer-answer-ref">
+                <div style="font-size:0.75rem; color:var(--text-secondary); font-weight:700; margin-bottom:0.6rem;">📖 この問題の解説（参照用）</div>
+                <div id="insight-drawer-strategy-box" style="display:none; margin-bottom: 0.8rem; padding-bottom: 0.8rem; border-bottom: 1px dashed var(--border-color);">
+                    <div style="font-size:0.72rem; color: var(--warning, #B45309); font-weight:700; margin-bottom:0.3rem;">🧭 考え方の定石</div>
+                    <div class="model-answer-text" id="insight-drawer-strategy-text" style="background:transparent; border:none; padding:0; font-size:0.86rem;"></div>
+                </div>
+                <div class="model-answer-text tex2jax_process" id="insight-drawer-answer-text" style="background:transparent; border:none; padding:0; font-size:0.86rem;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 📚 問題選択モーダル（右上の「他の問題を選ぶ」で開く） -->
+    <div class="picker-modal-overlay" id="picker-modal-overlay">
+        <div class="picker-modal-card">
+            <div class="picker-modal-header">
+                <div>
+                    <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary); margin: 0;">
+                        📚 『文系の数学』全158題から問題を選択
+                    </h3>
+                    <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 0.2rem 0 0;">
+                        解きたい例題をクリックしてください。
+                    </p>
+                </div>
+                <button type="button" class="modal-close-btn" id="close-picker-modal-btn" style="border:none; background:none; font-size:1.4rem; cursor:pointer; color:var(--text-muted);">✕</button>
+            </div>
+            <div style="padding: 0.8rem 1.5rem; border-bottom: 1px solid var(--border-color); background: var(--bg-subtle); display: flex; gap: 0.8rem; align-items: center;">
+                <input type="text" id="picker-filter-input" class="flora-input" placeholder="タイトルや章名で絞り込み..." style="flex:1; padding:0.45rem 0.8rem; font-size:var(--fs-sm);">
+                <select id="picker-chapter-select" class="flora-select" style="width: 180px; font-size:var(--fs-xs); padding:0.45rem 0.6rem;">
+                    <option value="">すべての章 (全158題)</option>
+                </select>
+            </div>
+            <div class="picker-modal-body" id="picker-modal-list">
+                <!-- JSで全158題がレンダリングされる -->
+            </div>
+        </div>
+    </div>
+
+    <!-- サイドバー共通スクリプト -->
+    <script src="sidebar.js"></script>
+
+    <!-- メインスクリプト -->
+    <script type="module">
+        import { BUNKEI_MATH_CHAPTERS, BUNKEI_MATH_CATALOG, BUNKEI_MATH_PROBLEMS } from "./data/bunkei-math-data.js?v=20261025_figures";
+        import { BUNKEI_MATH_EXERCISES_CATALOG, BUNKEI_MATH_EXERCISES } from "./data/bunkei-math-exercises-data.js?v=20261024_all158";
+        import { BUNKEI_MATH_FIGURES } from "./data/bunkei-math-figures.js?v=20261030_fig_answer";
+        import { callGeminiChat, hasAvailableGeminiKey, hasAvailableDeepseekKey, initApiKeyManager, showToast, clearAllKeyCooldowns, openApiKeyManager } from "./api-key-manager.js?v=4.4";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyA7JuY44CleWYIxuqlF11ibHn_ml5nH69Q",
+            authDomain: "buturi2.firebaseapp.com",
+            databaseURL: "https://buturi2-default-rtdb.asia-southeast1.firebasedatabase.app/",
+            projectId: "buturi2",
+            storageBucket: "buturi2.firebasestorage.app",
+            messagingSenderId: "203866225339",
+            appId: "1:203866225339:web:ae84420cfd2f4c2ec0079e",
+            measurementId: "G-WFCYLPDQHK"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+
+        initApiKeyManager({ needGemini: true, needDeepseek: true });
+
+        // 🧠 AIエンジン選択（Gemini / DeepSeek）
+        let activeEngine = 'gemini';
+        try {
+            const saved = localStorage.getItem('flora_bunkei_math_engine');
+            if (saved === 'deepseek' || saved === 'gemini') {
+                activeEngine = saved;
+            }
+        } catch (_) {}
+
+        const engineGeminiBtn = document.getElementById('engine-btn-gemini');
+        const engineDeepseekBtn = document.getElementById('engine-btn-deepseek');
+
+        function updateEngineUI() {
+            if (engineGeminiBtn && engineDeepseekBtn) {
+                if (activeEngine === 'deepseek') {
+                    engineDeepseekBtn.classList.add('active');
+                    engineGeminiBtn.classList.remove('active');
+                } else {
+                    engineGeminiBtn.classList.add('active');
+                    engineDeepseekBtn.classList.remove('active');
+                }
+            }
+        }
+        updateEngineUI();
+
+        if (engineGeminiBtn) {
+            engineGeminiBtn.addEventListener('click', () => {
+                activeEngine = 'gemini';
+                try { localStorage.setItem('flora_bunkei_math_engine', 'gemini'); } catch (_) {}
+                updateEngineUI();
+                showToast('✨ AIエンジンを Gemini に切り替えました', 'info', 1500);
+            });
+        }
+        if (engineDeepseekBtn) {
+            engineDeepseekBtn.addEventListener('click', () => {
+                activeEngine = 'deepseek';
+                try { localStorage.setItem('flora_bunkei_math_engine', 'deepseek'); } catch (_) {}
+                updateEngineUI();
+                showToast('🐋 AIエンジンを DeepSeek に切り替えました', 'info', 1500);
+            });
+        }
+
+        let currentUser = null;
+        let currentMode = 'reidai'; // 'reidai' | 'exercise'
+        let currentProblemId = 1;
+        let currentExerciseId = 1;
+
+        let progressMap = {};
+        let exerciseProgressMap = {};
+        let insightMap = {}; // { 'reidai_1': 'メモ内容', 'exercise_1': 'メモ内容' }
+
+        // ローカル進捗 ＆ 気づきメモのロード
+        try {
+            const raw = localStorage.getItem('flora_bunkei_math_progress');
+            if (raw) progressMap = JSON.parse(raw);
+        } catch (_) {}
+        try {
+            const rawEx = localStorage.getItem('flora_bunkei_math_ex_progress');
+            if (rawEx) exerciseProgressMap = JSON.parse(rawEx);
+        } catch (_) {}
+        try {
+            const rawIns = localStorage.getItem('flora_bunkei_math_insights');
+            if (rawIns) insightMap = JSON.parse(rawIns);
+        } catch (_) {}
+
+        // Firebase 認証監視
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+            if (user) {
+                const progRef = ref(database, `users/${user.uid}/bunkeiMathProgress`);
+                onValue(progRef, (snap) => {
+                    if (snap.exists()) {
+                        progressMap = Object.assign({}, progressMap, snap.val());
+                        if (currentMode === 'reidai') updateHeaderProgress();
+                    }
+                });
+                const exProgRef = ref(database, `users/${user.uid}/bunkeiMathExProgress`);
+                onValue(exProgRef, (snap) => {
+                    if (snap.exists()) {
+                        exerciseProgressMap = Object.assign({}, exerciseProgressMap, snap.val());
+                        if (currentMode === 'exercise') updateHeaderProgress();
+                    }
+                });
+
+                // 気づきメモのリアルタイム同期
+                const insRef = ref(database, `users/${user.uid}/bunkeiMathInsights`);
+                onValue(insRef, (snap) => {
+                    if (snap.exists()) {
+                        const val = snap.val();
+                        Object.keys(val).forEach(k => {
+                            if (val[k] && val[k].memo) {
+                                insightMap[k] = val[k].memo;
+                            }
+                        });
+                        try {
+                            localStorage.setItem('flora_bunkei_math_insights', JSON.stringify(insightMap));
+                        } catch (_) {}
+                        updateInsightButtonState();
+                    }
+                });
+
+                // 既存の problems ノード（insights.html共有）からの気づきメモ吸い上げ
+                const probListRef = ref(database, `users/${user.uid}/problems`);
+                onValue(probListRef, (snap) => {
+                    if (snap.exists()) {
+                        const probs = snap.val();
+                        let changed = false;
+                        Object.values(probs).forEach(p => {
+                            if (p && p.insight && p.sourceBookProblemId) {
+                                const mode = p.mode || (p.id && p.id.startsWith("BUNKEI_MATH_EX") ? 'exercise' : 'reidai');
+                                const key = `${mode}_${p.sourceBookProblemId}`;
+                                if (!insightMap[key]) {
+                                    insightMap[key] = p.insight;
+                                    changed = true;
+                                }
+                            }
+                        });
+                        if (changed) {
+                            try {
+                                localStorage.setItem('flora_bunkei_math_insights', JSON.stringify(insightMap));
+                            } catch (_) {}
+                            updateInsightButtonState();
+                        }
+                    }
+                });
+            }
+        });
+
+        // -------------------------------------------------------------------------
+        // 🎛️ 質問エリア幅の可変・伸縮（ドラッグリサイズ＆ワンクリックトグル対応）
+        // -------------------------------------------------------------------------
+        function setupInlineChatExpand() {
+            const toggleBtn = document.getElementById('toggle-chat-width-btn');
+            const gridEl = document.querySelector('.problem-bento-grid');
+            const asideEl = document.querySelector('.ai-sidebar-tile');
+            const handleEl = document.getElementById('chat-resize-handle');
+            const iconEl = document.getElementById('toggle-chat-width-icon');
+            const labelEl = document.getElementById('toggle-chat-width-label');
+            if (!gridEl || !asideEl) return;
+
+            const DEFAULT_WIDTH = 380;
+            const WIDE_WIDTH = 620;
+            const MIN_WIDTH = 290;
+
+            function getMaxWidth() {
+                const gridWidth = gridEl.clientWidth;
+                return Math.max(MIN_WIDTH, Math.min(950, gridWidth - 360));
+            }
+
+            function applyChatWidth(widthPx, saveToStorage = true) {
+                const maxWidth = getMaxWidth();
+                const clamped = Math.max(MIN_WIDTH, Math.min(maxWidth, widthPx));
+                gridEl.style.setProperty('--problem-chat-width', `${clamped}px`);
+                
+                if (saveToStorage) {
+                    try {
+                        localStorage.setItem('flora_problem_chat_width', String(clamped));
+                    } catch (_) {}
+                }
+
+                if (clamped >= 460) {
+                    if (labelEl) labelEl.textContent = '縮める';
+                    if (iconEl) iconEl.textContent = '→|←';
+                    if (toggleBtn) toggleBtn.title = '質問画面の幅を標準に戻す (380px)';
+                } else {
+                    if (labelEl) labelEl.textContent = '広げる';
+                    if (iconEl) iconEl.textContent = '↔';
+                    if (toggleBtn) toggleBtn.title = '質問画面の幅を広げる (620px)';
+                }
+                return clamped;
+            }
+
+            // 保存された幅の復元
+            let initialWidth = null;
+            const storedCustomWidth = localStorage.getItem('flora_problem_chat_width');
+            if (storedCustomWidth) {
+                const parsed = parseInt(storedCustomWidth, 10);
+                if (!isNaN(parsed) && parsed >= MIN_WIDTH) {
+                    initialWidth = parsed;
+                }
+            } else if (localStorage.getItem('flora_problem_chat_wide') === 'true') {
+                initialWidth = WIDE_WIDTH;
+            }
+
+            if (initialWidth) {
+                applyChatWidth(initialWidth, false);
+            }
+
+            // トグルボタンクリック時の切り替え（380px ⇄ 620px）
+            if (toggleBtn) {
+                toggleBtn.onclick = () => {
+                    const currentWidth = asideEl.getBoundingClientRect().width;
+                    if (currentWidth >= 460) {
+                        applyChatWidth(DEFAULT_WIDTH);
+                    } else {
+                        applyChatWidth(WIDE_WIDTH);
+                    }
+                };
+            }
+
+            // リサイズハンドルによるドラッグ操作
+            if (handleEl) {
+                handleEl.addEventListener('dblclick', () => {
+                    applyChatWidth(DEFAULT_WIDTH);
+                });
+
+                let isDragging = false;
+                let startX = 0;
+                let startWidth = 0;
+
+                const onPointerDown = (clientX) => {
+                    if (window.innerWidth <= 1024) return;
+                    isDragging = true;
+                    startX = clientX;
+                    startWidth = asideEl.getBoundingClientRect().width;
+
+                    gridEl.classList.add('is-resizing');
+                    handleEl.classList.add('is-active');
+                    document.body.classList.add('chat-is-resizing');
+                };
+
+                const onPointerMove = (clientX) => {
+                    if (!isDragging) return;
+                    const deltaX = startX - clientX;
+                    const newWidth = Math.round(startWidth + deltaX);
+                    applyChatWidth(newWidth, false);
+                };
+
+                const onPointerUp = () => {
+                    if (!isDragging) return;
+                    isDragging = false;
+                    gridEl.classList.remove('is-resizing');
+                    handleEl.classList.remove('is-active');
+                    document.body.classList.remove('chat-is-resizing');
+
+                    const finalWidth = Math.round(asideEl.getBoundingClientRect().width);
+                    applyChatWidth(finalWidth, true);
+                };
+
+                handleEl.addEventListener('mousedown', (e) => {
+                    if (e.button !== 0) return;
+                    e.preventDefault();
+                    onPointerDown(e.clientX);
+
+                    const moveHandler = (ev) => onPointerMove(ev.clientX);
+                    const upHandler = () => {
+                        window.removeEventListener('mousemove', moveHandler);
+                        window.removeEventListener('mouseup', upHandler);
+                        onPointerUp();
+                    };
+                    window.addEventListener('mousemove', moveHandler);
+                    window.addEventListener('mouseup', upHandler);
+                });
+
+                handleEl.addEventListener('touchstart', (e) => {
+                    if (e.touches.length !== 1) return;
+                    onPointerDown(e.touches[0].clientX);
+
+                    const touchMoveHandler = (ev) => {
+                        if (ev.touches.length === 1) onPointerMove(ev.touches[0].clientX);
+                    };
+                    const touchEndHandler = () => {
+                        window.removeEventListener('touchmove', touchMoveHandler);
+                        window.removeEventListener('touchend', touchEndHandler);
+                        window.removeEventListener('touchcancel', touchEndHandler);
+                        onPointerUp();
+                    };
+                    window.addEventListener('touchmove', touchMoveHandler, { passive: true });
+                    window.addEventListener('touchend', touchEndHandler);
+                    window.addEventListener('touchcancel', touchEndHandler);
+                }, { passive: true });
+            }
+
+            window.addEventListener('resize', () => {
+                if (window.innerWidth > 1024) {
+                    const currentWidth = asideEl.getBoundingClientRect().width;
+                    const maxWidth = getMaxWidth();
+                    if (currentWidth > maxWidth) {
+                        applyChatWidth(maxWidth, false);
+                    }
+                }
+            });
+        }
+        setupInlineChatExpand();
+
+        // -------------------------------------------------------------------------
+        // 📝 数式・テキストの整形（文字崩れ＆不自然な改行の解消）
+        // -------------------------------------------------------------------------
+        function sanitizeMathText(text) {
+            if (!text) return "";
+            let t = String(text);
+            // 壊れた制御文字（\x0c フォームフィード、\x08 バックスペースなど）の救済
+            t = t.replace(/\x0cbox/g, "\\fbox");
+            t = t.replace(/\x08eta/g, "\\beta");
+            t = t.replace(/\x08egin/g, "\\begin");
+            t = t.replace(/\x08mathbf/g, "\\mathbf");
+            
+            // \text{\fbox{...}} や \text{\boxed{...}} のアンラップ（MathJaxのテキストモードでマクロが素通しされるバグの防止）
+            t = t.replace(/\\text\{\s*\\(fbox|boxed)\{([^}]*)\}\s*\}/g, "\\$1{$2}");
+
+            // 空白の \fbox や \boxed （全角空白・半角空白・空文字）を \fbox{\quad} / \boxed{\quad} に正規化
+            t = t.replace(/\\(fbox|boxed)\{\s*[　\s]*\}/g, "\\$1{\\quad}");
+
+            // 数式内の全角スペースを \quad に変換（TeXパーサ破綻防止）
+            t = t.replace(/\$([^$]+)\$/g, (match, inner) => {
+                return '$' + inner.replace(/　/g, ' \\quad ') + '$';
+            });
+            return t;
+        }
+
+        function formatQuestionText(raw) {
+            if (!raw) return "";
+            let t = sanitizeMathText(raw).trim();
+
+            // 1. 数式ブロック（$$...$$ および $...$）を一時退避して内部のカッコ数字や記号を保護
+            const mathBlocks = [];
+            t = t.replace(/(\$\$[\s\S]*?\$\$|\$[^\$\n]+?\$)/g, (match) => {
+                mathBlocks.push(match);
+                return `%%%MATH_BLOCK_${mathBlocks.length - 1}%%%`;
+            });
+
+            // 2. 句点「。」等の直後に小問番号が直接続いている場合があれば改行（文脈参照 (1)で・(1)より 等は除外）
+            t = t.replace(/([。．；])\s*(\(\s*([1-9]|10|[ivx]+)\s*\)|\[\s*([1-9]|10)\s*\])(?!\s*(で|より|を|に|の|から|と|が|を利用|の結果))/gi, "$1\n$2");
+
+            // 3. 行ごとに分割して行頭の小問番号の前に適度な空行を確保
+            const lines = t.split(/\r?\n/);
+            const formattedLines = [];
+
+            for (let i = 0; i < lines.length; i++) {
+                let line = lines[i].trim();
+                if (!line) {
+                    formattedLines.push("");
+                    continue;
+                }
+
+                // 行頭が小問番号 (1)〜(10) または (i)〜(iv) または [1]〜[10] の場合
+                const isSubquestionHeader = /^\s*(\(\s*([1-9]|10|[ivx]+)\s*\)|\[\s*([1-9]|10)\s*\])/i.test(line);
+
+                if (isSubquestionHeader && formattedLines.length > 0 && formattedLines[formattedLines.length - 1] !== "") {
+                    formattedLines.push("");
+                }
+
+                formattedLines.push(line);
+            }
+
+            let result = formattedLines.join("\n");
+
+            // 3つ以上の連続改行を2つに圧縮
+            result = result.replace(/\n{3,}/g, "\n\n").trim();
+
+            // 4. 数式ブロックの復元
+            result = result.replace(/%%%MATH_BLOCK_(\d+)%%%/g, (_, idx) => mathBlocks[idx]);
+
+            return result.replace(/\n/g, "<br>");
+        }
+
+        function formatMathContent(raw) {
+            if (!raw) return "";
+            let t = sanitizeMathText(raw).trim();
+            return t.replace(/\n/g, "<br>");
+        }
+
+        // 埋め込み図（問題文・解答の下に表示）
+        function renderFigure(fig) {
+            if (!fig || !fig.svg) return "";
+            const caption = fig.caption ? `<figcaption>${fig.caption}</figcaption>` : "";
+            return `<figure class="problem-figure tex2jax_ignore">${fig.svg}${caption}</figure>`;
+        }
+
+        // -------------------------------------------------------------------------
+        // 🎛️ 指導方針（モデル・キー・思考レベルはAI設定でカスタマイズ）
+        // -------------------------------------------------------------------------
+        let activeTeachingStyle = 'standard';
+
+        const styleBadge = document.getElementById('chat-styles-active-badge');
+        const styleBtns = document.querySelectorAll('.teaching-style-btn');
+        const styleLabels = {
+            standard: '標準丁寧',
+            easy: '噛み砕き',
+            speed: '最速裏技',
+            strict: '厳密論理'
+        };
+
+        styleBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                styleBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                activeTeachingStyle = btn.dataset.style || 'standard';
+                if (styleBadge) styleBadge.textContent = styleLabels[activeTeachingStyle] || '標準丁寧';
+            });
+        });
+
+        // -------------------------------------------------------------------------
+        // 🗺️ 例題 ⇄ 演習問題 相互リンク用マップ
+        // -------------------------------------------------------------------------
+        const reidaiToExerciseMap = {};
+        BUNKEI_MATH_EXERCISES_CATALOG.forEach(ex => {
+            if (ex.target_reidai) {
+                if (!reidaiToExerciseMap[ex.target_reidai]) {
+                    reidaiToExerciseMap[ex.target_reidai] = [];
+                }
+                reidaiToExerciseMap[ex.target_reidai].push(ex.id);
+            }
+        });
+
+        // -------------------------------------------------------------------------
+        // 📘 例題 / 📝 演習問題 モード切替
+        // -------------------------------------------------------------------------
+        const tabReidai = document.getElementById('tab-mode-reidai');
+        const tabExercise = document.getElementById('tab-mode-exercise');
+        const crossLinkContainer = document.getElementById('cross-link-container');
+        const crossLinkBtn = document.getElementById('btn-cross-link');
+        const crossLinkText = document.getElementById('cross-link-text');
+
+        function switchMode(newMode, targetId = null) {
+            currentMode = newMode;
+            if (currentMode === 'reidai') {
+                if (tabReidai) tabReidai.classList.add('active');
+                if (tabExercise) tabExercise.classList.remove('active');
+                if (targetId) currentProblemId = targetId;
+                renderProblem(currentProblemId);
+            } else {
+                if (tabExercise) tabExercise.classList.add('active');
+                if (tabReidai) tabReidai.classList.remove('active');
+                if (targetId) currentExerciseId = targetId;
+                renderProblem(currentExerciseId);
+            }
+            initPickerChapters();
+        }
+
+        if (tabReidai) tabReidai.addEventListener('click', () => switchMode('reidai'));
+        if (tabExercise) tabExercise.addEventListener('click', () => switchMode('exercise'));
+
+        // URLパラメータ処理
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('mode') === 'exercise') {
+            currentMode = 'exercise';
+            if (tabExercise) tabExercise.classList.add('active');
+            if (tabReidai) tabReidai.classList.remove('active');
+        }
+        if (params.has('id')) {
+            const pId = parseInt(params.get('id'), 10);
+            if (currentMode === 'reidai' && pId >= 1 && pId <= 158) {
+                currentProblemId = pId;
+            } else if (currentMode === 'exercise' && pId >= 1 && pId <= 115) {
+                currentExerciseId = pId;
+            }
+        }
+
+        // -------------------------------------------------------------------------
+        // 問題の描画
+        // -------------------------------------------------------------------------
+        async function renderProblem(id) {
+            const isReidai = (currentMode === 'reidai');
+            if (isReidai) currentProblemId = id;
+            else currentExerciseId = id;
+
+            const url = new URL(window.location);
+            url.searchParams.set('mode', currentMode);
+            url.searchParams.set('id', id);
+            window.history.replaceState({}, '', url);
+
+            updateHeaderProgress();
+            updateInsightButtonState();
+            resetChatForProblem();
+
+            const p = isReidai ? BUNKEI_MATH_PROBLEMS[id] : BUNKEI_MATH_EXERCISES[id];
+            const figSet = (BUNKEI_MATH_FIGURES[isReidai ? 'reidai' : 'exercise'] || {})[id] || {};
+            const cat = isReidai 
+                ? BUNKEI_MATH_CATALOG.find(c => c.id === id)
+                : BUNKEI_MATH_EXERCISES_CATALOG.find(c => c.id === id);
+
+            const qSection = document.getElementById('tile-question-section');
+            const aSection = document.getElementById('tile-answer-section');
+            const emptySection = document.getElementById('tile-empty-section');
+            const revealZone = document.getElementById('answer-reveal-zone');
+            const revealBtn = document.getElementById('show-answer-btn');
+
+            revealZone.style.display = 'none';
+            revealBtn.style.display = 'block';
+
+            // 相互リンクボタンの更新
+            if (crossLinkContainer && crossLinkBtn && crossLinkText) {
+                if (isReidai) {
+                    const exIds = reidaiToExerciseMap[id];
+                    if (exIds && exIds.length > 0) {
+                        crossLinkContainer.style.display = 'block';
+                        crossLinkText.textContent = `演習問題 ${exIds.join('・')} に挑戦する →`;
+                        crossLinkBtn.onclick = () => switchMode('exercise', exIds[0]);
+                    } else {
+                        crossLinkContainer.style.display = 'none';
+                    }
+                } else {
+                    if (p && p.target_reidai) {
+                        crossLinkContainer.style.display = 'block';
+                        crossLinkText.textContent = `対応例題: 例題 ${p.target_reidai} を復習する →`;
+                        crossLinkBtn.onclick = () => switchMode('reidai', p.target_reidai);
+                    } else {
+                        crossLinkContainer.style.display = 'none';
+                    }
+                }
+            }
+
+            if (!p) {
+                qSection.style.display = 'none';
+                aSection.style.display = 'none';
+                emptySection.style.display = 'flex';
+                const label = isReidai ? `例題 ${id}` : `演習問題 ${id}`;
+                document.getElementById('header-problem-name').textContent = cat ? `${label}: ${cat.title}` : label;
+                document.getElementById('empty-title').textContent = cat ? `${label}: ${cat.title} のデータを準備中` : `${label} のデータを準備中`;
+                return;
+            }
+
+            emptySection.style.display = 'none';
+            qSection.style.display = 'block';
+            aSection.style.display = 'block';
+
+            // ヘッダー情報
+            document.getElementById('header-problem-name').textContent = p.title;
+            const badgePrefix = isReidai ? `例題 ${p.id}` : `演習問題 ${p.id}`;
+            document.getElementById('question-badge').textContent = `数学 // ${p.chapter} // ${badgePrefix}`;
+            document.getElementById('question-source-tag').textContent = p.sources && p.sources.length > 0 ? `出題: ${p.sources.join('、')}` : '出題: 河合塾';
+
+            // 問題本文（美しい段落・改行整形）
+            let questionHtml = formatQuestionText(p.question);
+            questionHtml += renderFigure(figSet.question || p.figure);
+            document.getElementById('question-text-block').innerHTML = questionHtml;
+
+            // 定石ボックス（文系数学の必勝ポイント / 着眼点）
+            const pointText = isReidai ? (p.key_point || '') : (p.commentary || '');
+            document.getElementById('target-strategy-pattern').innerHTML = formatMathContent(pointText);
+
+            // 解答＆解説講義（図は模範解答の直後に差し込む）
+            const ANSWER_FIGURE_TOKEN = '%%BUNKEI_ANSWER_FIGURE%%';
+            let combined = '';
+            if (isReidai) {
+                combined = `【模範解答】\n${p.answer}\n\n${ANSWER_FIGURE_TOKEN}\n\n【解説講義】\n${p.explanation}`;
+            } else {
+                combined = `【模範解答】\n${p.answer}\n\n${ANSWER_FIGURE_TOKEN}\n\n【解説・研究】\n${p.commentary || ''}`;
+            }
+            const answerEl = document.getElementById('target-model-answer');
+            answerEl.innerHTML = formatMathContent(combined);
+            answerEl.innerHTML = answerEl.innerHTML.replace(ANSWER_FIGURE_TOKEN, renderFigure(figSet.answer));
+
+            // 数式レンダリング
+            await safeTypeset([
+                document.getElementById('question-text-block'),
+                document.getElementById('target-strategy-pattern'),
+                document.getElementById('target-model-answer')
+            ]);
+        }
+
+        function updateHeaderProgress() {
+            if (currentMode === 'reidai') {
+                document.getElementById('pill-progress-no').textContent = `例題 No. ${currentProblemId} / 158`;
+            } else {
+                document.getElementById('pill-progress-no').textContent = `演習問題 No. ${currentExerciseId} / 115`;
+            }
+        }
+
+        // -------------------------------------------------------------------------
+        // 解答表示 ＆ 自己採点イベント
+        // -------------------------------------------------------------------------
+        document.getElementById('show-answer-btn').addEventListener('click', async () => {
+            const revealZone = document.getElementById('answer-reveal-zone');
+            const revealBtn = document.getElementById('show-answer-btn');
+            revealBtn.style.display = 'none';
+            revealZone.style.display = 'flex';
+            revealZone.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            await safeTypeset([revealZone]);
+        });
+
+        // ⭕ 合ってた
+        document.getElementById('btn-judge-right').addEventListener('click', async () => {
+            const isReidai = (currentMode === 'reidai');
+            const activeId = isReidai ? currentProblemId : currentExerciseId;
+            const maxCount = isReidai ? 158 : 115;
+            const label = isReidai ? `例題 ${activeId}` : `演習問題 ${activeId}`;
+
+            await recordProgress(activeId, 'cleared');
+            showToast(`🎉 ${label} 克服完了！お見事です！`, "success");
+            setTimeout(() => {
+                if (activeId < maxCount) renderProblem(activeId + 1);
+            }, 600);
+        });
+
+        // ❌ 間違えた（誤答ノートへ即時登録）
+        document.getElementById('btn-judge-wrong').addEventListener('click', async () => {
+            const isReidai = (currentMode === 'reidai');
+            const activeId = isReidai ? currentProblemId : currentExerciseId;
+            await recordProgress(activeId, 'mistake');
+            await registerMistakeProblem(activeId);
+        });
+
+        async function recordProgress(id, status) {
+            const isReidai = (currentMode === 'reidai');
+            const targetMap = isReidai ? progressMap : exerciseProgressMap;
+            const storageKey = isReidai ? 'flora_bunkei_math_progress' : 'flora_bunkei_math_ex_progress';
+            const fbPath = isReidai ? 'bunkeiMathProgress' : 'bunkeiMathExProgress';
+
+            targetMap[id] = { status, timestamp: new Date().toISOString() };
+            try {
+                localStorage.setItem(storageKey, JSON.stringify(targetMap));
+            } catch (_) {}
+            if (currentUser) {
+                try {
+                    await set(ref(database, `users/${currentUser.uid}/${fbPath}/${id}`), targetMap[id]);
+                } catch (e) {
+                    console.warn("進捗同期エラー:", e);
+                }
+            }
+        }
+
+        async function registerMistakeProblem(problemId) {
+            const isReidai = (currentMode === 'reidai');
+            const p = isReidai ? BUNKEI_MATH_PROBLEMS[problemId] : BUNKEI_MATH_EXERCISES[problemId];
+            if (!p) return;
+
+            const newId = (isReidai ? "BUNKEI_MATH_" : "BUNKEI_MATH_EX_") + problemId + "_" + Date.now();
+            const nowIso = new Date().toISOString();
+            const combinedAnswer = isReidai 
+                ? `【解答】\n${p.answer || ""}\n\n【解説講義】\n${p.explanation || ""}`
+                : `【解答】\n${p.answer || ""}\n\n【解説・研究】\n${p.commentary || ""}`;
+
+            const mistakeProblem = {
+                id: newId,
+                title: p.question || "",
+                short_title: isReidai ? `文系の数学 例題${p.id} ${p.title}` : `文系の数学 演習${p.id} ${p.title}`,
+                subject: "数学",
+                field: isReidai ? `文系の数学（${p.chapter}）` : `文系の数学・演習（${p.chapter}）`,
+                trap_description: "解法の着眼点、または計算プロセスの見落とし",
+                strategyPattern: (isReidai ? p.key_point : p.commentary) || "",
+                errorCount: 1,
+                lastAttemptAt: nowIso,
+                lastResult: false,
+                thumb: null,
+                imageCount: 0,
+                answerFormula: combinedAnswer,
+                mnemonic: "",
+                events: [],
+                createdAt: nowIso,
+                sourceBook: "文系の数学 重要事項完全習得編",
+                sourceBookProblemId: p.id,
+                mode: currentMode
+            };
+
+            if (currentUser) {
+                try {
+                    await set(ref(database, `users/${currentUser.uid}/problems/${newId}`), mistakeProblem);
+                } catch (e) {
+                    console.error("Firebaseへの誤答登録失敗:", e);
+                }
+            } else {
+                try {
+                    const localProblems = JSON.parse(localStorage.getItem('flora_local_problems') || '{}');
+                    localProblems[newId] = mistakeProblem;
+                    localStorage.setItem('flora_local_problems', JSON.stringify(localProblems));
+                } catch (_) {}
+            }
+
+            showToast("📥 誤答ダッシュボードに登録しました！引き続き復習・質問が可能です。", "info", 4500);
+        }
+
+        // 次へ進む
+        document.getElementById('btn-quick-next-problem').addEventListener('click', () => {
+            const isReidai = (currentMode === 'reidai');
+            const activeId = isReidai ? currentProblemId : currentExerciseId;
+            const maxCount = isReidai ? 158 : 115;
+            if (activeId < maxCount) renderProblem(activeId + 1);
+        });
+
+        // 前の問題・次の問題
+        document.getElementById('btn-prev-problem').addEventListener('click', () => {
+            const isReidai = (currentMode === 'reidai');
+            const activeId = isReidai ? currentProblemId : currentExerciseId;
+            if (activeId > 1) renderProblem(activeId - 1);
+        });
+        document.getElementById('btn-next-problem').addEventListener('click', () => {
+            const isReidai = (currentMode === 'reidai');
+            const activeId = isReidai ? currentProblemId : currentExerciseId;
+            const maxCount = isReidai ? 158 : 115;
+            if (activeId < maxCount) renderProblem(activeId + 1);
+        });
+        document.getElementById('btn-random-problem').addEventListener('click', () => {
+            const isReidai = (currentMode === 'reidai');
+            const pool = isReidai ? BUNKEI_MATH_CATALOG : BUNKEI_MATH_EXERCISES_CATALOG;
+            const next = pool[Math.floor(Math.random() * pool.length)];
+            if (next) renderProblem(next.id);
+        });
+        document.getElementById('btn-back-to-problem1').addEventListener('click', () => {
+            renderProblem(1);
+        });
+
+        // 折りたたみトグル
+        document.getElementById('question-collapse-toggle').addEventListener('click', () => {
+            const area = document.getElementById('question-collapsible-area');
+            const btn = document.getElementById('question-collapse-toggle');
+            const isCol = area.classList.toggle('is-collapsed');
+            btn.textContent = isCol ? '▼ 全文を表示' : '▲ 折りたたむ';
+        });
+
+        // キーボードショートカット (Alt + ←, Alt + →)
+        window.addEventListener('keydown', (e) => {
+            const isReidai = (currentMode === 'reidai');
+            const activeId = isReidai ? currentProblemId : currentExerciseId;
+            const maxCount = isReidai ? 158 : 115;
+            if (e.altKey && e.key === 'ArrowRight') {
+                e.preventDefault();
+                if (activeId < maxCount) renderProblem(activeId + 1);
+            } else if (e.altKey && e.key === 'ArrowLeft') {
+                e.preventDefault();
+                if (activeId > 1) renderProblem(activeId - 1);
+            }
+        });
+
+        // -------------------------------------------------------------------------
+        // 📚 問題選択モーダル
+        // -------------------------------------------------------------------------
+        const pickerModal = document.getElementById('picker-modal-overlay');
+        const openPickerBtn = document.getElementById('btn-open-problem-picker');
+        const closePickerBtn = document.getElementById('close-picker-modal-btn');
+        const pickerList = document.getElementById('picker-modal-list');
+        const chapterSelect = document.getElementById('picker-chapter-select');
+        const filterInput = document.getElementById('picker-filter-input');
+        const pickerTitleEl = pickerModal ? pickerModal.querySelector('.picker-modal-header h3') : null;
+
+        function initPickerChapters() {
+            if (!chapterSelect) return;
+            chapterSelect.innerHTML = '';
+
+            const isReidai = (currentMode === 'reidai');
+            if (pickerTitleEl) {
+                pickerTitleEl.textContent = isReidai 
+                    ? `📚 『文系の数学』全158題から問題を選択`
+                    : `📝 『文系の数学』演習問題（全115題）から問題を選択`;
+            }
+
+            const defaultOpt = document.createElement('option');
+            defaultOpt.value = '';
+            defaultOpt.textContent = isReidai ? 'すべての章 (全158題)' : 'すべての章 (全115題)';
+            chapterSelect.appendChild(defaultOpt);
+
+            if (isReidai) {
+                BUNKEI_MATH_CHAPTERS.forEach(ch => {
+                    const opt = document.createElement('option');
+                    opt.value = ch.title;
+                    opt.textContent = `${ch.title} (例題${ch.range[0]}〜${ch.range[1]})`;
+                    chapterSelect.appendChild(opt);
+                });
+            } else {
+                const chapters = [];
+                BUNKEI_MATH_EXERCISES_CATALOG.forEach(ex => {
+                    if (ex.chapter && !chapters.includes(ex.chapter)) chapters.push(ex.chapter);
+                });
+                chapters.forEach(ch => {
+                    const opt = document.createElement('option');
+                    opt.value = ch;
+                    opt.textContent = ch;
+                    chapterSelect.appendChild(opt);
+                });
+            }
+        }
+
+        initPickerChapters();
+
+        openPickerBtn.addEventListener('click', () => {
+            renderPickerList();
+            pickerModal.classList.add('open');
+        });
+        closePickerBtn.addEventListener('click', () => {
+            pickerModal.classList.remove('open');
+        });
+        pickerModal.addEventListener('click', (e) => {
+            if (e.target === pickerModal) pickerModal.classList.remove('open');
+        });
+
+        chapterSelect.addEventListener('change', renderPickerList);
+        filterInput.addEventListener('input', renderPickerList);
+
+        function renderPickerList() {
+            pickerList.innerHTML = '';
+            const isReidai = (currentMode === 'reidai');
+            const activeId = isReidai ? currentProblemId : currentExerciseId;
+            const targetCatalog = isReidai ? BUNKEI_MATH_CATALOG : BUNKEI_MATH_EXERCISES_CATALOG;
+            const targetMap = isReidai ? progressMap : exerciseProgressMap;
+            const targetProblems = isReidai ? BUNKEI_MATH_PROBLEMS : BUNKEI_MATH_EXERCISES;
+
+            const selectedChapter = chapterSelect.value;
+            const keyword = filterInput.value.trim().toLowerCase();
+
+            targetCatalog.forEach(item => {
+                if (selectedChapter && item.chapter !== selectedChapter) return;
+                if (keyword && !item.title.toLowerCase().includes(keyword) && !item.chapter.toLowerCase().includes(keyword)) return;
+
+                const row = document.createElement('div');
+                row.className = 'picker-item-row';
+                if (item.id === activeId) row.classList.add('active');
+
+                const stat = targetMap[item.id]?.status;
+                const hasData = !!targetProblems[item.id];
+
+                let statusBadge = '<span class="flora-badge" style="font-size:0.72rem; opacity:0.6;">📷 準備中</span>';
+                if (stat === 'cleared') {
+                    statusBadge = '<span class="flora-badge" style="background:#ECFDF5; color:#059669; font-size:0.72rem;">✅ 習得済</span>';
+                } else if (stat === 'mistake') {
+                    statusBadge = '<span class="flora-badge" style="background:#FEF2F2; color:#DC2626; font-size:0.72rem;">❌ 要復習</span>';
+                } else if (hasData) {
+                    statusBadge = '<span class="flora-badge" style="background:var(--brand-light); color:var(--brand-primary); font-size:0.72rem;">解ける</span>';
+                }
+
+                const prefix = isReidai ? `例題 ${item.id}` : `演習 ${item.id}`;
+                const subInfo = item.target_reidai ? ` (例題 ${item.target_reidai} に対応)` : '';
+
+                row.innerHTML = `
+                    <div style="display:flex; align-items:center; gap:0.8rem; overflow:hidden;">
+                        <strong style="font-size:0.85rem; color:var(--brand-primary); width:70px; flex-shrink:0;">${prefix}</strong>
+                        <div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                            <span style="font-size:0.72rem; color:var(--text-muted); display:block;">${item.chapter}${subInfo}</span>
+                            <span style="font-size:0.9rem; font-weight:700; color:var(--text-primary);">${item.title}</span>
+                        </div>
+                    </div>
+                    <div style="flex-shrink:0;">
+                        ${statusBadge}
+                    </div>
+                `;
+
+                row.onclick = () => {
+                    pickerModal.classList.remove('open');
+                    renderProblem(item.id);
+                };
+                pickerList.appendChild(row);
+            });
+        }
+
+        // -------------------------------------------------------------------------
+        // 🧠 気づき・極意メモ（ドロワーモーダル & Firebase/localStorage同期）
+        // -------------------------------------------------------------------------
+        const insightModal = document.getElementById('insight-modal');
+        const openInsightBtn = document.getElementById('open-insight-modal-btn');
+        const openInsightBtnSub = document.getElementById('open-insight-modal-btn-sub');
+        const closeInsightBtn = document.getElementById('close-insight-btn');
+        const closeInsightModalBtn = document.getElementById('close-insight-modal-btn');
+        const saveInsightBtn = document.getElementById('save-insight-btn');
+        const insightTextInput = document.getElementById('insight-text-input');
+        const insightModalTitle = document.getElementById('insight-modal-title');
+        const insightPreviewBox = document.getElementById('insight-preview-box');
+        const insightPreviewContent = document.getElementById('insight-preview-content');
+
+        function getProblemInsightKey(mode, id) {
+            return `${mode}_${id}`;
+        }
+
+        function getProblemFixedDbId(mode, id) {
+            return mode === 'reidai' ? `BUNKEI_MATH_${id}` : `BUNKEI_MATH_EX_${id}`;
+        }
+
+        function updateInsightButtonState() {
+            const activeId = (currentMode === 'reidai') ? currentProblemId : currentExerciseId;
+            const activeKey = getProblemInsightKey(currentMode, activeId);
+            const existingMemo = (insightMap[activeKey] || "").trim();
+            const openBtn = document.getElementById('open-insight-modal-btn');
+            const openBtnSub = document.getElementById('open-insight-modal-btn-sub');
+
+            if (existingMemo) {
+                if (openBtn) {
+                    openBtn.innerHTML = '🧠 メモ記録済み（クリックで確認・編集）';
+                    openBtn.style.background = 'rgba(99, 102, 241, 0.16)';
+                    openBtn.style.color = '#4F46E5';
+                    openBtn.style.borderColor = '#6366F1';
+                }
+                if (openBtnSub) {
+                    openBtnSub.innerHTML = '🧠 メモ編集';
+                    openBtnSub.style.background = 'rgba(99, 102, 241, 0.14)';
+                }
+            } else {
+                if (openBtn) {
+                    openBtn.innerHTML = '🧠 この問題の「気づき・極意」をメモする';
+                    openBtn.style.background = 'rgba(99, 102, 241, 0.06)';
+                    openBtn.style.color = '#6366F1';
+                    openBtn.style.borderColor = 'rgba(99, 102, 241, 0.4)';
+                }
+                if (openBtnSub) {
+                    openBtnSub.innerHTML = '🧠 気づきメモを書く';
+                    openBtnSub.style.background = 'rgba(99, 102, 241, 0.04)';
+                }
+            }
+        }
+
+        function openInsightModal() {
+            if (!insightModal) return;
+            const isReidai = (currentMode === 'reidai');
+            const activeId = isReidai ? currentProblemId : currentExerciseId;
+            const activeKey = getProblemInsightKey(currentMode, activeId);
+            const p = isReidai ? BUNKEI_MATH_PROBLEMS[activeId] : BUNKEI_MATH_EXERCISES[activeId];
+            const cat = isReidai 
+                ? BUNKEI_MATH_CATALOG.find(c => c.id === activeId)
+                : BUNKEI_MATH_EXERCISES_CATALOG.find(c => c.id === activeId);
+
+            const titleText = (p && p.title) ? p.title : (cat ? cat.title : "");
+            const label = isReidai ? `例題 ${activeId}` : `演習 ${activeId}`;
+            if (insightModalTitle) {
+                insightModalTitle.textContent = titleText ? `🧠 【${label}: ${titleText}】の気づきメモ` : `🧠 【${label}】の気づきメモ`;
+            }
+
+            if (insightTextInput) {
+                insightTextInput.value = insightMap[activeKey] || "";
+            }
+
+            // ドロワー内の解説参照エリアを更新
+            const drawerStrategyBox = document.getElementById('insight-drawer-strategy-box');
+            const drawerStrategyText = document.getElementById('insight-drawer-strategy-text');
+            const drawerAnswerText = document.getElementById('insight-drawer-answer-text');
+            const sourceStrategyBox = document.getElementById('strategy-pattern-box');
+            const sourceStrategyText = document.getElementById('target-strategy-pattern');
+            const sourceAnswerText = document.getElementById('target-model-answer');
+
+            if (drawerStrategyBox && drawerStrategyText) {
+                if (sourceStrategyBox && sourceStrategyBox.style.display !== 'none' && sourceStrategyText && sourceStrategyText.innerHTML.trim()) {
+                    drawerStrategyText.innerHTML = sourceStrategyText.innerHTML;
+                    drawerStrategyBox.style.display = 'block';
+                } else {
+                    drawerStrategyBox.style.display = 'none';
+                }
+            }
+            if (drawerAnswerText) {
+                drawerAnswerText.innerHTML = (sourceAnswerText && sourceAnswerText.innerHTML.trim()) 
+                    ? sourceAnswerText.innerHTML 
+                    : (p ? formatMathContent(`【解答】\n${p.answer}\n\n【解説】\n${isReidai ? p.explanation : (p.commentary || '')}`) : '問題データを準備中です。');
+            }
+
+            safeTypeset([insightModalTitle, drawerStrategyText, drawerAnswerText]);
+
+            updateInsightPreview();
+            insightModal.classList.add('active');
+            if (insightTextInput) insightTextInput.focus();
+        }
+
+        function closeInsightModal() {
+            if (insightModal) insightModal.classList.remove('active');
+        }
+
+        function updateInsightPreview() {
+            if (!insightPreviewBox || !insightPreviewContent) return;
+            const val = insightTextInput ? insightTextInput.value.trim() : "";
+            if (val) {
+                insightPreviewContent.innerHTML = renderFormattedMarkdown(val);
+                insightPreviewBox.style.display = 'block';
+                safeTypeset([insightPreviewContent]);
+            } else {
+                insightPreviewBox.style.display = 'none';
+                insightPreviewContent.innerHTML = "";
+            }
+        }
+
+        async function saveInsight() {
+            const isReidai = (currentMode === 'reidai');
+            const activeId = isReidai ? currentProblemId : currentExerciseId;
+            const activeKey = getProblemInsightKey(currentMode, activeId);
+            const fixedDbId = getProblemFixedDbId(currentMode, activeId);
+            const memoText = insightTextInput ? insightTextInput.value.trim() : "";
+
+            if (saveInsightBtn) {
+                saveInsightBtn.textContent = '💾 保存中...';
+                saveInsightBtn.disabled = true;
+            }
+
+            try {
+                insightMap[activeKey] = memoText;
+                try {
+                    localStorage.setItem('flora_bunkei_math_insights', JSON.stringify(insightMap));
+                } catch (_) {}
+
+                // Firebase への保存
+                if (currentUser) {
+                    // 1. 文系数学専用 insights ノード
+                    await set(ref(database, `users/${currentUser.uid}/bunkeiMathInsights/${activeKey}`), {
+                        memo: memoText,
+                        updatedAt: new Date().toISOString(),
+                        problemId: activeId,
+                        mode: currentMode
+                    });
+
+                    // 2. Flora全体のナレッジベース（insights.html）と統合するための problems ノード
+                    const p = isReidai ? BUNKEI_MATH_PROBLEMS[activeId] : BUNKEI_MATH_EXERCISES[activeId];
+                    const probRef = ref(database, `users/${currentUser.uid}/problems/${fixedDbId}`);
+                    const nowIso = new Date().toISOString();
+                    const combinedAnswer = p 
+                        ? (isReidai ? `【解答】\n${p.answer || ""}\n\n【解説講義】\n${p.explanation || ""}` : `【解答】\n${p.answer || ""}\n\n【解説・研究】\n${p.commentary || ""}`)
+                        : "";
+
+                    const problemPayload = {
+                        id: fixedDbId,
+                        title: (p && p.question) || (isReidai ? `文系の数学 例題${activeId}` : `文系の数学 演習${activeId}`),
+                        short_title: isReidai ? `文系の数学 例題${activeId} ${(p && p.title) || ''}` : `文系の数学 演習${activeId} ${(p && p.title) || ''}`,
+                        subject: "数学",
+                        field: isReidai ? `文系の数学（${(p && p.chapter) || ''}）` : `文系の数学・演習（${(p && p.chapter) || ''}）`,
+                        trap_description: "解法の着眼点、または計算プロセスの見落とし",
+                        strategyPattern: (p ? (isReidai ? p.key_point : p.commentary) : "") || "",
+                        answerFormula: combinedAnswer,
+                        insight: memoText,
+                        insightUpdatedAt: nowIso,
+                        createdAt: nowIso,
+                        sourceBook: "文系の数学 重要事項完全習得編",
+                        sourceBookProblemId: activeId,
+                        mode: currentMode
+                    };
+
+                    await set(probRef, problemPayload);
+                }
+
+                updateInsightButtonState();
+                showToast("🧠 気づきメモをクラウドに保存しました！", "success", 2500);
+                closeInsightModal();
+            } catch (err) {
+                console.error("気づきメモ保存エラー:", err);
+                showToast("保存に失敗しました: " + (err?.message || err), "error");
+            } finally {
+                if (saveInsightBtn) {
+                    saveInsightBtn.textContent = '💾 クラウドに保存';
+                    saveInsightBtn.disabled = false;
+                }
+            }
+        }
+
+        // イベントリスナーの登録
+        if (openInsightBtn) openInsightBtn.addEventListener('click', openInsightModal);
+        if (openInsightBtnSub) openInsightBtnSub.addEventListener('click', openInsightModal);
+        if (closeInsightBtn) closeInsightBtn.addEventListener('click', closeInsightModal);
+        if (closeInsightModalBtn) closeInsightModalBtn.addEventListener('click', closeInsightModal);
+        if (saveInsightBtn) saveInsightBtn.addEventListener('click', saveInsight);
+        if (insightModal) {
+            insightModal.addEventListener('click', (e) => {
+                if (e.target === insightModal) closeInsightModal();
+            });
+        }
+        if (insightTextInput) {
+            insightTextInput.addEventListener('input', updateInsightPreview);
+        }
+
+        // 🧠 AI回答から気づきメモへの転記
+        window.saveAiResponseToInsight = function(rawText) {
+            if (!rawText) return;
+            openInsightModal();
+            const isReidai = (currentMode === 'reidai');
+            const activeId = isReidai ? currentProblemId : currentExerciseId;
+            const p = isReidai ? BUNKEI_MATH_PROBLEMS[activeId] : BUNKEI_MATH_EXERCISES[activeId];
+            const label = isReidai ? `例題 ${activeId}` : `演習 ${activeId}`;
+            const title = (p && p.title) ? ` ${p.title}` : "";
+
+            const addition = `【💡 AI解説からの要点 (${label}${title})】\n${rawText.trim()}`;
+            if (insightTextInput) {
+                if (insightTextInput.value.trim()) {
+                    insightTextInput.value += `\n\n---\n\n${addition}`;
+                } else {
+                    insightTextInput.value = addition;
+                }
+                updateInsightPreview();
+            }
+            showToast("🧠 AIの解説を気づきメモに転記しました！確認して保存してください。", "success", 3500);
+        };
+
+        // -------------------------------------------------------------------------
+        // 🤖 AI TUTOR チャット相談（Gemini / DeepSeek）
+        // -------------------------------------------------------------------------
+        const chatHistoryBox = document.getElementById('chat-history-box');
+        const aiChatInput = document.getElementById('ai-chat-input');
+        const aiChatSendBtn = document.getElementById('ai-chat-send-btn');
+        let chatConversationHistory = []; // マルチターン履歴保持
+
+        function resetChatForProblem() {
+            chatConversationHistory = [];
+            if (chatHistoryBox) {
+                chatHistoryBox.innerHTML = `
+                    <div class="chat-bubble bubble-ai" id="initial-ai-bubble">
+                        演習お疲れ様です！この問題は過去の出題頻度が高い超重要テーマです。解法の定石や典型的な罠、途中式の変形など、納得いくまで何でも質問してください！
+                    </div>
+                `;
+            }
+        }
+
+        function renderFormattedMarkdown(text) {
+            if (!text) return "";
+            let clean = sanitizeMathText(text);
+
+            // 数式ブロックを退避
+            const mathBlocks = [];
+            let placeholderText = clean.replace(/(\$\$[\s\S]*?\$\$|\$[^\$\n]+?\$)/g, (match) => {
+                mathBlocks.push(match);
+                return `%%%MATH_${mathBlocks.length - 1}%%%`;
+            });
+
+            let formatted = placeholderText
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;");
+
+            formatted = formatted.replace(/^###\s*(.+)$/gm, '<h4 style="font-size:0.95rem; font-weight:700; color:var(--brand-primary); margin:0.6rem 0 0.3rem 0; border-bottom:1px solid var(--border-color); padding-bottom:0.2rem;">$1</h4>');
+            formatted = formatted.replace(/^##\s*(.+)$/gm, '<h3 style="font-size:1rem; font-weight:800; color:var(--brand-primary); margin:0.7rem 0 0.35rem 0;">$1</h3>');
+            formatted = formatted.replace(/^---\s*$/gm, '<hr style="border:none; border-top:1px dashed var(--border-color); margin:0.6rem 0;">');
+            formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong style="font-weight:700;">$1</strong>');
+            formatted = formatted.replace(/^(\d+\.)\s*/gm, '<span style="color:var(--brand-primary); font-weight:800; margin-right:0.3rem;">$1</span>');
+            formatted = formatted.replace(/^[-*]\s+(.+)$/gm, '<li style="margin-left: 1.2rem; list-style-type: disc;">$1</li>');
+
+            // 数式ブロック復元
+            formatted = formatted.replace(/%%%MATH_(\d+)%%%/g, (_, idx) => mathBlocks[idx]);
+            formatted = formatted.replace(/\n/g, '<br>');
+            formatted = formatted.replace(/(<\/h[34]>|<\/li>|<hr[^>]*>)\s*<br>/gi, '$1');
+            return formatted;
+        }
+
+        function appendChatBubble(text, sender) {
+            const bubble = document.createElement('div');
+            bubble.className = `chat-bubble bubble-${sender} tex2jax_process`;
+            bubble.textContent = text;
+            chatHistoryBox.appendChild(bubble);
+            chatHistoryBox.scrollTop = chatHistoryBox.scrollHeight;
+            return bubble;
+        }
+
+        function appendAiBubbleWithActions(htmlContent, rawTextForMemo) {
+            const bubble = document.createElement('div');
+            bubble.className = 'chat-bubble bubble-ai tex2jax_process';
+
+            const bodyDiv = document.createElement('div');
+            bodyDiv.className = 'ai-bubble-body';
+            bodyDiv.innerHTML = htmlContent;
+            bubble.appendChild(bodyDiv);
+
+            // アクションバー（気づきメモ保存 & コピー）
+            const actionBar = document.createElement('div');
+            actionBar.className = 'ai-bubble-action-bar';
+
+            const saveInsightBtn = document.createElement('button');
+            saveInsightBtn.type = 'button';
+            saveInsightBtn.className = 'ai-bubble-action-btn save-insight-btn-highlight';
+            saveInsightBtn.innerHTML = '🧠 気づきメモに保存';
+            saveInsightBtn.title = 'このAI解説を気づき・極意メモに転記して保存';
+            saveInsightBtn.onclick = () => window.saveAiResponseToInsight(rawTextForMemo || bodyDiv.innerText);
+
+            const copyBtn = document.createElement('button');
+            copyBtn.type = 'button';
+            copyBtn.className = 'ai-bubble-action-btn';
+            copyBtn.innerHTML = '📋 コピー';
+            copyBtn.title = '解説テキストをクリップボードにコピー';
+            copyBtn.onclick = async () => {
+                try {
+                    await navigator.clipboard.writeText(rawTextForMemo || bodyDiv.innerText);
+                    showToast('📋 解説テキストをコピーしました！', 'success', 2000);
+                } catch (_) {
+                    showToast('コピーに失敗しました', 'error');
+                }
+            };
+
+            actionBar.appendChild(saveInsightBtn);
+            actionBar.appendChild(copyBtn);
+            bubble.appendChild(actionBar);
+
+            chatHistoryBox.appendChild(bubble);
+            chatHistoryBox.scrollTop = chatHistoryBox.scrollHeight;
+            return bubble;
+        }
+
+        aiChatSendBtn.addEventListener('click', () => sendAiQuery());
+        aiChatInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendAiQuery();
+            }
+        });
+
+        // クイック質問チップ
+        document.querySelectorAll('.chat-quick-chip-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const text = btn.dataset.quick;
+                if (text) sendAiQuery(text);
+            });
+        });
+
+        document.getElementById('activate-ai-question-btn').addEventListener('click', () => {
+            aiChatInput.focus();
+        });
+
+        async function sendAiQuery(customText) {
+            const query = (customText || aiChatInput.value).trim();
+            if (!query) return;
+
+            if (!customText) aiChatInput.value = '';
+
+            aiChatSendBtn.disabled = true;
+            aiChatSendBtn.textContent = '...';
+
+            // ユーザー発言追加
+            appendChatBubble(query, 'user');
+
+            const isReidai = (currentMode === 'reidai');
+            const activeId = isReidai ? currentProblemId : currentExerciseId;
+            const p = isReidai ? BUNKEI_MATH_PROBLEMS[activeId] : BUNKEI_MATH_EXERCISES[activeId];
+            const typeLabel = isReidai ? '例題' : '演習問題';
+
+            const contextText = p ? `
+【現在解いている問題】
+- 区分: ${typeLabel} ${p.id}
+- 単元: ${p.chapter}（${p.title}）
+- 問題文:
+${p.question}
+
+- 模範解答:
+${p.answer}
+
+- 着眼点・ポイント:
+${isReidai ? p.key_point : (p.commentary || '')}
+` : `【現在解いている問題番号】: ${typeLabel} ${activeId}（※問題文データ準備中。生徒の質問に即して柔軟に解説してください）`;
+
+            const styleInstructions = {
+                standard: "【指導方針：標準丁寧】基礎からステップを踏んで親身に解説してください。",
+                easy: "【指導方針：噛み砕き】専門用語を極力避け、直感的な日常の例えや図解イメージで分かりやすく解説してください。",
+                speed: "【指導方針：最速裏技】入試本番で使える秒殺テクニック、検算方法、グラフによる高速判断を中心に解説してください。",
+                strict: "【指導方針：厳密論理】定理の前提条件や同値変形、論理の飛躍がない厳密な証明スタイルで解説してください。"
+            };
+            const currentStyleInstruction = styleInstructions[activeTeachingStyle] || styleInstructions.standard;
+
+            const systemPrompt = `あなたは高校文系数学のプロ講師AI（AI TUTOR）です。
+生徒が河合塾の参考書『文系の数学 重要事項 完全習得編』の${typeLabel}に取り組んでいます。
+${currentStyleInstruction}
+生徒の疑問に対して、親切・的確・論理的・直感的に分かりやすく答えてください。
+数式は必ずLaTeX形式（インラインは $...$、別行は $$...$$）で記述してください。
+見出しには「### 見出し名」、太字には「**重要ポイント**」を用いて構造化してください。
+
+${contextText}`;
+
+            const loadingBubble = appendChatBubble('考え中...', 'ai');
+
+            try {
+                // 選択中エンジンに応じたAPIキーチェック
+                if (activeEngine === 'deepseek') {
+                    if (!hasAvailableDeepseekKey()) {
+                        loadingBubble.innerHTML = `
+                            <div>⚠️ DeepSeekのAPIキーが設定されていません。</div>
+                            <div style="margin-top:0.4rem; display:flex; gap:0.4rem;">
+                                <button type="button" class="flora-btn flora-btn-secondary flora-btn-sm" id="chat-open-settings-deepseek-btn" style="font-size:0.75rem; padding:0.25rem 0.6rem;">🔑 AI設定を開く</button>
+                                <button type="button" class="flora-btn flora-btn-primary flora-btn-sm" id="chat-switch-to-gemini-btn" style="font-size:0.75rem; padding:0.25rem 0.6rem;">✨ Geminiに切り替え</button>
+                            </div>
+                        `;
+                        const setBtn = loadingBubble.querySelector('#chat-open-settings-deepseek-btn');
+                        if (setBtn) setBtn.onclick = () => openApiKeyManager();
+                        const swBtn = loadingBubble.querySelector('#chat-switch-to-gemini-btn');
+                        if (swBtn) {
+                            swBtn.onclick = () => {
+                                activeEngine = 'gemini';
+                                try { localStorage.setItem('flora_bunkei_math_engine', 'gemini'); } catch (_) {}
+                                updateEngineUI();
+                                loadingBubble.remove();
+                                sendAiQuery(query);
+                            };
+                        }
+                        return;
+                    }
+                } else {
+                    if (!hasAvailableGeminiKey()) {
+                        loadingBubble.innerHTML = `
+                            <div>⚠️ GeminiのAPIキーが設定されていません。</div>
+                            <div style="margin-top:0.4rem; display:flex; gap:0.4rem;">
+                                <button type="button" class="flora-btn flora-btn-secondary flora-btn-sm" id="chat-open-settings-gemini-btn" style="font-size:0.75rem; padding:0.25rem 0.6rem;">🔑 AI設定を開く</button>
+                                <button type="button" class="flora-btn flora-btn-primary flora-btn-sm" id="chat-switch-to-deepseek-btn" style="font-size:0.75rem; padding:0.25rem 0.6rem;">🐋 DeepSeekに切り替え</button>
+                            </div>
+                        `;
+                        const setBtn = loadingBubble.querySelector('#chat-open-settings-gemini-btn');
+                        if (setBtn) setBtn.onclick = () => openApiKeyManager();
+                        const swBtn = loadingBubble.querySelector('#chat-switch-to-deepseek-btn');
+                        if (swBtn) {
+                            swBtn.onclick = () => {
+                                activeEngine = 'deepseek';
+                                try { localStorage.setItem('flora_bunkei_math_engine', 'deepseek'); } catch (_) {}
+                                updateEngineUI();
+                                loadingBubble.remove();
+                                sendAiQuery(query);
+                            };
+                        }
+                        return;
+                    }
+                }
+
+                // マルチターン会話履歴に追加
+                chatConversationHistory.push({
+                    role: 'user',
+                    parts: [{ text: `生徒からの質問: ${query}` }]
+                });
+
+                const reply = await callGeminiChat(
+                    chatConversationHistory,
+                    systemPrompt,
+                    {
+                        temperature: 0.5,
+                        featureId: 'chat',
+                        preferredModel: (activeEngine === 'deepseek' ? 'deepseek-flash' : null)
+                    }
+                );
+
+                let replyText = "";
+                if (typeof reply === "string") {
+                    if (reply.trim().startsWith("{") && reply.trim().endsWith("}")) {
+                        try {
+                            const parsed = JSON.parse(reply);
+                            replyText = parsed.ai_response || parsed.text || reply;
+                        } catch (_) {
+                            replyText = reply;
+                        }
+                    } else {
+                        replyText = reply;
+                    }
+                } else if (reply && typeof reply === "object") {
+                    replyText = reply.ai_response || reply.text || JSON.stringify(reply);
+                } else {
+                    replyText = "回答を生成できませんでした。";
+                }
+
+                // AI回答を会話履歴に追加
+                chatConversationHistory.push({
+                    role: 'model',
+                    parts: [{ text: replyText }]
+                });
+
+                // ローディングバブルを削除し、リッチ描画＋アクション付きバブルを追加
+                loadingBubble.remove();
+                const formattedHtml = renderFormattedMarkdown(replyText);
+                const newBubble = appendAiBubbleWithActions(formattedHtml, replyText);
+                await safeTypeset([newBubble]);
+
+            } catch (err) {
+                console.error("AI TUTOR エラー:", err);
+                const errMsg = err?.message || String(err);
+                const isLimitOrCooldown = /(上限|お休み|429|クールダウン|レート制限|exhausted|quota|demand)/i.test(errMsg);
+
+                if (isLimitOrCooldown) {
+                    loadingBubble.innerHTML = `
+                        <div style="font-size:0.85rem; line-height:1.5;">
+                            <div style="color:var(--danger, #ef4444); font-weight:700; margin-bottom:0.25rem;">
+                                ⚠️ AIの利用制限・お休み通知
+                            </div>
+                            <div style="color:var(--text-secondary); font-size:0.78rem; margin-bottom:0.5rem; word-break:break-all;">
+                                ${errMsg.replace(/</g, "&lt;").replace(/>/g, "&gt;")}
+                            </div>
+                            <div style="display:flex; flex-wrap:wrap; gap:0.4rem;">
+                                <button type="button" class="flora-btn flora-btn-primary flora-btn-sm" id="chat-rescue-retry-btn" style="font-size:0.75rem; padding:0.25rem 0.6rem;">
+                                    🔄 上限記録を解除して再試行
+                                </button>
+                                <button type="button" class="flora-btn flora-btn-secondary flora-btn-sm" id="chat-switch-engine-btn" style="font-size:0.75rem; padding:0.25rem 0.6rem;">
+                                    ${activeEngine === 'gemini' ? '🐋 DeepSeekに切り替えて質問' : '✨ Geminiに切り替えて質問'}
+                                </button>
+                                <button type="button" class="flora-btn flora-btn-secondary flora-btn-sm" id="chat-open-settings-btn" style="font-size:0.75rem; padding:0.25rem 0.6rem;">
+                                    🔑 AI設定
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    const rescueBtn = loadingBubble.querySelector('#chat-rescue-retry-btn');
+                    if (rescueBtn) {
+                        rescueBtn.onclick = () => {
+                            clearAllKeyCooldowns();
+                            showToast('🔄 クールダウン記録をすべて解除しました。再試行します...', 'info', 2000);
+                            loadingBubble.remove();
+                            sendAiQuery(query);
+                        };
+                    }
+                    const switchBtn = loadingBubble.querySelector('#chat-switch-engine-btn');
+                    if (switchBtn) {
+                        switchBtn.onclick = () => {
+                            activeEngine = (activeEngine === 'gemini') ? 'deepseek' : 'gemini';
+                            try { localStorage.setItem('flora_bunkei_math_engine', activeEngine); } catch (_) {}
+                            updateEngineUI();
+                            showToast(activeEngine === 'gemini' ? '✨ Geminiに切り替えました' : '🐋 DeepSeekに切り替えました', 'info', 1500);
+                            loadingBubble.remove();
+                            sendAiQuery(query);
+                        };
+                    }
+                    const settingsBtn = loadingBubble.querySelector('#chat-open-settings-btn');
+                    if (settingsBtn) {
+                        settingsBtn.onclick = () => openApiKeyManager();
+                    }
+                } else {
+                    loadingBubble.textContent = `⚠️ AIからの回答取得に失敗しました (${errMsg})`;
+                }
+                chatConversationHistory.pop();
+            } finally {
+                aiChatSendBtn.disabled = false;
+                aiChatSendBtn.textContent = '送信';
+            }
+        }
+
+        // 初期ロード実行
+        renderProblem(currentMode === 'reidai' ? currentProblemId : currentExerciseId);
+    </script>
+</body>
+</html>

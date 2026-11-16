@@ -42,7 +42,7 @@ app.post('/api/gemini/generate', async (req, res) => {
       });
     }
 
-    const { model = 'gemini-3.8-flash', ...geminiPayload } = req.body || {};
+    const { model = 'gemini-4-hydrogen', ...geminiPayload } = req.body || {};
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
     const apiRes = await fetch(url, {
@@ -90,16 +90,29 @@ app.post('/api/deepseek/chat', async (req, res) => {
   }
 });
 
+// AI endpoints for Flora
+app.get('/api/ai', (req, res) => {
+  res.json({ ok: true, configured: Boolean(process.env.GEMINI_API_KEY) });
+});
+
+// Serve legacy archive at /legacy
+const legacyDir = path.join(__dirname, 'legacy');
+app.use('/legacy', express.static(legacyDir, { extensions: ['html'] }));
+app.use('/junker/legacy', express.static(legacyDir, { extensions: ['html'] }));
+
 // Serve static assets from project root and handle /junker base prefix
 app.use('/junker', express.static(__dirname, { extensions: ['html'] }));
 app.use(express.static(__dirname, { extensions: ['html'] }));
 
-// Serve index.html for root path
-app.get('/', (req, res) => {
+// SPA fallback: return index.html for navigation routes (routes without file extensions)
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api/') || path.extname(req.path)) {
+    return next();
+  }
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Fallback to 404.html
+// Fallback to 404.html for missing static files
 app.use((req, res) => {
   res.status(404).sendFile(path.join(__dirname, '404.html'));
 });

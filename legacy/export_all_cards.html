@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Export All Memorization Items</title>
+    <style>
+        body { font-family: sans-serif; background: #0f172a; color: #f8fafc; padding: 2rem; }
+        .box { background: #1e293b; padding: 1.5rem; border-radius: 8px; margin-bottom: 1rem; border: 1px solid #334155; }
+        pre { background: #090d16; padding: 1rem; border-radius: 6px; overflow: auto; max-height: 400px; color: #38bdf8; }
+        .stat-item { margin-bottom: 0.5rem; }
+    </style>
+</head>
+<body>
+    <h1>📦 全暗記事項・授業データ 完全エクスポート</h1>
+    <div id="status" class="box">Firebase 認証待機中...</div>
+    <div id="summary" class="box" style="display:none;"></div>
+    <pre id="output" style="display:none;"></pre>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+        import { firebaseConfig } from "./firebase-config.js";
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+
+        const statusEl = document.getElementById("status");
+        const summaryEl = document.getElementById("summary");
+        const outputEl = document.getElementById("output");
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                statusEl.innerHTML = "❌ ログインしていません。ブラウザで一度ログインしてください。";
+                return;
+            }
+
+            statusEl.innerHTML = `✅ ログイン中: ${user.displayName || user.email || user.uid}<br>⏳ 全データを取得中...`;
+
+            try {
+                // 1. 全授業データ
+                const lessonsSnap = await get(ref(database, `users/${user.uid}/lessons`));
+                const rawLessons = lessonsSnap.exists() ? lessonsSnap.val() : {};
+
+                // 2. 全問題データ
+                const problemsSnap = await get(ref(database, `users/${user.uid}/problems`));
+                const rawProblems = problemsSnap.exists() ? problemsSnap.val() : {};
+
+                // 3. 全QnAログ
+                const qnaSnap = await get(ref(database, `users/${user.uid}/qna_logs`));
+                const rawQna = qnaSnap.exists() ? qnaSnap.val() : {};
+
+                // 暗記事項の抽出
+                const cards = [];
+                const subjectStats = {};
+
+                // A. 授業の暗記事項
+                Object.entries(rawLessons).forEach(([lid, lesson]) => {
+                    if (!lesson || !Array.isArray(lesson.memorizationPoints)) return;
+                    const subj = lesson.subject || "その他";
+                    if (!subjectStats[subj]) subjectStats[subj] = { total: 0, lessons: 0 };
+                    subjectStats[subj].lessons++;
+
+                    lesson.memorizationPoints.forEach((mp, idx) => {
+                        const mpId = mp.id || `idx_${idx}`;
+                        let q = (mp.question || "").trim();
+                        let a = (mp.answer || mp.content || "").trim();
+                        const note = (mp.note || "").trim();
+
+                        if (!q && a.includes("：")) {
+                            const parts = a.split("：");
+                            q = parts[0].trim();
+                            a = parts.slice(1).join("：").trim();
+                        } else if (!q && a.includes(":")) {
+                            const parts = a.split(":");
+                            q = parts[0].trim();
+                            a = parts.slice(1).join(":").trim();
+                        }
+
+                        subjectStats[subj].total++;
+                        cards.push({
+                            id: `mem_${lid}_${mpId}`,
+                            sourceType: "lesson",
+                            lessonId: lid,
+                            lessonTitle: lesson.title || "無題の授業",
+                            subject: subj,
+                            category: mp.category || "重要事項",
+                            question: q,
+                            answer: a,
+                            note: note,
+                            distractors: Array.isArray(mp.distractors) ? mp.distractors : []
+                        });
+                    });
+                });
+
+                // B. 問題の解法の極意 (insight)
+                let problemInsightCount = 0;
+                Object.entries(rawProblems).forEach(([pid, prob]) => {
+                    if (!prob || !prob.insight || !prob.insight.trim()) return;
+                    const subj = prob.subject || "その他";
+                    problemInsightCount++;
+                    cards.push({
+                        id: `prob_${pid}`,
+                        sourceType: "problem_insight",
+                        problemId: pid,
+                        subject: subj,
+                        category: "解法の極意",
+                        question: prob.question || prob.title || "問題",
+                        answer: prob.insight.trim(),
+                        note: prob.explanation || "",
+                        distractors: []
+                    });
+                });
+
+                const payload = {
+                    uid: user.uid,
+                    timestamp: new Date().toISOString(),
+                    totalCards: cards.length,
+                    lessonCardsCount: cards.filter(c => c.sourceType === "lesson").length,
+                    problemInsightCount,
+                    totalLessons: Object.keys(rawLessons).length,
+                    totalProblems: Object.keys(rawProblems).length,
+                    subjectStats,
+                    cards,
+                    rawLessons
+                };
+
+                let sumHtml = `<h3>📊 エクスポート集計結果</h3>`;
+                sumHtml += `<p>全暗記事項数: <b>${cards.length}</b> 件 (授業暗記: ${payload.lessonCardsCount} 件, 問題要点: ${problemInsightCount} 件)</p>`;
+                sumHtml += `<ul>`;
+                for (const [subj, stat] of Object.entries(subjectStats)) {
+                    sumHtml += `<li><b>${subj}</b>: ${stat.total} 件 (${stat.lessons} 授業)</li>`;
+                }
+                sumHtml += `</ul>`;
+                summaryEl.innerHTML = sumHtml;
+                summaryEl.style.display = "block";
+
+                outputEl.textContent = JSON.stringify(payload, null, 2);
+                outputEl.style.display = "block";
+
+                statusEl.innerHTML = `✅ 抽出完了（${cards.length} 件）！ ローカルサーバー (http://localhost:3001/save) に保存中...`;
+
+                try {
+                    const res = await fetch("http://localhost:3001/save", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(payload)
+                    });
+                    const resJson = await res.json();
+                    statusEl.innerHTML = `🎉 成功！ 全 ${cards.length} 件のデータがローカルファイルに保存されました！`;
+                } catch (postErr) {
+                    statusEl.innerHTML = `⚠️ サーバーへの送信エラーですが画面にJSONを表示しました: ${postErr.message}`;
+                }
+
+            } catch (err) {
+                console.error(err);
+                statusEl.innerHTML = `❌ エラー: ${err.message}`;
+            }
+        });
+    </script>
+</body>
+</html>

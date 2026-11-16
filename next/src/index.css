@@ -1,0 +1,304 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --surface-alpha: 0.52;
+  --surface-2-alpha: 0.34;
+  --soft-alpha: 0.65;
+  --border-alpha: 0.48;
+  --glass-blur: 12px;
+
+  --bg: #f5f2ed;
+  --surface: rgba(255, 255, 255, var(--surface-alpha));
+  --surface-2: rgba(255, 255, 255, var(--surface-2-alpha));
+  --ink: #18181b;
+  --muted: #3f3f46;
+  --border: rgba(255, 255, 255, var(--border-alpha));
+  --accent: #047857;
+  --accent-soft: rgba(236, 253, 245, var(--soft-alpha));
+  --accent-ink: #064e3b;
+  --accent-contrast: #ffffff;
+  --danger: #dc2626;
+  --danger-soft: rgba(254, 242, 242, var(--soft-alpha));
+  --warning: #b45309;
+  --warning-soft: rgba(255, 251, 235, var(--soft-alpha));
+  --ring: #10b981;
+}
+
+.dark {
+  --bg: #0f1117;
+  --surface: rgba(18, 20, 28, var(--surface-alpha));
+  --surface-2: rgba(28, 32, 44, var(--surface-2-alpha));
+  --ink: #f4f4f5;
+  --muted: #d4d4d8;
+  --border: rgba(255, 255, 255, 0.16);
+  --accent: #34d399;
+  --accent-soft: rgba(5, 46, 38, var(--soft-alpha));
+  --accent-ink: #6ee7b7;
+  --accent-contrast: #052e26;
+  --danger: #f87171;
+  --danger-soft: rgba(42, 18, 21, var(--soft-alpha));
+  --warning: #fbbf24;
+  --warning-soft: rgba(42, 31, 10, var(--soft-alpha));
+  --ring: #34d399;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-ink: var(--accent-ink);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+
+  --font-sans: 'Inter', 'Noto Sans JP', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --radius-card: 12px;
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    background-color: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-feature-settings: 'palt' 1;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+    color: inherit;
+  }
+
+  select option,
+  select optgroup {
+    background-color: #ffffff;
+    color: #18181b;
+  }
+
+  .dark select option,
+  .dark select optgroup {
+    background-color: #181b26;
+    color: #f4f4f5;
+  }
+
+  ::selection {
+    background: var(--accent-soft);
+    color: var(--accent-ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /* =========================================================================
+     アプリ全体の背景画像（フィルターなし・オリジナル高画質）
+     ========================================================================= */
+  .flora-app-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image: url('/images/app-bg.jpg'); /* fallback; overridden by inline style for base-path support */
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+
+  /* =========================================================================
+     Markdown & 数式タイポグラフィ
+     ========================================================================= */
+  .markdown {
+    font-size: 0.945rem;
+    line-height: 2;
+    word-break: break-word;
+  }
+
+  .markdown > :first-child {
+    margin-top: 0;
+  }
+
+  .markdown > :last-child {
+    margin-bottom: 0;
+  }
+
+  .markdown h1,
+  .markdown h2,
+  .markdown h3,
+  .markdown h4 {
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.5;
+    margin: 1.4em 0 0.55em;
+  }
+
+  .markdown h2 {
+    font-size: 1.0625rem;
+  }
+
+  .markdown h3 {
+    font-size: 1rem;
+  }
+
+  .markdown p {
+    margin: 0.55em 0;
+  }
+
+  .markdown ul,
+  .markdown ol {
+    margin: 0.6em 0;
+    padding-left: 1.4em;
+  }
+
+  .markdown ul {
+    list-style: disc;
+  }
+
+  .markdown ol {
+    list-style: decimal;
+  }
+
+  .markdown li {
+    margin: 0.4em 0;
+    line-height: 1.9;
+  }
+
+  .markdown li::marker {
+    color: var(--muted);
+  }
+
+  .markdown strong {
+    font-weight: 600;
+  }
+
+  .markdown a {
+    color: var(--accent-ink);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .markdown code {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 0.1em 0.35em;
+    font-size: 0.86em;
+  }
+
+  .markdown pre {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.9em 1em;
+    overflow-x: auto;
+    margin: 0.9em 0;
+  }
+
+  .markdown pre code {
+    background: transparent;
+    border: 0;
+    padding: 0;
+  }
+
+  .markdown blockquote {
+    border-left: 3px solid var(--accent);
+    padding-left: 0.9em;
+    color: var(--muted);
+    margin: 0.9em 0;
+  }
+
+  .markdown table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0.9em 0;
+    font-size: 0.9em;
+  }
+
+  .markdown th,
+  .markdown td {
+    border: 1px solid var(--border);
+    padding: 0.45em 0.6em;
+    text-align: left;
+  }
+
+  .markdown th {
+    background: var(--surface-2);
+    font-weight: 600;
+  }
+
+  .flora-glass {
+    backdrop-filter: blur(var(--glass-blur, 12px));
+    -webkit-backdrop-filter: blur(var(--glass-blur, 12px));
+  }
+
+  .katex-display {
+    overflow-x: auto;
+    overflow-y: hidden;
+    margin: 0.65em 0 !important;
+    padding: 0.55em 0.85em;
+    border-radius: 8px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    text-align: left !important;
+  }
+
+  .katex-display > .katex {
+    text-align: left !important;
+  }
+
+  .katex {
+    font-size: 1.04em;
+  }
+
+  /* 模範解答の最終答 (\mathbf{...}) をマーカー風に強調 */
+  .markdown .katex .mord.mathbf,
+  .markdown .katex .textbf {
+    color: var(--accent-ink);
+    background: color-mix(in oklab, var(--accent) 18%, transparent);
+    padding: 0.06em 0.22em;
+    border-radius: 4px;
+    border-bottom: 2px solid color-mix(in oklab, var(--accent) 60%, transparent);
+  }
+
+  .hide-scrollbar {
+    scrollbar-width: none;
+  }
+
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}

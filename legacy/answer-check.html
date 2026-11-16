@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="ja" class="notranslate" translate="no">
+<head>
+    <meta name="google" content="notranslate">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#059669">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="icons/icon.png">
+    <link rel="apple-touch-icon" href="icons/icon.png">
+    <title>Flora | クイック答え合わせ</title>
+    <link rel="stylesheet" href="style.css?v=3.5">
+
+    <script>
+        window.MathJax = {
+            loader: { load: ['[tex]/bbox', '[tex]/color'] },
+            tex: {
+                packages: { '[+]': ['bbox', 'color'] },
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true,
+                macros: {
+                    fbox: ["\\bbox[2px,border:1px solid]{\\text{#1}}", 1],
+                    boxed: ["\\bbox[2px,border:1px solid]{\\text{#1}}", 1]
+                }
+            },
+            options: {
+                skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+            },
+            startup: {
+                typeset: false // ページ全体の自動フルスキャンを停止
+            }
+        };
+    </script>
+    
+    <script>
+        let mathTypesetQueue = Promise.resolve();
+        function safeTypeset(targets) {
+            mathTypesetQueue = mathTypesetQueue.then(async () => {
+                if (!window.MathJax) return;
+                if (!window.MathJax.typesetPromise) {
+                    if (window.MathJax.startup && window.MathJax.startup.promise) {
+                        await window.MathJax.startup.promise.catch(() => {});
+                    }
+                }
+                if (!window.MathJax || !window.MathJax.typesetPromise) return;
+                try {
+                    let els = null;
+                    if (Array.isArray(targets)) els = targets.filter(el => el && el.isConnected);
+                    else if (targets && targets.isConnected) els = [targets];
+                    else if (targets && !targets.isConnected) return;
+
+                    if (typeof MathJax.typesetClear === "function") {
+                        try {
+                            if (els && els.length > 0) MathJax.typesetClear(els);
+                            else if (!targets) MathJax.typesetClear();
+                        } catch (_) {}
+                    }
+                    if (els && els.length > 0) await MathJax.typesetPromise(els);
+                    else if (!targets) await safeTypeset();
+                } catch (e) {
+                    console.debug("MathJax notice (handled):", e.message);
+                }
+            }).catch(err => console.debug("MathJax queue notice:", err));
+            return mathTypesetQueue;
+        }
+        window.safeTypeset = safeTypeset;
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
+    <style>
+        .check-workspace-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-sm);
+            padding: 2rem;
+            max-width: 860px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .filter-label {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            margin-bottom: 0.4rem;
+            display: block;
+        }
+        .subject-select-btn {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 0.4rem 0.9rem;
+            border-radius: var(--radius-full);
+            font-size: var(--fs-xs);
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .subject-select-btn:hover { border-color: #94A3B8; color: var(--text-primary); }
+        .subject-select-btn.active {
+            background: var(--brand-primary);
+            color: #fff;
+            border-color: var(--brand-primary);
+        }
+
+        .target-note-box {
+            background: var(--bg-subtle);
+            border: 1px dashed var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 1.1rem 1.3rem;
+            margin: 1.2rem 0 0.6rem 0;
+        }
+        .target-note-box .note-title {
+            font-size: 0.84rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.4rem;
+        }
+        .target-note-box .note-sub {
+            font-size: 0.74rem;
+            color: var(--text-secondary);
+            margin-top: 0.4rem;
+            line-height: 1.5;
+        }
+
+        .math-preview {
+            margin-top: 0.6rem;
+            padding: 0.8rem 1rem;
+            background: var(--bg-surface);
+            border: 1px dashed var(--border-color);
+            border-radius: var(--radius-md);
+            min-height: 40px;
+            font-size: var(--fs-sm);
+            color: var(--text-primary);
+            word-break: break-all;
+        }
+
+        .preview-box {
+            width: 100%; display: none; flex-wrap: wrap; gap: 0.6rem; margin-top: 0.8rem;
+        }
+        .preview-box.has-images { display: flex; }
+        .photo-thumb-wrap {
+            position: relative; width: 88px; height: 88px; border-radius: var(--radius-md); overflow: hidden;
+            border: 1px solid var(--border-color); background: var(--bg-subtle); flex-shrink: 0;
+        }
+        .photo-thumb-wrap img { width: 100%; height: 100%; object-fit: cover; }
+        .photo-thumb-remove {
+            position: absolute; top: 4px; right: 4px; width: 20px; height: 20px; border-radius: 50%;
+            background: var(--error); color: #fff;
+            font-size: 0.72rem; line-height: 20px; text-align: center; cursor: pointer; font-weight: 800;
+        }
+        .photo-thumb-index {
+            position: absolute; bottom: 3px; left: 3px; background: rgba(15,23,42,0.75); color: #fff;
+            font-size: 0.65rem; font-weight: 700; padding: 0.05rem 0.35rem; border-radius: 4px;
+        }
+
+        #result-list { display: none; flex-direction: column; gap: 1.25rem; max-width: 860px; margin: 1.5rem auto 0 auto; width: 100%; }
+
+        .result-item {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-xl);
+            padding: 1.8rem;
+            box-shadow: var(--shadow-sm);
+        }
+        .result-item.item-done { opacity: 0.6; }
+        .result-item-label {
+            font-size: 0.84rem;
+            font-weight: 700;
+            color: var(--brand-primary);
+            margin-bottom: 0.6rem;
+        }
+        .result-note {
+            background: var(--bg-subtle);
+            border: 1px dashed var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 0.8rem 1rem;
+            font-size: 0.86rem;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+        }
+        .model-answer-text {
+            font-size: 1.05rem;
+            line-height: 1.8;
+            color: var(--text-primary);
+            white-space: normal;
+        }
+        .judgment-buttons {
+            display: flex; gap: 0.8rem; margin-top: 1.2rem; flex-wrap: wrap;
+        }
+        .btn-correct { background: var(--brand-primary) !important; color: #fff !important; }
+        .btn-incorrect { background: var(--error) !important; color: #fff !important; }
+        .item-status-badge {
+            font-size: 0.82rem; font-weight: 700; padding: 0.4rem 0.85rem; border-radius: var(--radius-full);
+        }
+        .item-status-badge.status-correct { background: var(--brand-light); color: var(--brand-primary); border: 1px solid var(--brand-border); }
+        .item-status-badge.status-wrong { background: var(--error-bg); color: var(--error); border: 1px solid #FECACA; }
+    </style>
+</head>
+<body>
+
+    <div class="app-layout">
+        <!-- 🌿 左側共通サイドバー -->
+        <div id="flora-sidebar"></div>
+
+        <!-- 💻 右側メインコンテンツ -->
+        <main class="app-main">
+            <div class="workspace-content-wrap">
+
+                <!-- ページヘッダー -->
+                <div class="page-header">
+                    <div class="page-title-group">
+                        <h1 class="page-title">⚡ クイック答え合わせ</h1>
+                        <p class="page-subtitle">答えだけをサクッと高速確認し、間違えた問題だけを誤答ノートに連携</p>
+                    </div>
+                    <div class="page-actions" id="auth-panel" style="font-size: var(--fs-xs); color: var(--text-secondary);">
+                        読込中...
+                    </div>
+                </div>
+
+                <div id="login-required-notice" class="squircle-card login-overlay-box" style="display: none; text-align: center; padding: 3rem 1.5rem; max-width: 600px; margin: 2rem auto;">
+                    <h2 style="font-family: var(--font-heading); font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.6rem;">クラウド同期未接続</h2>
+                    <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: var(--fs-sm);">間違えた問題を登録するために、Googleアカウントでログインしてください。</p>
+                    <button type="button" class="flora-btn flora-btn-primary btn-lg" id="main-login-btn">
+                        Googleアカウントでサインイン
+                    </button>
+                </div>
+
+                <main id="answer-check-main" style="display:none;">
+                    <div class="check-workspace-card" id="input-card">
+                        <span class="flora-badge badge-warning">⚡ QUICK CHECK</span>
+                        <h3 style="font-family: var(--font-heading); font-size: 1.15rem; font-weight: 700; margin-top: 0.6rem; color: var(--text-primary);">① 答えだけをAIに聞く</h3>
+                        <p style="color: var(--text-secondary); font-size: 0.84rem; margin-top: 0.25rem;">定石解説や罠の解説は省略し、正解の確認だけを高速に行います。複数問をまとめて判定も可能です。</p>
+
+                        <div style="margin: 1.2rem 0 0.6rem 0;">
+                            <span class="filter-label">📚 教科を選択：</span>
+                            <div id="subject-select-group" style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                                <button type="button" class="subject-select-btn active" data-subject="数学" onclick="setSelectedSubject('数学')">📐 数学</button>
+                                <button type="button" class="subject-select-btn" data-subject="物理" onclick="setSelectedSubject('物理')">⚡ 物理</button>
+                                <button type="button" class="subject-select-btn" data-subject="化学" onclick="setSelectedSubject('化学')">🧪 化学</button>
+                                <button type="button" class="subject-select-btn" data-subject="生物" onclick="setSelectedSubject('生物')">🧬 生物</button>
+                                <button type="button" class="subject-select-btn" data-subject="情報" onclick="setSelectedSubject('情報')">💻 情報</button>
+                                <button type="button" class="subject-select-btn" data-subject="地理" onclick="setSelectedSubject('地理')">🗺️ 地理</button>
+                                <button type="button" class="subject-select-btn" data-subject="日本史" onclick="setSelectedSubject('日本史')">⛩️ 日本史</button>
+                                <button type="button" class="subject-select-btn" data-subject="世界史" onclick="setSelectedSubject('世界史')">🏛️ 世界史</button>
+                                <button type="button" class="subject-select-btn" data-subject="英語" onclick="setSelectedSubject('英語')">🔤 英語</button>
+                                <button type="button" class="subject-select-btn" data-subject="国語" onclick="setSelectedSubject('国語')">📜 国語</button>
+                                <button type="button" class="subject-select-btn" data-subject="公民" onclick="setSelectedSubject('公民')">⚖️ 公民 / 倫政</button>
+                            </div>
+                        </div>
+
+                        <div class="target-note-box">
+                            <div class="note-title">🎯 対象指定メモ（範囲や複数指定OK）</div>
+                            <textarea class="flora-textarea" id="target-note-input" placeholder="例：287番だけ／290~293の4問全部／287と289と291 など" style="min-height: 60px; font-size: var(--fs-sm);"></textarea>
+                            <div class="note-sub">・1問だけ指定 → その1問だけ回答<br>・「290~293」や「287, 289」→ それぞれ独立した項目として回答<br>・空欄 → 写真内で最も分かりやすい1問をAIが自動選択</div>
+                            
+                            <div class="math-keyboard" id="math-keyboard-group" style="margin-top:0.6rem;">
+                                <button type="button" class="math-key btn-accent" onclick="insertMathSymbol('$', '$')">$$</button>
+                                <button type="button" class="math-key" onclick="insertMathSymbol('\\frac{', '}{}')">分数</button>
+                                <button type="button" class="math-key" onclick="insertMathSymbol('\\sqrt{', '}')">√</button>
+                                <button type="button" class="math-key" onclick="insertMathSymbol('^{', '}')">xⁿ</button>
+                                <button type="button" class="math-key" onclick="insertMathSymbol('_{', '}')">xₙ</button>
+                                <button type="button" class="math-key" onclick="insertMathSymbol('\\theta')">θ</button>
+                                <button type="button" class="math-key" onclick="insertMathSymbol('\\pi')">π</button>
+                                <button type="button" class="math-key" onclick="insertMathSymbol('\\Delta')">Δ</button>
+                                <button type="button" class="math-key" onclick="insertMathSymbol('\\pm')">±</button>
+                                <button type="button" class="math-key" onclick="insertMathSymbol('\\vec{', '}')">ベクトル</button>
+                            </div>
+                            <div id="math-preview" class="math-preview tex2jax_process">入力プレビューがここに表示されます</div>
+                        </div>
+
+                        <div style="display: flex; gap: 0.5rem; align-items: center; margin-top: 1rem; flex-wrap: wrap;">
+                            <label for="problem-image-input" class="image-upload-zone" style="flex: 1; margin: 0; min-width: 150px;">
+                                📸 写真を追加（複数可・任意）
+                            </label>
+                            <button type="button" onclick="openGooglePhotosPopout(event)" title="Google Photosを小窓で開く" class="flora-btn flora-btn-secondary btn-sm" style="flex-shrink: 0;">
+                                📷 Google Photos
+                            </button>
+                        </div>
+                        <input type="file" id="problem-image-input" accept="image/*" multiple style="display: none;">
+                        <p style="font-size: 0.74rem; color: var(--text-secondary); margin-top: 0.4rem;">💡 問題文＋解答用紙など、複数枚をまとめて選択・追加できます。</p>
+                        <div class="preview-box" id="image-preview-container"></div>
+
+                        <button type="button" class="flora-btn flora-btn-primary btn-lg" id="quick-answer-btn" style="width: 100%; margin-top: 1.2rem;">① 答えだけAIに聞く</button>
+                    </div>
+
+                    <div id="result-list"></div>
+                    <button type="button" class="flora-btn flora-btn-secondary" id="next-batch-btn" style="width: 100%; max-width: 860px; margin: 1rem auto 0 auto; display: none;">🔄 次の写真・問題をチェックする</button>
+                </main>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="sidebar.js"></script>
+
+    <script type="module">
+        import {
+            getGeminiKeys, initApiKeyManager,
+            showToast, callGeminiJSON, generateTinyThumbnail
+        } from "./api-key-manager.js?v=3.5";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getAuth, signInWithPopup, signInWithEmailAndPassword, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyA7JuY44CleWYIxuqlF11ibHn_ml5nH69Q",
+            authDomain: "buturi2.firebaseapp.com",
+            databaseURL: "https://buturi2-default-rtdb.asia-southeast1.firebasedatabase.app/",
+            projectId: "buturi2",
+            storageBucket: "buturi2.firebasestorage.app",
+            messagingSenderId: "203866225339",
+            appId: "1:203866225339:web:ae84420cfd2f4c2ec0079e",
+            measurementId: "G-WFCYLPDQHK"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+        const provider = new GoogleAuthProvider();
+
+        // 🔑 このページでは画像認識に強いGeminiだけを使うため、Geminiキーだけ要求する
+        initApiKeyManager({ needGemini: true });
+        // ✨ GEMINI_MODEL_FALLBACK_LIST / buildGeminiUrl / stripCodeFence / fixJsonEscapes / extractJsonObject は
+        //    api-key-manager.js から共通インポート（重複定義の解消）
+
+        // 🎯【最重要】1回の入力・複数枚の写真に複数の小問が含まれる場合のルール
+        const MULTI_QUESTION_INSTRUCTION = `
+【最重要ルール：小問の絞り込みと複数指定】
+提出された画像やテキストには、同じ大問の中に複数の小問（(1)(2)(3)や①②③、290番〜293番のように番号が連続する複数の大問など）がまとめて写っている場合があります。写真が複数枚提出されている場合は、それらは1回の見直しでまとめて撮影した「続きのページ」（例：287〜290番のページと291〜293番の次のページ、または問題文ページと生徒の解答用紙ページなど）である可能性が高いので、すべての画像を1つの続き物の情報として横断的に読み取ってください。
+- 下の「対象指定メモ」でユーザーが対象を指定している場合は、そこで指定された小問**だけ**を解析・解答すること。指定されていない小問には絶対に答えを書かないこと。何枚目の画像に写っているかに関わらず、指定された番号を全画像の中から探して対応すること。
+- 対象指定メモが「290~293」のような範囲、または「287, 289, 291」のような複数指定の場合は、指定された数だけそれぞれ**独立した別々の項目**として"answers"配列に入れること。絶対にまとめて要約したり、1つの項目に複数問を混ぜて書いたりしないこと。
+- 対象指定メモが空欄、または対象が曖昧な場合は、画像内（複数枚ある場合は全画像の中）で最も分かりやすく完結している小問を1つだけ自分で選び、その項目のextracted_textの冒頭に「（対象指定メモが空欄だったため、○○を対象として解答しました。他の小問も知りたい場合は対象指定メモに書いてください）」のように必ず明記し、"answers"配列にはその1件だけを入れること。
+- "answers"配列の各要素には、必ず対応する小問の番号・記号を"label"に入れること（例："290"、"(2)"など）。
+
+【最重要・絶対厳守：問題文の完全な書き写し】
+対象と判断した小問について、extracted_textにはその設問の問題文を一字一句省略せず、最初から最後まで全文をそのまま書き写すこと。
+- (1)(2)(3)のように対象の小問の中にさらに複数の設問がある場合は、その全てを漏れなく含めること。
+- ア、イ、ウ…のような空欄（穴埋め）記号がある場合は、その空欄の記号もひとつも省略せずすべて含めること。
+- model_answerの中で解答・言及している空欄や設問は、必ずextracted_textにも同じ記号・番号で登場していなければならない。extracted_textに書いていない空欄について答えを作ってはならない（矛盾は絶対に許されない）。
+- 問題文が長い場合でも、要約したり途中を省略したりしないこと。
+`.trim();
+
+        const QUICK_SUBJECT_CONFIG = {
+            "数学": {
+                role: "高校数学（数学I・A・II・B・III・C）",
+                fieldExample: "分野名（例：数学II 式と証明、数学B ベクトル、数学III 微積分 など）",
+                extractedNote: "数式や記号を含む場合は必ず $ $ で挟むこと",
+                answerNote: "数式や変数を記述する場合は、必ず前後に $ または $$ をつけて美しいLaTeX形式にすること。手順ごとに改行コード（\\n）を挟んで箇条書き（1., 2.など）で出力すること"
+            },
+            "物理": {
+                role: "高校物理・物理基礎",
+                fieldExample: "分野名（例：力学 等加速度運動・円運動、電磁気、波動、熱力学 など）",
+                extractedNote: "数式や記号を含む場合は必ず $ $ で挟むこと",
+                answerNote: "数式や変数を記述する場合は、必ず前後に $ または $$ をつけて美しいLaTeX形式にすること。手順ごとに改行コード（\\n）を挟んで箇条書き（1., 2.など）で出力すること"
+            },
+            "化学": {
+                role: "高校化学・化学基礎",
+                fieldExample: "分野名（例：理論化学 mol計算・平衡、無機化学、有機化学 など）",
+                extractedNote: "化学式や数値は $H_2O$ のようにLaTeX形式（$で囲む）で表現すること",
+                answerNote: "化学反応式・化学式・数値・単位は必ず $ で囲んだLaTeX形式（例：$2H_2 + O_2 \\rightarrow 2H_2O$）で書くこと。手順ごとに改行コード（\\n）を挟んで箇条書き（1., 2.など）で出力すること"
+            },
+            "生物": {
+                role: "高校生物・生物基礎",
+                fieldExample: "分野名（例：細胞と代謝、遺伝情報の発現、恒常性・免疫、生態系・進化 など）",
+                extractedNote: "専門用語や遺伝子記号（例：$AaBb$）は正確に書き写すこと",
+                answerNote: "生物用語・反応経路は正確に記述し、計算問題では導出過程を簡潔に書くこと。手順ごとに改行コード（\\n）を挟んで箇条書き（1., 2.など）で出力すること"
+            },
+            "情報": {
+                role: "高校情報（情報I）",
+                fieldExample: "分野名（例：情報社会とセキュリティ、暗号化、データ通信・ネットワーク、プログラミング・アルゴリズム、データの活用 など）",
+                extractedNote: "コードブロックや真理値表、2進数・16進数計算は正確に書き写すこと",
+                answerNote: "暗号化の鍵の種類（公開鍵/秘密鍵）や計算過程、論理式の変形を明示すること。コードや変数は正確に出力すること。手順ごとに改行コード（\\n）を挟んで箇条書き（1., 2.など）で出力すること"
+            },
+            "地理": {
+                role: "高校地理（地理総合・地理探究）",
+                fieldExample: "分野名（例：系統地理 気候・地形・産業、地誌 アジア・ヨーロッパ・南北アメリカ など）",
+                extractedNote: "雨温図・地図・統計グラフの内容が設問に含まれる場合はその要点も書き起こすこと",
+                answerNote: "国名・都市名・気候区・産業データを正確に示し、因果関係を簡潔に説明すること。手順ごとに改行コード（\\n）を挟んで箇条書き（1., 2.など）で出力すること"
+            },
+            "日本史": {
+                role: "高校日本史（日本史探究）",
+                fieldExample: "分野名（例：古代 律令国家、中世 鎌倉・室町幕府、近世 江戸幕政・外交、近代・現代 明治維新・戦後史 など）",
+                extractedNote: "史料文や人名・元号・寺社名・法令名は正確に書き写すこと",
+                answerNote: "年代（西暦・元号）、人物名、事件・制度の名称と背景を正確に記述すること。手順ごとに改行コード（\\n）を挟んで箇条書き（1., 2.など）で出力すること"
+            },
+            "世界史": {
+                role: "高校世界史（世界史探究）",
+                fieldExample: "分野名（例：オリエント・地中海世界、東アジア史・中国王朝、欧米近代革命、帝国主義・二度の世界大戦、冷戦と現代世界 など）",
+                extractedNote: "地域名・世紀・条約名・王朝名は正確に書き写すこと",
+                answerNote: "年代（西暦）、地域、国王・皇帝・指導者名、条約・戦争の名称を正確に記述すること。手順ごとに改行コード（\\n）を挟んで箇条書き（1., 2.など）で出力すること"
+            },
+            "英語": {
+                role: "高校英語",
+                fieldExample: "分野名（例：文法・語法、長文読解、英作文、整序英作文、語彙 など）",
+                extractedNote: "英文のまま。改行は\\nで保持すること。LaTeX記法は使わないこと",
+                answerNote: "最終的な答え・和訳と、簡潔なステップ解説（文構造 SVOC や重要熟語・文法ポイントを含む）。LaTeX記法は使わないこと。手順ごとに改行コード（\\n）を挟んで箇条書き（1., 2.など）で出力すること"
+            },
+            "国語": {
+                role: "高校国語（現代文・古文・漢文）",
+                fieldExample: "分野名（例：現代文 評論文・小説、古文 助動詞・敬語・和歌、漢文 句法・返り点 など）",
+                extractedNote: "古文・漢文は原文のまま。LaTeX記法は使わないこと",
+                answerNote: "根拠となる本文箇所を明示すること。古文・漢文は現代語訳や句法（返り点・送り仮名）の説明も含めること。手順ごとに改行コード（\\n）を挟んで箇条書き（1., 2.など）で出力すること"
+            },
+            "公民": {
+                role: "高校公民（公共・政治経済・倫理）",
+                fieldExample: "分野名（例：公共 民主政治の基本原理、政治経済 市場メカニズム・金融政策、倫理 西洋・東洋思想 など）",
+                extractedNote: "憲法条文・判例名・思想家名・経済指標は正確に書き写すこと",
+                answerNote: "用語・制度名・判例趣旨・計算式（GDPや比較優位など）を正確に示すこと。手順ごとに改行コード（\\n）を挟んで箇条書き（1., 2.など）で出力すること"
+            }
+        };
+
+        // 🔒【新設】buildQuickAnswerPrompt() の「answers配列」JSON構造をAPI側で強制するためのスキーマ
+        const QUICK_ANSWER_RESPONSE_SCHEMA = {
+            type: "OBJECT",
+            properties: {
+                answers: {
+                    type: "ARRAY",
+                    items: {
+                        type: "OBJECT",
+                        properties: {
+                            label: { type: "STRING" },
+                            field: { type: "STRING" },
+                            short_title: { type: "STRING" },
+                            extracted_text: { type: "STRING" },
+                            model_answer: { type: "STRING" }
+                        },
+                        required: ["label", "field", "short_title", "extracted_text", "model_answer"]
+                    }
+                }
+            },
+            required: ["answers"]
+        };
+
+        function buildQuickAnswerPrompt(subject) {
+            const c = QUICK_SUBJECT_CONFIG[subject] || QUICK_SUBJECT_CONFIG["数学"];
+            return `
+あなたは${c.role}の「クイック答え合わせAI」です。生徒はすでに自力で解いており、じっくりした解説ではなく、自己採点用に「正しい答え」だけを高速に確認したいと思っています。定石の解説や、間違えやすいポイントの解説は不要です。
+
+${MULTI_QUESTION_INSTRUCTION}
+
+出力は必ず以下のJSONフォーマットの形式にしてください。他の説明テキストは絶対に含めないでください。
+{
+  "answers": [
+    {
+      "label": "対象にした問題の番号・記号（例：290、(2) など）",
+      "field": "${c.fieldExample}",
+      "short_title": "この1問だけの要約タイトル（15字程度）",
+      "extracted_text": "対象と判断したこの1問だけの正確な問題文。${c.extractedNote} 【厳守】要約・省略は絶対禁止。問題文がどれだけ長くても、最後の設問・選択肢・空欄記号（ア,イ,ウ…等）まで一字一句省略せず全文を書き出すこと。1つでも文・記号を省いたら失格とみなす。",
+      "model_answer": "この1問だけの最終的な正しい答えと、簡潔なステップ解説。${c.answerNote}"
+    }
+  ]
+}
+`.trim();
+        }
+
+        // ✨ fixJsonEscapes / stripCodeFence / extractJsonObject は api-key-manager.js から共通インポート
+
+        // 🧠【移植】insights.html/problem.htmlと共通の数式正規化＆穴埋め枠の修復処理。
+        //    AI生成の問題文で $...$ の外に \fbox{ア} 等が取り残されて生テキスト表示に
+        //    なってしまう不具合の対策。
+        function normalizeMathSyntax(str) {
+            if (!str) return "";
+            let s = String(str);
+
+            s = s.replace(/\\bbox\s*\[[^\]]*\]\s*\{((?:[^{}]*|\{[^{}]*\})*)\}/g, (_, content) => {
+                let c = content.trim();
+                while (/^\\text\{([\s\S]*)\}$/.test(c)) {
+                    c = c.replace(/^\\text\{([\s\S]*)\}$/, "$1").trim();
+                }
+                if (!c) c = "\\quad";
+                return `\\bbox[2px,border:1px solid]{\\text{${c}}}`;
+            });
+
+            s = s.replace(/\\bbox\s*\[[^\]]*\]\s*([0-9A-Za-zぁ-んァ-ヶー一-龠々]+)/g, (_, content) => {
+                let c = content.trim();
+                while (/^\\text\{([\s\S]*)\}$/.test(c)) {
+                    c = c.replace(/^\\text\{([\s\S]*)\}$/, "$1").trim();
+                }
+                if (!c) c = "\\quad";
+                return `\\bbox[2px,border:1px solid]{\\text{${c}}}`;
+            });
+
+            s = s.replace(/\\bbox\s*\[[^\]]*\](?!\s*\{)/g, `\\bbox[2px,border:1px solid]{\\text{\\quad}}`);
+
+            s = s.replace(/\\(?:fbox|boxed|framebox)(?:\s*\[[^\]]*\])?\s*\{((?:[^{}]*|\{[^{}]*\})*)\}/g, (_, content) => {
+                let c = content.trim();
+                while (/^\\text\{([\s\S]*)\}$/.test(c)) {
+                    c = c.replace(/^\\text\{([\s\S]*)\}$/, "$1").trim();
+                }
+                if (!c) c = "\\quad";
+                return `\\bbox[2px,border:1px solid]{\\text{${c}}}`;
+            });
+            s = s.replace(/\\(?:fbox|boxed|framebox)(?:\s*\[[^\]]*\])?\s+([0-9A-Za-zぁ-んァ-ヶー一-龠々]+)/g, (_, content) => {
+                let c = content.trim();
+                while (/^\\text\{([\s\S]*)\}$/.test(c)) {
+                    c = c.replace(/^\\text\{([\s\S]*)\}$/, "$1").trim();
+                }
+                if (!c) c = "\\quad";
+                return `\\bbox[2px,border:1px solid]{\\text{${c}}}`;
+            });
+            s = s.replace(/\\(?:fbox|boxed|framebox)(?:\s*\[[^\]]*\])?(?!\s*\{)/g, `\\bbox[2px,border:1px solid]{\\text{\\quad}}`);
+
+            const parts = s.split(/(\$\$[\s\S]*?\$\$|\$[^\$\n]+?\$)/g);
+            for (let i = 0; i < parts.length; i += 2) {
+                let chunk = parts[i];
+                if (!chunk) continue;
+                chunk = chunk.replace(/(\\bbox\[2px,border:1px solid\]\{\\text\{[^}]*\}\}(?:\^[0-9A-Za-z^\circ]+)?)/g, '$$$1$$');
+                chunk = chunk.replace(/(\\(?:triangle|angle|sqrt|frac|vec|alpha|beta|gamma|theta|pi|pm|mp|le|ge|leqq|geqq|neq|approx|sim|equiv|subset|supset|cap|cup|times|div|cdot|int|sum|lim|log|ln|sin|cos|tan)\b[^\s$、。,.)）]*)/g, '$$$1$$');
+                chunk = chunk.replace(/\$\s*\$/g, '');
+                parts[i] = chunk;
+            }
+            return parts.join("");
+        }
+
+        // 📝【問題文の可読性改善】AI文字起こしで改行が入らず長文が1塊になるのを防ぐ。
+        // problem.htmlの同名関数と同じロジック（小問番号(1)(2)や(i)(ii)の前で改行）。
+        function formatQuestionText(raw) {
+            if (!raw) return "";
+            let t = normalizeMathSyntax(raw);
+            t = t
+                .replace(/\\n/g, '\n')
+                .replace(/\r\n?/g, '\n')
+                .trim();
+
+            const noWordBefore = "(?<![0-9A-Za-zぁ-んァ-ヶー一-龠々'’])";
+
+            t = t.replace(new RegExp(noWordBefore + "\\(\\s*([1-9]|10)\\s*\\)(?!\\d)", "g"), "\n\n($1)");
+            t = t.replace(new RegExp(noWordBefore + "\\(\\s*(i{1,3}|iv)\\s*\\)", "gi"), "\n($1)");
+            t = t.replace(/\n{3,}/g, "\n\n").replace(/^\n+/, "").trim();
+
+            return t.replace(/\n/g, "<br>");
+        }
+
+        let currentUser = null;
+        let selectedSubject = "数学";
+        let selectedImages = []; // {mimeType, base64, dataUrl} の配列
+        let currentBatch = []; // 直近の「答えだけ確認」バッチ結果を保持（各項目を個別に登録判定するために使う）
+        let previewTimeout = null;
+
+        window.setSelectedSubject = function(subject) {
+            selectedSubject = subject;
+            document.querySelectorAll(".subject-select-btn").forEach(btn => {
+                btn.classList.toggle("active", btn.getAttribute("data-subject") === subject);
+            });
+            const kb = document.getElementById("math-keyboard-group");
+            if (kb) kb.style.display = (subject === "英語" || subject === "国語" || subject === "地歴公民") ? "none" : "";
+        };
+
+        window.insertMathSymbol = function(startTag, endTag = "") {
+            const textarea = document.getElementById('target-note-input');
+            if (!textarea) return;
+            let startPos = textarea.selectionStart;
+            let endPos = textarea.selectionEnd;
+            const currentText = textarea.value;
+            const textBeforeCursor = currentText.substring(0, startPos);
+            const dollarCount = (textBeforeCursor.match(/\$/g) || []).length;
+            if (startTag !== '$' && dollarCount % 2 === 0) {
+                startTag = '$' + startTag;
+                endTag = endTag + '$';
+            }
+            const selectedText = currentText.substring(startPos, endPos);
+            const replacement = startTag + selectedText + endTag;
+            textarea.value = currentText.substring(0, startPos) + replacement + currentText.substring(endPos);
+            textarea.focus();
+            const newCursorPos = startPos + startTag.length + selectedText.length;
+            textarea.selectionStart = newCursorPos;
+            textarea.selectionEnd = newCursorPos;
+            window.updateMathPreview(true);
+        };
+
+        window.updateMathPreview = function(immediate = false) {
+            const textarea = document.getElementById('target-note-input');
+            const preview = document.getElementById('math-preview');
+            if (!textarea || !preview) return;
+            preview.innerHTML = textarea.value ? textarea.value : "入力プレビューがここに表示されます";
+            if (previewTimeout) clearTimeout(previewTimeout);
+            const renderMath = () => {
+                if (window.MathJax && window.MathJax.typesetPromise) {
+                    window.MathJax.typesetPromise([preview]).catch((err) => console.log(err.message));
+                }
+            };
+            if (immediate) renderMath();
+            else previewTimeout = setTimeout(renderMath, 400);
+        };
+
+        function resetForNextBatch() {
+            document.getElementById("target-note-input").value = "";
+            document.getElementById("problem-image-input").value = "";
+            selectedImages = [];
+            renderImagePreviews();
+            currentBatch = [];
+            const preview = document.getElementById("math-preview");
+            if (window.MathJax && window.MathJax.typesetClear) window.MathJax.typesetClear([preview]);
+            preview.innerHTML = "入力プレビューがここに表示されます";
+            document.getElementById("result-list").style.display = "none";
+            document.getElementById("result-list").innerHTML = "";
+            document.getElementById("next-batch-btn").style.display = "none";
+            document.getElementById("input-card").scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+
+        async function runQuickAnswerCheck() {
+            const noteInput = document.getElementById("target-note-input");
+            const noteText = noteInput.value.trim();
+            if (!noteText && selectedImages.length === 0) {
+                showToast("写真を選択するか、対象指定メモ（または問題文）を入力してください。", "error");
+                return;
+            }
+            if (getGeminiKeys().length === 0 && !window.__serverHasGeminiKey) {
+                showToast("GeminiのAPIキーが登録されていません。右下の🔑ボタンから登録してください。", "error");
+                return;
+            }
+
+            const btn = document.getElementById("quick-answer-btn");
+            const originalText = btn.textContent;
+            btn.textContent = "⚙️ 答えを確認中...";
+            btn.disabled = true;
+
+            let parts = [{ "text": "提出されたデータのうち、対象指定メモで示された小問（未指定なら1問だけ自動選択）を解析し、指定のJSON（answers配列）で答えだけ返してください。" }];
+            if (noteText) parts[0].text += `\n【対象指定メモ／問題文】\n${noteText}`;
+            selectedImages.forEach(img => {
+                parts.push({ "inlineData": { "mimeType": img.mimeType, "data": img.base64 } });
+            });
+
+            try {
+                // ✨ モデル×キーの二重フォールバックループは api-key-manager.js の callGeminiJSON に共通化済み
+                const parsedResult = await callGeminiJSON(parts, buildQuickAnswerPrompt(selectedSubject), { temperature: 0.2, responseSchema: QUICK_ANSWER_RESPONSE_SCHEMA, featureId: "quick_answer" });
+
+                const rawAnswers = Array.isArray(parsedResult.answers) ? parsedResult.answers : [];
+                if (rawAnswers.length === 0) {
+                    throw new Error("AIが有効な回答を返しませんでした。対象指定メモをもう少し具体的にして再度お試しください。");
+                }
+
+                currentBatch = rawAnswers.map(a => ({
+                    subject: selectedSubject,
+                    label: a.label || "",
+                    field: a.field || "手動管理",
+                    short_title: a.short_title || "クイック確認問題",
+                    extracted_text: a.extracted_text || noteText,
+                    model_answer: a.model_answer || "解答データなし",
+                    status: null, // null | "correct" | "wrong"
+                    registeredId: null
+                }));
+
+                renderBatch();
+
+            } catch (error) {
+                console.error(error);
+                showToast("答えの確認に失敗しました。\n\n【原因】" + error.message, "error", 8000);
+            } finally {
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        function renderBatch() {
+            const listEl = document.getElementById("result-list");
+            listEl.innerHTML = "";
+
+            currentBatch.forEach((item, idx) => {
+                const card = document.createElement("div");
+                card.className = "squircle-card glass-card result-item";
+                card.id = "result-item-" + idx;
+
+                const labelText = item.label ? `対象: ${item.label}` : `対象 #${idx + 1}`;
+                card.innerHTML = `
+                    <span class="badge badge-safe">RESULT</span>
+                    <div class="result-item-label">🎯 ${labelText}</div>
+                    <div class="result-note tex2jax_process">${formatQuestionText(item.extracted_text)}</div>
+                    <div style="font-size:0.8rem; color:var(--text-muted); font-weight:800; margin-bottom:0.4rem;">MODEL ANSWER</div>
+                    <div class="model-answer-text tex2jax_process">${normalizeMathSyntax(item.model_answer || "").replace(/\\n/g, '<br>').replace(/\n/g, '<br>')}</div>
+                    <div class="judgment-buttons" id="judgment-row-${idx}">
+                        <button type="button" class="tactile-btn btn-correct" id="btn-correct-${idx}">✅ 合ってた</button>
+                        <button type="button" class="tactile-btn btn-incorrect" id="btn-wrong-${idx}">❌ 間違えた（登録する）</button>
+                    </div>
+                    <div class="item-status-row" id="status-row-${idx}" style="display:none;"></div>
+                `;
+                listEl.appendChild(card);
+
+                document.getElementById(`btn-correct-${idx}`).addEventListener("click", () => markCorrect(idx));
+                document.getElementById(`btn-wrong-${idx}`).addEventListener("click", () => registerAsWrong(idx));
+            });
+
+            listEl.style.display = "flex";
+            document.getElementById("next-batch-btn").style.display = "block";
+
+            if (window.MathJax && MathJax.typesetPromise) safeTypeset();
+            listEl.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+
+        function markCorrect(idx) {
+            currentBatch[idx].status = "correct";
+            const card = document.getElementById("result-item-" + idx);
+            card.classList.add("item-done");
+            document.getElementById(`judgment-row-${idx}`).style.display = "none";
+            const statusRow = document.getElementById(`status-row-${idx}`);
+            statusRow.style.display = "flex";
+            statusRow.innerHTML = `<span class="item-status-badge status-correct">✅ 合ってた（未登録・記録なし）</span>`;
+        }
+
+        async function registerAsWrong(idx) {
+            if (!currentUser) return;
+            const item = currentBatch[idx];
+            const btn = document.getElementById(`btn-wrong-${idx}`);
+            const originalText = btn.textContent;
+            btn.textContent = "登録中...";
+            btn.disabled = true;
+            document.getElementById(`btn-correct-${idx}`).disabled = true;
+
+            try {
+                const newId = "CUSTOM_" + Date.now() + "_" + idx;
+                const nowIso = new Date().toISOString();
+
+                // 🖼️【新設・パフォーマンス改善】フル画像は別ノードへ、problems側は軽量サムネイルのみ
+                // （複数問・複数ページが写った同じ写真セットを使い回している可能性があるため、フル画像自体は全項目に添付する）
+                const fullImages = selectedImages.map(img => img.dataUrl);
+                let thumb = null;
+                if (fullImages.length > 0) {
+                    try { thumb = await generateTinyThumbnail(fullImages[0]); } catch (e) { console.error("サムネイル生成失敗:", e); thumb = fullImages[0]; }
+                }
+
+                const newProblem = {
+                    id: newId,
+                    title: item.extracted_text,
+                    short_title: item.short_title,
+                    subject: item.subject,
+                    field: item.field,
+                    trap_description: "",
+                    strategyPattern: "",
+                    errorCount: 1,
+                    lastAttemptAt: nowIso,
+                    lastResult: false,
+                    thumb: thumb,
+                    imageCount: fullImages.length,
+                    answerFormula: item.model_answer,
+                    createdAt: nowIso
+                };
+
+                await set(ref(database, 'users/' + currentUser.uid + '/problems/' + newId), newProblem);
+                if (fullImages.length > 0) {
+                    await set(ref(database, 'users/' + currentUser.uid + '/problemImages/' + newId), { images: fullImages });
+                }
+
+                item.status = "wrong";
+                item.registeredId = newId;
+
+                const card = document.getElementById("result-item-" + idx);
+                card.classList.add("item-done");
+                document.getElementById(`judgment-row-${idx}`).style.display = "none";
+                const statusRow = document.getElementById(`status-row-${idx}`);
+                statusRow.style.display = "flex";
+                statusRow.innerHTML = `
+                    <span class="item-status-badge status-wrong">❌ 間違えた（登録済み）</span>
+                    <button type="button" class="tactile-btn" style="background:rgba(0,243,255,0.08); color:var(--accent-cyan); border:1px solid var(--accent-cyan); box-shadow:none; padding:0.5rem 1rem;" onclick="window.open('problem.html?id=${encodeURIComponent(newId)}', '_blank')">📌 この問題を開く</button>
+                `;
+
+            } catch (error) {
+                console.error(error);
+                showToast("クラウドへの登録に失敗しました。" + error.message, "error");
+                btn.textContent = originalText;
+                btn.disabled = false;
+                document.getElementById(`btn-correct-${idx}`).disabled = false;
+            }
+        }
+
+        // --- DOM配線 ---
+        const noteInput = document.getElementById("target-note-input");
+        const imageInput = document.getElementById("problem-image-input");
+        const previewContainer = document.getElementById("image-preview-container");
+
+        if (noteInput) noteInput.addEventListener('input', () => { window.updateMathPreview(false); });
+
+        // 🖼️ 選択中の写真サムネイル一覧を描画（×で個別削除可能）
+        function renderImagePreviews() {
+            if (!previewContainer) return;
+            if (selectedImages.length === 0) {
+                previewContainer.classList.remove("has-images");
+                previewContainer.innerHTML = "";
+                return;
+            }
+            previewContainer.classList.add("has-images");
+            previewContainer.innerHTML = selectedImages.map((img, i) => `
+                <div class="photo-thumb-wrap">
+                    <img src="${img.dataUrl}">
+                    <span class="photo-thumb-index">${i + 1}</span>
+                    <div class="photo-thumb-remove" data-remove-img="${i}">×</div>
+                </div>
+            `).join("");
+            previewContainer.querySelectorAll("[data-remove-img]").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    const idx = parseInt(btn.getAttribute("data-remove-img"), 10);
+                    selectedImages.splice(idx, 1);
+                    renderImagePreviews();
+                });
+            });
+        }
+
+        // 📸 1枚の画像ファイルを圧縮してdataURLに変換（Promiseでラップ）
+        function compressImageFile(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement("canvas");
+                        const max_size = 1000; let width = img.width, height = img.height;
+                        if (width > height) { if (width > max_size) { height *= max_size / width; width = max_size; } }
+                        else { if (height > max_size) { width *= max_size / height; height = max_size; } }
+                        canvas.width = width; canvas.height = height;
+                        const ctx = canvas.getContext("2d"); ctx.drawImage(img, 0, 0, width, height);
+                        const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.7);
+                        resolve({
+                            mimeType: "image/jpeg",
+                            base64: compressedDataUrl.split(',')[1],
+                            dataUrl: compressedDataUrl
+                        });
+                    };
+                    img.onerror = reject;
+                    img.src = evt.target.result;
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        if (imageInput) {
+            imageInput.addEventListener("change", async function(e) {
+                const files = Array.from(e.target.files || []);
+                if (files.length === 0) return;
+                for (const file of files) {
+                    try {
+                        selectedImages.push(await compressImageFile(file));
+                    } catch (err) {
+                        console.error("画像の読み込みに失敗しました:", err);
+                    }
+                }
+                renderImagePreviews();
+                imageInput.value = ""; // 同じファイルを再度追加選択できるようにリセット
+            });
+        }
+
+        document.getElementById("quick-answer-btn").addEventListener("click", runQuickAnswerCheck);
+        document.getElementById("next-batch-btn").addEventListener("click", resetForNextBatch);
+
+        onAuthStateChanged(auth, (user) => {
+            const authPanel = document.getElementById("auth-panel");
+            const loginNotice = document.getElementById("login-required-notice");
+            const mainArea = document.getElementById("answer-check-main");
+
+            if (authPanel) authPanel.innerHTML = "";
+
+            if (user) {
+                currentUser = user;
+                loginNotice.style.display = "none";
+                mainArea.style.display = "block";
+            } else {
+                currentUser = null;
+                loginNotice.style.display = "block";
+                mainArea.style.display = "none";
+            }
+        });
+
+        function doLogin() { signInWithPopup(auth, provider).catch(e => console.error(e)); }
+        document.getElementById("main-login-btn")?.addEventListener("click", doLogin);
+
+        window.floraTestLogin = async function() {
+            try {
+                showToast("🧪 テスターアカウントでログイン中...", "info");
+                await signInWithEmailAndPassword(auth, "tester@flora.local", "flora1234");
+                showToast("✅ テスターログイン成功", "success");
+            } catch(e) {
+                console.error("Test login failed:", e);
+                showToast("⚠️ テスターログイン失敗: " + e.message, "error");
+            }
+        };
+
+        if (new URLSearchParams(window.location.search).has("autologin") || new URLSearchParams(window.location.search).has("test")) {
+            setTimeout(() => {
+                if (!auth.currentUser) window.floraTestLogin();
+            }, 500);
+        }
+    </script>
+</body>
+</html>

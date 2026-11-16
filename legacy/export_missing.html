@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Export Missing Distractors</title>
+    <style>
+        body { font-family: sans-serif; background: #0f172a; color: #f8fafc; padding: 2rem; }
+        .box { background: #1e293b; padding: 1.5rem; border-radius: 8px; margin-bottom: 1rem; border: 1px solid #334155; }
+        pre { background: #090d16; padding: 1rem; border-radius: 6px; overflow: auto; max-height: 400px; color: #38bdf8; }
+        button { background: #10b981; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>🔍 暗記事項ダミー解答（distractors）スキャン＆抽出</h1>
+    <div id="status" class="box">Firebase 認証待機中...</div>
+    <div id="summary" class="box" style="display:none;"></div>
+    <pre id="output" style="display:none;"></pre>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+        import { firebaseConfig } from "./firebase-config.js";
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+
+        const statusEl = document.getElementById("status");
+        const summaryEl = document.getElementById("summary");
+        const outputEl = document.getElementById("output");
+
+        function stripFurigana(text) {
+            if (!text) return "";
+            return String(text).replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$1").replace(/[（(][^）)]*[）)]/g, "");
+        }
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                statusEl.innerHTML = "❌ ログインしていません。ブラウザで一度ログインしてください。";
+                return;
+            }
+
+            statusEl.innerHTML = `✅ ログイン中: ${user.displayName || user.email || user.uid}<br>⏳ 全授業データを取得中...`;
+
+            try {
+                const snapshot = await get(ref(database, `users/${user.uid}/lessons`));
+                if (!snapshot.exists()) {
+                    statusEl.innerHTML = "❌ 授業データが見つかりませんでした。";
+                    return;
+                }
+
+                const lessons = snapshot.val();
+                let totalCards = 0;
+                let missingCards = 0;
+                const subjectCounts = {};
+                const missingItems = [];
+
+                Object.entries(lessons).forEach(([lessonId, lesson]) => {
+                    if (!lesson || !Array.isArray(lesson.memorizationPoints)) return;
+                    const subject = lesson.subject || "その他";
+                    if (!subjectCounts[subject]) subjectCounts[subject] = { total: 0, missing: 0 };
+
+                    lesson.memorizationPoints.forEach((p, idx) => {
+                        totalCards++;
+                        subjectCounts[subject].total++;
+
+                        const distractors = Array.isArray(p.distractors) ? p.distractors.filter(Boolean) : [];
+                        const isMissing = distractors.length < 3;
+
+                        if (isMissing) {
+                            missingCards++;
+                            subjectCounts[subject].missing++;
+                            missingItems.push({
+                                lessonId,
+                                lessonTitle: lesson.title || "無題の授業",
+                                subject: subject,
+                                pointIndex: idx,
+                                pointId: p.id || `idx_${idx}`,
+                                question: (p.question || p.term || "").trim(),
+                                answer: (p.answer || p.content || "").trim(),
+                                category: p.category || "",
+                                note: p.note || "",
+                                currentDistractors: distractors
+                            });
+                        }
+                    });
+                });
+
+                const payload = {
+                    uid: user.uid,
+                    timestamp: new Date().toISOString(),
+                    totalLessons: Object.keys(lessons).length,
+                    totalCards,
+                    missingCardsCount: missingCards,
+                    subjectCounts,
+                    missingItems
+                };
+
+                let summaryHtml = `<h3>📊 スキャン結果サマリー</h3>`;
+                summaryHtml += `<p>全暗記事項数: <b>${totalCards}</b> 件 / ダミー未作成（欠損）: <b style="color:#ef4444;">${missingCards}</b> 件</p>`;
+                summaryHtml += `<ul>`;
+                for (const [subj, counts] of Object.entries(subjectCounts)) {
+                    summaryHtml += `<li><b>${subj}</b>: 全 ${counts.total} 件中、未作成 ${counts.missing} 件</li>`;
+                }
+                summaryHtml += `</ul>`;
+                summaryEl.innerHTML = summaryHtml;
+                summaryEl.style.display = "block";
+
+                outputEl.textContent = JSON.stringify(payload, null, 2);
+                outputEl.style.display = "block";
+
+                statusEl.innerHTML = `✅ 抽出完了！ サーバー (http://localhost:3001/save) に送信中...`;
+
+                try {
+                    const res = await fetch("http://localhost:3001/save", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(payload)
+                    });
+                    const resJson = await res.json();
+                    statusEl.innerHTML = `🎉 成功！ データがローカルサーバーに保存されました（${missingCards} 件）。`;
+                } catch (postErr) {
+                    statusEl.innerHTML = `⚠️ ローカルサーバーへの送信に失敗しましたが、画面にJSONを表示しました: ${postErr.message}`;
+                }
+
+            } catch (err) {
+                console.error(err);
+                statusEl.innerHTML = `❌ エラー: ${err.message}`;
+            }
+        });
+    </script>
+</body>
+</html>

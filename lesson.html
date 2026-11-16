@@ -9805,7 +9805,7 @@
                                         <!-- 🤖 授業AI設定バッジ -->
                                         <button type="button" id="lesson-header-ai-config-btn"
                                             class="lesson-ai-badge-btn" title="AIモデル・思考レベルを設定">
-                                            🤖 <span id="lesson-header-ai-model-label">Gemini 3.8 Flash</span>
+                                            🤖 <span id="lesson-header-ai-model-label">Gemini 4 Hydrogen</span>
                                         </button>
                                         <button type="button" id="lesson-header-recreate-btn" class="lesson-order-btn"
                                             title="授業を再作成（原本の変更や、暗記物をキープする柔軟な設定が可能）"
@@ -11617,7 +11617,8 @@
                             </label>
                             <select id="batch-timeline-model-select" class="flora-input"
                                 style="width:100%; font-size:0.75rem; padding:0.3rem 0.6rem; border-radius:var(--radius-md); font-weight:700; background:var(--bg-subtle); color:var(--text-primary); border:1px solid var(--border-color); cursor:pointer;">
-                                <option value="gemini-3.8-flash" selected>✨ Gemini 3.8 Flash（推奨・最新最速）</option>
+                                <option value="gemini-4-hydrogen" selected>✨ Gemini 4 Hydrogen（推奨・最新）</option>
+                                <option value="gemini-3.8-flash">✨ Gemini 3.8 Flash（前世代・安定）</option>
                                 <option value="gemini-3.7-flash">⚡ Gemini 3.7 Flash</option>
                                 <option value="gemini-3.6-flash">⚡ Gemini 3.6 Flash（安定）</option>
                                 <option value="gemini-3.5-flash">⚡ Gemini 3.5 Flash（超高速）</option>
@@ -11635,6 +11636,7 @@
                                 <option value="low">低 (高速・簡潔)</option>
                                 <option value="medium">中 (バランス・推奨)</option>
                                 <option value="high">高 (高思考・詳細推論)</option>
+                                <option value="xhigh">超高 (最深推論・Gemini 4専用)</option>
                             </select>
                         </div>
                     </div>
@@ -11835,14 +11837,14 @@
                             <div class="ais-model-card-top">
                                 <div class="ais-model-card-name" id="ais-current-model-name">
                                     <span id="ais-current-model-icon">✨</span>
-                                    <span id="ais-current-model-title">Gemini 3.8 Flash</span>
+                                    <span id="ais-current-model-title">Gemini 4 Hydrogen</span>
                                     <span class="ais-badge ais-badge-new" id="ais-current-model-badge">New</span>
                                 </div>
                                 <span style="font-size: 0.8rem; color: #9aa0a6;">❯</span>
                             </div>
-                            <div class="ais-model-card-id" id="ais-current-model-id">gemini-3.8-flash</div>
+                            <div class="ais-model-card-id" id="ais-current-model-id">gemini-4-hydrogen</div>
                             <div class="ais-model-card-desc" id="ais-current-model-desc">
-                                Floraの最高推奨フラッグシップ。高速応答と深層思考を両立し、難関大受験レベルの解説や対話、カリキュラム設計を最も高精度にこなします。
+                                2026年11月GAの最新フラッグシップ。1M統合コンテキストと4段階の思考レベル（low/medium/high/xhigh）を備え、高速応答と難関大受験レベルの解説・対話・カリキュラム設計を両立します。
                             </div>
                             <div class="ais-model-card-change">
                                 <span>モデル一覧から選ぶ ❯</span>
@@ -13008,7 +13010,8 @@
         };
 
         const MODEL_LABELS = {
-            "gemini-3.8-flash": "Gemini 3.8 Flash (最新・高速)",
+            "gemini-4-hydrogen": "Gemini 4 Hydrogen (最新・推奨)",
+            "gemini-3.8-flash": "Gemini 3.8 Flash (高速・安定)",
             "gemini-3.7-flash": "Gemini 3.7 Flash",
             "gemini-3.6-flash": "Gemini 3.6 Flash (安定)",
             "gemini-3.5-flash": "Gemini 3.5 Flash (超高速)",
@@ -13021,6 +13024,7 @@
             "low": "low (低思考・高速応答)",
             "medium": "medium (中思考・標準バランス)",
             "high": "high (高思考・深層推論)",
+            "xhigh": "xhigh (超高思考・最深推論 ※Gemini 4)",
             "minimal": "minimal (極小・最速 ※Flash-Lite等)"
         };
 
@@ -13033,7 +13037,7 @@
         };
 
         function getDisplayModelName(modelName) {
-            return MODEL_LABELS[modelName] || modelName || "Gemini 3.8 Flash";
+            return MODEL_LABELS[modelName] || modelName || "Gemini 4 Hydrogen";
         }
 
         function populateModelSelect(selectEl, currentModel) {
@@ -13047,7 +13051,7 @@
                 selectEl.appendChild(opt);
             });
             if (!currentModel || !ALL_AVAILABLE_MODELS.includes(currentModel)) {
-                selectEl.value = "gemini-3.8-flash";
+                selectEl.value = "gemini-4-hydrogen";
             }
         }
 
@@ -13056,11 +13060,13 @@
             selectEl.innerHTML = "";
             const isDs = isDeepseekModel(selectedModel);
             const isLite = isLiteModel(selectedModel);
-            const rawOptions = isDs ? DEEPSEEK_REASONING_EFFORTS : GEMINI_THINKING_LEVELS;
+            const rawOptions = isDs
+                ? DEEPSEEK_REASONING_EFFORTS
+                : GEMINI_THINKING_LEVELS.filter(opt => opt.id !== "xhigh" || String(selectedModel).includes("gemini-4"));
 
             // エンジン（Gemini vs DeepSeek）に応じた正確な思考レベルIDにマッピング
             let cleanThinking = (currentThinking && currentThinking !== "[object Object]" && typeof currentThinking === "string") ? currentThinking : "default";
-            cleanThinking = getActiveThinkingIdForEngine(cleanThinking, isDs);
+            cleanThinking = getActiveThinkingIdForEngine(cleanThinking, isDs, selectedModel);
 
             // 💡 lite系統モデル選択時は思考レベルを自動的に "high" に固定
             if (isLite) {
@@ -13184,7 +13190,7 @@
 
         function getPrimaryModelForFeature(featureId) {
             const list = getEffectiveModelList(featureId);
-            return (list && list.length > 0) ? list[0] : "gemini-3.8-flash";
+            return (list && list.length > 0) ? list[0] : "gemini-4-hydrogen";
         }
 
         function getThinkingForFeature(featureId) {
@@ -13197,7 +13203,7 @@
             const isDs = isDeepseekModel(newModel);
             const isLite = isLiteModel(newModel);
             let cleanThinking = (newThinking && newThinking !== "[object Object]" && typeof newThinking === "string") ? newThinking : "default";
-            cleanThinking = getActiveThinkingIdForEngine(cleanThinking, isDs);
+            cleanThinking = getActiveThinkingIdForEngine(cleanThinking, isDs, newModel);
             if (isLite) {
                 cleanThinking = "high";
             }
@@ -13221,17 +13227,30 @@
         // --------------------------------------------------------------
         const AI_STUDIO_MODELS = [
             {
-                id: "gemini-3.8-flash",
-                name: "Gemini 3.8 Flash",
+                id: "gemini-4-hydrogen",
+                name: "Gemini 4 Hydrogen",
                 badge: "New",
                 badgeClass: "ais-badge-new",
                 category: "Featured",
                 provider: "Gemini",
                 icon: "✨",
-                desc: "Floraの最高推奨フラッグシップ。高速応答と深層思考を両立し、難関大受験レベルの解説や対話、カリキュラム設計を最も高精度にこなします。",
+                desc: "2026年11月12日にGAされた最新フラッグシップ。1M統合コンテキストと4段階の思考レベル（low/medium/high/xhigh）を備え、高速応答と難関大受験レベルの解説・対話・カリキュラム設計を両立します。",
+                specs: "Context: 1M tokens • 思考レベル: low/medium/high/xhigh • Structured Outputs対応",
+                speed: "Fast",
+                release: "2026年11月 最新モデル"
+            },
+            {
+                id: "gemini-3.8-flash",
+                name: "Gemini 3.8 Flash",
+                badge: "Stable",
+                badgeClass: "ais-badge-rec",
+                category: "Gemini",
+                provider: "Gemini",
+                icon: "✨",
+                desc: "前世代の主力フラッグシップ。高速応答と深層思考を両立し、難関大受験レベルの解説や対話、カリキュラム設計を高精度にこなします。",
                 specs: "Context: 1M tokens • 思考レベル制御対応",
                 speed: "Fast",
-                release: "最新 2026モデル"
+                release: "2026年9月リビジョン"
             },
             {
                 id: "gemini-3.7-flash",
@@ -13460,6 +13479,11 @@
                 { id: "high", label: "High (高思考・推奨)", desc: "難関大受験に必須の論理的裏付けと丁寧な導出を展開。" },
                 { id: "medium", label: "Medium (中思考・標準)", desc: "速度と思考のベストバランス。" },
                 { id: "low", label: "Low (低思考・高速)", desc: "素早いレスポンスを優先。軽快な質疑応答。" },
+                ...(String(currentModelId).includes("gemini-4") ? [{
+                    id: "xhigh",
+                    label: "XHigh (超高思考・最深推論)",
+                    desc: "Gemini 4 Hydrogen専用。高難度の多段推論を最も深く思考します（レイテンシ・トークン消費は増加）。"
+                }] : []),
                 { id: "minimal", label: "Minimal (極小思考)", desc: "思考トークンを最小限にし最速で返信。" },
                 { id: "default", label: "Default (自動)", desc: "モデルの標準設定に委ねる。" }
             ];
@@ -13710,7 +13734,7 @@
                     syncAllLessonAiSelectors();
                     const featObj = AI_STUDIO_FEATURES.find(f => f.id === currentAisFeatureId);
                     const title = featObj ? featObj.title : currentAisFeatureId;
-                    showToast(`↺ ${title}のAI設定をデフォルト（Gemini 3.8 Flash / high）に戻しました`, "info", 2000);
+                    showToast(`↺ ${title}のAI設定をデフォルト（Gemini 4 Hydrogen / high）に戻しました`, "info", 2000);
                 });
             }
 
@@ -23301,7 +23325,7 @@ ${promptItems}`;
             }
 
             // ユーザーが選択したAIモデル & 思考レベル
-            const selectedModel = el("batch-timeline-model-select")?.value || "gemini-3.8-flash";
+            const selectedModel = el("batch-timeline-model-select")?.value || "gemini-4-hydrogen";
             const selectedThinking = el("batch-timeline-thinking-select")?.value || "default";
 
             el("batch-timeline-setup-view").style.display = "none";
