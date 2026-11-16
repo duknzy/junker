@@ -384,296 +384,39 @@ export function ProblemsPage() {
 
   return (
     <div className="space-y-3">
-      {/* 1行スリム・コマンドバー（今日の復習・学習ステータス・モード切替・ショートカット） */}
-      <Card className="px-4 py-2.5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          {/* 左側：今日の復習 ＆ 統計バッジ */}
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            <div className="flex items-center gap-2 rounded-[9px] border border-accent/35 bg-accent-soft/50 px-3 py-1.5">
-              <Zap size={15} className="text-accent-ink" />
-              <span className="text-xs font-semibold text-ink">今日の復習</span>
-              <span className="text-base font-extrabold tabular-nums text-accent-ink">
-                {stats?.due ?? 0}
-              </span>
-              <span className="text-[0.7rem] text-muted">問</span>
-              <Button
-                size="sm"
-                onClick={() => navigate('/practice/review')}
-                disabled={!stats || stats.due === 0}
-                className="ml-1 h-7 px-2.5 text-xs"
-              >
-                開始
-                <ArrowRight size={13} />
-              </Button>
-            </div>
-
-            <div className="hidden items-center gap-3 text-xs text-muted xl:flex">
-              <span>
-                登録 <strong className="tabular-nums text-ink">{stats?.total ?? 0}</strong> 問
-              </span>
-              <span aria-hidden>·</span>
-              <span>
-                🧠 気づき <strong className="tabular-nums text-ink">{insightTotal}</strong> 件
-              </span>
-              <span aria-hidden>·</span>
-              <span>
-                今週復習{' '}
-                <strong className="tabular-nums text-ink">
-                  {stats?.reviewedThisWeek ?? 0}
-                </strong>
-              </span>
-              <span aria-hidden>·</span>
-              <span className="inline-flex items-center gap-1">
-                <Flame size={13} className="text-warning" />
-                連続 <strong className="tabular-nums text-ink">{stats?.streak ?? 0}</strong> 日
-              </span>
-            </div>
-          </div>
-
-          {/* 右側：タブ切替・文系数学・同期・問題登録 */}
-          <div className="flex flex-wrap items-center gap-1.5">
-            <div className="flex items-center rounded-[9px] border border-border bg-surface-2 p-0.5">
-              <button
-                type="button"
-                onClick={() => setTab('problems')}
-                className={cn(
-                  'inline-flex items-center gap-1.5 rounded-[7px] px-2.5 py-1 text-xs font-semibold transition-colors',
-                  tab === 'problems'
-                    ? 'bg-accent text-white'
-                    : 'text-muted hover:text-ink',
-                )}
-              >
-                <BookOpen size={13} />
-                誤答ノート
-              </button>
-              <button
-                type="button"
-                onClick={() => setTab('lessons')}
-                className={cn(
-                  'inline-flex items-center gap-1.5 rounded-[7px] px-2.5 py-1 text-xs font-semibold transition-colors',
-                  tab === 'lessons'
-                    ? 'bg-accent text-white'
-                    : 'text-muted hover:text-ink',
-                )}
-              >
-                <GraduationCap size={13} />
-                授業・AI講義
-              </button>
-            </div>
-
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => navigate('/practice/bunkei')}
+      {tab === 'lessons' ? (
+        <div className="flex items-center justify-between border-b border-border/40 pb-2">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setTab('problems')}
+              className="text-xs font-semibold text-muted hover:text-ink"
             >
-              <BookMarked size={14} />
-              文系の数学
-            </Button>
-
-            {sync.user ? (
-              <button
-                type="button"
-                onClick={handleResyncLegacy}
-                disabled={isSyncWorking}
-                title="Firebase上の旧Floraデータと同期"
-                className="inline-flex h-8 items-center gap-1 rounded-[8px] border border-border bg-surface-2 px-2.5 text-xs font-medium text-muted transition-colors hover:text-ink disabled:opacity-50"
-              >
-                <RefreshCw
-                  size={13}
-                  className={cn(isSyncWorking && 'animate-spin text-accent-ink')}
-                />
-                {sync.legacySyncing ? '引継中…' : '同期'}
-              </button>
-            ) : null}
-
-            <Button size="sm" onClick={() => navigate('/problems/new')}>
-              <Plus size={15} />
-              問題を登録
-            </Button>
+              ← 誤答ダッシュボードへ戻る
+            </button>
           </div>
         </div>
-      </Card>
-
-      {/* 🏁 全問マラソン進捗バー（IDベース完全新設計・不整合ゼロ） */}
-      {tab === 'problems' && problems && problems.length > 0 ? (
-        <Card className="px-4 py-2.5">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">
-              <div className="flex items-center gap-1.5">
-                <Flag size={14} className="text-accent-ink" />
-                <span className="text-xs font-bold text-ink">
-                  {marathon.onlyRetryMode
-                    ? `🎯 第${marathon.lap}周 弱点再挑戦モード`
-                    : `🏁 第${marathon.lap}周 全問マラソン`}
-                </span>
-                <Badge tone="accent">
-                  {marathon.scopeSubject === 'all'
-                    ? '全教科'
-                    : marathon.scopeSubject}
-                </Badge>
-              </div>
-
-              {/* 進捗ゲージ */}
-              <div className="flex min-w-[200px] flex-1 items-center gap-2.5">
-                <div className="h-2 flex-1 overflow-hidden rounded-full bg-surface-2">
-                  <div
-                    className="h-full rounded-full bg-accent transition-[width] duration-300"
-                    style={{ width: `${marathonProgress.percent}%` }}
-                  />
-                </div>
-                <span className="shrink-0 text-xs font-bold tabular-nums text-ink">
-                  {marathonProgress.cleared} / {marathonProgress.total} 問 (
-                  {marathonProgress.percent}%)
-                </span>
-              </div>
-
-              {marathonProgress.retry > 0 ? (
-                <span className="text-xs font-semibold text-danger">
-                  🔄 要再挑戦: {marathonProgress.retry} 問
-                </span>
-              ) : null}
-            </div>
-
-            <div className="flex flex-wrap items-center gap-1.5">
-              {marathonProgress.nextUnclearedProblem ? (
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    const next = marathonProgress.nextUnclearedProblem;
-                    if (!next) return;
-                    setSelectedId(next.id);
-                  }}
-                  className="h-7 px-2.5 text-xs"
-                  title="まだ今周でクリアしていない次の問題を開きます"
-                >
-                  <Play size={12} />
-                  次の未クリア問題へ
-                </Button>
-              ) : null}
-
-              <button
-                type="button"
-                onClick={() => setOnlyMarathonUncleared((prev) => !prev)}
-                className={cn(
-                  'inline-flex h-7 items-center gap-1 rounded-[7px] border px-2 text-xs font-medium transition-colors',
-                  onlyMarathonUncleared
-                    ? 'border-accent bg-accent-soft text-accent-ink'
-                    : 'border-border bg-surface-2 text-muted hover:text-ink',
-                )}
-              >
-                未クリアのみ ({marathonProgress.remaining})
-              </button>
-
-              {marathonProgress.retry > 0 ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    startNextMarathonLap('retry_only');
-                    toast(
-                      `間違えた ${marathonProgress.retry} 問だけの集中周回を開始しました！`,
-                      'info',
-                    );
-                  }}
-                  className="inline-flex h-7 items-center gap-1 rounded-[7px] border border-danger/40 bg-danger-soft/40 px-2 text-xs font-semibold text-danger hover:bg-danger-soft"
-                >
-                  🎯 間違えた{marathonProgress.retry}問だけ周回
-                </button>
-              ) : null}
-
-              {marathonProgress.isCompleted ? (
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    const nextLap = marathon.lap + 1;
-                    startNextMarathonLap('all');
-                    toast(`🎉 第${nextLap}周目を開始しました！`, 'success');
-                  }}
-                  className="h-7 px-2.5 text-xs"
-                >
-                  🎉 第{marathon.lap + 1}周目へ進む
-                </Button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (
-                      window.confirm(
-                        `第${marathon.lap}周目のマラソン進捗（クリア済み ${marathonProgress.cleared} 問）をリセットしますか？`,
-                      )
-                    ) {
-                      resetMarathonProgress(false);
-                      toast('現在の周回進捗をリセットしました。', 'info');
-                    }
-                  }}
-                  className="inline-flex h-7 items-center gap-1 rounded-[7px] border border-border bg-surface-2 px-2 text-[0.7rem] text-muted hover:text-ink"
-                  title="現在の周回進捗を0からやり直す"
-                >
-                  <RotateCcw size={11} />
-                  周回リセット
-                </button>
-              )}
-            </div>
-          </div>
-        </Card>
       ) : null}
 
-      {/* 未ログイン時または旧データ引き継ぎバナー */}
+      {/* 未ログイン時のみ表示する控えめな引き継ぎ案内 */}
       {!sync.user ? (
-        <Card className="flex flex-col items-start justify-between gap-3 border-accent/35 px-4 py-3 sm:flex-row sm:items-center">
-          <div>
-            <p className="text-xs font-semibold text-ink">
-              🔥 Firebase上の誤答問題・気づき一覧を引き継ぐ
-            </p>
-            <p className="mt-0.5 text-xs text-muted">
-              旧Floraと同じGoogleアカウントでログインすると、保存されていた誤答問題（全299件等）・気づきメモ・『文系の数学』進捗を自動で引き継ぎます。
-            </p>
-          </div>
+        <Card className="flex flex-col items-start justify-between gap-2 border-accent/35 px-3 py-2 sm:flex-row sm:items-center">
+          <p className="text-xs text-muted">
+            <strong className="text-ink">Firebase連携:</strong> Googleログインすると旧Floraの誤答・気づきを自動引き継ぎできます。
+          </p>
           <Button
             size="sm"
             onClick={handleLoginAndImport}
             disabled={isSyncWorking}
-            className="shrink-0"
+            className="h-7 shrink-0 px-2.5 text-xs"
           >
             {isSyncWorking ? (
-              <Loader2 size={14} className="animate-spin" />
+              <Loader2 size={13} className="animate-spin" />
             ) : (
-              <LogIn size={14} />
+              <LogIn size={13} />
             )}
-            Googleでログインして引き継ぐ
+            ログインして引継ぎ
           </Button>
-        </Card>
-      ) : sync.legacySyncing || hasOnlyDemoOrEmpty ? (
-        <Card className="flex flex-wrap items-center justify-between gap-3 border-accent/35 px-4 py-2.5">
-          <div className="flex items-center gap-2 text-xs text-ink">
-            {sync.legacySyncing ? (
-              <>
-                <Loader2 size={14} className="animate-spin text-accent-ink" />
-                <span>
-                  Firebase（{sync.user.displayName || sync.user.email}
-                  ）から誤答問題・気づき一覧を引き継いでいます…
-                </span>
-              </>
-            ) : (
-              <>
-                <ArchiveRestore size={14} className="text-accent-ink" />
-                <span>
-                  ログイン中（{sync.user.displayName || sync.user.email}
-                  ）— Firebaseから旧データを再取得できます。
-                </span>
-              </>
-            )}
-          </div>
-          {!sync.legacySyncing ? (
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={handleResyncLegacy}
-              disabled={isSyncWorking}
-            >
-              <RefreshCw size={13} />
-              旧データを取得
-            </Button>
-          ) : null}
         </Card>
       ) : null}
 
@@ -708,6 +451,145 @@ export function ProblemsPage() {
           {/* 左ペイン：フィルタ＆問題一覧 */}
           <div className="space-y-2.5 lg:col-span-5 xl:col-span-5">
             <Card className="space-y-2.5 p-3.5">
+              {/* アプリヘッダー：復習クイック開始 ＆ 新規登録 */}
+              <div className="flex items-center justify-between gap-2 border-b border-border/40 pb-2">
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 rounded-md bg-accent-soft/70 px-2.5 py-1 text-xs font-semibold text-accent-ink">
+                    <Zap size={13} className="text-accent-ink" />
+                    <span>復習 {stats?.due ?? 0}問</span>
+                  </div>
+                  {stats && stats.due > 0 ? (
+                    <Button
+                      size="sm"
+                      onClick={() => navigate('/practice/review')}
+                      className="h-6 px-2 text-[0.7rem] font-medium"
+                    >
+                      開始 →
+                    </Button>
+                  ) : null}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    onClick={() => navigate('/problems/new')}
+                    className="h-7 px-2.5 text-xs font-medium"
+                  >
+                    <Plus size={14} />
+                    問題を登録
+                  </Button>
+                </div>
+              </div>
+
+              {/* 🏁 全問マラソン進捗（スマート・インラインゲージ） */}
+              {problems && problems.length > 0 ? (
+                <div className="rounded-[9px] border border-border/60 bg-surface-2/40 p-2.5">
+                  <div className="flex items-center justify-between gap-2 text-xs">
+                    <div className="flex items-center gap-1.5 font-bold text-ink">
+                      <Flag size={13} className="text-accent-ink" />
+                      <span>
+                        {marathon.onlyRetryMode
+                          ? `🎯 第${marathon.lap}周 弱点周回`
+                          : `🏁 第${marathon.lap}周 全問マラソン`}
+                      </span>
+                      <span className="text-[0.7rem] font-normal text-muted">
+                        ({marathonProgress.cleared}/{marathonProgress.total}問)
+                      </span>
+                    </div>
+                    <span className="font-extrabold tabular-nums text-accent-ink">
+                      {marathonProgress.percent}%
+                    </span>
+                  </div>
+
+                  {/* ゲージ */}
+                  <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-border/50">
+                    <div
+                      className="h-full rounded-full bg-accent transition-[width] duration-300"
+                      style={{ width: `${marathonProgress.percent}%` }}
+                    />
+                  </div>
+
+                  {/* コントロール */}
+                  <div className="mt-2 flex flex-wrap items-center justify-between gap-1.5 text-[0.7rem]">
+                    <div className="flex items-center gap-1.5">
+                      {marathonProgress.nextUnclearedProblem ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const next = marathonProgress.nextUnclearedProblem;
+                            if (next) setSelectedId(next.id);
+                          }}
+                          className="inline-flex items-center gap-1 rounded bg-accent px-2 py-0.5 font-semibold text-white transition-opacity hover:opacity-90"
+                        >
+                          <Play size={10} />
+                          次へ
+                        </button>
+                      ) : null}
+                      <button
+                        type="button"
+                        onClick={() => setOnlyMarathonUncleared((prev) => !prev)}
+                        className={cn(
+                          'rounded px-1.5 py-0.5 font-medium transition-colors',
+                          onlyMarathonUncleared
+                            ? 'bg-accent-soft font-bold text-accent-ink'
+                            : 'text-muted hover:text-ink',
+                        )}
+                      >
+                        未クリアのみ ({marathonProgress.remaining})
+                      </button>
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      {marathonProgress.retry > 0 ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            startNextMarathonLap('retry_only');
+                            toast(
+                              `間違えた ${marathonProgress.retry} 問だけの集中周回を開始しました！`,
+                              'info',
+                            );
+                          }}
+                          className="font-semibold text-danger hover:underline"
+                        >
+                          🎯 誤答{marathonProgress.retry}問
+                        </button>
+                      ) : null}
+                      {marathonProgress.isCompleted ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            startNextMarathonLap('all');
+                            toast(`🎉 第${marathon.lap + 1}周目を開始しました！`, 'success');
+                          }}
+                          className="font-bold text-accent-ink hover:underline"
+                        >
+                          🎉 次周へ
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (
+                              window.confirm(
+                                `第${marathon.lap}周目のマラソン進捗（クリア済み ${marathonProgress.cleared} 問）をリセットしますか？`,
+                              )
+                            ) {
+                              resetMarathonProgress(false);
+                              toast('リセットしました', 'info');
+                            }
+                          }}
+                          title="現在の周回進捗をリセット"
+                          className="text-muted hover:text-ink"
+                        >
+                          <RotateCcw size={11} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+
               {/* 教科ピル & 一括整理モード切替 */}
               <div className="flex flex-wrap items-center justify-between gap-1.5">
                 <div className="flex flex-wrap items-center gap-1.5">
