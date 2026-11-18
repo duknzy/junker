@@ -9,6 +9,7 @@ import {
   Eye,
   EyeOff,
   Lightbulb,
+  LightbulbOff,
   ListFilter,
   NotebookPen,
   Shuffle,
@@ -18,6 +19,7 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { cn } from '@/core/lib/cn';
+import { useInsightMemoHidden } from '@/core/lib/useInsightMemoHidden';
 import { Badge } from '@/core/ui/Badge';
 import { Button } from '@/core/ui/Button';
 import { Card } from '@/core/ui/Card';
@@ -97,6 +99,8 @@ export function BunkeiPage() {
   const [insightOpen, setInsightOpen] = useState(false);
   const [insightDraft, setInsightDraft] = useState('');
   const [savingInsight, setSavingInsight] = useState(false);
+  // 気づきメモはヒントになり得るので、演習中は隠せるようにする
+  const [hideInsightMemo, setHideInsightMemo] = useInsightMemoHidden();
   const [busyJudge, setBusyJudge] = useState(false);
 
   const { toast } = useToast();
@@ -623,6 +627,21 @@ export function BunkeiPage() {
                 : '🧠 この問題の「気づき・極意」をメモする'}
             </Button>
 
+            <button
+              type="button"
+              onClick={() => setHideInsightMemo(!hideInsightMemo)}
+              title="気づきメモを隠して、自分の力だけで解きます"
+              className={cn(
+                'inline-flex items-center gap-1 rounded-[7px] border px-2 py-1 text-[0.7rem] font-medium transition-colors',
+                hideInsightMemo
+                  ? 'border-accent/50 bg-accent-soft text-accent-ink'
+                  : 'border-border bg-surface text-muted hover:text-ink',
+              )}
+            >
+              {hideInsightMemo ? <LightbulbOff size={11} /> : <Lightbulb size={11} />}
+              メモ: {hideInsightMemo ? '非表示' : '表示'}
+            </button>
+
             {linkedProblem && linkedProblem.kind !== 'insight' ? (
               <Link
                 to={`/problems/${linkedProblem.id}`}
@@ -633,7 +652,7 @@ export function BunkeiPage() {
             ) : null}
           </div>
 
-          {!insightOpen && existingInsight ? (
+          {!hideInsightMemo && !insightOpen && existingInsight ? (
             <div
               onClick={() => setInsightOpen(true)}
               className="mt-2.5 cursor-pointer rounded-[10px] border border-accent/35 bg-accent-soft px-4 py-3 text-sm leading-relaxed transition-colors"
@@ -644,6 +663,13 @@ export function BunkeiPage() {
               </p>
               <Markdown>{existingInsight}</Markdown>
             </div>
+          ) : null}
+
+          {hideInsightMemo && !insightOpen ? (
+            <p className="mt-2.5 flex items-center gap-1.5 text-xs text-muted">
+              <LightbulbOff size={12} />
+              気づきメモは非表示中です（ヒント防止）
+            </p>
           ) : null}
 
           {insightOpen ? (

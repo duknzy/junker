@@ -10,6 +10,7 @@ import {
   FastForward,
   Layers,
   Lightbulb,
+  LightbulbOff,
   Loader2,
   MessageSquarePlus,
   Pencil,
@@ -26,6 +27,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { askProblemQuestion, generateExplanation } from '@/ai/client';
 import { cn } from '@/core/lib/cn';
 import { formatDate } from '@/core/lib/date';
+import { useInsightMemoHidden } from '@/core/lib/useInsightMemoHidden';
 import { Badge } from '@/core/ui/Badge';
 import { Button } from '@/core/ui/Button';
 import { Card } from '@/core/ui/Card';
@@ -101,6 +103,8 @@ export function ProblemInspectorPane({
   const [editingInsight, setEditingInsight] = useState(false);
   const [alwaysShowAnswer, setAlwaysShowAnswer] = useState(true);
   const [showAnswer, setShowAnswer] = useState(true);
+  // 気づきメモはヒントになり得るので、演習中は隠せるようにする
+  const [hideInsightMemo, setHideInsightMemo] = useInsightMemoHidden();
 
   // 問題本体の編集モード
   const [editingProblem, setEditingProblem] = useState(false);
@@ -696,6 +700,20 @@ export function ProblemInspectorPane({
         <div className="flex items-center gap-1.5">
           <button
             type="button"
+            onClick={() => setHideInsightMemo(!hideInsightMemo)}
+            title="気づきメモを隠して、自分の力だけで解きます"
+            className={cn(
+              'inline-flex items-center gap-1 rounded-[7px] border px-2 py-1 text-[0.7rem] font-medium transition-colors',
+              hideInsightMemo
+                ? 'border-accent/50 bg-accent-soft text-accent-ink'
+                : 'border-border bg-surface text-muted hover:text-ink',
+            )}
+          >
+            {hideInsightMemo ? <LightbulbOff size={11} /> : <Lightbulb size={11} />}
+            メモ: {hideInsightMemo ? '非表示' : '表示'}
+          </button>
+          <button
+            type="button"
             onClick={() => setAlwaysShowAnswer((prev) => !prev)}
             className={cn(
               'inline-flex items-center gap-1 rounded-[7px] border px-2 py-1 text-[0.7rem] font-medium transition-colors',
@@ -756,8 +774,30 @@ export function ProblemInspectorPane({
         </div>
       </div>
 
+      {/* 気づきメモはヒントになり得るため、非表示中は本文を隠す */}
+      {hideInsightMemo ? (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-[12px] border border-dashed border-border bg-surface-2/40 px-4 py-3">
+          <p className="flex items-center gap-1.5 text-xs text-muted">
+            <LightbulbOff size={14} />
+            気づきメモは非表示中です（ヒント防止）
+          </p>
+          <button
+            type="button"
+            onClick={() => setHideInsightMemo(false)}
+            className="text-xs font-medium text-accent-ink hover:underline"
+          >
+            表示する
+          </button>
+        </div>
+      ) : null}
+
       {/* 掴んだ極意・気づきメモ（インライン編集対応） */}
-      <div className="rounded-[12px] border border-accent/30 bg-accent-soft/25 p-4">
+      <div
+        className={cn(
+          'rounded-[12px] border border-accent/30 bg-accent-soft/25 p-4',
+          hideInsightMemo && 'hidden',
+        )}
+      >
         <div className="mb-2 flex items-center justify-between gap-2">
           <p className="flex items-center gap-1.5 text-xs font-semibold text-accent-ink">
             <Lightbulb size={14} className="text-warning" />
