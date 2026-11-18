@@ -46,6 +46,14 @@ if (fs.existsSync(distImages)) {
   console.log('✓ Copied images/');
 }
 
+// 2b. Copy PWA icons directory
+const distIcons = path.join(distDir, 'icons');
+const rootIcons = path.join(rootDir, 'icons');
+if (fs.existsSync(distIcons)) {
+  copyDirRecursive(distIcons, rootIcons);
+  console.log('✓ Copied icons/');
+}
+
 // 3. Copy root files from next/dist (index.html, _redirects, _headers, etc.)
 const distEntries = fs.readdirSync(distDir, { withFileTypes: true });
 for (const entry of distEntries) {
